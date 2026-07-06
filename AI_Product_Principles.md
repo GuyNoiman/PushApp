@@ -1,0 +1,459 @@
+# AI_Product_Principles.md
+
+# Purpose
+
+This document teaches AI assistants how to make product decisions for PushApp.
+
+It is intentionally independent of the current implementation.
+
+Technology changes.
+
+The philosophy behind good product decisions should remain stable.
+
+Whenever an AI proposes new ideas, modifies existing documentation or evaluates future features, these principles should guide every decision.
+
+This document should be considered mandatory reading before contributing to the product.
+
+---
+
+# Core Principle
+
+Never ask:
+
+> "What feature should we build?"
+
+Instead ask:
+
+> "What problem are we trying to solve for the user?"
+
+Features are only one possible solution.
+
+The user's transformation always comes first.
+
+---
+
+# Principle 1
+
+Optimize For Real-Life Success
+
+Never optimize primarily for:
+
+- Daily Active Users
+- Screen Time
+- Notification Opens
+- Session Length
+
+Instead optimize for:
+
+- Completed Journeys
+- Long-term consistency
+- Confidence
+- Personal growth
+- Transformation
+- Returning after setbacks
+
+If a feature increases engagement without improving real life, challenge it.
+
+---
+
+# Principle 2
+
+Protect The Product Vision
+
+Implementation constraints should never reduce the long-term vision.
+
+Instead classify ideas into:
+
+Vision
+
+↓
+
+POC
+
+↓
+
+MVP
+
+↓
+
+Commercial Version
+
+↓
+
+Future
+
+Never delete a good idea because it is difficult.
+
+Move it.
+
+Do not remove it.
+
+---
+
+# Principle 3
+
+Reduce Cognitive Load
+
+The best feature is often the one users never notice.
+
+Whenever AI is introduced, its first responsibility is reducing complexity.
+
+Examples
+
+Instead of:
+
+asking users to configure reminder schedules.
+
+Buddy learns them.
+
+Instead of:
+
+asking users to design complicated Journeys.
+
+Buddy suggests an initial structure.
+
+Instead of:
+
+forcing users to browse hundreds of templates.
+
+Recommend a few relevant ones.
+
+Users should make fewer decisions—not more.
+
+---
+
+# Principle 4
+
+Protect Emotional Consistency
+
+PushApp should always feel emotionally safe.
+
+Avoid:
+
+pressure
+
+fear
+
+guilt
+
+punishment
+
+shame
+
+Prefer:
+
+support
+
+curiosity
+
+encouragement
+
+celebration
+
+hope
+
+Whenever wording is proposed, ask:
+
+"How will this make the user feel?"
+
+Emotional consistency is more important than clever copywriting.
+
+---
+
+# Principle 5
+
+Reality Is Always Right
+
+If users repeatedly struggle:
+
+Do not assume the user is the problem.
+
+Investigate:
+
+Journey design.
+
+Timing.
+
+Complexity.
+
+Life changes.
+
+Motivation.
+
+The product should adapt before asking users to adapt.
+
+---
+
+# Principle 6
+
+Prefer One Excellent Flow
+
+Avoid solving every edge case immediately.
+
+Whenever possible:
+
+Build one excellent experience.
+
+Rather than:
+
+Three average experiences.
+
+Simple systems evolve.
+
+Complex systems collapse.
+
+---
+
+# Principle 7
+
+Keep The User Moving
+
+Every screen should naturally answer:
+
+"What happens next?"
+
+Every successful interaction should point toward another meaningful action.
+
+Examples
+
+Journey completed
+
+↓
+
+Reflection
+
+↓
+
+Celebration
+
+↓
+
+Recommended Journey
+
+↓
+
+Continue growing
+
+The user should rarely encounter dead ends.
+
+---
+
+# Principle 8
+
+Gamification Supports Growth
+
+Gamification is never the objective.
+
+It reinforces progress.
+
+Always ask:
+
+Would this mechanic still make sense if there were no XP?
+
+If the answer is no,
+
+the mechanic probably exists for the wrong reason.
+
+---
+
+# Principle 9
+
+Buddy Is The Experience
+
+Users should not feel they are using AI.
+
+Users should feel they have a companion.
+
+Whenever AI functionality is added:
+
+Prefer presenting it through Buddy.
+
+Not through generic AI interfaces.
+
+Buddy represents the emotional relationship.
+
+AI is simply the technology behind it.
+
+---
+
+# Principle 10
+
+Protect Simplicity
+
+Every feature introduces complexity.
+
+Before approving any feature ask:
+
+Does this simplify life?
+
+Or merely add functionality?
+
+If complexity grows faster than value,
+
+reconsider the feature.
+
+---
+
+# Principle 11
+
+Every Screen Has One Purpose
+
+Do not overload screens.
+
+Each screen should answer one primary question.
+
+If a screen attempts to solve multiple unrelated problems,
+
+consider splitting or redesigning it.
+
+---
+
+# Principle 12
+
+Think In Systems
+
+Avoid designing isolated features.
+
+Every new feature should strengthen an existing behavioural loop.
+
+Ask:
+
+What system does this improve?
+
+Dreams?
+
+Journeys?
+
+Buddy?
+
+Support?
+
+Marketplace?
+
+Intervention Engine?
+
+If it strengthens none,
+
+its value is questionable.
+
+---
+
+# Principle 13
+
+Document Why
+
+Whenever documenting product decisions,
+
+always explain:
+
+Why this decision exists.
+
+Future contributors should understand reasoning,
+
+not only implementation.
+
+Rationale ages much better than specifications.
+
+---
+
+# Principle 14
+
+Challenge Every Idea
+
+Do not automatically accept feature requests.
+
+For every idea ask:
+
+Does it reinforce the mission?
+
+Does it simplify life?
+
+Does it improve transformation?
+
+Could a simpler solution achieve the same outcome?
+
+What new complexity does it introduce?
+
+This applies equally to ideas generated by humans and AI.
+
+---
+
+# Principle 15
+
+Preserve The Language
+
+Never casually rename important concepts.
+
+The terminology defines the product architecture.
+
+Dreams.
+
+Journeys.
+
+Steps.
+
+Buddy.
+
+Ally.
+
+Mission.
+
+Experience.
+
+These words are intentionally chosen.
+
+Changing terminology requires careful consideration because language shapes product thinking.
+
+---
+
+# Principle 16
+
+Prefer Long-Term Thinking
+
+Many product decisions optimize short-term metrics.
+
+PushApp should optimize long-term trust.
+
+Whenever forced to choose:
+
+Prefer the decision users will appreciate after five years,
+
+not necessarily after five days.
+
+Trust compounds.
+
+---
+
+# Principle 17
+
+Increase Autonomy, Never Create Dependency
+
+AI should always satisfy three conditions:
+
+1. Reduce friction — never increase complexity.
+
+2. Increase confidence — never create dependency.
+
+3. Increase autonomy — the user should gradually need *less* help from PushApp, not become trapped inside it.
+
+This is one of the most important philosophical principles.
+
+PushApp succeeds when the user becomes more capable on their own,
+
+even if that means opening the application less often.
+
+---
+
+# Final Question
+
+Before proposing any significant product change,
+
+always ask:
+
+> Does this help people become who they choose to be?
+
+If the answer is unclear,
+
+continue exploring the problem before proposing a solution.
+
+This single question should guide every future AI working on PushApp.

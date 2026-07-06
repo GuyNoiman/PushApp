@@ -8,7 +8,7 @@ Status: Draft
 
 This document defines the product principles that guide every product decision made within PushApp.
 
-Unlike features, these principles are expected to remain stable as the product evolves.
+Unlike features, these principles are expected to remain relatively stable as the product evolves.
 
 Every new feature should reinforce these principles rather than contradict them.
 
@@ -18,7 +18,9 @@ Every new feature should reinforce these principles rather than contradict them.
 
 PushApp is designed to maximize personal growth, not screen time.
 
-If a feature increases engagement without creating meaningful progress, it should be reconsidered.
+If a feature increases engagement without creating meaningful real-world progress, it should be challenged.
+
+The product should be proud when users leave the app to act in their lives.
 
 ---
 
@@ -28,15 +30,15 @@ Personal growth is already difficult.
 
 The product should reduce unnecessary effort whenever possible.
 
-Creating, joining and completing a quest should feel simple and approachable.
+Creating, joining, reporting, and completing a Journey should feel simple and approachable.
 
 ---
 
 # Principle 3 — Support, Don't Control
 
-PushApp should encourage, guide and support users.
+PushApp should encourage, guide, and support users.
 
-It should never manipulate, shame or pressure them.
+It should never manipulate, shame, or pressure them.
 
 Accountability should feel empowering rather than punitive.
 
@@ -56,6 +58,8 @@ Every feature should support sustainable personal change rather than short burst
 
 Consistency is more valuable than intensity.
 
+Recovery after drifting is more important than punishing failure.
+
 ---
 
 # Principle 6 — Humans Matter
@@ -63,6 +67,8 @@ Consistency is more valuable than intensity.
 Technology should strengthen meaningful human relationships.
 
 Whenever appropriate, the product should make it easier for people to support one another.
+
+Support is a core product primitive, not merely a social add-on.
 
 ---
 
@@ -74,31 +80,60 @@ Others first need help discovering it.
 
 PushApp should eventually support both journeys without overwhelming new users.
 
+The first product should likely focus on people who already know what they want to improve and need help continuing.
+
 ---
 
-# Principle 8 — Intelligence Should Feel Invisible
+# Principle 8 — Intelligence Should Feel Human, Not Mechanical
 
-AI should simplify decisions, reduce cognitive load and personalize guidance.
+AI and automated systems should simplify decisions, reduce cognitive load, personalize guidance, and improve timing.
 
-Users should feel supported—not managed by AI.
+Users should feel supported — not managed by a machine.
+
+A good intervention should often feel like something a thoughtful person might have said at the right moment.
 
 ---
 
 # Principle 9 — Progress Over Perfection
 
-Missing a day should never feel like failure.
+Missing a day should never feel like total failure.
 
 The product should help users return to the journey instead of making them feel guilty.
 
 ---
 
-# Principle 10 — Every Feature Must Answer "Why?"
+# Principle 10 — Interventions Over Notifications
+
+PushApp should not merely send reminders at fixed times.
+
+The product should learn when, how, and whether to intervene in order to increase the user's probability of success.
+
+Sometimes the right intervention is a push notification.
+
+Sometimes it is a message from a friend.
+
+Sometimes it is silence.
+
+---
+
+# Principle 11 — Competition Should Motivate Growth, Not Replace It
+
+Competitive elements may be useful when they increase consistency and motivation.
+
+Competition should not encourage users to choose easier Journeys, chase vanity points, or compare identities.
+
+Competition is a mode of motivation, not the philosophy of the product.
+
+---
+
+# Principle 12 — Every Feature Must Answer “Why?”
 
 Before building any feature, ask:
 
 - Which user problem does it solve?
 - Which core belief does it reinforce?
 - Does it make personal growth easier?
-- Would we still build it if it didn't increase engagement?
+- Would we still build it if it did not increase engagement?
+- Could this be solved by Calendar, Notes, WhatsApp, or ChatGPT? If yes, why is PushApp meaningfully better?
 
 If the answers are unclear, the feature should be challenged before implementation.

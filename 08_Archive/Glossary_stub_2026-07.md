@@ -42,7 +42,7 @@ Links or references to other glossary terms.
 
 The following concepts are considered part of the initial PushApp vocabulary and should be defined in future iterations:
 
-- Quest
+- Journey
 - Creator
 - User
 - Ally
@@ -55,8 +55,8 @@ The following concepts are considered part of the initial PushApp vocabulary and
 - Recommendation
 - Intervention
 - AI Coach
-- Quest Library
-- Quest Marketplace
+- Growth Library
+- Marketplace
 - Community Insight
 
 ---

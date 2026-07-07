@@ -97,3 +97,17 @@ Journey analytics · Journey comparison · AI adaptation timeline · alternative
 - **Completed** Journeys appear as an additional list at the bottom of the screen.
 - **Achievements button** opens the Journey-related part of Achievements.
 - **Journey cards show no Steps** — Steps are a higher-resolution detail, shown only in the Journey detail screen.
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved finalized decisions. Reference mockup:
+`https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba`.
+
+- Journeys are grouped **Active / Future / Completed**. Cards match the Home step-card
+  language: a **small inline Journey icon in the title row**, name, meta (phase ·
+  ends-in), a progress bar, chevron; completed cards are dimmed with a **"DONE" stamp**.
+- Two **icon-only buttons across the bottom** of the tab: **New** (coral "+") and
+  **Achievements** (a 3D gold trophy emblem).
+- **Journey detail:** the Journey-name title reads as **secondary** — smaller/lighter,
+  under a small "JOURNEY" eyebrow label — so it's clearly distinct from top-level tab
+  titles like "Explore".

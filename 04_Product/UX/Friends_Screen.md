@@ -76,3 +76,11 @@ Explicit **ask-for-help** · support streaks · Group Journeys · community even
 ## Naming (resolved 2026-07-06)
 
 The *your-friends* card action is **"Cheer"** — an encouraging, poke-like nudge (chosen over Encourage / Boost / Hype / Root for).
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved layout. Reference mockup: https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba
+
+- A **"Needs your cheer"** section (renamed from "help") with a **Cheer** action.
+- A **"Your friends"** list sorted **A–Z**; friends who need cheer **also appear** in this list.
+- Each friend row has a single **circular 3-dot button** that opens a **neutral menu** (Cheer / Gift / Message — icon + label, no colors, styled like mainstream apps). The old full-width action row and the bottom "Cheer · Gift · Message" caption were removed.

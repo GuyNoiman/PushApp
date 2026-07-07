@@ -34,3 +34,12 @@ Centralize conversations, separated by relationship type.
 - Split by **Friends / Allies / Groups(if any)** — tabs or Instagram-style.
 - Unread indicator on messages (unread sorted to top) **and** on categories with unread underneath.
 - Tap a person → friend / ally card (group page = future, likely not in v1).
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved layout. Reference mockup: https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba
+
+- Tabs above the list: **Friends (default) · Allies · Groups**.
+- Conversations are **IG-style rows** (not cards).
+- The redundant **"Ally" tag** next to names was removed.
+- **Notifications** (e.g. "X sent a gift") are **NOT shown as conversations** — only actual messages appear in the list.

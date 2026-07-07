@@ -48,3 +48,13 @@ Seasonal / limited trophies · creator & coach achievement categories (Product_B
 - Tiers: **Bronze / Silver / Gold**, sometimes **Diamond**; not all trophies have all tiers.
 - **Earned = colored; unearned = grayed.**
 - Reachable from multiple entry points (Profile, Journeys tab, completion celebrations).
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved layout. Reference mockup: https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba
+
+- Rendered on the **app's warm base** (the old purple game background was dropped) so it feels on-brand.
+- Prizes read as **medals with ribbons**, laid out **3 per row** with even margins.
+- Each prize shows its **unlock condition**. Locked prizes show a **progress count** ("18/30") with the remaining ("12 more") in a **lower visual hierarchy** (muted/smaller) — the old progress bar was dropped in favor of the count.
+- Tapping a medal opens a **centered detail sheet** (medal, name, full condition, progress, and the reward) with a **close (X) button**.
+- Tabs: **All · Journeys · Social**.

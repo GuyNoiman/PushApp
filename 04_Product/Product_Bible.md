@@ -2319,3 +2319,111 @@ the Product Bible and is preserved in its home document:
   friendly competition in behavior change, social support / help-seeking) — see
   `05_Research/`.
 
+---
+
+# 34. Behavioral Design Additions (Atomic Habits, 2026-07-07)
+
+Founder-approved additions inspired by *Atomic Habits* principles (make it obvious,
+easy, attractive, satisfying; identity-based habits; friction-minimizing starts).
+These refine existing objects — they do **not** introduce new top-level concepts.
+Each respects **D2** (no core flow depends on AI). Cross-references note where each
+lands in the object model and the UX specs.
+
+## 34.1 Step Card — Title + Description ("More Info")
+
+Every **Step** (§3.4) carries two text fields:
+
+- a short **title** (e.g. "Evening run"), and
+- a longer **description** that clearly explains what the user is expected to do.
+
+The description is **not** shown on the Step card by default (keep the UI clean). It is
+reached from the Step card's **three-dot menu → "More Info."** Purpose: remove ambiguity
+about each habit/step without cluttering the action surface.
+*Reflected in:* `UX/Home_Screen.md` (Step card + three-dot menu), `UX/Journey_Creation_Screen.md` (Step definition).
+
+## 34.2 No dedicated Habit-Stacking mechanism (for now)
+
+We will **not** add a separate "attach to an existing habit" flow at this stage. The
+existing **calendar-based** and **location-based** triggers (see §30 Intervention Engine,
+and Journey creation Reminders/context) already cover the need:
+
+- **Calendar triggers** connect a Step to existing routines / scheduled moments in the day.
+- **Location triggers** connect a Step to arriving at / leaving a specific place.
+
+*Reflected in:* this section; Intervention Engine §30; `UX/Journey_Creation_Screen.md` (Reminders & context).
+
+## 34.3 Starter Step (first Step of a Journey)
+
+When a Journey is created, its **first Step** is defined as a deliberately tiny action —
+the **Starter Step** — completable in **up to 2 minutes**. It minimizes friction, creates
+an early sense of progress, and keeps the first action from feeling intimidating.
+
+Creation guidance to show the author: *"The first step should be very small — something the
+user can complete in up to 2 minutes. The goal is to help the user start, not complete the
+entire Journey."* Examples:
+
+- "Start working out" → **"Put on workout clothes."**
+- "Look for a job" → **"Open LinkedIn and save one job."**
+- "Clean the apartment" → **"Clear one small surface."**
+
+*Reflected in:* `UX/Journey_Creation_Screen.md` (Plan / Steps step).
+
+## 34.4 Identity & Motivation questions (Journey start)
+
+At the **start of each Journey**, ask a few questions connecting it to the user's deeper
+motivation and identity — the **why**, not just the **what**. Possible prompts:
+
+- Why do you want to start this Journey?
+- What will motivate you to keep going?
+- How will you feel if you succeed?
+- What change would you like to see in yourself?
+- What do you want to remember when things get difficult?
+
+Answers are **saved** and later used to generate **personal** encouragement instead of
+generic motivation — reminding the user of *their own* stated reason. Examples:
+
+- "You started this because you wanted to feel more in control. Even one small step today counts."
+- "You said it was important to prove to yourself that you can stay consistent. This is the moment to show up, even in a small way."
+- "You don't need a perfect day. Just one action that reminds you why you started."
+
+*Note (D2):* the questions and saved answers work without AI; AI only enriches how the
+reminders are phrased. *Reflected in:* `UX/Journey_Creation_Screen.md`; ties to Intervention Engine §30 (message content).
+
+## 34.5 Immediate positive feedback on Step completion
+
+When a user reports a Step complete, show an **immediate, satisfying reward**: confetti,
+fireworks, a short animation, an avatar (Buddy) reaction, a glow/pulse, XP gain, or
+unlocking a small visual item. It must feel positive and rewarding but **elegant and
+mature — never childish or overwhelming.** Provide **several celebration variations** so it
+stays fresh and non-repetitive. *Reflected in:* `Design_System.md` §7 (Motion), `UX/Home_Screen.md` (check-in flow).
+
+## 34.6 Flexible, non-punishing streaks
+
+Keep streak logic **flexible and recovery-oriented** (reinforces §9.10 Missing Reports).
+Missing one step or one day must **not** trigger immediate punishment or a
+"you failed" feeling. Encourage return with one small action. Copy examples:
+
+- "You missed yesterday, and that's okay. Today we come back with one small step."
+- "You don't need to catch up on everything. Just show up again."
+- "The real streak is your ability to return."
+
+*Reflected in:* §9.10; `Design_System.md` §1 (Never shame).
+
+## 34.7 Weekly planning confirmation flow
+
+At the **start of each week**, show the user their planned Steps for the upcoming week so
+they can **review, approve, edit, move Steps between days, or replace Steps.** Goal: reduce
+in-the-moment daily decisions — the user begins the week with a clear plan (clarity, soft
+commitment, sense of control).
+
+The weekly-planning surface can include: the list of planned Steps, Steps grouped by day,
+an **"Approve week"** action, an **"Edit plan"** action, and a reminder of the user's
+personal motivation (§34.4) for the Journey. Copy examples:
+
+- "This is your plan for the upcoming week. Does it feel doable?"
+- "Would you like to approve the week or make adjustments?"
+- "It's easier to plan now than to decide again every day."
+
+*Status:* new surface — a **Weekly Planning** screen is owed (not yet designed). *Reflected in:*
+this section; `Open_Questions.md` (to spec); relates to Home (§11) and the implied-deadline model.
+

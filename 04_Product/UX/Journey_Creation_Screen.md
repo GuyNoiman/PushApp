@@ -36,9 +36,19 @@ defaults and can be added later.
 
 1. **Name & goal** — the Journey name / goal. A **"Show me similar"** button surfaces
    matching existing Journeys (adopt instead of build). *[required]*
+1b. **Your why (identity & motivation)** — a few short questions connecting the Journey to
+   the user's deeper motivation and identity; answers are **saved** and later power
+   *personal* encouragement (Bible §34.4). Prompts: why start · what will keep you going ·
+   how you'll feel if you succeed · what change you want in yourself · what to remember when
+   it's hard. *[optional but encouraged]*
 2. **Duration & rhythm** — duration (default ~2 months, configurable) + how progress is
    measured (frequency, e.g. 2×/week; or completion; etc.). *[required]*
-3. **Plan — Steps (optional; Phases optional)** — see the Steps mechanism below. *[optional]*
+3. **Plan — Steps (optional; Phases optional)** — see the Steps mechanism below. The
+   **first Step is a Starter Step** (Bible §34.3): a ≤2-minute action, with inline
+   guidance ("The first step should be very small — something you can complete in up to 2
+   minutes. The goal is to help you start, not finish the whole Journey.") and examples
+   ("Put on workout clothes", "Open LinkedIn and save one job", "Clear one small surface").
+   Each Step also has a short **title** and a longer **description** (Bible §34.1). *[optional]*
 4. **Reminders & context** — preferred **time**, **day(s)**, **location** for nudges.
    (Paid: Buddy suggests from what it knows.) *[optional]*
 5. **Privacy & support** — **Private** or **Public** (Public = the Journey is shared to
@@ -85,6 +95,14 @@ a **Future Journey** if the start date is in the future).
 Buddy predicting obstacles before they happen (the later stages of the "Journey creation
 should require less effort over time" philosophy) · richer AI drafting · importing a coach's plan.
 
+## Decisions (2026-07-07 — Atomic Habits additions, Bible §34)
+
+- **Starter Step** (§34.3): the first Step is a ≤2-minute action, with author guidance + examples.
+- **Identity & motivation questions** (§34.4) added near the start; answers saved for personal encouragement.
+- **Step title + description** (§34.1): each Step has a short title and a longer description (description hidden on the card; opened via three-dot "More Info").
+- **No dedicated Habit Stacking** (§34.2): calendar/location triggers in "Reminders & context" cover it.
+- **Weekly planning** (§34.7) is a separate owed screen, not part of this wizard.
+
 ## Decisions (2026-07-06)
 
 - Two tiers: **free = manual wizard**; **paid = Buddy-built proposal refined in conversation**.
@@ -94,3 +112,14 @@ should require less effort over time" philosophy) · richer AI drafting · impor
 - **Steps optional:** frequency → one implicit repeating Step; custom → up to ~40 named
   Steps, each with a repeat count, added via "+", duplicable, all can differ.
 - **Public = shared / creator.**
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+> Reference mockup: https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba
+
+- Each **editable value row** uses a **pencil edit affordance** (not a chevron), with clean spacing between the value and the control.
+- The **previous/next step names** are shown beside the **Back / Next** buttons. **Back is disabled on step 1.** **Back and Next are equal size.**
+- Tapping a **top step-progress bar** shows a **tooltip** with that step's title. The tooltip renders **below** the bars so it isn't hidden by the screen title.
+- The **Step description** field lives on the **Name** stage.
+- **"Your why" screen:** the first two questions are **normal answer boxes**; the third ("What to remember when it's hard") is a **list** — a **short text input (max 50 chars) + Add** button. Each saved line appears **below as a grey chip with an X to delete**, and the input **clears** after Add. The Back/Next buttons are pinned at the bottom.
+- The **Starter Step** is shown as **"Recommended"** (optional) on the plan/step-creation stage, with the guidance that a ≤2-minute first step raises completion odds.

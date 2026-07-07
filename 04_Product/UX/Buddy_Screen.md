@@ -82,3 +82,26 @@ more species · personality adaptation.
 - **Show evolution.**
 - **Store categories:** Clothes · Pet · Background · Frame · etc.
 - v1 may include a **few** species / animations / voices; **AI conversation stays future**.
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved layout. Reference mockup: https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba
+
+- **Headerless**, same as Home: a floating **level meter** (level circle joined to the XP bar) top-left and a framed **coin pill** top-right, over the **forest background** which fills the whole area down to the inventory. The **buddy is centered** in that forest area.
+- The buddy's **name + stage** sit on a pill directly under the buddy.
+- Two **icon-only 3D buttons** at the top-right: **Customize** (sparkle) and **Shop** (bag). Shop opens the dedicated **Shop screen**.
+- The **inventory is one unified framed panel**, stretched **edge-to-edge with straight (square) top corners**. It contains:
+  - **Five icon-only tabs** — Character · Clothing · Items · Location · Furniture.
+  - A **compact, scrollable item grid** (small items, since there will be many, with an internal scroller).
+  - A **"Select" button** at the bottom that applies the chosen item.
+- **Locked abilities/tabs** show a **"coming soon" tooltip that points at the locked tab**, e.g. "Unlocks at level 20".
+
+### NEW — Hatch / Evolve reveal screen
+
+A celebration surface shown on **first hatch (egg → Sprout)** and on **each stage-up**:
+
+- A **dark screen** with a radial light **burst**.
+- A **rarity tag** (Common → Rare → Epic → Mythic) — the rarity and burst intensity **scale with the milestone**.
+- The creature's **name**, gold **stars**, and a large **COLLECT** button.
+- An **"Open store" affordance** top-left.
+- This is one of the **reward/identity surfaces that earns full game-juice** (per `Design_System`), while work surfaces stay calm.

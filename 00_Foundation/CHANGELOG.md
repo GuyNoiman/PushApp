@@ -4,6 +4,32 @@ Status: Living Document
 
 ---
 
+# 2026-07-08 — Phases 4–5 close-out: mockups signed off, designs folded into specs
+
+The initial screen-design iteration (~13 mockup rounds, 2026-07-07) is founder-approved.
+Folded every finalized visual decision from the mockups into the permanent UX specs so
+nothing lives only in artifacts (repo = source of truth). Append-only; no content removed.
+
+## Changed (appended a "Finalized visual design (mockup v13)" section)
+- `UX/Home_Screen.md` (headerless forest home, floating stats, greeting bubble, swipe-report cards, DONE watermark / yellow-urgent / red-missed, nav shadow, hub-vs-default nav open question)
+- `UX/Journeys_Screen.md` (Home-matching cards, bottom New + Achievements buttons, secondary detail title)
+- `UX/Buddy_Screen.md` (headerless, centered buddy, unified edge-to-edge inventory + Select, locked-tab tooltip, **Hatch/Evolve reveal**)
+- `UX/Achievements_Screen.md` (warm base, medals 3-up, condition + count, detail sheet)
+- `UX/Explore_Screen.md` (draggable carousels — For you / Top creators / Brands — flex-shrink note)
+- `UX/Friends_Screen.md` (Cheer rename, A–Z list, neutral 3-dot menu)
+- `UX/Inbox_Screen.md` (Friends/Allies/Groups tabs, IG rows, no Ally tag, notifications excluded)
+- `UX/Missions_Modal.md` + `UX/Consistency_Reward_Modal.md` (unified centered modal; Missions · Login tabs; per-mission reward/claim states)
+- `UX/Journey_Creation_Screen.md` (pencil edit, prev/next labels, tooltip, equal buttons, "Your why" reminder-list, Recommended Starter Step)
+
+## Added
+- `UX/Shop_Screen.md` (new — featured pack + daily grid, warm palette)
+- `UX/Weekly_Planning_Screen.md` (new — Bible §34.7 / D12)
+
+## Status
+- Phases 1–5 complete. Next: **Phase 6 (Engineering)** — blocked on the founder's "Engineering Bible". POC/MVP scope (D4) still to define together.
+
+---
+
 # 2026-07-06 — Founder Decisions (post Repository Review)
 
 Recorded five founder decisions and folded them into the repository. Canonical record: `06_Decisions/Decision_Log.md`.

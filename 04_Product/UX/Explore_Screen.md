@@ -68,3 +68,15 @@ AI roadmap generation · Dream exploration · full Marketplace · coach recommen
 - **Feed-first** with categories: Most recommended · Recommended for you · Friends chose · Newest.
 - **Search** + **Build your own** as bottom entries; search swaps the screen to most-similar results.
 - **Build your own** opens a **separate Creation screen** (designed next).
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved layout. Reference mockup: https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba
+
+- **Search field at the top** — placeholder **"What do you want to achieve?"**
+- Content is a set of **horizontally-draggable carousels** (Netflix / Spotify style — cards peek at the edge). Each row uses a **distinct card shape** so the row type reads at a glance:
+  - **For you** — Journey tiles, **text-first**: a slim top image band (currently a decorative icon; becomes the **creator's uploaded image** when a Journey is made public), then the body leads with the **Journey name**, then **duration**, then **# steps**.
+  - **Top creators** — vertical cards showing the **creator's own buddy + level badge**, their **@username**, a **registrations count** ("42k joined" — counts each sign-up to their content, not unique people), and a journeys count.
+  - **From brands** — wide cards: **logo + brand name + Journey name**.
+- A **"Build your own"** entry (also reachable from the Journeys tab).
+- **Implementation note:** the carousels must be **`flex-shrink:0`** so a content-heavy Explore **scrolls** vertically rather than flex-compressing the rows (a real bug we hit and fixed).

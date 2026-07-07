@@ -76,6 +76,8 @@ Each Step card (the **Step name is the primary line**; everything else is second
 - **Journey name** (secondary) + **Phase name** (only if the Journey has Phases).
 - **Progress bar + "Phase X / Y"** — the bar shows **current-Phase** progress (or the whole Journey if it has no Phases).
 - A **report control** on the right (compact) — a rounded-square button: a check for done-type Steps, a **+** for frequency Steps; filled when completed. This is the Step's Check-in.
+- A **three-dot menu** on the card exposes **"More Info"** — the Step's longer
+  **description** (Bible §34.1), kept off the card by default so the surface stays clean.
 - No tags are shown (internal data only).
 
 **Completed Steps** for the period move to the **bottom of the feed**, shown **disabled**
@@ -97,8 +99,10 @@ competing with the Steps for the main space.
 1. Open app → Home shows the prioritized Steps list (the top card is the most urgent action).
 2. Tap the hero (or long-press any card) → **Quick Check-in sheet** appropriate to
    that Journey's reporting type (checkbox / number / module / within-limit / etc.).
-3. Confirm → brief, warm micro-celebration (Buddy reacts; XP/streak update) → the
-   list re-orders to the next action.
+3. Confirm → an **immediate, satisfying celebration** (Bible §34.5): Buddy reacts, plus
+   one of **several elegant variations** (confetti, glow/pulse, XP gain, small unlock) —
+   rewarding but never childish or overwhelming → XP/streak update → the list re-orders to
+   the next action.
 4. If nothing is due → Home shows a "return to life" state (below), not an empty list.
 
 Home should feel *lighter* after each check-in, reinforcing completion.
@@ -163,3 +167,35 @@ Resolved (2026-07-06):
 
 Still open:
 - Visual fine-tuning (Phase 5/6): Buddy arrangement within its 30% band; button placement.
+
+## Finalized visual design (mockup v13 — 2026-07-07)
+
+Founder-approved finalized decisions. Reference mockup:
+`https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba`.
+
+- **Headerless.** No header bar. A floating **level meter** (a level circle visually
+  joined to a short horizontal XP bar reading "340 / 500 EXP" inside it — one unit)
+  sits top-left; a framed gold **coin pill** (star-coin icon + amount + a "+") sits
+  top-right, sized to the XP-bar height. (Gems were dropped for now.)
+- The whole screen sits on the **forest background** (same scene as the Buddy tab),
+  lightened slightly so buttons/objects stay prominent.
+- The **greeting** ("Hello, [name]") is a **speech bubble above the centered buddy**,
+  as if the buddy says it.
+- The buddy is flanked by **four 3D, icon-only area buttons**: left = Missions (gold),
+  Streak/Consistency (pink); right = Help / friends-who-need-cheer (purple),
+  Awards/Achievements (teal). Badges on the corner when relevant. The buddy shows its
+  stage name.
+- **Week's steps** live in a **full-width, straight-cornered cream panel** with a
+  **right-side scroller** and a **shadow separating it from the buddy area**.
+- **Step cards** use the inline mini Journey-icon before the step name (chosen
+  "Option C"); progress bar; a **3-dot menu** (→ "More Info" reveals the Step
+  description). Reporting is by **swipe-right or long-press** (no separate check
+  button). Result recolors the whole card: **completed → green wash + a faded "DONE"
+  watermark**; **missed → red wash, no mark** (non-shaming copy); **urgent/at-risk →
+  yellow wash with an "Ends today" badge straddling the top-right corner**. Completed
+  steps drop to the bottom.
+- The **bottom nav has a stronger shadow** (pops off the screen).
+- **Nav open question (still founder's call):** default is Home · Journeys · Explore ·
+  Friends · Buddy; the alternative "hub" option is Home · Explore · Friends · Buddy ·
+  Inbox with a "This week · Journeys" toggle at the top of Home (folds Journeys into
+  Home, frees a slot for Inbox). Record as unresolved.

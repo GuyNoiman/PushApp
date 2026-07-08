@@ -1,3 +1,38 @@
+# PushApp — POC mobile app
+
+The PushApp proof-of-concept. Stack + architecture: `../11_Engineering_Bible/Engineering_Decisions.md`
+§E1 and root `CLAUDE.md` §6. **Expo (React Native) + TypeScript**, engine-based: all business logic
+lives in `src/core/` (event bus + engines + config + offline `Repository`); the UI is presentational.
+
+## Test on your iPhone (Expo Go — $0, no Apple Developer account)
+
+Run this on a computer on the **same Wi-Fi** as your phone:
+
+```bash
+cd app
+npm install
+npx expo start
+```
+
+Then open **Expo Go** on the iPhone and scan the QR. Editing files hot-reloads on the device.
+(The dev server must stay running on the computer while you test — that's the only limitation of
+this free path. TestFlight/App Store, when we get there, removes it but needs an Apple Developer
+account — see `Engineering_Decisions.md` §E1.)
+
+Notes:
+- Fresh clone: run `npx expo start` once before `npx tsc --noEmit` — it regenerates `expo-env.d.ts`
+  (which the Expo template gitignores), otherwise typecheck shows template CSS-module errors.
+- In a restricted network that blocks `api.expo.dev`, use `npx expo start --offline`.
+
+## Where things live
+- `src/core/` — pure-TS engines (no UI imports): `JourneyEngine`, `RewardEngine`, `BuddyEngine`,
+  `ReminderEngine`, the `EventBus`, `config/` (XP/coins/buddy stages as data), and `persistence/`
+  (offline `Repository` + `LocalRepository`). `AppCore.ts` wires them and seeds a demo Journey.
+- `src/app/` — screens (file-based routing). `src/app/index.tsx` is the action-based Home.
+- `src/state/AppProvider.tsx` — bridges `AppCore` to React.
+
+---
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

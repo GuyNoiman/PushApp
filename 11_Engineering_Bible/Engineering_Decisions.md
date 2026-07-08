@@ -79,3 +79,52 @@ vendor independence, business logic outside the UI, and platform-agnostic core s
 
 ### Reflected in
 - `CLAUDE.md` §6 (Stack summary), `06_Decisions/Decision_Log.md` (E1), the `app/` scaffold.
+
+---
+
+## E2 — POC social/Allies backend: Supabase (Free tier)
+
+- **Date:** 2026-07-09
+- **Owner:** Founder (approved) + engineering.
+- **Stage:** POC (the social/Allies pillar of `04_Product/POC_and_MVP_Scope.md` §1.3).
+
+### Context
+Four POC pillars (Journey loop, Buddy, Coins/Shop, Missions) are local-first at $0. The
+**social/Allies** pillar — a chosen circle seeing each other's Journey progress and cheering —
+inherently needs a shared, networked backend (auth + a little cloud data + realtime). It is the
+one pillar that leaves the free local world, and it is half the POC hypothesis ("does social
+support drive persistence"). Held for founder approval per CLAUDE.md §3.10 / cost-guardian.
+
+### Decision
+Use **Supabase (Free tier)** for the POC social pillar. Founder approved on 2026-07-09 and created
+a free project (`EXPO_PUBLIC_SUPABASE_URL` + publishable key stored in gitignored `app/.env`;
+placeholders in `app/.env.example`). Connectivity verified. Built behind a new **`SocialGateway`**
+interface + feature flag; **`SupabaseSocialGateway`** is the only file importing the Supabase SDK
+(vendor isolation, Bible §3). Only a progress *summary* + social objects live in the cloud; local
+state stays authoritative (Bible §8). Access controlled by Postgres Row-Level Security. Full spec:
+`11_Engineering_Bible/Social_Backend_Proposal.md`.
+
+### Why
+- **$0 at POC scale** — no credit card, no path to a charge unless a deliberate later upgrade
+  (Commercial-stage; cost-guardian will warn). Postgres RLS expresses Ally visibility cleanly;
+  auth + realtime included; SQL portable (vendor independence).
+- Client ships only the **publishable** (client-safe) key; the **secret** key never ships (Bible §12).
+
+### Alternatives considered
+- **Firebase (Spark free tier)** — also $0, but NoSQL makes per-Journey Ally-visibility rules
+  clumsier than Postgres RLS, and it is less portable. Rejected; Supabase preferred.
+- **Stay local-only / defer social** — keeps $0 but cannot test the social half of the POC bet.
+
+### Tradeoffs accepted
+- A free project pauses after ~7 days idle (manual, no-charge resume). Fine for intermittent POC use.
+- A cloud dependency, isolated behind `SocialGateway` + a single SDK-importing implementation, so a
+  later provider swap is one new file with no engine changes.
+
+### Future considerations
+- security-privacy reviews the RLS + data-minimization **before** the pillar ships.
+- POC visibility default: *progress-only* (with *full* / *anonymous* per-Journey options); cheers
+  surface as a local notification.
+
+### Reflected in
+- `Social_Backend_Proposal.md` (status → Approved), `app/.env.example`, forthcoming
+  `app/src/core/social/` (`SocialGateway` + `SupabaseSocialGateway`).

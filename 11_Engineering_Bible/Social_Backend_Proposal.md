@@ -1,8 +1,9 @@
-# Social / Allies Backend — Proposal (awaiting founder approval)
+# Social / Allies Backend — Proposal (APPROVED 2026-07-09)
 
-Status: **Open Question — NOT approved, NOTHING provisioned.** This document exists so the
-decision is ready when the founder returns. Per `CLAUDE.md` §3.10 and the cost-guardian, no
-account/service is created and no money is committed until the founder approves.
+Status: **APPROVED — Supabase Free tier (see Engineering_Decisions.md E2).** Founder approved on
+2026-07-09 and created a free project; client-safe values are in gitignored `app/.env` (placeholders
+in `app/.env.example`), connectivity verified, still $0. Implementation proceeds behind the
+`SocialGateway` interface + feature flag; security-privacy reviews the RLS before the pillar ships.
 
 Stage: POC (the social/Allies pillar of `04_Product/POC_and_MVP_Scope.md` §1.3).
 

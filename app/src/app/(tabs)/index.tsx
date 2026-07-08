@@ -4,8 +4,9 @@
  * calls the AppCore facade; the engines run and the Buddy reacts on screen.
  * Presentational only — no business logic lives here (Engineering Bible §19).
  */
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuddyCard } from '@/components/buddy/BuddyCard';
@@ -13,6 +14,7 @@ import { StepCard } from '@/components/journey/StepCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
 function greeting(): string {
@@ -24,6 +26,8 @@ function greeting(): string {
 
 export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
+  const router = useRouter();
+  const theme = useTheme();
   const [celebration, setCelebration] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,10 +60,25 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
           <View style={styles.greetingBlock}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {greeting()}
-            </ThemedText>
-            <ThemedText type="subtitle">What will you do now?</ThemedText>
+            <View style={styles.greetingText}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {greeting()}
+              </ThemedText>
+              <ThemedText type="subtitle">What will you do now?</ThemedText>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Create a new Journey"
+              onPress={() => router.push('/journey/new')}
+              style={({ pressed }) => [
+                styles.createButton,
+                { backgroundColor: theme.text },
+                pressed && styles.pressed,
+              ]}>
+              <ThemedText type="subtitle" style={[styles.plus, { color: theme.background }]}>
+                +
+              </ThemedText>
+            </Pressable>
           </View>
 
           {!ready || !snapshot ? (
@@ -129,7 +148,27 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   greetingBlock: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  greetingText: {
+    flex: 1,
     gap: Spacing.half,
+  },
+  createButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plus: {
+    lineHeight: 34,
+  },
+  pressed: {
+    opacity: 0.6,
   },
   sectionHeader: {
     flexDirection: 'row',

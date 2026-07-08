@@ -1,13 +1,42 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-08
+Last updated: 2026-07-08 (engineering sprint)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (read this first)
-**Phases 1–5 complete; product + business strategy now locked.** Sessions 2026-07-07/08 delivered:
+## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (ENGINEERING — read this first)
+**Phase 6 (Engineering) has STARTED.** The founder chose to begin building the POC now; the
+investor-deck task (previous "NEXT") is **deferred**, not cancelled.
+
+- **New team role: Cost Guardian** (`.claude/agents/cost-guardian.md` + CLAUDE.md §4/§5 and rule
+  §3.10) — warns in Hebrew before any action that could cost money or approach a paid quota.
+- **Stack decided (E1):** **Expo (React Native) + TypeScript**, engine-based architecture.
+  Full rationale/alternatives in `11_Engineering_Bible/Engineering_Decisions.md` §E1; summarized in
+  CLAUDE.md §6. Cloud backend (Supabase free tier) deferred until the social/Allies pillar.
+- **POC app scaffolded in `app/`** (Expo SDK 57). Pure-TS core (no UI imports) under `app/src/core/`:
+  `EventBus` + engines (`JourneyEngine`, `RewardEngine`, `BuddyEngine`, `ReminderEngine`),
+  config-before-code (`config/rewards.ts`, `config/buddyStages.ts`), offline-first `Repository`
+  (+`LocalRepository` via AsyncStorage), `AppCore` composition root. UI: an action-based **Home**
+  screen wired via `AppProvider`; seeds ONE demo Journey ("Run 5km" + Starter Step + 2 Steps) on
+  first run; checking a Step → engines → Buddy reacts, XP/Coins update. `tsc --noEmit` = 0; web
+  export ok. Business logic lives ONLY in engines (verified: no react/expo import in `src/core`).
+- **Cost so far: 0₪.** All local; Apple Developer account only needed later for TestFlight/store.
+- **⚠️ Env constraint:** `api.expo.dev` is blocked by org egress from THIS container (403). Here,
+  use `EXPO_OFFLINE=1` for `expo install` and `npx expo start --offline`. **The founder tests on his
+  own machine:** `git pull` the branch → `cd app && npm install && npx expo start` → scan QR with
+  **Expo Go** (same WiFi) — his machine reaches Expo normally. Note `app/expo-env.d.ts` is gitignored
+  by the Expo template; on a fresh clone run `npx expo start` once before `tsc` (it regenerates it).
+- **NEXT (POC build order):** get founder feedback on Home, then build out the POC pillars via the
+  team flow — real Journey-creation flow (name·rhythm·Steps·Starter Step·"why") → Buddy evolve UI →
+  Coins/Shop → Missions+Login rewards → **social/Allies** (this is where the Supabase free-tier
+  backend enters, behind the Repository/social abstraction; cost-guardian to review first).
+
+---
+
+## HANDOFF SNAPSHOT — 2026-07-08 (product & business strategy)
+**Phases 1–5 complete; product + business strategy locked.** Sessions 2026-07-07/08 delivered:
 - **Design:** all finalized screen decisions folded into `UX/*.md` + new `Shop_Screen.md`/`Weekly_Planning_Screen.md`; committed (86187eb). Latest mockup = **v14** (GT card) — link under Artifacts. Mockup is a *reference*; `UX/*.md` are the source of truth.
 - **POC / MVP / roadmap** (`POC_and_MVP_Scope.md`, D13/D14): POC = does **social + Buddy + reward-loop** drive persistence; **lean MVP** = POC + Explore/library + onboarding(egg→hatch) + Phases/full types + light-AI encouragement/reminders.
 - **5-version roadmap** (`Version_Roadmap.md` + **`.pdf`**, D15): V1 POC · V2 MVP · V3 Commercial · V4 Scale/Ecosystem · V5 Future/Optional. Table artifact 9cdeb986.

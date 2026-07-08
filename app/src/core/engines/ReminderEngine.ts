@@ -6,15 +6,6 @@
  */
 import * as Notifications from 'expo-notifications';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
-
 export interface DailyReminderInput {
   title: string;
   body: string;
@@ -30,6 +21,16 @@ export class ReminderEngine {
   /** Ask for notification permission once. Safe to call repeatedly. */
   async init(): Promise<boolean> {
     try {
+      // Configure how notifications present — lazily, only when the user opts in,
+      // so expo-notifications isn't pulled into cold start for everyone.
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
       const settings = await Notifications.getPermissionsAsync();
       let granted = settings.granted;
       if (!granted) {

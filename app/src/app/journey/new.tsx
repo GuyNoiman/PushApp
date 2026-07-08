@@ -87,8 +87,8 @@ export default function NewJourneyScreen() {
   // Stage 2 — Your why (identity & motivation). Saved as Journey.why[].
   const [whyStart, setWhyStart] = useState('');
   const [whyKeepGoing, setWhyKeepGoing] = useState('');
-  const [reminders, setReminders] = useState<string[]>([]); // "what to remember when it's hard"
-  const [rememberDraft, setRememberDraft] = useState('');
+  const [hardMoments, setHardMoments] = useState<string[]>([]); // "what to remember when it's hard"
+  const [hardMomentDraft, setHardMomentDraft] = useState('');
 
   // Stage 3 — Duration & rhythm.
   const [durationDays, setDurationDays] = useState(60);
@@ -109,8 +109,8 @@ export default function NewJourneyScreen() {
   const isLast = stage === STAGE_TITLES.length - 1;
 
   const why = useMemo(
-    () => [whyStart.trim(), whyKeepGoing.trim(), ...reminders].filter(Boolean),
-    [whyStart, whyKeepGoing, reminders],
+    () => [whyStart.trim(), whyKeepGoing.trim(), ...hardMoments].filter(Boolean),
+    [whyStart, whyKeepGoing, hardMoments],
   );
 
   const stepInputs = useMemo<NewStepInput[]>(() => {
@@ -135,48 +135,55 @@ export default function NewJourneyScreen() {
     return list;
   }, [starterTitle, starterDescription, steps]);
 
-  const addRemember = () => {
-    const value = rememberDraft.trim();
+  const addHardMoment = () => {
+    const value = hardMomentDraft.trim();
     if (!value) return;
-    setReminders((prev) => [...prev, value]);
-    setRememberDraft('');
+    setHardMoments((prev) => [...prev, value]);
+    setHardMomentDraft('');
   };
 
-  const removeRemember = (index: number) =>
-    setReminders((prev) => prev.filter((_, i) => i !== index));
+  const removeHardMoment = (index: number) =>
+    setHardMoments((prev) => prev.filter((_, i) => i !== index));
 
   const updateStep = (key: string, patch: Partial<DraftStep>) =>
     setSteps((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
 
   const removeStep = (key: string) => setSteps((prev) => prev.filter((s) => s.key !== key));
 
+  // Dismiss the modal safely — router.back() is a no-op with no history
+  // (web reload / deep-link straight onto this route), which would trap the user.
+  const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
+
   const handleCreate = async () => {
     if (creating || !title.trim()) return;
     setCreating(true);
+    try {
+      const journey = core.createJourney({
+        title: title.trim(),
+        why,
+        durationDays,
+        rhythm,
+        steps: stepInputs,
+      });
 
-    const journey = core.createJourney({
-      title: title.trim(),
-      why,
-      durationDays,
-      rhythm,
-      steps: stepInputs,
-    });
-
-    if (remindEnabled) {
-      // Ask for notification permission only now, in context (never at launch).
-      const granted = await core.initReminders();
-      if (granted) {
-        const time = REMINDER_TIMES[remindTimeIndex];
-        await core.scheduleDailyReminder({
-          title: `Time for ${journey.title}`,
-          body: starterTitle.trim() || 'Take your next Step.',
-          hour: time.hour,
-          minute: time.minute,
-        });
+      if (remindEnabled) {
+        // Ask for notification permission only now, in context (never at launch).
+        const granted = await core.initReminders();
+        if (granted) {
+          const time = REMINDER_TIMES[remindTimeIndex];
+          await core.scheduleDailyReminder({
+            title: `Time for ${journey.title}`,
+            body: starterTitle.trim() || 'Take your next Step.',
+            hour: time.hour,
+            minute: time.minute,
+          });
+        }
       }
-    }
 
-    router.back();
+      dismiss();
+    } finally {
+      setCreating(false);
+    }
   };
 
   const inputStyle = [styles.input, { borderColor: theme.backgroundSelected, color: theme.text }];
@@ -195,7 +202,7 @@ export default function NewJourneyScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Close"
-                onPress={() => router.back()}>
+                onPress={dismiss}>
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   Close
                 </ThemedText>
@@ -261,25 +268,25 @@ export default function NewJourneyScreen() {
                   <View style={styles.addRow}>
                     <TextInput
                       style={[...inputStyle, styles.flex]}
-                      value={rememberDraft}
-                      onChangeText={setRememberDraft}
+                      value={hardMomentDraft}
+                      onChangeText={setHardMomentDraft}
                       placeholder="A short reminder…"
                       placeholderTextColor={theme.textSecondary}
                       maxLength={50}
                       returnKeyType="done"
-                      onSubmitEditing={addRemember}
+                      onSubmitEditing={addHardMoment}
                     />
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel="Add reminder"
-                      onPress={addRemember}
+                      onPress={addHardMoment}
                       style={[styles.addButton, { borderColor: theme.text }]}>
                       <ThemedText type="smallBold">Add</ThemedText>
                     </Pressable>
                   </View>
-                  {reminders.length > 0 && (
+                  {hardMoments.length > 0 && (
                     <View style={styles.chipWrap}>
-                      {reminders.map((line, index) => (
+                      {hardMoments.map((line, index) => (
                         <ThemedView
                           key={`${line}_${index}`}
                           type="backgroundSelected"
@@ -288,7 +295,7 @@ export default function NewJourneyScreen() {
                           <Pressable
                             accessibilityRole="button"
                             accessibilityLabel={`Remove ${line}`}
-                            onPress={() => removeRemember(index)}>
+                            onPress={() => removeHardMoment(index)}>
                             <ThemedText type="smallBold" themeColor="textSecondary">
                               ✕
                             </ThemedText>
@@ -432,7 +439,10 @@ export default function NewJourneyScreen() {
             {stage === 5 && (
               <View style={styles.stack}>
                 <SummaryRow label="Journey" value={title.trim() || '—'} />
-                <SummaryRow label="Duration" value={`${durationDays} days`} />
+                <SummaryRow
+                  label="Duration"
+                  value={DURATION_OPTIONS.find((d) => d.value === durationDays)?.label ?? `${durationDays} days`}
+                />
                 <SummaryRow
                   label="Rhythm"
                   value={RHYTHM_OPTIONS.find((r) => r.value === rhythm)?.label ?? rhythm}

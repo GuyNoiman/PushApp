@@ -97,7 +97,7 @@ export default function HomeScreen() {
 
               <View style={styles.sectionHeader}>
                 <ThemedText type="default" style={styles.sectionTitle}>
-                  This week&apos;s steps
+                  This week&apos;s Steps
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {snapshot.todaySteps.length} to go

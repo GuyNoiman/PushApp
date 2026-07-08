@@ -58,6 +58,7 @@ export class ShopEngine {
   equip(itemId: string): boolean {
     const state = this.getState();
     if (!state.buddy.ownedCosmetics.includes(itemId)) return false;
+    if (state.buddy.equippedCosmetic === itemId) return true; // already worn — no redundant save/emit
 
     state.buddy = { ...state.buddy, equippedCosmetic: itemId };
     this.bus.emit({ type: 'ItemEquipped', itemId });

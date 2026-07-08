@@ -45,17 +45,20 @@ function emptyState(): AppState {
 
 /**
  * Backfill fields added after a user's state was first persisted, so loading an
- * older snapshot never crashes or drops data (offline-first migration). Only
- * missing fields are defaulted; existing values are preserved.
+ * older — or partially corrupt — snapshot never crashes or drops data
+ * (offline-first migration). Merges the loaded value over known-good defaults:
+ * existing values win, missing/absent shape (e.g. no `buddy`, no `journeys`) is
+ * healed rather than dereferenced, so a bad payload can't crash-loop launch.
  */
 function migrateState(state: AppState): AppState {
+  const base = emptyState();
   return {
+    ...base,
     ...state,
-    buddy: {
-      ...state.buddy,
-      ownedCosmetics: state.buddy.ownedCosmetics ?? [],
-      equippedCosmetic: state.buddy.equippedCosmetic ?? null,
-    },
+    dreams: state.dreams ?? base.dreams,
+    journeys: state.journeys ?? base.journeys,
+    checkIns: state.checkIns ?? base.checkIns,
+    buddy: { ...base.buddy, ...state.buddy },
   };
 }
 

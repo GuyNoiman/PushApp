@@ -229,4 +229,63 @@ describe('MissionEngine — rollover', () => {
     engine.claimLoginReward();
     expect(engine.getClaimableCount()).toBe(0);
   });
+
+  it('auto-claims a done-but-unclaimed Mission’s Coins before resetting it (Coins only, no XP)', () => {
+    const { bus, engine, time, rewards, claimed } = setup(new Date(2026, 6, 8));
+
+    emitCheckIn(bus); // completes daily_checkin_1 (target 1) — left UNCLAIMED
+    expect(engine.getMissions().find((m) => m.id === 'daily_checkin_1')!.done).toBe(true);
+    rewards.length = 0; // ignore anything emitted before the rollover
+    claimed.length = 0;
+
+    // A new day arrives; the authoritative rollover runs (start()/foreground).
+    time.set(new Date(2026, 6, 9));
+    engine.refresh();
+
+    // The earned Coins were granted via the normal path — never forfeited, no XP.
+    expect(rewards).toHaveLength(1);
+    expect(rewards[0]).toMatchObject({
+      xp: 0,
+      coins: 5,
+      reason: 'MissionClaimed',
+      sourceMissionId: 'daily_checkin_1',
+    });
+    expect(claimed).toEqual([{ type: 'MissionClaimed', missionId: 'daily_checkin_1', coins: 5 }]);
+    // The Mission is then reset fresh for the new day.
+    expect(engine.getMissions().find((m) => m.id === 'daily_checkin_1')!.progress).toBe(0);
+  });
+
+  it('reads are pure — they reflect a rollover view but do not mutate state until refresh()', () => {
+    const { bus, engine, state, time } = setup(new Date(2026, 6, 8));
+
+    emitCheckIn(bus); // daily_checkin_1 done, daily_checkin_3 progress 1
+    const dailyKeyBefore = state.missions.dailyResetKey;
+    const progressBefore = JSON.stringify(state.missions.progress);
+
+    // New day: pure reads REFLECT the reset view but must NOT touch stored state.
+    time.set(new Date(2026, 6, 9));
+    expect(engine.getMissions().find((m) => m.id === 'daily_checkin_1')!.progress).toBe(0);
+    expect(engine.getClaimableCount()).toBe(1); // Login only; daily reads as fresh
+    expect(state.missions.dailyResetKey).toBe(dailyKeyBefore);
+    expect(JSON.stringify(state.missions.progress)).toBe(progressBefore);
+
+    // Only the authoritative rollover mutates and persists the reset.
+    engine.refresh();
+    expect(state.missions.dailyResetKey).toBe('2026-07-09');
+    expect(state.missions.progress['daily_checkin_1']).toEqual({ progress: 0, claimed: false });
+  });
+
+  it('never grants undefined/NaN Coins when the Login dayIndex is out of range', () => {
+    const { engine, state, rewards } = setup();
+
+    state.login.dayIndex = 99; // corrupt / future-cycle index, out of range
+
+    const view = engine.getLoginReward();
+    expect(view.todayCoins).toBe(0);
+    expect(Number.isNaN(view.todayCoins)).toBe(false);
+
+    expect(engine.claimLoginReward()).toBe(true);
+    expect(rewards[0].coins).toBe(0);
+    expect(Number.isNaN(rewards[0].coins)).toBe(false);
+  });
 });

@@ -80,8 +80,21 @@ function migrateState(state: AppState): AppState {
       ...state.missions,
       progress: state.missions?.progress ?? base.missions.progress,
     },
-    login: { ...base.login, ...state.login },
+    login: clampLogin({ ...base.login, ...state.login }),
   };
+}
+
+/**
+ * Keep `login.dayIndex` a valid index into the login cycle. A future cycle-length
+ * change or a corrupt snapshot could leave it out of range, which would make the
+ * engine grant `undefined` Coins and turn the Buddy's balance into NaN forever.
+ */
+function clampLogin(login: AppState['login']): AppState['login'] {
+  const lastIndex = Math.max(0, LOGIN_REWARD.cycleCoins.length - 1);
+  const dayIndex = Number.isFinite(login.dayIndex)
+    ? Math.min(Math.max(0, Math.floor(login.dayIndex)), lastIndex)
+    : 0;
+  return { ...login, dayIndex };
 }
 
 export class AppCore {
@@ -126,9 +139,10 @@ export class AppCore {
 
     this.rewardEngine.start();
     this.buddyEngine.start();
-    this.missionEngine.start();
 
-    // Persist + notify after any state-changing domain event.
+    // Persist + notify after any state-changing domain event. Subscribed BEFORE
+    // the MissionEngine starts so that a rollover on start() (which can auto-claim
+    // earned Coins) is persisted through the same path.
     this.bus.on('JourneyCreated', this.onChanged);
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
@@ -137,6 +151,9 @@ export class AppCore {
     this.bus.on('ItemEquipped', this.onChanged);
     this.bus.on('MissionClaimed', this.onChanged);
     this.bus.on('LoginRewardClaimed', this.onChanged);
+
+    // start() runs the authoritative day/week rollover once on launch.
+    this.missionEngine.start();
 
     if (!loaded) {
       this.seedDemoJourney();
@@ -216,6 +233,17 @@ export class AppCore {
   /** Claim today's Login reward Coins. Returns whether it was claimed. */
   claimLoginReward(): boolean {
     return this.missionEngine.claimLoginReward();
+  }
+
+  /**
+   * Reconcile Missions with the wall clock (day/week rollover) at an explicit
+   * lifecycle point — called by the UI glue on app foreground, never during
+   * render. Any earned-but-unclaimed Coins are auto-claimed before a reset (so
+   * none are forfeited), then state is persisted + subscribers notified once.
+   */
+  syncTime(): void {
+    this.missionEngine.refresh();
+    this.onChanged();
   }
 
   /** Request notification permission for on-device reminders. Returns whether granted. */

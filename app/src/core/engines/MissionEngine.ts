@@ -11,7 +11,12 @@
  * itself and never grants XP. Pure TS — no UI/vendor imports.
  *
  * Day/week rollover uses an injected clock (`now`) so it is deterministic in
- * tests; there is no background timer — rollover is recomputed on read/start.
+ * tests; there is no background timer. Reads (`getMissions`/`getClaimableCount`)
+ * are PURE — they compute the view for the current clock WITHOUT mutating state,
+ * so they are safe to call during React render. The authoritative rollover (which
+ * mutates, auto-claims earned-but-unclaimed Coins so none are forfeited, and is
+ * persisted by the caller) runs only at explicit lifecycle points — `start()` and
+ * app foreground, both via `refresh()` — never on read.
  */
 import type { LoginRewardConfig } from '../config/loginReward';
 import type { MissionCadence, MissionDef, MissionTrigger } from '../config/missions';
@@ -131,39 +136,85 @@ export class MissionEngine {
     }
   }
 
+  /** The daily/weekly reset keys for the current clock (pure). */
+  private currentKeys(): { today: string; week: string } {
+    const now = this.now();
+    return { today: dateKey(now), week: weekKey(now) };
+  }
+
+  /** Whether a cadence's stored reset key is stale vs the current clock (pure). */
+  private isCadenceStale(cadence: MissionCadence, keys: { today: string; week: string }): boolean {
+    const missions = this.getState().missions;
+    return cadence === 'daily'
+      ? missions.dailyResetKey !== keys.today
+      : missions.weeklyResetKey !== keys.week;
+  }
+
   /**
-   * Roll daily Missions over on a new day and weekly ones on a new week, by
-   * comparing stored reset keys to the runtime clock. Idempotent — safe to call
-   * on start and before every read; recomputable, so it needn't persist itself.
+   * The effective progress/claim entry for a Mission at the current clock, WITHOUT
+   * mutating state: a Mission whose cadence has rolled over reads as fresh
+   * (0/unclaimed) even before the authoritative `refresh()` persists that reset.
+   */
+  private effectiveEntry(def: MissionDef, keys: { today: string; week: string }): MissionProgress {
+    if (this.isCadenceStale(def.cadence, keys)) return { progress: 0, claimed: false };
+    return this.getState().missions.progress[def.id] ?? { progress: 0, claimed: false };
+  }
+
+  /**
+   * Authoritative rollover: roll daily Missions over on a new day and weekly ones
+   * on a new week, comparing stored reset keys to the runtime clock. Mutates state
+   * (and may grant Coins) so it must run OUTSIDE render — only from `start()` and
+   * app foreground; the caller persists + notifies. Idempotent.
    */
   refresh(): void {
     const state = this.getState();
-    const now = this.now();
-    const today = dateKey(now);
-    const week = weekKey(now);
+    const keys = this.currentKeys();
 
-    if (state.missions.dailyResetKey !== today) {
+    if (state.missions.dailyResetKey !== keys.today) {
       this.resetCadence('daily');
-      state.missions.dailyResetKey = today;
+      state.missions.dailyResetKey = keys.today;
     }
-    if (state.missions.weeklyResetKey !== week) {
+    if (state.missions.weeklyResetKey !== keys.week) {
       this.resetCadence('weekly');
-      state.missions.weeklyResetKey = week;
+      state.missions.weeklyResetKey = keys.week;
     }
   }
 
+  /**
+   * Reset every Mission of this cadence to fresh progress. Before wiping a
+   * `done`-but-unclaimed Mission, auto-claim it (grant its Coins via the normal
+   * RewardGranted{ xp: 0 } path) so earned Coins are NEVER forfeited on rollover
+   * — punishing the user would be against the PushApp philosophy. This is the one
+   * place the engine grants on the user's behalf, and it runs outside render.
+   */
   private resetCadence(cadence: MissionCadence): void {
     const progress = this.getState().missions.progress;
     for (const def of this.missions) {
-      if (def.cadence === cadence) progress[def.id] = { progress: 0, claimed: false };
+      if (def.cadence !== cadence) continue;
+      const entry = progress[def.id];
+      if (entry && !entry.claimed && entry.progress >= def.target) {
+        this.bus.emit({
+          type: 'RewardGranted',
+          xp: 0,
+          coins: def.rewardCoins,
+          reason: 'MissionClaimed',
+          sourceMissionId: def.id,
+        });
+        this.bus.emit({ type: 'MissionClaimed', missionId: def.id, coins: def.rewardCoins });
+      }
+      progress[def.id] = { progress: 0, claimed: false };
     }
   }
 
-  /** Missions with their live progress, in catalog order (UI groups by cadence). */
+  /**
+   * Missions with their live progress, in catalog order (UI groups by cadence).
+   * PURE — computes the view for the current clock (rolled-over cadences read as
+   * fresh) without mutating or persisting, so it is safe during React render.
+   */
   getMissions(): MissionView[] {
-    this.refresh();
+    const keys = this.currentKeys();
     return this.missions.map((def) => {
-      const entry = this.entryFor(def.id);
+      const entry = this.effectiveEntry(def, keys);
       return {
         id: def.id,
         title: def.title,
@@ -209,10 +260,13 @@ export class MissionEngine {
     const cycle = this.loginReward.cycleCoins;
     const today = dateKey(this.now());
     const claimedToday = login.lastClaimedKey === today;
+    // After claiming the final day, dayIndex wraps to 0; show the whole cycle as
+    // claimed for the rest of the day rather than resetting the rail to upcoming.
+    const cycleComplete = claimedToday && login.dayIndex === 0;
 
     const days: LoginDayView[] = cycle.map((coins, i) => {
       let status: LoginDayView['status'];
-      if (i < login.dayIndex) {
+      if (cycleComplete || i < login.dayIndex) {
         status = 'claimed';
       } else if (!claimedToday && i === login.dayIndex) {
         status = 'today';
@@ -225,7 +279,9 @@ export class MissionEngine {
     return {
       days,
       claimableToday: !claimedToday,
-      todayCoins: claimedToday ? 0 : cycle[login.dayIndex],
+      // `?? 0` guards a dayIndex that fell out of range (cycle-length change /
+      // corrupt snapshot) so the claimable amount can never read as undefined.
+      todayCoins: claimedToday ? 0 : (cycle[login.dayIndex] ?? 0),
     };
   }
 
@@ -241,7 +297,7 @@ export class MissionEngine {
     const today = dateKey(this.now());
     if (state.login.lastClaimedKey === today) return false;
 
-    const coins = cycle[state.login.dayIndex];
+    const coins = cycle[state.login.dayIndex] ?? 0; // never grant undefined Coins
     const day = state.login.dayIndex + 1;
     state.login.lastClaimedKey = today;
     state.login.dayIndex = (state.login.dayIndex + 1) % cycle.length;
@@ -251,12 +307,16 @@ export class MissionEngine {
     return true;
   }
 
-  /** Count of rewards ready to collect now (done-unclaimed Missions + today's Login). */
+  /**
+   * Count of rewards ready to collect now (done-unclaimed Missions + today's
+   * Login). PURE — computes for the current clock without mutating, so it is safe
+   * to call from `getSnapshot()` during render.
+   */
   getClaimableCount(): number {
-    this.refresh();
+    const keys = this.currentKeys();
     let count = this.getLoginReward().claimableToday ? 1 : 0;
     for (const def of this.missions) {
-      const entry = this.entryFor(def.id);
+      const entry = this.effectiveEntry(def, keys);
       if (!entry.claimed && entry.progress >= def.target) count += 1;
     }
     return count;

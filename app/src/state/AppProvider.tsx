@@ -5,6 +5,7 @@
  * they never contain business logic.
  */
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { AppCore, type Snapshot } from '@/core/AppCore';
 
@@ -34,15 +35,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     const unsubscribe = core.subscribe(refresh);
 
+    // Registered only after start() resolves, so a foreground event can never run
+    // the rollover (and persist) over not-yet-loaded state.
+    let appStateSub: { remove: () => void } | null = null;
+
     core.start().then(() => {
       if (!mounted) return;
       setReady(true);
       refresh();
+
+      // Run the authoritative day/week rollover whenever the app returns to the
+      // foreground (outside render), so Missions/Login reconcile with the clock.
+      const onAppStateChange = (status: AppStateStatus) => {
+        if (status === 'active') core.syncTime();
+      };
+      appStateSub = AppState.addEventListener('change', onAppStateChange);
     });
 
     return () => {
       mounted = false;
       unsubscribe();
+      appStateSub?.remove();
     };
   }, [core]);
 

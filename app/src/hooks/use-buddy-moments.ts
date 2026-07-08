@@ -30,6 +30,19 @@ export interface BuddyReveal {
 /** How long a reaction banner lingers before it auto-dismisses. */
 const REACTION_DURATION_MS = 2600;
 
+/**
+ * The reward clause for a celebration banner, e.g. `+5 XP · +10 🪙`. Includes the
+ * XP clause ONLY when XP was gained and the Coins clause ONLY when Coins were
+ * gained — so a Coins-only reward (Missions / Login, which never grant XP) never
+ * reads a misleading "+0 XP". Returns null when nothing was gained (no banner).
+ */
+export function formatReactionReward({ gainedXp, gainedCoins }: BuddyReaction): string | null {
+  const parts: string[] = [];
+  if (gainedXp > 0) parts.push(`+${gainedXp} XP`);
+  if (gainedCoins > 0) parts.push(`+${gainedCoins} 🪙`);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 export function useBuddyMoments(core: AppCore): {
   reaction: BuddyReaction | null;
   reveal: BuddyReveal | null;

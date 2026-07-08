@@ -15,7 +15,7 @@ import { EvolveReveal } from '@/components/buddy/EvolveReveal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useBuddyMoments } from '@/hooks/use-buddy-moments';
+import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useApp } from '@/state/AppProvider';
 
 /** Warm, non-childish lines the Buddy can respond to a check-in with. */
@@ -38,13 +38,11 @@ export default function BuddyScreen() {
 
   // Pair the warm line with the reward once per reaction, so it stays stable
   // across re-renders instead of re-rolling on every frame.
-  const reactionText = useMemo(
-    () =>
-      reaction
-        ? `${pickReactionLine()}  +${reaction.gainedXp} XP · +${reaction.gainedCoins} 🪙`
-        : null,
-    [reaction],
-  );
+  const reactionText = useMemo(() => {
+    if (!reaction) return null;
+    const reward = formatReactionReward(reaction);
+    return reward ? `${pickReactionLine()}  ${reward}` : null;
+  }, [reaction]);
 
   return (
     <ThemedView style={styles.container}>

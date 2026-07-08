@@ -14,7 +14,7 @@ import { StepCard } from '@/components/journey/StepCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useBuddyMoments } from '@/hooks/use-buddy-moments';
+import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
@@ -33,9 +33,8 @@ export default function HomeScreen() {
   // One-off Buddy moments. The evolution reveal is owned by the EvolveReveal
   // modal below; the reaction shows a small, non-childish celebration banner.
   const { reaction, reveal, dismissReveal } = useBuddyMoments(core);
-  const celebration = reaction
-    ? `Nice — +${reaction.gainedXp} XP · +${reaction.gainedCoins} 🪙`
-    : null;
+  const reward = reaction ? formatReactionReward(reaction) : null;
+  const celebration = reward ? `Nice — ${reward}` : null;
 
   return (
     <ThemedView style={styles.container}>

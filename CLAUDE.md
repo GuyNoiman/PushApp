@@ -50,6 +50,9 @@ doc temporarily overrides files until merged.
    report the outcome.
 9. **End every sprint** by updating `Current_Context.md` + `00_Foundation/CHANGELOG.md` and
    recommending the next task. Commit per completed topic (see §6).
+10. **Cost awareness.** Before any action that could bill the founder or approach a paid quota
+    (large/binary files, Git LFS, CI minutes, a paid dependency/service/API, a cloud deploy), stop,
+    warn with an estimate, and get approval. When in doubt, invoke **cost-guardian**.
 
 ## 4. The team (sub-agents in `.claude/agents/`)
 
@@ -69,6 +72,7 @@ Delegate scoped work to specialists; each runs in its own context and reports ba
 | **security-privacy** | Continuously guard privacy & data-security across everything we build. |
 | **content-writer** | Write user-facing support/marketing copy for every feature (light, non-technical). |
 | **repo-steward** | Keep the repo updated & consistent; enforce never-overwrite, terminology, `Current_Context`. |
+| **cost-guardian** | Catch anything that could cost money before it does — storage, CI minutes, paid deps/APIs, deploy. |
 
 ## 5. Orchestration — invoke only what the task needs (token discipline)
 
@@ -93,6 +97,7 @@ Invoke a specialist **only when its trigger fires** — otherwise it stays idle 
 | explorer | you must locate/understand code across many files (keeps search out of main context) |
 | content-writer | a user-facing feature shipped and needs support copy |
 | repo-steward | knowledge must move into the repo, or at sprint end |
+| cost-guardian | before adding large/binary files, Git LFS, CI workflows, a paid dependency/service/API, or a cloud deploy |
 
 Prefer running independent agents in **parallel**; use a barrier only when you truly need all
 results together. You (founder) approve plans and review results.

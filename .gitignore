@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Claude Code — machine-local settings & personal permissions (do NOT share)
+.claude/settings.local.json
+
+# Obsidian local UI state (per-machine, noisy)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

@@ -7,3 +7,26 @@
 # Obsidian local UI state (per-machine, noisy)
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
+
+# ── App build artifacts (never commit — keeps repo history small) ──
+# Dependencies
+node_modules/
+# Expo / React Native
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.orig.*
+# Native builds (if we ever eject / add EAS local builds)
+app/ios/
+app/android/
+# Metro / bundler + logs
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+# Env / secrets (never in the client — Engineering Bible §12)
+.env
+.env.*
+!.env.example

@@ -105,9 +105,12 @@ results together. You (founder) approve plans and review results.
 
 ## 6. Engineering & commits
 
-- **Stack:** *TBD — to be decided with the founder and captured in `11_Engineering_Bible/`.*
-  Until then, coding agents must not assume a stack. Once chosen, its conventions live in the
-  Engineering Bible and are summarized back here.
+- **Stack (POC):** **Expo (React Native) + TypeScript**, engine-based architecture — pure-TS
+  engines over an event bus, configuration-before-code, an offline-first `Repository` abstraction,
+  on-device local notifications for reminders. App code lives in `app/`. Full rationale +
+  alternatives: `11_Engineering_Bible/Engineering_Decisions.md` §E1 (decided 2026-07-08).
+  A cloud backend (Supabase free tier) is added behind the abstraction only when the social/Allies
+  pillar lands. Business logic belongs in the framework-free engines, never in UI components.
 - **Commits:** one completed topic per commit (not per file). Describe the knowledge/change added,
   e.g. `feat(buddy): egg→hatch reveal`, `docs(pitch): investor deck`. Work on a branch, not `main`.
 - Never commit or push unless asked. When asked, follow the founder's instruction.

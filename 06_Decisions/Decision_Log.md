@@ -4,6 +4,28 @@ Status: Living Document — canonical record of founder-level product decisions.
 
 Each entry records the decision, its framing, and where it is reflected in the repository. Newest first.
 
+> **Engineering decisions** (technology/architecture) are logged in
+> `11_Engineering_Bible/Engineering_Decisions.md` with an **E** prefix. Product decisions
+> stay here with a **D** prefix.
+
+---
+
+## 2026-07-08 — Engineering: POC stack chosen (E1)
+
+### E1 — POC technology stack
+**Decision:** Build the POC on **Expo (React Native) + TypeScript** with an **engine-based
+architecture** (pure-TS `JourneyEngine`/`BuddyEngine`/`RewardEngine`/`MissionEngine`/`ReminderEngine`
+communicating over an event bus; configuration-before-code; an offline-first `Repository`
+abstraction; on-device local notifications for reminders). Chosen jointly with the founder.
+**Why:** instant iOS testing via Expo Go at **$0** (no Mac, no Apple Developer account for the
+feedback loop), future web reuse of the UI-agnostic engines, and full alignment with the
+Engineering Bible (engines-before-features, vendor independence, offline-first, business logic
+outside UI). A cloud backend (Supabase free tier, front-runner) is added behind the abstraction
+only when the social/Allies pillar lands.
+**Alternatives rejected:** native Swift (needs Mac + paid Apple account, no web path), Flutter
+(no JS/TS code-share with the future web builder), PWA (weak iOS notifications, weaker native feel).
+**Full record (alternatives, tradeoffs, future):** `11_Engineering_Bible/Engineering_Decisions.md` §E1.
+
 ---
 
 ## 2026-07-08 — POC scope defined (resolves part of D4)

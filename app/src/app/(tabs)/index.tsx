@@ -5,15 +5,16 @@
  * Presentational only — no business logic lives here (Engineering Bible §19).
  */
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuddyCard } from '@/components/buddy/BuddyCard';
+import { EvolveReveal } from '@/components/buddy/EvolveReveal';
 import { StepCard } from '@/components/journey/StepCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
@@ -28,30 +29,13 @@ export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
   const router = useRouter();
   const theme = useTheme();
-  const [celebration, setCelebration] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Listen for one-off Buddy moments to show a small, non-childish celebration.
-  useEffect(() => {
-    const flash = (message: string) => {
-      setCelebration(message);
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCelebration(null), 2600);
-    };
-    const onReacted = (e: { gainedXp: number; gainedCoins: number }) => {
-      flash(`Nice — +${e.gainedXp} XP · +${e.gainedCoins} 🪙`);
-    };
-    const onEvolved = (e: { buddy: { name: string }; toStage: string }) => {
-      flash(`${e.buddy.name} evolved into a ${e.toStage}! ✨`);
-    };
-    core.bus.on('BuddyReacted', onReacted);
-    core.bus.on('BuddyEvolved', onEvolved);
-    return () => {
-      core.bus.off('BuddyReacted', onReacted);
-      core.bus.off('BuddyEvolved', onEvolved);
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [core]);
+  // One-off Buddy moments. The evolution reveal is owned by the EvolveReveal
+  // modal below; the reaction shows a small, non-childish celebration banner.
+  const { reaction, reveal, dismissReveal } = useBuddyMoments(core);
+  const celebration = reaction
+    ? `Nice — +${reaction.gainedXp} XP · +${reaction.gainedCoins} 🪙`
+    : null;
 
   return (
     <ThemedView style={styles.container}>
@@ -126,6 +110,16 @@ export default function HomeScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      {reveal && (
+        <EvolveReveal
+          visible
+          buddyName={reveal.buddyName}
+          toStage={reveal.toStage}
+          toStageDisplayName={reveal.toStageDisplayName}
+          onCollect={dismissReveal}
+        />
+      )}
     </ThemedView>
   );
 }

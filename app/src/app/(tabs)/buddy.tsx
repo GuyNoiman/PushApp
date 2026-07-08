@@ -5,7 +5,7 @@
  * the snapshot the core computes and listens to domain events on the bus; no
  * business logic lives here (Engineering Bible §19).
  */
-import { useEffect, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,7 +14,7 @@ import { EvolveReveal } from '@/components/buddy/EvolveReveal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import type { BuddyStage } from '@/core/types/domain';
+import { useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useApp } from '@/state/AppProvider';
 
 /** Warm, non-childish lines the Buddy can respond to a check-in with. */
@@ -30,44 +30,19 @@ function pickReactionLine(): string {
   return REACTION_LINES[Math.floor(Math.random() * REACTION_LINES.length)];
 }
 
-interface Reveal {
-  buddyName: string;
-  toStage: BuddyStage;
-  toStageDisplayName: string;
-}
-
 export default function BuddyScreen() {
   const { core, snapshot, ready } = useApp();
-  const [reaction, setReaction] = useState<string | null>(null);
-  const [reveal, setReveal] = useState<Reveal | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { reaction, reveal, dismissReveal } = useBuddyMoments(core);
 
-  // Listen for one-off Buddy moments: a warm reaction on every check-in, and a
-  // full evolution reveal whenever the stage changes.
-  useEffect(() => {
-    const onReacted = (e: { gainedXp: number; gainedCoins: number }) => {
-      setReaction(`${pickReactionLine()}  +${e.gainedXp} XP · +${e.gainedCoins} 🪙`);
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setReaction(null), 2600);
-    };
-    const onEvolved = (e: { buddy: { name: string }; toStage: BuddyStage }) => {
-      // The reveal takes over — clear any pending reaction banner.
-      if (timer.current) clearTimeout(timer.current);
-      setReaction(null);
-      setReveal({
-        buddyName: e.buddy.name,
-        toStage: e.toStage,
-        toStageDisplayName: core.stageDisplayName(e.toStage),
-      });
-    };
-    core.bus.on('BuddyReacted', onReacted);
-    core.bus.on('BuddyEvolved', onEvolved);
-    return () => {
-      core.bus.off('BuddyReacted', onReacted);
-      core.bus.off('BuddyEvolved', onEvolved);
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [core]);
+  // Pair the warm line with the reward once per reaction, so it stays stable
+  // across re-renders instead of re-rolling on every frame.
+  const reactionText = useMemo(
+    () =>
+      reaction
+        ? `${pickReactionLine()}  +${reaction.gainedXp} XP · +${reaction.gainedCoins} 🪙`
+        : null,
+    [reaction],
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -81,10 +56,10 @@ export default function BuddyScreen() {
         ) : (
           <View style={styles.stage}>
             <BuddyScene buddy={snapshot.buddy} />
-            {reaction && (
+            {reactionText && (
               <ThemedView type="backgroundSelected" style={styles.reaction}>
                 <ThemedText type="smallBold" style={styles.reactionText}>
-                  {reaction}
+                  {reactionText}
                 </ThemedText>
               </ThemedView>
             )}
@@ -92,13 +67,15 @@ export default function BuddyScreen() {
         )}
       </SafeAreaView>
 
-      <EvolveReveal
-        visible={reveal !== null}
-        buddyName={reveal?.buddyName ?? ''}
-        toStage={reveal?.toStage ?? 'egg'}
-        toStageDisplayName={reveal?.toStageDisplayName ?? ''}
-        onCollect={() => setReveal(null)}
-      />
+      {reveal && (
+        <EvolveReveal
+          visible
+          buddyName={reveal.buddyName}
+          toStage={reveal.toStage}
+          toStageDisplayName={reveal.toStageDisplayName}
+          onCollect={dismissReveal}
+        />
+      )}
     </ThemedView>
   );
 }

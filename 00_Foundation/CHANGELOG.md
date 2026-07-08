@@ -4,6 +4,37 @@ Status: Living Document
 
 ---
 
+# 2026-07-08 — Phase 6: four local POC pillars built (autonomous run)
+
+The founder asked the team to run autonomously through everything doable without him. Built all
+four **local** POC pillars end-to-end — each implemented → adversarially code-reviewed → fixed →
+verified → committed on branch `claude/project-continuity-cost-oversight-1ctfso`. Everything stays
+**$0** and offline; the one pillar needing a backend (social) is a proposal awaiting approval.
+
+## Pillars (app/, Expo + TS, engine-based)
+- **1 · Journey creation** — `journey/new` modal wizard (title · why · duration/rhythm · Steps ·
+  Starter Step); in-context local reminders; wired to `JourneyEngine`.
+- **2 · Buddy** — Buddy tab (`BuddyScene`), warm reactions + `EvolveReveal`; focus-gated
+  `useBuddyMoments` hook (fixed a cross-tab double-celebration). Replaced the deferred Explore tab.
+- **3 · Coins + Shop** — `ShopEngine` + `config/shopItems` (6 cosmetics), `shop` modal, equipped
+  cosmetic renders on the Buddy; hardened state migration.
+- **4 · Missions + Login** — `MissionEngine` (injected clock), `missions` modal, Coins-only single
+  reward path (`RewardGranted → BuddyEngine`), pure reads + foreground rollover that auto-claims
+  earned-but-unclaimed Coins (non-punishing).
+
+Engines now: Journey · Reward · Buddy · Reminder · Shop · Mission. **jest 35/35, `tsc`=0, web export ok.**
+
+## Awaiting founder (gate)
+- `11_Engineering_Bible/Social_Backend_Proposal.md` — the social/Allies pillar needs a backend
+  (Supabase free tier, $0); decision-ready, **nothing provisioned** (§3.10). Becomes E2 on approval.
+
+## Next
+- Founder tests the 4 pillars in Expo Go (`app/README.md`) and reviews the social proposal.
+  Device smoke-tests owed (native tabs, modals, rollover-across-midnight, persistence). Then visual
+  polish toward the mockups, and TestFlight when wanted.
+
+---
+
 # 2026-07-08 — Phase 6 begins: Cost Guardian + POC stack + Expo app scaffold
 
 Started engineering. Added a cost-oversight team role, chose the POC stack, and scaffolded the app.

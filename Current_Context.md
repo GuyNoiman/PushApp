@@ -7,31 +7,41 @@ Last updated: 2026-07-08 (engineering sprint)
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo.
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (ENGINEERING — read this first)
-**Phase 6 (Engineering) has STARTED.** The founder chose to begin building the POC now; the
-investor-deck task (previous "NEXT") is **deferred**, not cancelled.
+**Phase 6 (Engineering): all FOUR local POC pillars are BUILT.** The founder asked the team to
+run autonomously through everything doable without him; done up to the one gate that needs him
+(the social backend). The investor-deck task (older "NEXT") remains **deferred**, not cancelled.
 
 - **New team role: Cost Guardian** (`.claude/agents/cost-guardian.md` + CLAUDE.md §4/§5 and rule
   §3.10) — warns in Hebrew before any action that could cost money or approach a paid quota.
-- **Stack decided (E1):** **Expo (React Native) + TypeScript**, engine-based architecture.
-  Full rationale/alternatives in `11_Engineering_Bible/Engineering_Decisions.md` §E1; summarized in
-  CLAUDE.md §6. Cloud backend (Supabase free tier) deferred until the social/Allies pillar.
-- **POC app scaffolded in `app/`** (Expo SDK 57). Pure-TS core (no UI imports) under `app/src/core/`:
-  `EventBus` + engines (`JourneyEngine`, `RewardEngine`, `BuddyEngine`, `ReminderEngine`),
-  config-before-code (`config/rewards.ts`, `config/buddyStages.ts`), offline-first `Repository`
-  (+`LocalRepository` via AsyncStorage), `AppCore` composition root. UI: an action-based **Home**
-  screen wired via `AppProvider`; seeds ONE demo Journey ("Run 5km" + Starter Step + 2 Steps) on
-  first run; checking a Step → engines → Buddy reacts, XP/Coins update. `tsc --noEmit` = 0; web
-  export ok. Business logic lives ONLY in engines (verified: no react/expo import in `src/core`).
-- **Cost so far: 0₪.** All local; Apple Developer account only needed later for TestFlight/store.
-- **⚠️ Env constraint:** `api.expo.dev` is blocked by org egress from THIS container (403). Here,
-  use `EXPO_OFFLINE=1` for `expo install` and `npx expo start --offline`. **The founder tests on his
-  own machine:** `git pull` the branch → `cd app && npm install && npx expo start` → scan QR with
-  **Expo Go** (same WiFi) — his machine reaches Expo normally. Note `app/expo-env.d.ts` is gitignored
-  by the Expo template; on a fresh clone run `npx expo start` once before `tsc` (it regenerates it).
-- **NEXT (POC build order):** get founder feedback on Home, then build out the POC pillars via the
-  team flow — real Journey-creation flow (name·rhythm·Steps·Starter Step·"why") → Buddy evolve UI →
-  Coins/Shop → Missions+Login rewards → **social/Allies** (this is where the Supabase free-tier
-  backend enters, behind the Repository/social abstraction; cost-guardian to review first).
+- **Stack (E1):** **Expo (React Native) + TypeScript**, engine-based (`11_Engineering_Bible/Engineering_Decisions.md`
+  §E1; CLAUDE.md §6). App in `app/` (Expo SDK 57). Pure-TS core under `app/src/core/`; business logic
+  ONLY in engines (verified: no react/expo import in `src/core`).
+- **Built pillars (each: implemented → code-reviewed → fixed → verified → committed):**
+  0. **Scaffold** — EventBus, `AppCore` composition root, offline `Repository`/`LocalRepository`,
+     config-before-code, action-based **Home** (seeds a demo "Run 5km" Journey).
+  1. **Journey creation** — `journey/new` modal wizard (title·why·duration/rhythm·Steps·Starter Step),
+     in-context local reminders.
+  2. **Buddy** — Buddy tab: `BuddyScene`, reactions + `EvolveReveal`; focus-gated `useBuddyMoments`.
+  3. **Coins + Shop** — `ShopEngine` + `config/shopItems`, `shop` modal, equipped cosmetic on the Buddy.
+  4. **Missions + Login** — `MissionEngine` (injected clock), `missions` modal, Coins-only single
+     reward path, foreground rollover with auto-claim (no forfeited Coins).
+  - Engines: `Journey / Reward / Buddy / Reminder / Shop / Mission`. **Tests: jest 35/35; `tsc`=0;
+    web export ok.** Nav = Home + Buddy tabs; Journey/Shop/Missions are modals.
+- **Cost so far: 0₪.** All local. Apple Developer account only later for TestFlight/store.
+- **⚠️ Env constraint:** `api.expo.dev` is blocked from THIS container (403). Here use `EXPO_OFFLINE=1`
+  for `expo install`/`expo start`. **Founder tests on his own machine:** `git pull` → `cd app &&
+  npm install && npx expo start` → scan QR with **Expo Go** (same WiFi). `app/README.md` has the guide.
+  Fresh clone: run `npx expo start` once before `tsc` (regenerates the gitignored `expo-env.d.ts`).
+- **Device smoke-tests still owed** (can't run here — no device): native-tabs render/switch;
+  Journey modal present/dismiss; cross-tab Buddy reveal; Missions daily/weekly rollover across a real
+  midnight on foreground; AsyncStorage persistence across restart.
+- **🚦 GATE — social/Allies pillar needs the founder.** It's the only POC pillar needing a backend.
+  A decision-ready **proposal awaits approval**: `11_Engineering_Bible/Social_Backend_Proposal.md`
+  (Supabase free tier = $0; `SocialGateway` abstraction; nothing provisioned per §3.10). On approval
+  it becomes E2 and gets built behind a feature flag.
+- **NEXT:** (1) founder opens the app in Expo Go and gives feedback on the 4 pillars; (2) founder
+  reviews the social backend proposal → approve/adjust so the social pillar can be built; (3) address
+  device smoke-test findings; (4) later: visual polish toward the mockups, then TestFlight when wanted.
 
 ---
 

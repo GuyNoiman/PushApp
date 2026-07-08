@@ -136,14 +136,16 @@ Potential expansion:
 
 ## 9. Business Model
 
-Potential revenue:
+A **mix of complementary revenue streams** (ratios TBD), turning on across the roadmap
+(full model: Product Bible §23 · `Version_Roadmap.md`):
 
-- Premium subscription
-- Premium AI
-- Creator marketplace
-- Coach marketplace
-- Cosmetic purchases
-- Enterprise offerings
+- **Virtual economy / Shop** — coins, cosmetics, Buddy items (live from V1)
+- **Consumer subscription** (Premium / Freemium) — AI planning, advanced analytics & interventions (V3)
+- **Creator marketplace** — paid creator Journeys, platform revenue share (V4)
+- **Business / branded Journeys** — publishing fee · revenue share · premium placement (V4)
+- **Coach / professional tier** — coaches run clients on PushApp; future coach marketplace (V3–V4)
+
+Early revenue likely leans on **IAP + subscription**; the **marketplaces are the later scaling engine.** A portfolio, not a single bet.
 
 ---
 

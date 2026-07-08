@@ -129,16 +129,16 @@ This differentiates PushApp from simpler habit trackers.
 
 ---
 
-## 14. Business Model (Hypotheses)
+## 14. Business Model
 
-- Freemium
-- Premium subscription
-- AI features
-- Premium Journeys
-- Business Journeys
-- Marketplace
-- Creator revenue sharing
-- Virtual economy
+*Approved model (a portfolio of complementary streams, ratios TBD, version-mapped): **Product
+Bible §23** + `Version_Roadmap.md`.* Streams:
+
+- Virtual economy / Shop (coins, cosmetics, Buddy items) — from V1
+- Consumer subscription (Premium / Freemium; AI, analytics, advanced interventions) — V3
+- Creator marketplace (paid creator Journeys + revenue share) — V4
+- Business / branded Journeys (publishing fee · rev-share · placement) — V4
+- Coach / professional tier (seats; future coach marketplace) — V3–V4
 
 ---
 

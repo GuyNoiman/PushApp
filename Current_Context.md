@@ -1,19 +1,35 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 ## How to resume
-Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo. The design mockups live as **artifacts** (URLs below), not in the repo; fold locked decisions into the `UX/*.md` docs as they settle.
+Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (read this first)
+**Phases 1–5 complete; product + business strategy now locked.** Sessions 2026-07-07/08 delivered:
+- **Design:** all finalized screen decisions folded into `UX/*.md` + new `Shop_Screen.md`/`Weekly_Planning_Screen.md`; committed (86187eb). Latest mockup = **v14** (GT card) — link under Artifacts. Mockup is a *reference*; `UX/*.md` are the source of truth.
+- **POC / MVP / roadmap** (`POC_and_MVP_Scope.md`, D13/D14): POC = does **social + Buddy + reward-loop** drive persistence; **lean MVP** = POC + Explore/library + onboarding(egg→hatch) + Phases/full types + light-AI encouragement/reminders.
+- **5-version roadmap** (`Version_Roadmap.md` + **`.pdf`**, D15): V1 POC · V2 MVP · V3 Commercial · V4 Scale/Ecosystem · V5 Future/Optional. Table artifact 9cdeb986.
+- **Rich Step Types** vision (Bible §35, D15) — V4/Future, investor material.
+- **Revenue model** (Bible §23 rewritten, D16): 5-stream portfolio — Shop/coins · consumer subscription · creator marketplace · business/branded Journeys · coach tier; mirrored in `03_Pitch/`.
+- **Grace Tokens** (Bible §36, D17): earned-only/never-buyable · gift-not-wager · opt-out · regenerating floor; GT card in Home mockup v14.
+- Decisions **D1–D17** are canonical in `06_Decisions/Decision_Log.md`.
+
+**▶ NEXT: build the investor PRESENTATION / pitch deck** (founder's next request; start from `03_Pitch/Pitch_Deck.md` + `Investor_Questions.md`, Vision, POC/MVP, Version_Roadmap, revenue §23, Rich Step Types §35). After that, Phase 6 (Engineering) is still blocked on the **Engineering Bible** (empty `11_Engineering_Bible/` folder exists).
+
+*(The dated per-round mockup-refinement logs below (v3–v12) are historical process notes — superseded by the folded specs + git history; kept for provenance, not needed to continue.)*
 
 ## Specs folded in — DONE 2026-07-08
-The initial screen design is **signed off**. All finalized v13 decisions are now folded into the repo (no longer artifact-only): each `UX/*.md` got an appended **"Finalized visual design (mockup v13 — 2026-07-08)"** section (append-only, nothing lost), and two new specs were created: **`UX/Shop_Screen.md`** and **`UX/Weekly_Planning_Screen.md`**. The artifact is now a *reference*, not the source of truth — the `UX/*.md` docs are canonical. Phases 1–5 complete. **Next per the work plan: Phase 6 (Engineering), BLOCKED on the founder's "Engineering Bible" (doesn't exist yet).** Also still open: define **POC/MVP scope together** (D4). Git still uncommitted — offer to commit.
+The initial screen design is **signed off**. All finalized v13 decisions are now folded into the repo (no longer artifact-only): each `UX/*.md` got an appended **"Finalized visual design (mockup v13 — 2026-07-08)"** section (append-only, nothing lost), and two new specs were created: **`UX/Shop_Screen.md`** and **`UX/Weekly_Planning_Screen.md`**. The artifact is now a *reference*, not the source of truth — the `UX/*.md` docs are canonical. Phases 1–5 complete; design commit landed (86187eb). **POC + MVP + roadmap staging now DEFINED together** (2026-07-08) in `04_Product/POC_and_MVP_Scope.md` (D13/D14 — D4 fully resolved): POC tests social+Buddy+reward-loop → persistence; MVP = POC + Explore/library + onboarding(egg→hatch) + Phases/full-types + light-AI encouragement/reminders; rest → Commercial. **4-version release plan** now drafted in `04_Product/Version_Roadmap.md` (V1 POC · V2 MVP · V3 Commercial · V4 Scale/Ecosystem — all remaining work ranked; D15). New vision idea captured: **Rich Step Types** (Bible §35, Stage: Future — video/audio/quiz/reflection/etc. Steps; investor-vision material). **Revenue streams consolidated** (D16): Bible §23 rewritten as a 5-stream portfolio (Shop/coins · consumer subscription · creator marketplace · business/branded Journeys [promoted from §33.6 hypothesis] · coach/pro tier), version-mapped; mirrored in Pitch_Deck §9 + Investor_Questions §14. 5-version roadmap table also exported to **`04_Product/Version_Roadmap.pdf`** (generated via headless Chrome from `scratchpad/version_table.html`; artifact https://claude.ai/code/artifact/9cdeb986-c3c7-48fe-80ef-8af16eb50bc8). **Next per the work plan: Phase 6 (Engineering)** — note an empty-ish `11_Engineering_Bible/` folder exists; still BLOCKED on the founder providing the Engineering Bible content. Uncommitted since the 86187eb design commit: POC/MVP scope, Version_Roadmap(.md/.pdf), Bible §23+§35, Pitch updates, Decision_Log D13–D16 — offer to commit.
 
 ## Where we are
 Phases 1–4 (Learn, Cleanup, Review, UX specs) are complete. **Phase 5 (Design System)** foundations are locked in `04_Product/Design_System.md`. We are in the **UI-mockup iteration**. Latest = **`all_screens_v3.html`** (full round, 2026-07-07): every screen reworked per the backlog + two new screens (Shop, Weekly Planning). Three decisions await the founder (see "STATUS OF THE v3 ROUND"). Separately, the **Atomic Habits product spec (§34)** is now in the repo. **Next priority: fold the v3 visual decisions into the per-screen `UX/*.md` docs** — they currently live mostly in the artifact only.
 
 ## Artifacts (mockups — external, not in repo)
-- **All screens — LATEST (2026-07-07):** https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba — source: `all_screens_v13b.html`. **Fixed the real bug:** Explore `.hs` carousels were being flex-compressed (their `overflow-x:auto` collapsed `min-height` to 0, so in the content-heavy Explore the flex column shrank them, clipping the creator-card text below the buddy). Fix = **`flex-shrink:0` on `.hs`**. Also creator buddy 40px. Verified with a full-content Explore replica screenshot. Use THIS link.
+- **All screens — LATEST (2026-07-08, adds Grace Tokens "GT" card in Home header):** https://claude.ai/code/artifact/bfa84846-91c3-42c2-bded-035ab93f2d08 — source `all_screens_v14.html` (== v13b + a purple "GT" card top-of-Home next to Coins, no "+"; one-line fit verified via isolated header screenshot). Use THIS link.
+- Version roadmap TABLE (5 versions incl. Grace Tokens): https://claude.ai/code/artifact/9cdeb986-c3c7-48fe-80ef-8af16eb50bc8 · PDF `04_Product/Version_Roadmap.pdf` (5 pp; regen via headless Chrome from `scratchpad/version_table.html`).
+- All screens — prior (v13b, pre-Grace-Tokens):** https://claude.ai/code/artifact/0b6b8b30-de33-4fac-939a-c5a2152747ba — source: `all_screens_v13b.html`. **Fixed the real bug:** Explore `.hs` carousels were being flex-compressed (their `overflow-x:auto` collapsed `min-height` to 0, so in the content-heavy Explore the flex column shrank them, clipping the creator-card text below the buddy). Fix = **`flex-shrink:0` on `.hs`**. Also creator buddy 40px. Verified with a full-content Explore replica screenshot. Use THIS link.
 - Explore-only replica (proof the creators card renders): https://claude.ai/code/artifact/ff3f33e9-c038-444e-847f-56ee3cabcc17
 - NOTE: republishing to the SAME artifact URL repeatedly caused a stale-cache render for the founder — always publish to a NEW path/URL when he needs to see a change.
 - Old rolling URL (63dba7b5, may be cached): https://claude.ai/code/artifact/63dba7b5-a2c9-4393-9484-fa5ad2139070
@@ -218,10 +234,10 @@ New references added to `04_Product/UX/UX_References/`: `achivements.PNG`, `inve
 - Missing docs from the review: object model, onboarding flow, Intervention Engine MVP spec, metrics, privacy.
 
 ## Next steps (fresh session)
-1. **Get founder's calls** on the three open items (Home hub + Inbox tab; merge reward modals y/n; Achievements condition treatment). Then **lock them into the UX specs** (`Home_Screen.md`, `Achievements_Screen.md`, `Missions_Modal.md`, `Consistency_Reward_Modal.md`, `Buddy_Screen.md`, `Explore_Screen.md`, `Friends_Screen.md`, `Inbox_Screen.md`, `Journey_Creation_Screen.md`) — most v3 changes are still only in the artifact, not yet folded into the per-screen docs.
-2. Create the two owed UX spec docs: **Shop_Screen.md** and **Weekly_Planning_Screen.md** (both mocked in v3, not yet specced).
-3. Iterate any screens the founder still wants refined from the v3 round.
-4. Phase 6 (Engineering) remains blocked on an **Engineering Bible**. Git: still uncommitted — offer to commit.
+1. **Build the investor PRESENTATION / pitch deck** — the founder's next task. Inputs: `03_Pitch/Pitch_Deck.md` + `Investor_Questions.md` (current), `01_Vision/Vision.md`, `POC_and_MVP_Scope.md`, `Version_Roadmap.md` (+ PDF), revenue Bible §23, Rich Step Types §35, the mockup v14 (visuals). Clarify format/audience/length with founder first. Founder likes seeing visuals — consider an artifact deck.
+2. Open design calls still un-locked (carry if they come up): Home hub + Inbox-tab nav option; whether GT appears on the Buddy header too (currently Home only).
+3. Phase 6 (Engineering) remains blocked on the **Engineering Bible** (empty `11_Engineering_Bible/` folder exists — populate together or await founder content).
+4. Git: work through D17 committed as of 2026-07-08 (see CHANGELOG). Keep committing per batch.
 
 ## Read next
 - `04_Product/Design_System.md` · `04_Product/UX/*.md` (esp. `Home_Screen.md`) · `04_Product/UX/UX_References/`

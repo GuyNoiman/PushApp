@@ -4,6 +4,27 @@ Status: Living Document
 
 ---
 
+# 2026-07-08 — Product & business strategy locked (POC/MVP, roadmap, revenue, Grace Tokens)
+
+Jointly defined the build & business strategy after design sign-off.
+
+## Decisions (Decision_Log D13–D17)
+- **D13/D14 — POC + MVP + roadmap.** POC tests social + Buddy + reward-loop → persistence; lean MVP = POC + Explore/library + onboarding(egg→hatch) + Phases/full types + light-AI encouragement/reminders; rest → Commercial. (`POC_and_MVP_Scope.md`, resolves D4.)
+- **D15 — 5-version roadmap + Rich Step Types.** All remaining work ranked V1 POC · V2 MVP · V3 Commercial · V4 Scale/Ecosystem · V5 Future/Optional (`Version_Roadmap.md` + `Version_Roadmap.pdf`). New vision idea **Rich Step Types** (Bible §35).
+- **D16 — Revenue streams.** Bible §23 rewritten as a 5-stream portfolio (Shop/coins · subscription · creator marketplace · business/branded Journeys · coach tier); mirrored in Pitch_Deck §9 + Investor_Questions §14.
+- **D17 — Grace Tokens.** New flexibility mechanic (Bible §36, + §5A.4/§23 cross-refs, Home spec): earned-only/never-buyable · gift-not-wager · opt-out · regenerating floor; GT card added to Home mockup (v14).
+
+## Added / Changed
+- New: `04_Product/Version_Roadmap.md`, `04_Product/Version_Roadmap.pdf`.
+- Bible: rewrote §23; added §35, §36; cross-refs in §5A.4.
+- Pitch: `Pitch_Deck.md` §9, `Investor_Questions.md` §14 updated.
+- `POC_and_MVP_Scope.md` fully written; `UX/Home_Screen.md` GT indicator; `Decision_Log.md` D13–D17; `Current_Context.md`.
+
+## Next
+- Build the **investor presentation / pitch deck**. Then Phase 6 (Engineering) — still blocked on the Engineering Bible.
+
+---
+
 # 2026-07-08 — Phases 4–5 close-out: mockups signed off, designs folded into specs
 
 The initial screen-design iteration (~13 mockup rounds, 2026-07-07) is founder-approved.

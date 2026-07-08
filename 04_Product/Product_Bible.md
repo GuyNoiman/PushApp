@@ -545,6 +545,8 @@ A smoking-cessation Journey may have stricter restart rules.
 
 The system should not assume one universal rule for all Journeys.
 
+**Grace Tokens (§36)** are the concrete mechanic that extends this flexibility system — a spendable, earned-only resource that lets a user skip or postpone a Step without breaking the Journey, governed by each Journey's flexibility policy.
+
 ---
 
 ## 5A.5 Finite Journeys
@@ -1823,48 +1825,61 @@ Gifting should strengthen meaningful support, not become spam.
 
 ---
 
-# 23. Business Model
+# 23. Revenue Streams (Business Model)
 
-## 23.1 Premium Journeys
+PushApp monetizes through a **mix of complementary streams — not a single bet.** The streams
+reinforce one another and **turn on across the version roadmap** (`Version_Roadmap.md`);
+their ratio is **not yet estimated** and will be validated over time.
 
-Some Journeys may unlock enhanced capabilities:
+Guiding principle: **core growth functionality always works without paying** — monetization
+should *reinforce* growth, never interrupt it. (Earlier hypothesis framing is preserved in
+§33.6 and the Pitch documents; this section is the approved model.)
 
-- More reflection modules
-- Rich content
+## 23.1 Virtual economy / Shop  ·  *[V1 shallow → V3 deeper]*
+
+In-app purchases: **Coins, cosmetics, themes, frames, rare / seasonal Buddy items.**
+One-time / consumable. Live (shallow, coins-only) from the POC; deepens in Commercial (a
+second currency, richer Shop, offers).
+
+## 23.2 Consumer subscription (Premium / Freemium)  ·  *[V3]*
+
+Recurring. Free users get the **full core growth product**; **Premium** unlocks enhanced
+capabilities:
+
+- Unlimited Journeys
+- **AI-guided discovery & planning** (premium due to usage cost)
 - Advanced analytics
-- Advanced interventions
-- Creator content
-- Community Insights
-- Coach visibility
+- Advanced / premium interventions
+- More reflection modules · rich content
+- Premium customization
+- Community Insights · creator / coach visibility
 
-Core growth functionality should still work without premium.
+## 23.3 Special / creator Journeys — Creator Marketplace  ·  *[V4]*
 
-## 23.2 Creator Marketplace
+Creators publish **paid Journeys / programs**; the platform takes a **usage-based revenue
+share**. Potential creators: coaches · NLP practitioners · course creators · fitness trainers ·
+therapists / support professionals (where appropriate) · experts. (Premium Journeys unlock
+rich content, advanced analytics, creator content, etc.)
 
-Creators may publish paid Journeys or programs.
+## 23.4 Business / branded Journeys (B2B)  ·  *[V4]*
 
-Potential creators:
+Businesses create **branded Journeys** around their products / services. Monetization:
+**publishing fee · revenue share · premium placement · sponsored discovery.** *(Promoted from
+a §33.6 hypothesis to an approved stream on 2026-07-08.)*
 
-- Coaches
-- NLP practitioners
-- Course creators
-- Fitness trainers
-- Therapists / support professionals where appropriate
-- Experts
+## 23.5 Coach / professional tier (B2B2C)  ·  *[V3–V4]*
 
-## 23.3 AI Premium
+Coaches run their **clients** on PushApp (seats / subscription), extending coaching between
+sessions — also a **distribution** channel (§24.3). A future **Coach Marketplace** may connect
+users directly with coaches; it requires careful design due to real-money flow.
 
-AI-guided discovery and planning may be premium due to usage cost.
+## 23.6 Framing (for investors)
 
-## 23.4 Cosmetics
+Early revenue most likely leans on **IAP / cosmetics + consumer subscription**; the **creator
+and business marketplaces are the scaling engine** later (V4). It is a **portfolio of streams**,
+not one bet — ratios to be validated. See `03_Pitch/` and `Version_Roadmap.md`.
 
-Themes, avatar items, frames and other cosmetics may be monetized.
-
-## 23.5 Coach Marketplace
-
-A future marketplace may connect users with coaches.
-
-Requires careful design due to real money flow.
+**Grace Tokens (§36) are explicitly NOT monetized — earned only, never sold** (not in the Shop, not bought with coins or real money). The flexibility / safety-net resource is deliberately kept off the revenue map so it stays uncorrupted by monetization and protects the "growth before engagement" mission.
 
 ---
 
@@ -2426,4 +2441,152 @@ personal motivation (§34.4) for the Journey. Copy examples:
 
 *Status:* new surface — a **Weekly Planning** screen is owed (not yet designed). *Reflected in:*
 this section; `Open_Questions.md` (to spec); relates to Home (§11) and the implied-deadline model.
+
+---
+
+# 35. Rich Step Types (Vision — V4 / Future)
+
+`Stage: Future` · founder idea (2026-07-08). Useful for investor vision. Extends the
+**Journey Engine** (§5A) and the **Step** definition (§3.4). Not scoped for POC/MVP.
+
+## 35.1 The idea
+
+Expand what a **Step** can *be*, without changing the core model:
+
+> **Dream → Journey → Phase / Section → Step**
+
+A Journey is still made of Steps; **Step remains the unit of progress.** We are **not**
+replacing Steps with a generic content container — we are making the Step **richer and more
+extensible**. A Step should not always be only a basic checkbox or external action; Steps
+could support different **execution experiences**.
+
+## 35.2 Potential Step types
+
+Basic action step · Text instruction · Video step · Audio step · Guided meditation ·
+Reflection prompt · Quiz · Checklist · PDF / document · Presentation / slides · Image ·
+AI conversation · External link · In-app exercise.
+
+Examples: a meditation Journey may include an **audio** Step; a short-course Journey a
+**video** Step followed by a **quiz** Step; a personal-growth Journey a **reflection** Step;
+a fitness Journey an **external action** Step the user marks complete manually.
+
+## 35.3 Why it matters (vision)
+
+This lets PushApp support **courses, guided programs, coaching journeys, meditation programs,
+and creator-generated experiences** — without changing the core Journey structure. It is a
+natural extension of the Marketplace / Creator direction (V4). **Journey remains the main
+product abstraction; Step remains the unit of progress.**
+
+## 35.4 Open questions (to resolve when scoped)
+
+- Which Step types exist in the **first** version vs **future-only**?
+- Should every Step type share the **same completion logic**?
+- How does **progress** work for video / audio / quiz / reflection Steps?
+- Which types can be **verified automatically** in-app vs rely on **user reporting**?
+- How do **creators** build rich Steps in the future?
+- Does this require a formal **Step Type system** in the Journey Engine (§5A)?
+
+# 36. Grace Tokens
+
+`Stage: V2/MVP (minimal) → V3 (full)` · founder-approved (2026-07-08). Extends **Journey
+Flexibility (§5A.4)** and feeds the **Intervention Engine (§30)**. Layered on top of the
+already non-punitive **miss handling (§9.10)**.
+
+## 36.1 Concept
+
+A **Grace Token (GT)** is a **spendable** resource that lets a user occasionally **skip or
+postpone a Step without breaking the Journey** — according to that Journey's Success /
+flexibility policy. Instead of a miss silently breaking a streak, the user can *spend* a token
+to keep their progress intact.
+
+## 36.2 Philosophy
+
+Real life is unpredictable, and **long-term consistency matters more than perfect streaks.** A
+Grace Token reframes a miss from *"I failed"* into *"I chose to spend a token because life
+happened"* — restoring **dignity and agency at the exact moment most habit apps lose people.**
+
+Grace Tokens **protect streak / progress and give agency.** They are layered on top of the
+already-forgiving baseline (§9.10) — they do **not merely "prevent failure,"** they turn an
+unavoidable miss into a deliberate, self-respecting choice.
+
+## 36.3 Guardrails / locked decisions (2026-07-08)
+
+- **Earned only — NEVER purchasable.** Grace Tokens are **not in the Shop** and **cannot be
+  bought** with coins or real money. This protects the "growth before engagement" mission. GT
+  is **explicitly NOT a revenue stream** (see §23).
+- **Transferable only as a GIFT of support.** An **Ally may gift a Grace Token to a struggling
+  friend** — *"I've got your back."* It is **never a competition wager / stake** (no
+  loser-pays-winner). Wagering the safety net would **double-punish the person who most needs
+  grace.**
+- **Opt-out.** A user can turn Grace Tokens **off** in general (user) settings. When off, the
+  **GT indicator does not appear** at the top of Home and grace mechanics are disabled for that
+  user. Frame this neutrally (e.g., **"strict mode"**). Ideally also settable **per-Journey** —
+  some Journeys should be strict (e.g., critical-compliance / medication).
+- **Separate from Coins.** Grace is a **distinct resource**, clearly distinguished from Coins.
+  **Coins = fun / cosmetics; Grace = flexibility.** Grace is **not** a buyable currency.
+
+## 36.4 Earning & balance
+
+Grace Tokens are earned through **positive, sustained behavior**: consistent weekly progress,
+completing Journeys, special achievements, seasonal events, and other positive behaviors.
+
+The model is a **small regenerating baseline floor** (e.g., ~1 per consistent week, or a modest
+monthly baseline) **plus earned top-ups**, up to a **small storage cap (~3).** Abundance
+requires consistency — you cannot stockpile grace without earning it.
+
+Prefer a **cap over hard expiry**: this creates scarcity without punishing the user. An
+optional slow **decay** may be layered in later, but is not required.
+
+## 36.5 When a user runs out
+
+Running out of Grace Tokens is **NOT a punishment.** The user simply falls back to the existing
+**non-shaming miss handling (§9.10)** — *"what happened? come back with one small step."*
+
+Grace Tokens are a **bonus layer on an already-forgiving baseline.** They are **never offered
+free on demand** and the app **never asks "how many do you want."** Scarcity is what gives them
+meaning.
+
+## 36.6 Reason capture → learning (the highest-value part)
+
+Each time a Grace Token is used, the user **briefly explains what happened** — via a
+**predefined reason** or **free text.** The purpose is **learning, not judgment.**
+
+This reason data feeds **Buddy + the Intervention Engine (§30)** to adapt reminders, schedules,
+and encouragement to the user's **recurring obstacles.** Understanding *why* people miss — at
+the exact moment they miss — is a genuine **moat**: it is data most habit apps never collect
+because they treat a miss as a failure rather than a signal.
+
+## 36.7 Per-Journey flexibility policy
+
+Each Journey may define, as part of its flexibility policy (§5A.4):
+
+- whether Grace Tokens are **allowed** at all,
+- the **max usable** per Journey,
+- whether a token performs a **skip** or a **postpone**, and
+- whether it **preserves streak / progress** or only **prevents failure.**
+
+This is **default-driven** — sensible defaults apply automatically — with the config **exposed
+for advanced / creator Journeys (V3+).**
+
+## 36.8 Visual
+
+A **card marked "GT"** (Grace Tokens — look / name may change), shown at the **top of Home next
+to the Coins.** It has **NO "+" button** — grace cannot be bought, so there is nothing to buy.
+The card is **hidden when the user has opted out** (strict mode).
+
+## 36.9 Version placement
+
+- **V2 / MVP (minimal).** A couple of **earned** grace uses + **reason capture.** This directly
+  reduces the **miss → quit** churn that costs habit apps their users.
+- **V3 (full).** Earning **variety**, **gifting** between Allies, **per-Journey policy**, and
+  **Buddy adaptation** driven by reason data.
+- **POC (optional).** A stripped-down grace mechanic could sit in the POC **if** we want to test
+  the churn moment early.
+
+## 36.10 Residual open questions
+
+- Exact **earn rates** for each positive behavior.
+- **Baseline regeneration cadence** (weekly floor vs monthly baseline vs both).
+- **Whether / how decay** works (if at all).
+- **Per-Journey defaults** — which Journey archetypes ship strict vs flexible out of the box.
 

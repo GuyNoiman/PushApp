@@ -199,3 +199,14 @@ Founder-approved finalized decisions. Reference mockup:
   Friends · Buddy; the alternative "hub" option is Home · Explore · Friends · Buddy ·
   Inbox with a "This week · Journeys" toggle at the top of Home (folds Journeys into
   Home, frees a slot for Inbox). Record as unresolved.
+
+### Grace Tokens indicator (added 2026-07-08)
+
+- A **"GT" card** (Grace Tokens) appears at the **top of Home, next to the Coins pill**,
+  with **NO "+" button** — Grace Tokens **cannot be bought (earned only)**. It must fit on
+  the **same line** as the level meter and coins with good spacing, without pushing any
+  element to a new line.
+- The indicator is **hidden** when the user has turned Grace Tokens **off** in general
+  settings.
+- Grace Tokens let a user **skip/postpone a Step without breaking the Journey** (see Product
+  Bible §36); tapping the card opens the **grace flow** (spend + brief reason capture).

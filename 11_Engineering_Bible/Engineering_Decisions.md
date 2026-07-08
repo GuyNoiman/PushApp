@@ -124,6 +124,10 @@ state stays authoritative (Bible §8). Access controlled by Postgres Row-Level S
 - security-privacy reviews the RLS + data-minimization **before** the pillar ships.
 - POC visibility default: *progress-only* (with *full* / *anonymous* per-Journey options); cheers
   surface as a local notification.
+- **Auth = anonymous sign-in** for the POC (no email, no SMTP, $0 — chosen 2026-07-09 to avoid
+  Supabase's rate-limited built-in email and the need for a custom SMTP provider). Users pick a
+  handle so friends can find them; anonymous accounts are per-device and upgradable to
+  email/password at Commercial stage for cross-device login.
 
 ### Reflected in
 - `Social_Backend_Proposal.md` (status → Approved), `app/.env.example`, forthcoming

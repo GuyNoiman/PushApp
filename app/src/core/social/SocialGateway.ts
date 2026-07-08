@@ -62,15 +62,17 @@ export interface Cheer {
 /**
  * The social surface the POC needs. Kept intentionally thin (proposal §2):
  * identity, Support Circle, per-Journey Allies, published summaries, cheers.
- * Auth is email OTP (magic code) — free, no password, no SMS cost.
+ * Auth is ANONYMOUS (no email, no SMTP, no cost): the user gets an account on
+ * first use and picks a handle so friends can find them. Upgradable to
+ * email/password later (Commercial) for cross-device login.
  */
 export interface SocialGateway {
   /** Whether the pillar is configured/active (feature flag + env present). */
   readonly enabled: boolean;
 
-  // ── Identity / auth (email OTP) ──
-  signInWithEmail(email: string): Promise<void>;
-  verifyOtp(email: string, code: string): Promise<SocialProfile>;
+  // ── Identity / auth (anonymous — friends link by handle) ──
+  /** Ensure an anonymous account/session exists. Idempotent. */
+  signInAnonymously(): Promise<void>;
   signOut(): Promise<void>;
   currentProfile(): Promise<SocialProfile | null>;
   /** Set/curate the user's public handle + cosmetic buddy summary. */
@@ -102,8 +104,7 @@ export interface SocialGateway {
  */
 export const NullSocialGateway: SocialGateway = {
   enabled: false,
-  async signInWithEmail() {},
-  async verifyOtp() { throw new Error('Social pillar is disabled'); },
+  async signInAnonymously() {},
   async signOut() {},
   async currentProfile() { return null; },
   async upsertProfile() { throw new Error('Social pillar is disabled'); },

@@ -4,7 +4,8 @@
  * Row-Level Security (app/supabase/schema.sql) is the real gate. This class just
  * maps our domain calls to tables/RPCs and shapes results back to DTOs.
  *
- * Auth: email OTP (a code emailed to the user) — free, no password, no SMS cost.
+ * Auth: anonymous sign-in — no email, no SMTP, no cost. The user picks a handle
+ * so friends can find them. (Upgradable to email/password later, Commercial-stage.)
  */
 import { supabase } from './supabaseClient';
 import type {
@@ -39,17 +40,14 @@ export class SupabaseSocialGateway implements SocialGateway {
     return supabase;
   }
 
-  // ── Identity / auth ──
-  async signInWithEmail(email: string): Promise<void> {
-    const { error } = await this.client().auth.signInWithOtp({ email });
-    if (error) throw error;
-  }
-
-  async verifyOtp(email: string, code: string): Promise<SocialProfile> {
-    const { data, error } = await this.client().auth.verifyOtp({ email, token: code, type: 'email' });
+  // ── Identity / auth (anonymous) ──
+  async signInAnonymously(): Promise<void> {
+    const c = this.client();
+    const { data: userData } = await c.auth.getUser();
+    if (userData.user) { this.uid = userData.user.id; return; } // already signed in
+    const { data, error } = await c.auth.signInAnonymously();
     if (error) throw error;
     this.uid = data.user?.id ?? null;
-    return (await this.currentProfile()) ?? { id: this.uid!, handle: '', buddySummary: {} };
   }
 
   async signOut(): Promise<void> {

@@ -50,9 +50,10 @@ doc temporarily overrides files until merged.
    report the outcome.
 9. **End every sprint** by updating `Current_Context.md` + `00_Foundation/CHANGELOG.md` and
    recommending the next task. Commit per completed topic (see §6).
-10. **Cost awareness.** Before any action that could bill the founder or approach a paid quota
-    (large/binary files, Git LFS, CI minutes, a paid dependency/service/API, a cloud deploy), stop,
-    warn with an estimate, and get approval. When in doubt, invoke **cost-guardian**.
+10. **Never spend the founder's money silently.** Before any action that could incur a real charge
+    or approach a paid quota (Git/LFS storage, CI minutes, a paid dependency/SDK/service/metered API,
+    cloud/deploy), **stop, warn in Hebrew with an estimate and a cheaper alternative, and get
+    approval first.** For deeper analysis, invoke **cost-guardian**. No cost risk → no need to ask.
 
 ## 4. The team (sub-agents in `.claude/agents/`)
 
@@ -72,7 +73,7 @@ Delegate scoped work to specialists; each runs in its own context and reports ba
 | **security-privacy** | Continuously guard privacy & data-security across everything we build. |
 | **content-writer** | Write user-facing support/marketing copy for every feature (light, non-technical). |
 | **repo-steward** | Keep the repo updated & consistent; enforce never-overwrite, terminology, `Current_Context`. |
-| **cost-guardian** | Catch anything that could cost money before it does — storage, CI minutes, paid deps/APIs, deploy. |
+| **cost-guardian** | Warn BEFORE any action that could cost real money or approach a paid quota (storage/LFS, CI minutes, paid deps/APIs, cloud/deploy); on-demand cost audits. |
 
 ## 5. Orchestration — invoke only what the task needs (token discipline)
 
@@ -97,16 +98,19 @@ Invoke a specialist **only when its trigger fires** — otherwise it stays idle 
 | explorer | you must locate/understand code across many files (keeps search out of main context) |
 | content-writer | a user-facing feature shipped and needs support copy |
 | repo-steward | knowledge must move into the repo, or at sprint end |
-| cost-guardian | before adding large/binary files, Git LFS, CI workflows, a paid dependency/service/API, or a cloud deploy |
+| cost-guardian | an action may incur a real charge or approach a paid quota (large files/LFS, CI minutes, paid deps/APIs, cloud/deploy) — consult it *before* acting |
 
 Prefer running independent agents in **parallel**; use a barrier only when you truly need all
 results together. You (founder) approve plans and review results.
 
 ## 6. Engineering & commits
 
-- **Stack:** *TBD — to be decided with the founder and captured in `11_Engineering_Bible/`.*
-  Until then, coding agents must not assume a stack. Once chosen, its conventions live in the
-  Engineering Bible and are summarized back here.
+- **Stack (POC):** **Expo (React Native) + TypeScript**, engine-based architecture — pure-TS
+  engines over an event bus, configuration-before-code, an offline-first `Repository` abstraction,
+  on-device local notifications for reminders. App code lives in `app/`. Full rationale +
+  alternatives: `11_Engineering_Bible/Engineering_Decisions.md` §E1 (decided 2026-07-08).
+  A cloud backend (Supabase free tier) is added behind the abstraction only when the social/Allies
+  pillar lands. Business logic belongs in the framework-free engines, never in UI components.
 - **Commits:** one completed topic per commit (not per file). Describe the knowledge/change added,
   e.g. `feat(buddy): egg→hatch reveal`, `docs(pitch): investor deck`. Work on a branch, not `main`.
 - Never commit or push unless asked. When asked, follow the founder's instruction.

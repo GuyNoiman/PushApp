@@ -1,13 +1,52 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-08
+Last updated: 2026-07-08 (engineering sprint)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (read this first)
-**Phases 1–5 complete; product + business strategy now locked.** Sessions 2026-07-07/08 delivered:
+## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (ENGINEERING — read this first)
+**Phase 6 (Engineering): all FOUR local POC pillars are BUILT.** The founder asked the team to
+run autonomously through everything doable without him; done up to the one gate that needs him
+(the social backend). The investor-deck task (older "NEXT") remains **deferred**, not cancelled.
+
+- **New team role: Cost Guardian** (`.claude/agents/cost-guardian.md` + CLAUDE.md §4/§5 and rule
+  §3.10) — warns in Hebrew before any action that could cost money or approach a paid quota.
+- **Stack (E1):** **Expo (React Native) + TypeScript**, engine-based (`11_Engineering_Bible/Engineering_Decisions.md`
+  §E1; CLAUDE.md §6). App in `app/` (Expo SDK 57). Pure-TS core under `app/src/core/`; business logic
+  ONLY in engines (verified: no react/expo import in `src/core`).
+- **Built pillars (each: implemented → code-reviewed → fixed → verified → committed):**
+  0. **Scaffold** — EventBus, `AppCore` composition root, offline `Repository`/`LocalRepository`,
+     config-before-code, action-based **Home** (seeds a demo "Run 5km" Journey).
+  1. **Journey creation** — `journey/new` modal wizard (title·why·duration/rhythm·Steps·Starter Step),
+     in-context local reminders.
+  2. **Buddy** — Buddy tab: `BuddyScene`, reactions + `EvolveReveal`; focus-gated `useBuddyMoments`.
+  3. **Coins + Shop** — `ShopEngine` + `config/shopItems`, `shop` modal, equipped cosmetic on the Buddy.
+  4. **Missions + Login** — `MissionEngine` (injected clock), `missions` modal, Coins-only single
+     reward path, foreground rollover with auto-claim (no forfeited Coins).
+  - Engines: `Journey / Reward / Buddy / Reminder / Shop / Mission`. **Tests: jest 35/35; `tsc`=0;
+    web export ok.** Nav = Home + Buddy tabs; Journey/Shop/Missions are modals.
+- **Cost so far: 0₪.** All local. Apple Developer account only later for TestFlight/store.
+- **⚠️ Env constraint:** `api.expo.dev` is blocked from THIS container (403). Here use `EXPO_OFFLINE=1`
+  for `expo install`/`expo start`. **Founder tests on his own machine:** `git pull` → `cd app &&
+  npm install && npx expo start` → scan QR with **Expo Go** (same WiFi). `app/README.md` has the guide.
+  Fresh clone: run `npx expo start` once before `tsc` (regenerates the gitignored `expo-env.d.ts`).
+- **Device smoke-tests still owed** (can't run here — no device): native-tabs render/switch;
+  Journey modal present/dismiss; cross-tab Buddy reveal; Missions daily/weekly rollover across a real
+  midnight on foreground; AsyncStorage persistence across restart.
+- **🚦 GATE — social/Allies pillar needs the founder.** It's the only POC pillar needing a backend.
+  A decision-ready **proposal awaits approval**: `11_Engineering_Bible/Social_Backend_Proposal.md`
+  (Supabase free tier = $0; `SocialGateway` abstraction; nothing provisioned per §3.10). On approval
+  it becomes E2 and gets built behind a feature flag.
+- **NEXT:** (1) founder opens the app in Expo Go and gives feedback on the 4 pillars; (2) founder
+  reviews the social backend proposal → approve/adjust so the social pillar can be built; (3) address
+  device smoke-test findings; (4) later: visual polish toward the mockups, then TestFlight when wanted.
+
+---
+
+## HANDOFF SNAPSHOT — 2026-07-08 (product & business strategy)
+**Phases 1–5 complete; product + business strategy locked.** Sessions 2026-07-07/08 delivered:
 - **Design:** all finalized screen decisions folded into `UX/*.md` + new `Shop_Screen.md`/`Weekly_Planning_Screen.md`; committed (86187eb). Latest mockup = **v14** (GT card) — link under Artifacts. Mockup is a *reference*; `UX/*.md` are the source of truth.
 - **POC / MVP / roadmap** (`POC_and_MVP_Scope.md`, D13/D14): POC = does **social + Buddy + reward-loop** drive persistence; **lean MVP** = POC + Explore/library + onboarding(egg→hatch) + Phases/full types + light-AI encouragement/reminders.
 - **5-version roadmap** (`Version_Roadmap.md` + **`.pdf`**, D15): V1 POC · V2 MVP · V3 Commercial · V4 Scale/Ecosystem · V5 Future/Optional. Table artifact 9cdeb986.

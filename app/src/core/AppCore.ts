@@ -1,0 +1,295 @@
+/**
+ * AppCore — the composition root. It builds the EventBus, the Repository, and
+ * every engine, wires their subscriptions, loads persisted state on start and
+ * saves on change, and exposes a small facade to the UI. This is the only place
+ * that knows how the pieces fit together; the UI talks only to this facade.
+ *
+ * Business logic lives in the engines (Engineering Bible §19). AppCore just wires
+ * and owns state — it performs no reward/Buddy/Journey math itself.
+ */
+import { resolveBuddy, stageDisplayName as resolveStageDisplayName } from './config/buddyStages';
+import { LOGIN_REWARD } from './config/loginReward';
+import { MISSIONS } from './config/missions';
+import { REWARDS } from './config/rewards';
+import { SHOP_ITEMS, type ShopItem } from './config/shopItems';
+import { BuddyEngine } from './engines/BuddyEngine';
+import { JourneyEngine, type NewJourneyInput, type TodayStep } from './engines/JourneyEngine';
+import {
+  MissionEngine,
+  type LoginRewardView,
+  type MissionView,
+} from './engines/MissionEngine';
+import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
+import { RewardEngine } from './engines/RewardEngine';
+import { ShopEngine } from './engines/ShopEngine';
+import { EventBus } from './events/EventBus';
+import { LocalRepository } from './persistence/LocalRepository';
+import type { Repository } from './persistence/Repository';
+import type { AppState, Buddy, BuddyStage, Journey } from './types/domain';
+
+/** A Buddy enriched with derived progression for display. */
+export interface BuddyView extends Buddy {
+  stageDisplayName: string;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+}
+
+/** An immutable read-model the UI renders. Recomputed on every change. */
+export interface Snapshot {
+  buddy: BuddyView;
+  journeys: Journey[];
+  todaySteps: TodayStep[];
+  activeJourneyCount: number;
+  /** Rewards ready to collect now (done-unclaimed Missions + today's Login) — drives the Home badge. */
+  claimableRewards: number;
+}
+
+function initialBuddy(): Buddy {
+  return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
+}
+
+function emptyState(): AppState {
+  return {
+    dreams: [],
+    journeys: [],
+    buddy: initialBuddy(),
+    checkIns: [],
+    missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
+    login: { lastClaimedKey: null, dayIndex: 0 },
+  };
+}
+
+/**
+ * Backfill fields added after a user's state was first persisted, so loading an
+ * older — or partially corrupt — snapshot never crashes or drops data
+ * (offline-first migration). Merges the loaded value over known-good defaults:
+ * existing values win, missing/absent shape (e.g. no `buddy`, no `journeys`) is
+ * healed rather than dereferenced, so a bad payload can't crash-loop launch.
+ */
+function migrateState(state: AppState): AppState {
+  const base = emptyState();
+  return {
+    ...base,
+    ...state,
+    dreams: state.dreams ?? base.dreams,
+    journeys: state.journeys ?? base.journeys,
+    checkIns: state.checkIns ?? base.checkIns,
+    buddy: { ...base.buddy, ...state.buddy },
+    missions: {
+      ...base.missions,
+      ...state.missions,
+      progress: state.missions?.progress ?? base.missions.progress,
+    },
+    login: clampLogin({ ...base.login, ...state.login }),
+  };
+}
+
+/**
+ * Keep `login.dayIndex` a valid index into the login cycle. A future cycle-length
+ * change or a corrupt snapshot could leave it out of range, which would make the
+ * engine grant `undefined` Coins and turn the Buddy's balance into NaN forever.
+ */
+function clampLogin(login: AppState['login']): AppState['login'] {
+  const lastIndex = Math.max(0, LOGIN_REWARD.cycleCoins.length - 1);
+  const dayIndex = Number.isFinite(login.dayIndex)
+    ? Math.min(Math.max(0, Math.floor(login.dayIndex)), lastIndex)
+    : 0;
+  return { ...login, dayIndex };
+}
+
+export class AppCore {
+  /** Exposed so the UI can react to one-off moments (e.g. a Buddy celebration). */
+  readonly bus = new EventBus();
+
+  private state: AppState = emptyState();
+  private readonly repo: Repository;
+
+  private readonly journeyEngine: JourneyEngine;
+  private readonly rewardEngine: RewardEngine;
+  private readonly buddyEngine: BuddyEngine;
+  private readonly reminderEngine: ReminderEngine;
+  private readonly shopEngine: ShopEngine;
+  private readonly missionEngine: MissionEngine;
+
+  private readonly listeners = new Set<() => void>();
+  private started = false;
+
+  constructor(repo: Repository = new LocalRepository()) {
+    this.repo = repo;
+    const getState = () => this.state;
+    this.journeyEngine = new JourneyEngine(this.bus, getState);
+    this.rewardEngine = new RewardEngine(this.bus, REWARDS);
+    this.buddyEngine = new BuddyEngine(this.bus, getState);
+    this.reminderEngine = new ReminderEngine();
+    this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
+    this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
+  }
+
+  /** Load persisted state (seeding a demo Journey on first run) and start engines. */
+  async start(): Promise<void> {
+    if (this.started) return;
+    this.started = true;
+
+    const loaded = await this.repo.load();
+    if (loaded) {
+      this.state = migrateState(loaded);
+    } else {
+      this.state = emptyState();
+    }
+
+    this.rewardEngine.start();
+    this.buddyEngine.start();
+
+    // Persist + notify after any state-changing domain event. Subscribed BEFORE
+    // the MissionEngine starts so that a rollover on start() (which can auto-claim
+    // earned Coins) is persisted through the same path.
+    this.bus.on('JourneyCreated', this.onChanged);
+    this.bus.on('StepCheckedIn', this.onChanged);
+    this.bus.on('JourneyCompleted', this.onChanged);
+    this.bus.on('BuddyReacted', this.onChanged);
+    this.bus.on('ItemPurchased', this.onChanged);
+    this.bus.on('ItemEquipped', this.onChanged);
+    this.bus.on('MissionClaimed', this.onChanged);
+    this.bus.on('LoginRewardClaimed', this.onChanged);
+
+    // start() runs the authoritative day/week rollover once on launch.
+    this.missionEngine.start();
+
+    if (!loaded) {
+      this.seedDemoJourney();
+    }
+  }
+
+  private readonly onChanged = (): void => {
+    void this.repo.save(this.state);
+    this.notify();
+  };
+
+  /** Seed ONE demo Journey (Starter Step + 2 ordinary Steps) so Home isn't empty. */
+  private seedDemoJourney(): void {
+    this.journeyEngine.createJourney({
+      title: 'Run 5km',
+      why: ['Feel stronger and clear-headed', 'Prove to myself I follow through'],
+      durationDays: 30,
+      rhythm: 'few-times-week',
+      steps: [
+        {
+          title: 'Lace up and walk for 10 minutes',
+          description: 'The Starter Step — just get out the door.',
+          isStarterStep: true,
+          cadence: 'once',
+        },
+        { title: 'Jog for 15 minutes', cadence: 'weekly' },
+        { title: 'Run a full 2km without stopping', cadence: 'weekly' },
+      ],
+    });
+  }
+
+  // ── Facade ────────────────────────────────────────────────────────────────
+
+  createJourney(input: NewJourneyInput): Journey {
+    return this.journeyEngine.createJourney(input);
+  }
+
+  checkInStep(journeyId: string, stepId: string): void {
+    this.journeyEngine.checkInStep(journeyId, stepId);
+  }
+
+  /** The Shop cosmetic catalog (read-only config) for the Shop screen to render. */
+  getShopItems(): ShopItem[] {
+    return SHOP_ITEMS;
+  }
+
+  /** Buy a cosmetic with Coins. Returns whether the purchase succeeded. */
+  purchaseItem(itemId: string): boolean {
+    return this.shopEngine.purchase(itemId);
+  }
+
+  /** Wear an owned cosmetic on the Buddy. Returns whether it was equipped. */
+  equipItem(itemId: string): boolean {
+    return this.shopEngine.equip(itemId);
+  }
+
+  /** Remove whatever cosmetic the Buddy is wearing. */
+  unequipItem(): void {
+    this.shopEngine.unequip();
+  }
+
+  /** Daily/weekly Missions with live progress (Coins-only game loop). */
+  getMissions(): MissionView[] {
+    return this.missionEngine.getMissions();
+  }
+
+  /** Claim a completed Mission's Coins. Returns whether it was claimed. */
+  claimMission(id: string): boolean {
+    return this.missionEngine.claimMission(id);
+  }
+
+  /** The daily Login reward rail plus today's claimable amount. */
+  getLoginReward(): LoginRewardView {
+    return this.missionEngine.getLoginReward();
+  }
+
+  /** Claim today's Login reward Coins. Returns whether it was claimed. */
+  claimLoginReward(): boolean {
+    return this.missionEngine.claimLoginReward();
+  }
+
+  /**
+   * Reconcile Missions with the wall clock (day/week rollover) at an explicit
+   * lifecycle point — called by the UI glue on app foreground, never during
+   * render. Any earned-but-unclaimed Coins are auto-claimed before a reset (so
+   * none are forfeited), then state is persisted + subscribers notified once.
+   */
+  syncTime(): void {
+    this.missionEngine.refresh();
+    this.onChanged();
+  }
+
+  /** Request notification permission for on-device reminders. Returns whether granted. */
+  initReminders(): Promise<boolean> {
+    return this.reminderEngine.init();
+  }
+
+  /** Schedule a simple time/day reminder. Returns the reminder id, or null if unavailable. */
+  scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
+    return this.reminderEngine.scheduleDailyReminder(input);
+  }
+
+  /**
+   * Display name for a Buddy stage — lets a one-off UI surface (e.g. the
+   * evolution reveal) name the new stage without importing engine/config.
+   */
+  stageDisplayName(stage: BuddyStage): string {
+    return resolveStageDisplayName(stage);
+  }
+
+  getSnapshot(): Snapshot {
+    const p = resolveBuddy(this.state.buddy.xp);
+    const buddy: BuddyView = {
+      ...this.state.buddy,
+      level: p.level,
+      stage: p.stage,
+      stageDisplayName: p.stageDisplayName,
+      xpIntoLevel: p.xpIntoLevel,
+      xpForNextLevel: p.xpForNextLevel,
+    };
+    return {
+      buddy,
+      journeys: this.state.journeys,
+      todaySteps: this.journeyEngine.getTodaySteps(),
+      activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,
+      claimableRewards: this.missionEngine.getClaimableCount(),
+    };
+  }
+
+  /** Subscribe to state changes. Returns an unsubscribe function. */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify(): void {
+    for (const listener of [...this.listeners]) listener();
+  }
+}

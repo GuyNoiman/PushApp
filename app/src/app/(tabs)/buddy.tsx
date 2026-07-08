@@ -5,6 +5,7 @@
  * the snapshot the core computes and listens to domain events on the bus; no
  * business logic lives here (Engineering Bible §19).
  */
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ function pickReactionLine(): string {
 
 export default function BuddyScreen() {
   const { core, snapshot, ready } = useApp();
+  const router = useRouter();
   const { reaction, reveal, dismissReveal } = useBuddyMoments(core);
 
   // Pair the warm line with the reward once per reaction, so it stays stable
@@ -55,7 +57,7 @@ export default function BuddyScreen() {
           </View>
         ) : (
           <View style={styles.stage}>
-            <BuddyScene buddy={snapshot.buddy} />
+            <BuddyScene buddy={snapshot.buddy} onOpenShop={() => router.push('/shop')} />
             {reactionText && (
               <ThemedView type="backgroundSelected" style={styles.reaction}>
                 <ThemedText type="smallBold" style={styles.reactionText}>

@@ -10,7 +10,7 @@ import type { AppState, Buddy } from '../../types/domain';
 import { BuddyEngine } from '../BuddyEngine';
 
 function initialBuddy(): Buddy {
-  return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0 };
+  return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
 }
 
 function emptyState(): AppState {

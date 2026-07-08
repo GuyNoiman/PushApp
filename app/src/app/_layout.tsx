@@ -16,6 +16,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>
     </AppProvider>

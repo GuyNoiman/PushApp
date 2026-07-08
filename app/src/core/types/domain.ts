@@ -58,6 +58,10 @@ export interface Buddy {
   level: number;
   stage: BuddyStage;
   coins: number;
+  /** Ids of Shop cosmetics the user has purchased (see config/shopItems.ts). */
+  ownedCosmetics: string[];
+  /** The single cosmetic currently worn on the Buddy, or null when none. */
+  equippedCosmetic: string | null;
 }
 
 /** A recorded check-in against a Step. */

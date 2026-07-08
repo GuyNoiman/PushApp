@@ -45,13 +45,30 @@ export interface BuddyEvolved {
   toStage: BuddyStage;
 }
 
+/** A Shop cosmetic was bought: Coins were spent and the item added to the Buddy. */
+export interface ItemPurchased {
+  type: 'ItemPurchased';
+  itemId: string;
+  coinsSpent: number;
+  /** The Buddy's Coin balance after the purchase. */
+  balance: number;
+}
+
+/** The equipped cosmetic changed. `itemId` is null when the Buddy was unequipped. */
+export interface ItemEquipped {
+  type: 'ItemEquipped';
+  itemId: string | null;
+}
+
 export type DomainEvent =
   | JourneyCreated
   | StepCheckedIn
   | JourneyCompleted
   | RewardGranted
   | BuddyReacted
-  | BuddyEvolved;
+  | BuddyEvolved
+  | ItemPurchased
+  | ItemEquipped;
 
 export type DomainEventType = DomainEvent['type'];
 

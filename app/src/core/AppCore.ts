@@ -9,10 +9,12 @@
  */
 import { resolveBuddy, stageDisplayName as resolveStageDisplayName } from './config/buddyStages';
 import { REWARDS } from './config/rewards';
+import { SHOP_ITEMS, type ShopItem } from './config/shopItems';
 import { BuddyEngine } from './engines/BuddyEngine';
 import { JourneyEngine, type NewJourneyInput, type TodayStep } from './engines/JourneyEngine';
 import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
 import { RewardEngine } from './engines/RewardEngine';
+import { ShopEngine } from './engines/ShopEngine';
 import { EventBus } from './events/EventBus';
 import { LocalRepository } from './persistence/LocalRepository';
 import type { Repository } from './persistence/Repository';
@@ -34,11 +36,27 @@ export interface Snapshot {
 }
 
 function initialBuddy(): Buddy {
-  return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0 };
+  return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
 }
 
 function emptyState(): AppState {
   return { dreams: [], journeys: [], buddy: initialBuddy(), checkIns: [] };
+}
+
+/**
+ * Backfill fields added after a user's state was first persisted, so loading an
+ * older snapshot never crashes or drops data (offline-first migration). Only
+ * missing fields are defaulted; existing values are preserved.
+ */
+function migrateState(state: AppState): AppState {
+  return {
+    ...state,
+    buddy: {
+      ...state.buddy,
+      ownedCosmetics: state.buddy.ownedCosmetics ?? [],
+      equippedCosmetic: state.buddy.equippedCosmetic ?? null,
+    },
+  };
 }
 
 export class AppCore {
@@ -52,6 +70,7 @@ export class AppCore {
   private readonly rewardEngine: RewardEngine;
   private readonly buddyEngine: BuddyEngine;
   private readonly reminderEngine: ReminderEngine;
+  private readonly shopEngine: ShopEngine;
 
   private readonly listeners = new Set<() => void>();
   private started = false;
@@ -63,6 +82,7 @@ export class AppCore {
     this.rewardEngine = new RewardEngine(this.bus, REWARDS);
     this.buddyEngine = new BuddyEngine(this.bus, getState);
     this.reminderEngine = new ReminderEngine();
+    this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
   }
 
   /** Load persisted state (seeding a demo Journey on first run) and start engines. */
@@ -72,7 +92,7 @@ export class AppCore {
 
     const loaded = await this.repo.load();
     if (loaded) {
-      this.state = loaded;
+      this.state = migrateState(loaded);
     } else {
       this.state = emptyState();
     }
@@ -85,6 +105,8 @@ export class AppCore {
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
     this.bus.on('BuddyReacted', this.onChanged);
+    this.bus.on('ItemPurchased', this.onChanged);
+    this.bus.on('ItemEquipped', this.onChanged);
 
     if (!loaded) {
       this.seedDemoJourney();
@@ -124,6 +146,26 @@ export class AppCore {
 
   checkInStep(journeyId: string, stepId: string): void {
     this.journeyEngine.checkInStep(journeyId, stepId);
+  }
+
+  /** The Shop cosmetic catalog (read-only config) for the Shop screen to render. */
+  getShopItems(): ShopItem[] {
+    return SHOP_ITEMS;
+  }
+
+  /** Buy a cosmetic with Coins. Returns whether the purchase succeeded. */
+  purchaseItem(itemId: string): boolean {
+    return this.shopEngine.purchase(itemId);
+  }
+
+  /** Wear an owned cosmetic on the Buddy. Returns whether it was equipped. */
+  equipItem(itemId: string): boolean {
+    return this.shopEngine.equip(itemId);
+  }
+
+  /** Remove whatever cosmetic the Buddy is wearing. */
+  unequipItem(): void {
+    this.shopEngine.unequip();
   }
 
   /** Request notification permission for on-device reminders. Returns whether granted. */

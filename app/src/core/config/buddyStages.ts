@@ -36,6 +36,12 @@ export function stageForLevel(level: number): BuddyStageDef {
   return current;
 }
 
+/** Display name for a given stage (e.g. to name the stage in an evolution reveal). */
+export function stageDisplayName(stage: BuddyStage): string {
+  const def = BUDDY_STAGES.find((d) => d.stage === stage);
+  return def ? def.displayName : stage;
+}
+
 /** Resolved Buddy progression derived from total XP — stage, level, and level progress. */
 export interface BuddyProgression {
   level: number;

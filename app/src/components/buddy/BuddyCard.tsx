@@ -5,20 +5,12 @@
  */
 import { StyleSheet, View } from 'react-native';
 
+import { STAGE_FACE } from '@/components/buddy/stageFaces';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import type { BuddyView } from '@/core/AppCore';
-import type { BuddyStage } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
-
-const STAGE_FACE: Record<BuddyStage, string> = {
-  egg: '🥚',
-  hatchling: '🐣',
-  sprout: '🌱',
-  companion: '🐥',
-  guardian: '🦅',
-};
 
 export function BuddyCard({ buddy }: { buddy: BuddyView }) {
   const theme = useTheme();

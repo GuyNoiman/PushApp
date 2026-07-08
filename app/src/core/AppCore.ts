@@ -7,7 +7,7 @@
  * Business logic lives in the engines (Engineering Bible §19). AppCore just wires
  * and owns state — it performs no reward/Buddy/Journey math itself.
  */
-import { resolveBuddy } from './config/buddyStages';
+import { resolveBuddy, stageDisplayName as resolveStageDisplayName } from './config/buddyStages';
 import { REWARDS } from './config/rewards';
 import { BuddyEngine } from './engines/BuddyEngine';
 import { JourneyEngine, type NewJourneyInput, type TodayStep } from './engines/JourneyEngine';
@@ -16,7 +16,7 @@ import { RewardEngine } from './engines/RewardEngine';
 import { EventBus } from './events/EventBus';
 import { LocalRepository } from './persistence/LocalRepository';
 import type { Repository } from './persistence/Repository';
-import type { AppState, Buddy, Journey } from './types/domain';
+import type { AppState, Buddy, BuddyStage, Journey } from './types/domain';
 
 /** A Buddy enriched with derived progression for display. */
 export interface BuddyView extends Buddy {
@@ -134,6 +134,14 @@ export class AppCore {
   /** Schedule a simple time/day reminder. Returns the reminder id, or null if unavailable. */
   scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
     return this.reminderEngine.scheduleDailyReminder(input);
+  }
+
+  /**
+   * Display name for a Buddy stage — lets a one-off UI surface (e.g. the
+   * evolution reveal) name the new stage without importing engine/config.
+   */
+  stageDisplayName(stage: BuddyStage): string {
+    return resolveStageDisplayName(stage);
   }
 
   getSnapshot(): Snapshot {

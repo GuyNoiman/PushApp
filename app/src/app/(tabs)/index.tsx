@@ -50,19 +50,43 @@ export default function HomeScreen() {
               </ThemedText>
               <ThemedText type="subtitle">What will you do now?</ThemedText>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Create a new Journey"
-              onPress={() => router.push('/journey/new')}
-              style={({ pressed }) => [
-                styles.createButton,
-                { backgroundColor: theme.text },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="subtitle" style={[styles.plus, { color: theme.background }]}>
-                +
-              </ThemedText>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  snapshot && snapshot.claimableRewards > 0
+                    ? `Missions — ${snapshot.claimableRewards} to claim`
+                    : 'Missions'
+                }
+                onPress={() => router.push('/missions')}
+                style={({ pressed }) => [
+                  styles.missionsButton,
+                  { backgroundColor: theme.backgroundElement },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold">🎯 Missions</ThemedText>
+                {snapshot && snapshot.claimableRewards > 0 && (
+                  <View style={styles.badge}>
+                    <ThemedText type="smallBold" style={styles.badgeText}>
+                      {snapshot.claimableRewards}
+                    </ThemedText>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Create a new Journey"
+                onPress={() => router.push('/journey/new')}
+                style={({ pressed }) => [
+                  styles.createButton,
+                  { backgroundColor: theme.text },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="subtitle" style={[styles.plus, { color: theme.background }]}>
+                  +
+                </ThemedText>
+              </Pressable>
+            </View>
           </View>
 
           {!ready || !snapshot ? (
@@ -150,6 +174,33 @@ const styles = StyleSheet.create({
   greetingText: {
     flex: 1,
     gap: Spacing.half,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  missionsButton: {
+    height: 48,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  badge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.one,
+    backgroundColor: '#0E8177',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    lineHeight: 16,
   },
   createButton: {
     width: 48,

@@ -29,7 +29,14 @@ function makeBuddy(overrides: Partial<Buddy> = {}): Buddy {
 }
 
 function emptyState(buddy: Buddy): AppState {
-  return { dreams: [], journeys: [], buddy, checkIns: [] };
+  return {
+    dreams: [],
+    journeys: [],
+    buddy,
+    checkIns: [],
+    missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
+    login: { lastClaimedKey: null, dayIndex: 0 },
+  };
 }
 
 function setup(buddy: Buddy = makeBuddy()) {

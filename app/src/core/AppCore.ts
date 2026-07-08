@@ -8,10 +8,17 @@
  * and owns state — it performs no reward/Buddy/Journey math itself.
  */
 import { resolveBuddy, stageDisplayName as resolveStageDisplayName } from './config/buddyStages';
+import { LOGIN_REWARD } from './config/loginReward';
+import { MISSIONS } from './config/missions';
 import { REWARDS } from './config/rewards';
 import { SHOP_ITEMS, type ShopItem } from './config/shopItems';
 import { BuddyEngine } from './engines/BuddyEngine';
 import { JourneyEngine, type NewJourneyInput, type TodayStep } from './engines/JourneyEngine';
+import {
+  MissionEngine,
+  type LoginRewardView,
+  type MissionView,
+} from './engines/MissionEngine';
 import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
@@ -33,6 +40,8 @@ export interface Snapshot {
   journeys: Journey[];
   todaySteps: TodayStep[];
   activeJourneyCount: number;
+  /** Rewards ready to collect now (done-unclaimed Missions + today's Login) — drives the Home badge. */
+  claimableRewards: number;
 }
 
 function initialBuddy(): Buddy {
@@ -40,7 +49,14 @@ function initialBuddy(): Buddy {
 }
 
 function emptyState(): AppState {
-  return { dreams: [], journeys: [], buddy: initialBuddy(), checkIns: [] };
+  return {
+    dreams: [],
+    journeys: [],
+    buddy: initialBuddy(),
+    checkIns: [],
+    missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
+    login: { lastClaimedKey: null, dayIndex: 0 },
+  };
 }
 
 /**
@@ -59,6 +75,12 @@ function migrateState(state: AppState): AppState {
     journeys: state.journeys ?? base.journeys,
     checkIns: state.checkIns ?? base.checkIns,
     buddy: { ...base.buddy, ...state.buddy },
+    missions: {
+      ...base.missions,
+      ...state.missions,
+      progress: state.missions?.progress ?? base.missions.progress,
+    },
+    login: { ...base.login, ...state.login },
   };
 }
 
@@ -74,6 +96,7 @@ export class AppCore {
   private readonly buddyEngine: BuddyEngine;
   private readonly reminderEngine: ReminderEngine;
   private readonly shopEngine: ShopEngine;
+  private readonly missionEngine: MissionEngine;
 
   private readonly listeners = new Set<() => void>();
   private started = false;
@@ -86,6 +109,7 @@ export class AppCore {
     this.buddyEngine = new BuddyEngine(this.bus, getState);
     this.reminderEngine = new ReminderEngine();
     this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
+    this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
   }
 
   /** Load persisted state (seeding a demo Journey on first run) and start engines. */
@@ -102,6 +126,7 @@ export class AppCore {
 
     this.rewardEngine.start();
     this.buddyEngine.start();
+    this.missionEngine.start();
 
     // Persist + notify after any state-changing domain event.
     this.bus.on('JourneyCreated', this.onChanged);
@@ -110,6 +135,8 @@ export class AppCore {
     this.bus.on('BuddyReacted', this.onChanged);
     this.bus.on('ItemPurchased', this.onChanged);
     this.bus.on('ItemEquipped', this.onChanged);
+    this.bus.on('MissionClaimed', this.onChanged);
+    this.bus.on('LoginRewardClaimed', this.onChanged);
 
     if (!loaded) {
       this.seedDemoJourney();
@@ -171,6 +198,26 @@ export class AppCore {
     this.shopEngine.unequip();
   }
 
+  /** Daily/weekly Missions with live progress (Coins-only game loop). */
+  getMissions(): MissionView[] {
+    return this.missionEngine.getMissions();
+  }
+
+  /** Claim a completed Mission's Coins. Returns whether it was claimed. */
+  claimMission(id: string): boolean {
+    return this.missionEngine.claimMission(id);
+  }
+
+  /** The daily Login reward rail plus today's claimable amount. */
+  getLoginReward(): LoginRewardView {
+    return this.missionEngine.getLoginReward();
+  }
+
+  /** Claim today's Login reward Coins. Returns whether it was claimed. */
+  claimLoginReward(): boolean {
+    return this.missionEngine.claimLoginReward();
+  }
+
   /** Request notification permission for on-device reminders. Returns whether granted. */
   initReminders(): Promise<boolean> {
     return this.reminderEngine.init();
@@ -204,6 +251,7 @@ export class AppCore {
       journeys: this.state.journeys,
       todaySteps: this.journeyEngine.getTodaySteps(),
       activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,
+      claimableRewards: this.missionEngine.getClaimableCount(),
     };
   }
 

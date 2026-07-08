@@ -14,7 +14,14 @@ function initialBuddy(): Buddy {
 }
 
 function emptyState(): AppState {
-  return { dreams: [], journeys: [], buddy: initialBuddy(), checkIns: [] };
+  return {
+    dreams: [],
+    journeys: [],
+    buddy: initialBuddy(),
+    checkIns: [],
+    missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
+    login: { lastClaimedKey: null, dayIndex: 0 },
+  };
 }
 
 function setup() {

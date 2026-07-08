@@ -26,9 +26,12 @@ export interface RewardGranted {
   type: 'RewardGranted';
   xp: number;
   coins: number;
-  reason: 'StepCheckedIn' | 'JourneyCompleted';
-  sourceJourneyId: string;
+  reason: 'StepCheckedIn' | 'JourneyCompleted' | 'MissionClaimed' | 'LoginRewardClaimed';
+  /** Set when the reward came from a Journey (Step check-in / completion). */
+  sourceJourneyId?: string;
   sourceStepId?: string;
+  /** Set when the reward came from claiming a Mission. */
+  sourceMissionId?: string;
 }
 
 export interface BuddyReacted {
@@ -60,6 +63,35 @@ export interface ItemEquipped {
   itemId: string | null;
 }
 
+/** A Mission advanced toward its target (game-loop progress, not transformation). */
+export interface MissionProgressed {
+  type: 'MissionProgressed';
+  missionId: string;
+  progress: number;
+  target: number;
+}
+
+/** A Mission hit its target and is now claimable. Emitted once, on crossing. */
+export interface MissionCompleted {
+  type: 'MissionCompleted';
+  missionId: string;
+}
+
+/** A completed Mission was claimed: its Coins are granted via RewardGranted. */
+export interface MissionClaimed {
+  type: 'MissionClaimed';
+  missionId: string;
+  coins: number;
+}
+
+/** The daily Login reward was claimed: its Coins are granted via RewardGranted. */
+export interface LoginRewardClaimed {
+  type: 'LoginRewardClaimed';
+  /** 1-based day in the login cycle that was claimed. */
+  day: number;
+  coins: number;
+}
+
 export type DomainEvent =
   | JourneyCreated
   | StepCheckedIn
@@ -68,7 +100,11 @@ export type DomainEvent =
   | BuddyReacted
   | BuddyEvolved
   | ItemPurchased
-  | ItemEquipped;
+  | ItemEquipped
+  | MissionProgressed
+  | MissionCompleted
+  | MissionClaimed
+  | LoginRewardClaimed;
 
 export type DomainEventType = DomainEvent['type'];
 

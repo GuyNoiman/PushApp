@@ -1,0 +1,250 @@
+<title>PushApp — Buddy Creature Concepts</title>
+<style>
+  :root{
+    --bg:#161225; --bg2:#1E1838; --panel:#241C40; --panel2:#2C2350;
+    --ink:#F5F2FB; --mut:#A79FC2; --line:#3A2F63;
+    --coral:#F2765E; --teal:#22B8B0; --peri:#8FA0F0; --leaf:#5FB878; --gold:#E7A22E;
+    --disp:'SF Pro Rounded',ui-rounded,'Baloo 2',system-ui,sans-serif;
+    --body:system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  .wrap{
+    font-family:var(--body); color:var(--ink);
+    background:
+      radial-gradient(1100px 700px at 50% -10%, #2A2150 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, #201a3d 0%, transparent 55%),
+      var(--bg);
+    min-height:100vh; padding:48px 24px 72px;
+  }
+  .inner{max-width:1080px; margin:0 auto}
+  header{text-align:center; margin-bottom:8px}
+  .eyebrow{font-family:var(--disp); font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    font-size:12px; color:var(--gold)}
+  h1{font-family:var(--disp); font-weight:800; font-size:clamp(30px,5vw,46px);
+    margin:10px 0 6px; text-wrap:balance; line-height:1.05}
+  .sub{color:var(--mut); font-size:16px; max-width:56ch; margin:0 auto; line-height:1.5}
+
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:22px; margin-top:40px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+
+  .cap{
+    position:relative; border-radius:26px; padding:26px 24px 24px;
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line); overflow:hidden;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .glow{position:absolute; inset:0; z-index:0; opacity:.8; pointer-events:none;
+    background:radial-gradient(360px 300px at 50% 34%, var(--c) 0%, transparent 62%); filter:saturate(1.1)}
+  .cap.ember{--c:rgba(242,118,94,.30)}
+  .cap.lumi{--c:rgba(34,184,176,.28)}
+  .cap.nimbo{--c:rgba(143,160,240,.28)}
+  .cap.sprig{--c:rgba(95,184,120,.28)}
+
+  .stage{position:relative; z-index:1; display:flex; justify-content:center; align-items:flex-end;
+    height:280px}
+  .stage svg{width:250px; height:280px; overflow:visible}
+  .creature{animation:bob 5.5s ease-in-out infinite}
+  .lumi .creature{animation-delay:-1.2s}
+  .nimbo .creature{animation-delay:-2.4s}
+  .sprig .creature{animation-delay:-3.6s}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+  .meta{position:relative; z-index:1; margin-top:16px; display:flex; align-items:baseline;
+    justify-content:space-between; gap:12px}
+  .name{font-family:var(--disp); font-weight:800; font-size:24px}
+  .tag{font-family:var(--disp); font-weight:700; font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    padding:5px 11px; border-radius:999px; color:#1a1330; background:var(--tagc); white-space:nowrap}
+  .ember .tag{--tagc:var(--coral)} .lumi .tag{--tagc:var(--teal)}
+  .nimbo .tag{--tagc:var(--peri)} .sprig .tag{--tagc:var(--leaf)}
+  .desc{position:relative; z-index:1; color:var(--mut); font-size:14.5px; line-height:1.55; margin-top:8px; max-width:44ch}
+  .swatches{position:relative; z-index:1; display:flex; gap:7px; margin-top:16px}
+  .sw{width:22px; height:22px; border-radius:7px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+
+  .note{margin-top:44px; text-align:center; color:var(--mut); font-size:13.5px; line-height:1.6;
+    max-width:70ch; margin-left:auto; margin-right:auto}
+  .note b{color:var(--ink)}
+  @media(prefers-reduced-motion:reduce){.creature{animation:none}}
+</style>
+
+<div class="wrap"><div class="inner">
+  <header>
+    <div class="eyebrow">PushApp · Buddy species</div>
+    <h1>Four companions to grow beside</h1>
+    <p class="sub">Concept designs for the Buddy — new creatures, not humans or animals. Each is an elemental "growth spirit" with its own silhouette, personality, and brand color, rendered in a glossy vinyl-toy 3D style.</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- ============ EMBER ============ -->
+    <figure class="cap ember">
+      <div class="glow"></div>
+      <div class="stage">
+        <svg viewBox="0 0 250 280" class="creature" role="img" aria-label="Ember, a warm glossy flame-puff creature">
+          <defs>
+            <radialGradient id="emBody" cx="40%" cy="30%" r="78%">
+              <stop offset="0%" stop-color="#FCD98A"/><stop offset="42%" stop-color="#F79A5A"/>
+              <stop offset="78%" stop-color="#F2765E"/><stop offset="100%" stop-color="#B83E2C"/>
+            </radialGradient>
+            <radialGradient id="emFlame" cx="50%" cy="80%" r="70%">
+              <stop offset="0%" stop-color="#FFE7A0"/><stop offset="55%" stop-color="#FCB24E"/>
+              <stop offset="100%" stop-color="#F2765E"/>
+            </radialGradient>
+            <radialGradient id="emShine" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fff" stop-opacity=".85"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#000" stop-opacity=".38"/><stop offset="100%" stop-color="#000" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="125" cy="256" rx="78" ry="17" fill="url(#shadow)"/>
+          <!-- flame tuft -->
+          <path d="M125 30 C150 66 150 92 125 108 C100 92 100 66 125 30 Z" fill="url(#emFlame)"/>
+          <path d="M125 52 C138 74 138 90 125 102 C112 90 112 74 125 52 Z" fill="#FFE39A" opacity=".85"/>
+          <!-- body -->
+          <path d="M125 96 C182 96 210 140 210 182 C210 226 174 250 125 250 C76 250 40 226 40 182 C40 140 68 96 125 96 Z" fill="url(#emBody)"/>
+          <!-- ambient occlusion -->
+          <ellipse cx="125" cy="236" rx="70" ry="24" fill="#A5321F" opacity=".35"/>
+          <!-- rim light -->
+          <path d="M62 224 C46 206 42 188 44 172" stroke="#FFD08A" stroke-width="6" fill="none" stroke-linecap="round" opacity=".5"/>
+          <!-- specular highlight -->
+          <ellipse cx="92" cy="140" rx="34" ry="26" fill="url(#emShine)" transform="rotate(-22 92 140)"/>
+          <circle cx="83" cy="128" r="7" fill="#fff" opacity=".9"/>
+          <!-- face -->
+          <ellipse cx="103" cy="176" rx="9" ry="12" fill="#3A241E"/><ellipse cx="149" cy="176" rx="9" ry="12" fill="#3A241E"/>
+          <circle cx="100" cy="171" r="3" fill="#fff"/><circle cx="146" cy="171" r="3" fill="#fff"/>
+          <path d="M110 198 Q126 212 142 198" stroke="#3A241E" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="84" cy="196" rx="11" ry="7" fill="#E85C3E" opacity=".45"/><ellipse cx="168" cy="196" rx="11" ry="7" fill="#E85C3E" opacity=".45"/>
+        </svg>
+      </div>
+      <div class="meta"><span class="name">Ember</span><span class="tag">Spark · warm</span></div>
+      <p class="desc">The go-getter. A cheerful flame-puff who celebrates every check-in with a little flare. Radiates momentum.</p>
+      <div class="swatches"><span class="sw" style="background:#FCD98A"></span><span class="sw" style="background:#F2765E"></span><span class="sw" style="background:#B83E2C"></span></div>
+    </figure>
+
+    <!-- ============ LUMI ============ -->
+    <figure class="cap lumi">
+      <div class="glow"></div>
+      <div class="stage">
+        <svg viewBox="0 0 250 280" class="creature" role="img" aria-label="Lumi, a glossy teal dew-drop creature">
+          <defs>
+            <radialGradient id="luBody" cx="40%" cy="30%" r="80%">
+              <stop offset="0%" stop-color="#C6FBF2"/><stop offset="40%" stop-color="#57DAcd"/>
+              <stop offset="78%" stop-color="#22B8B0"/><stop offset="100%" stop-color="#0C6F6B"/>
+            </radialGradient>
+            <radialGradient id="luShine" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fff" stop-opacity=".9"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="125" cy="256" rx="74" ry="16" fill="url(#shadow)"/>
+          <!-- droplet body: rounded bottom, gentle point on top -->
+          <path d="M125 58 C150 108 202 150 202 190 C202 230 168 252 125 252 C82 252 48 230 48 190 C48 150 100 108 125 58 Z" fill="url(#luBody)"/>
+          <!-- inner translucent glow -->
+          <ellipse cx="125" cy="205" rx="60" ry="52" fill="#8FF0E6" opacity=".18"/>
+          <!-- ambient occlusion -->
+          <ellipse cx="125" cy="238" rx="64" ry="20" fill="#0A5D5A" opacity=".38"/>
+          <!-- rim light -->
+          <path d="M182 216 C196 200 198 184 196 170" stroke="#CFFff5" stroke-width="5" fill="none" stroke-linecap="round" opacity=".5"/>
+          <!-- specular -->
+          <ellipse cx="97" cy="150" rx="30" ry="40" fill="url(#luShine)" transform="rotate(-18 97 150)"/>
+          <circle cx="88" cy="132" r="8" fill="#fff" opacity=".95"/>
+          <!-- little dew bead on top -->
+          <circle cx="125" cy="70" r="9" fill="#C6FBF2"/><circle cx="122" cy="67" r="3" fill="#fff"/>
+          <!-- face -->
+          <ellipse cx="104" cy="188" rx="9" ry="12" fill="#123B3A"/><ellipse cx="148" cy="188" rx="9" ry="12" fill="#123B3A"/>
+          <circle cx="101" cy="183" r="3" fill="#fff"/><circle cx="145" cy="183" r="3" fill="#fff"/>
+          <path d="M112 208 Q126 220 140 208" stroke="#123B3A" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="86" cy="206" rx="10" ry="6.5" fill="#3AD0C4" opacity=".5"/><ellipse cx="166" cy="206" rx="10" ry="6.5" fill="#3AD0C4" opacity=".5"/>
+        </svg>
+      </div>
+      <div class="meta"><span class="name">Lumi</span><span class="tag">Dew · calm</span></div>
+      <p class="desc">The steady one. A translucent dew-drop spirit with a quiet glow — reassuring on the hard days, never pushy.</p>
+      <div class="swatches"><span class="sw" style="background:#C6FBF2"></span><span class="sw" style="background:#22B8B0"></span><span class="sw" style="background:#0C6F6B"></span></div>
+    </figure>
+
+    <!-- ============ NIMBO ============ -->
+    <figure class="cap nimbo">
+      <div class="glow"></div>
+      <div class="stage">
+        <svg viewBox="0 0 250 280" class="creature" role="img" aria-label="Nimbo, a fluffy glossy cloud creature">
+          <defs>
+            <radialGradient id="niBody" cx="42%" cy="30%" r="80%">
+              <stop offset="0%" stop-color="#FFFFFF"/><stop offset="45%" stop-color="#CBD4FF"/>
+              <stop offset="80%" stop-color="#8FA0F0"/><stop offset="100%" stop-color="#5A63C4"/>
+            </radialGradient>
+            <radialGradient id="niShine" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fff" stop-opacity=".95"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="125" cy="256" rx="78" ry="16" fill="url(#shadow)"/>
+          <!-- puffy cloud silhouette: overlapping lobes -->
+          <g fill="url(#niBody)">
+            <circle cx="80" cy="188" r="46"/><circle cx="170" cy="188" r="46"/>
+            <circle cx="108" cy="150" r="46"/><circle cx="150" cy="152" r="42"/>
+            <rect x="70" y="176" width="110" height="60" rx="30"/>
+          </g>
+          <!-- ambient occlusion along the bottom -->
+          <ellipse cx="125" cy="228" rx="78" ry="18" fill="#5A63C4" opacity=".32"/>
+          <!-- specular -->
+          <ellipse cx="98" cy="150" rx="30" ry="22" fill="url(#niShine)" transform="rotate(-20 98 150)"/>
+          <circle cx="120" cy="126" r="7" fill="#fff" opacity=".95"/>
+          <!-- tiny orbiting sparkle -->
+          <path d="M196 132 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#E7A22E" opacity=".9"/>
+          <!-- face -->
+          <ellipse cx="104" cy="190" rx="9" ry="12" fill="#2E3363"/><ellipse cx="148" cy="190" rx="9" ry="12" fill="#2E3363"/>
+          <circle cx="101" cy="185" r="3" fill="#fff"/><circle cx="145" cy="185" r="3" fill="#fff"/>
+          <path d="M112 208 Q126 219 140 208" stroke="#2E3363" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="86" cy="206" rx="10" ry="6.5" fill="#9AA6F5" opacity=".6"/><ellipse cx="166" cy="206" rx="10" ry="6.5" fill="#9AA6F5" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="meta"><span class="name">Nimbo</span><span class="tag">Cloud · dreamy</span></div>
+      <p class="desc">The dreamer. A soft cloud companion who drifts alongside your bigger goals and keeps them in sight.</p>
+      <div class="swatches"><span class="sw" style="background:#FFFFFF"></span><span class="sw" style="background:#8FA0F0"></span><span class="sw" style="background:#5A63C4"></span></div>
+    </figure>
+
+    <!-- ============ SPRIG ============ -->
+    <figure class="cap sprig">
+      <div class="glow"></div>
+      <div class="stage">
+        <svg viewBox="0 0 250 280" class="creature" role="img" aria-label="Sprig, a glossy green seed-bud creature with leaves">
+          <defs>
+            <radialGradient id="spBody" cx="40%" cy="32%" r="78%">
+              <stop offset="0%" stop-color="#D6F3AE"/><stop offset="42%" stop-color="#84CF74"/>
+              <stop offset="78%" stop-color="#5FB878"/><stop offset="100%" stop-color="#2C7A4C"/>
+            </radialGradient>
+            <radialGradient id="spLeaf" cx="40%" cy="30%" r="80%">
+              <stop offset="0%" stop-color="#BEEE8E"/><stop offset="70%" stop-color="#6EBE64"/><stop offset="100%" stop-color="#3E8E4E"/>
+            </radialGradient>
+            <radialGradient id="spShine" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fff" stop-opacity=".85"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="125" cy="256" rx="72" ry="16" fill="url(#shadow)"/>
+          <!-- sprout stem + two leaves -->
+          <path d="M125 108 C125 80 125 64 125 50" stroke="#4E9E5A" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M125 74 C104 66 86 70 74 86 C96 96 116 92 125 74 Z" fill="url(#spLeaf)"/>
+          <path d="M125 62 C142 50 162 50 176 62 C158 78 138 76 125 62 Z" fill="url(#spLeaf)"/>
+          <!-- seed-bud body (rounded, slightly egg) -->
+          <path d="M125 100 C180 100 206 142 206 184 C206 228 172 252 125 252 C78 252 44 228 44 184 C44 142 70 100 125 100 Z" fill="url(#spBody)"/>
+          <!-- ambient occlusion -->
+          <ellipse cx="125" cy="238" rx="66" ry="20" fill="#256B41" opacity=".36"/>
+          <!-- rim light -->
+          <path d="M182 220 C196 204 198 188 196 174" stroke="#DDF6B4" stroke-width="5" fill="none" stroke-linecap="round" opacity=".5"/>
+          <!-- specular -->
+          <ellipse cx="95" cy="146" rx="32" ry="24" fill="url(#spShine)" transform="rotate(-20 95 146)"/>
+          <circle cx="86" cy="134" r="7" fill="#fff" opacity=".9"/>
+          <!-- face -->
+          <ellipse cx="104" cy="182" rx="9" ry="12" fill="#204B2F"/><ellipse cx="148" cy="182" rx="9" ry="12" fill="#204B2F"/>
+          <circle cx="101" cy="177" r="3" fill="#fff"/><circle cx="145" cy="177" r="3" fill="#fff"/>
+          <path d="M110 202 Q126 216 142 202" stroke="#204B2F" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="85" cy="200" rx="10.5" ry="6.5" fill="#7ACB7E" opacity=".55"/><ellipse cx="167" cy="200" rx="10.5" ry="6.5" fill="#7ACB7E" opacity=".55"/>
+        </svg>
+      </div>
+      <div class="meta"><span class="name">Sprig</span><span class="tag">Sprout · earnest</span></div>
+      <p class="desc">The believer. A little seed-bud that literally grows leaves as you do — the most on-the-nose "becoming" of the four.</p>
+      <div class="swatches"><span class="sw" style="background:#D6F3AE"></span><span class="sw" style="background:#5FB878"></span><span class="sw" style="background:#2C7A4C"></span></div>
+    </figure>
+
+  </div>
+
+  <p class="note">These are <b>SVG concept renders</b> — a design direction for the Buddy, in the app's glossy toy-3D language. They read as real 3D on screen; the next step (when you're happy with a direction) is taking the chosen silhouettes to a 3D/illustration tool for hatch → evolve stages. Each maps to a brand accent so the Buddy fits the existing palette.</p>
+</div></div>

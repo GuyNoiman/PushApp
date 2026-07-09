@@ -1,12 +1,49 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-08 (engineering sprint)
+Last updated: 2026-07-09 (POC feature-complete + Expo Go blocker + design audit)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (ENGINEERING — read this first)
+## ⭐ HANDOFF SNAPSHOT — 2026-07-09 (read this first)
+**The POC is now CODE-COMPLETE — all 5 pillars.** The 4 local pillars (below, 2026-07-08 snapshot)
+plus the **social / Allies pillar** are built, reviewed, and on `main` (GitHub live at `GuyNoiman/PushApp`).
+
+- **Social pillar (E2):** Supabase Free tier, **anonymous auth** (no email/SMTP, $0). Schema + RLS in
+  `app/supabase/schema.sql` (security-privacy reviewed — visibility masking enforced server-side).
+  `app/src/core/social/` (`SocialGateway` + `SupabaseSocialGateway`, vendor-isolated), `SocialProvider`,
+  `app/src/app/friends.tsx`, behind `featureFlags.social`. Keys in gitignored `app/.env` (verified live).
+  Decision logged: `11_Engineering_Bible/Engineering_Decisions.md` E2.
+- **Investor decks delivered:** `03_Pitch/PushApp_Deck_A_Investor.pptx` (revised) + `_Deck_B_Keynote.pptx`
+  (Steve-Jobs style) + PDFs. Use the app's v14 screens.
+- **Team = 13 agents** (`.claude/agents/`) + `CLAUDE.md` constitution + `cost-guardian`. Multi-device
+  (desktop + mobile via GitHub) confirmed working.
+
+**🚧 BLOCKER — can't run on the iPhone yet (needs founder at the computer):** the app was scaffolded on
+**Expo SDK 57** (npm `latest`), which is newer than the App Store Expo Go supports. Downgraded to **SDK 56**
+(commit `0749a33`) — **still** shows "incompatible", so the founder's Expo Go tops out at **≤ SDK 55**.
+**TOMORROW (needs founder to re-test on device):** downgrade one more to **SDK 55** (repeat the `expo install`
++ verify flow), or make a **dev build** (Xcode local / $99 Apple acct). The **web build works** now
+(`web.output: "single"`), so the app is runnable — just not in Expo Go yet.
+
+**🎨 Design fidelity audit done → `04_Product/UX/Design_Fidelity_Audit.md`.** BIG finding: `app/src/constants/theme.ts`
+is still the **stock Expo gray/black/white** — the Design-System palette + Baloo 2/Inter fonts + coral CTA
+were **never encoded**, so every screen renders gray. That one file is tomorrow's #1 design task (then game-juice
+on reward surfaces per §; and a scope call on 7+ missing mockup screens — Journeys list, Journey detail, Explore,
+Achievements, Inbox, Weekly planning). Terminology fidelity is excellent.
+
+**🐣 Buddy creature concepts (founder to pick a direction):** 4 cute glossy 3D-style creatures — Ember (coral),
+Lumi (teal), Nimbo (periwinkle), Sprig (leaf) — artifact: https://claude.ai/code/artifact/1608abae-1c82-45e6-89a7-4faa0bef7ea7
+(source `scratchpad/creature_concepts.html`). New species, not human/animal.
+
+**▶ NEXT (tomorrow, from this point):** (1) get it on the iPhone — SDK 55 downgrade or dev build (founder present);
+(2) encode the Design System into `theme.ts` + fonts + coral CTA (audit #1); (3) founder picks a creature direction.
+Dev servers were stopped for the night; restart with `cd app && npx expo start` (LAN 192.168.0.123, port 8081).
+
+*(The 2026-07-08 engineering snapshot below covers the 4 local pillars in detail — still accurate for those.)*
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-08 (ENGINEERING — superseded header; pillar detail still valid)
 **Phase 6 (Engineering): all FOUR local POC pillars are BUILT.** The founder asked the team to
 run autonomously through everything doable without him; done up to the one gate that needs him
 (the social backend). The investor-deck task (older "NEXT") remains **deferred**, not cancelled.

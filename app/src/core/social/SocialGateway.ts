@@ -89,6 +89,8 @@ export interface SocialGateway {
   publishProgress(summary: ProgressSummary): Promise<void>;
   /** Journeys the current user is an Ally of. */
   allyProgress(): Promise<AllyProgress[]>;
+  /** Distinct ids of the current user's own Journeys that have at least one Ally. */
+  mySharedJourneyIds(): Promise<string[]>;
 
   // ── Cheers ──
   sendCheer(toId: string, journeyId: string, kind: CheerKind): Promise<void>;
@@ -115,6 +117,7 @@ export const NullSocialGateway: SocialGateway = {
   async setAllies() {},
   async publishProgress() {},
   async allyProgress() { return []; },
+  async mySharedJourneyIds() { return []; },
   async sendCheer() {},
   subscribeToCheers() { return () => {}; },
   subscribeToAllyUpdates() { return () => {}; },

@@ -168,6 +168,17 @@ export class SupabaseSocialGateway implements SocialGateway {
     }));
   }
 
+  async mySharedJourneyIds(): Promise<string[]> {
+    const id = await this.requireUid();
+    const { data, error } = await this.client()
+      .from('journey_allies')
+      .select('journey_id')
+      .eq('owner_id', id);
+    if (error) throw error;
+    // Distinct: a Journey may have several Allies (one row each).
+    return Array.from(new Set((data ?? []).map((r: any) => r.journey_id as string)));
+  }
+
   // ── Cheers ──
   async sendCheer(toId: string, journeyId: string, kind: CheerKind): Promise<void> {
     const id = await this.requireUid();

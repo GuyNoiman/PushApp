@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AppProvider } from '@/state/AppProvider';
+import { SocialProvider } from '@/state/SocialProvider';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -11,15 +12,18 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <AppProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AnimatedSplashOverlay />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
-        </Stack>
-      </ThemeProvider>
+      <SocialProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <AnimatedSplashOverlay />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="friends" options={{ presentation: 'modal' }} />
+          </Stack>
+        </ThemeProvider>
+      </SocialProvider>
     </AppProvider>
   );
 }

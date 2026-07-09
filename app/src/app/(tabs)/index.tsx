@@ -14,6 +14,7 @@ import { StepCard } from '@/components/journey/StepCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { featureFlags } from '@/core/config/featureFlags';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
@@ -50,6 +51,19 @@ export default function HomeScreen() {
               <ThemedText type="subtitle">What will you do now?</ThemedText>
             </View>
             <View style={styles.headerActions}>
+              {featureFlags.social && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Friends"
+                  onPress={() => router.push('/friends')}
+                  style={({ pressed }) => [
+                    styles.missionsButton,
+                    { backgroundColor: theme.backgroundElement },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold">🤝 Friends</ThemedText>
+                </Pressable>
+              )}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={

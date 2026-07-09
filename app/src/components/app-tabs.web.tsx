@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   Tabs,
   TabList,
@@ -13,6 +14,11 @@ import { ThemedView } from './themed-view';
 
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
+// The five nav tabs (v14 mockup): Home · Explore · Friends · Buddy · Inbox. Each
+// carries an Ionicon so the web bar reads like the mockup; the active tab is
+// tinted teal (brand/navigation, Design System §2).
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 export default function AppTabs() {
   return (
     <Tabs>
@@ -20,10 +26,19 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
+            <TabButton icon="home-outline">Home</TabButton>
+          </TabTrigger>
+          <TabTrigger name="explore" href="/explore" asChild>
+            <TabButton icon="compass-outline">Explore</TabButton>
+          </TabTrigger>
+          <TabTrigger name="friends" href="/friends" asChild>
+            <TabButton icon="people-outline">Friends</TabButton>
           </TabTrigger>
           <TabTrigger name="buddy" href="/buddy" asChild>
-            <TabButton>Buddy</TabButton>
+            <TabButton icon="happy-outline">Buddy</TabButton>
+          </TabTrigger>
+          <TabTrigger name="inbox" href="/inbox" asChild>
+            <TabButton icon="mail-outline">Inbox</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -31,8 +46,14 @@ export default function AppTabs() {
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+export function TabButton({
+  children,
+  isFocused,
+  icon,
+  ...props
+}: TabTriggerSlotProps & { icon?: IoniconName }) {
   // Teal active state = brand/navigation (Design System §2).
+  const color = isFocused ? Colors.light.tealStrong : Colors.light.textSecondary;
   return (
     <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
       <View
@@ -40,6 +61,7 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
           styles.tabButtonView,
           { backgroundColor: isFocused ? Colors.light.tealTint : 'transparent' },
         ]}>
+        {icon && <Ionicons name={icon} size={18} color={color} />}
         <ThemedText
           type="smallBold"
           style={isFocused ? { color: Colors.light.tealStrong } : undefined}
@@ -94,6 +116,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   tabButtonView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.pill,

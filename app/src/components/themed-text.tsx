@@ -1,6 +1,6 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { FontFamily, Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
@@ -31,48 +31,49 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 // Type scale (Design System §3): display 26 · h1 20 · h2 16 · body 15 · caption 12.
-// Headings use the rounded system display stack (ui-rounded / SF Pro Rounded /
-// system) for the warm, friendly character; body uses the system sans.
+// The weight lives in the FAMILY NAME (custom fonts ignore `fontWeight`), so each
+// role picks the right variant: HEADINGS/display use Baloo 2 (rounded, warm) and
+// BODY uses Inter. Baloo 2 runs slightly small at a given px, so headings keep
+// their generous line-heights for optical balance.
 const styles = StyleSheet.create({
   small: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: 500,
   },
   smallBold: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: 700,
   },
   default: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 15,
     lineHeight: 22,
-    fontWeight: 500,
   },
   title: {
-    fontFamily: Fonts.rounded,
+    fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    fontWeight: 700,
     lineHeight: 32,
   },
   subtitle: {
-    fontFamily: Fonts.rounded,
+    fontFamily: FontFamily.headingBold,
     fontSize: 20,
     lineHeight: 26,
-    fontWeight: 700,
   },
   link: {
+    fontFamily: FontFamily.bodyMedium,
     lineHeight: 22,
     fontSize: 15,
   },
   linkPrimary: {
+    fontFamily: FontFamily.bodySemiBold,
     lineHeight: 22,
     fontSize: 15,
     color: '#4A80E0',
   },
   code: {
     fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
     fontSize: 12,
   },
 });

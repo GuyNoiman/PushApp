@@ -8,7 +8,7 @@
  */
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { STAGE_FACE } from '@/components/buddy/stageFaces';
+import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -84,14 +84,13 @@ export function BuddyScene({ buddy, onOpenShop }: { buddy: BuddyView; onOpenShop
       <View style={styles.center}>
         <View style={styles.buddyStack}>
           {tint && <View style={[styles.tint, { backgroundColor: tint }]} />}
-          <ThemedText style={styles.face}>{STAGE_FACE[buddy.stage]}</ThemedText>
+          {/* Glossy 3D-look Buddy (its own soft ground shadow is baked in). */}
+          <BuddyAvatar stage={buddy.stage} size={200} />
           {accessory && (
             <ThemedText style={styles.accessory} accessibilityElementsHidden>
               {accessory}
             </ThemedText>
           )}
-          {/* Soft ground shadow under the buddy. */}
-          <View style={styles.buddyShadow} />
         </View>
         <View style={[styles.namePill, { backgroundColor: theme.backgroundElement }]}>
           <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
@@ -208,18 +207,6 @@ const styles = StyleSheet.create({
     top: -8,
     fontSize: 64,
     lineHeight: 72,
-  },
-  face: {
-    fontSize: 128,
-    lineHeight: 148,
-  },
-  buddyShadow: {
-    position: 'absolute',
-    bottom: -8,
-    width: 120,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.12)',
   },
   namePill: {
     alignItems: 'center',

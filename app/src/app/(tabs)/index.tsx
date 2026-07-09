@@ -57,7 +57,7 @@ export default function HomeScreen() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Friends"
-                  onPress={() => router.push('/friends')}
+                  onPress={() => router.navigate('/friends')}
                   style={({ pressed }) => [
                     styles.missionsButton,
                     { backgroundColor: theme.purpleTint },

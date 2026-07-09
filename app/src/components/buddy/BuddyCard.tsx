@@ -5,7 +5,7 @@
  */
 import { StyleSheet, View } from 'react-native';
 
-import { STAGE_FACE } from '@/components/buddy/stageFaces';
+import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -19,8 +19,8 @@ export function BuddyCard({ buddy }: { buddy: BuddyView }) {
   return (
     <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.hairline }]}>
       <View style={styles.header}>
-        <View style={[styles.faceWrap, { backgroundColor: theme.coralTint }]}>
-          <ThemedText style={styles.face}>{STAGE_FACE[buddy.stage]}</ThemedText>
+        <View style={styles.faceWrap}>
+          <BuddyAvatar stage={buddy.stage} size={64} />
         </View>
         <View style={styles.identity}>
           <ThemedText type="subtitle" style={styles.name}>
@@ -70,13 +70,8 @@ const styles = StyleSheet.create({
   faceWrap: {
     width: 64,
     height: 64,
-    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  face: {
-    fontSize: 40,
-    lineHeight: 48,
   },
   identity: {
     flex: 1,

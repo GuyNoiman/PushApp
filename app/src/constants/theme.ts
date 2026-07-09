@@ -86,27 +86,60 @@ export const Radius = {
   pill: 999,
 } as const;
 
+/**
+ * Real brand fonts (Design System §3, locked 2026-07-06):
+ * **Baloo 2** for display / headings / Buddy / celebrations (friendly, rounded),
+ * **Inter** for body / dense UI (clean, legible). These are the exact family
+ * names `@expo-google-fonts/*` registers via `useFonts` in `_layout.tsx`; once
+ * loaded they resolve by name on every platform (native + web), so we reference
+ * them directly rather than routing through the old CSS-variable stacks.
+ */
+export const FontFamily = {
+  // Baloo 2 — headings / display / Buddy.
+  headingBold: 'Baloo2_700Bold',
+  headingSemiBold: 'Baloo2_600SemiBold',
+  headingMedium: 'Baloo2_500Medium',
+  // Inter — body / dense UI.
+  bodyRegular: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  bodySemiBold: 'Inter_600SemiBold',
+} as const;
+
+/**
+ * The font families to load at boot (name → asset). Passed straight to
+ * `useFonts` in the root layout; kept here so the token and the loader can never
+ * drift apart.
+ */
+export const FontAssets = {
+  Baloo2_500Medium: require('@expo-google-fonts/baloo-2/500Medium/Baloo2_500Medium.ttf'),
+  Baloo2_600SemiBold: require('@expo-google-fonts/baloo-2/600SemiBold/Baloo2_600SemiBold.ttf'),
+  Baloo2_700Bold: require('@expo-google-fonts/baloo-2/700Bold/Baloo2_700Bold.ttf'),
+  Inter_400Regular: require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
+  Inter_500Medium: require('@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf'),
+  Inter_600SemiBold: require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
+    /** Body sans — Inter. */
+    sans: FontFamily.bodyRegular,
+    /** iOS `UIFontDescriptorSystemDesignSerif` (unused; kept for compat). */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
+    /** Display / headings — Baloo 2 (rounded, warm). */
+    rounded: FontFamily.headingBold,
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: FontFamily.bodyRegular,
     serif: 'serif',
-    rounded: 'normal',
+    rounded: FontFamily.headingBold,
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
+    sans: FontFamily.bodyRegular,
     serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
+    rounded: FontFamily.headingBold,
     mono: 'var(--font-mono)',
   },
 });

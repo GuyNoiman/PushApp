@@ -7,8 +7,9 @@
  */
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
-import { STAGE_FACE } from '@/components/buddy/stageFaces';
+import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { ThemedText } from '@/components/themed-text';
+import { FontFamily } from '@/constants/theme';
 import type { BuddyStage } from '@/core/types/domain';
 
 const GOLD = '#F5C451';
@@ -30,7 +31,7 @@ export function EvolveReveal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCollect}>
       <View style={styles.backdrop}>
         <View style={styles.burst}>
-          <ThemedText style={styles.face}>{STAGE_FACE[toStage]}</ThemedText>
+          <BuddyAvatar stage={toStage} size={180} />
         </View>
 
         <ThemedText type="small" style={styles.eyebrow}>
@@ -72,20 +73,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(245, 196, 81, 0.35)',
   },
-  face: {
-    fontSize: 128,
-    lineHeight: 148,
-  },
   eyebrow: {
     color: GOLD,
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
   stageName: {
+    fontFamily: FontFamily.headingBold,
     color: '#ffffff',
     fontSize: 36,
     lineHeight: 44,
-    fontWeight: 700,
     textAlign: 'center',
   },
   stars: {

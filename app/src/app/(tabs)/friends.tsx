@@ -1,14 +1,13 @@
 /**
- * Friends — the POC social / Allies pillar surface (05_Social). A pushed screen
- * (mirrors missions.tsx) with the full circle flow: pick a handle, grow your
- * Support Circle, share a Journey with chosen Allies at a visibility level, and
- * cheer the Journeys you're an Ally of.
+ * Friends — the POC social / Allies pillar surface (05_Social), now a first-class
+ * bottom-nav TAB (v14 mockup screen-09). The full circle flow: pick a handle,
+ * grow your Support Circle, share a Journey with chosen Allies at a visibility
+ * level, and cheer the Journeys you're an Ally of.
  *
  * Presentational only — it reads SocialProvider state and calls its actions; no
  * social/business logic lives here (Engineering Bible §19). Only a progress
  * SUMMARY is ever shared; reflections and the "why" never leave the device.
  */
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,11 +34,8 @@ const VISIBILITY_LABELS: Record<Visibility, string> = {
 };
 
 export default function FriendsScreen() {
-  const router = useRouter();
   const social = useSocial();
   const { snapshot } = useApp();
-
-  const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   const accepted = social.friends.filter((f) => f.status === 'accepted');
   const incoming = social.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming');
@@ -49,14 +45,7 @@ export default function FriendsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <ThemedText type="subtitle">Friends</ThemedText>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={dismiss}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Close
-              </ThemedText>
-            </Pressable>
-          </View>
+          <ThemedText type="title">Friends</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             Your Support Circle. Only a progress summary is ever shared — never your reflections.
           </ThemedText>
@@ -387,14 +376,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    paddingTop: Spacing.four,
     gap: Spacing.two,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
   },
   content: {
     paddingHorizontal: Spacing.four,

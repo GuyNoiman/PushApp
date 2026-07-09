@@ -13,7 +13,7 @@ import { EvolveReveal } from '@/components/buddy/EvolveReveal';
 import { StepCard } from '@/components/journey/StepCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
@@ -44,11 +44,13 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
           <View style={styles.greetingBlock}>
+            {/* Greeting reads on its own full-width line(s); the action buttons sit
+                on the row below so the text column is never squeezed to ~0 width. */}
             <View style={styles.greetingText}>
               <ThemedText type="small" themeColor="textSecondary">
                 {greeting()}
               </ThemedText>
-              <ThemedText type="subtitle">What will you do now?</ThemedText>
+              <ThemedText type="title">What will you do now?</ThemedText>
             </View>
             <View style={styles.headerActions}>
               {featureFlags.social && (
@@ -58,10 +60,12 @@ export default function HomeScreen() {
                   onPress={() => router.push('/friends')}
                   style={({ pressed }) => [
                     styles.missionsButton,
-                    { backgroundColor: theme.backgroundElement },
+                    { backgroundColor: theme.purpleTint },
                     pressed && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">🤝 Friends</ThemedText>
+                  <ThemedText type="smallBold" style={{ color: theme.purpleStrong }}>
+                    🤝 Friends
+                  </ThemedText>
                 </Pressable>
               )}
               <Pressable
@@ -74,12 +78,14 @@ export default function HomeScreen() {
                 onPress={() => router.push('/missions')}
                 style={({ pressed }) => [
                   styles.missionsButton,
-                  { backgroundColor: theme.backgroundElement },
+                  { backgroundColor: theme.tealTint },
                   pressed && styles.pressed,
                 ]}>
-                <ThemedText type="smallBold">🎯 Missions</ThemedText>
+                <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                  🎯 Missions
+                </ThemedText>
                 {snapshot && snapshot.claimableRewards > 0 && (
-                  <View style={styles.badge}>
+                  <View style={[styles.badge, { backgroundColor: theme.coral }]}>
                     <ThemedText type="smallBold" style={styles.badgeText}>
                       {snapshot.claimableRewards}
                     </ThemedText>
@@ -92,10 +98,10 @@ export default function HomeScreen() {
                 onPress={() => router.push('/journey/new')}
                 style={({ pressed }) => [
                   styles.createButton,
-                  { backgroundColor: theme.text },
+                  { backgroundColor: theme.coral },
                   pressed && styles.pressed,
                 ]}>
-                <ThemedText type="subtitle" style={[styles.plus, { color: theme.background }]}>
+                <ThemedText type="title" style={[styles.plus, { color: theme.text }]}>
                   +
                 </ThemedText>
               </Pressable>
@@ -111,15 +117,15 @@ export default function HomeScreen() {
               <BuddyCard buddy={snapshot.buddy} />
 
               {celebration && (
-                <ThemedView type="backgroundSelected" style={styles.celebration}>
-                  <ThemedText type="smallBold">{celebration}</ThemedText>
-                </ThemedView>
+                <View style={[styles.celebration, { backgroundColor: theme.successTint }]}>
+                  <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                    {celebration}
+                  </ThemedText>
+                </View>
               )}
 
               <View style={styles.sectionHeader}>
-                <ThemedText type="default" style={styles.sectionTitle}>
-                  This week&apos;s Steps
-                </ThemedText>
+                <ThemedText type="subtitle">This week&apos;s Steps</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {snapshot.todaySteps.length} to go
                 </ThemedText>
@@ -179,13 +185,12 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   greetingBlock: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    // Column, not row: the greeting owns its own full-width line(s) above the
+    // action buttons. (The old row layout squeezed the text column to ~0 width,
+    // which forced the greeting to wrap one character per line.)
     gap: Spacing.three,
   },
   greetingText: {
-    flex: 1,
     gap: Spacing.half,
   },
   headerActions: {
@@ -194,9 +199,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   missionsButton: {
-    height: 48,
+    height: 44,
     paddingHorizontal: Spacing.three,
-    borderRadius: 24,
+    borderRadius: Radius.button,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
@@ -206,7 +211,6 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     paddingHorizontal: Spacing.one,
-    backgroundColor: '#0E8177',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -216,14 +220,14 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   createButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
   plus: {
-    lineHeight: 34,
+    lineHeight: 30,
   },
   pressed: {
     opacity: 0.6,
@@ -232,9 +236,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    fontWeight: 700,
   },
   stepList: {
     gap: Spacing.three,

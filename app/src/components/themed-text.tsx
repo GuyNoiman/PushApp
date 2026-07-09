@@ -30,40 +30,45 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
   );
 }
 
+// Type scale (Design System §3): display 26 · h1 20 · h2 16 · body 15 · caption 12.
+// Headings use the rounded system display stack (ui-rounded / SF Pro Rounded /
+// system) for the warm, friendly character; body uses the system sans.
 const styles = StyleSheet.create({
   small: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: 500,
   },
   smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: 700,
   },
   default: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: 500,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    fontFamily: Fonts.rounded,
+    fontSize: 26,
+    fontWeight: 700,
+    lineHeight: 32,
   },
   subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    fontFamily: Fonts.rounded,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: 700,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 14,
+    lineHeight: 22,
+    fontSize: 15,
   },
   linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
+    lineHeight: 22,
+    fontSize: 15,
+    color: '#4A80E0',
   },
   code: {
     fontFamily: Fonts.mono,

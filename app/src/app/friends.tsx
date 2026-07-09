@@ -15,15 +15,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { AllyProgress, Friend, Visibility } from '@/core/social';
 import type { Journey } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 
-/** Warm accent shared with Missions / Shop (teal). */
-const TEAL = '#0E8177';
+// Friends is the social surface: PURPLE accents (selected chips, progress) and a
+// CORAL primary CTA with a dark-ink label (Design System §2, §6).
+const PURPLE = Colors.light.purple;
+const CORAL = Colors.light.coral;
+const INK = Colors.light.text;
 
 const VISIBILITY_LABELS: Record<Visibility, string> = {
   progress: 'Progress',
@@ -299,7 +302,7 @@ function ShareJourney({
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
               onPress={() => toggle(f.profile.id)}
-              style={[styles.chip, { backgroundColor: on ? TEAL : theme.background }]}>
+              style={[styles.chip, { backgroundColor: on ? PURPLE : theme.backgroundElement }]}>
               <ThemedText type="small" style={on ? styles.chipOnText : undefined}>
                 @{f.profile.handle}
               </ThemedText>
@@ -320,7 +323,7 @@ function ShareJourney({
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
               onPress={() => setVisibility(v)}
-              style={[styles.chip, { backgroundColor: on ? TEAL : theme.background }]}>
+              style={[styles.chip, { backgroundColor: on ? PURPLE : theme.backgroundElement }]}>
               <ThemedText type="small" style={on ? styles.chipOnText : undefined}>
                 {VISIBILITY_LABELS[v]}
               </ThemedText>
@@ -348,7 +351,7 @@ function AllyRow({ ally, onCheer }: { ally: AllyProgress; onCheer: () => void })
           @{ally.owner.handle} · {pct}%
         </ThemedText>
         <View style={[styles.progressTrack, { backgroundColor: theme.background }]}>
-          <View style={[styles.progressFill, { backgroundColor: TEAL, width: `${pct}%` }]} />
+          <View style={[styles.progressFill, { backgroundColor: PURPLE, width: `${pct}%` }]} />
         </View>
       </View>
       <PrimaryButton label="Cheer 🎉" onPress={onCheer} />
@@ -363,7 +366,7 @@ function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: (
       accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.primaryButton, { backgroundColor: TEAL }, disabled && styles.disabled, pressed && styles.pressed]}>
+      style={({ pressed }) => [styles.primaryButton, { backgroundColor: CORAL }, disabled && styles.disabled, pressed && styles.pressed]}>
       <ThemedText type="smallBold" style={styles.primaryLabel}>
         {label}
       </ThemedText>
@@ -437,7 +440,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.light.hairline,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
     gap: Spacing.two,
@@ -448,7 +453,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   shareCard: {
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.light.hairline,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -460,15 +467,18 @@ const styles = StyleSheet.create({
   chip: {
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.pill,
   },
   chipOnText: {
     color: '#ffffff',
+    fontWeight: '700',
   },
   allyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.light.hairline,
     padding: Spacing.three,
     gap: Spacing.three,
   },
@@ -487,17 +497,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   primaryButton: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.button,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryLabel: {
-    color: '#ffffff',
+    color: INK,
   },
   ghostButton: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.button,
     borderWidth: 1,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,

@@ -8,7 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { STAGE_FACE } from '@/components/buddy/stageFaces';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import type { BuddyView } from '@/core/AppCore';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -17,9 +17,11 @@ export function BuddyCard({ buddy }: { buddy: BuddyView }) {
   const progress = Math.max(0, Math.min(1, buddy.xpIntoLevel / buddy.xpForNextLevel));
 
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
+    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.hairline }]}>
       <View style={styles.header}>
-        <ThemedText style={styles.face}>{STAGE_FACE[buddy.stage]}</ThemedText>
+        <View style={[styles.faceWrap, { backgroundColor: theme.coralTint }]}>
+          <ThemedText style={styles.face}>{STAGE_FACE[buddy.stage]}</ThemedText>
+        </View>
         <View style={styles.identity}>
           <ThemedText type="subtitle" style={styles.name}>
             {buddy.name}
@@ -28,19 +30,20 @@ export function BuddyCard({ buddy }: { buddy: BuddyView }) {
             {buddy.stageDisplayName} · Level {buddy.level}
           </ThemedText>
         </View>
-        <View style={styles.coins}>
-          <ThemedText type="smallBold">🪙 {buddy.coins}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Coins
+        {/* Coins = gold reward chip (Design System §2: gold = coins/rewards). */}
+        <View style={[styles.coinChip, { backgroundColor: theme.goldTint }]}>
+          <ThemedText type="smallBold" style={{ color: theme.goldStrong }}>
+            🪙 {buddy.coins}
           </ThemedText>
         </View>
       </View>
 
-      <View style={[styles.progressTrack, { backgroundColor: theme.backgroundSelected }]}>
+      {/* XP bar = blue (game XP), distinct from teal "real growth". */}
+      <View style={[styles.progressTrack, { backgroundColor: theme.blueTint }]}>
         <View
           style={[
             styles.progressFill,
-            { backgroundColor: theme.text, width: `${progress * 100}%` },
+            { backgroundColor: theme.blue, width: `${progress * 100}%` },
           ]}
         />
       </View>
@@ -54,7 +57,8 @@ export function BuddyCard({ buddy }: { buddy: BuddyView }) {
 const styles = StyleSheet.create({
   card: {
     alignSelf: 'stretch',
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
+    borderWidth: 1,
     padding: Spacing.four,
     gap: Spacing.three,
   },
@@ -63,19 +67,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
   },
+  faceWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   face: {
-    fontSize: 52,
-    lineHeight: 60,
+    fontSize: 40,
+    lineHeight: 48,
   },
   identity: {
     flex: 1,
     gap: Spacing.half,
   },
   name: {
-    lineHeight: 34,
+    lineHeight: 26,
   },
-  coins: {
-    alignItems: 'flex-end',
+  coinChip: {
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.pill,
   },
   progressTrack: {
     height: 10,

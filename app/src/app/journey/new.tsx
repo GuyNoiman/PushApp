@@ -26,7 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChoiceChips } from '@/components/journey/ChoiceChips';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { NewStepInput } from '@/core/engines/JourneyEngine';
 import type { Cadence, Rhythm } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
@@ -327,14 +327,16 @@ export default function NewJourneyScreen() {
 
             {stage === 3 && (
               <View style={styles.stack}>
-                <ThemedView type="backgroundElement" style={styles.starterBox}>
+                <View style={[styles.starterBox, { backgroundColor: theme.successTint }]}>
                   <View style={styles.starterHeader}>
-                    <ThemedText type="smallBold">Starter Step</ThemedText>
-                    <ThemedView type="backgroundSelected" style={styles.badge}>
-                      <ThemedText type="small" themeColor="textSecondary">
+                    <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                      ★ Starter Step
+                    </ThemedText>
+                    <View style={[styles.badge, { backgroundColor: theme.teal }]}>
+                      <ThemedText type="small" style={styles.recommendedLabel}>
                         Recommended
                       </ThemedText>
-                    </ThemedView>
+                    </View>
                   </View>
                   <ThemedText type="small" themeColor="textSecondary">
                     Make the first Step tiny — something you can finish in under 2 minutes. The goal
@@ -355,7 +357,7 @@ export default function NewJourneyScreen() {
                     placeholderTextColor={theme.textSecondary}
                     multiline
                   />
-                </ThemedView>
+                </View>
 
                 <ThemedText type="smallBold">Your Steps</ThemedText>
                 {steps.length === 0 ? (
@@ -475,10 +477,12 @@ export default function NewJourneyScreen() {
               onPress={() => setStage((s) => Math.max(0, s - 1))}
               style={[
                 styles.navButton,
-                { borderColor: theme.backgroundSelected },
+                { borderColor: theme.hairline },
                 stage === 0 && styles.disabled,
               ]}>
-              <ThemedText type="smallBold">Back</ThemedText>
+              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                Back
+              </ThemedText>
               {stage > 0 && (
                 <ThemedText type="small" themeColor="textSecondary">
                   {STAGE_TITLES[stage - 1]}
@@ -495,10 +499,10 @@ export default function NewJourneyScreen() {
                 style={[
                   styles.navButton,
                   styles.primary,
-                  { backgroundColor: theme.text },
+                  { backgroundColor: theme.coral },
                   (!title.trim() || creating) && styles.disabled,
                 ]}>
-                <ThemedText type="smallBold" style={{ color: theme.background }}>
+                <ThemedText type="smallBold" style={{ color: theme.text }}>
                   {creating ? 'Creating…' : 'Create'}
                 </ThemedText>
               </Pressable>
@@ -511,13 +515,13 @@ export default function NewJourneyScreen() {
                 style={[
                   styles.navButton,
                   styles.primary,
-                  { backgroundColor: theme.text },
+                  { backgroundColor: theme.coral },
                   !canContinue && styles.disabled,
                 ]}>
-                <ThemedText type="smallBold" style={{ color: theme.background }}>
+                <ThemedText type="smallBold" style={{ color: theme.text }}>
                   Next
                 </ThemedText>
-                <ThemedText type="small" style={{ color: theme.background, opacity: 0.7 }}>
+                <ThemedText type="small" style={{ color: theme.text, opacity: 0.7 }}>
                   {STAGE_TITLES[stage + 1]}
                 </ThemedText>
               </Pressable>
@@ -539,7 +543,7 @@ function ProgressBars({ count, active }: { count: number; active: number }) {
           key={index}
           style={[
             styles.progressBar,
-            { backgroundColor: index <= active ? theme.text : theme.backgroundSelected },
+            { backgroundColor: index <= active ? theme.teal : theme.hairline },
           ]}
         />
       ))}
@@ -609,10 +613,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.input,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    fontSize: 16,
+    fontSize: 15,
   },
   multiline: {
     minHeight: 72,
@@ -625,7 +629,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     borderWidth: 1,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.button,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
@@ -643,7 +647,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   starterBox: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -655,10 +659,14 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
-    borderRadius: Spacing.four,
+    borderRadius: Radius.chip,
+  },
+  recommendedLabel: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
   stepBox: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -670,7 +678,7 @@ const styles = StyleSheet.create({
   addStep: {
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.button,
     paddingVertical: Spacing.three,
     alignItems: 'center',
   },
@@ -702,7 +710,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: 'transparent',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.button,
     paddingVertical: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',

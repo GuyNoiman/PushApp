@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -22,7 +22,7 @@ export function StepCard({
   const { step } = item;
 
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
+    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.hairline }]}>
       <View style={styles.textCol}>
         <View style={styles.titleRow}>
           <ThemedText type="default" style={styles.title}>
@@ -48,10 +48,12 @@ export function StepCard({
         onPress={() => onCheckIn(item.journeyId, step.id)}
         style={({ pressed }) => [
           styles.check,
-          { borderColor: theme.text },
+          { backgroundColor: theme.coral },
           pressed && styles.pressed,
         ]}>
-        <ThemedText type="smallBold">Check in</ThemedText>
+        <ThemedText type="smallBold" style={{ color: theme.text }}>
+          Check in
+        </ThemedText>
       </Pressable>
     </ThemedView>
   );
@@ -60,7 +62,8 @@ export function StepCard({
 const styles = StyleSheet.create({
   card: {
     alignSelf: 'stretch',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
     padding: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
@@ -82,11 +85,10 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
-    borderRadius: Spacing.four,
+    borderRadius: Radius.chip,
   },
   check: {
-    borderWidth: 1,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.button,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },

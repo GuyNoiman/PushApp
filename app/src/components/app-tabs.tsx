@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Image, useColorScheme } from 'react-native';
+import { Image } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 
@@ -9,16 +9,19 @@ const tabIcons = {
 } as const;
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = Colors.light;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: { backgroundColor: colors.background },
+        // Teal active tint = brand/navigation (Design System §2); muted inactive.
+        tabBarActiveTintColor: colors.teal,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.backgroundElement,
+          borderTopColor: colors.hairline,
+        },
       }}>
       <Tabs.Screen
         name="index"

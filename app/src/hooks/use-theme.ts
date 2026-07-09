@@ -1,5 +1,7 @@
 /**
- * Learn more about light and dark modes:
+ * The active theme's colour tokens. The design is warm-light only (Design System
+ * §2), so this always returns the light palette. When a dark design exists, branch
+ * on `useColorScheme()` here.
  * https://docs.expo.dev/guides/color-schemes/
  */
 
@@ -8,7 +10,5 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export function useTheme() {
   const scheme = useColorScheme();
-  const theme = scheme === 'dark' ? 'dark' : 'light';
-
-  return Colors[theme];
+  return Colors[scheme];
 }

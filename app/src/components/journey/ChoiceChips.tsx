@@ -6,7 +6,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface Choice<T extends string | number> {
@@ -37,12 +37,12 @@ export function ChoiceChips<T extends string | number>({
             onPress={() => onChange(option.value)}
             style={[
               styles.chip,
-              { borderColor: theme.backgroundSelected },
-              selected && { backgroundColor: theme.text, borderColor: theme.text },
+              { borderColor: theme.hairline },
+              selected && { backgroundColor: theme.teal, borderColor: theme.teal },
             ]}>
             <ThemedText
               type="smallBold"
-              style={selected ? { color: theme.background } : undefined}
+              style={selected ? styles.selectedLabel : undefined}
               themeColor={selected ? undefined : 'textSecondary'}>
               {option.label}
             </ThemedText>
@@ -61,8 +61,11 @@ const styles = StyleSheet.create({
   },
   chip: {
     borderWidth: 1,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.pill,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  selectedLabel: {
+    color: '#ffffff',
   },
 });

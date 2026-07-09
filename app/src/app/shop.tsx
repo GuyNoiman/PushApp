@@ -17,14 +17,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { ShopItem } from '@/core/config/shopItems';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
-/** Warm accents for the Shop, per the UX spec (cream / teal — not the app's neutrals). */
-const TEAL = '#0E8177';
-const CREAM = '#F6E4C1';
+// Shop is a reward surface: prices in GOLD, the Buy CTA in CORAL, equipped state
+// in TEAL (Design System §2).
+const TEAL = Colors.light.teal;
+const GOLD_TINT = Colors.light.goldTint;
+const GOLD_STRONG = Colors.light.goldStrong;
+const CORAL = Colors.light.coral;
+const INK = Colors.light.text;
 
 export default function ShopScreen() {
   const { core, snapshot } = useApp();
@@ -56,7 +60,7 @@ export default function ShopScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               Dress up your Buddy with what you&apos;ve earned.
             </ThemedText>
-            <View style={[styles.coinPill, { backgroundColor: CREAM }]}>
+            <View style={[styles.coinPill, { backgroundColor: GOLD_TINT }]}>
               <ThemedText type="smallBold" style={styles.coinText}>
                 🪙 {buddy?.coins ?? 0}
               </ThemedText>
@@ -88,10 +92,12 @@ export default function ShopScreen() {
                       onPress={() => core.purchaseItem(item.id)}
                       style={[
                         styles.action,
-                        { backgroundColor: TEAL },
+                        { backgroundColor: affordable ? CORAL : GOLD_TINT },
                         !affordable && styles.disabled,
                       ]}>
-                      <ThemedText type="smallBold" style={styles.actionLabel}>
+                      <ThemedText
+                        type="smallBold"
+                        style={{ color: affordable ? INK : GOLD_STRONG }}>
                         🪙 {item.price}
                       </ThemedText>
                     </Pressable>
@@ -172,10 +178,10 @@ const styles = StyleSheet.create({
   coinPill: {
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.pill,
   },
   coinText: {
-    color: '#3A2E17',
+    color: GOLD_STRONG,
   },
   content: {
     paddingHorizontal: Spacing.four,
@@ -190,7 +196,9 @@ const styles = StyleSheet.create({
   card: {
     width: 150,
     flexGrow: 1,
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.light.hairline,
     padding: Spacing.three,
     gap: Spacing.two,
     alignItems: 'center',
@@ -214,13 +222,10 @@ const styles = StyleSheet.create({
   },
   action: {
     alignSelf: 'stretch',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.button,
     paddingVertical: Spacing.two,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  actionLabel: {
-    color: '#ffffff',
   },
   equipped: {
     backgroundColor: 'transparent',

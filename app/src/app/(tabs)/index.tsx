@@ -53,6 +53,19 @@ export default function HomeScreen() {
               <ThemedText type="title">What will you do now?</ThemedText>
             </View>
             <View style={styles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Journeys"
+                onPress={() => router.push('/journeys')}
+                style={({ pressed }) => [
+                  styles.missionsButton,
+                  { backgroundColor: theme.successTint },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                  🧭 Journeys
+                </ThemedText>
+              </Pressable>
               {featureFlags.social && (
                 <Pressable
                   accessibilityRole="button"

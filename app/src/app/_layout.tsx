@@ -54,6 +54,9 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="journey/[id]" />
+            <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
             <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
             <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
           </Stack>

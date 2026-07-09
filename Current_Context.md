@@ -1,10 +1,62 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-09 (POC feature-complete + Expo Go blocker + design audit)
+Last updated: 2026-07-10 (app runs on iPhone; full-design build in progress)
 
 ## How to resume
-Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "Next steps". Do NOT re-read the whole repo.
+Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10 (read this first)
+**The app RUNS on the founder's iPhone (Expo Go), and we're mid-way through building the full v14
+mockup design.** POC is code-complete (5 pillars, on `main`, GitHub `GuyNoiman/PushApp`). Now doing a
+screen-by-screen design build to match the mockups.
+
+**📱 Runs on device — Expo SDK 54.** The founder's Expo Go supports **exactly SDK 54** (confirmed
+on-device: Settings→App Info→Supported SDK 54). App was downgraded 57→56→54 to match. **To run:**
+`cd app && npx expo start` (server on LAN **192.168.0.123:8081**); the founder scans a QR with the
+iPhone **Camera** app (Expo Go's "manual URL" is gone in his version) → "Open in Expo Go". Make a QR:
+`node -e "require('qrcode').toFile('/tmp/q.png','exp://192.168.0.123:8081',{width:640,margin:3},()=>{})"`
+then `open /tmp/q.png`. Web build also works (`web.output:"single"`) — screenshot routes via headless
+Chrome at `http://localhost:8081/<route>` to visually verify.
+
+**🎨 FULL-DESIGN BUILD — progress (all verified tsc-clean + web-screenshot vs mockup, committed per chunk):**
+- ✅ **Foundation** — Baloo 2 + Inter fonts loaded; **glossy SVG Buddy** (`BuddyAvatar`, stage-aware,
+  egg for L1 → hatches with level); **5-tab nav** (Home · Explore · Friends · Buddy · Inbox). Friends
+  moved from modal → tab; Explore/Inbox were stubs.
+- ✅ **Explore** tab (discovery carousels — For you / Top creators / From brands; sample content).
+- ✅ **Inbox** tab (IG-style list wired to real friend-requests + cheers via `useSocial`).
+- ✅ **Journeys cluster** — `journeys.tsx` (list, real journeys), `journey/[id].tsx` (detail),
+  `achievements.tsx` (+ detail sheet; sample achievement data). Home has a "Journeys" entry. *(Committed
+  with this handoff.)*
+- ⏭️ **NOT DONE:** **Weekly planning** screen (mockup screen-18); and the **fidelity pass** on existing
+  screens (Home, Buddy scene, Shop, Friends, Missions/Login modals, Journey-creation wizard) to match
+  each mockup exactly (spacing, depth, game-juice). Also still deferred: illustrated Buddy art direction
+  (founder rejected the 4 creature concepts — see `07_Assets/Buddy_Creature_Concepts.html`; needs a new
+  direction), and per the audit, deeper game-juice.
+
+**🗂️ DESIGN TARGETS ARE NOW IN THE REPO:** `04_Product/UX/UX_References/mockups_v14/` — screen-01..18.png
++ `mockup_v14.html`. Mapping: 01 Home · 02 Journeys · 03 Journey detail · 04 Explore · 05–08 Creation
+(Name/rhythm/Plan/Your-why) · 09 Friends · 10 Buddy · 11 Shop · 12 Hatch reveal · 13 Achievements ·
+14 Achievement detail · 15 Inbox · 16 Missions · 17 Login · 18 Weekly planning. The gap punch-list:
+`04_Product/UX/Design_Fidelity_Audit.md`.
+
+**🔑 State a new session needs:**
+- **Social pillar** (E2, Supabase, anonymous auth): keys live in **gitignored `app/.env`** — they
+  PERSIST on this Mac (not in git). On a fresh clone they must be recreated (URL + publishable key from
+  the founder's Supabase). Social is behind `featureFlags.social` (auto-on when env present).
+- **Permissions:** this Mac has a permissive "YOLO" config in `.claude/settings.local.json`
+  (acceptEdits + broad allow-list + dangerous-op deny-list). Machine-local, not committed.
+- **Build method:** delegate each screen to an implementer/ux-designer agent with the mockup image +
+  audit as spec; agent verifies `tsc --noEmit` + a headless-Chrome web screenshot of the route vs the
+  mockup; then commit per chunk. `qrcode` npm pkg was in a session scratchpad — reinstall if needed.
+
+**▶ NEXT (resume here):** (1) restart the dev server + hand the founder a fresh QR; (2) build the
+**Weekly planning** screen (screen-18); (3) do the **fidelity pass** on the existing screens vs mockups;
+(4) resolve the Buddy art direction with the founder. Task list: #5 (new screens) nearly done, #6
+(fidelity pass) pending.
+
+*(Older snapshots below remain accurate for their eras — 2026-07-09 = POC complete + social + Expo Go
+blocker; 2026-07-08 = the 4 local pillars in detail.)*
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-07-09 (read this first)
 **The POC is now CODE-COMPLETE — all 5 pillars.** The 4 local pillars (below, 2026-07-08 snapshot)

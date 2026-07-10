@@ -78,8 +78,8 @@ export function BuddyScene({
 const styles = StyleSheet.create({
   scene: {
     flex: 1,
-    borderTopLeftRadius: Radius.card,
-    borderTopRightRadius: Radius.card,
+    // Full-bleed: the scene fills the screen edge-to-edge (no rounded corners /
+    // side margins) and runs up behind the floating ResourceBar, per the mockup.
     overflow: 'hidden',
   },
   ground: {
@@ -93,8 +93,10 @@ const styles = StyleSheet.create({
     transform: [{ scaleX: 1.6 }],
   },
   sideButtons: {
+    // Sit below the floating ResourceBar (which overlays the top of the scene)
+    // so the Customize/Shop tiles never collide with the level/coins strip.
     position: 'absolute',
-    top: Spacing.four,
+    top: 64,
     right: Spacing.three,
     gap: Spacing.two,
     zIndex: 3,

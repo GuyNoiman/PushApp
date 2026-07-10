@@ -60,17 +60,8 @@ export default function BuddyScreen() {
           </View>
         ) : (
           <View style={styles.stage}>
-            <View style={styles.resourceRow}>
-              <ResourceBar
-                level={buddy.level}
-                xpInto={buddy.xpIntoLevel}
-                xpForNext={buddy.xpForNextLevel}
-                coins={buddy.coins}
-                showGrace={false}
-                onAddCoins={() => router.push('/shop')}
-              />
-            </View>
-
+            {/* Full-bleed scene: the sky/ground fills edge-to-edge and up behind the
+                floating ResourceBar, exactly like the mockup — no side margins. */}
             <View style={styles.sceneWrap}>
               <BuddyScene
                 buddy={buddy}
@@ -80,6 +71,16 @@ export default function BuddyScreen() {
                   // panel below already covers browsing + equipping cosmetics.
                 }}
               />
+              <View style={styles.resourceOverlay} pointerEvents="box-none">
+                <ResourceBar
+                  level={buddy.level}
+                  xpInto={buddy.xpIntoLevel}
+                  xpForNext={buddy.xpForNextLevel}
+                  coins={buddy.coins}
+                  showGrace={false}
+                  onAddCoins={() => router.push('/shop')}
+                />
+              </View>
               {reactionText && (
                 <ThemedView type="backgroundSelected" style={styles.reaction}>
                   <ThemedText type="smallBold" style={styles.reactionText}>
@@ -136,14 +137,15 @@ const styles = StyleSheet.create({
   stage: {
     flex: 1,
   },
-  resourceRow: {
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
-    paddingBottom: Spacing.two,
-  },
   sceneWrap: {
     flex: 3,
-    paddingHorizontal: Spacing.four,
+  },
+  resourceOverlay: {
+    position: 'absolute',
+    top: Spacing.two,
+    left: Spacing.four,
+    right: Spacing.four,
+    zIndex: 5,
   },
   reaction: {
     position: 'absolute',

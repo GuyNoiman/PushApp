@@ -70,7 +70,9 @@ export function BuddyInventory({
   };
 
   return (
-    <View style={[styles.panel, { backgroundColor: theme.cream }]}>
+    <View style={[styles.panel, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+      {/* Grabber handle — signals the whole sheet is one liftable object. */}
+      <View style={[styles.grabber, { backgroundColor: theme.hairline }]} />
       {/* Category tabs — icon-only, selected one highlighted as a white pill. */}
       <View style={[styles.tabRow, { backgroundColor: theme.backgroundSelected }]}>
         {CATEGORIES.map((cat) => {
@@ -197,12 +199,27 @@ const TILE_SIZE = 56;
 
 const styles = StyleSheet.create({
   panel: {
-    borderTopLeftRadius: Radius.card + 8,
-    borderTopRightRadius: Radius.card + 8,
-    paddingTop: Spacing.three,
+    // One unified, raised sheet: rounded top, a top hairline + upward shadow that
+    // lift it off the scene so the tabs + grid + Select read as a single object.
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    borderTopWidth: 1,
+    paddingTop: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.three,
     gap: Spacing.three,
+    shadowColor: '#283C1E',
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 16,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    marginBottom: Spacing.two,
   },
   tabRow: {
     flexDirection: 'row',

@@ -10,6 +10,41 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-07-10 — Auth foundation: real accounts via Apple + Google (E3)
+
+### D19 — Auth method, no real-name collection, foundation-first phasing
+**Decision:** Three linked founder decisions approving the auth plan in
+`11_Engineering_Bible/Auth_Backend_Proposal.md`:
+1. **Auth method = Sign in with Apple + Sign in with Google**, passwordless (no email/password, no
+   SMTP) — consistent with the earlier anonymous-auth rationale (E2) of avoiding email entirely.
+2. **Do NOT collect the user's real name** from Apple or Google. In-product identity stays the
+   **handle + Buddy**, never a legal name; email is quarantined in Supabase-managed `auth.users`
+   and is never written to any `public.*` table.
+3. **Build the free foundation (P1–P2) first, at $0 with zero user-visible behavior change.** The
+   native Apple/Google sign-in buttons + dev build (P3+) require the **~$99/yr Apple Developer
+   Program** — the one unavoidable cost — and are a **later, separately-approved step**, per
+   CLAUDE.md §3.10 (never spend the founder's money silently).
+**Why:** real users need real, durable, cross-device accounts, and each user's private data must
+never be exposed to any other user (founder requirement) — anonymous-only auth (E2) cannot satisfy
+this long-term. Apple + Google keeps friction and cost low; skipping the real name removes a
+liability with no product use (the identity system already runs on handle + Buddy); splitting the
+free architecture work from the paid native step means the $0 foundation doesn't wait on a cost
+decision, and the cost decision isn't rushed to unblock engineering.
+**Alternatives rejected:** email + password (needs a custom SMTP provider to stay usable, adds a
+password-reset surface, higher friction); collecting the real name (no product feature needs it);
+shipping P3+ bundled with P1–P2 (would force the $99/yr approval before it needed to happen).
+**Landed 2026-07-10:** P1–P2 + R2 secure-store hardening shipped in commit `2af2468` — a
+vendor-isolated `AuthGateway` (`app/src/core/auth/`), a new `AuthProvider` owning session
+bootstrap (moved out of `SocialProvider`), and Supabase sessions moved from plaintext AsyncStorage
+to `expo-secure-store` on native. App still boots anonymous; Apple/Google methods throw
+`AuthNotAvailableError` until the P3+ native dev build. `tsc` 0, jest 55/55, code-reviewed.
+**Full record (architecture, privacy red-lines, store-compliance, cost, phasing):**
+`11_Engineering_Bible/Auth_Backend_Proposal.md`; engineering decision record:
+`11_Engineering_Bible/Engineering_Decisions.md` §E3.
+**Reflected in:** `app/src/core/auth/`, `app/src/app/_layout.tsx`, `Current_Context.md`.
+
+---
+
 ## 2026-07-10 — Interim Buddy art direction
 
 ### D18 — Interim Buddy creature = "Ember" (coral), current avatar stands in

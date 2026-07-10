@@ -4,6 +4,50 @@ Status: Living Document
 
 ---
 
+# 2026-07-10 — Auth foundation: vendor-isolated AuthGateway + AuthProvider + secure-store (E3, D19)
+
+Approved and began building real-account auth (Sign in with Apple + Google), split into a free
+architecture phase (built today) and a later paid native phase (awaiting founder go-ahead).
+
+## Decisions (Decision_Log D19, Engineering_Decisions E3)
+- **Auth method = Apple + Google sign-in**, passwordless (no email/password, no SMTP).
+- **Do NOT collect the user's real name** — identity stays handle + Buddy; email quarantined in
+  Supabase's `auth.users`, never in `public.*`.
+- **Build the free foundation (P1–P2) first, at $0, zero behavior change.** The ~$99/yr Apple
+  Developer Program + native Apple/Google + dev build (P3+) is a separate, later approval.
+
+## Added
+- `11_Engineering_Bible/Auth_Backend_Proposal.md` — the full plan (architecture, privacy
+  red-lines, store-compliance checklist, cost table, 7-phase rollout), synthesized from
+  architect · security-privacy · store-compliance · cost-guardian.
+- `app/src/core/auth/` — vendor-isolated `AuthGateway` interface + `AuthUser` (no PII) +
+  `NullAuthGateway` + `SupabaseAuthGateway` (reuses the existing Supabase client; Apple/Google
+  methods declared but throw `AuthNotAvailableError` until the P3+ native build) + factory +
+  pure `toAuthUser` mapper.
+- `AuthProvider` (`app/src/state/`) — owns anonymous session bootstrap, composed outside
+  `SocialProvider` in `_layout.tsx`. `featureFlags.auth`.
+
+## Changed
+- `SocialProvider` no longer self-initiates anonymous sign-in — it now reacts to the auth uid;
+  the `cheers` realtime subscribe takes an explicit uid (fixes a bind race found in review).
+- **R2 hardening:** Supabase session storage moved from plaintext AsyncStorage to
+  `expo-secure-store` on native, with byte-safe UTF-8 chunking and generation-based atomic
+  writes (web unchanged — keeps AsyncStorage, no OS keychain equivalent there).
+
+## Status
+- Landed in commit `2af2468`. **Zero user-visible change** — the app still boots anonymous.
+  `tsc` 0, jest 55/55 (new PII-stripping, byte-boundary, corruption→logged-out, write-rollback
+  tests). Code-reviewed; findings fixed.
+- P3+ (native dev build, real Apple/Google sign-in, account deletion, privacy policy) is gated
+  on founder approval of the ~$99/yr Apple Developer Program — the only unavoidable cost.
+
+## Next
+- Founder decides on the Apple Developer Program approval to unblock P3–P7. Independently: the
+  design/data-model open items from the prior snapshot (Buddy art direction, inventory interior,
+  deferred data-model wiring) remain open and can proceed in parallel.
+
+---
+
 # 2026-07-10 — v14 design-fidelity pass: full mockup screen set gets a first-pass native build
 
 Closed the "fidelity pass" item left open by the earlier 2026-07-10 session (5-tab nav + Journeys

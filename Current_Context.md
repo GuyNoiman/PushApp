@@ -1,12 +1,55 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-10 (v14 design-fidelity pass complete; app runs on iPhone)
+Last updated: 2026-07-10 (auth foundation P1–P2 landed; E3 + D19 decided)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-10 (v14 design-fidelity pass — read this first)
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10, later this day (auth foundation P1–P2 — read this first)
+**Real-accounts auth work started.** `11_Engineering_Bible/Auth_Backend_Proposal.md` (a four-specialist
+synthesis: architect · security-privacy · store-compliance · cost-guardian) was approved-in-principle
+by the founder, then the free half of it was built and committed.
+
+**Founder decisions (D19, `06_Decisions/Decision_Log.md`):**
+1. **Auth method = Sign in with Apple + Google**, passwordless (no email/password, no SMTP).
+2. **Do NOT collect the user's real name** — identity stays handle + Buddy; email is quarantined in
+   Supabase's `auth.users`, never written to `public.*`.
+3. **Build the free foundation (P1–P2) first**, at $0 with zero user-visible behavior change. The
+   ~$99/yr Apple Developer Program + native Apple/Google + dev build (P3+) is a **later, separately-
+   approved step** (CLAUDE.md §3.10) — the only unavoidable cost; everything else stays $0 at MVP scale.
+
+**Landed (commit `2af2468`):** a vendor-isolated `AuthGateway` (`app/src/core/auth/`: interface +
+`AuthUser` + `NullAuthGateway` + `SupabaseAuthGateway` + factory + pure `toAuthUser`), a new
+`AuthProvider` that now owns anonymous session bootstrap (moved out of `SocialProvider`, which reacts
+to the auth uid instead), `featureFlags.auth`, and **R2 hardening**: Supabase session storage moved
+from plaintext AsyncStorage to `expo-secure-store` on native (byte-safe UTF-8 chunking + generation-
+based atomic writes; web keeps AsyncStorage). **Zero user-visible change — app still boots anonymous.**
+Apple/Google methods are declared but throw `AuthNotAvailableError` until the native P3+ dev build.
+`tsc` 0, jest 55/55, code-reviewed (findings fixed: a cheers realtime bind race, byte-vs-char
+chunking, non-atomic writes). Full decision record: `Engineering_Decisions.md` §E3.
+
+**Open items / decisions the founder still owns (carried, unchanged from the prior snapshot below):**
+- **Buddy art direction** — still unresolved (founder rejected the 4 creature concepts).
+- **Buddy inventory interior** depth question — awaiting his call.
+- **Deferred data-model wiring** — Grace Tokens not in `AppState`, no Consistency screen/route, no
+  per-weekday Step scheduling, no user profile/name, Friends Gift/Message have no `SocialGateway`
+  methods, Shop real-money data model, inventory Items/Location/Furniture categories. (Unchanged by
+  today's auth work — auth deliberately does not touch these.)
+- **New: P3+ native auth (paid)** — awaiting founder go-ahead on the ~$99/yr Apple Developer Program
+  before Apple/Google sign-in can actually be tapped by a user, and before a dev build replaces the
+  Expo Go loop for auth testing. See `Auth_Backend_Proposal.md` §8 for the full phase list (P3–P7).
+
+**▶ NEXT (resume here):** (1) founder decides whether/when to approve the ~$99/yr Apple Developer
+Program to unblock P3 (native dev build stand-up) → P4 (Apple sign-in) → P5 (Google sign-in) → P6
+(hardening) → P7 (account deletion + privacy policy + store compliance); (2) meanwhile, the design/
+data-model open items below are independent and can proceed in parallel — resolve Buddy art direction,
+decide Buddy inventory interior, wire deferred data-model items as their pillars land; (3) once several
+land, re-run `Design_Fidelity_Audit.md`.
+
+---
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10, earlier this day (v14 design-fidelity pass)
 **The v14 mockup-fidelity build is DONE.** Building on the prior 2026-07-10 snapshot below (5-tab nav +
 Explore/Inbox/Journeys cluster shipped), this session did the **fidelity pass** the prior snapshot's
 "▶ NEXT" called for — ten commits, all on `main`, `tsc` clean throughout:
@@ -73,7 +116,7 @@ its now-stale per-screen tables.
 
 ---
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-10, earlier this day (5-tab nav + Journeys cluster)
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10, earliest this day (5-tab nav + Journeys cluster)
 **The app RUNS on the founder's iPhone (Expo Go), and we're mid-way through building the full v14
 mockup design.** POC is code-complete (5 pillars, on `main`, GitHub `GuyNoiman/PushApp`). Now doing a
 screen-by-screen design build to match the mockups.

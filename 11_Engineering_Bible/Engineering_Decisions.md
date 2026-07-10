@@ -128,7 +128,114 @@ state stays authoritative (Bible §8). Access controlled by Postgres Row-Level S
   Supabase's rate-limited built-in email and the need for a custom SMTP provider). Users pick a
   handle so friends can find them; anonymous accounts are per-device and upgradable to
   email/password at Commercial stage for cross-device login.
+  **Update 2026-07-10:** anonymous-only auth has graduated into a proper, vendor-isolated
+  `AuthGateway` (see **E3** below) — anonymous sign-in is now the default *session*, not the
+  ceiling; real Apple/Google identities link onto the same anonymous uid without data loss.
 
 ### Reflected in
-- `Social_Backend_Proposal.md` (status → Approved), `app/.env.example`, forthcoming
-  `app/src/core/social/` (`SocialGateway` + `SupabaseSocialGateway`).
+- `Social_Backend_Proposal.md` (status → Approved), `app/.env.example`,
+  `app/src/core/social/` (`SocialGateway` + `SupabaseSocialGateway`). Auth now owned by
+  `app/src/core/auth/` — see **E3**.
+
+---
+
+## E3 — Real accounts: Sign in with Apple + Google (auth foundation)
+
+- **Date:** 2026-07-10
+- **Owner:** Founder (approved-in-principle) + engineering (architect · security-privacy ·
+  store-compliance · cost-guardian synthesized the proposal).
+- **Stage:** POC → MVP (P1–P2 landed at POC; P3+ native/paid step is separately gated).
+
+### Context
+E2 shipped anonymous-only auth for the POC social pillar. Real users need real, durable accounts
+and a proper user-management backend, and **each user's private data must never be exposed to any
+other user** (founder requirement). The full plan (architecture, privacy red-lines, store
+requirements, cost, phasing) was synthesized from a four-specialist review into
+`11_Engineering_Bible/Auth_Backend_Proposal.md` — this entry is the decision record; the proposal
+document holds the detail.
+
+### Decision
+Adopt **Sign in with Apple + Google** (passwordless — no email/password, no SMTP) via **Supabase
+Auth's native ID-token exchange**, behind a new vendor-isolated **`AuthGateway`**
+(`app/src/core/auth/`: interface + `AuthUser` + `NullAuthGateway` + `SupabaseAuthGateway` +
+factory), mirroring the existing `SocialGateway` pattern. A new `AuthProvider` owns session
+bootstrap (moved out of `SocialProvider`, which now reacts to the auth uid). Anonymous sessions
+upgrade in place via `linkIdentity` onto the **same** `auth.uid()` — no data migration, no
+orphaning. Full detail, architecture diagram, and store-compliance checklist:
+`Auth_Backend_Proposal.md`.
+
+Three founder decisions made alongside the approval (2026-07-10):
+1. **Auth method = Apple + Google sign-in**, passwordless.
+2. **Do NOT collect the user's real name** from Apple/Google. Identity in the product is the
+   handle + Buddy, never a legal name. Email stays quarantined in Supabase-managed `auth.users`
+   and is never written to any `public.*` table (privacy red-line R1 in the proposal).
+3. **Build the free foundation first.** P1–P2 (gateway skeleton + `AuthProvider` + R2 secure-store
+   hardening) ship now at **$0, zero user-visible behavior change**. The native Apple/Google
+   sign-in buttons + dev build (P3+) — which require the **~$99/yr Apple Developer Program**, the
+   one unavoidable cost — are a **later, separately-approved step**; everything else stays $0 at
+   MVP scale (local Xcode build recommended over EAS cloud minutes).
+
+**Landed 2026-07-10 (commit `2af2468`):** P1 (gateway skeleton) + P2 (`AuthProvider` + session
+ownership) + R2 (Supabase session storage moved from plaintext AsyncStorage to `expo-secure-store`
+on native, with byte-safe UTF-8 chunking and generation-based atomic writes; web keeps AsyncStorage,
+no OS keychain there). Apple/Google methods are declared on `SupabaseAuthGateway` but throw
+`AuthNotAvailableError` until the P3+ native dev build exists — the app still boots anonymous with
+zero behavior change. `tsc` 0, jest 55/55 (incl. new PII-stripping, byte-boundary, and
+write-rollback tests). Code-reviewed; findings fixed (a `cheers` realtime subscribe bind race,
+byte-vs-char chunking, non-atomic secure-store writes).
+
+### Why
+- **Real accounts are a founder requirement** for cross-device identity and private-data isolation
+  — anonymous-only (E2) cannot satisfy this at Commercial scale.
+- **Apple + Google over email/password** — passwordless keeps cost at $0 (no SMTP), is lower
+  friction, and Apple's platform rules require offering Sign in with Apple once Google is offered.
+- **No real-name collection** — security-privacy flagged the legal name as pure liability with no
+  product use; the identity system already runs on handle + Buddy, so the name field is simply
+  never asked for.
+- **Foundation-first phasing** — P1–P2 deliver the entire vendor-isolated architecture, the
+  session-ownership refactor, and the secure-store hardening at **$0 and with no behavior change**,
+  so none of it waits on a founder cost-approval. Only the phases that need native modules /
+  Apple's paid program (P3+) are gated, per CLAUDE.md §3.10.
+- **Identity linking, not migration** — using Supabase's `linkIdentity` onto the existing anonymous
+  `auth.uid()` means no profile/friendship/ally data is ever copied or orphaned when a user
+  upgrades from anonymous to a real identity.
+
+### Alternatives considered
+- **Email + password** — rejected: needs a custom SMTP provider (Supabase's built-in email is
+  rate-limited) to stay usable, adds a password-reset surface, and is higher friction than
+  passwordless social sign-in. Consistent with the E2 rationale for avoiding email.
+- **Collecting the real name from Apple/Google** — rejected per security-privacy: no product
+  feature needs it (identity = handle + Buddy), and storing it only creates liability and account-
+  deletion/export complexity for no benefit.
+- **Ship P3+ (native/paid) immediately alongside P1–P2** — rejected: the ~$99/yr Apple cost should
+  be a deliberate, separately-approved spend (CLAUDE.md §3.10), not bundled into a $0 foundation
+  change. Splitting the phases lets the architecture land now without forcing that decision today.
+- **EAS cloud build for the future dev build** — deprioritized in favor of local Xcode builds on
+  the founder's Mac, which cost $0 versus EAS's metered free-tier build minutes.
+
+### Tradeoffs accepted
+- Until P3+ lands, Apple/Google sign-in buttons cannot actually be tapped (calls throw
+  `AuthNotAvailableError`); acceptable because P1–P2 change nothing user-visible and unblock all
+  the vendor-isolation/session work ahead of time.
+- Native auth modules do not run in Expo Go, so P3+ requires moving to a dev build (local Xcode,
+  $0) — the QR-in-Expo-Go loop ends for auth testing specifically, though Metro JS hot-reload
+  continues to work for everything else.
+- Web sessions remain in AsyncStorage (no OS keychain equivalent in a browser); accepted as the
+  standard web-platform tradeoff, unchanged from before.
+
+### Future considerations
+- **P3 — dev build stand-up** (native modules, Apple Developer Program, Apple/Google configured in
+  Supabase + consoles) — gated on founder approval of the ~$99/yr cost.
+- **P4 — Apple sign-in**, **P5 — Google sign-in** (symmetric `signInWithIdToken` flow), **P6 —
+  hardening** (collision fallback, error surfaces, security review), **P7 — compliance & docs**
+  (in-app account deletion + public web deletion page, Privacy Policy/Terms, App Privacy nutrition
+  label, sign-in copy). Full phase list: `Auth_Backend_Proposal.md` §8.
+- Store-compliance items required before any TestFlight/submission (bundle ID + Sign in with Apple
+  capability, equal-prominence buttons, ATT not required, Google Play ~$25 one-time only when
+  Android ships) are tracked in the proposal §5 and not yet due.
+
+### Reflected in
+- `Auth_Backend_Proposal.md` (the full spec), `app/src/core/auth/` (`AuthGateway`,
+  `SupabaseAuthGateway`, `NullAuthGateway`, factory, `authUser.ts`), `app/src/app/_layout.tsx`
+  (`AuthProvider` composed outside `SocialProvider`), `featureFlags.auth`,
+  `06_Decisions/Decision_Log.md` (D19), `Current_Context.md`.

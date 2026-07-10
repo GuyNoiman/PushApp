@@ -4,6 +4,59 @@ Status: Living Document
 
 ---
 
+# 2026-07-10 — v14 design-fidelity pass: full mockup screen set gets a first-pass native build
+
+Closed the "fidelity pass" item left open by the earlier 2026-07-10 session (5-tab nav + Journeys
+cluster). Ten commits on `main`, `tsc` clean throughout, each screenshot-verified against its mockup.
+
+## Added
+- **Weekly planning** screen (`app/weekly-planning.tsx`, mockup screen-18) — the last v14 screen that
+  had no route.
+- Shared primitives: `ResourceBar` (floating level+XP / GT / coins strip) and `GlossyTile` (3D squircle
+  button), used across Home and Buddy.
+- `BuddyInventory` (5 category tabs, item grid, Select) as one unified framed sheet.
+- `FriendRow` + `FriendActionMenu` components for the Friends fidelity pass.
+- eslint + `eslint-config-expo` dev tooling (`app/eslint.config.js`).
+
+## Changed
+- **Home** (screen-01) rebuilt: ResourceBar + "Hello" speech bubble + centered Buddy flanked by 4
+  GlossyTile area buttons + cream Week's-steps panel; `StepCard` upgraded (icon tile, Journey·Phase
+  line, progress bar, states); `journeyGlyph()` shared via `journeyView.ts`.
+- **Buddy** (screen-10) rebuilt, then refined per founder feedback: full-bleed edge-to-edge scene with
+  the ResourceBar floating over it; inventory unified into one framed sheet (grabber, rounded top,
+  hairline + upward shadow).
+- **Bottom nav**: 5 icons (Ionicons, per-tab active accents, Inbox unread dot) in `app-tabs.tsx` /
+  `app-tabs.web.tsx`; fixed a web-harness bug where the tab strip overlaid the top ~140px of every
+  screen. Documented in `Screen_Bible.md`.
+- **Shop** (screen-11): structured header, glossy coin pill, Featured/Cosmetics/Coins/Offers sub-tabs,
+  glossy item cards with price chips.
+- **Friends** (screen-09): Needs-your-cheer + A-Z Your-friends sections, Cheer CTA, 3-dot menu — closes
+  the gap `04_Product/UX/Design_Fidelity_Audit.md` §09 had already flagged as fixed.
+- **Missions + Login** (screen-16/17): floating modal, gold-underline tabs, Daily/Weekly pill switch,
+  three mission states, 7-day login rail.
+- **Journey-creation wizard** (screens 05-08): Name/description, duration/rhythm with a fixed tooltip,
+  Plan-the-steps, Your-why.
+
+## Status
+- The full v14 screen set (18 mockups) now has a first-pass native implementation. `Design_Fidelity_Audit.md`
+  (written 2026-07-09, pre-pass) is **partially superseded** — most of its per-screen P0/P1 findings
+  describe the earlier flat/gray state and were not re-verified after this pass; treat it as historical
+  until it is re-run.
+- Still open (founder-owned): **Buddy art direction** (founder rejected the 4 creature concepts, needs a
+  new direction) and the **Buddy inventory interior** depth question (tiles/states/labels vs. current
+  framing).
+- Deferred data-model wiring, documented as placeholders in the shipped screens: Grace Tokens in
+  `AppState`, a Consistency screen/route, per-weekday Step scheduling, user profile/name, Social
+  gift/message gateway methods, Shop real-money data model, inventory Items/Location/Furniture
+  categories.
+
+## Next
+- Founder reviews the fidelity pass on-device (fresh QR). Then: resolve Buddy art direction → decide
+  the inventory-interior question → wire deferred data-model items as their pillars land → re-run the
+  Design-Fidelity Audit to confirm and retire the stale tables.
+
+---
+
 # 2026-07-08 — Phase 6: four local POC pillars built (autonomous run)
 
 The founder asked the team to run autonomously through everything doable without him. Built all

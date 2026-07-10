@@ -1,12 +1,79 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-10 (app runs on iPhone; full-design build in progress)
+Last updated: 2026-07-10 (v14 design-fidelity pass complete; app runs on iPhone)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-10 (read this first)
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10 (v14 design-fidelity pass — read this first)
+**The v14 mockup-fidelity build is DONE.** Building on the prior 2026-07-10 snapshot below (5-tab nav +
+Explore/Inbox/Journeys cluster shipped), this session did the **fidelity pass** the prior snapshot's
+"▶ NEXT" called for — ten commits, all on `main`, `tsc` clean throughout:
+
+1. `dbb3e55` **Weekly planning** screen (new `/weekly-planning` modal, mockup screen-18) — the one
+   remaining screen from the v14 set that had no route yet.
+2. `ab74e5f` **Home rebuild** + two new shared primitives: `ResourceBar` (floating level+XP / GT / coins
+   strip) and `GlossyTile` (3D squircle button). Home is now ResourceBar + "Hello" speech bubble +
+   centered Buddy flanked by 4 GlossyTile area buttons + a cream Week's-steps panel. `StepCard` upgraded
+   (icon tile, Journey·Phase line, progress bar, states). `journeyGlyph()` shared via `journeyView.ts`.
+   (mockup screen-01)
+3. `2f811f5` **Buddy rebuild**: ResourceBar + `BuddyScene` (Customize/Shop GlossyTiles) + new
+   `BuddyInventory` (5 category tabs, item grid, Select). (screen-10)
+4. `f61288c` **5-icon bottom nav** (Ionicons, per-tab active accents, Inbox unread dot) in
+   `app-tabs.tsx` / `app-tabs.web.tsx`; fixed a web-harness bug where the tab strip overlaid the top
+   ~140px of every screen. Documented in `Screen_Bible.md`.
+5. `6638569` Added eslint + `eslint-config-expo` dev tooling (+ `eslint.config.js`).
+6. `4533ee0` **Buddy refinement** per founder feedback: scene now full-bleed edge-to-edge with
+   ResourceBar floating over it; inventory is one unified framed sheet (grabber, rounded top, hairline +
+   upward shadow).
+7. `a5df8b4` **Shop fidelity** (structured header, glossy coin pill, Featured/Cosmetics/Coins/Offers
+   sub-tabs, glossy item cards with price chips). (screen-11)
+8. `6373bac` **Friends fidelity** (new `FriendRow` + `FriendActionMenu`; Needs-your-cheer + A-Z
+   Your-friends; Cheer CTA; 3-dot menu). (screen-09 — closes the fidelity gap already logged as
+   "FIXED 2026-07-10" in `Design_Fidelity_Audit.md` §09.)
+9. `a91038e` **Missions + Login fidelity** (floating modal, gold-underline tabs, Daily/Weekly pill
+   switch, three mission states, 7-day login rail). (screen-16/17)
+10. `90a3591` **Journey-creation wizard fidelity** (Name/description, duration/rhythm with fixed
+    tooltip, Plan-the-steps, Your-why). (screens 05-08)
+
+All screens were screenshot-verified against their mockups (~440-480px web width). **The full v14
+screen set now has a first-pass native implementation** — this closes the "fidelity pass" item that
+was the top of the prior snapshot's NEXT list. `Design_Fidelity_Audit.md` (2026-07-09) is now
+**partially superseded**: it was written before this pass and still describes the *pre-fidelity* flat/
+gray state for most screens (only §09 Friends was marked fixed at the time). It has not been re-run
+post-fixes — treat its per-screen P0/P1 tables as historical unless a screen is reconfirmed broken.
+
+**Open items / decisions the founder still owns:**
+- **Buddy art direction** — still unresolved; founder rejected the 4 creature concepts (`07_Assets/Buddy_Creature_Concepts.html`); needs a new direction before final Buddy art.
+- **Buddy inventory interior** — open question posed to the founder: go deeper on inventory tiles/states/labels, or leave the current framing. Awaiting his call.
+- **Deferred data-model wiring** (screens use documented placeholders/TODOs until these land): Grace
+  Tokens not in `AppState` (Home/ResourceBar shows a placeholder); no Consistency screen/route (Home
+  button is a no-op TODO); no per-weekday Step scheduling (Weekly planning groups via a placeholder
+  hash); no user profile/name (Home greeting falls back to "friend"); Friends Gift/Message have no
+  `SocialGateway` methods (disabled placeholders — same known gap the audit already noted for §09);
+  Shop real-money packs / daily rotation / purchase caps have no data model (Featured/Coins/Offers tabs
+  show honest "coming soon"); inventory Items/Location/Furniture categories have no data model (locked
+  tiles).
+
+**Operational notes:**
+- Known harness artifact: headless-Chrome web screenshots clip the right edge below ~440px on ALL
+  screens (native RN renders correctly on device); verify web at ≥440-460px.
+- The Expo dev server crashed several times under 4 concurrent verification agents hammering it (port
+  churn from repeated restarts); code was unaffected. If running many agents that screenshot, expect to
+  restart `npx expo start` and consider serializing screenshot-heavy verification.
+
+**▶ NEXT (resume here):** (1) restart the dev server + hand the founder a fresh QR, and have him review
+the fidelity pass on-device; (2) resolve the **Buddy art direction** with the founder (blocks final Buddy
+art everywhere); (3) decide the **Buddy inventory interior** open question; (4) wire the deferred
+data-model items above as their owning pillars land (Grace Tokens, Consistency screen, weekday
+scheduling, profile/name, Social gift/message, Shop real-money data model, inventory categories); (5) once
+several of the above land, re-run a `Design_Fidelity_Audit.md` pass to confirm no regressions and retire
+its now-stale per-screen tables.
+
+---
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10, earlier this day (5-tab nav + Journeys cluster)
 **The app RUNS on the founder's iPhone (Expo Go), and we're mid-way through building the full v14
 mockup design.** POC is code-complete (5 pillars, on `main`, GitHub `GuyNoiman/PushApp`). Now doing a
 screen-by-screen design build to match the mockups.

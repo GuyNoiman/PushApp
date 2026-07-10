@@ -1,10 +1,11 @@
 /**
  * InboxRow — one IG-style conversation row in the Inbox (v14 mockup screen-15):
  * a rounded tinted avatar, a Baloo name, an Inter preview line with a muted
- * timestamp, and a coral unread dot on the right. Conversations are ROWS, not
- * cards (Inbox_Screen.md — "IG-style rows, not cards"). Optional inline actions
- * (Accept / Decline) render beneath the preview for actionable items like an
- * incoming friend request.
+ * timestamp, and a danger unread dot on the right (Design System §status —
+ * the same soft coral-red as other unread/urgent badges, kept distinct from the
+ * coral CTA accent). Conversations are ROWS, not cards (Inbox_Screen.md —
+ * "IG-style rows, not cards"). Optional inline actions (Accept / Decline) render
+ * beneath the preview for actionable items like an incoming friend request.
  *
  * Presentational only — it takes data + callbacks; no social/business logic lives
  * here (Engineering Bible §19).
@@ -17,6 +18,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 const CORAL = Colors.light.coral;
 const INK = Colors.light.text;
+const DANGER = Colors.light.danger;
 
 export interface InboxRowAction {
   label: string;
@@ -33,7 +35,7 @@ export interface InboxRowData {
   preview: string;
   /** Muted relative timestamp, e.g. "2h" · "1d". Optional. */
   timestamp?: string;
-  /** Coral unread dot + bolder preview when true. */
+  /** Danger unread dot + bolder name/preview when true. */
   unread?: boolean;
   /** A rounded tint for the initial-circle avatar. */
   tint: string;
@@ -59,7 +61,10 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
 
       <View style={styles.main}>
         <View style={styles.nameRow}>
-          <ThemedText type="subtitle" style={styles.name} numberOfLines={1}>
+          <ThemedText
+            themeColor={row.unread ? 'text' : 'textSecondary'}
+            style={styles.name}
+            numberOfLines={1}>
             {row.name}
           </ThemedText>
         </View>
@@ -105,7 +110,7 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
         )}
       </View>
 
-      {row.unread && <View style={[styles.dot, { backgroundColor: CORAL }]} />}
+      {row.unread && <View style={[styles.dot, { backgroundColor: DANGER }]} />}
     </Pressable>
   );
 }
@@ -151,6 +156,9 @@ const styles = StyleSheet.create({
   },
   name: {
     flexShrink: 1,
+    fontFamily: FontFamily.headingBold,
+    fontSize: 17,
+    lineHeight: 22,
   },
   preview: {
     fontSize: 14,

@@ -1,22 +1,21 @@
 /**
  * Missions — the "return loop" (POC pillar 4, the POC subset of
- * 04_Product/UX/Missions_Modal.md). One centered, floating modal with two
- * top-level tabs: **Missions** (Daily / Weekly sub-tabs) and **Login** (a 7-day
- * reward rail). Missions and the Login reward grant **Coins only, never XP**.
- * Opened from the Missions button on Home and presented as a modal over the tabs.
+ * 04_Product/UX/Missions_Modal.md). One centered, floating modal (dimmed scrim +
+ * cream card, screen-16/17 of mockup_v14) with two top-level tabs: **Missions**
+ * (Daily / Weekly sub-tabs, nested under it) and **Login** (a 7-day reward rail).
+ * Missions and the Login reward grant **Coins only, never XP**. Opened from the
+ * Missions button on Home and presented as a modal over the tabs.
  *
  * Presentational only — it reads the snapshot / facade and calls claimMission /
  * claimLoginReward. No Mission, reward, or rollover logic lives here (Engineering
- * Bible §19); the MissionEngine owns it all. Warm palette (cream / teal accents).
+ * Bible §19); the MissionEngine owns it all. Warm palette (cream / gold accents).
  */
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import type { LoginDayView, MissionView } from '@/core/engines/MissionEngine';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
@@ -27,14 +26,17 @@ const GOLD = Colors.light.gold;
 const GOLD_STRONG = Colors.light.goldStrong;
 const GOLD_TINT = Colors.light.goldTint;
 const CORAL = Colors.light.coral;
+const CREAM = Colors.light.cream;
 const INK = Colors.light.text;
 
 type TopTab = 'missions' | 'login';
 type MissionTab = 'daily' | 'weekly';
 
 export default function MissionsScreen() {
-  const { core, snapshot } = useApp();
+  const { core } = useApp();
   const router = useRouter();
+  const theme = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
 
   const [topTab, setTopTab] = useState<TopTab>('missions');
   const [missionTab, setMissionTab] = useState<MissionTab>('daily');
@@ -50,142 +52,132 @@ export default function MissionsScreen() {
   const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <View style={styles.topTabs}>
-              <TopTabButton label="Missions" active={topTab === 'missions'} onPress={() => setTopTab('missions')} />
-              <TopTabButton label="Login" active={topTab === 'login'} onPress={() => setTopTab('login')} />
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={dismiss}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Close
-              </ThemedText>
-            </Pressable>
-          </View>
-          <View style={styles.headerRow}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Little tasks that earn you Coins.
+    <Pressable style={styles.scrim} accessibilityLabel="Close" onPress={dismiss}>
+      {/* Inner press swallows taps so the card body doesn't dismiss. */}
+      <Pressable style={styles.cardWrap} onPress={() => {}}>
+        <View style={[styles.card, { backgroundColor: CREAM, maxHeight: windowHeight * 0.82 }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={dismiss}
+            style={[styles.closeButton, { backgroundColor: theme.backgroundSelected }]}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              ✕
             </ThemedText>
-            <View style={[styles.coinPill, { backgroundColor: GOLD_TINT }]}>
-              <ThemedText type="smallBold" style={styles.coinText}>
-                🪙 {snapshot?.buddy.coins ?? 0}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+          </Pressable>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {topTab === 'missions' ? (
-            <>
-              <View style={styles.subTabs}>
-                <SubTabButton label="Daily" active={missionTab === 'daily'} onPress={() => setMissionTab('daily')} />
-                <SubTabButton label="Weekly" active={missionTab === 'weekly'} onPress={() => setMissionTab('weekly')} />
-              </View>
-              <View style={styles.list}>
-                {shown.map((mission) => (
-                  <MissionRow
-                    key={mission.id}
-                    mission={mission}
-                    onClaim={() => core.claimMission(mission.id)}
-                  />
-                ))}
-              </View>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.footnote}>
-                Daily Missions refresh each day; weekly Missions each week.
-              </ThemedText>
-            </>
-          ) : (
-            <>
-              <View style={styles.list}>
-                {login.days.map((day) => (
-                  <LoginDayRow key={day.day} day={day} />
-                ))}
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  login.claimableToday ? `Claim ${login.todayCoins} Coins` : 'Login reward already claimed today'
-                }
-                disabled={!login.claimableToday}
-                onPress={() => core.claimLoginReward()}
-                style={[styles.loginClaim, { backgroundColor: CORAL }, !login.claimableToday && styles.disabled]}>
-                <ThemedText type="smallBold" style={styles.claimInk}>
-                  {login.claimableToday ? 'Claim' : 'Claimed ✓'}
+          <View style={[styles.topTabs, { borderBottomColor: theme.hairline }]}>
+            <TopTabButton label="Missions" active={topTab === 'missions'} onPress={() => setTopTab('missions')} />
+            <TopTabButton label="Login" active={topTab === 'login'} onPress={() => setTopTab('login')} />
+          </View>
+
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {topTab === 'missions' ? (
+              <>
+                <View style={[styles.subTabs, { backgroundColor: theme.backgroundSelected }]}>
+                  <SubTabButton label="Daily" active={missionTab === 'daily'} onPress={() => setMissionTab('daily')} />
+                  <SubTabButton label="Weekly" active={missionTab === 'weekly'} onPress={() => setMissionTab('weekly')} />
+                </View>
+                <View style={styles.list}>
+                  {shown.map((mission) => (
+                    <MissionRow
+                      key={mission.id}
+                      mission={mission}
+                      onClaim={() => core.claimMission(mission.id)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.loginIntro}>
+                  Show up each day — the reward grows.
                 </ThemedText>
-              </Pressable>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.footnote}>
-                Come back each day to claim the next reward.
-              </ThemedText>
-            </>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </ThemedView>
+                <View style={styles.rail}>
+                  {login.days.map((day) => (
+                    <LoginDayTile key={day.day} day={day} />
+                  ))}
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    login.claimableToday ? `Claim ${login.todayCoins} Coins` : 'Login reward already claimed today'
+                  }
+                  disabled={!login.claimableToday}
+                  onPress={() => core.claimLoginReward()}
+                  style={[styles.loginClaim, { backgroundColor: CORAL }, !login.claimableToday && styles.disabled]}>
+                  <ThemedText type="smallBold" style={styles.claimInk}>
+                    {login.claimableToday ? 'Claim' : 'Claimed ✓'}
+                  </ThemedText>
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Pressable>
+    </Pressable>
   );
 }
 
 function TopTabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress}>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress} style={styles.topTab}>
       <ThemedText type="subtitle" style={[styles.topTabLabel, !active && styles.topTabInactive]}>
         {label}
       </ThemedText>
       {/* Gold underline marks the active top tab (reward domain). */}
-      <View style={[styles.topTabUnderline, { backgroundColor: active ? GOLD : 'transparent' }]} />
+      {active && <View style={[styles.topTabUnderline, { backgroundColor: GOLD }]} />}
     </Pressable>
   );
 }
 
 function SubTabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const theme = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={[styles.subTab, active && { backgroundColor: theme.backgroundSelected }]}>
-      <ThemedText type="smallBold" themeColor={active ? 'text' : 'textSecondary'}>
+      style={[styles.subTab, active && styles.subTabActive]}>
+      <ThemedText type="smallBold" style={active ? styles.subTabActiveText : styles.subTabInactiveText}>
         {label}
       </ThemedText>
     </Pressable>
   );
 }
 
-/** One Mission: title + progress bar & count on the left, reward + state on the right. */
+/** One Mission: title + progress bar & count on the left, reward + state in a fixed right column. */
 function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () => void }) {
-  const theme = useTheme();
   const ratio = Math.max(0, Math.min(1, mission.progress / mission.target));
+  const muted = mission.claimed;
 
   return (
-    <ThemedView type="backgroundElement" style={styles.missionCard}>
+    <View style={[styles.missionCard, muted && styles.missionCardMuted]}>
       <View style={styles.missionMain}>
-        <ThemedText type="smallBold" numberOfLines={2}>
-          {mission.title}
-        </ThemedText>
-        <View style={styles.progressRow}>
-          <View style={[styles.progressTrack, { backgroundColor: GOLD_TINT }]}>
-            <View style={[styles.progressFill, { backgroundColor: GOLD, width: `${ratio * 100}%` }]} />
-          </View>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.progressCount}>
+        <View style={styles.snRow}>
+          <ThemedText type="smallBold" numberOfLines={2} themeColor={muted ? 'textSecondary' : 'text'} style={styles.missionTitle}>
+            {mission.title}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
             {mission.progress}/{mission.target}
           </ThemedText>
         </View>
+        <View style={[styles.progressTrack, { backgroundColor: muted ? '#EEEAE1' : GOLD_TINT }]}>
+          <View style={[styles.progressFill, { backgroundColor: muted ? '#C9C2B4' : GOLD, width: `${ratio * 100}%` }]} />
+        </View>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
+      <View style={styles.divider} />
 
       <View style={styles.missionReward}>
-        <View style={[styles.rewardChip, { backgroundColor: GOLD_TINT }]}>
-          <ThemedText type="smallBold" style={styles.rewardAmount}>
-            🪙 {mission.rewardCoins}
+        <View style={[styles.rewardChip, { backgroundColor: muted ? '#EDEAE3' : GOLD_TINT }]}>
+          <ThemedText type="smallBold" style={{ color: muted ? '#9A9A93' : GOLD_STRONG }}>
+            🪙 +{mission.rewardCoins}
           </ThemedText>
         </View>
         {mission.claimed ? (
-          <View style={[styles.reward, styles.claimed]}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              Claimed ✓
+          <View style={styles.claimedPill}>
+            <ThemedText type="small" themeColor="textSecondary">
+              ✓ Claimed
             </ThemedText>
           </View>
         ) : mission.done ? (
@@ -193,109 +185,134 @@ function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () =>
             accessibilityRole="button"
             accessibilityLabel={`Claim ${mission.rewardCoins} Coins`}
             onPress={onClaim}
-            style={[styles.reward, { backgroundColor: CORAL }]}>
+            style={[styles.claimPill, { backgroundColor: CORAL }]}>
             <ThemedText type="smallBold" style={styles.claimInk}>
               Claim
             </ThemedText>
           </Pressable>
-        ) : (
-          <View style={[styles.reward, styles.inProgress]}>
-            <ThemedText type="small" themeColor="textSecondary">
-              In progress
-            </ThemedText>
-          </View>
-        )}
+        ) : null}
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
-/** One tile of the Login reward rail: day label · divider · prize · status shade. */
-function LoginDayRow({ day }: { day: LoginDayView }) {
-  const theme = useTheme();
-  const dimmed = day.status !== 'today';
+const LOGIN_TILE_STYLE: Record<LoginDayView['status'], { bg: string; text: string; border?: string }> = {
+  claimed: { bg: '#E9F3EC', text: '#6a8a72' },
+  today: { bg: '#FCE7B0', text: GOLD_STRONG, border: '#E9B23E' },
+  upcoming: { bg: '#F1EDE4', text: '#AEA697' },
+};
+
+/** One tile of the Login reward rail: day label · divider · prize, shaded by status. */
+function LoginDayTile({ day }: { day: LoginDayView }) {
+  const look = LOGIN_TILE_STYLE[day.status];
   return (
-    <ThemedView
-      type={day.status === 'today' ? 'backgroundSelected' : 'backgroundElement'}
-      style={[styles.loginRow, dimmed && styles.loginDimmed]}>
-      <ThemedText type="smallBold" style={styles.loginDay}>
+    <View
+      style={[
+        styles.rr,
+        { backgroundColor: look.bg },
+        look.border ? { borderWidth: 2, borderColor: look.border } : null,
+      ]}>
+      <ThemedText type="small" style={[styles.rrDay, { color: look.text }]}>
         Day {day.day}
       </ThemedText>
-      <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
-      <View style={styles.loginPrize}>
-        <ThemedText type="smallBold" style={{ color: GOLD_STRONG }}>
+      <View style={styles.rrDivider} />
+      <View style={styles.rrPrize}>
+        <ThemedText type="smallBold" style={{ color: look.text }}>
           🪙 {day.coins}
         </ThemedText>
       </View>
-      {day.status === 'claimed' && (
-        <ThemedText type="small" themeColor="textSecondary">
-          ✓
-        </ThemedText>
-      )}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrim: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  safeArea: {
-    flex: 1,
-    maxWidth: MaxContentWidth,
-    alignSelf: 'stretch',
-  },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
-    gap: Spacing.two,
-  },
-  headerRow: {
-    flexDirection: 'row',
+    backgroundColor: 'rgba(40,30,20,0.5)',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  cardWrap: {
+    width: '100%',
+    maxWidth: 360,
+  },
+  card: {
+    borderRadius: 22,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.three,
+    overflow: 'hidden',
+    shadowColor: '#28190A',
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: Spacing.three,
+    right: Spacing.three,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
   },
   topTabs: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: Spacing.three,
+    gap: Spacing.four,
+    borderBottomWidth: 2,
+    paddingHorizontal: Spacing.four,
+    paddingRight: Spacing.six,
+  },
+  topTab: {
+    paddingBottom: Spacing.two,
   },
   topTabLabel: {
-    lineHeight: 30,
+    lineHeight: 26,
   },
   topTabInactive: {
-    opacity: 0.35,
+    opacity: 0.4,
   },
   topTabUnderline: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: -2,
     height: 3,
     borderRadius: 2,
-    marginTop: Spacing.half,
-  },
-  coinPill: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.pill,
-  },
-  coinText: {
-    color: GOLD_STRONG,
   },
   content: {
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.three,
     paddingTop: Spacing.three,
-    paddingBottom: Spacing.four,
   },
   subTabs: {
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: Spacing.one,
+    borderRadius: 11,
+    padding: 3,
     marginBottom: Spacing.three,
   },
   subTab: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.pill,
+    flex: 1,
+    paddingVertical: Spacing.two,
+    borderRadius: 9,
+    alignItems: 'center',
+  },
+  subTabActive: {
+    backgroundColor: '#fff',
+    shadowColor: 'rgba(70,50,25,0.3)',
+    shadowOpacity: 1,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  subTabActiveText: {
+    color: GOLD_STRONG,
+  },
+  subTabInactiveText: {
+    color: Colors.light.textSecondary,
   },
   list: {
     gap: Spacing.two,
@@ -303,22 +320,30 @@ const styles = StyleSheet.create({
   missionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: Radius.card,
-    padding: Spacing.three,
-    gap: Spacing.three,
+    backgroundColor: '#fff',
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#F1ECE3',
+    padding: Spacing.two + 2,
+    gap: Spacing.two,
+  },
+  missionCardMuted: {
+    opacity: 0.75,
   },
   missionMain: {
     flex: 1,
-    gap: Spacing.two,
+    gap: 5,
   },
-  progressRow: {
+  snRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
   },
-  progressTrack: {
+  missionTitle: {
     flex: 1,
-    height: 8,
+  },
+  progressTrack: {
+    height: 6,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -326,72 +351,79 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  progressCount: {
-    minWidth: 36,
-    textAlign: 'right',
-  },
   divider: {
     width: 1,
     alignSelf: 'stretch',
+    backgroundColor: '#EEE7D6',
   },
   missionReward: {
-    width: 92,
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  rewardChip: {
-    paddingVertical: Spacing.half,
-    paddingHorizontal: Spacing.two,
-    borderRadius: Radius.pill,
-  },
-  rewardAmount: {
-    color: GOLD_STRONG,
-  },
-  reward: {
-    alignSelf: 'stretch',
-    borderRadius: Radius.button,
-    paddingVertical: Spacing.two,
+    width: 76,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 5,
   },
-  inProgress: {
-    backgroundColor: 'transparent',
+  rewardChip: {
+    paddingVertical: 3,
+    paddingHorizontal: Spacing.two,
+    borderRadius: 8,
   },
-  claimed: {
-    backgroundColor: 'transparent',
+  claimedPill: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.one + 2,
+    borderRadius: 10,
+    backgroundColor: '#EDEAE3',
+  },
+  claimPill: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.one + 3,
+    borderRadius: 10,
   },
   claimInk: {
     color: INK,
   },
-  loginRow: {
+  loginIntro: {
+    textAlign: 'center',
+    marginBottom: Spacing.three,
+  },
+  rail: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+    marginBottom: Spacing.three,
+  },
+  rr: {
+    width: '23%',
+    flexGrow: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: 2,
+  },
+  rrDay: {
+    fontWeight: '700' as const,
+  },
+  rrDivider: {
+    width: '72%',
+    height: 1,
+    backgroundColor: 'rgba(90,60,20,0.16)',
+  },
+  rrPrize: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: Radius.card,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    gap: Spacing.three,
-  },
-  loginDimmed: {
-    opacity: 0.55,
-  },
-  loginDay: {
-    width: 60,
-  },
-  loginPrize: {
-    flex: 1,
+    gap: 3,
   },
   loginClaim: {
-    marginTop: Spacing.three,
-    borderRadius: Radius.button,
+    borderRadius: 13,
     paddingVertical: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
   },
   disabled: {
     opacity: 0.4,
-  },
-  footnote: {
-    marginTop: Spacing.four,
-    textAlign: 'center',
   },
 });

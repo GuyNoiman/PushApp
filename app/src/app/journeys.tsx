@@ -4,9 +4,10 @@
  * now?"), Journeys is journey-centric. Pushed over the tabs like missions/shop.
  *
  * Journeys are grouped **Active / Future / Completed** with counts. Each card speaks
- * the Home step-card language — a small Journey icon tile, name, "Journey · Phase
- * x/y · ends-in", and a thin teal progress bar. Two bottom buttons: New (coral +)
- * and a prominent gold **Achievements** reward surface.
+ * the Home step-card language exactly — a small 26px Journey icon tile (colour keyed
+ * to the Journey's theme via the shared `journeyGlyph`, same as StepCard), name,
+ * "Phase x/y · ends-in", and a thin teal progress bar. Two bottom buttons: New
+ * (coral +) and a prominent gold **Achievements** reward surface.
  *
  * Presentational only — reads snapshot.journeys and derives display values via
  * journeyView; no rewards/Buddy/Journey math lives here (Engineering Bible §19).
@@ -20,28 +21,36 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
   endsInLabel,
+  journeyGlyph,
   toJourneyView,
   type JourneyBucket,
+  type JourneyGlyphColor,
   type JourneyView,
 } from '@/components/journey/journeyView';
 import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
-const GOLD = Colors.light.gold;
 const GOLD_STRONG = Colors.light.goldStrong;
 const GOLD_TINT = Colors.light.goldTint;
 const CORAL = Colors.light.coral;
 
-// A small stable glyph per Journey so cards read like the mockup's icon tiles.
-// (The domain has no icon field yet; derived from the title for now.)
-function journeyGlyph(title: string): string {
-  const t = title.toLowerCase();
-  if (/run|walk|jog|km|fit|gym|workout/.test(t)) return '🔥';
-  if (/span|french|german|lang|learn|study|read/.test(t)) return '💬';
-  if (/medit|calm|breath|mind|yoga/.test(t)) return '🌿';
-  if (/draw|paint|art|music|write/.test(t)) return '🎨';
-  return '🧭';
+// Same tile-tint mapping as StepCard, so a Journey's icon always reads the same
+// colour on Home and here (Design System §2 — colour encodes meaning).
+function tileColors(theme: ReturnType<typeof useTheme>, color: JourneyGlyphColor) {
+  switch (color) {
+    case 'gold':
+      return { bg: theme.goldTint, fg: theme.goldStrong };
+    case 'green':
+      return { bg: theme.successTint, fg: theme.tealStrong };
+    case 'coral':
+      return { bg: theme.coralTint, fg: theme.coralStrong };
+    case 'purple':
+      return { bg: theme.purpleTint, fg: theme.purpleStrong };
+    case 'teal':
+    default:
+      return { bg: theme.tealTint, fg: theme.tealStrong };
+  }
 }
 
 export default function JourneysScreen() {
@@ -86,14 +95,9 @@ export default function JourneysScreen() {
             </ThemedView>
           ) : (
             <>
-              <Section title="Active" bucket="active" items={buckets.active} glyph={journeyGlyph} />
-              <Section title="Future" bucket="future" items={buckets.future} glyph={journeyGlyph} />
-              <Section
-                title="Completed"
-                bucket="completed"
-                items={buckets.completed}
-                glyph={journeyGlyph}
-              />
+              <Section title="Active" bucket="active" items={buckets.active} />
+              <Section title="Future" bucket="future" items={buckets.future} />
+              <Section title="Completed" bucket="completed" items={buckets.completed} />
             </>
           )}
         </ScrollView>
@@ -119,9 +123,11 @@ export default function JourneysScreen() {
             style={({ pressed }) => [
               styles.footerButton,
               styles.achievements,
-              { backgroundColor: GOLD },
               pressed && styles.pressed,
             ]}>
+            {/* Soft top-gloss wash — a light echo of GlossyTile's highlight, kept
+                subtle since this is a full-width pill, not a chunky icon tile. */}
+            <View pointerEvents="none" style={styles.achievementsGloss} />
             <ThemedText style={styles.trophy}>🏆</ThemedText>
           </Pressable>
         </View>
@@ -134,12 +140,10 @@ function Section({
   title,
   bucket,
   items,
-  glyph,
 }: {
   title: string;
   bucket: JourneyBucket;
   items: JourneyView[];
-  glyph: (title: string) => string;
 }) {
   if (items.length === 0) return null;
   return (
@@ -153,26 +157,21 @@ function Section({
         </ThemedText>
       </View>
       {items.map((view) => (
-        <JourneyCard key={view.id} view={view} bucket={bucket} glyph={glyph(view.title)} />
+        <JourneyCard key={view.id} view={view} bucket={bucket} />
       ))}
     </View>
   );
 }
 
-function JourneyCard({
-  view,
-  bucket,
-  glyph,
-}: {
-  view: JourneyView;
-  bucket: JourneyBucket;
-  glyph: string;
-}) {
+function JourneyCard({ view, bucket }: { view: JourneyView; bucket: JourneyBucket }) {
   const theme = useTheme();
   const router = useRouter();
 
   const completed = bucket === 'completed';
   const future = bucket === 'future';
+
+  const glyph = journeyGlyph(view.title);
+  const tile = tileColors(theme, glyph.color);
 
   const meta = completed
     ? null
@@ -199,9 +198,9 @@ function JourneyCard({
           <View
             style={[
               styles.iconTile,
-              { backgroundColor: completed ? theme.backgroundSelected : theme.tealTint },
+              { backgroundColor: completed ? theme.backgroundSelected : tile.bg },
             ]}>
-            <ThemedText style={styles.icon}>{glyph}</ThemedText>
+            <ThemedText style={[styles.icon, { color: tile.fg }]}>{glyph.icon}</ThemedText>
           </View>
           <View style={styles.cardText}>
             <ThemedText
@@ -293,15 +292,17 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   iconTile: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.iconButton,
+    // Matches StepCard's `mini` tile exactly — Journey cards speak the same
+    // small-icon language as Home's Step cards (Journeys_Screen.md, mockup v14).
+    width: 26,
+    height: 26,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   icon: {
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 13,
   },
   cardText: {
     flex: 1,
@@ -344,11 +345,22 @@ const styles = StyleSheet.create({
   },
   achievements: {
     // A tasteful reward surface — gold with a soft lift (Design System §2/§5).
+    backgroundColor: Colors.light.gold,
+    overflow: 'hidden',
     shadowColor: GOLD_STRONG,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
+  },
+  achievementsGloss: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '60%',
+    backgroundColor: '#FFFFFF',
+    opacity: 0.25,
   },
   footerPlus: {
     lineHeight: 34,

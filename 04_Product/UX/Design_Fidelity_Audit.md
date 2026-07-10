@@ -122,22 +122,31 @@ Summary) is all there and the copy is on-spec. But it is rendered entirely in bl
 | Edit-affordance (teal pencil icon-button) in mockups 05/06 absent | **P2** | Add teal icon-button. |
 | Terminology OK — "Journey", "Starter Step", "Your why" | ✓ | — |
 
-### 09 · Friends  (mockup 09 · `Friends_Screen.md` · `friends.tsx`)
+### 09 · Friends  (mockup 09 · `Friends_Screen.md` · `friends.tsx`) — FIXED 2026-07-10
 
-The code screen conflates Friends with the full social/Allies management flow (handle setup, add
-friend, share Journey, visibility chips). The mockup is much simpler: "Needs your cheer" section, a
-friend list with coloured avatars + "Lv" badges, a **coral "Cheer"** button, a 3-dot action menu
-(Cheer / Gift / Message), and a purple "+ Invite" button.
+Resolved by a design-fidelity pass (ux-designer, 2026-07-10). `friends.tsx` now renders the
+mockup's simple friend list: header ("Friends" + purple "+ Invite" pill), a **"Needs your
+cheer (N)"** section (coloured avatar, status line, coral **Cheer** pill) sourced from
+`social.allyProgress`, then **"Your friends (N)"** sorted A–Z from accepted `Friend`s (cheer-needing
+friends also appear here, per spec) with a neutral circular 3-dot menu (Cheer / Gift / Message —
+icon + label, no per-item colour). New components: `components/friends/FriendRow.tsx`,
+`components/friends/FriendActionMenu.tsx`. The handle-setup / add-friend-by-handle / incoming
+-requests UI (the only working way to actually add a friend in this POC — no native share-invite
+flow exists yet) stays, compact, above the two mockup sections rather than being removed.
 
-| Deviation | Sev | Fix |
-|---|---|---|
-| No coloured avatar circles or level badges | **P1** | Add per-friend avatar (purple/teal/coral/gold tints) + "Lv N". |
-| "Cheer" action = teal `#0E8177` (hardcoded, wrong teal); mockup = **coral** | **P1** | Coral for the cheer CTA; social accent = purple `#7F77DD`. |
-| No "Needs your cheer" prioritized section | **P1** | Add the top prioritized cheer section. |
-| No 3-dot Cheer/Gift/Message menu | **P2** | Add popover menu. |
-| "+ Invite" purple button absent | **P2** | Add. |
-| All social accents rendered as one hardcoded teal, not purple | **P1** | Switch social surfaces to purple per §2. |
-| Terminology OK — "Support Circle", "Ally", "Cheer" used | ✓ | — |
+| Deviation | Sev | Fix | Status |
+|---|---|---|---|
+| No coloured avatar circles or level badges | **P1** | Add per-friend avatar (purple/teal/coral/gold tints) + "Lv N". | ✅ Fixed |
+| "Cheer" action = teal `#0E8177` (hardcoded, wrong teal); mockup = **coral** | **P1** | Coral for the cheer CTA; social accent = purple `#7F77DD`. | ✅ Fixed |
+| No "Needs your cheer" prioritized section | **P1** | Add the top prioritized cheer section. | ✅ Fixed |
+| No 3-dot Cheer/Gift/Message menu | **P2** | Add popover menu. | ✅ Fixed — Gift/Message are inert (no gateway action yet; see note below) |
+| "+ Invite" purple button absent | **P2** | Add. | ✅ Fixed (static pill; no share-invite flow to wire yet) |
+| All social accents rendered as one hardcoded teal, not purple | **P1** | Switch social surfaces to purple per §2. | ✅ Fixed |
+| Terminology OK — "Support Circle", "Ally", "Cheer" used | ✓ | — | ✓ |
+
+**Data gap:** `SocialGateway` has no `gift` or `message`/DM methods yet, so those two menu items are
+disabled placeholders rather than invented calls (Engineering Bible §19 — no business logic invented
+in the UI layer). Wire them once a gift-sending and direct-message surface exists on the gateway.
 
 ### 10 · Buddy  (mockup 10 · `Buddy_Screen.md` · `buddy.tsx`, `BuddyScene`)
 

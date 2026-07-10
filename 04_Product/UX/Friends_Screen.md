@@ -84,3 +84,14 @@ Founder-approved layout. Reference mockup: https://claude.ai/code/artifact/0b6b8
 - A **"Needs your cheer"** section (renamed from "help") with a **Cheer** action.
 - A **"Your friends"** list sorted **A–Z**; friends who need cheer **also appear** in this list.
 - Each friend row has a single **circular 3-dot button** that opens a **neutral menu** (Cheer / Gift / Message — icon + label, no colors, styled like mainstream apps). The old full-width action row and the bottom "Cheer · Gift · Message" caption were removed.
+
+## Implementation status (ux-designer, 2026-07-10)
+
+Live in `app/src/app/(tabs)/friends.tsx` (+ `components/friends/FriendRow.tsx`,
+`components/friends/FriendActionMenu.tsx`), matching mockup v14 screen-09: header + "+ Invite"
+pill, "Needs your cheer (N)" (from `SocialProvider.allyProgress`, coral Cheer pill), "Your friends
+(N)" A–Z (from accepted `Friend`s, neutral 3-dot menu). **Gift and Message are disabled/inert** —
+`SocialGateway` has no gift-sending or direct-message method yet, so the menu shows them but they
+do nothing until that gateway surface is built (tracked as a data gap, not a design gap). The
+handle-setup / add-by-handle / incoming-request UI (not in the mockup, but the only working way to
+add a friend pre-invite-flow) is kept, compact, above the two mockup sections.

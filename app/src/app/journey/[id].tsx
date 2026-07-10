@@ -61,7 +61,9 @@ export default function JourneyDetailScreen() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Phase / progress card */}
-          <ThemedView type="backgroundElement" style={[styles.phaseCard, { borderColor: theme.hairline }]}>
+          <ThemedView
+            type="backgroundElement"
+            style={[styles.phaseCard, { borderColor: theme.hairline }, CARD_SHADOW]}>
             <ThemedText type="subtitle">
               Phase {view.phase} of {view.phases}
             </ThemedText>
@@ -114,7 +116,7 @@ export default function JourneyDetailScreen() {
                   <ThemedView
                     key={`${line}_${index}`}
                     type="backgroundElement"
-                    style={[styles.whyCard, { borderColor: theme.hairline }]}>
+                    style={[styles.whyCard, { borderColor: theme.hairline }, CARD_SHADOW]}>
                     <ThemedText type="small" style={{ color: theme.coralStrong }}>
                       ♥
                     </ThemedText>
@@ -191,6 +193,7 @@ function StepRow({ step, isNext }: { step: Step; isNext: boolean }) {
       style={[
         styles.stepRow,
         { borderColor: theme.hairline },
+        CARD_SHADOW,
         isNext && { borderColor: theme.teal, borderWidth: 1.5 },
       ]}>
       <View
@@ -235,6 +238,15 @@ function StepRow({ step, isNext }: { step: Step; isNext: boolean }) {
     </ThemedView>
   );
 }
+
+/** Calm work-surface card depth (matches ExploreCards.tsx) — subtle, not game-juice. */
+const CARD_SHADOW = {
+  shadowColor: '#2E2E2C',
+  shadowOpacity: 0.06,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 2,
+} as const;
 
 const styles = StyleSheet.create({
   container: {
@@ -287,7 +299,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   track: {
-    height: 8,
+    height: 6,
     borderRadius: 4,
     overflow: 'hidden',
     marginTop: Spacing.one,

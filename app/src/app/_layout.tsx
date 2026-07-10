@@ -59,6 +59,7 @@ export default function RootLayout() {
             <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
             <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
             <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
           </Stack>
         </ThemeProvider>
       </SocialProvider>

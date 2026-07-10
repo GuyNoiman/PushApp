@@ -1,20 +1,23 @@
 /**
  * Buddy — the companion's dedicated home (POC pillar 2). It shows the Buddy in
- * its current stage, its Level + XP + Coins, reacts warmly to each check-in, and
- * celebrates a stage-up with an evolution reveal. Presentational only: it reads
- * the snapshot the core computes and listens to domain events on the bus; no
- * business logic lives here (Engineering Bible §19).
+ * its current stage, its Level + XP + Coins (shared `ResourceBar`), reacts warmly
+ * to each check-in, celebrates a stage-up with an evolution reveal, and lets the
+ * user browse + equip cosmetics from an inventory panel. Presentational only: it
+ * reads the snapshot the core computes and listens to domain events on the bus;
+ * no business logic lives here (Engineering Bible §19).
  */
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BuddyInventory } from '@/components/buddy/BuddyInventory';
 import { BuddyScene } from '@/components/buddy/BuddyScene';
 import { EvolveReveal } from '@/components/buddy/EvolveReveal';
+import { ResourceBar } from '@/components/ResourceBar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useApp } from '@/state/AppProvider';
 
@@ -44,10 +47,12 @@ export default function BuddyScreen() {
     return reward ? `${pickReactionLine()}  ${reward}` : null;
   }, [reaction]);
 
+  const buddy = snapshot?.buddy;
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {!ready || !snapshot ? (
+        {!ready || !buddy ? (
           <View style={styles.loading}>
             <ThemedText type="small" themeColor="textSecondary">
               Loading…
@@ -55,14 +60,46 @@ export default function BuddyScreen() {
           </View>
         ) : (
           <View style={styles.stage}>
-            <BuddyScene buddy={snapshot.buddy} onOpenShop={() => router.push('/shop')} />
-            {reactionText && (
-              <ThemedView type="backgroundSelected" style={styles.reaction}>
-                <ThemedText type="smallBold" style={styles.reactionText}>
-                  {reactionText}
-                </ThemedText>
-              </ThemedView>
-            )}
+            <View style={styles.resourceRow}>
+              <ResourceBar
+                level={buddy.level}
+                xpInto={buddy.xpIntoLevel}
+                xpForNext={buddy.xpForNextLevel}
+                coins={buddy.coins}
+                showGrace={false}
+                onAddCoins={() => router.push('/shop')}
+              />
+            </View>
+
+            <View style={styles.sceneWrap}>
+              <BuddyScene
+                buddy={buddy}
+                onOpenShop={() => router.push('/shop')}
+                onCustomize={() => {
+                  // TODO: customize flow — no dedicated route yet; the inventory
+                  // panel below already covers browsing + equipping cosmetics.
+                }}
+              />
+              {reactionText && (
+                <ThemedView type="backgroundSelected" style={styles.reaction}>
+                  <ThemedText type="smallBold" style={styles.reactionText}>
+                    {reactionText}
+                  </ThemedText>
+                </ThemedView>
+              )}
+            </View>
+
+            <BuddyInventory
+              ownedCosmetics={buddy.ownedCosmetics}
+              equippedCosmetic={buddy.equippedCosmetic}
+              onSelect={(itemId) => {
+                if (itemId) {
+                  core.equipItem(itemId);
+                } else {
+                  core.unequipItem();
+                }
+              }}
+            />
           </View>
         )}
       </SafeAreaView>
@@ -98,15 +135,21 @@ const styles = StyleSheet.create({
   },
   stage: {
     flex: 1,
+  },
+  resourceRow: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.four,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.two,
+  },
+  sceneWrap: {
+    flex: 3,
+    paddingHorizontal: Spacing.four,
   },
   reaction: {
     position: 'absolute',
     left: Spacing.four,
     right: Spacing.four,
-    bottom: BottomTabInset + Spacing.four,
+    bottom: Spacing.three,
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,

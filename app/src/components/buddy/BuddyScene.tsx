@@ -1,16 +1,18 @@
 /**
- * BuddyScene — presentational only. The Buddy's dedicated "stage": a calm scene
- * with the Buddy centered in it, a floating level meter (level + XP bar) top-left,
- * a Coins pill + Shop button top-right, and the Buddy's name + stage on a pill
+ * BuddyScene — presentational only. The Buddy's dedicated "stage": a calm forest
+ * scene with the Buddy centered in it, two glossy side-buttons (Customize / Shop)
+ * floating on the scene's right edge, and the Buddy's name + stage on a pill
  * beneath it. When a Shop cosmetic is equipped it shows here — an accessory worn
- * on the Buddy or a colour tint behind it.
+ * on the Buddy or a colour tint behind it. The shared `ResourceBar` (level/XP/
+ * coins) lives ABOVE this scene in `buddy.tsx`, not inside it, so Buddy and Home
+ * read as one visual language (Design System: reward surfaces get the game-juice).
  * No business logic here (Engineering Bible §19); the core computes every value.
  */
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
+import { GlossyTile } from '@/components/GlossyTile';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import type { BuddyView } from '@/core/AppCore';
 import { resolveCosmetic } from '@/core/config/shopItems';
@@ -22,9 +24,16 @@ import { useTheme } from '@/hooks/use-theme';
 const SCENE_SKY = '#D9EEE9';
 const SCENE_GROUND = '#8FCB8F';
 
-export function BuddyScene({ buddy, onOpenShop }: { buddy: BuddyView; onOpenShop?: () => void }) {
+export function BuddyScene({
+  buddy,
+  onOpenShop,
+  onCustomize,
+}: {
+  buddy: BuddyView;
+  onOpenShop?: () => void;
+  onCustomize?: () => void;
+}) {
   const theme = useTheme();
-  const progress = Math.max(0, Math.min(1, buddy.xpIntoLevel / buddy.xpForNextLevel));
 
   const cosmetic = resolveCosmetic(buddy.equippedCosmetic);
   const tint = cosmetic?.kind === 'tint' ? cosmetic.value : undefined;
@@ -35,50 +44,14 @@ export function BuddyScene({ buddy, onOpenShop }: { buddy: BuddyView; onOpenShop
       {/* Green ground band anchoring the buddy in a little world. */}
       <View style={[styles.ground, { backgroundColor: SCENE_GROUND }]} />
 
-      <View style={styles.topRow}>
-        {/* Level meter: a blue level circle joined to a blue XP bar (game XP). */}
-        <View style={styles.levelMeter}>
-          <View style={[styles.levelCircle, { backgroundColor: theme.blue }]}>
-            <ThemedText type="smallBold" style={styles.levelNumber}>
-              {buddy.level}
-            </ThemedText>
-          </View>
-          <View style={styles.levelInfo}>
-            <View style={[styles.progressTrack, { backgroundColor: theme.blueTint }]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { backgroundColor: theme.blue, width: `${progress * 100}%` },
-                ]}
-              />
-            </View>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.xpText}>
-              {buddy.xpIntoLevel} / {buddy.xpForNextLevel} XP
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.topRight}>
-          {/* Coins = gold reward chip. */}
-          <View style={[styles.coinPill, { backgroundColor: theme.goldTint }]}>
-            <ThemedText type="smallBold" style={{ color: theme.goldStrong }}>
-              🪙 {buddy.coins}
-            </ThemedText>
-          </View>
-          {onOpenShop && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open the Shop"
-              onPress={onOpenShop}
-              style={({ pressed }) => [
-                styles.shopButton,
-                { backgroundColor: theme.gold },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText style={styles.shopIcon}>🛍️</ThemedText>
-            </Pressable>
-          )}
-        </View>
+      {/* Customize (purple, sparkle) + Shop (gold, bag) — stacked on the right edge. */}
+      <View style={styles.sideButtons}>
+        <GlossyTile color="purple" accessibilityLabel="Customize your Buddy" onPress={onCustomize}>
+          <ThemedText style={styles.tileIcon}>✨</ThemedText>
+        </GlossyTile>
+        <GlossyTile color="gold" accessibilityLabel="Open the Shop" onPress={onOpenShop}>
+          <ThemedText style={styles.tileIcon}>🛍️</ThemedText>
+        </GlossyTile>
       </View>
 
       <View style={styles.center}>
@@ -105,8 +78,8 @@ export function BuddyScene({ buddy, onOpenShop }: { buddy: BuddyView; onOpenShop
 const styles = StyleSheet.create({
   scene: {
     flex: 1,
-    borderRadius: Radius.card,
-    padding: Spacing.four,
+    borderTopLeftRadius: Radius.card,
+    borderTopRightRadius: Radius.card,
     overflow: 'hidden',
   },
   ground: {
@@ -119,71 +92,16 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 120,
     transform: [{ scaleX: 1.6 }],
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
-  },
-  levelMeter: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  sideButtons: {
+    position: 'absolute',
+    top: Spacing.four,
+    right: Spacing.three,
     gap: Spacing.two,
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.one,
-    paddingRight: Spacing.three,
-    borderRadius: Radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    zIndex: 3,
   },
-  levelCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  levelNumber: {
-    lineHeight: 20,
-    color: '#ffffff',
-  },
-  levelInfo: {
-    gap: Spacing.half,
-    minWidth: 96,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  xpText: {
-    lineHeight: 16,
-  },
-  topRight: {
-    alignItems: 'flex-end',
-    gap: Spacing.two,
-  },
-  coinPill: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.pill,
-  },
-  shopButton: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.iconButton + 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shopIcon: {
-    fontSize: 24,
-    lineHeight: 30,
-  },
-  pressed: {
-    opacity: 0.7,
+  tileIcon: {
+    fontSize: 22,
+    lineHeight: 26,
   },
   center: {
     flex: 1,

@@ -10,6 +10,22 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-07-10 — Interim Buddy art direction
+
+### D18 — Interim Buddy creature = "Ember" (coral), current avatar stands in
+**Decision:** Adopt **Ember (the coral/orange creature)** as the **interim** Buddy art
+direction. The founder rejected the four creature concepts (Ember · Lumi · Nimbo · Sprig) as
+*final* art and is designing new Buddies himself in parallel; to keep nothing blocked, one is
+chosen to use now. Ember is picked because the shipped in-app `BuddyAvatar` (glossy SVG creature)
+already renders in Ember's coral-orange palette and already matches the v14 mockup's "Sprout,"
+so **no art re-draw is needed** — the current avatar *is* the interim Ember Buddy.
+**Framing:** Interim only. Re-implementing a different concept as SVG would be throwaway work
+since new Buddy art is in progress. When the founder's new Buddies land, they replace this.
+**Reflected in:** `app/src/components/buddy/BuddyAvatar.tsx` (already coral/orange), `Current_Context.md`,
+`07_Assets/Buddy_Creature_Concepts.html` (the four concepts, for provenance).
+
+---
+
 ## 2026-07-08 — Engineering: POC stack chosen (E1)
 
 ### E1 — POC technology stack

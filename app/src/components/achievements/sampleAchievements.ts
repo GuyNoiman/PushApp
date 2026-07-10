@@ -8,6 +8,11 @@
  * deleted. Do NOT wire product logic against it.
  */
 
+import type { ComponentProps } from 'react';
+import type { Ionicons } from '@expo/vector-icons';
+
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
+
 /** A predefined trophy/medal the user can earn (identity marker, not currency). */
 export interface SampleAchievement {
   id: string;
@@ -21,8 +26,10 @@ export interface SampleAchievement {
   progress: number;
   /** Target needed to unlock. */
   target: number;
-  /** Emoji glyph shown on the medal face when unlocked. */
-  glyph: string;
+  /** Ionicons glyph shown on the medal face when unlocked (mockup uses a matching icon set). */
+  glyph: IoniconName;
+  /** Medal finish when unlocked — "gold" for the headline wins, "silver" for lighter ones. */
+  tier: 'gold' | 'silver';
   /** The reward granted on unlock — shown in the detail sheet. */
   reward: string;
 }
@@ -45,7 +52,8 @@ export const SAMPLE_ACHIEVEMENTS: SampleAchievement[] = [
     category: 'journeys',
     progress: 1,
     target: 1,
-    glyph: '🔥',
+    glyph: 'flame',
+    tier: 'gold',
     reward: '200 coins',
   },
   {
@@ -55,7 +63,8 @@ export const SAMPLE_ACHIEVEMENTS: SampleAchievement[] = [
     category: 'social',
     progress: 10,
     target: 10,
-    glyph: '🤝',
+    glyph: 'people',
+    tier: 'gold',
     reward: '250 coins',
   },
   {
@@ -65,7 +74,8 @@ export const SAMPLE_ACHIEVEMENTS: SampleAchievement[] = [
     category: 'journeys',
     progress: 1,
     target: 1,
-    glyph: '✓',
+    glyph: 'checkmark',
+    tier: 'silver',
     reward: '100 coins',
   },
   {
@@ -75,7 +85,8 @@ export const SAMPLE_ACHIEVEMENTS: SampleAchievement[] = [
     category: 'social',
     progress: 18,
     target: 50,
-    glyph: '🔗',
+    glyph: 'link',
+    tier: 'gold',
     reward: '500 coins + frame',
   },
   {
@@ -85,7 +96,8 @@ export const SAMPLE_ACHIEVEMENTS: SampleAchievement[] = [
     category: 'journeys',
     progress: 18,
     target: 30,
-    glyph: '📅',
+    glyph: 'calendar',
+    tier: 'gold',
     reward: '400 coins',
   },
   {
@@ -95,7 +107,8 @@ export const SAMPLE_ACHIEVEMENTS: SampleAchievement[] = [
     category: 'journeys',
     progress: 0,
     target: 1,
-    glyph: '✦',
+    glyph: 'sparkles',
+    tier: 'gold',
     reward: '300 coins',
   },
 ];

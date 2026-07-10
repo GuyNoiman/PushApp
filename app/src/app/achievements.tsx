@@ -8,6 +8,7 @@
  * NOTE: there is no achievements engine yet, so this renders DESIGN-PLACEHOLDER
  * sample data (components/achievements/sampleAchievements.ts). Presentational only.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -26,7 +27,14 @@ import { useTheme } from '@/hooks/use-theme';
 
 const GOLD = Colors.light.gold;
 const GOLD_STRONG = Colors.light.goldStrong;
-const GOLD_TINT = Colors.light.goldTint;
+
+// Medal-face finishes (mockup v14 `.mgold` / `.msil` / `.mlock` radial gradients —
+// a local palette like GlossyTile's, since these are sphere gradients, not flat tokens).
+const MEDAL_FINISH = {
+  gold: { top: '#FFE9A8', mid: '#F0B429', bottom: '#B97F0C', glyph: '#7A4B0E' },
+  silver: { top: '#EEF2F6', mid: '#BCC6D0', bottom: '#8B96A2', glyph: '#5A6570' },
+  lock: { top: '#EFEAE0', mid: '#D6CFC2', bottom: '#B7AE9E', glyph: '#B4AC9B' },
+} as const;
 
 type Tab = 'all' | 'journeys' | 'social';
 const TABS: { value: Tab; label: string }[] = [
@@ -121,7 +129,6 @@ function MedalCell({
   achievement: SampleAchievement;
   onPress: () => void;
 }) {
-  const theme = useTheme();
   const unlocked = isUnlocked(achievement);
 
   return (
@@ -130,7 +137,7 @@ function MedalCell({
       accessibilityLabel={`${achievement.name} — ${achievement.condition}`}
       onPress={onPress}
       style={({ pressed }) => [styles.cell, pressed && styles.pressed]}>
-      <ThemedView type="backgroundElement" style={[styles.cellCard, { borderColor: theme.hairline }]}>
+      <ThemedView type="backgroundElement" style={[styles.cellCard, { borderColor: Colors.light.hairline }]}>
         <Medal achievement={achievement} />
         <ThemedText
           type="smallBold"
@@ -139,21 +146,21 @@ function MedalCell({
           style={styles.medalName}>
           {achievement.name}
         </ThemedText>
-        {unlocked ? (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.medalSub} numberOfLines={2}>
-            {achievement.condition}
-          </ThemedText>
-        ) : achievement.progress > 0 ? (
+        {!unlocked && achievement.progress > 0 ? (
           <View style={styles.countBlock}>
             <ThemedText type="smallBold">
               {achievement.progress}/{achievement.target}
             </ThemedText>
-            <ThemedText type="small" themeColor="textMuted">
+            <ThemedText type="small" themeColor="textMuted" style={styles.moreCaption}>
               {remaining(achievement)} more
             </ThemedText>
           </View>
         ) : (
-          <ThemedText type="small" themeColor="textMuted" style={styles.medalSub} numberOfLines={2}>
+          <ThemedText
+            type="small"
+            themeColor={unlocked ? 'textSecondary' : 'textMuted'}
+            style={styles.medalSub}
+            numberOfLines={2}>
             {achievement.condition}
           </ThemedText>
         )}
@@ -162,21 +169,39 @@ function MedalCell({
   );
 }
 
-/** The medal disc: warm gold glyph when unlocked, muted lock when not. */
-function Medal({ achievement }: { achievement: SampleAchievement }) {
-  const theme = useTheme();
+/** The medal disc: a glossy gold/silver sphere when unlocked, a muted lock when not,
+ * with a small ribbon tail under unlocked medals (mockup v14 `.ribbon`). */
+function Medal({ achievement, size = 46 }: { achievement: SampleAchievement; size?: number }) {
   const unlocked = isUnlocked(achievement);
+  const finish = unlocked ? MEDAL_FINISH[achievement.tier] : MEDAL_FINISH.lock;
+  const iconSize = Math.round(size * 0.46);
+
   return (
-    <View
-      style={[
-        styles.disc,
-        unlocked
-          ? { backgroundColor: GOLD, shadowColor: GOLD_STRONG }
-          : { backgroundColor: theme.backgroundSelected },
-      ]}>
-      <ThemedText style={[styles.discGlyph, !unlocked && { opacity: 0.55 }]}>
-        {unlocked ? achievement.glyph : '🔒'}
-      </ThemedText>
+    <View style={styles.medalWrap}>
+      <View
+        style={[
+          styles.disc,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: finish.mid,
+            shadowColor: finish.bottom,
+          },
+        ]}>
+        {/* Soft top-left highlight standing in for the mockup's radial gradient. */}
+        <View
+          pointerEvents="none"
+          style={[styles.discHighlight, { borderRadius: size / 2, backgroundColor: finish.top }]}
+        />
+        <Ionicons
+          name={unlocked ? achievement.glyph : 'lock-closed'}
+          size={iconSize}
+          color={finish.glyph}
+          style={styles.discGlyph}
+        />
+      </View>
+      {unlocked && <View style={styles.ribbon} />}
     </View>
   );
 }
@@ -204,13 +229,11 @@ function AchievementSheet({
               accessibilityLabel="Close"
               onPress={onClose}
               style={[styles.closeButton, { backgroundColor: theme.backgroundSelected }]}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                ✕
-              </ThemedText>
+              <Ionicons name="close" size={16} color={theme.textSecondary} />
             </Pressable>
 
             <View style={styles.sheetMedal}>
-              <Medal achievement={achievement} />
+              <Medal achievement={achievement} size={72} />
             </View>
             <ThemedText type="title" style={styles.sheetName}>
               {achievement.name}
@@ -291,36 +314,60 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'flex-start',
     gap: Spacing.three,
   },
   cell: {
-    // Three per row with even gaps: (100% - 2 gaps) / 3.
-    width: `${(100 - 2 * 4) / 3}%`,
-    minWidth: 96,
-    flexGrow: 1,
+    // Three per row (BuddyInventory's proven pattern): a % width shy of the exact
+    // 1/3 share leaves room for the grid's `gap`, so 3 fit with an even right
+    // margin instead of composing into a 4th partial column or wrapping to 2-up.
+    width: `${100 / 3 - 3}%`,
   },
   cellCard: {
     borderRadius: Radius.card,
     borderWidth: 1,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.two,
-    gap: Spacing.two,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
+    paddingHorizontal: Spacing.one,
+    gap: Spacing.one,
+    alignItems: 'center',
+    minHeight: 128,
+  },
+  medalWrap: {
     alignItems: 'center',
   },
   disc: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 3,
   },
+  // Soft highlight standing in for the mockup's `radial-gradient(circle at 38% 30%, ...)`.
+  discHighlight: {
+    position: 'absolute',
+    top: '-25%',
+    left: '-15%',
+    width: '90%',
+    height: '90%',
+    opacity: 0.6,
+  },
   discGlyph: {
-    fontSize: 26,
-    lineHeight: 32,
+    // Ionicons glyph itself carries size/color — no extra styling needed, kept for layering.
+  },
+  // The small red ribbon "tail" under unlocked medals (mockup v14 `.ribbon`).
+  ribbon: {
+    width: 0,
+    height: 0,
+    marginTop: -2,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 7,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#C94E4E',
   },
   medalName: {
     textAlign: 'center',
@@ -330,6 +377,9 @@ const styles = StyleSheet.create({
   },
   countBlock: {
     alignItems: 'center',
+  },
+  moreCaption: {
+    marginTop: -2,
   },
   footnote: {
     marginTop: Spacing.four,
@@ -364,7 +414,6 @@ const styles = StyleSheet.create({
   },
   sheetMedal: {
     marginTop: Spacing.two,
-    transform: [{ scale: 1.25 }],
   },
   sheetName: {
     textAlign: 'center',

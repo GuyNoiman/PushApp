@@ -186,10 +186,9 @@ export class SupabaseSocialGateway implements SocialGateway {
     if (error) throw error;
   }
 
-  subscribeToCheers(onCheer: (cheer: Cheer) => void): () => void {
+  subscribeToCheers(uid: string, onCheer: (cheer: Cheer) => void): () => void {
     if (!supabase) return () => {};
-    const uid = this.uid;
-    if (!uid) return () => {}; // not signed in yet; caller re-subscribes after auth
+    if (!uid) return () => {}; // caller has no session yet; it re-subscribes with the uid
     const client = supabase; // narrowed non-null for the unsubscribe closure
     const channel = client
       .channel(`cheers:${uid}`)

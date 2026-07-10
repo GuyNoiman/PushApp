@@ -21,6 +21,7 @@ import type {
   Visibility,
 } from '@/core/social';
 import { useApp } from '@/state/AppProvider';
+import { useAuth } from '@/state/AuthProvider';
 
 interface SocialContextValue {
   enabled: boolean;
@@ -72,6 +73,10 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const gateway = getSocialGateway();
   const { core } = useApp();
+  // Auth owns the session now (P2). The social pillar reacts to the uid instead
+  // of minting its own anonymous account. A non-empty uid means a session exists.
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
 
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -105,24 +110,33 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     });
   }, [gateway, guard]);
 
-  // ── Mount: anonymous sign-in, then load profile + circle + ally progress ──
+  // ── React to the auth session (P2): AuthProvider owns the (anonymous) session;
+  // when a uid becomes available or changes, (re)load profile + circle + ally
+  // progress. On sign-out (uid → null) clear the local social state so no stale
+  // friends/cheers linger. The realtime cheers channel is torn down by the
+  // subscribe effect below, which re-binds on the new uid. ──
   useEffect(() => {
     let mounted = true;
+    if (!uid) {
+      setProfile(null);
+      setFriends([]);
+      setAllyProgress([]);
+      setIncomingCheers([]);
+      return;
+    }
     void (async () => {
-      await guard(async () => {
-        await gateway.signInAnonymously();
-      });
       if (mounted) await refresh();
     })();
     return () => {
       mounted = false;
     };
-  }, [gateway, guard, refresh]);
+  }, [uid, refresh]);
 
   // ── Incoming cheers: append to state + fire a local notification ──
   useEffect(() => {
+    if (!uid) return; // no session yet — bind once the auth uid is known
     let configured = false;
-    const unsubscribe = gateway.subscribeToCheers((cheer) => {
+    const unsubscribe = gateway.subscribeToCheers(uid, (cheer) => {
       setIncomingCheers((prev) => [cheer, ...prev].slice(0, 20));
       const fromHandle = friendsHandle(friendsRef.current, cheer.fromId);
       void fireCheerNotification(fromHandle, () => {
@@ -140,8 +154,9 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       });
     });
     return unsubscribe;
-    // Re-subscribe once the profile (uid) is known so the realtime filter binds.
-  }, [gateway, profile]);
+    // Re-subscribe once the auth uid is known so the realtime filter binds, and
+    // tear down on sign-out (uid → null / changes).
+  }, [gateway, uid]);
 
   // Keep the latest friends list available to the (stable) cheer callback.
   const friendsRef = useRef<Friend[]>([]);

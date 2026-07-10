@@ -94,8 +94,13 @@ export interface SocialGateway {
 
   // ── Cheers ──
   sendCheer(toId: string, journeyId: string, kind: CheerKind): Promise<void>;
-  /** Realtime incoming cheers for the current user. Returns an unsubscribe fn. */
-  subscribeToCheers(onCheer: (cheer: Cheer) => void): () => void;
+  /**
+   * Realtime incoming cheers for a KNOWN user. The caller passes the uid it
+   * already holds (from the auth session) so the realtime filter always binds —
+   * the gateway no longer keeps its own uid cache to race against. Returns an
+   * unsubscribe fn.
+   */
+  subscribeToCheers(uid: string, onCheer: (cheer: Cheer) => void): () => void;
   /** Realtime updates to Journeys the user is an Ally of. Returns an unsubscribe fn. */
   subscribeToAllyUpdates(onUpdate: (progress: AllyProgress) => void): () => void;
 }

@@ -13,6 +13,13 @@ const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 export const featureFlags = {
   /** Social/Allies pillar: requires a configured Supabase project (E2). */
   social: Boolean(url && key),
+  /**
+   * Auth pillar: session ownership + (later) real sign-in. Gated on the SAME
+   * Supabase env as social — auth is the prerequisite that mints the anonymous
+   * session social builds on (E3, Auth_Backend_Proposal §2). Off ⇒ no backend,
+   * fully anonymous no-op, local pillars untouched.
+   */
+  auth: Boolean(url && key),
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

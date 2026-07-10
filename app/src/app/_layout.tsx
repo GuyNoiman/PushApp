@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, FontAssets } from '@/constants/theme';
 import { AppProvider } from '@/state/AppProvider';
+import { AuthProvider } from '@/state/AuthProvider';
 import { SocialProvider } from '@/state/SocialProvider';
 
 SplashScreen.preventAutoHideAsync();
@@ -47,22 +48,24 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
-      <SocialProvider>
-        <ThemeProvider value={NavTheme}>
-          <StatusBar style="dark" />
-          <AnimatedSplashOverlay />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="journey/[id]" />
-            <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
-          </Stack>
-        </ThemeProvider>
-      </SocialProvider>
+      <AuthProvider>
+        <SocialProvider>
+          <ThemeProvider value={NavTheme}>
+            <StatusBar style="dark" />
+            <AnimatedSplashOverlay />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="journey/[id]" />
+              <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
+            </Stack>
+          </ThemeProvider>
+        </SocialProvider>
+      </AuthProvider>
     </AppProvider>
   );
 }

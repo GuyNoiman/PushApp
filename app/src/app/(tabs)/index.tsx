@@ -1,16 +1,21 @@
 /**
- * Home — action-based. It answers "what should I do now?" (not a list of Journeys):
- * a greeting, the Buddy, and this week's Steps as check-off cards. Checking a Step
- * calls the AppCore facade; the engines run and the Buddy reacts on screen.
+ * Home — action-based (v14 mockup screen-01). It answers "what should I do now?"
+ * (not a list of Journeys): a floating resource bar, a greeting speech bubble +
+ * the Buddy flanked by four area buttons, and this week's Steps as check-off
+ * cards in a warm cream panel. Checking a Step calls the AppCore facade; the
+ * engines run and the Buddy reacts on screen.
+ *
  * Presentational only — no business logic lives here (Engineering Bible §19).
  */
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BuddyCard } from '@/components/buddy/BuddyCard';
+import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { EvolveReveal } from '@/components/buddy/EvolveReveal';
+import { GlossyTile } from '@/components/GlossyTile';
 import { StepCard } from '@/components/journey/StepCard';
+import { ResourceBar } from '@/components/ResourceBar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -18,18 +23,17 @@ import { featureFlags } from '@/core/config/featureFlags';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
+import { useSocial } from '@/state/SocialProvider';
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
+// TODO(data model): Grace Tokens are not yet tracked in AppState — no GraceTokenEngine
+// exists yet. Render a placeholder until one lands (see ResourceBar's `graceTokens` prop).
+const GRACE_TOKENS_PLACEHOLDER = 2;
 
 export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const social = useSocial();
 
   // One-off Buddy moments. The evolution reveal is owned by the EvolveReveal
   // modal below; the reaction shows a small, non-childish celebration banner.
@@ -37,89 +41,29 @@ export default function HomeScreen() {
   const reward = reaction ? formatReactionReward(reaction) : null;
   const celebration = reward ? `Nice — ${reward}` : null;
 
+  const incomingFriendRequests = featureFlags.social
+    ? social.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming').length
+    : 0;
+
+  // The greeting bubble is the Buddy speaking to the USER, so it should show the
+  // user's name (mockup: "Hello, Guy"). AppState has no user profile/name yet, so
+  // fall back to a warm default. TODO(data model): wire real user name once profiles land.
+  const userName = 'friend';
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
-          <View style={styles.greetingBlock}>
-            {/* Greeting reads on its own full-width line(s); the action buttons sit
-                on the row below so the text column is never squeezed to ~0 width. */}
-            <View style={styles.greetingText}>
-              <ThemedText type="small" themeColor="textSecondary">
-                {greeting()}
-              </ThemedText>
-              <ThemedText type="title">What will you do now?</ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Journeys"
-                onPress={() => router.push('/journeys')}
-                style={({ pressed }) => [
-                  styles.missionsButton,
-                  { backgroundColor: theme.successTint },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                  🧭 Journeys
-                </ThemedText>
-              </Pressable>
-              {featureFlags.social && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Friends"
-                  onPress={() => router.navigate('/friends')}
-                  style={({ pressed }) => [
-                    styles.missionsButton,
-                    { backgroundColor: theme.purpleTint },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold" style={{ color: theme.purpleStrong }}>
-                    🤝 Friends
-                  </ThemedText>
-                </Pressable>
-              )}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  snapshot && snapshot.claimableRewards > 0
-                    ? `Missions — ${snapshot.claimableRewards} to claim`
-                    : 'Missions'
-                }
-                onPress={() => router.push('/missions')}
-                style={({ pressed }) => [
-                  styles.missionsButton,
-                  { backgroundColor: theme.tealTint },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                  🎯 Missions
-                </ThemedText>
-                {snapshot && snapshot.claimableRewards > 0 && (
-                  <View style={[styles.badge, { backgroundColor: theme.coral }]}>
-                    <ThemedText type="smallBold" style={styles.badgeText}>
-                      {snapshot.claimableRewards}
-                    </ThemedText>
-                  </View>
-                )}
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Create a new Journey"
-                onPress={() => router.push('/journey/new')}
-                style={({ pressed }) => [
-                  styles.createButton,
-                  { backgroundColor: theme.coral },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText type="title" style={[styles.plus, { color: theme.text }]}>
-                  +
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
+          <ResourceBar
+            level={snapshot?.buddy.level ?? 1}
+            xpInto={snapshot?.buddy.xpIntoLevel ?? 0}
+            xpForNext={snapshot?.buddy.xpForNextLevel ?? 1}
+            coins={snapshot?.buddy.coins ?? 0}
+            graceTokens={GRACE_TOKENS_PLACEHOLDER}
+            onAddCoins={() => router.push('/shop')}
+          />
 
           {!ready || !snapshot ? (
             <ThemedText type="small" themeColor="textSecondary">
@@ -127,7 +71,63 @@ export default function HomeScreen() {
             </ThemedText>
           ) : (
             <>
-              <BuddyCard buddy={snapshot.buddy} />
+              <View style={styles.buddyRow}>
+                <View style={styles.abCol}>
+                  <GlossyTile
+                    color="gold"
+                    accessibilityLabel={
+                      snapshot.claimableRewards > 0
+                        ? `Missions — ${snapshot.claimableRewards} to claim`
+                        : 'Missions'
+                    }
+                    badge={snapshot.claimableRewards}
+                    onPress={() => router.push('/missions')}>
+                    <ThemedText style={styles.tileGlyph}>🎯</ThemedText>
+                  </GlossyTile>
+                  <GlossyTile
+                    color="pink"
+                    accessibilityLabel="Consistency"
+                    // TODO: consistency screen — no route exists yet.
+                    onPress={() => {}}>
+                    <ThemedText style={styles.tileGlyph}>🔥</ThemedText>
+                  </GlossyTile>
+                </View>
+
+                <View style={styles.buddyCol}>
+                  <View style={[styles.greetBubble, { backgroundColor: theme.backgroundElement }]}>
+                    <ThemedText type="subtitle" style={styles.greetText}>
+                      Hello, {userName}
+                    </ThemedText>
+                    <View
+                      style={[styles.greetTail, { borderTopColor: theme.backgroundElement }]}
+                    />
+                  </View>
+                  <BuddyAvatar stage={snapshot.buddy.stage} size={140} />
+                  <View style={[styles.stagePill, { backgroundColor: theme.tealTint }]}>
+                    <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                      {snapshot.buddy.name}
+                    </ThemedText>
+                  </View>
+                </View>
+
+                <View style={styles.abCol}>
+                  {featureFlags.social && (
+                    <GlossyTile
+                      color="purple"
+                      accessibilityLabel="Friends"
+                      badge={incomingFriendRequests}
+                      onPress={() => router.navigate('/friends')}>
+                      <ThemedText style={styles.tileGlyph}>🤝</ThemedText>
+                    </GlossyTile>
+                  )}
+                  <GlossyTile
+                    color="teal"
+                    accessibilityLabel="Achievements"
+                    onPress={() => router.push('/achievements')}>
+                    <ThemedText style={styles.tileGlyph}>🏆</ThemedText>
+                  </GlossyTile>
+                </View>
+              </View>
 
               {celebration && (
                 <View style={[styles.celebration, { backgroundColor: theme.successTint }]}>
@@ -137,31 +137,45 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              <View style={styles.sectionHeader}>
-                <ThemedText type="subtitle">This week&apos;s Steps</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {snapshot.todaySteps.length} to go
-                </ThemedText>
-              </View>
-
-              {snapshot.todaySteps.length === 0 ? (
-                <ThemedView type="backgroundElement" style={styles.empty}>
-                  <ThemedText type="default">All caught up 🎉</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    You&apos;ve checked in on every Step. Your Buddy is proud.
+              <View style={[styles.panel, { backgroundColor: theme.cream }]}>
+                <View style={styles.panelHeader}>
+                  <ThemedText type="subtitle" style={{ color: theme.text }}>
+                    Week&apos;s steps
                   </ThemedText>
-                </ThemedView>
-              ) : (
-                <View style={styles.stepList}>
-                  {snapshot.todaySteps.map((item) => (
-                    <StepCard
-                      key={item.step.id}
-                      item={item}
-                      onCheckIn={(journeyId, stepId) => core.checkInStep(journeyId, stepId)}
-                    />
-                  ))}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Create a new Journey"
+                    onPress={() => router.push('/journey/new')}
+                    style={({ pressed }) => [
+                      styles.createButton,
+                      { backgroundColor: theme.coral },
+                      pressed && styles.pressed,
+                    ]}>
+                    <ThemedText type="smallBold" style={[styles.plus, { color: theme.text }]}>
+                      +
+                    </ThemedText>
+                  </Pressable>
                 </View>
-              )}
+
+                {snapshot.todaySteps.length === 0 ? (
+                  <View style={styles.empty}>
+                    <ThemedText type="default">All caught up 🎉</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      You&apos;ve checked in on every Step. Your Buddy is proud.
+                    </ThemedText>
+                  </View>
+                ) : (
+                  <View style={styles.stepList}>
+                    {snapshot.todaySteps.map((item) => (
+                      <StepCard
+                        key={item.step.id}
+                        item={item}
+                        onCheckIn={(journeyId, stepId) => core.checkInStep(journeyId, stepId)}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
             </>
           )}
         </ScrollView>
@@ -193,62 +207,85 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
+    paddingTop: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.four,
   },
-  greetingBlock: {
-    // Column, not row: the greeting owns its own full-width line(s) above the
-    // action buttons. (The old row layout squeezed the text column to ~0 width,
-    // which forced the greeting to wrap one character per line.)
+
+  // ── Buddy cluster ──────────────────────────────────────────────────────
+  buddyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  abCol: {
     gap: Spacing.three,
   },
-  greetingText: {
-    gap: Spacing.half,
+  tileGlyph: {
+    fontSize: 24,
+    lineHeight: 28,
   },
-  headerActions: {
-    flexDirection: 'row',
+  buddyCol: {
+    flex: 1,
     alignItems: 'center',
     gap: Spacing.two,
   },
-  missionsButton: {
-    height: 44,
+  greetBubble: {
+    borderRadius: Radius.card,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    marginBottom: Spacing.two,
+    shadowColor: '#283C1E',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+  greetText: {
+    fontSize: 18,
+  },
+  greetTail: {
+    position: 'absolute',
+    bottom: -6,
+    left: '50%',
+    marginLeft: -6,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  stagePill: {
     paddingHorizontal: Spacing.three,
-    borderRadius: Radius.button,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+  },
+
+  // ── Steps panel ────────────────────────────────────────────────────────
+  panel: {
+    borderRadius: Radius.card + 4,
+    padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  panelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-  },
-  badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    paddingHorizontal: Spacing.one,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    lineHeight: 16,
+    justifyContent: 'space-between',
   },
   createButton: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     borderRadius: Radius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
   plus: {
-    lineHeight: 30,
+    lineHeight: 24,
   },
   pressed: {
     opacity: 0.6,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   stepList: {
     gap: Spacing.three,

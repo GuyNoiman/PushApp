@@ -80,3 +80,26 @@ export function endsInLabel(endsAt: number, now: number = Date.now()): string {
 export function shortDate(at: number): string {
   return new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
+
+/**
+ * A small stable glyph + accent colour per Journey/Step, derived from its title.
+ * The domain has no icon field yet, so this is a light, honest guess from
+ * keywords (display-only — Engineering Bible §19). Shared by the Journeys list
+ * and Home's Step cards so the same title always reads the same icon tile.
+ */
+export type JourneyGlyphColor = 'gold' | 'teal' | 'green' | 'coral' | 'purple';
+
+export interface JourneyGlyph {
+  icon: string;
+  color: JourneyGlyphColor;
+}
+
+export function journeyGlyph(title: string): JourneyGlyph {
+  const t = title.toLowerCase();
+  if (/run|walk|jog|km|fit|gym|workout|flame/.test(t)) return { icon: '🔥', color: 'teal' };
+  if (/span|french|german|lang|learn|study|read|lesson/.test(t)) return { icon: '💬', color: 'green' };
+  if (/medit|calm|breath|mind|yoga/.test(t)) return { icon: '🌿', color: 'gold' };
+  if (/draw|paint|art|music|write/.test(t)) return { icon: '🎨', color: 'purple' };
+  if (/call|phone|mom|dad|family|friend/.test(t)) return { icon: '📞', color: 'coral' };
+  return { icon: '🧭', color: 'teal' };
+}

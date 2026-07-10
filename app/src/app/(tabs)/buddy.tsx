@@ -138,7 +138,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sceneWrap: {
-    flex: 3,
+    // ~58% of the stage for the scene, leaving the inventory sheet (flex:1) enough
+    // room to show its full grid + the pinned Select button on phone heights.
+    flex: 1.4,
   },
   resourceOverlay: {
     position: 'absolute',

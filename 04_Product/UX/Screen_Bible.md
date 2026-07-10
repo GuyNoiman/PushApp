@@ -81,6 +81,23 @@ The navigation should remain stable over time.
 
 Users should rarely need to learn new navigation patterns.
 
+**Implemented bottom nav (v14 mockup, `Stage: POC`).** The build's 5 fixed tabs are
+**Home · Explore · Friends · Buddy · Inbox** — Journeys is reached from Home/a
+dedicated route rather than occupying a 6th permanent tab slot, keeping the bar at
+five icon-only entries (mockups `screen-01.png` / `screen-10.png`,
+`04_Product/UX/UX_References/mockups_v14/`). Icon-only, no text labels, no
+active-pill background. Icons are Ionicons outline glyphs (`home-outline`,
+`compass-outline`, `people-outline`, `happy-outline`, `mail-outline`) — a 1:1 match
+to the mockup's custom SVG glyph set. Inactive icons are muted gray
+(`textMuted`); the active tab's icon takes a per-tab meaning-based accent rather
+than a single uniform brand tint (mockup-evidenced: Home = coral when active,
+Buddy = pink when active). Friends = purple and Inbox = coral reuse the per-area
+accents already documented in `Design_System.md` §2 ("Missions teal · Consistency
+gold · Friends purple · Inbox coral"); Explore = teal, the default brand colour.
+Inbox carries a small coral unread dot when there is unread content. Implementation:
+`app/src/components/app-tabs.tsx` (native) and `app-tabs.web.tsx` (web dev harness,
+matching look, positioned as a real bottom bar).
+
 ---
 
 # HOME

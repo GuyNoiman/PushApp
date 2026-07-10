@@ -4,6 +4,11 @@
  * Name → your Why → Duration & rhythm → Steps (+ Starter Step) → Reminders →
  * Summary. Only the Name is truly required; everything else has sensible
  * defaults (Product_Bible §5: "complexity belongs to the system, not the user").
+ * Visual language matches mockup v14 screens 05–08: pencil-edit value rows,
+ * a below-bars step tooltip, a "Recommended" Starter Step card, and grey
+ * delete-chip lines on "Your why". Privacy/support and public/creator are out
+ * of POC scope (POC_and_MVP_Scope.md), so this wizard stays at 6 stages, not
+ * the full 7 shown in the mockup gallery.
  *
  * Presentational only — it gathers input and calls the AppCore facade to create
  * the Journey. No reward/Buddy/Journey math lives here (Engineering Bible §19).
@@ -13,14 +18,17 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  LayoutAnimation,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   TextInput,
+  UIManager,
   View,
 } from 'react-native';
+import Svg, { Line, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/journey/ChoiceChips';
@@ -31,6 +39,10 @@ import type { NewStepInput } from '@/core/engines/JourneyEngine';
 import type { Cadence, Rhythm } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 /** A Step the user is still editing in the wizard (before it becomes a real Step). */
 interface DraftStep {
@@ -80,9 +92,12 @@ export default function NewJourneyScreen() {
   const theme = useTheme();
 
   const [stage, setStage] = useState(0);
+  const [openTooltip, setOpenTooltip] = useState<number | null>(null);
 
   // Stage 1 — Name.
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [editingTitle, setEditingTitle] = useState(false);
 
   // Stage 2 — Your why (identity & motivation). Saved as Journey.why[].
   const [whyStart, setWhyStart] = useState('');
@@ -93,10 +108,12 @@ export default function NewJourneyScreen() {
   // Stage 3 — Duration & rhythm.
   const [durationDays, setDurationDays] = useState(60);
   const [rhythm, setRhythm] = useState<Rhythm>('daily');
+  const [editingField, setEditingField] = useState<'duration' | 'rhythm' | null>(null);
 
   // Stage 4 — Steps. The first Step is a recommended Starter Step (≤2 min).
   const [starterTitle, setStarterTitle] = useState('');
   const [starterDescription, setStarterDescription] = useState('');
+  const [starterOpen, setStarterOpen] = useState(false);
   const [steps, setSteps] = useState<DraftStep[]>([]);
 
   // Stage 5 — Reminders (opt-in; permission requested in-context on create).
@@ -150,6 +167,12 @@ export default function NewJourneyScreen() {
 
   const removeStep = (key: string) => setSteps((prev) => prev.filter((s) => s.key !== key));
 
+  const goToStage = (next: number) => {
+    if (Platform.OS !== 'web') LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOpenTooltip(null);
+    setStage(next);
+  };
+
   // Dismiss the modal safely — router.back() is a no-op with no history
   // (web reload / deep-link straight onto this route), which would trap the user.
   const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -186,7 +209,10 @@ export default function NewJourneyScreen() {
     }
   };
 
-  const inputStyle = [styles.input, { borderColor: theme.backgroundSelected, color: theme.text }];
+  const inputStyle = [styles.input, { borderColor: theme.hairline, color: theme.text }];
+  const rhythmLabel = RHYTHM_OPTIONS.find((r) => r.value === rhythm)?.label ?? rhythm;
+  const durationLabel =
+    DURATION_OPTIONS.find((d) => d.value === durationDays)?.label ?? `${durationDays} days`;
 
   return (
     <ThemedView style={styles.container}>
@@ -194,179 +220,309 @@ export default function NewJourneyScreen() {
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.header}>
-            <View style={styles.headerRow}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Step {stage + 1} of {STAGE_TITLES.length}
-              </ThemedText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-                onPress={dismiss}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  Close
-                </ThemedText>
-              </Pressable>
-            </View>
-            <ProgressBars count={STAGE_TITLES.length} active={stage} />
-            <ThemedText type="subtitle" style={styles.stageTitle}>
-              {STAGE_TITLES[stage]}
+          <View style={[styles.top, { borderBottomColor: theme.hairline }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={dismiss}
+              style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]}>
+              <ChevronIcon color={theme.textSecondary} />
+            </Pressable>
+            <ThemedText type="subtitle" style={styles.topTitle}>
+              {stage === 1 ? 'Your why' : 'New Journey'}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textMuted">
+              {stage + 1} / {STAGE_TITLES.length}
             </ThemedText>
           </View>
 
-          <ScrollView
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
-            {stage === 0 && (
-              <View style={styles.field}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  What Journey do you want to take? Give it a clear name or goal.
-                </ThemedText>
-                <TextInput
-                  style={inputStyle}
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="e.g. Run 5km, Learn to draw…"
-                  placeholderTextColor={theme.textSecondary}
-                  autoFocus
-                  returnKeyType="next"
-                />
-              </View>
-            )}
-
-            {stage === 1 && (
-              <View style={styles.stack}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Optional, but it helps. Your answers stay private and later power personal
-                  encouragement.
-                </ThemedText>
-                <View style={styles.field}>
-                  <ThemedText type="smallBold">Why are you starting this?</ThemedText>
-                  <TextInput
-                    style={[...inputStyle, styles.multiline]}
-                    value={whyStart}
-                    onChangeText={setWhyStart}
-                    placeholder="What makes this matter to you?"
-                    placeholderTextColor={theme.textSecondary}
-                    multiline
-                  />
-                </View>
-                <View style={styles.field}>
-                  <ThemedText type="smallBold">What will keep you going?</ThemedText>
-                  <TextInput
-                    style={[...inputStyle, styles.multiline]}
-                    value={whyKeepGoing}
-                    onChangeText={setWhyKeepGoing}
-                    placeholder="The person you want to become…"
-                    placeholderTextColor={theme.textSecondary}
-                    multiline
-                  />
-                </View>
-                <View style={styles.field}>
-                  <ThemedText type="smallBold">What to remember when it&apos;s hard</ThemedText>
-                  <View style={styles.addRow}>
-                    <TextInput
-                      style={[...inputStyle, styles.flex]}
-                      value={hardMomentDraft}
-                      onChangeText={setHardMomentDraft}
-                      placeholder="A short reminder…"
-                      placeholderTextColor={theme.textSecondary}
-                      maxLength={50}
-                      returnKeyType="done"
-                      onSubmitEditing={addHardMoment}
+          <View style={styles.body}>
+            <View style={styles.progressWrap}>
+              <View style={styles.progressBars}>
+                {STAGE_TITLES.map((label, index) => (
+                  <Pressable
+                    key={label}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} — step ${index + 1} of ${STAGE_TITLES.length}`}
+                    onPress={() => setOpenTooltip((prev) => (prev === index ? null : index))}
+                    hitSlop={{ top: 8, bottom: 8 }}
+                    style={styles.progressBarHit}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { backgroundColor: index <= stage ? theme.teal : theme.hairline },
+                      ]}
                     />
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Add reminder"
-                      onPress={addHardMoment}
-                      style={[styles.addButton, { borderColor: theme.text }]}>
-                      <ThemedText type="smallBold">Add</ThemedText>
-                    </Pressable>
-                  </View>
-                  {hardMoments.length > 0 && (
-                    <View style={styles.chipWrap}>
-                      {hardMoments.map((line, index) => (
-                        <ThemedView
-                          key={`${line}_${index}`}
-                          type="backgroundSelected"
-                          style={styles.savedChip}>
-                          <ThemedText type="small">{line}</ThemedText>
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Remove ${line}`}
-                            onPress={() => removeHardMoment(index)}>
-                            <ThemedText type="smallBold" themeColor="textSecondary">
-                              ✕
-                            </ThemedText>
-                          </Pressable>
-                        </ThemedView>
-                      ))}
-                    </View>
-                  )}
-                </View>
+                  </Pressable>
+                ))}
               </View>
-            )}
-
-            {stage === 2 && (
-              <View style={styles.stack}>
-                <View style={styles.field}>
-                  <ThemedText type="smallBold">How long is this Journey?</ThemedText>
-                  <ChoiceChips
-                    options={DURATION_OPTIONS}
-                    value={durationDays}
-                    onChange={setDurationDays}
-                  />
-                </View>
-                <View style={styles.field}>
-                  <ThemedText type="smallBold">How often will you show up?</ThemedText>
-                  <ChoiceChips options={RHYTHM_OPTIONS} value={rhythm} onChange={setRhythm} />
-                </View>
-              </View>
-            )}
-
-            {stage === 3 && (
-              <View style={styles.stack}>
-                <View style={[styles.starterBox, { backgroundColor: theme.successTint }]}>
-                  <View style={styles.starterHeader}>
-                    <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                      ★ Starter Step
+              {openTooltip !== null && (
+                <View style={styles.tooltipRow}>
+                  <View style={[styles.tooltip, { backgroundColor: theme.text }]}>
+                    <ThemedText type="small" style={styles.tooltipText}>
+                      {STAGE_TITLES[openTooltip]}
                     </ThemedText>
-                    <View style={[styles.badge, { backgroundColor: theme.teal }]}>
-                      <ThemedText type="small" style={styles.recommendedLabel}>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {stage !== 1 && (
+              <ThemedText type="subtitle" style={styles.stageTitle}>
+                {stage === 0 ? 'Name & goal' : STAGE_TITLES[stage]}
+              </ThemedText>
+            )}
+
+            <ScrollView
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              {stage === 0 && (
+                <View style={styles.stack}>
+                  <View style={[styles.field, { borderColor: theme.hairline }]}>
+                    <EditRow
+                      label="Name"
+                      value={title || 'Untitled Journey'}
+                      valueColor={title ? theme.text : theme.textMuted}
+                      editing={editingTitle}
+                      onPress={() => setEditingTitle((v) => !v)}
+                    />
+                    {editingTitle && (
+                      <TextInput
+                        style={[...inputStyle, styles.rowEditInput]}
+                        value={title}
+                        onChangeText={setTitle}
+                        placeholder="e.g. Run 5km, Learn to draw…"
+                        placeholderTextColor={theme.textSecondary}
+                        autoFocus
+                        returnKeyType="done"
+                        onSubmitEditing={() => setEditingTitle(false)}
+                        onBlur={() => setEditingTitle(false)}
+                      />
+                    )}
+                  </View>
+
+                  <View style={styles.field}>
+                    <ThemedText type="smallBold">Description</ThemedText>
+                    <TextInput
+                      style={[...inputStyle, styles.abig]}
+                      value={description}
+                      onChangeText={setDescription}
+                      placeholder="What this Journey is about, in your words."
+                      placeholderTextColor={theme.textSecondary}
+                      multiline
+                    />
+                  </View>
+                </View>
+              )}
+
+              {stage === 1 && (
+                <View style={styles.stack}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    A few words now become your own encouragement later — in your voice.
+                  </ThemedText>
+                  <View style={styles.qBlock}>
+                    <ThemedText type="smallBold">Why start this Journey?</ThemedText>
+                    <TextInput
+                      style={[...inputStyle, styles.ansBox]}
+                      value={whyStart}
+                      onChangeText={setWhyStart}
+                      placeholder="Type your answer…"
+                      placeholderTextColor={theme.textMuted}
+                      multiline
+                    />
+                  </View>
+                  <View style={styles.qBlock}>
+                    <ThemedText type="smallBold">How will you feel if you succeed?</ThemedText>
+                    <TextInput
+                      style={[...inputStyle, styles.ansBox]}
+                      value={whyKeepGoing}
+                      onChangeText={setWhyKeepGoing}
+                      placeholder="Type your answer…"
+                      placeholderTextColor={theme.textMuted}
+                      multiline
+                    />
+                  </View>
+                  <View style={styles.qBlock}>
+                    <ThemedText type="smallBold">What to remember when it&apos;s hard?</ThemedText>
+                    <ThemedText type="small" themeColor="textMuted">
+                      Short lines we&apos;ll surface when you&apos;re drifting.
+                    </ThemedText>
+                    <View style={styles.addRow}>
+                      <View style={[styles.reminderInputWrap, { borderColor: theme.hairline }]}>
+                        <TextInput
+                          style={[styles.reminderInput, { color: theme.text }]}
+                          value={hardMomentDraft}
+                          onChangeText={setHardMomentDraft}
+                          placeholder="A short reminder…"
+                          placeholderTextColor={theme.textMuted}
+                          maxLength={50}
+                          returnKeyType="done"
+                          onSubmitEditing={addHardMoment}
+                        />
+                        <ThemedText type="small" themeColor="textMuted" style={styles.charHint}>
+                          {hardMomentDraft.length}/50
+                        </ThemedText>
+                      </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Add reminder"
+                        onPress={addHardMoment}
+                        style={[styles.addButton, { backgroundColor: theme.teal }]}>
+                        <ThemedText type="smallBold" style={styles.addButtonLabel}>
+                          Add
+                        </ThemedText>
+                      </Pressable>
+                    </View>
+                    {hardMoments.map((line, index) => (
+                      <View
+                        key={`${line}_${index}`}
+                        style={[styles.savedChip, { backgroundColor: theme.backgroundSelected }]}>
+                        <ThemedText type="small" style={styles.savedChipText}>
+                          {line}
+                        </ThemedText>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${line}`}
+                          onPress={() => removeHardMoment(index)}
+                          hitSlop={6}>
+                          <XIcon color={theme.textMuted} />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {stage === 2 && (
+                <View style={styles.stack}>
+                  <View style={[styles.field, { borderColor: theme.hairline }]}>
+                    <EditRow
+                      label="Duration"
+                      value={durationLabel}
+                      valueColor={theme.tealStrong}
+                      editing={editingField === 'duration'}
+                      onPress={() =>
+                        setEditingField((v) => (v === 'duration' ? null : 'duration'))
+                      }
+                    />
+                    {editingField === 'duration' && (
+                      <View style={styles.rowEditInput}>
+                        <ChoiceChips
+                          options={DURATION_OPTIONS}
+                          value={durationDays}
+                          onChange={(v) => {
+                            setDurationDays(v);
+                            setEditingField(null);
+                          }}
+                        />
+                      </View>
+                    )}
+                  </View>
+                  <View style={[styles.field, { borderColor: theme.hairline }]}>
+                    <EditRow label="Type" value="Frequency" valueColor={theme.tealStrong} />
+                  </View>
+                  <View style={[styles.field, { borderColor: theme.hairline }]}>
+                    <EditRow
+                      label="How often"
+                      value={rhythmLabel}
+                      valueColor={theme.tealStrong}
+                      editing={editingField === 'rhythm'}
+                      onPress={() => setEditingField((v) => (v === 'rhythm' ? null : 'rhythm'))}
+                    />
+                    {editingField === 'rhythm' && (
+                      <View style={styles.rowEditInput}>
+                        <ChoiceChips
+                          options={RHYTHM_OPTIONS}
+                          value={rhythm}
+                          onChange={(v) => {
+                            setRhythm(v);
+                            setEditingField(null);
+                          }}
+                        />
+                      </View>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {stage === 3 && (
+                <View style={styles.stack}>
+                  <View
+                    style={[
+                      styles.starterBox,
+                      { backgroundColor: theme.successTint, borderColor: theme.success },
+                    ]}>
+                    <View style={[styles.badge, { backgroundColor: theme.backgroundElement }]}>
+                      <StarIcon color={theme.tealStrong} />
+                      <ThemedText type="small" style={{ color: theme.tealStrong, fontWeight: '700' }}>
                         Recommended
                       </ThemedText>
                     </View>
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.starterCopy}>
+                      Adding a small first Step you can finish in{' '}
+                      <ThemedText type="smallBold" themeColor="textSecondary">
+                        up to 2 minutes
+                      </ThemedText>{' '}
+                      raises your chance of completing the Journey.
+                    </ThemedText>
                   </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Make the first Step tiny — something you can finish in under 2 minutes. The goal
-                    is to help you start, not finish the whole Journey. {STARTER_EXAMPLES}
-                  </ThemedText>
-                  <TextInput
-                    style={inputStyle}
-                    value={starterTitle}
-                    onChangeText={setStarterTitle}
-                    placeholder="Your ≤2-minute first Step"
-                    placeholderTextColor={theme.textSecondary}
-                  />
-                  <TextInput
-                    style={[...inputStyle, styles.multiline]}
-                    value={starterDescription}
-                    onChangeText={setStarterDescription}
-                    placeholder="Optional: a little more detail"
-                    placeholderTextColor={theme.textSecondary}
-                    multiline
-                  />
-                </View>
 
-                <ThemedText type="smallBold">Your Steps</ThemedText>
-                {steps.length === 0 ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Steps are optional — add a few concrete actions, or skip and let your rhythm
-                    guide you.
-                  </ThemedText>
-                ) : (
-                  steps.map((step, index) => (
+                  {starterOpen ? (
+                    <ThemedView type="backgroundElement" style={styles.stepBox}>
+                      <View style={styles.stepBoxHeader}>
+                        <View style={styles.starterHeader}>
+                          <StarIcon color={theme.tealStrong} />
+                          <ThemedText type="small" style={{ color: theme.tealStrong, fontWeight: '700' }}>
+                            Starter Step
+                          </ThemedText>
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Remove Starter Step"
+                          onPress={() => {
+                            setStarterOpen(false);
+                            setStarterTitle('');
+                            setStarterDescription('');
+                          }}>
+                          <ThemedText type="smallBold" themeColor="textSecondary">
+                            Remove
+                          </ThemedText>
+                        </Pressable>
+                      </View>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {STARTER_EXAMPLES}
+                      </ThemedText>
+                      <TextInput
+                        style={inputStyle}
+                        value={starterTitle}
+                        onChangeText={setStarterTitle}
+                        placeholder="Your ≤2-minute first Step"
+                        placeholderTextColor={theme.textSecondary}
+                      />
+                      <TextInput
+                        style={[...inputStyle, styles.multiline]}
+                        value={starterDescription}
+                        onChangeText={setStarterDescription}
+                        placeholder="Optional: a little more detail"
+                        placeholderTextColor={theme.textSecondary}
+                        multiline
+                      />
+                    </ThemedView>
+                  ) : (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Add a Starter Step"
+                      onPress={() => setStarterOpen(true)}
+                      style={[styles.addStep, { borderColor: theme.success }]}>
+                      <StarIcon color={theme.tealStrong} />
+                      <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                        Add a Starter Step
+                      </ThemedText>
+                    </Pressable>
+                  )}
+
+                  {steps.map((step, index) => (
                     <ThemedView key={step.key} type="backgroundElement" style={styles.stepBox}>
                       <View style={styles.stepBoxHeader}>
                         <ThemedText type="small" themeColor="textSecondary">
@@ -402,130 +558,131 @@ export default function NewJourneyScreen() {
                         onChange={(value) => updateStep(step.key, { cadence: value })}
                       />
                     </ThemedView>
-                  ))
-                )}
+                  ))}
+
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Add a step"
+                    onPress={() => setSteps((prev) => [...prev, newDraftStep()])}
+                    style={[styles.addStep, { borderColor: theme.coral }]}>
+                    <PlusIcon color={theme.coralStrong} />
+                    <ThemedText type="smallBold" style={{ color: theme.coralStrong }}>
+                      Add a step
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              )}
+
+              {stage === 4 && (
+                <View style={styles.stack}>
+                  <View style={styles.switchRow}>
+                    <View style={styles.flex}>
+                      <ThemedText type="smallBold">Remind me</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        A gentle on-device nudge. We&apos;ll ask permission only if you turn this on.
+                      </ThemedText>
+                    </View>
+                    <Switch value={remindEnabled} onValueChange={setRemindEnabled} />
+                  </View>
+                  {remindEnabled && (
+                    <View style={styles.field}>
+                      <ThemedText type="smallBold">When?</ThemedText>
+                      <ChoiceChips
+                        options={REMINDER_TIMES.map((t, i) => ({ value: i, label: t.label }))}
+                        value={remindTimeIndex}
+                        onChange={setRemindTimeIndex}
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {stage === 5 && (
+                <View style={styles.stack}>
+                  <SummaryRow label="Journey" value={title.trim() || '—'} />
+                  <SummaryRow label="Duration" value={durationLabel} />
+                  <SummaryRow label="Rhythm" value={rhythmLabel} />
+                  <SummaryRow
+                    label="Steps"
+                    value={
+                      stepInputs.length === 0
+                        ? 'None yet'
+                        : `${stepInputs.length}${stepInputs.some((s) => s.isStarterStep) ? ' (incl. Starter Step)' : ''}`
+                    }
+                  />
+                  <SummaryRow label="Your why" value={why.length === 0 ? '—' : `${why.length} saved`} />
+                  <SummaryRow
+                    label="Reminder"
+                    value={remindEnabled ? REMINDER_TIMES[remindTimeIndex].label : 'Off'}
+                  />
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.summaryNote}>
+                    Starts now. Your Steps will appear on Home right away.
+                  </ThemedText>
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.footer}>
+              <View style={styles.navlbl}>
+                <ThemedText type="small" themeColor="textMuted">
+                  {stage > 0 ? `‹ ${STAGE_TITLES[stage - 1]}` : ''}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textMuted">
+                  {!isLast ? `${STAGE_TITLES[stage + 1]} ›` : ''}
+                </ThemedText>
+              </View>
+              <View style={styles.footerRow}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Add a Step"
-                  onPress={() => setSteps((prev) => [...prev, newDraftStep()])}
-                  style={[styles.addStep, { borderColor: theme.backgroundSelected }]}>
-                  <ThemedText type="smallBold">+ Add a Step</ThemedText>
+                  accessibilityLabel="Back"
+                  disabled={stage === 0}
+                  onPress={() => goToStage(Math.max(0, stage - 1))}
+                  style={[
+                    styles.navButton,
+                    styles.outlineButton,
+                    { borderColor: theme.tealTint, backgroundColor: theme.backgroundElement },
+                    stage === 0 && styles.disabled,
+                  ]}>
+                  <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                    Back
+                  </ThemedText>
                 </Pressable>
-              </View>
-            )}
 
-            {stage === 4 && (
-              <View style={styles.stack}>
-                <View style={styles.switchRow}>
-                  <View style={styles.flex}>
-                    <ThemedText type="smallBold">Remind me</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      A gentle on-device nudge. We&apos;ll ask permission only if you turn this on.
+                {isLast ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Create the Journey"
+                    disabled={!title.trim() || creating}
+                    onPress={handleCreate}
+                    style={[
+                      styles.navButton,
+                      styles.primary,
+                      { backgroundColor: theme.coral },
+                      (!title.trim() || creating) && styles.disabled,
+                    ]}>
+                    <ThemedText type="smallBold" style={{ color: theme.text }}>
+                      {creating ? 'Creating…' : 'Create'}
                     </ThemedText>
-                  </View>
-                  <Switch value={remindEnabled} onValueChange={setRemindEnabled} />
-                </View>
-                {remindEnabled && (
-                  <View style={styles.field}>
-                    <ThemedText type="smallBold">When?</ThemedText>
-                    <ChoiceChips
-                      options={REMINDER_TIMES.map((t, i) => ({ value: i, label: t.label }))}
-                      value={remindTimeIndex}
-                      onChange={setRemindTimeIndex}
-                    />
-                  </View>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Next"
+                    disabled={!canContinue}
+                    onPress={() => goToStage(Math.min(STAGE_TITLES.length - 1, stage + 1))}
+                    style={[
+                      styles.navButton,
+                      styles.primary,
+                      { backgroundColor: theme.coral },
+                      !canContinue && styles.disabled,
+                    ]}>
+                    <ThemedText type="smallBold" style={{ color: theme.text }}>
+                      Next
+                    </ThemedText>
+                  </Pressable>
                 )}
               </View>
-            )}
-
-            {stage === 5 && (
-              <View style={styles.stack}>
-                <SummaryRow label="Journey" value={title.trim() || '—'} />
-                <SummaryRow
-                  label="Duration"
-                  value={DURATION_OPTIONS.find((d) => d.value === durationDays)?.label ?? `${durationDays} days`}
-                />
-                <SummaryRow
-                  label="Rhythm"
-                  value={RHYTHM_OPTIONS.find((r) => r.value === rhythm)?.label ?? rhythm}
-                />
-                <SummaryRow
-                  label="Steps"
-                  value={
-                    stepInputs.length === 0
-                      ? 'None yet'
-                      : `${stepInputs.length}${stepInputs.some((s) => s.isStarterStep) ? ' (incl. Starter Step)' : ''}`
-                  }
-                />
-                <SummaryRow label="Your why" value={why.length === 0 ? '—' : `${why.length} saved`} />
-                <SummaryRow
-                  label="Reminder"
-                  value={remindEnabled ? REMINDER_TIMES[remindTimeIndex].label : 'Off'}
-                />
-                <ThemedText type="small" themeColor="textSecondary" style={styles.summaryNote}>
-                  Starts now. Your Steps will appear on Home right away.
-                </ThemedText>
-              </View>
-            )}
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              disabled={stage === 0}
-              onPress={() => setStage((s) => Math.max(0, s - 1))}
-              style={[
-                styles.navButton,
-                { borderColor: theme.hairline },
-                stage === 0 && styles.disabled,
-              ]}>
-              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                Back
-              </ThemedText>
-              {stage > 0 && (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {STAGE_TITLES[stage - 1]}
-                </ThemedText>
-              )}
-            </Pressable>
-
-            {isLast ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Create the Journey"
-                disabled={!title.trim() || creating}
-                onPress={handleCreate}
-                style={[
-                  styles.navButton,
-                  styles.primary,
-                  { backgroundColor: theme.coral },
-                  (!title.trim() || creating) && styles.disabled,
-                ]}>
-                <ThemedText type="smallBold" style={{ color: theme.text }}>
-                  {creating ? 'Creating…' : 'Create'}
-                </ThemedText>
-              </Pressable>
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Next"
-                disabled={!canContinue}
-                onPress={() => setStage((s) => Math.min(STAGE_TITLES.length - 1, s + 1))}
-                style={[
-                  styles.navButton,
-                  styles.primary,
-                  { backgroundColor: theme.coral },
-                  !canContinue && styles.disabled,
-                ]}>
-                <ThemedText type="smallBold" style={{ color: theme.text }}>
-                  Next
-                </ThemedText>
-                <ThemedText type="small" style={{ color: theme.text, opacity: 0.7 }}>
-                  {STAGE_TITLES[stage + 1]}
-                </ThemedText>
-              </Pressable>
-            )}
+            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -533,24 +690,43 @@ export default function NewJourneyScreen() {
   );
 }
 
-/** The top step-progress bars; the active stage is filled. */
-function ProgressBars({ count, active }: { count: number; active: number }) {
+/** A labelled value row with a pencil edit affordance (mockup v14: `.rowE`/`.editpen`). */
+function EditRow({
+  label,
+  value,
+  valueColor,
+  editing,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  editing?: boolean;
+  onPress?: () => void;
+}) {
   const theme = useTheme();
   return (
-    <View style={styles.progressBars}>
-      {Array.from({ length: count }).map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.progressBar,
-            { backgroundColor: index <= active ? theme.teal : theme.hairline },
-          ]}
-        />
-      ))}
+    <View style={styles.rowE}>
+      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="smallBold" style={[styles.rowValue, valueColor ? { color: valueColor } : undefined]}>
+        {value}
+      </ThemedText>
+      {onPress && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${label}`}
+          accessibilityState={{ expanded: !!editing }}
+          onPress={onPress}
+          hitSlop={6}
+          style={[styles.editPen, { backgroundColor: theme.tealTint }]}>
+          <PencilIcon color={theme.tealStrong} />
+        </Pressable>
+      )}
     </View>
   );
 }
 
+/** A label/value row on the final Summary stage. */
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.summaryRow}>
@@ -561,6 +737,61 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
         {value}
       </ThemedText>
     </View>
+  );
+}
+
+// ── Inline icons (Design System: no icon-font CDN; small hand-drawn SVGs) ──
+
+function ChevronIcon({ color }: { color: string }) {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M15 6l-6 6 6 6"
+        stroke={color}
+        strokeWidth={2.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function PencilIcon({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 20l4-1 11-11-3-3L5 16l-1 4z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Line x1="14" y1="7" x2="17" y2="10" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function XIcon({ color }: { color: string }) {
+  return (
+    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 6l12 12M18 6L6 18" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function PlusIcon({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function StarIcon({ color }: { color: string }) {
+  return (
+    <Svg width={11} height={11} viewBox="0 0 24 24" fill={color}>
+      <Path d="M12 2l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8L12 17l-6.1 3.5 1.5-6.8L2.2 9l6.9-.7L12 2z" />
+    </Svg>
   );
 }
 
@@ -578,37 +809,71 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
-    gap: Spacing.two,
-  },
-  headerRow: {
+  top: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderBottomWidth: 1,
   },
-  stageTitle: {
-    lineHeight: 40,
+  backButton: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.iconButton,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topTitle: {
+    flex: 1,
+  },
+  body: {
+    flex: 1,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+  },
+  progressWrap: {
+    zIndex: 3,
   },
   progressBars: {
     flexDirection: 'row',
     gap: Spacing.one,
   },
-  progressBar: {
+  progressBarHit: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    paddingVertical: Spacing.one,
+  },
+  progressBar: {
+    height: 5,
+    borderRadius: 3,
+  },
+  tooltipRow: {
+    alignItems: 'center',
+    marginTop: Spacing.one,
+  },
+  tooltip: {
+    borderRadius: Radius.chip,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+  },
+  tooltipText: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  stageTitle: {
+    marginTop: Spacing.three,
   },
   content: {
-    paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
     paddingBottom: Spacing.four,
   },
   stack: {
-    gap: Spacing.four,
+    gap: Spacing.three,
   },
   field: {
+    gap: Spacing.two,
+  },
+  qBlock: {
     gap: Spacing.two,
   },
   input: {
@@ -618,35 +883,92 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     fontSize: 15,
   },
+  abig: {
+    minHeight: 64,
+    textAlignVertical: 'top',
+  },
+  ansBox: {
+    minHeight: 46,
+    textAlignVertical: 'top',
+  },
   multiline: {
     minHeight: 72,
     textAlignVertical: 'top',
   },
+
+  // ── Edit row (Name / Duration / Type / How often) ──
+  rowE: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderRadius: Radius.card,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+  },
+  rowValue: {
+    marginLeft: 'auto',
+  },
+  editPen: {
+    width: 30,
+    height: 30,
+    borderRadius: Radius.iconButton,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowEditInput: {
+    marginTop: Spacing.two,
+  },
+
+  // ── Your why ──
   addRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
   },
-  addButton: {
+  reminderInputWrap: {
+    flex: 1,
     borderWidth: 1,
-    borderRadius: Radius.button,
+    borderRadius: Radius.input,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-  },
-  chipWrap: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
+    alignItems: 'center',
+  },
+  reminderInput: {
+    flex: 1,
+    fontSize: 14,
+  },
+  charHint: {
+    marginLeft: Spacing.two,
+  },
+  addButton: {
+    borderRadius: Radius.input,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonLabel: {
+    color: '#ffffff',
   },
   savedChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    borderRadius: Spacing.four,
+    justifyContent: 'space-between',
+    borderRadius: Radius.input,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
+    paddingVertical: Spacing.two,
   },
+  savedChipText: {
+    flex: 1,
+    marginRight: Spacing.two,
+  },
+
+  // ── Plan the steps ──
   starterBox: {
+    borderWidth: 1.5,
     borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
@@ -656,14 +978,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
+  starterCopy: {
+    lineHeight: 18,
+  },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
     borderRadius: Radius.chip,
-  },
-  recommendedLabel: {
-    color: '#ffffff',
-    fontWeight: '700',
   },
   stepBox: {
     borderRadius: Radius.card,
@@ -676,17 +1001,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   addStep: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: Radius.button,
-    paddingVertical: Spacing.three,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: Radius.card,
+    paddingVertical: Spacing.three,
   },
+
+  // ── Reminders ──
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
   },
+
+  // ── Summary ──
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -700,26 +1032,36 @@ const styles = StyleSheet.create({
   summaryNote: {
     marginTop: Spacing.two,
   },
+
+  // ── Footer ──
   footer: {
+    paddingBottom: Spacing.three,
+    paddingTop: Spacing.one,
+  },
+  navlbl: {
     flexDirection: 'row',
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.one,
+    paddingBottom: Spacing.one,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
   },
   navButton: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: 'transparent',
     borderRadius: Radius.button,
     paddingVertical: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.half,
+  },
+  outlineButton: {
+    borderWidth: 1.5,
   },
   primary: {
     borderWidth: 0,
   },
   disabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
 });

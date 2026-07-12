@@ -92,6 +92,34 @@ export interface LoginRewardClaimed {
   coins: number;
 }
 
+// ── RESERVED events ─────────────────────────────────────────────────────────
+// Declared-but-never-emitted contract members for deferred domains (profile /
+// interests / intervention). They keep the DomainEvent vocabulary stable so a
+// future engine can subscribe/emit with no union churn. NONE of these is emitted
+// anywhere today — building the behavior behind them is out of scope.
+
+/** RESERVED — not yet emitted. The derived user profile changed. Carries NO PII. */
+export interface ProfileUpdated {
+  type: 'ProfileUpdated';
+}
+
+/** RESERVED — not yet emitted. The user's chosen interest topics changed. */
+export interface InterestsUpdated {
+  type: 'InterestsUpdated';
+}
+
+/** RESERVED — not yet emitted. A future InterventionEngine scheduled a nudge. */
+export interface InterventionScheduled {
+  type: 'InterventionScheduled';
+}
+
+/** RESERVED — not yet emitted. A Step's expected cadence window elapsed unmet. */
+export interface StepMissed {
+  type: 'StepMissed';
+  journeyId: string;
+  stepId: string;
+}
+
 export type DomainEvent =
   | JourneyCreated
   | StepCheckedIn
@@ -104,7 +132,12 @@ export type DomainEvent =
   | MissionProgressed
   | MissionCompleted
   | MissionClaimed
-  | LoginRewardClaimed;
+  | LoginRewardClaimed
+  // RESERVED — not yet emitted (deferred domains)
+  | ProfileUpdated
+  | InterestsUpdated
+  | InterventionScheduled
+  | StepMissed;
 
 export type DomainEventType = DomainEvent['type'];
 

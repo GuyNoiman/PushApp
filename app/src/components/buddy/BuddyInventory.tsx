@@ -29,7 +29,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
-import { SHOP_ITEMS, type ShopItem } from '@/core/config/shopItems';
+import { type ShopItem } from '@/core/config/shopItems';
 import { useTheme } from '@/hooks/use-theme';
 
 type CategoryId = 'character' | 'clothing' | 'items' | 'location' | 'furniture';
@@ -68,18 +68,21 @@ const TILE_GRADIENTS = [
 export function BuddyInventory({
   ownedCosmetics,
   equippedCosmetic,
+  cosmetics,
   onSelect,
 }: {
   ownedCosmetics: string[];
   equippedCosmetic: string | null;
+  /** The cosmetic catalog, supplied by the screen via the core facade (§19). */
+  cosmetics: ShopItem[];
   onSelect: (itemId: string | null) => void;
 }) {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState<CategoryId>('character');
   const [highlighted, setHighlighted] = useState<string | null>(equippedCosmetic);
 
-  const tintItems = useMemo(() => SHOP_ITEMS.filter((i) => i.kind === 'tint'), []);
-  const accessoryItems = useMemo(() => SHOP_ITEMS.filter((i) => i.kind === 'accessory'), []);
+  const tintItems = useMemo(() => cosmetics.filter((i) => i.kind === 'tint'), [cosmetics]);
+  const accessoryItems = useMemo(() => cosmetics.filter((i) => i.kind === 'accessory'), [cosmetics]);
 
   const items: ShopItem[] =
     activeTab === 'character' ? tintItems : activeTab === 'clothing' ? accessoryItems : [];

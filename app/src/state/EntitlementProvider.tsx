@@ -14,10 +14,9 @@
  * PRIVACY (R1): the Entitlement carries NO PII — only a tier and a couple of
  * expiry timestamps.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { getEntitlementGateway } from '@/core/entitlement';
-import { EntitlementEngine } from '@/core/engines/EntitlementEngine';
 import type { GatedFeature } from '@/core/config/tiers';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from '@/core/types/entitlement';
 import { useApp } from '@/state/AppProvider';
@@ -105,24 +104,30 @@ function ActiveEntitlementProvider({ children }: { children: ReactNode }) {
     };
   }, [gateway, uid]);
 
-  // The engine computes the effective tier from `stored` against the runtime
-  // clock; startTrial persists the local trial through AppCore/Repository.
-  const engine = useMemo(
-    () =>
-      new EntitlementEngine(
-        () => stored,
-        (e) => {
-          setStored(e);
-          core.setEntitlement(e); // persist the local trial offline-first
-        },
-      ),
-    [stored, core],
+  // The EntitlementEngine lives in AppCore (composition root). Point it at THIS
+  // provider's `stored` — including any non-persisted server elevation — so the
+  // effective tier is computed against the same value as before. A ref keeps the
+  // reader reading the latest `stored` without re-registering each render.
+  const storedRef = useRef<Entitlement>(stored);
+  storedRef.current = stored;
+  useEffect(() => {
+    core.setEntitlementReader(() => storedRef.current);
+    return () => core.setEntitlementReader(); // restore the persisted default
+  }, [core]);
+
+  // Effective tier for the current clock (a lapsed trial reads as free). Reading
+  // it here (on every render) recomputes when `stored` changes — same as before.
+  const tier = core.getEffectiveTier();
+
+  const isActive = useCallback((feature: GatedFeature) => core.isFeatureActive(feature), [core]);
+  const startTrial = useCallback(
+    (days: number) => {
+      const started = core.startTrial(days); // persists the local trial via AppCore
+      if (started) setStored(core.getEntitlement()); // re-render on the new tier
+      return started;
+    },
+    [core],
   );
-
-  const tier = engine.getEffectiveTier();
-
-  const isActive = useCallback((feature: GatedFeature) => engine.isActive(feature), [engine]);
-  const startTrial = useCallback((days: number) => engine.startTrial(days), [engine]);
 
   const value: EntitlementContextValue = {
     entitlement: stored,

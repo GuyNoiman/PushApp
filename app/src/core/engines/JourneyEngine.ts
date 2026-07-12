@@ -89,6 +89,21 @@ export class JourneyEngine {
     }
   }
 
+  /**
+   * A Journey's completion ratio in [0,1] — done Steps over total Steps, or 0 when
+   * the Journey is missing or has no Steps. The single source of this math (was
+   * inlined in SocialProvider's progress publish): keeps engine logic out of the UI
+   * (Engineering Bible §19). Value is identical to the previous inline computation.
+   */
+  journeyProgress(journeyId: string): number {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey) return 0;
+    const total = journey.steps.length;
+    if (total === 0) return 0;
+    const done = journey.steps.filter((s) => s.done).length;
+    return done / total;
+  }
+
   /** Steps the user can act on now: not-yet-done Steps of active Journeys. */
   getTodaySteps(): TodayStep[] {
     const today: TodayStep[] = [];

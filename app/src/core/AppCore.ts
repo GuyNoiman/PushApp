@@ -11,7 +11,7 @@ import { resolveBuddy, stageDisplayName as resolveStageDisplayName } from './con
 import { LOGIN_REWARD } from './config/loginReward';
 import { MISSIONS } from './config/missions';
 import { REWARDS } from './config/rewards';
-import { SHOP_ITEMS, type ShopItem } from './config/shopItems';
+import { resolveCosmetic, SHOP_ITEMS, type ShopItem } from './config/shopItems';
 import { BuddyEngine } from './engines/BuddyEngine';
 import { JourneyEngine, type NewJourneyInput, type TodayStep } from './engines/JourneyEngine';
 import {
@@ -19,14 +19,16 @@ import {
   type LoginRewardView,
   type MissionView,
 } from './engines/MissionEngine';
+import { EntitlementEngine } from './engines/EntitlementEngine';
 import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
+import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
 import { LocalRepository } from './persistence/LocalRepository';
 import type { Repository } from './persistence/Repository';
 import type { AppState, Buddy, BuddyStage, Journey } from './types/domain';
-import { FREE_ENTITLEMENT, type Entitlement } from './types/entitlement';
+import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
 
 /** A Buddy enriched with derived progression for display. */
 export interface BuddyView extends Buddy {
@@ -111,6 +113,16 @@ export class AppCore {
   private readonly reminderEngine: ReminderEngine;
   private readonly shopEngine: ShopEngine;
   private readonly missionEngine: MissionEngine;
+  private readonly entitlementEngine: EntitlementEngine;
+
+  /**
+   * Reads the entitlement the EntitlementEngine should compute against. Defaults
+   * to the locally-persisted entitlement; EntitlementProvider overrides it (via
+   * {@link setEntitlementReader}) so a NON-persisted server elevation (subscriber/
+   * grant) can drive the effective tier without being written to disk. Behavior is
+   * identical to the previous in-provider engine construction.
+   */
+  private entitlementReader: () => Entitlement = () => this.getEntitlement();
 
   private readonly listeners = new Set<() => void>();
   private started = false;
@@ -121,9 +133,19 @@ export class AppCore {
     this.journeyEngine = new JourneyEngine(this.bus, getState);
     this.rewardEngine = new RewardEngine(this.bus, REWARDS);
     this.buddyEngine = new BuddyEngine(this.bus, getState);
-    this.reminderEngine = new ReminderEngine();
+    // Pass the bus as the reserved intervention seam (deferred): the engine only
+    // stores it today and subscribes to nothing — no behavior change.
+    this.reminderEngine = new ReminderEngine(this.bus);
     this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
     this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
+    // Composition root owns the EntitlementEngine (like every other engine). It
+    // reads through `entitlementReader` (provider-overridable for server elevation)
+    // and persists a local trial via setEntitlement — same wiring as before, just
+    // hoisted out of EntitlementProvider.
+    this.entitlementEngine = new EntitlementEngine(
+      () => this.entitlementReader(),
+      (e) => this.setEntitlement(e),
+    );
   }
 
   /** Load persisted state (seeding a demo Journey on first run) and start engines. */
@@ -196,9 +218,36 @@ export class AppCore {
     this.journeyEngine.checkInStep(journeyId, stepId);
   }
 
+  /**
+   * A Journey's completion ratio in [0,1] (done Steps / total). Facade over the
+   * JourneyEngine selector so callers (e.g. SocialProvider's progress publish)
+   * don't recompute Step math inline (Engineering Bible §19).
+   */
+  journeyProgress(journeyId: string): number {
+    return this.journeyEngine.journeyProgress(journeyId);
+  }
+
   /** The Shop cosmetic catalog (read-only config) for the Shop screen to render. */
   getShopItems(): ShopItem[] {
     return SHOP_ITEMS;
+  }
+
+  /**
+   * The full cosmetic catalog for presentational Buddy surfaces (e.g. the
+   * inventory grid), so components read the catalog through the facade rather than
+   * importing core config directly (Engineering Bible §19). Same data as the Shop
+   * catalog today; a distinct method keeps the intent (cosmetics, not the Shop).
+   */
+  getCosmetics(): ShopItem[] {
+    return SHOP_ITEMS;
+  }
+
+  /**
+   * Resolve an equipped cosmetic by id (or undefined), so the Buddy scene doesn't
+   * import core config directly. Delegates to the config resolver.
+   */
+  resolveCosmetic(id: string | null | undefined): ShopItem | undefined {
+    return resolveCosmetic(id);
   }
 
   /** Buy a cosmetic with Coins. Returns whether the purchase succeeded. */
@@ -275,6 +324,30 @@ export class AppCore {
   setEntitlement(entitlement: Entitlement): void {
     this.state.entitlement = entitlement;
     this.onChanged();
+  }
+
+  /**
+   * Point the EntitlementEngine at a custom entitlement source (used by
+   * EntitlementProvider to feed a NON-persisted server elevation into the effective
+   * tier). Passing no reader restores the default (the persisted local entitlement).
+   */
+  setEntitlementReader(reader?: () => Entitlement): void {
+    this.entitlementReader = reader ?? (() => this.getEntitlement());
+  }
+
+  /** The account's EFFECTIVE tier for the current clock (a lapsed trial → free). */
+  getEffectiveTier(): AccountTier {
+    return this.entitlementEngine.getEffectiveTier();
+  }
+
+  /** Whether a feature is unlocked at the account's effective tier. */
+  isFeatureActive(feature: GatedFeature): boolean {
+    return this.entitlementEngine.isActive(feature);
+  }
+
+  /** Start a LOCAL dev/POC trial for `days` days. Returns whether it started. */
+  startTrial(days: number): boolean {
+    return this.entitlementEngine.startTrial(days);
   }
 
   /**

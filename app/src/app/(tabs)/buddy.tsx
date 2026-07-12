@@ -65,6 +65,7 @@ export default function BuddyScreen() {
             <View style={styles.sceneWrap}>
               <BuddyScene
                 buddy={buddy}
+                cosmetic={core.resolveCosmetic(buddy.equippedCosmetic)}
                 onOpenShop={() => router.push('/shop')}
                 onCustomize={() => {
                   // TODO: customize flow — no dedicated route yet; the inventory
@@ -93,6 +94,7 @@ export default function BuddyScreen() {
             <BuddyInventory
               ownedCosmetics={buddy.ownedCosmetics}
               equippedCosmetic={buddy.equippedCosmetic}
+              cosmetics={core.getCosmetics()}
               onSelect={(itemId) => {
                 if (itemId) {
                   core.equipItem(itemId);

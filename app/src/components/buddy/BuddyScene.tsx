@@ -15,7 +15,7 @@ import { GlossyTile } from '@/components/GlossyTile';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import type { BuddyView } from '@/core/AppCore';
-import { resolveCosmetic } from '@/core/config/shopItems';
+import { type ShopItem } from '@/core/config/shopItems';
 import { useTheme } from '@/hooks/use-theme';
 
 // The Buddy scene's "forest" backdrop — a soft sky-teal top fading into a green
@@ -26,16 +26,18 @@ const SCENE_GROUND = '#8FCB8F';
 
 export function BuddyScene({
   buddy,
+  cosmetic,
   onOpenShop,
   onCustomize,
 }: {
   buddy: BuddyView;
+  /** The equipped cosmetic, resolved by the screen via the core facade (§19). */
+  cosmetic?: ShopItem;
   onOpenShop?: () => void;
   onCustomize?: () => void;
 }) {
   const theme = useTheme();
 
-  const cosmetic = resolveCosmetic(buddy.equippedCosmetic);
   const tint = cosmetic?.kind === 'tint' ? cosmetic.value : undefined;
   const accessory = cosmetic?.kind === 'accessory' ? cosmetic.value : undefined;
 

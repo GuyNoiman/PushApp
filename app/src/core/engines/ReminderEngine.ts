@@ -4,6 +4,7 @@
  * the rest of core stays pure and provider-agnostic. All calls are guarded so a
  * denied permission or an unsupported platform never crashes the app.
  */
+import type { EventBus } from '../events/EventBus';
 import * as Notifications from 'expo-notifications';
 
 export interface DailyReminderInput {
@@ -17,6 +18,13 @@ export interface DailyReminderInput {
 
 export class ReminderEngine {
   private permissionGranted = false;
+
+  /**
+   * Intervention seam: bus reserved so a future InterventionEngine can react to
+   * events (e.g. StepMissed) to decide when/how to nudge — deferred. Optional and
+   * stored only; current behavior is unchanged and nothing is subscribed yet.
+   */
+  constructor(private readonly bus?: EventBus) {}
 
   /** Ask for notification permission once. Safe to call repeatedly. */
   async init(): Promise<boolean> {

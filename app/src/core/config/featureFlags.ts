@@ -28,6 +28,25 @@ export const featureFlags = {
    * NOTE: this only reads; a `subscriber` tier is written server-side only.
    */
   entitlements: Boolean(url && key),
+  /**
+   * RESERVED (deferred, POC scope). Adaptive-profile domain — a derived, PII-free
+   * picture of how a user tends to act, for a future personalization layer. Off:
+   * the seam exists (ProfileGateway) but no logic runs. Must pass security-privacy
+   * review before it is ever turned on.
+   */
+  profile: false,
+  /**
+   * RESERVED (deferred, POC scope). Interests/discovery domain — coarse, user-
+   * chosen topic tags for future recommendations. Off: the seam exists
+   * (InterestsGateway) but no logic runs. Must pass security-privacy review first.
+   */
+  interests: false,
+  /**
+   * RESERVED (deferred, POC scope). Intervention domain — a future engine that
+   * reacts to domain events (e.g. StepMissed) to decide when/how to nudge. Off:
+   * the ReminderEngine holds a reserved bus but subscribes to nothing.
+   */
+  intervention: false,
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

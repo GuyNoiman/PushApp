@@ -172,12 +172,10 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       for (const journeyId of sharedIds) {
         const journey = journeys.find((j) => j.id === journeyId);
         if (!journey) continue;
-        const total = journey.steps.length;
-        const done = journey.steps.filter((s) => s.done).length;
         await gateway.publishProgress({
           journeyId,
           title: journey.title,
-          progress: total > 0 ? done / total : 0,
+          progress: core.journeyProgress(journeyId), // engine owns the math (Bible §19)
           streak: 0, // No local streak model yet — best-effort (Bible §19).
         });
       }
@@ -236,12 +234,10 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
         // Publish this Journey's summary immediately so a new Ally sees it at once.
         const journey = core.getSnapshot().journeys.find((j) => j.id === journeyId);
         if (journey) {
-          const total = journey.steps.length;
-          const done = journey.steps.filter((s) => s.done).length;
           await gateway.publishProgress({
             journeyId,
             title: journey.title,
-            progress: total > 0 ? done / total : 0,
+            progress: core.journeyProgress(journeyId), // engine owns the math (Bible §19)
             streak: 0,
           });
         }

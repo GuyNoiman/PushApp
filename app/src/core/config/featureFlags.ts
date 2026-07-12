@@ -20,6 +20,14 @@ export const featureFlags = {
    * fully anonymous no-op, local pillars untouched.
    */
   auth: Boolean(url && key),
+  /**
+   * Entitlement pillar: READS the signed-in user's account tier (free / trial /
+   * subscriber) from the server. Gated on the SAME Supabase env — it depends on
+   * the auth session. Off ⇒ no server read; the effective tier is the offline-
+   * first `free` default (a local dev trial still works, persisted on-device).
+   * NOTE: this only reads; a `subscriber` tier is written server-side only.
+   */
+  entitlements: Boolean(url && key),
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

@@ -26,6 +26,7 @@ import { EventBus } from './events/EventBus';
 import { LocalRepository } from './persistence/LocalRepository';
 import type { Repository } from './persistence/Repository';
 import type { AppState, Buddy, BuddyStage, Journey } from './types/domain';
+import { FREE_ENTITLEMENT, type Entitlement } from './types/entitlement';
 
 /** A Buddy enriched with derived progression for display. */
 export interface BuddyView extends Buddy {
@@ -254,6 +255,26 @@ export class AppCore {
   /** Schedule a simple time/day reminder. Returns the reminder id, or null if unavailable. */
   scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
     return this.reminderEngine.scheduleDailyReminder(input);
+  }
+
+  /**
+   * The LOCALLY-persisted entitlement (types/entitlement.ts), or the offline-
+   * first `free` default when none has been stored. This holds only the local
+   * dev/POC trial; a server `subscriber` tier is read live via EntitlementGateway
+   * and is never persisted here. Carries no PII.
+   */
+  getEntitlement(): Entitlement {
+    return this.state.entitlement ?? FREE_ENTITLEMENT;
+  }
+
+  /**
+   * Persist a locally-derived entitlement (the dev/POC trial only — a
+   * subscriber tier is never client-written). Saved through the Repository like
+   * every other state change and notifies subscribers.
+   */
+  setEntitlement(entitlement: Entitlement): void {
+    this.state.entitlement = entitlement;
+    this.onChanged();
   }
 
   /**

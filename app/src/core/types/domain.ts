@@ -5,6 +5,7 @@
  *
  * This file is pure TypeScript. No React, no UI, no vendor imports.
  */
+import type { Entitlement } from './entitlement';
 
 /** How often a Step is meant to recur. A Step may be one-time or repeating. */
 export type Cadence = 'once' | 'daily' | 'weekly';
@@ -110,4 +111,12 @@ export interface AppState {
   checkIns: CheckIn[];
   missions: MissionsState;
   login: LoginState;
+  /**
+   * Local account-tier state (types/entitlement.ts). Optional so an older
+   * persisted snapshot loads without it and resolves to the `free` default
+   * (backfilled in AppCore.migrateState). Holds ONLY the local dev/POC trial
+   * on-device; a server `subscriber` tier is read live via EntitlementGateway,
+   * never stored here. Carries NO PII.
+   */
+  entitlement?: Entitlement;
 }

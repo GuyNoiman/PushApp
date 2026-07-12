@@ -174,6 +174,42 @@ create policy "cheers_read" on public.cheers for select to authenticated
 create policy "cheers_send_ally" on public.cheers for insert to authenticated
   with check (from_id = auth.uid() and public.is_ally(journey_id, to_id, auth.uid()));
 
+-- ── 5b. ENTITLEMENTS (account tier) ─────────────────────────────────────────
+-- One row per user describing their account tier (free / trial / subscriber).
+-- This is the $0 foundation for multi-user account management; it is NOT billing.
+--
+-- SECURITY (critical): writes are SERVER-AUTHORITATIVE ONLY. `authenticated` may
+-- SELECT its OWN row and nothing else — there is deliberately NO insert / update
+-- / delete policy for `authenticated`, so RLS DENIES every client write. A row is
+-- created / upgraded only by the service role (a verified App Store / Play receipt
+-- webhook, or a manual grant) — the client can therefore NEVER make itself a
+-- `subscriber`. The one client-side elevation, the local dev trial, lives on the
+-- device only and never touches this table.
+--
+-- PRIVACY: no PII here — no name, email, receipt, or purchase token. Only a tier
+-- and a couple of expiry timestamps (Auth_Backend_Proposal red-line R1).
+create table if not exists public.entitlements (
+  user_id            uuid primary key references auth.users(id) on delete cascade,
+  tier               text not null default 'free' check (tier in ('free','trial','subscriber')),
+  trial_ends_at      timestamptz,
+  current_period_end timestamptz,
+  source             text not null default 'none' check (source in ('none','trial','iap','grant')),
+  updated_at         timestamptz not null default now()
+);
+alter table public.entitlements enable row level security;
+
+-- SELECT own row only. NO insert/update/delete for authenticated: the server
+-- (service role) is the sole writer of a tier — the client cannot upgrade itself.
+drop policy if exists "entitlements_read_own" on public.entitlements;
+create policy "entitlements_read_own" on public.entitlements for select to authenticated
+  using (user_id = auth.uid());
+
+-- Server-stamp updated_at so the "last changed" signal can't be forged (matches
+-- the snapshots pattern). Reuses public.stamp_updated_at() defined above.
+drop trigger if exists trg_entitlements_stamp on public.entitlements;
+create trigger trg_entitlements_stamp before insert or update
+  on public.entitlements for each row execute function public.stamp_updated_at();
+
 -- ── 6. REALTIME ────────────────────────────────────────────────────────────
 -- Cheers only. (F2) progress_snapshots is intentionally NOT published — realtime
 -- respects only base-table RLS and would bypass the title-masking function.

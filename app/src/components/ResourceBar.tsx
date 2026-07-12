@@ -1,13 +1,16 @@
 /**
  * ResourceBar — the floating top resource strip from the v14 mockup (screen-01 /
- * screen-10): a blue Level circle fused into a dark XP pill, a purple "GT" (Grace
- * Token) chip, and a gold Coins pill with a small "+" affordance. No background
- * bar behind it — the pieces float directly on the page, each with its own
- * glossy depth (inner highlight + drop shadow) so it reads as game UI.
+ * screen-10): a blue Level circle fused into a dark XP pill reading "{into}/{next}
+ * EXP" (Home_Screen.md "Finalized visual design"), a purple "GT" (Grace Token)
+ * chip, and a gold Coins pill (a distinct star-coin icon, separate from the
+ * check-in glyph elsewhere) with a small "+" affordance. No background bar behind
+ * it — the pieces float directly on the page, each with its own glossy depth
+ * (inner highlight + drop shadow) so it reads as game UI.
  *
  * Shared by Home and Buddy (Engineering Bible: presentational only, no business
  * logic — every value is a prop).
  */
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -51,7 +54,7 @@ export function ResourceBar({
         <View style={styles.lvTrack}>
           <View style={[styles.lvFill, { width: `${fill * 100}%`, backgroundColor: theme.blue }]} />
           <Text style={styles.lvCnt}>
-            {xpInto}/{xpForNext}
+            {xpInto}/{xpForNext} EXP
           </Text>
         </View>
       </View>
@@ -74,8 +77,11 @@ export function ResourceBar({
       )}
 
       <View style={[styles.coinPill, { backgroundColor: theme.goldTint, borderColor: theme.gold }]}>
+        {/* Star-coin — a distinct glyph from the Step-card check-in icon (Ionicons,
+            not an emoji/character glyph), per the founder's "give each a clear,
+            distinct icon" correction. */}
         <View style={[styles.coinStar, { backgroundColor: theme.gold }]}>
-          <Text style={styles.coinStarGlyph}>★</Text>
+          <Ionicons name="star" size={12} color="#fff" />
         </View>
         <ThemedText style={[styles.coinCount, { color: theme.goldStrong }]}>{coins}</ThemedText>
         <Pressable
@@ -84,7 +90,7 @@ export function ResourceBar({
           onPress={onAddCoins}
           hitSlop={6}
           style={styles.coinPlus}>
-          <Text style={[styles.coinPlusGlyph, { color: theme.goldStrong }]}>+</Text>
+          <Ionicons name="add" size={14} color={theme.goldStrong} />
         </Pressable>
       </View>
     </View>
@@ -126,8 +132,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   lvTrack: {
+    // Widened (was 76) so "{into}/{next} EXP" always fits without wrapping or
+    // truncating (Home_Screen.md "Finalized visual design": "make the meter a
+    // bit wider").
     height: 21,
-    minWidth: 76,
+    minWidth: 100,
     borderRadius: 11,
     backgroundColor: '#2B3B54',
     marginLeft: -12,
@@ -210,11 +219,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  coinStarGlyph: {
-    color: '#fff',
-    fontSize: 11,
-    lineHeight: 13,
-  },
   coinCount: {
     fontFamily: FontFamily.headingBold,
     fontSize: 13,
@@ -226,10 +230,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.7)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  coinPlusGlyph: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 12,
-    lineHeight: 14,
   },
 });

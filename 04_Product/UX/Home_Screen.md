@@ -210,3 +210,44 @@ Founder-approved finalized decisions. Reference mockup:
   settings.
 - Grace Tokens let a user **skip/postpone a Step without breaking the Journey** (see Product
   Bible §36); tapping the card opens the **grace flow** (spend + brief reason capture).
+
+### Implementation notes (2026-07-12) — frozen top + draggable panel + swipe
+
+Built in `app/src/app/(tabs)/index.tsx`, `app/src/components/WeekStepsSheet.tsx`,
+`app/src/components/journey/StepCard.tsx`, `app/src/components/ResourceBar.tsx`:
+
+- **Frozen top / draggable panel, confirmed as a two-layer structure**: the top
+  zone (ResourceBar + greeting bubble + Buddy + the four area buttons) is a
+  non-scrolling layer painted with the forest scene wash; the Week's-steps panel
+  is a separate `WeekStepsSheet` component anchored to the bottom of the screen,
+  full-width, **square top corners** (no `borderRadius`), that grows **upward**
+  as the user drags its grabber — never scrolling the frozen top above it. Only
+  the Steps `FlatList` inside the panel scrolls. Built on
+  `react-native-gesture-handler`'s `Gesture.Pan` + `react-native-reanimated`
+  (already app deps, Expo-Go-safe) — a `GestureHandlerRootView` was added once at
+  the app root (`_layout.tsx`) as gesture-handler v2 requires it.
+- **Swipe-to-report** landed on `StepCard`: swipe right commits `onCheckIn`
+  (same as the existing tap button, which is kept); swipe left commits an
+  `onMiss` callback. A live colour-wash preview (green/coral) fades in under the
+  finger as the card is dragged past a threshold, then the card flies off and
+  reports. **Data-model gap**: the domain Step has no persisted "missed" state
+  yet, so Home currently tracks swiped-miss Steps in local component state only
+  (visual recolour, not persisted) — replace with a real Miss/status field on
+  the Step/JourneyEngine when one lands; `onMiss` is optional on `StepCard` so
+  callers without a miss concept degrade gracefully (swipe-left just springs
+  back).
+- **Distinct icons**: the coin pill now uses an Ionicons `star` glyph (was a
+  text "★" character) and the Step-card check-in control is an Ionicons
+  `checkmark` button (was a "Check in" text pill) — chosen so the two rewards
+  glyphs (coins vs. report-done) are visually and semantically distinct per the
+  founder's correction.
+- **XP meter**: now reads **"{into}/{next} EXP"** and the track is ~24px wider
+  to fit the label without wrapping.
+- **Known follow-up**: at very narrow phone widths (~390–460px) the four-button
+  `buddyRow` (two icon buttons flanking Buddy on each side + the ResourceBar's
+  GT/coin pills) is tight and the rightmost elements can crop at the edge —
+  this layout tension pre-dates this pass and is not new, but the wider XP track
+  makes it marginally worse. Flagged for a follow-up visual pass (e.g. shrinking
+  the area-button size slightly at narrow widths, or letting the ResourceBar
+  wrap) rather than solved here, to keep this change scoped to the spec's
+  explicit asks.

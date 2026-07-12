@@ -1,14 +1,21 @@
 /**
- * Home — action-based (v14 mockup screen-01). It answers "what should I do now?"
- * (not a list of Journeys): a floating resource bar, a greeting speech bubble +
- * the Buddy flanked by four area buttons, and this week's Steps as check-off
- * cards in a warm cream panel. Checking a Step calls the AppCore facade; the
- * engines run and the Buddy reacts on screen.
+ * Home — action-based (Home_Screen.md "Finalized visual design", mockup v14
+ * screen-01). It answers "what should I do now?" (not a list of Journeys).
+ *
+ * Layout is two zones (Home_Screen.md §"draggable panel over a frozen top"):
+ * a FROZEN top (never scrolls) — the floating ResourceBar, the greeting speech
+ * bubble + Buddy flanked by four area buttons, all sitting on the forest scene
+ * wash — and a draggable "Week's steps" panel on top of it: full-width, square
+ * top corners, cream background, taking a larger share of the screen than a
+ * plain content card. Dragging the panel's grabber up expands it over more of
+ * the frozen top; only the Steps list inside the panel scrolls. Checking a Step
+ * calls the AppCore facade; the engines run and the Buddy reacts on screen.
  *
  * Presentational only — no business logic lives here (Engineering Bible §19).
  */
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
@@ -18,8 +25,10 @@ import { StepCard } from '@/components/journey/StepCard';
 import { ResourceBar } from '@/components/ResourceBar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { WeekStepsSheet } from '@/components/WeekStepsSheet';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
+import type { TodayStep } from '@/core/engines/JourneyEngine';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
@@ -28,6 +37,21 @@ import { useSocial } from '@/state/SocialProvider';
 // TODO(data model): Grace Tokens are not yet tracked in AppState — no GraceTokenEngine
 // exists yet. Render a placeholder until one lands (see ResourceBar's `graceTokens` prop).
 const GRACE_TOKENS_PLACEHOLDER = 2;
+
+// The frozen top's forest wash — same sky→ground pairing as BuddyScene, lightened
+// per Home_Screen.md ("lightened slightly so buttons/objects stay prominent") since
+// Home's top zone is much shorter than the full Buddy-tab scene and carries more
+// foreground UI (ResourceBar + buttons) on top of it.
+const HOME_SCENE_SKY = '#E7F5F1';
+const HOME_SCENE_GROUND = '#B7DEB2';
+
+// The Week's-steps sheet's resting vs. fully-dragged-open heights. Sized off the
+// window so short/tall phones both get a sensible collapsed height that still
+// reads as "a larger share of the screen" than a small content card, per the
+// founder's "taller" correction, while leaving the frozen top's Buddy visible.
+const windowHeight = Dimensions.get('window').height;
+const SHEET_COLLAPSED_HEIGHT = Math.round(windowHeight * 0.56);
+const SHEET_EXPANDED_HEIGHT = Math.round(windowHeight * 0.82);
 
 export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
@@ -50,84 +74,112 @@ export default function HomeScreen() {
   // fall back to a warm default. TODO(data model): wire real user name once profiles land.
   const userName = 'friend';
 
+  // Swipe-left "missed" reports are visual-only for now — there is no MissEngine /
+  // missed-status field on the domain Step yet (TODO: data model). We track a
+  // local set of Step ids the user has swiped as missed so the card recolors
+  // (Home_Screen.md: "missed → red wash, no mark") without inventing persisted
+  // state the engines don't own. Cleared automatically once the Step itself
+  // leaves today's list (e.g. checked in later some other way).
+  const [locallyMissed, setLocallyMissed] = useState<Set<string>>(new Set());
+  const handleMiss = (_journeyId: string, stepId: string) => {
+    setLocallyMissed((prev) => new Set(prev).add(stepId));
+  };
+
+  const steps: TodayStep[] = snapshot?.todaySteps ?? [];
+  // Completed Steps sink to the bottom of the feed, shown disabled (Home_Screen.md).
+  const orderedSteps = useMemo(() => {
+    return [...steps].sort((a, b) => {
+      const aMissed = locallyMissed.has(a.step.id) ? 1 : 0;
+      const bMissed = locallyMissed.has(b.step.id) ? 1 : 0;
+      return aMissed - bMissed;
+    });
+  }, [steps, locallyMissed]);
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
-          <ResourceBar
-            level={snapshot?.buddy.level ?? 1}
-            xpInto={snapshot?.buddy.xpIntoLevel ?? 0}
-            xpForNext={snapshot?.buddy.xpForNextLevel ?? 1}
-            coins={snapshot?.buddy.coins ?? 0}
-            graceTokens={GRACE_TOKENS_PLACEHOLDER}
-            onAddCoins={() => router.push('/shop')}
-          />
+        <View style={styles.stage}>
+          {/* ── Frozen top: never scrolls. The forest scene wash sits behind the
+              ResourceBar + greeting + Buddy + area buttons (Home_Screen.md: "the
+              whole screen sits on the forest background, same scene as the Buddy
+              tab"). The Week's-steps sheet below is a separate, draggable layer
+              on top of this — dragging it never scrolls this zone. */}
+          <View style={[styles.scene, { backgroundColor: HOME_SCENE_SKY }]}>
+            <View style={[styles.ground, { backgroundColor: HOME_SCENE_GROUND }]} />
 
-          {!ready || !snapshot ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              Loading…
-            </ThemedText>
-          ) : (
-            <>
-              <View style={styles.buddyRow}>
-                <View style={styles.abCol}>
-                  <GlossyTile
-                    color="gold"
-                    accessibilityLabel={
-                      snapshot.claimableRewards > 0
-                        ? `Missions — ${snapshot.claimableRewards} to claim`
-                        : 'Missions'
-                    }
-                    badge={snapshot.claimableRewards}
-                    onPress={() => router.push('/missions')}>
-                    <ThemedText style={styles.tileGlyph}>🎯</ThemedText>
-                  </GlossyTile>
-                  <GlossyTile
-                    color="pink"
-                    accessibilityLabel="Consistency"
-                    // TODO: consistency screen — no route exists yet.
-                    onPress={() => {}}>
-                    <ThemedText style={styles.tileGlyph}>🔥</ThemedText>
-                  </GlossyTile>
-                </View>
+            <View style={styles.sceneContent}>
+              <ResourceBar
+                level={snapshot?.buddy.level ?? 1}
+                xpInto={snapshot?.buddy.xpIntoLevel ?? 0}
+                xpForNext={snapshot?.buddy.xpForNextLevel ?? 1}
+                coins={snapshot?.buddy.coins ?? 0}
+                graceTokens={GRACE_TOKENS_PLACEHOLDER}
+                onAddCoins={() => router.push('/shop')}
+              />
 
-                <View style={styles.buddyCol}>
-                  <View style={[styles.greetBubble, { backgroundColor: theme.backgroundElement }]}>
-                    <ThemedText type="subtitle" style={styles.greetText}>
-                      Hello, {userName}
-                    </ThemedText>
-                    <View
-                      style={[styles.greetTail, { borderTopColor: theme.backgroundElement }]}
-                    />
-                  </View>
-                  <BuddyAvatar stage={snapshot.buddy.stage} size={140} />
-                  <View style={[styles.stagePill, { backgroundColor: theme.tealTint }]}>
-                    <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                      {snapshot.buddy.name}
-                    </ThemedText>
-                  </View>
-                </View>
-
-                <View style={styles.abCol}>
-                  {featureFlags.social && (
+              {!ready || !snapshot ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Loading…
+                </ThemedText>
+              ) : (
+                <View style={styles.buddyRow}>
+                  <View style={styles.abCol}>
                     <GlossyTile
-                      color="purple"
-                      accessibilityLabel="Friends"
-                      badge={incomingFriendRequests}
-                      onPress={() => router.navigate('/friends')}>
-                      <ThemedText style={styles.tileGlyph}>🤝</ThemedText>
+                      color="gold"
+                      accessibilityLabel={
+                        snapshot.claimableRewards > 0
+                          ? `Missions — ${snapshot.claimableRewards} to claim`
+                          : 'Missions'
+                      }
+                      badge={snapshot.claimableRewards}
+                      onPress={() => router.push('/missions')}>
+                      <ThemedText style={styles.tileGlyph}>🎯</ThemedText>
                     </GlossyTile>
-                  )}
-                  <GlossyTile
-                    color="teal"
-                    accessibilityLabel="Achievements"
-                    onPress={() => router.push('/achievements')}>
-                    <ThemedText style={styles.tileGlyph}>🏆</ThemedText>
-                  </GlossyTile>
+                    <GlossyTile
+                      color="pink"
+                      accessibilityLabel="Consistency"
+                      // TODO: consistency screen — no route exists yet.
+                      onPress={() => {}}>
+                      <ThemedText style={styles.tileGlyph}>🔥</ThemedText>
+                    </GlossyTile>
+                  </View>
+
+                  <View style={styles.buddyCol}>
+                    <View style={[styles.greetBubble, { backgroundColor: theme.backgroundElement }]}>
+                      <ThemedText type="subtitle" style={styles.greetText}>
+                        Hello, {userName}
+                      </ThemedText>
+                      <View
+                        style={[styles.greetTail, { borderTopColor: theme.backgroundElement }]}
+                      />
+                    </View>
+                    <BuddyAvatar stage={snapshot.buddy.stage} size={120} />
+                    <View style={[styles.stagePill, { backgroundColor: theme.tealTint }]}>
+                      <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                        {snapshot.buddy.name}
+                      </ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={styles.abCol}>
+                    {featureFlags.social && (
+                      <GlossyTile
+                        color="purple"
+                        accessibilityLabel="Friends"
+                        badge={incomingFriendRequests}
+                        onPress={() => router.navigate('/friends')}>
+                        <ThemedText style={styles.tileGlyph}>🤝</ThemedText>
+                      </GlossyTile>
+                    )}
+                    <GlossyTile
+                      color="teal"
+                      accessibilityLabel="Achievements"
+                      onPress={() => router.push('/achievements')}>
+                      <ThemedText style={styles.tileGlyph}>🏆</ThemedText>
+                    </GlossyTile>
+                  </View>
                 </View>
-              </View>
+              )}
 
               {celebration && (
                 <View style={[styles.celebration, { backgroundColor: theme.successTint }]}>
@@ -136,49 +188,57 @@ export default function HomeScreen() {
                   </ThemedText>
                 </View>
               )}
+            </View>
+          </View>
 
-              <View style={[styles.panel, { backgroundColor: theme.cream }]}>
-                <View style={styles.panelHeader}>
-                  <ThemedText type="subtitle" style={{ color: theme.text }}>
-                    Week&apos;s steps
+          {/* ── Draggable "Week's steps" panel — the only thing that scrolls/drags. */}
+          {ready && snapshot && (
+            <WeekStepsSheet collapsedHeight={SHEET_COLLAPSED_HEIGHT} expandedHeight={SHEET_EXPANDED_HEIGHT}>
+              <View style={styles.panelHeader}>
+                <ThemedText type="subtitle" style={{ color: theme.text }}>
+                  Week&apos;s steps
+                </ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Create a new Journey"
+                  onPress={() => router.push('/journey/new')}
+                  style={({ pressed }) => [
+                    styles.createButton,
+                    { backgroundColor: theme.coral },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" style={[styles.plus, { color: theme.text }]}>
+                    +
                   </ThemedText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Create a new Journey"
-                    onPress={() => router.push('/journey/new')}
-                    style={({ pressed }) => [
-                      styles.createButton,
-                      { backgroundColor: theme.coral },
-                      pressed && styles.pressed,
-                    ]}>
-                    <ThemedText type="smallBold" style={[styles.plus, { color: theme.text }]}>
-                      +
-                    </ThemedText>
-                  </Pressable>
-                </View>
-
-                {snapshot.todaySteps.length === 0 ? (
-                  <View style={styles.empty}>
-                    <ThemedText type="default">All caught up 🎉</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      You&apos;ve checked in on every Step. Your Buddy is proud.
-                    </ThemedText>
-                  </View>
-                ) : (
-                  <View style={styles.stepList}>
-                    {snapshot.todaySteps.map((item) => (
-                      <StepCard
-                        key={item.step.id}
-                        item={item}
-                        onCheckIn={(journeyId, stepId) => core.checkInStep(journeyId, stepId)}
-                      />
-                    ))}
-                  </View>
-                )}
+                </Pressable>
               </View>
-            </>
+
+              {orderedSteps.length === 0 ? (
+                <View style={styles.empty}>
+                  <ThemedText type="default">All caught up 🎉</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    You&apos;ve checked in on every Step. Your Buddy is proud.
+                  </ThemedText>
+                </View>
+              ) : (
+                <FlatList
+                  data={orderedSteps}
+                  keyExtractor={(item) => item.step.id}
+                  contentContainerStyle={styles.stepList}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <StepCard
+                      item={item}
+                      status={locallyMissed.has(item.step.id) ? 'missed' : 'pending'}
+                      onCheckIn={(journeyId, stepId) => core.checkInStep(journeyId, stepId)}
+                      onMiss={handleMiss}
+                    />
+                  )}
+                />
+              )}
+            </WeekStepsSheet>
           )}
-        </ScrollView>
+        </View>
       </SafeAreaView>
 
       {reveal && (
@@ -205,11 +265,30 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'stretch',
   },
-  content: {
+  stage: {
+    flex: 1,
+    position: 'relative',
+  },
+
+  // ── Frozen top / forest scene ──────────────────────────────────────────
+  scene: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  ground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '30%',
+    borderTopLeftRadius: 120,
+    borderTopRightRadius: 120,
+    transform: [{ scaleX: 1.6 }],
+  },
+  sceneContent: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.four,
-    gap: Spacing.four,
+    gap: Spacing.three,
   },
 
   // ── Buddy cluster ──────────────────────────────────────────────────────
@@ -264,15 +343,12 @@ const styles = StyleSheet.create({
   },
 
   // ── Steps panel ────────────────────────────────────────────────────────
-  panel: {
-    borderRadius: Radius.card + 4,
-    padding: Spacing.three,
-    gap: Spacing.three,
-  },
   panelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.three,
   },
   createButton: {
     width: 36,
@@ -289,6 +365,8 @@ const styles = StyleSheet.create({
   },
   stepList: {
     gap: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: BottomTabInset + Spacing.four,
   },
   celebration: {
     alignSelf: 'stretch',
@@ -301,6 +379,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     borderRadius: Spacing.three,
     padding: Spacing.four,
+    marginHorizontal: Spacing.four,
     gap: Spacing.two,
     alignItems: 'center',
   },

@@ -5,12 +5,30 @@
  * visual states where the data allows: an "Ends today" floating badge, a green
  * DONE watermark wash for completed Steps, and a coral "Missed" tint.
  *
- * Presentational only: it reports the check-in intent upward; all reward/Buddy
- * logic runs in the engines (Engineering Bible §19). The `item`/`onCheckIn` props
- * are kept stable for existing call sites; everything else is optional so this
- * upgrade never breaks a caller that hasn't opted in yet.
+ * Reporting (Home_Screen.md "Finalized visual design"): swipe-right or long-press
+ * reports the Step, alongside a tap "Check in" button (belt-and-braces — the
+ * spec's swipe gesture plus a still-tappable control so nothing is swipe-only).
+ * Swipe right = done (calls `onCheckIn`, same as the tap button); swipe left =
+ * miss (calls `onMiss` — a low-friction "what happened?" per Home_Screen.md
+ * Edge Cases, not an assumption of failure). Built on
+ * `react-native-gesture-handler` + `react-native-reanimated` (already app deps,
+ * bundled in Expo Go — no dev build needed).
+ *
+ * Presentational only: it reports the check-in/miss intent upward; all reward/
+ * Buddy logic runs in the engines (Engineering Bible §19). The `item`/`onCheckIn`
+ * props are kept stable for existing call sites; everything else is optional so
+ * this upgrade never breaks a caller that hasn't opted in yet.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { journeyGlyph, type JourneyGlyphColor } from '@/components/journey/journeyView';
 import { ThemedText } from '@/components/themed-text';
@@ -20,6 +38,11 @@ import type { TodayStep } from '@/core/engines/JourneyEngine';
 import { useTheme } from '@/hooks/use-theme';
 
 export type StepCardStatus = 'pending' | 'done' | 'missed';
+
+// Distance a card must travel before a swipe commits to done/miss, and how far
+// off-screen it flies once committed.
+const SWIPE_COMMIT_DISTANCE = 96;
+const SWIPE_FLY_DISTANCE = 420;
 
 function tileColors(theme: ReturnType<typeof useTheme>, color: JourneyGlyphColor) {
   switch (color) {
@@ -40,6 +63,7 @@ function tileColors(theme: ReturnType<typeof useTheme>, color: JourneyGlyphColor
 export function StepCard({
   item,
   onCheckIn,
+  onMiss,
   phase,
   phases,
   progress,
@@ -49,6 +73,8 @@ export function StepCard({
 }: {
   item: TodayStep;
   onCheckIn: (journeyId: string, stepId: string) => void;
+  /** Swipe-left result — a low-friction "missed" report (Home_Screen.md Edge Cases: never assume failure). Omit to disable the left-swipe commit (card springs back instead). */
+  onMiss?: (journeyId: string, stepId: string) => void;
   /** Current Phase (1-based), if known — shown as "Journey · Phase x/y". */
   phase?: number;
   /** Total Phases in the Step's Journey, if known. */
@@ -69,6 +95,7 @@ export function StepCard({
 
   const done = status === 'done';
   const missed = status === 'missed';
+  const reportable = !done && !missed;
 
   const cardBg = done ? theme.successTint : missed ? theme.dangerTint : theme.backgroundElement;
   const cardBorder = done ? theme.success : missed ? theme.danger : theme.hairline;
@@ -80,19 +107,70 @@ export function StepCard({
       ? `${item.journeyTitle} · Phase ${phase}/${phases}`
       : item.journeyTitle;
 
-  return (
-    <View style={endsToday && styles.urgentWrap}>
-      {endsToday && (
-        <View style={[styles.dueTag, { backgroundColor: theme.goldTint }]}>
-          <Text style={[styles.dueTagText, { color: theme.goldStrong }]}>⏱ Ends today</Text>
-        </View>
-      )}
+  // ── Swipe-to-report ──────────────────────────────────────────────────────
+  const translateX = useSharedValue(0);
 
+  const commitCheckIn = () => onCheckIn(item.journeyId, step.id);
+  const commitMiss = () => onMiss?.(item.journeyId, step.id);
+
+  const pan = Gesture.Pan()
+    .enabled(reportable)
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-14, 14])
+    .onUpdate((e) => {
+      translateX.value = e.translationX;
+    })
+    .onEnd((e) => {
+      if (e.translationX > SWIPE_COMMIT_DISTANCE) {
+        // Swipe right → done: fly off-screen right, then report.
+        translateX.value = withTiming(SWIPE_FLY_DISTANCE, { duration: 180 }, () => {
+          runOnJS(commitCheckIn)();
+        });
+      } else if (e.translationX < -SWIPE_COMMIT_DISTANCE && onMiss) {
+        // Swipe left → miss (only when a miss handler is wired up).
+        translateX.value = withTiming(-SWIPE_FLY_DISTANCE, { duration: 180 }, () => {
+          runOnJS(commitMiss)();
+        });
+      } else {
+        // Under the threshold — spring back to rest.
+        translateX.value = withSpring(0, { damping: 16, stiffness: 180 });
+      }
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+  // Green "done" wash fades in as the card is dragged right; coral "miss" wash as
+  // it's dragged left — a live preview of what letting go will commit to.
+  const doneHintStyle = useAnimatedStyle(() => ({
+    opacity: Math.max(0, Math.min(1, translateX.value / SWIPE_COMMIT_DISTANCE)),
+  }));
+  const missHintStyle = useAnimatedStyle(() => ({
+    opacity: Math.max(0, Math.min(1, -translateX.value / SWIPE_COMMIT_DISTANCE)),
+  }));
+
+  const card = (
+    <Animated.View style={cardAnimatedStyle}>
       <ThemedView style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
         {done && (
           <Text style={styles.doneWatermark} pointerEvents="none">
             DONE
           </Text>
+        )}
+
+        {reportable && (
+          <>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.swipeHint, styles.swipeHintRight, { backgroundColor: theme.successTint }, doneHintStyle]}>
+              <Ionicons name="checkmark-circle" size={22} color={theme.tealStrong} />
+            </Animated.View>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.swipeHint, styles.swipeHintLeft, { backgroundColor: theme.dangerTint }, missHintStyle]}>
+              <Ionicons name="close-circle" size={22} color={theme.danger} />
+            </Animated.View>
+          </>
         )}
 
         <View style={styles.body}>
@@ -111,7 +189,7 @@ export function StepCard({
             {missed ? `Missed · still time to catch it` : done ? `Completed · nice work` : metaLine}
           </ThemedText>
 
-          {!done && !missed && progress !== undefined && (
+          {reportable && progress !== undefined && (
             <View style={[styles.bar, { backgroundColor: theme.backgroundSelected }]}>
               <View
                 style={[
@@ -123,19 +201,20 @@ export function StepCard({
           )}
         </View>
 
-        {!done && !missed ? (
+        {reportable ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Check in on ${step.title}`}
-            onPress={() => onCheckIn(item.journeyId, step.id)}
+            onPress={commitCheckIn}
             style={({ pressed }) => [
               styles.check,
               { backgroundColor: theme.coral },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="smallBold" style={{ color: theme.text }}>
-              Check in
-            </ThemedText>
+            {/* A distinct check-in glyph (Ionicons), separate from the coin icon
+                in ResourceBar, per the founder's "different icon for check-in"
+                correction — a checkmark reads as "report this done" at a glance. */}
+            <Ionicons name="checkmark" size={18} color={theme.text} />
           </Pressable>
         ) : (
           <Pressable
@@ -148,6 +227,18 @@ export function StepCard({
           </Pressable>
         )}
       </ThemedView>
+    </Animated.View>
+  );
+
+  return (
+    <View style={endsToday && styles.urgentWrap}>
+      {endsToday && (
+        <View style={[styles.dueTag, { backgroundColor: theme.goldTint }]}>
+          <Text style={[styles.dueTagText, { color: theme.goldStrong }]}>⏱ Ends today</Text>
+        </View>
+      )}
+
+      {reportable ? <GestureDetector gesture={pan}>{card}</GestureDetector> : card}
     </View>
   );
 }
@@ -194,6 +285,21 @@ const styles = StyleSheet.create({
     opacity: 0.15,
     letterSpacing: 1,
   },
+  swipeHint: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  swipeHintRight: {
+    right: 0,
+  },
+  swipeHintLeft: {
+    left: 0,
+  },
   body: {
     flex: 1,
     // minWidth:0 lets this flex child shrink below its content's intrinsic width
@@ -235,8 +341,10 @@ const styles = StyleSheet.create({
   },
   check: {
     borderRadius: Radius.button,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dots: {
     width: 26,

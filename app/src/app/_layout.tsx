@@ -4,11 +4,13 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, FontAssets } from '@/constants/theme';
 import { AppProvider } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
+import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { SocialProvider } from '@/state/SocialProvider';
 
 SplashScreen.preventAutoHideAsync();
@@ -47,25 +49,32 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProvider>
-      <AuthProvider>
-        <SocialProvider>
-          <ThemeProvider value={NavTheme}>
-            <StatusBar style="dark" />
-            <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="journey/[id]" />
-              <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
-            </Stack>
-          </ThemeProvider>
-        </SocialProvider>
-      </AuthProvider>
-    </AppProvider>
+    // Required by react-native-gesture-handler v2 so any gesture (e.g. Home's
+    // swipe-to-report Step cards / draggable Week's-steps sheet) works correctly
+    // on native; harmless no-op wrapper on web. Wraps everything, once, at the root.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <AuthProvider>
+          <EntitlementProvider>
+            <SocialProvider>
+              <ThemeProvider value={NavTheme}>
+                <StatusBar style="dark" />
+                <AnimatedSplashOverlay />
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="journey/[id]" />
+                  <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
+                </Stack>
+              </ThemeProvider>
+            </SocialProvider>
+          </EntitlementProvider>
+        </AuthProvider>
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }

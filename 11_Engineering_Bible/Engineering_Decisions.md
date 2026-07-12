@@ -239,3 +239,115 @@ byte-vs-char chunking, non-atomic secure-store writes).
   `SupabaseAuthGateway`, `NullAuthGateway`, factory, `authUser.ts`), `app/src/app/_layout.tsx`
   (`AuthProvider` composed outside `SocialProvider`), `featureFlags.auth`,
   `06_Decisions/Decision_Log.md` (D19), `Current_Context.md`.
+
+---
+
+## E4 — Module boundaries & reserved seams for future domains
+
+- **Date:** 2026-07-12
+- **Owner:** Engineering (architecture audit + implementation), no founder gate needed — $0,
+  zero user-visible behavior change, no new data collection (CLAUDE.md §3.10 does not apply).
+- **Stage:** POC (built domains); the four reserved seams are Future-stage per their own
+  `Stage:` tags in `Module_Architecture.md` — flags default off.
+
+### Context
+As the team grows, future contributors/teams should be able to **own a domain independently**
+(Journey, Buddy, Social, etc.) without needing to understand the whole app. An architecture audit
+was run to check whether the codebase already supports this. It confirmed PushApp is
+**modularity-adherent**: framework-free engines over an event bus, vendor-isolated `*Gateway`
+boundaries with `Null*` fallbacks for every external dependency, config-before-code, an
+offline-first `Repository`, and no business logic in UI components. Given that baseline, two
+follow-ups were worth doing now rather than later: (1) make the module boundaries **explicit and
+documented**, so "which team owns this" and "what can I depend on" are answered by a doc, not
+tribal knowledge; and (2) **reserve boundaries** for four domains the product vision already
+calls for (adaptive profiling, proactive intervention, interests, deeper Support Circle) but that
+are deliberately not built yet, so a future team drops in behind a stable interface instead of
+first inventing one.
+
+### Decision
+Two parts, both landed in commit `746c685`:
+
+1. **Document the module map** — new `11_Engineering_Bible/Module_Architecture.md`: a
+   responsibility / team-boundary / public-interface / events / data-ownership / status block for
+   every BUILT domain (Journey, Reward, Buddy, Shop, Mission, Reminder, Auth, Social, Entitlement)
+   and every FUTURE domain, plus the full event-contract table. This doc is now the canonical
+   module map; see it for the actual boundaries rather than duplicating them here.
+2. **Reserve four future-domain seams — boundary only, no feature logic:**
+   - `app/src/core/profile/` — `ProfileGateway` + `NullProfileGateway` + factory,
+     `featureFlags.profile` (off). `UserProfile` type is defined PII-free (derived/aggregate
+     traits only).
+   - `app/src/core/interests/` — `InterestsGateway` + `NullInterestsGateway` + factory,
+     `featureFlags.interests` (off). Topics are explicitly user-chosen, not inferred.
+   - **Intervention seam** — `ReminderEngine`'s constructor now takes an **optional** `EventBus`
+     (stored only; nothing subscribed; zero behavior change) as the future attachment point for
+     an `InterventionEngine` that would decide *when* to nudge, keeping that decision separate
+     from Reminder's delivery mechanism.
+   - Four **reserved (declared-but-never-emitted)** members added to the `DomainEvent` union in
+     `core/events/events.ts`: `ProfileUpdated`, `InterestsUpdated`, `InterventionScheduled`,
+     `StepMissed` — so a future engine can subscribe/emit with no union churn.
+
+   Alongside the seams, four **behavior-preserving tidy-ups** were made to keep the boundaries
+   clean while touching this code: `JourneyEngine.journeyProgress()` selector (progress math
+   moved out of `SocialProvider`, which was reaching into Journey's math instead of asking
+   Journey); Shop catalog exposed via `AppCore.getCosmetics()` / `resolveCosmetic()` (Buddy
+   components previously imported Shop's config directly); `EntitlementEngine` now constructed
+   inside `AppCore` rather than in `EntitlementProvider` (a provider was doing an engine's
+   composition job).
+
+### Why
+- **Future team ownership is a stated goal**, not yet a written contract — writing down "what can
+  this domain's team touch, and what must it go through" turns an implicit convention (that
+  happened to already be followed) into an explicit, checkable one.
+- **Reserving seams now is cheap and correct-shaped later.** Building the interface + `Null*` +
+  flag costs nothing at runtime (dead code path) and means the *actual* future work
+  (profiling/intervention/interests logic) starts with a stable contract instead of also having
+  to invent one under time pressure, and without a second migration to introduce the boundary
+  retroactively.
+- **CLAUDE.md §3 "the vision never shrinks."** These four domains are real, previously-discussed
+  product direction that is hard or premature now — reserving the seam keeps them visibly *in
+  the architecture* (Future-stage, not deleted) rather than only living in someone's memory of a
+  past conversation.
+- **The tidy-ups were opportunistic, not separately motivated** — while establishing where module
+  boundaries are, three call sites were found reaching past another domain's public interface
+  (a provider doing math that belongs to Journey, a UI component importing Shop's config, a
+  provider constructing another domain's engine). Fixing them while the boundary work was already
+  in progress was cheaper than a separate pass later, and each is behavior-preserving (verified:
+  `tsc` 0, jest 87/87 including 2 new seam tests, eslint clean).
+
+### Alternatives considered
+- **Leave the boundaries implicit** (rely on the existing engine/gateway pattern being "obviously"
+  followed) — rejected: it already required an audit to *confirm* adherence, meaning it wasn't
+  actually legible without reading the code; a documented map is the cheaper long-term default.
+- **Build the future domains' real logic now** instead of just seams — rejected: none of the four
+  has gone through the required security-privacy / store-compliance review yet (data collection
+  and inference are exactly what those reviews exist to gate), and building ahead of that review
+  risks having to unwind collected data or shipped behavior. Boundary-only defers the *build*
+  without losing the *shape*.
+- **Skip the tidy-ups** and file them as separate future tickets — rejected: they were small,
+  behavior-preserving, and directly touched by the same boundary-drawing work; deferring them
+  would have meant re-opening the same files later for an unrelated-looking commit.
+
+### Tradeoffs accepted
+- Four feature flags now exist that are permanently off until their domain is built — a small,
+  intentional amount of dead-but-documented surface area (mirrors the existing pattern for
+  `social`/`auth`/`entitlements`, which also gate on config/flags).
+- `ReminderEngine` now has an unused-at-runtime constructor parameter (the reserved `EventBus`)
+  until Intervention is built — accepted as the cheapest way to reserve that attachment point
+  without a larger refactor later.
+
+### Future considerations
+- Implementing **any** of Profiling / Intervention / Interests requires, in order: a
+  security-privacy review (RLS + data-minimization design) and, if it changes what the app
+  collects or how it behaves toward the user, a store-compliance pass (App Privacy label update)
+  — per CLAUDE.md §5 routing table. See `Module_Architecture.md`'s "Reserved-seam note" for the
+  full reasoning.
+- Close-Circle-deeper (Friends Gift/Message, groups, richer Ally permissions) remains fully
+  deferred with **no seam yet** — it was scoped out of this pass because its shape (likely new
+  `SocialGateway` methods rather than a new gateway) needs its own design pass first. Tracked in
+  `Module_Architecture.md` so it isn't forgotten.
+
+### Reflected in
+- `11_Engineering_Bible/Module_Architecture.md` (the full module map — canonical), commit
+  `746c685`, `app/src/core/profile/`, `app/src/core/interests/`, `app/src/core/events/events.ts`,
+  `app/src/core/engines/ReminderEngine.ts`, `app/src/core/config/featureFlags.ts`,
+  `Current_Context.md`.

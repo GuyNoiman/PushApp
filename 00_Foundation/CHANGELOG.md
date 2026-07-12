@@ -4,6 +4,55 @@ Status: Living Document
 
 ---
 
+# 2026-07-12 — Module architecture doc + reserved seams for future domains (E4)
+
+An architecture audit confirmed the codebase already follows modular boundaries (framework-free
+engines over an event bus, vendor-isolated `*Gateway`s with `Null*` fallbacks, config-before-code,
+offline-first Repository, no business logic in UI). This session made those boundaries explicit
+and reserved four future-domain seams so a future team can build behind a stable interface.
+
+## Decisions (Engineering_Decisions E4)
+- Document the module map so "who owns this, what can it depend on" is answered by a doc.
+- Reserve boundary-only seams (interface + `Null*` + off feature flag) for four vision domains —
+  no feature logic, no data collection, until each passes a security-privacy (and, if it changes
+  data collection, store-compliance) review per CLAUDE.md §5.
+
+## Added
+- **`11_Engineering_Bible/Module_Architecture.md`** — the canonical module map: every BUILT domain
+  (Journey, Reward, Buddy, Shop, Mission, Reminder, Auth, Social, Entitlement) and every FUTURE
+  domain (User-Model/Profiling, Intervention/Communication, Interests, Close-Circle-deeper), each
+  with responsibility / team boundary / public interface / events / data ownership / status, plus
+  the full event-contract table.
+- `app/src/core/profile/` — `ProfileGateway` + `NullProfileGateway` + factory,
+  `featureFlags.profile` (off). `UserProfile` type is PII-free by design (derived/aggregate
+  traits only).
+- `app/src/core/interests/` — `InterestsGateway` + `NullInterestsGateway` + factory,
+  `featureFlags.interests` (off). Topics are user-chosen, never inferred.
+- Four reserved (declared-but-never-emitted) members on the `DomainEvent` union
+  (`core/events/events.ts`): `ProfileUpdated`, `InterestsUpdated`, `InterventionScheduled`,
+  `StepMissed`.
+
+## Changed (behavior-preserving tidy-ups, found while drawing the boundaries)
+- `ReminderEngine` constructor now takes an **optional** `EventBus` (stored only, nothing
+  subscribed) — the future attachment point for an `InterventionEngine`; zero behavior change.
+- `JourneyEngine.journeyProgress()` selector added — progress math moved out of `SocialProvider`.
+- Shop catalog now accessed via `AppCore.getCosmetics()` / `resolveCosmetic()` — out of Buddy
+  components, which previously imported Shop's config directly.
+- `EntitlementEngine` now constructed inside `AppCore`, not in `EntitlementProvider`.
+
+## Status
+- Landed in commit `746c685`. `tsc` 0, jest 87/87 (incl. 2 new seam tests), eslint clean, no PII,
+  no new dependencies, **zero user-visible behavior change**.
+
+## Next
+- The three reserved domains (Profiling, Intervention, Interests) stay off until each is
+  explicitly scheduled and passes security-privacy (+ store-compliance if it changes data
+  collection) review. Close-Circle-deeper remains fully deferred with no seam yet.
+- Unrelated open items carried forward unchanged: Buddy art direction, Buddy inventory interior,
+  the ~$99/yr Apple Developer Program approval for P3+ native auth, deferred data-model wiring.
+
+---
+
 # 2026-07-10 — Auth foundation: vendor-isolated AuthGateway + AuthProvider + secure-store (E3, D19)
 
 Approved and began building real-account auth (Sign in with Apple + Google), split into a free

@@ -1,12 +1,45 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-10 (auth foundation P1–P2 landed; E3 + D19 decided)
+Last updated: 2026-07-12 (modularity verified + future-domain seams reserved; E4 decided)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-10, later this day (auth foundation P1–P2 — read this first)
+## ⭐ HANDOFF SNAPSHOT — 2026-07-12 (module architecture doc + reserved seams — read this first)
+**An architecture audit confirmed PushApp is modularity-adherent** (framework-free engines over
+an event bus, vendor-isolated `*Gateway` boundaries with `Null*` fallbacks, config-before-code,
+offline-first Repository, no business logic in UI). New canonical doc:
+**`11_Engineering_Bible/Module_Architecture.md`** — the full module map (Journey · Reward · Buddy
+· Shop · Mission · Reminder · Auth · Social · Entitlement, all BUILT) plus four FUTURE domains
+now given **reserved seams** (boundary only, no feature logic, per CLAUDE.md §3 "vision never
+shrinks"): User-Model/Profiling, Intervention/Communication, Interests (each a `*Gateway` +
+`Null*` + off feature flag), and a fourth, Close-Circle-deeper, listed but with no seam yet.
+Landed in commit `746c685` — also 4 small behavior-preserving tidy-ups (progress-math selector
+moved into `JourneyEngine`, Shop catalog access centralized in `AppCore`, `EntitlementEngine`
+construction moved into `AppCore`). `tsc` 0, jest 87/87, eslint clean, zero user-visible change.
+Decision record: `Engineering_Decisions.md` §E4. **Before any of the three reserved domains gets
+real logic, it must go through security-privacy (RLS + data-minimization) and, if it changes data
+collection, store-compliance (App Privacy label) — per CLAUDE.md §5.**
+
+**Open items carried forward, unchanged by this session:**
+- **Buddy art direction** — still unresolved (founder rejected the 4 creature concepts; interim
+  Ember stands in per D18).
+- **Buddy inventory interior** depth question — awaiting founder's call.
+- **P3+ native auth (paid)** — awaiting founder go-ahead on the ~$99/yr Apple Developer Program
+  (see the 2026-07-10 snapshot below for full detail).
+- **Deferred data-model wiring** (Grace Tokens, Consistency screen, weekday scheduling,
+  profile/name, Social gift/message, Shop real-money data model, inventory categories) — unchanged.
+
+**▶ NEXT (resume here):** (1) pick up the still-open founder decisions above (Buddy art
+direction; Buddy inventory interior; the ~$99/yr Apple Developer Program approval for P3+ native
+auth); (2) the deferred data-model items can be wired as their owning pillars land; (3) once
+several land, re-run `Design_Fidelity_Audit.md`. `Module_Architecture.md` itself needs no further
+work until a reserved domain is actually scheduled for implementation.
+
+---
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-10, later this day (auth foundation P1–P2 landed)
 **Real-accounts auth work started.** `11_Engineering_Bible/Auth_Backend_Proposal.md` (a four-specialist
 synthesis: architect · security-privacy · store-compliance · cost-guardian) was approved-in-principle
 by the founder, then the free half of it was built and committed.

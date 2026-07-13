@@ -1,0 +1,29 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "lightning_chest",
+        "spark_L"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "lightning_chest",
+        "spark_L",
+        "spark_R",
+        "bolt_L"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "lightning_chest",
+        "spark_L",
+        "spark_R",
+        "spark_top",
+        "bolt_L",
+        "bolt_R"
+      ]
+    }
+  }
+}

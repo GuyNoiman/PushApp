@@ -1,0 +1,115 @@
+{
+  "speciesId": "hoarder",
+  "displayName": "Hoarder",
+  "sourcePackage": "PUSh_Hoarder_v2_runtime",
+  "meshCount": 25,
+  "materialCount": 9,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 3380468,
+    "outGlb": 1104488,
+    "outTextures": 19474,
+    "outTotal": 1123962
+  },
+  "bakedMaterials": {
+    "mat_strap": {
+      "baseColor_sRGB": [
+        51,
+        43,
+        39
+      ],
+      "roughness": 0.8392,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        154,
+        112,
+        74
+      ],
+      "roughness": 0.6588,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        213,
+        178,
+        136
+      ],
+      "roughness": 0.6588,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_bag": {
+      "baseColor_sRGB": [
+        87,
+        63,
+        48
+      ],
+      "roughness": 0.8392,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_item_blue": {
+      "baseColor_sRGB": [
+        77,
+        130,
+        193
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_item_red": {
+      "baseColor_sRGB": [
+        185,
+        73,
+        73
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_item_gold": {
+      "baseColor_sRGB": [
+        194,
+        150,
+        62
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        86,
+        60,
+        45
+      ],
+      "roughness": 0.4,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_16.png",
+      "emissiveMap": "tex_17.png"
+    }
+  }
+}

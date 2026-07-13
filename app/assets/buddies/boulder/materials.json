@@ -1,0 +1,8 @@
+{
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_8.png",
+      "emissiveMap": "tex_9.png"
+    }
+  }
+}

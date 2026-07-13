@@ -1,0 +1,38 @@
+{
+  "speciesId": "horse",
+  "displayName": "Horse",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/horse.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "ear_L",
+    "ear_R",
+    "mane_top",
+    "mane_back_0",
+    "mane_back_1",
+    "tail_base",
+    "tail_tip",
+    "speed_orb_L",
+    "speed_orb_R",
+    "speed_orb_top",
+    "speed_trail_L",
+    "speed_trail_R"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

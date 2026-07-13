@@ -1,0 +1,95 @@
+{
+  "speciesId": "jumper",
+  "displayName": "Jumper",
+  "sourcePackage": "PUSh_Jumper_v2_runtime",
+  "meshCount": 22,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 3099056,
+    "outGlb": 1047596,
+    "outTextures": 19474,
+    "outTotal": 1067070
+  },
+  "bakedMaterials": {
+    "mat_pad": {
+      "baseColor_sRGB": [
+        226,
+        136,
+        75
+      ],
+      "roughness": 0.4588,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_spring": {
+      "baseColor_sRGB": [
+        58,
+        77,
+        98
+      ],
+      "roughness": 0.298,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        87,
+        162,
+        146
+      ],
+      "roughness": 0.5373,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        179,
+        225,
+        213
+      ],
+      "roughness": 0.5373,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_energy": {
+      "baseColor_sRGB": [
+        116,
+        227,
+        254
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.0784,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        55,
+        101,
+        93
+      ],
+      "roughness": 0.3569,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_13.png",
+      "emissiveMap": "tex_14.png"
+    }
+  }
+}

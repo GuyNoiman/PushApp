@@ -1,0 +1,95 @@
+{
+  "speciesId": "shell",
+  "displayName": "Shell",
+  "sourcePackage": "PUSh_Shell_v2_runtime",
+  "meshCount": 26,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 6739532,
+    "outGlb": 2063456,
+    "outTextures": 23366,
+    "outTotal": 2086822
+  },
+  "bakedMaterials": {
+    "mat_shell_dark": {
+      "baseColor_sRGB": [
+        69,
+        48,
+        39
+      ],
+      "roughness": 0.8784,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        107,
+        136,
+        157
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        170,
+        192,
+        205
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_shell": {
+      "baseColor_sRGB": [
+        114,
+        85,
+        67
+      ],
+      "roughness": 0.7765,
+      "metalness": 0.0078,
+      "external": []
+    },
+    "mat_shell_glow": {
+      "baseColor_sRGB": [
+        74,
+        132,
+        184
+      ],
+      "roughness": 0.2392,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        71,
+        86,
+        101
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_13.png",
+      "emissiveMap": "tex_14.png"
+    }
+  }
+}

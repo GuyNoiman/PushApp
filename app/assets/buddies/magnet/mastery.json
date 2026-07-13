@@ -1,0 +1,29 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "floating_bolt_0",
+        "floating_nut_0"
+      ],
+      "fieldRings": 0
+    },
+    "2": {
+      "visibleMeshes": [
+        "floating_bolt_0",
+        "floating_bolt_1",
+        "floating_nut_0"
+      ],
+      "fieldRings": 1
+    },
+    "3": {
+      "visibleMeshes": [
+        "floating_bolt_0",
+        "floating_bolt_1",
+        "floating_nut_0",
+        "floating_nut_1"
+      ],
+      "fieldRings": 2
+    }
+  }
+}

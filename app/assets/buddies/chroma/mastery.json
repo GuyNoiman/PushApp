@@ -1,0 +1,29 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "patch_L"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "patch_L",
+        "patch_R",
+        "patch_chest"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "crest_0",
+        "crest_1",
+        "crest_2",
+        "tail_base",
+        "tail_tip",
+        "patch_L",
+        "patch_R",
+        "patch_chest"
+      ]
+    }
+  }
+}

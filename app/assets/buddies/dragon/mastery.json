@@ -1,0 +1,53 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "flame_small",
+        "horn_L",
+        "horn_R"
+      ],
+      "hiddenMeshes": [
+        "flame_large",
+        "flame_blue",
+        "spine_1",
+        "spine_2"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "flame_large",
+        "horn_L",
+        "horn_R",
+        "wing_L",
+        "wing_R",
+        "spine_0",
+        "spine_1"
+      ],
+      "hiddenMeshes": [
+        "flame_small",
+        "flame_blue",
+        "spine_2"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "flame_blue",
+        "horn_L",
+        "horn_R",
+        "wing_L",
+        "wing_R",
+        "spine_0",
+        "spine_1",
+        "spine_2",
+        "tail_base",
+        "tail_mid",
+        "tail_tip"
+      ],
+      "hiddenMeshes": [
+        "flame_small",
+        "flame_large"
+      ]
+    }
+  }
+}

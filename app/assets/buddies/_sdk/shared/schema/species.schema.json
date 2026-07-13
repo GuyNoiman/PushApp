@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PUSh Species Definition",
+  "type": "object",
+  "required": [
+    "speciesId",
+    "displayName",
+    "sdkVersion",
+    "modelAsset",
+    "sharedFace",
+    "coreMeshes",
+    "extraMeshes",
+    "anchors",
+    "materials",
+    "mastery"
+  ],
+  "properties": {
+    "speciesId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "sdkVersion": {
+      "const": "1.0.0"
+    },
+    "modelAsset": {
+      "type": "string"
+    },
+    "sharedFace": {
+      "const": "shared/face/push_face_outline.svg"
+    },
+    "coreMeshes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extraMeshes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "anchors": {
+      "type": "string"
+    },
+    "materials": {
+      "type": "string"
+    },
+    "mastery": {
+      "type": "string"
+    }
+  }
+}

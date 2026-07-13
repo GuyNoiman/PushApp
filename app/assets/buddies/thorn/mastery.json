@@ -1,0 +1,26 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "flower_0"
+      ],
+      "thornScale": 1.0
+    },
+    "2": {
+      "visibleMeshes": [
+        "flower_0",
+        "flower_1"
+      ],
+      "thornScale": 0.9
+    },
+    "3": {
+      "visibleMeshes": [
+        "flower_0",
+        "flower_1",
+        "flower_2"
+      ],
+      "thornScale": 0.8
+    }
+  }
+}

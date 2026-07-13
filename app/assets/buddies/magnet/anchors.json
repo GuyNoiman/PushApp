@@ -1,0 +1,71 @@
+{
+  "coordinateSystem": {
+    "up": "Y",
+    "front": "+Z",
+    "units": "meters"
+  },
+  "origin": "centered X/Z, feet on Y=0",
+  "heightMeters": 1.08,
+  "anchors": {
+    "hat": [
+      0,
+      1.03,
+      0
+    ],
+    "cape_neck": [
+      0,
+      0.68,
+      -0.15
+    ],
+    "shirt_center": [
+      0,
+      0.43,
+      0.16
+    ],
+    "pants_center": [
+      0,
+      0.25,
+      0.08
+    ],
+    "shoe_L": [
+      -0.14,
+      0.06,
+      0.02
+    ],
+    "shoe_R": [
+      0.14,
+      0.06,
+      0.02
+    ],
+    "necklace": [
+      0,
+      0.58,
+      0.19
+    ],
+    "wrist_L": [
+      -0.33,
+      0.31,
+      0.01
+    ],
+    "wrist_R": [
+      0.33,
+      0.31,
+      0.01
+    ],
+    "hand_item_L": [
+      -0.4,
+      0.31,
+      0.05
+    ],
+    "hand_item_R": [
+      0.4,
+      0.31,
+      0.05
+    ],
+    "face_center": [
+      0,
+      0.72,
+      0.22
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "format": "glTF 2.0 binary",
+  "orientation": {
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "heightMeters": 1.08,
+  "texturesEmbedded": false,
+  "vertexNormalsMandatory": true,
+  "normalMapsUsed": false,
+  "tangentsRequired": false,
+  "meshNames": [
+    "head",
+    "body",
+    "shoulder_L",
+    "shoulder_R",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "back_plate_top",
+    "back_plate_mid",
+    "forehead_rock_L",
+    "forehead_rock_R",
+    "moss_0",
+    "moss_1",
+    "moss_2",
+    "face_frame",
+    "face_screen"
+  ],
+  "face": {
+    "canonicalSVG": "assets/push_face_neutral.svg",
+    "screenUV": "0..1 planar",
+    "screenType": "flat inset mesh"
+  },
+  "rig": {
+    "boundSkeleton": false,
+    "animationClips": []
+  },
+  "optimizedBy": "tools/ingest_creature.py"
+}

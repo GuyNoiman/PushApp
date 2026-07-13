@@ -1,0 +1,36 @@
+{
+  "speciesId": "jumper",
+  "displayName": "Jumper",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/jumper.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "spring_knee_L",
+    "spring_knee_R",
+    "jump_pad_L",
+    "jump_pad_R",
+    "energy_orb_L",
+    "energy_orb_R",
+    "energy_orb_top",
+    "antenna_tip",
+    "energy_trail_L",
+    "energy_trail_R"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

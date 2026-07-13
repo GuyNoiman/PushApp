@@ -1,0 +1,55 @@
+{
+  "sdkId": "push-creature-sdk",
+  "version": "1.0.0",
+  "coordinateSystem": {
+    "up": "Y",
+    "forward": "+Z",
+    "units": "meters",
+    "origin": "centered on X/Z with feet touching Y=0"
+  },
+  "targetHeightMeters": 1.08,
+  "sharedFace": {
+    "asset": "shared/face/push_face_outline.svg",
+    "immutableSilhouette": true,
+    "screenMeshName": "face_screen",
+    "frameMeshName": "face_frame",
+    "uvRule": "0..1 planar UV with no stretching"
+  },
+  "requiredWearableSlots": [
+    "hat",
+    "cape_neck",
+    "shirt_center",
+    "pants_center",
+    "shoe_L",
+    "shoe_R",
+    "necklace",
+    "wrist_L",
+    "wrist_R",
+    "hand_item_L",
+    "hand_item_R"
+  ],
+  "requiredCoreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "runtime": {
+    "format": "glTF 2.0 binary (.glb)",
+    "texturesEmbedded": true,
+    "vertexNormalsRequired": true,
+    "uvsRequired": true,
+    "normalMapsOptional": true,
+    "tangentsRequiredOnlyWhenNormalMapsUsed": true,
+    "boundSkeletonRequired": false,
+    "bakedAnimationsRequired": false
+  }
+}

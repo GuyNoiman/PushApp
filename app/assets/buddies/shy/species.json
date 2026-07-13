@@ -1,0 +1,35 @@
+{
+  "speciesId": "shy",
+  "displayName": "Shy",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/shy.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "hood_shell",
+    "hood_flap_L",
+    "hood_flap_R",
+    "cheek_L",
+    "cheek_R",
+    "hand_cover_L",
+    "hand_cover_R",
+    "confidence_glow_0",
+    "confidence_glow_1"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

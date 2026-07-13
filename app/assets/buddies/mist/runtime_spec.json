@@ -1,0 +1,43 @@
+{
+  "format": "glTF 2.0 binary",
+  "orientation": {
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "heightMeters": 1.08,
+  "texturesEmbedded": false,
+  "vertexNormalsMandatory": true,
+  "normalMapsUsed": false,
+  "tangentsRequired": false,
+  "meshNames": [
+    "foot_L",
+    "foot_R",
+    "leg_L",
+    "leg_R",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "head",
+    "cloud_puff_top",
+    "cloud_puff_L",
+    "cloud_puff_R",
+    "cloud_puff_back",
+    "mist_swirl_0",
+    "mist_swirl_1",
+    "mist_swirl_2",
+    "face_frame",
+    "face_screen"
+  ],
+  "face": {
+    "canonicalSVG": "assets/push_face_neutral.svg",
+    "screenUV": "0..1 planar",
+    "screenType": "flat inset mesh"
+  },
+  "rig": {
+    "boundSkeleton": false,
+    "animationClips": []
+  },
+  "optimizedBy": "tools/ingest_creature.py"
+}

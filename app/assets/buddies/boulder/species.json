@@ -1,0 +1,35 @@
+{
+  "speciesId": "boulder",
+  "displayName": "Boulder",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/boulder.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "shoulder_L",
+    "shoulder_R",
+    "moss_0",
+    "moss_1",
+    "moss_2",
+    "back_plate_top",
+    "back_plate_mid",
+    "forehead_rock_L",
+    "forehead_rock_R"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

@@ -1,0 +1,85 @@
+{
+  "speciesId": "mist",
+  "displayName": "Mist",
+  "sourcePackage": "PUSh_Mist_v2_runtime",
+  "meshCount": 19,
+  "materialCount": 6,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 4770384,
+    "outGlb": 1473160,
+    "outTextures": 34698,
+    "outTotal": 1507858
+  },
+  "bakedMaterials": {
+    "mat_cloud_dark": {
+      "baseColor_sRGB": [
+        91,
+        76,
+        160
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_cloud": {
+      "baseColor_sRGB": [
+        162,
+        149,
+        220
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_cloud_light": {
+      "baseColor_sRGB": [
+        216,
+        210,
+        248
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_mist_accent": {
+      "baseColor_sRGB": [
+        127,
+        102,
+        215
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        82,
+        67,
+        146
+      ],
+      "roughness": 0.4196,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_10.png",
+      "emissiveMap": "tex_11.png"
+    }
+  }
+}

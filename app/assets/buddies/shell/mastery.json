@@ -1,0 +1,60 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "shell_core",
+        "shell_ridge_top"
+      ],
+      "hiddenMeshes": [
+        "shell_side_L",
+        "shell_side_R",
+        "shell_glow_0",
+        "shell_glow_1",
+        "shell_glow_2",
+        "shell_glow_3",
+        "shell_spike_0",
+        "shell_spike_1",
+        "shell_spike_2",
+        "shell_spike_3"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "shell_core",
+        "shell_ridge_top",
+        "shell_ridge_mid",
+        "shell_side_L",
+        "shell_side_R",
+        "shell_glow_0",
+        "shell_glow_1"
+      ],
+      "hiddenMeshes": [
+        "shell_glow_2",
+        "shell_glow_3",
+        "shell_spike_0",
+        "shell_spike_1",
+        "shell_spike_2",
+        "shell_spike_3"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "shell_core",
+        "shell_ridge_top",
+        "shell_ridge_mid",
+        "shell_ridge_low",
+        "shell_side_L",
+        "shell_side_R",
+        "shell_glow_0",
+        "shell_glow_1",
+        "shell_glow_2",
+        "shell_glow_3",
+        "shell_spike_0",
+        "shell_spike_1",
+        "shell_spike_2",
+        "shell_spike_3"
+      ]
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "speciesId": "dozer",
+  "displayName": "Dozer",
+  "sourcePackage": "PUSh_Dozer_v2_runtime",
+  "meshCount": 18,
+  "materialCount": 6,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 4560140,
+    "outGlb": 1308184,
+    "outTextures": 32370,
+    "outTotal": 1340554
+  },
+  "bakedMaterials": {
+    "mat_pajama": {
+      "baseColor_sRGB": [
+        55,
+        75,
+        135
+      ],
+      "roughness": 0.8784,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_fur": {
+      "baseColor_sRGB": [
+        124,
+        140,
+        174
+      ],
+      "roughness": 0.7373,
+      "metalness": 0.0078,
+      "external": []
+    },
+    "mat_fur_light": {
+      "baseColor_sRGB": [
+        181,
+        192,
+        217
+      ],
+      "roughness": 0.7373,
+      "metalness": 0.0078,
+      "external": []
+    },
+    "mat_pillow": {
+      "baseColor_sRGB": [
+        215,
+        192,
+        156
+      ],
+      "roughness": 0.8784,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        68,
+        81,
+        115
+      ],
+      "roughness": 0.4,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_10.png",
+      "emissiveMap": "tex_11.png"
+    }
+  }
+}

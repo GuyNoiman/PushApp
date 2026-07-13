@@ -1,0 +1,38 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "energy_orb_L"
+      ],
+      "hiddenMeshes": [
+        "energy_orb_R",
+        "energy_orb_top",
+        "energy_trail_L",
+        "energy_trail_R"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "energy_orb_L",
+        "energy_orb_R",
+        "energy_trail_L"
+      ],
+      "hiddenMeshes": [
+        "energy_orb_top",
+        "energy_trail_R"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "energy_orb_L",
+        "energy_orb_R",
+        "energy_orb_top",
+        "energy_trail_L",
+        "energy_trail_R",
+        "jump_pad_L",
+        "jump_pad_R"
+      ]
+    }
+  }
+}

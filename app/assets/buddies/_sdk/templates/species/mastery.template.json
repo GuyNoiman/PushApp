@@ -1,0 +1,17 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [],
+      "emissionMultiplier": 0.65
+    },
+    "2": {
+      "visibleMeshes": [],
+      "emissionMultiplier": 1.0
+    },
+    "3": {
+      "visibleMeshes": [],
+      "emissionMultiplier": 1.35
+    }
+  }
+}

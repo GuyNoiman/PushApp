@@ -1,0 +1,95 @@
+{
+  "speciesId": "horse",
+  "displayName": "Horse",
+  "sourcePackage": "PUSh_Horse_v2_runtime",
+  "meshCount": 24,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 3063392,
+    "outGlb": 1090316,
+    "outTextures": 19474,
+    "outTotal": 1109790
+  },
+  "bakedMaterials": {
+    "mat_hoof": {
+      "baseColor_sRGB": [
+        47,
+        42,
+        40
+      ],
+      "roughness": 0.5176,
+      "metalness": 0.0784,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        125,
+        95,
+        74
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        207,
+        173,
+        139
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_mane": {
+      "baseColor_sRGB": [
+        56,
+        43,
+        38
+      ],
+      "roughness": 0.7765,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_accent": {
+      "baseColor_sRGB": [
+        114,
+        163,
+        208
+      ],
+      "roughness": 0.2784,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        85,
+        64,
+        50
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_13.png",
+      "emissiveMap": "tex_14.png"
+    }
+  }
+}

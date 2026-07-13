@@ -1,0 +1,49 @@
+{
+  "format": "glTF 2.0 binary",
+  "sdkVersion": "1.0.0",
+  "orientation": {
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "heightMeters": 1.08,
+  "texturesEmbedded": false,
+  "vertexNormalsMandatory": true,
+  "normalMapsUsed": false,
+  "tangentsRequired": false,
+  "meshNames": [
+    "foot_L",
+    "foot_R",
+    "leg_L",
+    "leg_R",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "head",
+    "leaf_head_L",
+    "leaf_head_R",
+    "leaf_shoulder_L",
+    "leaf_shoulder_R",
+    "thorn_head_0",
+    "thorn_head_1",
+    "thorn_back_0",
+    "thorn_arm_L",
+    "thorn_arm_R",
+    "flower_0",
+    "flower_1",
+    "flower_2",
+    "face_frame",
+    "face_screen"
+  ],
+  "face": {
+    "canonicalSVG": "assets/push_face_neutral.svg",
+    "screenUV": "0..1 planar",
+    "screenType": "flat inset mesh"
+  },
+  "rig": {
+    "boundSkeleton": false,
+    "animationClips": []
+  },
+  "optimizedBy": "tools/ingest_creature.py"
+}

@@ -1,0 +1,45 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "crystal_chest",
+        "crystal_head_0"
+      ],
+      "hiddenMeshes": [
+        "glow_orb_0",
+        "glow_orb_1",
+        "glow_orb_2"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "crystal_chest",
+        "crystal_head_0",
+        "crystal_head_1",
+        "crystal_head_2",
+        "glow_orb_0",
+        "glow_orb_1"
+      ],
+      "hiddenMeshes": [
+        "glow_orb_2"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "crystal_chest",
+        "crystal_head_0",
+        "crystal_head_1",
+        "crystal_head_2",
+        "crystal_shoulder_L",
+        "crystal_shoulder_R",
+        "crystal_back_0",
+        "crystal_back_1",
+        "crystal_back_2",
+        "glow_orb_0",
+        "glow_orb_1",
+        "glow_orb_2"
+      ]
+    }
+  }
+}

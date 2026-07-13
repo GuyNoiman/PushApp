@@ -1,0 +1,30 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "pillow",
+        "nightcap_body",
+        "nightcap_tip",
+        "nightcap_pom"
+      ],
+      "eyeOpenness": 0.35
+    },
+    "2": {
+      "visibleMeshes": [
+        "nightcap_body",
+        "nightcap_tip",
+        "nightcap_pom"
+      ],
+      "eyeOpenness": 0.65
+    },
+    "3": {
+      "visibleMeshes": [
+        "nightcap_body",
+        "nightcap_tip",
+        "nightcap_pom"
+      ],
+      "eyeOpenness": 1.0
+    }
+  }
+}

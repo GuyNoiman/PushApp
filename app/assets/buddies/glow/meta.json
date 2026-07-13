@@ -1,0 +1,95 @@
+{
+  "speciesId": "glow",
+  "displayName": "Glow",
+  "sourcePackage": "PUSh_Glow_v2_runtime",
+  "meshCount": 24,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 3389772,
+    "outGlb": 1111244,
+    "outTextures": 19474,
+    "outTotal": 1130718
+  },
+  "bakedMaterials": {
+    "mat_crystal_dark": {
+      "baseColor_sRGB": [
+        48,
+        106,
+        149
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        100,
+        116,
+        179
+      ],
+      "roughness": 0.4784,
+      "metalness": 0.0784,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        183,
+        197,
+        237
+      ],
+      "roughness": 0.4784,
+      "metalness": 0.0784,
+      "external": []
+    },
+    "mat_crystal": {
+      "baseColor_sRGB": [
+        98,
+        192,
+        232
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_glow": {
+      "baseColor_sRGB": [
+        137,
+        231,
+        254
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        76,
+        89,
+        140
+      ],
+      "roughness": 0.3373,
+      "metalness": 0.1569,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_14.png",
+      "emissiveMap": "tex_15.png"
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "speciesId": "hopper",
+  "displayName": "Hopper",
+  "sourcePackage": "PUSh_Hopper_v2_runtime",
+  "meshCount": 21,
+  "materialCount": 5,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 22453228,
+    "outGlb": 2384012,
+    "outTextures": 47765,
+    "outTotal": 2431777
+  },
+  "bakedMaterials": {
+    "mat_body": {
+      "baseColor_sRGB": [
+        89,
+        49,
+        169
+      ],
+      "roughness": 0.5765,
+      "metalness": 0.0392,
+      "external": []
+    },
+    "mat_inner_ear": {
+      "baseColor_sRGB": [
+        187,
+        125,
+        218
+      ],
+      "roughness": 0.5765,
+      "metalness": 0.0392,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        71,
+        38,
+        131
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    },
+    "mat_teleport": {
+      "baseColor_sRGB": [
+        96,
+        60,
+        212
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.1176,
+      "external": [
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_6.png",
+      "emissiveMap": "tex_7.png"
+    },
+    "mat_teleport": {
+      "emissiveMap": "tex_10.png"
+    }
+  }
+}

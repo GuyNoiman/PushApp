@@ -1,0 +1,38 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "hood_shell",
+        "hood_flap_L",
+        "hood_flap_R",
+        "hand_cover_L",
+        "hand_cover_R"
+      ],
+      "hiddenMeshes": [
+        "confidence_glow_0",
+        "confidence_glow_1"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "hood_shell",
+        "hood_flap_L",
+        "hood_flap_R",
+        "confidence_glow_0"
+      ],
+      "hiddenMeshes": [
+        "confidence_glow_1"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "hood_shell",
+        "hood_flap_L",
+        "hood_flap_R",
+        "confidence_glow_0",
+        "confidence_glow_1"
+      ]
+    }
+  }
+}

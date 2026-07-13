@@ -1,0 +1,85 @@
+{
+  "speciesId": "storm",
+  "displayName": "Storm",
+  "sourcePackage": "PUSh_Storm_v2_runtime",
+  "meshCount": 23,
+  "materialCount": 6,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 2770008,
+    "outGlb": 1074044,
+    "outTextures": 19474,
+    "outTotal": 1093518
+  },
+  "bakedMaterials": {
+    "mat_cloud": {
+      "baseColor_sRGB": [
+        36,
+        45,
+        73
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0078,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        65,
+        86,
+        147
+      ],
+      "roughness": 0.5765,
+      "metalness": 0.0392,
+      "external": []
+    },
+    "mat_light": {
+      "baseColor_sRGB": [
+        132,
+        154,
+        213
+      ],
+      "roughness": 0.5765,
+      "metalness": 0.0392,
+      "external": []
+    },
+    "mat_lightning": {
+      "baseColor_sRGB": [
+        168,
+        209,
+        254
+      ],
+      "roughness": 0.2392,
+      "metalness": 0.0784,
+      "external": []
+    },
+    "mat_frame": {
+      "baseColor_sRGB": [
+        49,
+        63,
+        105
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_screen": {
+      "map": "tex_11.png",
+      "emissiveMap": "tex_12.png"
+    }
+  }
+}

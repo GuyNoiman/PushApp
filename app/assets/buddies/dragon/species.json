@@ -1,0 +1,39 @@
+{
+  "speciesId": "dragon",
+  "displayName": "Dragon",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/dragon.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "horn_L",
+    "horn_R",
+    "wing_L",
+    "wing_R",
+    "tail_base",
+    "tail_mid",
+    "tail_tip",
+    "flame_small",
+    "flame_large",
+    "flame_blue",
+    "spine_0",
+    "spine_1",
+    "spine_2"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

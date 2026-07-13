@@ -1,0 +1,105 @@
+{
+  "speciesId": "dragon",
+  "displayName": "Dragon",
+  "sourcePackage": "PUSh_Dragon_v2_runtime",
+  "meshCount": 25,
+  "materialCount": 8,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 3765456,
+    "outGlb": 1166472,
+    "outTextures": 19474,
+    "outTotal": 1185946
+  },
+  "bakedMaterials": {
+    "mat_horn": {
+      "baseColor_sRGB": [
+        80,
+        66,
+        54
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        102,
+        79,
+        164
+      ],
+      "roughness": 0.549,
+      "metalness": 0.0392,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        175,
+        149,
+        220
+      ],
+      "roughness": 0.549,
+      "metalness": 0.0392,
+      "external": []
+    },
+    "mat_wing": {
+      "baseColor_sRGB": [
+        67,
+        53,
+        120
+      ],
+      "roughness": 0.6196,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_flame": {
+      "baseColor_sRGB": [
+        244,
+        121,
+        55
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.0588,
+      "external": []
+    },
+    "mat_flame_blue": {
+      "baseColor_sRGB": [
+        79,
+        169,
+        254
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.0588,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        66,
+        50,
+        112
+      ],
+      "roughness": 0.3569,
+      "metalness": 0.1176,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_16.png",
+      "emissiveMap": "tex_17.png"
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "speciesId": "thorn",
+  "displayName": "Thorn",
+  "sourcePackage": "PUSh_Thorn_v2_runtime",
+  "meshCount": 24,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 5401700,
+    "outGlb": 1293472,
+    "outTextures": 23366,
+    "outTotal": 1316838
+  },
+  "bakedMaterials": {
+    "mat_bark_dark": {
+      "baseColor_sRGB": [
+        54,
+        38,
+        25
+      ],
+      "roughness": 0.8784,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_bark": {
+      "baseColor_sRGB": [
+        97,
+        69,
+        44
+      ],
+      "roughness": 0.8784,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_leaf": {
+      "baseColor_sRGB": [
+        57,
+        127,
+        63
+      ],
+      "roughness": 0.7765,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_thorn": {
+      "baseColor_sRGB": [
+        98,
+        113,
+        69
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_flower": {
+      "baseColor_sRGB": [
+        217,
+        107,
+        148
+      ],
+      "roughness": 0.7765,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        72,
+        50,
+        32
+      ],
+      "roughness": 0.8784,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_12.png",
+      "emissiveMap": "tex_13.png"
+    }
+  }
+}

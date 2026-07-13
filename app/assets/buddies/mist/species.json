@@ -1,0 +1,33 @@
+{
+  "speciesId": "mist",
+  "displayName": "Mist",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/mist.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "cloud_puff_top",
+    "cloud_puff_L",
+    "cloud_puff_R",
+    "cloud_puff_back",
+    "mist_swirl_0",
+    "mist_swirl_1",
+    "mist_swirl_2"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

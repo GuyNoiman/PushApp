@@ -1,0 +1,37 @@
+{
+  "speciesId": "storm",
+  "displayName": "Storm",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/storm.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "cloud_crown_0",
+    "cloud_crown_1",
+    "cloud_crown_2",
+    "cloud_shoulder_L",
+    "cloud_shoulder_R",
+    "lightning_chest",
+    "spark_L",
+    "spark_R",
+    "spark_top",
+    "bolt_L",
+    "bolt_R"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

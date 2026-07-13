@@ -1,0 +1,36 @@
+{
+  "speciesId": "nimbus",
+  "displayName": "Nimbus",
+  "sdkVersion": "1.0.0",
+  "modelAsset": "model/nimbus.glb",
+  "sharedFace": "shared/face/push_face_outline.svg",
+  "coreMeshes": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "face_frame",
+    "face_screen"
+  ],
+  "extraMeshes": [
+    "cloud_halo_0",
+    "cloud_halo_L",
+    "cloud_halo_R",
+    "cloud_back_0",
+    "wind_orb_L",
+    "wind_orb_R",
+    "wind_orb_top",
+    "wind_trail_L",
+    "wind_trail_R",
+    "wind_trail_back"
+  ],
+  "anchors": "anchors.json",
+  "materials": "materials.json",
+  "mastery": "mastery.json"
+}

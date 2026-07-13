@@ -1,0 +1,47 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "heart_chest",
+        "heart_orb_L"
+      ],
+      "hiddenMeshes": [
+        "heart_orb_R",
+        "heart_orb_top",
+        "halo_left",
+        "halo_right",
+        "aura_trail_L",
+        "aura_trail_R"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "heart_chest",
+        "heart_orb_L",
+        "heart_orb_R",
+        "halo_left"
+      ],
+      "hiddenMeshes": [
+        "heart_orb_top",
+        "halo_right",
+        "aura_trail_L",
+        "aura_trail_R"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "heart_chest",
+        "heart_orb_L",
+        "heart_orb_R",
+        "heart_orb_top",
+        "halo_left",
+        "halo_right",
+        "aura_trail_L",
+        "aura_trail_R",
+        "wing_L",
+        "wing_R"
+      ]
+    }
+  }
+}

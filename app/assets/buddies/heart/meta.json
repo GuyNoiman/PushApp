@@ -1,0 +1,95 @@
+{
+  "speciesId": "heart",
+  "displayName": "Heart",
+  "sourcePackage": "PUSh_Heart_v2_runtime",
+  "meshCount": 22,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 3269484,
+    "outGlb": 1047588,
+    "outTextures": 19474,
+    "outTotal": 1067062
+  },
+  "bakedMaterials": {
+    "mat_heart": {
+      "baseColor_sRGB": [
+        220,
+        75,
+        116
+      ],
+      "roughness": 0.298,
+      "metalness": 0.0471,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        179,
+        109,
+        139
+      ],
+      "roughness": 0.5765,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        233,
+        193,
+        209
+      ],
+      "roughness": 0.5765,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_wing": {
+      "baseColor_sRGB": [
+        245,
+        223,
+        236
+      ],
+      "roughness": 0.7176,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_glow": {
+      "baseColor_sRGB": [
+        254,
+        177,
+        205
+      ],
+      "roughness": 0.298,
+      "metalness": 0.0471,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        111,
+        71,
+        93
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_14.png",
+      "emissiveMap": "tex_15.png"
+    }
+  }
+}

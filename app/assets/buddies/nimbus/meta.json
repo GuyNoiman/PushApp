@@ -1,0 +1,85 @@
+{
+  "speciesId": "nimbus",
+  "displayName": "Nimbus",
+  "sourcePackage": "PUSh_Nimbus_v2_runtime",
+  "meshCount": 22,
+  "materialCount": 6,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 2714596,
+    "outGlb": 1032196,
+    "outTextures": 19474,
+    "outTotal": 1051670
+  },
+  "bakedMaterials": {
+    "mat_cloud": {
+      "baseColor_sRGB": [
+        184,
+        207,
+        223
+      ],
+      "roughness": 0.7569,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        121,
+        157,
+        184
+      ],
+      "roughness": 0.6196,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        205,
+        222,
+        233
+      ],
+      "roughness": 0.6196,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_wind": {
+      "baseColor_sRGB": [
+        128,
+        210,
+        234
+      ],
+      "roughness": 0.2,
+      "metalness": 0.0784,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        81,
+        106,
+        127
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_11.png",
+      "emissiveMap": "tex_12.png"
+    }
+  }
+}

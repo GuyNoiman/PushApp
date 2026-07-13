@@ -1,0 +1,54 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "bag_main",
+        "bag_side_L",
+        "bag_side_R",
+        "strap_L",
+        "strap_R",
+        "item_blue_0",
+        "item_red_0",
+        "item_gold_0",
+        "item_blue_1",
+        "item_red_1"
+      ],
+      "hiddenMeshes": [
+        "organizer_slot_0",
+        "organizer_slot_1",
+        "organizer_slot_2"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "bag_main",
+        "strap_L",
+        "strap_R",
+        "item_blue_0",
+        "item_red_0",
+        "item_gold_0",
+        "organizer_slot_0",
+        "organizer_slot_1"
+      ],
+      "hiddenMeshes": [
+        "item_blue_1",
+        "item_red_1",
+        "organizer_slot_2"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "bag_main",
+        "strap_L",
+        "strap_R",
+        "item_blue_0",
+        "item_red_0",
+        "item_gold_0",
+        "organizer_slot_0",
+        "organizer_slot_1",
+        "organizer_slot_2"
+      ]
+    }
+  }
+}

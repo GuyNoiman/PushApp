@@ -1,0 +1,39 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "wind_orb_L"
+      ],
+      "hiddenMeshes": [
+        "wind_orb_R",
+        "wind_orb_top",
+        "wind_trail_L",
+        "wind_trail_R",
+        "wind_trail_back"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "wind_orb_L",
+        "wind_orb_R",
+        "wind_trail_L"
+      ],
+      "hiddenMeshes": [
+        "wind_orb_top",
+        "wind_trail_R",
+        "wind_trail_back"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "wind_orb_L",
+        "wind_orb_R",
+        "wind_orb_top",
+        "wind_trail_L",
+        "wind_trail_R",
+        "wind_trail_back"
+      ]
+    }
+  }
+}

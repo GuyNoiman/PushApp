@@ -1,0 +1,85 @@
+{
+  "speciesId": "shy",
+  "displayName": "Shy",
+  "sourcePackage": "PUSh_Shy_v2_runtime",
+  "meshCount": 21,
+  "materialCount": 6,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 2550796,
+    "outGlb": 1093308,
+    "outTextures": 19474,
+    "outTotal": 1112782
+  },
+  "bakedMaterials": {
+    "mat_hood": {
+      "baseColor_sRGB": [
+        63,
+        58,
+        94
+      ],
+      "roughness": 0.8196,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_body": {
+      "baseColor_sRGB": [
+        132,
+        119,
+        169
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_body_light": {
+      "baseColor_sRGB": [
+        186,
+        174,
+        216
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_blush": {
+      "baseColor_sRGB": [
+        217,
+        129,
+        163
+      ],
+      "roughness": 0.6392,
+      "metalness": 0.0196,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        73,
+        66,
+        101
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_10.png",
+      "emissiveMap": "tex_11.png"
+    }
+  }
+}

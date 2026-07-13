@@ -1,0 +1,17 @@
+{
+  "materials": {
+    "mat_body": {
+      "baseColorTexture": "textures/body_basecolor.png",
+      "metallicRoughnessTexture": "textures/body_metalrough.png"
+    },
+    "mat_face_frame": {
+      "baseColorTexture": "textures/frame_basecolor.png",
+      "metallicRoughnessTexture": "textures/frame_metalrough.png"
+    },
+    "mat_face_screen": {
+      "baseColorTexture": "textures/face_neutral.png",
+      "metallicRoughnessTexture": "textures/screen_metalrough.png",
+      "emissiveTexture": "textures/face_emissive.png"
+    }
+  }
+}

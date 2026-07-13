@@ -1,0 +1,95 @@
+{
+  "speciesId": "magnet",
+  "displayName": "Magnet",
+  "sourcePackage": "PUSh_Magnet_v2_runtime",
+  "meshCount": 22,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 5596432,
+    "outGlb": 966480,
+    "outTextures": 34776,
+    "outTotal": 1001256
+  },
+  "bakedMaterials": {
+    "mat_metal_dark": {
+      "baseColor_sRGB": [
+        36,
+        45,
+        56
+      ],
+      "roughness": 0.3176,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_metal": {
+      "baseColor_sRGB": [
+        84,
+        99,
+        116
+      ],
+      "roughness": 0.3176,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_magnet_red": {
+      "baseColor_sRGB": [
+        184,
+        58,
+        67
+      ],
+      "roughness": 0.4196,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_magnet_blue": {
+      "baseColor_sRGB": [
+        57,
+        109,
+        189
+      ],
+      "roughness": 0.4196,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_magnetic_field": {
+      "baseColor_sRGB": [
+        89,
+        65,
+        215
+      ],
+      "roughness": 0.2471,
+      "metalness": 0.149,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        63,
+        75,
+        94
+      ],
+      "roughness": 0.3176,
+      "metalness": 0.2,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_13.png",
+      "emissiveMap": "tex_14.png"
+    }
+  }
+}

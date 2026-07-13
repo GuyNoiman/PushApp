@@ -1,0 +1,59 @@
+{
+  "format": "glTF 2.0 binary",
+  "checks": [
+    {
+      "id": "glb_loads",
+      "required": true
+    },
+    {
+      "id": "height_1_08m",
+      "required": true,
+      "tolerance": 0.02
+    },
+    {
+      "id": "feet_on_y_0",
+      "required": true,
+      "tolerance": 0.002
+    },
+    {
+      "id": "y_up",
+      "required": true
+    },
+    {
+      "id": "forward_plus_z",
+      "required": true
+    },
+    {
+      "id": "all_meshes_have_normals",
+      "required": true
+    },
+    {
+      "id": "all_meshes_have_uvs",
+      "required": true
+    },
+    {
+      "id": "face_screen_flat_and_inset",
+      "required": true
+    },
+    {
+      "id": "canonical_face_silhouette_preserved",
+      "required": true
+    },
+    {
+      "id": "required_core_mesh_names_present",
+      "required": true
+    },
+    {
+      "id": "required_anchor_ids_present",
+      "required": true
+    },
+    {
+      "id": "embedded_textures_present",
+      "required": true
+    },
+    {
+      "id": "no_runtime_code_duplication",
+      "required": true
+    }
+  ]
+}

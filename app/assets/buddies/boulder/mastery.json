@@ -1,0 +1,23 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "moss_0"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "moss_0",
+        "moss_1"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "moss_0",
+        "moss_1",
+        "moss_2"
+      ]
+    }
+  }
+}

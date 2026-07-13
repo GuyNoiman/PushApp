@@ -1,0 +1,75 @@
+{
+  "speciesId": "boulder",
+  "displayName": "Boulder",
+  "sourcePackage": "PUSh_Boulder_v2_runtime",
+  "meshCount": 21,
+  "materialCount": 5,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 6400672,
+    "outGlb": 1279544,
+    "outTextures": 28317,
+    "outTotal": 1307861
+  },
+  "bakedMaterials": {
+    "mat_stone": {
+      "baseColor_sRGB": [
+        95,
+        81,
+        73
+      ],
+      "roughness": 0.898,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_stone_dark": {
+      "baseColor_sRGB": [
+        50,
+        43,
+        40
+      ],
+      "roughness": 0.949,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_moss": {
+      "baseColor_sRGB": [
+        47,
+        98,
+        51
+      ],
+      "roughness": 0.9176,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_face_frame": {
+      "baseColor_sRGB": [
+        57,
+        49,
+        44
+      ],
+      "roughness": 0.949,
+      "metalness": 0.0,
+      "external": []
+    },
+    "mat_face_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_face_screen": {
+      "map": "tex_8.png",
+      "emissiveMap": "tex_9.png"
+    }
+  }
+}

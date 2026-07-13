@@ -1,0 +1,95 @@
+{
+  "speciesId": "chroma",
+  "displayName": "Chroma",
+  "sourcePackage": "PUSh_Chroma_v2_runtime",
+  "meshCount": 20,
+  "materialCount": 7,
+  "missingCoreMeshes": [],
+  "sizeBytes": {
+    "srcGlb": 2683748,
+    "outGlb": 1059292,
+    "outTextures": 19474,
+    "outTotal": 1078766
+  },
+  "bakedMaterials": {
+    "mat_dark": {
+      "baseColor_sRGB": [
+        38,
+        71,
+        62
+      ],
+      "roughness": 0.5569,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_green": {
+      "baseColor_sRGB": [
+        73,
+        154,
+        113
+      ],
+      "roughness": 0.5569,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_blue": {
+      "baseColor_sRGB": [
+        68,
+        135,
+        189
+      ],
+      "roughness": 0.5569,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_pink": {
+      "baseColor_sRGB": [
+        174,
+        94,
+        154
+      ],
+      "roughness": 0.5569,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_yellow": {
+      "baseColor_sRGB": [
+        192,
+        154,
+        69
+      ],
+      "roughness": 0.5569,
+      "metalness": 0.0275,
+      "external": []
+    },
+    "mat_frame": {
+      "baseColor_sRGB": [
+        50,
+        87,
+        77
+      ],
+      "roughness": 0.3765,
+      "metalness": 0.098,
+      "external": []
+    },
+    "mat_screen": {
+      "baseColor_sRGB": [
+        255,
+        255,
+        255
+      ],
+      "roughness": 0.1765,
+      "metalness": 0.2,
+      "external": [
+        "map",
+        "emissiveMap"
+      ]
+    }
+  },
+  "externalTextures": {
+    "mat_screen": {
+      "map": "tex_12.png",
+      "emissiveMap": "tex_13.png"
+    }
+  }
+}

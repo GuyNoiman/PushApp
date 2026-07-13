@@ -1,0 +1,41 @@
+{
+  "sameBaseMesh": true,
+  "levels": {
+    "1": {
+      "visibleMeshes": [
+        "speed_orb_L"
+      ],
+      "hiddenMeshes": [
+        "speed_orb_R",
+        "speed_orb_top",
+        "speed_trail_L",
+        "speed_trail_R"
+      ]
+    },
+    "2": {
+      "visibleMeshes": [
+        "speed_orb_L",
+        "speed_orb_R",
+        "speed_trail_L"
+      ],
+      "hiddenMeshes": [
+        "speed_orb_top",
+        "speed_trail_R"
+      ]
+    },
+    "3": {
+      "visibleMeshes": [
+        "speed_orb_L",
+        "speed_orb_R",
+        "speed_orb_top",
+        "speed_trail_L",
+        "speed_trail_R",
+        "mane_top",
+        "mane_back_0",
+        "mane_back_1",
+        "tail_base",
+        "tail_tip"
+      ]
+    }
+  }
+}

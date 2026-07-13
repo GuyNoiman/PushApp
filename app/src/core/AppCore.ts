@@ -25,9 +25,20 @@ import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
 import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
+import { getLocationGateway } from './location';
+import { getCalendarGateway } from './calendar';
 import { LocalRepository } from './persistence/LocalRepository';
 import type { Repository } from './persistence/Repository';
-import type { AppState, Buddy, BuddyStage, Journey } from './types/domain';
+import type {
+  AppState,
+  Buddy,
+  BuddyStage,
+  CommunicationPrefs,
+  Journey,
+  ReminderRule,
+  ReminderTrigger,
+} from './types/domain';
+import { createId } from './util/id';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
 
 /** A Buddy enriched with derived progression for display. */
@@ -51,6 +62,17 @@ function initialBuddy(): Buddy {
   return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
 }
 
+/** Default communication prefs: everything on except the OS-permission opt-ins. */
+function defaultCommunicationPrefs(): CommunicationPrefs {
+  return {
+    remindersEnabled: true,
+    socialCheerEnabled: true,
+    socialNudgeEnabled: true,
+    locationOptIn: false,
+    calendarOptIn: false,
+  };
+}
+
 function emptyState(): AppState {
   return {
     dreams: [],
@@ -59,6 +81,8 @@ function emptyState(): AppState {
     checkIns: [],
     missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
     login: { lastClaimedKey: null, dayIndex: 0 },
+    reminderRules: [],
+    communicationPrefs: defaultCommunicationPrefs(),
   };
 }
 
@@ -84,6 +108,14 @@ function migrateState(state: AppState): AppState {
       progress: state.missions?.progress ?? base.missions.progress,
     },
     login: clampLogin({ ...base.login, ...state.login }),
+    reminderRules: state.reminderRules ?? base.reminderRules,
+    communicationPrefs: { ...base.communicationPrefs, ...state.communicationPrefs },
+    // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses
+    // emptyState directly). So any state reaching here belongs to an existing user
+    // who predates onboarding — treat them as already onboarded (a nonzero
+    // timestamp) so they never see it. A snapshot that already recorded a value
+    // keeps it.
+    onboardingCompletedAt: state.onboardingCompletedAt ?? 1,
   };
 }
 
@@ -134,8 +166,14 @@ export class AppCore {
     this.rewardEngine = new RewardEngine(this.bus, REWARDS);
     this.buddyEngine = new BuddyEngine(this.bus, getState);
     // Pass the bus as the reserved intervention seam (deferred): the engine only
-    // stores it today and subscribes to nothing — no behavior change.
-    this.reminderEngine = new ReminderEngine(this.bus);
+    // stores it today and subscribes to nothing — no behavior change. The
+    // location/calendar gateways are the DORMANT trigger seams — both resolve to
+    // their Null gateway today (flags off), so those trigger kinds are graceful
+    // no-ops.
+    this.reminderEngine = new ReminderEngine(this.bus, {
+      location: getLocationGateway(),
+      calendar: getCalendarGateway(),
+    });
     this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
     this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
     // Composition root owns the EntitlementEngine (like every other engine). It
@@ -174,6 +212,8 @@ export class AppCore {
     this.bus.on('ItemEquipped', this.onChanged);
     this.bus.on('MissionClaimed', this.onChanged);
     this.bus.on('LoginRewardClaimed', this.onChanged);
+    this.bus.on('ReminderRuleAdded', this.onChanged);
+    this.bus.on('ReminderRuleRemoved', this.onChanged);
 
     // start() runs the authoritative day/week rollover once on launch.
     this.missionEngine.start();
@@ -304,6 +344,90 @@ export class AppCore {
   /** Schedule a simple time/day reminder. Returns the reminder id, or null if unavailable. */
   scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
     return this.reminderEngine.scheduleDailyReminder(input);
+  }
+
+  // ── Reminders / communication prefs ─────────────────────────────────────────
+
+  /**
+   * Create a reminder for a Journey, schedule its OS notification(s), and persist.
+   * The rule owns the scheduled notification ids so it can later be cancelled.
+   * Scheduling is best-effort (no permission ⇒ no ids); the rule is still saved so
+   * it can be (re)scheduled once permission is granted.
+   */
+  async addReminderRule(input: {
+    journeyId: string;
+    trigger: ReminderTrigger;
+    title: string;
+    body: string;
+    enabled?: boolean;
+  }): Promise<ReminderRule> {
+    const rule: ReminderRule = {
+      id: createId('reminder'),
+      journeyId: input.journeyId,
+      trigger: input.trigger,
+      title: input.title,
+      body: input.body,
+      enabled: input.enabled ?? true,
+      scheduledNotificationIds: [],
+    };
+    rule.scheduledNotificationIds = await this.reminderEngine.scheduleRule(rule);
+    this.state.reminderRules.push(rule);
+    this.bus.emit({ type: 'ReminderRuleAdded', rule });
+    return rule;
+  }
+
+  /**
+   * Replace an existing reminder rule: cancel its old OS notifications, reschedule
+   * from the new definition, and persist. No-op (returns null) if the id is unknown.
+   */
+  async updateReminderRule(
+    id: string,
+    changes: Partial<Pick<ReminderRule, 'trigger' | 'title' | 'body' | 'enabled'>>,
+  ): Promise<ReminderRule | null> {
+    const existing = this.state.reminderRules.find((r) => r.id === id);
+    if (!existing) return null;
+    await this.reminderEngine.cancelRule(existing);
+    const next: ReminderRule = { ...existing, ...changes, scheduledNotificationIds: [] };
+    next.scheduledNotificationIds = await this.reminderEngine.scheduleRule(next);
+    const idx = this.state.reminderRules.findIndex((r) => r.id === id);
+    this.state.reminderRules[idx] = next;
+    this.bus.emit({ type: 'ReminderRuleAdded', rule: next });
+    return next;
+  }
+
+  /**
+   * Remove a reminder rule: cancel its OS notifications, drop it, and persist.
+   * No-op (returns false) if the id is unknown.
+   */
+  async removeReminderRule(id: string): Promise<boolean> {
+    const existing = this.state.reminderRules.find((r) => r.id === id);
+    if (!existing) return false;
+    await this.reminderEngine.cancelRule(existing);
+    this.state.reminderRules = this.state.reminderRules.filter((r) => r.id !== id);
+    this.bus.emit({ type: 'ReminderRuleRemoved', ruleId: id });
+    return true;
+  }
+
+  /** All reminder rules, or only those for a given Journey when `journeyId` is passed. */
+  listReminderRules(journeyId?: string): ReminderRule[] {
+    const rules = this.state.reminderRules;
+    return journeyId ? rules.filter((r) => r.journeyId === journeyId) : [...rules];
+  }
+
+  /** Set a single communication preference and persist. */
+  setCommunicationPref<K extends keyof CommunicationPrefs>(key: K, value: CommunicationPrefs[K]): void {
+    this.state.communicationPrefs = { ...this.state.communicationPrefs, [key]: value };
+    this.onChanged();
+  }
+
+  /** Opt in/out of location-triggered reminders (dormant seam). Persists. */
+  setLocationOptIn(value: boolean): void {
+    this.setCommunicationPref('locationOptIn', value);
+  }
+
+  /** Opt in/out of calendar-triggered reminders (dormant seam). Persists. */
+  setCalendarOptIn(value: boolean): void {
+    this.setCommunicationPref('calendarOptIn', value);
   }
 
   /**

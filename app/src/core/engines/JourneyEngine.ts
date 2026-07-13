@@ -2,6 +2,13 @@
  * JourneyEngine — owns Journey + Step state and the check-in flow.
  * It emits events only; it performs NO reward or Buddy math (that belongs to
  * RewardEngine / BuddyEngine reacting to these events). Pure TS.
+ *
+ * Model (confirmed with founder 2026-07-14): a Journey holds a FINITE set of Steps
+ * (a Journey lasts up to ~2 months, so the Steps are bounded). Each Step is completed
+ * ONCE; every completion fires a small celebration (via `StepCheckedIn` → reward/Buddy
+ * engines). The Journey completes when the LAST Step is done — i.e. every Step is done.
+ * There is no per-Step auto-recurrence; recurring practice is expressed as multiple
+ * planned Steps (future: the weekly-planning flow generates them).
  */
 import type { EventBus } from '../events/EventBus';
 import type { AppState, Cadence, Journey, Rhythm, Step } from '../types/domain';
@@ -16,6 +23,7 @@ export interface NewStepInput {
 
 export interface NewJourneyInput {
   title: string;
+  description?: string;
   why: string[];
   durationDays: number;
   rhythm: Rhythm;
@@ -50,6 +58,7 @@ export class JourneyEngine {
     const journey: Journey = {
       id: createId('journey'),
       title: input.title,
+      description: input.description,
       why: input.why,
       durationDays: input.durationDays,
       rhythm: input.rhythm,
@@ -64,9 +73,10 @@ export class JourneyEngine {
   }
 
   /**
-   * Check in on a Step. Marks it done, records a CheckIn, and emits StepCheckedIn.
-   * If every Step in the Journey is now done, marks the Journey complete and emits
-   * JourneyCompleted. No-op if the Journey/Step is missing or already done.
+   * Check in on a Step: mark it done (one-shot), record a CheckIn, and emit
+   * StepCheckedIn — the reward/Buddy engines turn that into the small per-Step
+   * celebration. When every Step in the Journey is done, mark the Journey complete
+   * and emit JourneyCompleted. No-op if the Journey/Step is missing or already done.
    */
   checkInStep(journeyId: string, stepId: string): void {
     const state = this.getState();
@@ -83,6 +93,7 @@ export class JourneyEngine {
     state.checkIns.push(checkIn);
     this.bus.emit({ type: 'StepCheckedIn', journeyId, step, checkIn });
 
+    // Finite Steps: the Journey completes when the last Step is done.
     if (!journey.completedAt && journey.steps.every((s) => s.done)) {
       journey.completedAt = now;
       this.bus.emit({ type: 'JourneyCompleted', journey });
@@ -93,7 +104,7 @@ export class JourneyEngine {
    * A Journey's completion ratio in [0,1] — done Steps over total Steps, or 0 when
    * the Journey is missing or has no Steps. The single source of this math (was
    * inlined in SocialProvider's progress publish): keeps engine logic out of the UI
-   * (Engineering Bible §19). Value is identical to the previous inline computation.
+   * (Engineering Bible §19).
    */
   journeyProgress(journeyId: string): number {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
@@ -104,7 +115,7 @@ export class JourneyEngine {
     return done / total;
   }
 
-  /** Steps the user can act on now: not-yet-done Steps of active Journeys. */
+  /** Steps the user can act on now: the not-yet-done Steps of active (incomplete) Journeys. */
   getTodaySteps(): TodayStep[] {
     const today: TodayStep[] = [];
     for (const journey of this.getState().journeys) {

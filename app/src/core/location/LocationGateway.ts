@@ -1,0 +1,60 @@
+/**
+ * RESERVED SEAM — boundary only; location-triggered reminders are deferred (POC
+ * scope) and must go through security-privacy + store review before any real
+ * implementation. The `featureFlags.location` flag stays OFF until then.
+ *
+ * LocationGateway — the reserved boundary for a future location-triggered reminder
+ * (arrive at / leave a place). It mirrors the existing gateway pattern (AuthGateway
+ * / SocialGateway / ProfileGateway): engines and UI depend on THIS interface only,
+ * and a single vendor file (an ExpoLocationGateway, NOT created yet — the dep is
+ * not installed and the flag is off) would implement it later. Pure TS here — no
+ * `expo-location` import, no React, no native modules.
+ *
+ * PRIVACY RED-LINE (R2): a future implementation must wrap DEVICE location APIs
+ * ONLY. Location data is ON-DEVICE ONLY — it must NEVER be sent to Supabase, put in
+ * a ProgressSummary, or leave the device in any form, and this seam must never
+ * import from `../social/`, `../profile/`, or `../interests/`. Saved data must be
+ * minimal; the payloads here are placeholders while the feature is dormant.
+ */
+
+/**
+ * A minimal placeholder description of a place a reminder could key off. Coarse
+ * and on-device only — no address, no history, no PII. Grow it only through the
+ * security-privacy review when the feature is actually built.
+ */
+export type LocationPlace = {
+  /** Opaque local id for a saved place (never a server id). */
+  id: string;
+  /** Whether to fire on arriving at or leaving the place. */
+  transition: 'enter' | 'exit';
+};
+
+export interface LocationGateway {
+  /** Whether the pillar is configured/active (feature flag + granted opt-in). */
+  readonly enabled: boolean;
+
+  /**
+   * Register interest in a place-based trigger, returning an OS notification id if
+   * one was scheduled, or null. No-op (null) while the seam is dormant.
+   */
+  watchPlace(place: LocationPlace): Promise<string | null>;
+
+  /** Stop watching a previously registered place. No-op while dormant. */
+  clearPlace(place: LocationPlace): Promise<void>;
+}
+
+/**
+ * No-op gateway used while the location pillar is deferred/disabled. Inert by
+ * design: enabled=false, every method a no-op. Mirrors NullProfileGateway so
+ * callers never branch on config once the seam is wired. It touches NO device
+ * location API and imports nothing (red-line R2).
+ */
+export const NullLocationGateway: LocationGateway = {
+  enabled: false,
+  async watchPlace() {
+    return null;
+  },
+  async clearPlace() {
+    // No location layer yet — clearing a place is intentionally a no-op.
+  },
+};

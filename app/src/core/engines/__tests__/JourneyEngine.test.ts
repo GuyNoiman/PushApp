@@ -2,6 +2,9 @@
  * JourneyEngine unit tests — pure TS, no RN rendering needed. Verifies the
  * create + check-in flow and the events other engines depend on
  * (Engineering Bible §18: every major engine has independent tests).
+ *
+ * Model (confirmed with founder 2026-07-14): a Journey holds a finite set of Steps,
+ * each completed once; the Journey completes when EVERY Step is done. No Step recurrence.
  */
 import { EventBus } from '../../events/EventBus';
 import type { DomainEvent } from '../../events/events';
@@ -20,6 +23,14 @@ function emptyState(): AppState {
     checkIns: [],
     missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
     login: { lastClaimedKey: null, dayIndex: 0 },
+    reminderRules: [],
+    communicationPrefs: {
+      remindersEnabled: true,
+      socialCheerEnabled: true,
+      socialNudgeEnabled: true,
+      locationOptIn: false,
+      calendarOptIn: false,
+    },
   };
 }
 
@@ -73,6 +84,19 @@ describe('JourneyEngine.createJourney', () => {
     expect(journey.steps[0].isStarterStep).toBe(false);
     expect(journey.steps[0].cadence).toBe('once');
   });
+
+  it('carries the Journey description through to the stored Journey', () => {
+    const { engine } = setup();
+    const journey = engine.createJourney({
+      title: 'Run 5km',
+      description: 'Build up to a 5k over a month',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ title: 'Walk' }],
+    });
+    expect(journey.description).toBe('Build up to a 5k over a month');
+  });
 });
 
 describe('JourneyEngine.checkInStep', () => {
@@ -92,10 +116,36 @@ describe('JourneyEngine.checkInStep', () => {
     expect(journey.steps[0].lastCheckInAt).toBeDefined();
     expect(state.checkIns).toHaveLength(1);
     expect(events.filter((e) => e.type === 'StepCheckedIn')).toHaveLength(1);
+    // Every Step gates completion — one of two done ≠ complete.
     expect(events.some((e) => e.type === 'JourneyCompleted')).toBe(false);
   });
 
-  it('emits JourneyCompleted once every Step is done', () => {
+  it('completes the Journey only when the LAST Step is done (every Step gates)', () => {
+    const { engine, events } = setup();
+    const journey = engine.createJourney({
+      title: 'Run 5km',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [
+        { title: 'Sign up', cadence: 'once' },
+        { title: 'Walk', cadence: 'daily' },
+        { title: 'Jog', cadence: 'weekly' },
+      ],
+    });
+
+    engine.checkInStep(journey.id, journey.steps[0].id);
+    engine.checkInStep(journey.id, journey.steps[1].id);
+    // Not done yet — one Step remains.
+    expect(journey.completedAt).toBeUndefined();
+    expect(events.some((e) => e.type === 'JourneyCompleted')).toBe(false);
+
+    engine.checkInStep(journey.id, journey.steps[2].id); // last Step
+    expect(journey.completedAt).toBeDefined();
+    expect(events.filter((e) => e.type === 'JourneyCompleted')).toHaveLength(1);
+  });
+
+  it('emits StepCheckedIn for every Step (each completion = a celebration)', () => {
     const { engine, events } = setup();
     const journey = engine.createJourney({
       title: 'Run 5km',
@@ -108,9 +158,8 @@ describe('JourneyEngine.checkInStep', () => {
     engine.checkInStep(journey.id, journey.steps[0].id);
     engine.checkInStep(journey.id, journey.steps[1].id);
 
-    const completed = events.filter((e) => e.type === 'JourneyCompleted');
-    expect(completed).toHaveLength(1);
-    expect(journey.completedAt).toBeDefined();
+    expect(events.filter((e) => e.type === 'StepCheckedIn')).toHaveLength(2);
+    expect(events.filter((e) => e.type === 'JourneyCompleted')).toHaveLength(1);
   });
 
   it('is a no-op for a missing Journey/Step or an already-done Step', () => {
@@ -133,7 +182,7 @@ describe('JourneyEngine.checkInStep', () => {
 });
 
 describe('JourneyEngine.getTodaySteps', () => {
-  it('returns only not-done Steps of active Journeys', () => {
+  it('returns only not-done Steps of active (incomplete) Journeys', () => {
     const { engine } = setup();
     const a = engine.createJourney({
       title: 'Run 5km',

@@ -5,6 +5,9 @@
  * denied permission or an unsupported platform never crashes the app.
  */
 import type { EventBus } from '../events/EventBus';
+import { NullCalendarGateway, type CalendarGateway } from '../calendar/CalendarGateway';
+import { NullLocationGateway, type LocationGateway } from '../location/LocationGateway';
+import type { ReminderRule, ReminderTrigger } from '../types/domain';
 import * as Notifications from 'expo-notifications';
 
 export interface DailyReminderInput {
@@ -16,15 +19,34 @@ export interface DailyReminderInput {
   minute: number;
 }
 
+/** Optional gateways for the DORMANT calendar/location trigger kinds. */
+export interface ReminderGateways {
+  location?: LocationGateway;
+  calendar?: CalendarGateway;
+}
+
 export class ReminderEngine {
   private permissionGranted = false;
+  private readonly location: LocationGateway;
+  private readonly calendar: CalendarGateway;
 
   /**
    * Intervention seam: bus reserved so a future InterventionEngine can react to
    * events (e.g. StepMissed) to decide when/how to nudge — deferred. Optional and
    * stored only; current behavior is unchanged and nothing is subscribed yet.
+   *
+   * The calendar/location gateways are the DORMANT trigger seams (both Null by
+   * default). They are used ONLY to schedule on-device notifications; per red-line
+   * R2 they never send data off-device. A Null/disabled gateway makes those trigger
+   * kinds a graceful no-op (returns no ids).
    */
-  constructor(private readonly bus?: EventBus) {}
+  constructor(
+    private readonly bus?: EventBus,
+    gateways: ReminderGateways = {},
+  ) {
+    this.location = gateways.location ?? NullLocationGateway;
+    this.calendar = gateways.calendar ?? NullCalendarGateway;
+  }
 
   /** Ask for notification permission once. Safe to call repeatedly. */
   async init(): Promise<boolean> {
@@ -67,6 +89,85 @@ export class ReminderEngine {
       });
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Schedule every OS notification a rule needs, returning the ids to store on the
+   * rule (`ReminderRule.scheduledNotificationIds`). Behavior by trigger kind:
+   *  - `fixedTime` with no weekdays → one DAILY notification (reuses
+   *    scheduleDailyReminder);
+   *  - `fixedTime` with weekdays → one WEEKLY notification per weekday, returning
+   *    all ids;
+   *  - `calendar` / `location` → resolved via the (dormant) gateway; returns `[]`
+   *    when the gateway is Null/disabled — a graceful no-op.
+   * Returns `[]` (schedules nothing) if the rule is disabled or permission is
+   * missing. Never throws — a failure to schedule one id just drops that id.
+   */
+  async scheduleRule(rule: ReminderRule): Promise<string[]> {
+    if (!rule.enabled) return [];
+    const t = rule.trigger;
+    switch (t.kind) {
+      case 'fixedTime':
+        return this.scheduleFixedTime(rule, t);
+      case 'location': {
+        if (!this.location.enabled) return [];
+        const id = await this.location.watchPlace({ id: rule.id, transition: t.transition ?? 'enter' });
+        return id ? [id] : [];
+      }
+      case 'calendar': {
+        if (!this.calendar.enabled) return [];
+        const id = await this.calendar.watchEvents({ id: rule.id, minutesBefore: t.minutesBefore ?? 0 });
+        return id ? [id] : [];
+      }
+    }
+  }
+
+  /**
+   * Schedule a fixedTime trigger: a plain daily when no weekdays are given, else
+   * one WEEKLY notification per chosen weekday. `weekdays` are in JS
+   * `Date.getDay()` convention (0=Sunday … 6=Saturday); expo-notifications wants
+   * 1..7 with 1=Sunday, so we map `weekday = jsDay + 1`.
+   */
+  private async scheduleFixedTime(
+    rule: ReminderRule,
+    t: Extract<ReminderTrigger, { kind: 'fixedTime' }>,
+  ): Promise<string[]> {
+    const days = t.weekdays ?? [];
+    if (days.length === 0) {
+      const id = await this.scheduleDailyReminder({
+        title: rule.title,
+        body: rule.body,
+        hour: t.hour,
+        minute: t.minute,
+      });
+      return id ? [id] : [];
+    }
+    if (!this.permissionGranted) return [];
+    const ids: string[] = [];
+    for (const jsDay of days) {
+      try {
+        const id = await Notifications.scheduleNotificationAsync({
+          content: { title: rule.title, body: rule.body },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            weekday: jsDay + 1, // JS 0=Sun → expo 1=Sun
+            hour: t.hour,
+            minute: t.minute,
+          },
+        });
+        ids.push(id);
+      } catch {
+        // Skip a weekday that failed to schedule rather than aborting the rest.
+      }
+    }
+    return ids;
+  }
+
+  /** Cancel every OS notification a rule scheduled (its stored ids). */
+  async cancelRule(rule: ReminderRule): Promise<void> {
+    for (const id of rule.scheduledNotificationIds) {
+      await this.cancel(id);
     }
   }
 

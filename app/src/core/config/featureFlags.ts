@@ -47,6 +47,22 @@ export const featureFlags = {
    * the ReminderEngine holds a reserved bus but subscribes to nothing.
    */
   intervention: false,
+  /**
+   * RESERVED (deferred, POC scope). Location-triggered reminders — a future
+   * arrive/leave-a-place nudge. Off: the seam exists (LocationGateway) but no
+   * logic runs and no OS location permission is requested. Location data is
+   * ON-DEVICE ONLY (red-line R2); must pass security-privacy + store review
+   * before enabling.
+   */
+  location: false,
+  /**
+   * RESERVED (deferred, POC scope). Calendar-triggered reminders — a future
+   * "before your event" nudge. Off: the seam exists (CalendarGateway) but no
+   * logic runs and no OS calendar permission is requested. Calendar data is
+   * ON-DEVICE ONLY (red-line R2); must pass security-privacy + store review
+   * before enabling.
+   */
+  calendar: false,
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

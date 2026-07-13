@@ -3,7 +3,7 @@
  * Engines never call each other directly; they emit and react to these events
  * (Engineering Bible §7 event-driven). Pure TS — no React/UI/vendor imports.
  */
-import type { Buddy, BuddyStage, CheckIn, Journey, Step } from '../types/domain';
+import type { Buddy, BuddyStage, CheckIn, Journey, ReminderRule, Step } from '../types/domain';
 
 export interface JourneyCreated {
   type: 'JourneyCreated';
@@ -92,6 +92,18 @@ export interface LoginRewardClaimed {
   coins: number;
 }
 
+/** A user reminder rule was added (or updated). Drives persistence. */
+export interface ReminderRuleAdded {
+  type: 'ReminderRuleAdded';
+  rule: ReminderRule;
+}
+
+/** A user reminder rule was removed. Drives persistence. */
+export interface ReminderRuleRemoved {
+  type: 'ReminderRuleRemoved';
+  ruleId: string;
+}
+
 // ── RESERVED events ─────────────────────────────────────────────────────────
 // Declared-but-never-emitted contract members for deferred domains (profile /
 // interests / intervention). They keep the DomainEvent vocabulary stable so a
@@ -133,6 +145,8 @@ export type DomainEvent =
   | MissionCompleted
   | MissionClaimed
   | LoginRewardClaimed
+  | ReminderRuleAdded
+  | ReminderRuleRemoved
   // RESERVED — not yet emitted (deferred domains)
   | ProfileUpdated
   | InterestsUpdated

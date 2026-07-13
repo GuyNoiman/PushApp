@@ -39,6 +39,14 @@ function emptyState(): AppState {
     checkIns: [],
     missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
     login: { lastClaimedKey: null, dayIndex: 0 },
+    reminderRules: [],
+    communicationPrefs: {
+      remindersEnabled: true,
+      socialCheerEnabled: true,
+      socialNudgeEnabled: true,
+      locationOptIn: false,
+      calendarOptIn: false,
+    },
   };
 }
 

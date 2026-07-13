@@ -23,6 +23,7 @@ export interface Step {
   description?: string;
   /** The first, deliberately-easy Step that gets the user moving. */
   isStarterStep: boolean;
+  /** Planned pace hint for this Step (metadata; Steps are completed once). */
   cadence: Cadence;
   /** Epoch ms of the most recent check-in on this Step, if any. */
   lastCheckInAt?: number;
@@ -33,6 +34,8 @@ export interface Step {
 export interface Journey {
   id: string;
   title: string;
+  /** An optional short description of what this Journey is about. */
+  description?: string;
   /** The user's "why" — one or more reasons this Journey matters to them. */
   why: string[];
   durationDays: number;
@@ -103,6 +106,70 @@ export interface LoginState {
   dayIndex: number;
 }
 
+/**
+ * What fires a reminder. A discriminated union so a rule can grow new trigger
+ * kinds without changing existing callers. Only `fixedTime` is live today; the
+ * `calendar`/`location` variants are DORMANT reserved seams (their gateways are
+ * inert, flags off) — their payloads are intentionally minimal placeholders and
+ * must pass security-privacy + store review before being enabled.
+ */
+export type ReminderTrigger =
+  | {
+      kind: 'fixedTime';
+      /** 0-23 local hour. */
+      hour: number;
+      /** 0-59 local minute. */
+      minute: number;
+      /**
+       * Days of the week this fires on, in JS `Date.getDay()` convention
+       * (0=Sunday … 6=Saturday). Omitted/empty means every day (a plain daily).
+       */
+      weekdays?: number[];
+    }
+  | {
+      /** RESERVED (dormant) — fire relative to a calendar event. Placeholder payload. */
+      kind: 'calendar';
+      /** Minutes before the event to fire. */
+      minutesBefore?: number;
+    }
+  | {
+      /** RESERVED (dormant) — fire on arriving at / leaving a place. Placeholder payload. */
+      kind: 'location';
+      /** Whether the trigger is on arrival or departure. */
+      transition?: 'enter' | 'exit';
+    };
+
+/**
+ * A user's reminder for a Journey. Owns the scheduled OS notification ids so the
+ * rule can be cancelled/rescheduled cleanly. On-device only — no reminder content
+ * ever leaves the device.
+ */
+export interface ReminderRule {
+  id: string;
+  journeyId: string;
+  trigger: ReminderTrigger;
+  title: string;
+  body: string;
+  enabled: boolean;
+  /** OS notification ids scheduled for this rule (may be several, one per weekday). */
+  scheduledNotificationIds: string[];
+}
+
+/**
+ * How the user has chosen to be contacted. All default ON except the two
+ * OS-permission opt-ins (location/calendar), which start OFF and never turn on
+ * without an explicit, reviewed opt-in (red-line R2). No PII.
+ */
+export interface CommunicationPrefs {
+  remindersEnabled: boolean;
+  socialCheerEnabled: boolean;
+  socialNudgeEnabled: boolean;
+  /** Opt-in for location-triggered reminders (dormant seam). Default false. */
+  locationOptIn: boolean;
+  /** Opt-in for calendar-triggered reminders (dormant seam). Default false. */
+  calendarOptIn: boolean;
+}
+
 /** The full persisted application state (offline-first). */
 export interface AppState {
   dreams: Dream[];
@@ -111,6 +178,16 @@ export interface AppState {
   checkIns: CheckIn[];
   missions: MissionsState;
   login: LoginState;
+  /** User-defined reminders (on-device local notifications). */
+  reminderRules: ReminderRule[];
+  /** How the user wants to be contacted (reminders / social / opt-ins). */
+  communicationPrefs: CommunicationPrefs;
+  /**
+   * Epoch ms onboarding was completed, or undefined if the user has not yet
+   * finished it. A pre-existing persisted snapshot (from before onboarding
+   * existed) is backfilled to a nonzero timestamp so existing users never see it.
+   */
+  onboardingCompletedAt?: number;
   /**
    * Local account-tier state (types/entitlement.ts). Optional so an older
    * persisted snapshot loads without it and resolves to the `free` default

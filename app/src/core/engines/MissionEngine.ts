@@ -23,6 +23,7 @@ import type { MissionCadence, MissionDef, MissionTrigger } from '../config/missi
 import type { EventBus } from '../events/EventBus';
 import type { EventOf } from '../events/events';
 import type { AppState, MissionProgress } from '../types/domain';
+import { dateKey, weekKey } from '../util/date';
 
 /** A Mission enriched with its live progress/claim state for the UI to render. */
 export interface MissionView {
@@ -52,22 +53,6 @@ export interface LoginRewardView {
   claimableToday: boolean;
   /** Coins claimable now (0 once today's reward is claimed). */
   todayCoins: number;
-}
-
-/** Local date key (YYYY-MM-DD) — the unit of the daily rollover. */
-function dateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-/** Week key = the date of that week's Monday, so a new week rolls weekly Missions. */
-function weekKey(d: Date): string {
-  const copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const mondayOffset = (copy.getDay() + 6) % 7; // Mon=0 … Sun=6
-  copy.setDate(copy.getDate() - mondayOffset);
-  return dateKey(copy);
 }
 
 export class MissionEngine {

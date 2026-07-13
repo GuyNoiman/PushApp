@@ -1,0 +1,41 @@
+{
+  "id": "hopper_v1",
+  "displayName": "Hopper",
+  "type": "core_species",
+  "challenge": "Task switching and difficulty staying with one goal",
+  "positivePotential": "Agility and controlled movement",
+  "signatureAbility": "Teleportation",
+  "faceAsset": "../assets/push_face_neutral.svg",
+  "modelAsset": "../model/hopper_v1.glb",
+  "scaleMeters": 1.05,
+  "wearableSlots": [
+    "hat",
+    "shirt",
+    "pants",
+    "shoes",
+    "cape",
+    "necklace",
+    "wrist",
+    "left_hand",
+    "right_hand"
+  ],
+  "requiredBodyParts": [
+    "head",
+    "body",
+    "arm_L",
+    "arm_R",
+    "leg_L",
+    "leg_R",
+    "hand_L",
+    "hand_R",
+    "foot_L",
+    "foot_R"
+  ],
+  "optionalBodyParts": [
+    "ear_L",
+    "ear_R",
+    "tail",
+    "teleport_particles"
+  ],
+  "notes": "Keep exact face silhouette unchanged. Clothing may scale per slot."
+}

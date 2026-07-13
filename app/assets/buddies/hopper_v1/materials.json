@@ -1,0 +1,27 @@
+{
+  "hopper_purple": {
+    "baseColor": "#4A278C",
+    "metallic": 0.05,
+    "roughness": 0.62
+  },
+  "inner_ear": {
+    "baseColor": "#895CD1",
+    "metallic": 0.02,
+    "roughness": 0.58
+  },
+  "face_screen": {
+    "baseColor": "#03080D",
+    "metallic": 0.35,
+    "roughness": 0.22
+  },
+  "face_emission": {
+    "baseColor": "#68E8FF",
+    "emissive": "#32D8FF",
+    "intensity": 1.0
+  },
+  "teleport_accent": {
+    "baseColor": "#6143E5",
+    "emissive": "#3D1FCC",
+    "intensity": 0.8
+  }
+}

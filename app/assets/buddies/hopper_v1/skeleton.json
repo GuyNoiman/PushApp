@@ -1,0 +1,187 @@
+{
+  "version": "1.0",
+  "root": "root",
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "hips",
+      "parent": "root",
+      "position": [
+        0,
+        0,
+        0.85
+      ]
+    },
+    {
+      "name": "spine",
+      "parent": "hips",
+      "position": [
+        0,
+        0,
+        1.28
+      ]
+    },
+    {
+      "name": "neck",
+      "parent": "spine",
+      "position": [
+        0,
+        0,
+        1.92
+      ]
+    },
+    {
+      "name": "head",
+      "parent": "neck",
+      "position": [
+        0,
+        0,
+        2.42
+      ]
+    },
+    {
+      "name": "ear_L",
+      "parent": "head",
+      "position": [
+        -0.56,
+        0.02,
+        3.18
+      ]
+    },
+    {
+      "name": "ear_R",
+      "parent": "head",
+      "position": [
+        0.56,
+        0.02,
+        3.18
+      ]
+    },
+    {
+      "name": "shoulder_L",
+      "parent": "spine",
+      "position": [
+        -0.55,
+        0,
+        1.58
+      ]
+    },
+    {
+      "name": "elbow_L",
+      "parent": "shoulder_L",
+      "position": [
+        -0.72,
+        -0.02,
+        1.38
+      ]
+    },
+    {
+      "name": "wrist_L",
+      "parent": "elbow_L",
+      "position": [
+        -0.89,
+        -0.08,
+        1.2
+      ]
+    },
+    {
+      "name": "shoulder_R",
+      "parent": "spine",
+      "position": [
+        0.55,
+        0,
+        1.58
+      ]
+    },
+    {
+      "name": "elbow_R",
+      "parent": "shoulder_R",
+      "position": [
+        0.72,
+        -0.02,
+        1.38
+      ]
+    },
+    {
+      "name": "wrist_R",
+      "parent": "elbow_R",
+      "position": [
+        0.89,
+        -0.08,
+        1.2
+      ]
+    },
+    {
+      "name": "hip_L",
+      "parent": "hips",
+      "position": [
+        -0.32,
+        0,
+        0.78
+      ]
+    },
+    {
+      "name": "knee_L",
+      "parent": "hip_L",
+      "position": [
+        -0.41,
+        -0.01,
+        0.55
+      ]
+    },
+    {
+      "name": "ankle_L",
+      "parent": "knee_L",
+      "position": [
+        -0.48,
+        -0.02,
+        0.34
+      ]
+    },
+    {
+      "name": "hip_R",
+      "parent": "hips",
+      "position": [
+        0.32,
+        0,
+        0.78
+      ]
+    },
+    {
+      "name": "knee_R",
+      "parent": "hip_R",
+      "position": [
+        0.41,
+        -0.01,
+        0.55
+      ]
+    },
+    {
+      "name": "ankle_R",
+      "parent": "knee_R",
+      "position": [
+        0.48,
+        -0.02,
+        0.34
+      ]
+    },
+    {
+      "name": "tail",
+      "parent": "hips",
+      "position": [
+        0,
+        0.48,
+        1.0
+      ]
+    }
+  ],
+  "note": "The GLB is separated into named meshes. skeleton.json defines the intended production rig."
+}

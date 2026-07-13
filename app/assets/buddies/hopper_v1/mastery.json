@@ -1,0 +1,41 @@
+{
+  "level1": {
+    "name": "Unstable Jump",
+    "visualChanges": [
+      "4 small teleport cubes",
+      "soft purple glow",
+      "ears relaxed"
+    ],
+    "implementation": {
+      "particles": 4,
+      "emission": 0.6,
+      "portal": false
+    }
+  },
+  "level2": {
+    "name": "Controlled Blink",
+    "visualChanges": [
+      "8 particles",
+      "short energy trail",
+      "brighter ear tips"
+    ],
+    "implementation": {
+      "particles": 8,
+      "emission": 1.0,
+      "portal": false
+    }
+  },
+  "level3": {
+    "name": "Portal Master",
+    "visualChanges": [
+      "stable oval portal behind character",
+      "spiraling particles",
+      "bright controlled aura"
+    ],
+    "implementation": {
+      "particles": 16,
+      "emission": 1.5,
+      "portal": true
+    }
+  }
+}

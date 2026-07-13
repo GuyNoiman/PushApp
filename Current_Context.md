@@ -1,12 +1,51 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-12 (modularity verified + future-domain seams reserved; E4 decided)
+Last updated: 2026-07-13 (real-time 3D Buddy rendering validated on device; Hopper v2 renders)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-07-12 (module architecture doc + reserved seams — read this first)
+## ⭐ HANDOFF SNAPSHOT — 2026-07-13 (3D BUDDY RENDERING — read this first)
+**Real-time 3D Buddy rendering is VALIDATED on the founder's iPhone.** The founder is producing
+detailed **3D character GLBs** (roster "PUSh Characters v1.0": 13 core + 6 reward species, each with
+3 mastery levels + a unified robot-screen face, 8 expressions). Decision (2026-07-13): **real-time 3D**
+(not 2D), stack = **expo-gl + three@0.180 + @react-three/fiber@9 (native)**, **SDK 54, runs in Expo Go
+(no dev build)**, procedural animation (GLBs aren't rigged). Species model = **Both** (species that also
+evolves through mastery). This SUPERSEDES the interim-SVG-Buddy plan (D18/Ember) and the earlier 2D
+BuddyAvatar for the Buddy tab (2D avatar stays elsewhere).
+
+**🔑 THE handoff doc: `11_Engineering_Bible/Buddy_3D_Spike_Findings.md` — READ IT FIRST for 3D work.**
+It captures every hard-won expo-gl/RN gotcha (they each caused a failure): navigator.userAgent shim
+(imported first), NO `gl.setSize`/setPixelRatio (corner bug), NO shadows/PMREM-IBL/EffectComposer-bloom
+(render targets break on expo-gl), recompute missing vertex normals (else pure black), **EMBEDDED glTF
+textures DON'T decode on RN → load SEPARATE textures via `TextureLoader().loadAsync(require('...png'))`
+passing the MODULE not a URI**, normalize model + fixed camera, Y-up. Do NOT re-learn these.
+
+- **Working reference (committed, `087e870`):** `app/src/app/buddy3d-spike.tsx` (+ `.polyfills.ts`,
+  `app/metro.config.js`) — throwaway route `/buddy3d-spike`, NOT wired into tabs; renders the detailed
+  textured **Hopper v2** GLB at **60 FPS** with the real face. This is the blueprint for the real module.
+- **Assets:** `app/assets/buddies/hopper_v1/` (procedural placeholder, superseded) and
+  `app/assets/buddies/hopper_v2/` (detailed textured, renders — commit `5e1622b`). **🚨 v2 is ~40MB
+  (21MB embedded GLB + 4.5MB baseColor PNGs) — NOT viable × 19 chars (~760MB).** Backup: the founder's
+  `~/Downloads/PUSh_Hopper_v2_Runtime_Package.zip`.
+- **▶ NEXT (3D):** (1) get a **compressed v3 Hopper** — hand the founder the spec update: **separate +
+  compressed textures (KTX2/Basis or ≤1K), NOT embedded** (fixes size AND the RN decode issue); keep the
+  rest of the v2 spec. (2) Promote the spike → the real module: `app/src/core/buddies/` (species registry
+  from JSON contracts, generic; cosmetics registry split from characters; expressions; animation policy;
+  mastery mapping) + `app/src/components/buddy3d/` (ONLY place `three` may import — eslint-enforce), a
+  `BuddyRenderer` interface, behind `featureFlags.buddy3d`, Buddy-tab-only (one GL context, dispose on
+  unmount), 2D `BuddyAvatar` elsewhere. (3) Real SVG face + 8 expressions on `face_screen` (bus-driven).
+  (4) Wearables at `anchors.json`, mastery from `mastery.json`, procedural idle+teleport-jump animations.
+  (5) Then all 19 characters. See `Buddy_3D_Spike_Findings.md` §NEXT.
+- **Also committed this session (design + backend, all on `main`):** full v14 fidelity pass + 5 older
+  screens; Home reworked to spec (frozen top + draggable panel + swipe-to-report); auth foundation P1-P2
+  (E3/D19); account-tier/entitlement mechanism; modularity seams + `Module_Architecture.md` (E4).
+- **Still open (founder-owned):** ~$99/yr Apple account for P3 native sign-in; deferred data wirings
+  (user name, Grace Tokens, Consistency screen, per-weekday scheduling); the pending small bug batch
+  (Explore search/keyboard, Explore Journey tap, Buddy locked-tab tooltip, Inbox compose).
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-12 (module architecture doc + reserved seams)
 **An architecture audit confirmed PushApp is modularity-adherent** (framework-free engines over
 an event bus, vendor-isolated `*Gateway` boundaries with `Null*` fallbacks, config-before-code,
 offline-first Repository, no business logic in UI). New canonical doc:

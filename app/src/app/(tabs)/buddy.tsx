@@ -51,7 +51,10 @@ export default function BuddyScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+      {/* The tab bar already reserves the bottom safe-area inset, so excluding the
+          bottom edge keeps the inventory sheet flush to the tab bar rather than
+          floating above a safe-area gap. */}
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {!ready || !buddy ? (
           <View style={styles.loading}>
             <ThemedText type="small" themeColor="textSecondary">
@@ -140,9 +143,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sceneWrap: {
-    // ~58% of the stage for the scene, leaving the inventory sheet (flex:1) enough
-    // room to show its full grid + the pinned Select button on phone heights.
-    flex: 1.4,
+    // ~63% of the stage for the scene (v14 mockup screen-10: the inventory sheet
+    // top sits at ~37% of the stage), leaving the inventory sheet (flex:1) enough
+    // room to show its full grid + the pinned Select button on phone heights. The
+    // grid scrolls, so a slightly shorter sheet never hides the Select CTA.
+    flex: 1.7,
   },
   resourceOverlay: {
     position: 'absolute',

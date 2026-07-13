@@ -15,7 +15,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
@@ -45,13 +45,17 @@ const GRACE_TOKENS_PLACEHOLDER = 2;
 const HOME_SCENE_SKY = '#E7F5F1';
 const HOME_SCENE_GROUND = '#B7DEB2';
 
-// The Week's-steps sheet's resting vs. fully-dragged-open heights. Sized off the
-// window so short/tall phones both get a sensible collapsed height that still
-// reads as "a larger share of the screen" than a small content card, per the
-// founder's "taller" correction, while leaving the frozen top's Buddy visible.
-const windowHeight = Dimensions.get('window').height;
-const SHEET_COLLAPSED_HEIGHT = Math.round(windowHeight * 0.56);
-const SHEET_EXPANDED_HEIGHT = Math.round(windowHeight * 0.82);
+// The Week's-steps sheet's resting vs. fully-dragged-open heights, expressed as a
+// fraction of the actual STAGE height (measured at runtime, below) — NOT the full
+// window. Sizing off the window overshot on device: the notch safe-area inset +
+// the bottom tab bar make the stage much shorter than the window, so a window-based
+// height rested the panel far too high, covering the Buddy + its area buttons
+// (v14 mockup screen-01: the cream panel top sits at ~46% of the stage). The
+// collapsed fraction keeps the frozen top's Buddy cluster fully visible while still
+// reading as "a larger share of the screen" than a small content card (founder's
+// "taller" correction); expanded drags up to cover most of the top.
+const SHEET_COLLAPSED_FRACTION = 0.54;
+const SHEET_EXPANDED_FRACTION = 0.8;
 
 export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
@@ -85,6 +89,15 @@ export default function HomeScreen() {
     setLocallyMissed((prev) => new Set(prev).add(stepId));
   };
 
+  // Measure the stage (the area between the safe-area top and the tab bar) so the
+  // Week's-steps sheet is sized against the real usable height on this device, not
+  // the full window — see SHEET_*_FRACTION above.
+  const [stageHeight, setStageHeight] = useState(0);
+  const onStageLayout = (e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    if (h > 0 && h !== stageHeight) setStageHeight(h);
+  };
+
   const steps: TodayStep[] = snapshot?.todaySteps ?? [];
   // Completed Steps sink to the bottom of the feed, shown disabled (Home_Screen.md).
   const orderedSteps = useMemo(() => {
@@ -97,8 +110,11 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.stage}>
+      {/* The tab bar already reserves the bottom safe-area inset, so excluding the
+          bottom edge here keeps the stage (and the sheet pinned to its bottom)
+          flush to the tab bar instead of floating above a safe-area gap. */}
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <View style={styles.stage} onLayout={onStageLayout}>
           {/* ── Frozen top: never scrolls. The forest scene wash sits behind the
               ResourceBar + greeting + Buddy + area buttons (Home_Screen.md: "the
               whole screen sits on the forest background, same scene as the Buddy
@@ -191,9 +207,13 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* ── Draggable "Week's steps" panel — the only thing that scrolls/drags. */}
-          {ready && snapshot && (
-            <WeekStepsSheet collapsedHeight={SHEET_COLLAPSED_HEIGHT} expandedHeight={SHEET_EXPANDED_HEIGHT}>
+          {/* ── Draggable "Week's steps" panel — the only thing that scrolls/drags.
+              Rendered once the stage is measured so its height tracks the real
+              usable area on this device (see SHEET_*_FRACTION). */}
+          {ready && snapshot && stageHeight > 0 && (
+            <WeekStepsSheet
+              collapsedHeight={Math.round(stageHeight * SHEET_COLLAPSED_FRACTION)}
+              expandedHeight={Math.round(stageHeight * SHEET_EXPANDED_FRACTION)}>
               <View style={styles.panelHeader}>
                 <ThemedText type="subtitle" style={{ color: theme.text }}>
                   Week&apos;s steps

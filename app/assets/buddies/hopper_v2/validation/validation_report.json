@@ -1,0 +1,149 @@
+{
+  "glbLoads": true,
+  "geometryCount": 21,
+  "allMeshesHaveVertexNormals": true,
+  "allMeshesHaveUVs": true,
+  "embeddedPNGCountDetected": 9,
+  "bounds": [
+    [
+      -0.37548860907554626,
+      0.0,
+      -0.23210375010967255
+    ],
+    [
+      0.37484511733055115,
+      1.0800000429153442,
+      0.20767179131507874
+    ]
+  ],
+  "heightMeters": 1.0800000429153442,
+  "feetYMin": 0.0,
+  "geometry": {
+    "foot_L": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "foot_R": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "leg_L": {
+      "vertices": 962,
+      "faces": 1920,
+      "normals": true,
+      "uvs": true
+    },
+    "leg_R": {
+      "vertices": 962,
+      "faces": 1920,
+      "normals": true,
+      "uvs": true
+    },
+    "body": {
+      "vertices": 10242,
+      "faces": 20480,
+      "normals": true,
+      "uvs": true
+    },
+    "arm_L": {
+      "vertices": 962,
+      "faces": 1920,
+      "normals": true,
+      "uvs": true
+    },
+    "arm_R": {
+      "vertices": 962,
+      "faces": 1920,
+      "normals": true,
+      "uvs": true
+    },
+    "hand_L": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "hand_R": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "head": {
+      "vertices": 10242,
+      "faces": 20480,
+      "normals": true,
+      "uvs": true
+    },
+    "ear_L": {
+      "vertices": 10242,
+      "faces": 20480,
+      "normals": true,
+      "uvs": true
+    },
+    "ear_R": {
+      "vertices": 10242,
+      "faces": 20480,
+      "normals": true,
+      "uvs": true
+    },
+    "inner_ear_L": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "inner_ear_R": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "tail": {
+      "vertices": 2562,
+      "faces": 5120,
+      "normals": true,
+      "uvs": true
+    },
+    "face_frame": {
+      "vertices": 432,
+      "faces": 862,
+      "normals": true,
+      "uvs": true
+    },
+    "face_screen": {
+      "vertices": 432,
+      "faces": 862,
+      "normals": true,
+      "uvs": true
+    },
+    "teleport_particle_0": {
+      "vertices": 8,
+      "faces": 12,
+      "normals": true,
+      "uvs": true
+    },
+    "teleport_particle_1": {
+      "vertices": 8,
+      "faces": 12,
+      "normals": true,
+      "uvs": true
+    },
+    "teleport_particle_2": {
+      "vertices": 8,
+      "faces": 12,
+      "normals": true,
+      "uvs": true
+    },
+    "teleport_particle_3": {
+      "vertices": 8,
+      "faces": 12,
+      "normals": true,
+      "uvs": true
+    }
+  }
+}

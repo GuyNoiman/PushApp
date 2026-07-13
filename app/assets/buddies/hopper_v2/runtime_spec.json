@@ -1,0 +1,45 @@
+{
+  "format": "glTF 2.0 binary",
+  "orientation": {
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "heightMeters": 1.08,
+  "texturesEmbedded": true,
+  "vertexNormalsMandatory": true,
+  "normalMapsUsed": false,
+  "tangentsRequired": false,
+  "meshNames": [
+    "head",
+    "body",
+    "ear_L",
+    "ear_R",
+    "inner_ear_L",
+    "inner_ear_R",
+    "arm_L",
+    "arm_R",
+    "hand_L",
+    "hand_R",
+    "leg_L",
+    "leg_R",
+    "foot_L",
+    "foot_R",
+    "tail",
+    "face_frame",
+    "face_screen",
+    "teleport_particle_0",
+    "teleport_particle_1",
+    "teleport_particle_2",
+    "teleport_particle_3"
+  ],
+  "face": {
+    "canonicalSVG": "assets/push_face_neutral.svg",
+    "screenUV": "0..1 planar, no stretch",
+    "screenType": "flat inset mesh"
+  },
+  "rig": {
+    "boundSkeleton": false,
+    "animationClips": [],
+    "note": "Procedural animation retained for validation."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "mat_body": {
+    "baseColorTexture": "body_basecolor.png",
+    "metallicRoughnessTexture": "body_metalrough.png"
+  },
+  "mat_inner_ear": {
+    "baseColorTexture": "inner_ear_basecolor.png",
+    "metallicRoughnessTexture": "body_metalrough.png"
+  },
+  "mat_face_frame": {
+    "baseColorTexture": "frame_basecolor.png",
+    "metallicRoughnessTexture": "frame_metalrough.png"
+  },
+  "mat_face_screen": {
+    "baseColorTexture": "face_neutral.png",
+    "metallicRoughnessTexture": "screen_metalrough.png",
+    "emissiveTexture": "face_emissive.png"
+  },
+  "mat_teleport": {
+    "baseColorTexture": "accent_basecolor.png",
+    "metallicRoughnessTexture": "frame_metalrough.png",
+    "emissiveTexture": "face_emissive.png"
+  }
+}

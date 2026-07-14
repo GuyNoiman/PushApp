@@ -1,10 +1,99 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-07-13 (real-time 3D Buddy rendering validated on device; Hopper v2 renders)
+Last updated: 2026-07-14 (3D Buddy registry + texture-render fix + 17 species; finite-step Journey
+model + Reminder engine + Communication Scheduler; UI polish pass — all on branch
+`feat/buddy-3d-and-reminders`, NOT merged to `main`)
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-07-14 (BUDDY 3D REGISTRY + REMINDERS/SCHEDULER + UI POLISH — read this first)
+**Everything in this snapshot lives on branch `feat/buddy-3d-and-reminders`, NOT yet merged to
+`main`.** Five commits this session: `943c732`, `ec69977`, `69d8616`, `d9e5866`, `75f0a36`.
+
+**3D Buddy / creatures — from spike to a real registry-driven module:**
+- Adopted the founder's **PUSh Creature SDK v1.0** (`app/assets/buddies/_sdk/` — README, docs,
+  shared assets, templates, validation). Built `app/tools/ingest_creature.py`: a **hybrid** ingest
+  pipeline that accepts either an embedded-GLB package or an external-`materials.json` package and
+  produces small **modular per-species packages** plus a generated registry
+  (`app/src/core/buddies/registry.generated.ts`). `app/src/components/buddy3d/BuddyView.tsx` remains
+  the **only** place `three`/`expo-gl` may be imported (per the eslint-enforced boundary from the
+  2026-07-13 spike). The `/buddy3d-spike` route now flips through species for visual QA.
+- **17 species ingested** (`app/assets/buddies/<species>/`, ~1–2.4MB each — boulder, chroma, dozer,
+  dragon, glow, heart, hoarder, hopper, horse, jumper, magnet, mist, nimbus, shell, shy, storm,
+  thorn), replacing the old throwaway `hopper_v1`/`hopper_v2` spike assets (kept on disk for
+  provenance, no longer wired).
+- **RN texture-render fix (commit `d9e5866`):** external (non-embedded) textures were rendering
+  blank on-device — root cause: **r3f-native's `TextureLoader` uploads no pixels on RN/expo-gl**.
+  Fixed by a **pure-JS PNG decode → `THREE.DataTexture`** path (using `upng-js`), bypassing the
+  loader entirely. `BuddyView` now applies `map`/`normalMap`/`emissiveMap` this way. Ingested the
+  **detailed v3 Hopper** (painted albedo + normal maps + a glowing face) using this pipeline.
+  **This still NEEDS on-device confirmation** (paint accuracy, `flipY`, texture tuning) — not yet
+  verified live like v2 was. Hopper's geometry is still **21.6MB** (unoptimized) — a **low-poly
+  regen has been requested from the founder**; spec update lives in
+  `app/assets/buddies/_sdk/docs/EXPORT_SPEC_v3_detailed.md`.
+- **Still pending / not done this session:** wiring `BuddyView` into the actual Buddy tab behind
+  `featureFlags.buddy3d` (the tab still shows the 2D SVG egg/`BuddyAvatar` — D18's interim Ember);
+  closing the fidelity gap vs. the founder's reference sheet; the shared face-expression system (8
+  expressions are captured in the assets but not yet driven by app state/events).
+
+**Reminders / Journey model — object-model decision + new engine + scheduler:**
+- **Journey model confirmed with the founder:** a Journey holds a **FINITE set of Steps**, each
+  completed **once** (triggers a per-Step celebration via a `StepCheckedIn` event), and the Journey
+  **completes when its LAST Step is done**. This is the model now implemented (commit `ec69977`).
+  Recurring "weekly copies" of Steps (via the Weekly-Planning flow, D12/Bible §34.7) are explicitly
+  a **LATER task** — not dropped, just sequenced after the finite-Step model lands solid.
+- **Reminder engine core** (commit `ec69977`): `ReminderRule` + `ReminderEngine.scheduleRule`, plus
+  `NullLocationGateway`/`NullCalendarGateway` (vendor-isolated, behind feature flags, dormant —
+  consistent with the reserved-seam pattern from E4/`Module_Architecture.md`).
+- **Communication Scheduler** (commit `75f0a36`, `app/src/core/engines/CommunicationScheduler.ts`):
+  aggregates all active-Journey reminders into one schedule and applies `SchedulingPrefs`
+  (`preferredDays` as a **hard filter**; an allowed time-window with morning/evening clamping);
+  enforces the **iOS 64-local-notification cap** (`app/src/core/config/schedulerLimits.ts`) and
+  emits a `SchedulerCapped` event when reminders had to be dropped to stay under it, rather than
+  silently over-scheduling or crashing.
+- **Calendar/location integration is seams-only** (Null gateways, on-device-only design, background
+  geofencing explicitly **deferred**) — this is a **new privacy red-line, logged as R3** (see
+  `06_Decisions/Decision_Log.md` D21) to avoid colliding with the existing R1/R2 auth-session
+  red-lines already defined in `11_Engineering_Bible/Auth_Backend_Proposal.md`.
+- **Onboarding is now framed as a MISSION-based flow**: create a Journey / open the Shop / enable
+  notifications / take a personality quiz → each grants XP → the egg hatches once enough XP is
+  earned. The personality quiz **must pass a security-privacy review before it stores anything**
+  — it targets the already-reserved `ProfileGateway` seam from E4 (`app/src/core/profile/`), so no
+  new PII surface should be opened without that review.
+
+**UI polish pass (commit `69d8616`):**
+- Home: the dynamic bottom sheet now has a bounded height so it no longer covers the Buddy; more
+  compact tab bar; the internal list now scrolls independently.
+- "My Journeys" area tile added (Missions tile moved right to make room); shows a done/total count;
+  each Step row gained a **⋯ menu** and a **Reschedule modal**.
+- Resource bar: coin display is now a coin-stack, a GT shield icon was added, level+XP unified into
+  one frame.
+- A completed Step now **stays visible** in its list (rendered green, no more "DONE" watermark
+  covering it) and triggers a check-in celebration.
+- Buddy tab: inventory panel reflushed; Buddy name/stage now render below the meter (not overlapping).
+- "My Journeys" screen is now tabbed; Explore gained search + a clear button; the journey-creation
+  wizard now uses `KeyboardAvoidingView`; the Missions modal background is transparent (matches the
+  floating-modal pattern used elsewhere).
+
+**Open founder decisions (▶ NEXT):**
+1. Founder to approve the UI designs **on-device** (this session's polish pass hasn't been
+   device-verified yet, unlike prior fidelity passes).
+2. Two design-reference artifacts await founder review: the primary-CTA "quests" reference, and the
+   4-area-tile reference (a redesign-proposal artifact exists but is not yet an approved direction).
+3. Decide whether onboarding is **mandatory or skippable**.
+4. Get the **low-poly Hopper v3 regen** from the founder (current geometry too heavy at 21.6MB ×
+   17 species).
+5. Once the above land: wire the validated 3D renderer into the actual Buddy tab behind
+   `featureFlags.buddy3d`.
+
+**Also logged this session:** `06_Decisions/Decision_Log.md` D20 (notification-permission ask
+folded into onboarding), D21 (notification/communication-management mechanism + optional opt-in
+location/calendar reminder rules, background geofencing deferred, privacy red-line R3), D22 (keep
+the "Phase" display name — no rename).
+
+---
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-07-13 (3D BUDDY RENDERING — read this first)
 **Real-time 3D Buddy rendering is VALIDATED on the founder's iPhone.** The founder is producing

@@ -10,6 +10,55 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-07-14 — Reminders / Communication Scheduler + onboarding (branch `feat/buddy-3d-and-reminders`, unmerged)
+
+> **Branch note:** D20–D22 and their implementation land on branch `feat/buddy-3d-and-reminders`,
+> **not yet merged to `main`.** Recorded here per CLAUDE.md §9/§3.6 (log approved product decisions
+> as they're made); treat as approved-for-the-branch until the branch merges.
+
+### D20 — Notification-permission ask happens during onboarding
+**Decision:** The OS notification-permission prompt is asked **as part of onboarding** (the new
+mission-based flow — see D21), not deferred to first-reminder-fire or a separate later screen.
+**Why:** reminders are core to the Journey/Step loop from day one; asking early, in context, while
+the user is already granting other setup permissions, avoids a confusing later interruption.
+**Reflected in:** `Current_Context.md` (2026-07-14 snapshot); implementation on
+`feat/buddy-3d-and-reminders`.
+
+### D21 — Communication Scheduler mechanism + opt-in location/calendar reminder rules; background geofencing deferred; new privacy red-line R3
+**Decision:** Reminders are managed by one **Communication Scheduler** that aggregates every
+active Journey's reminders into a single schedule, applies the user's `SchedulingPrefs`
+(preferred days as a hard filter; an allowed time-window with morning/evening clamping), and
+respects the **iOS 64-local-notification cap** (emitting `SchedulerCapped` rather than silently
+dropping or over-scheduling). Location- and calendar-based reminder rules are **optional and
+opt-in**, built behind vendor-isolated `LocationGateway`/`CalendarGateway` seams
+(`NullLocationGateway`/`NullCalendarGateway` today — dormant, consistent with the E4 reserved-seam
+pattern). **Background geofencing is explicitly deferred** (not in this pass) — only
+on-device, foreground/scheduled use is built now.
+**New privacy red-line — R3:** raw location/calendar data stays **on-device only, never synced**
+to any backend. *(Numbered R3, not R2, to avoid colliding with the existing R1/R2 privacy
+red-lines already defined for auth sessions in `11_Engineering_Bible/Auth_Backend_Proposal.md` §4 —
+R1 = no PII in world-readable tables, R2 = sessions in `expo-secure-store`. Renumbering here rather
+than reusing "R2" preserves both sets of reasoning without collision; if a single global red-line
+registry is ever wanted, reconcile R1–R3 into one place then.)*
+**Why:** a single scheduler avoids the failure mode of many independent per-Journey reminder
+schedulers silently exceeding the OS cap or fighting over notification slots; opt-in
+location/calendar keeps the feature genuinely optional and privacy-respecting from day one; keeping
+raw location/calendar data on-device-only avoids opening a new PII-in-the-cloud surface before the
+feature has even shipped; deferring background geofencing avoids the OS-permission and battery-cost
+complexity of always-on location before there's a validated need for it.
+**Reflected in:** `app/src/core/engines/CommunicationScheduler.ts`,
+`app/src/core/config/schedulerLimits.ts`, `app/src/core/location/`, `app/src/core/calendar/`,
+`Current_Context.md` (2026-07-14 snapshot), `00_Foundation/CHANGELOG.md`.
+
+### D22 — Keep the "Phase" display name
+**Decision:** The Journey → **Phase** (optional, sequential) → Step naming from D5 stays as-is;
+no rename. D5 had left "Phase" as a working name (candidates: Phase, Chapter, Part) — this closes
+that naming question without changing the object model.
+**Reflected in:** `Product_Terminology.md`, `Product_Bible.md` §3.4A (unchanged); this entry closes
+the open naming question from D5.
+
+---
+
 ## 2026-07-10 — Auth foundation: real accounts via Apple + Google (E3)
 
 ### D19 — Auth method, no real-name collection, foundation-first phasing
@@ -155,6 +204,7 @@ All respect **D2** (no core flow depends on AI).
 ### D5 — Object Model: the Phase layer
 **Decision:** The object hierarchy is **Dream → Journey → Phase (optional) → Step.** A Phase is an optional, sequential grouping of Steps. "Phase" is a **working name** (not finalized; candidates: Phase, Chapter, Part).
 **Reflected in:** `Product_Bible.md` §3.4A, `Product_Terminology.md` (Phase), `Information_Architecture.md`.
+**Naming closed by D22 (2026-07-14):** "Phase" is kept as the permanent display name — no rename.
 
 ### Also reflected (previously-confirmed decisions the review flagged)
 - **Home screen is action-based** (not Journey-based) — `Product_Bible.md` §11.2.

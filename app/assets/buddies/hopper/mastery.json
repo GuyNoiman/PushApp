@@ -2,31 +2,27 @@
   "sameBaseMesh": true,
   "levels": {
     "1": {
-      "meshes": [
-        "teleport_particle_0",
-        "teleport_particle_1"
+      "visibleMeshes": [
+        "teleport_particle_0"
       ],
-      "emissionMultiplier": 0.65,
-      "portal": false
+      "expression": "neutral"
     },
     "2": {
-      "meshes": [
+      "visibleMeshes": [
         "teleport_particle_0",
         "teleport_particle_1",
         "teleport_particle_2"
       ],
-      "emissionMultiplier": 1.0,
-      "portal": false
+      "expression": "determined"
     },
     "3": {
-      "meshes": [
+      "visibleMeshes": [
         "teleport_particle_0",
         "teleport_particle_1",
         "teleport_particle_2",
         "teleport_particle_3"
       ],
-      "emissionMultiplier": 1.35,
-      "portal": true
+      "expression": "excited"
     }
   }
 }

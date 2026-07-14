@@ -104,6 +104,43 @@ inner eyes/mouth/glow change). The face SVG silhouette is **canonical — never 
 5. Wire into `BuddyEngine` (level/stage → mastery) + Shop/inventory (items → wearable slots).
 6. Then produce **all 19 characters** to the finalized (compressed) spec.
 
+---
+
+## ⚠️ UPDATE 2026-07-14 — DataTexture texture upload (v3 "richly detailed" render)
+
+**Context:** v3 Hopper ships **detailed painted albedo + normal maps + emissive + 9 face
+expressions** as SEPARATE ≤512² PNGs, with **no embedded textures and no texture bindings in the
+GLB** — the material→texture map lives ONLY in the package's `materials.json`. Gotcha #6's fix
+(load separate PNGs via the patched `THREE.TextureLoader` with the `require()` module) turned out to
+**render BLANK on device** for our PNGs: r3f-native's patch sets `texture.image = {data:{localUri}}`
+and relies on expo-gl's native image upload, which does not produce pixels for these files (hence the
+white face). This is the deeper root cause behind #6.
+
+**The fix that works (offline-validated; ⏳ device test pending):** decode the PNG bytes to raw RGBA
+in JS and build a **`THREE.DataTexture`** — a plain `texImage2D` upload that needs no browser Image.
+Added dep **`upng-js`** (pure-JS, Hermes-safe). Per texture, in `BuddyView.tsx`:
+`Asset.fromModule(require).downloadAsync()` → `new File(uri).arrayBuffer()` → `UPNG.decode(bytes)` →
+`new Uint8Array(UPNG.toRGBA8(png)[0])` → `new THREE.DataTexture(rgba, w, h, RGBAFormat, UnsignedByteType)`.
+Set `colorSpace` = **sRGB** for `map`/`emissiveMap`, **NoColorSpace** for `normalMap`; `flipY = false`
+(glTF convention — matches the old Image path; flip to `true` if a texture shows mirrored); 512² PNGs
+are POT so `generateMipmaps + LinearMipmapLinear` are safe. Emissive shows only if `mat.emissive` is
+non-black — force it to white when an `emissiveMap` is assigned.
+
+**Ingest is now HYBRID** (`tools/ingest_creature.py`): if the GLB has embedded images+bindings → the
+old baked path (unchanged); else read the mapping from the package's external `materials.json` + the
+external texture FILES. It keeps DETAILED `map`/`normalMap`/`emissiveMap` external (copy, ≤512) and
+bakes only flat metalRough → `roughness/metalnessFactor` (metal clamped ≤0.2). The registry
+`ExternalSlot` now includes `normalMap`. The 9 face `expressionVariants` are recorded in the package
+`materials.json` + `meta.json` for the future live-expression system. All 17 species re-ingested; the
+16 v2 GLBs are byte-identical, only Hopper changed to v3 (21.6 MB geometry — accepted for this test).
+
+**Offline validation done:** `tsc` 0 errors · `jest` 126/126 · three r180 parses the v3 GLB (21 meshes,
+all with **tangents**+normals+UVs, so normal maps use the high-quality vertex-tangent path) · every
+material name matches `materials.json` · UPNG decodes all 12 v3 PNGs to correct 512² RGBA · all 61
+registry require-targets exist. **⏳ NEEDS ON-DEVICE:** confirm the DataTexture path actually paints on
+the iPhone (detailed body albedo, readable normals, glowing neutral face), pick `flipY`, and re-tune
+lights/roughness for depth. Renderer changes are confined to `app/src/components/buddy3d/`.
+
 ## Reference
 - Working spike: `app/src/app/buddy3d-spike.tsx` (+ `buddy3d-spike.polyfills.ts`, `app/metro.config.js`).
 - Deps added: `expo-gl`, `expo-asset`, `expo-file-system`, `three@0.180.0`, `@react-three/fiber@9.6.1`,

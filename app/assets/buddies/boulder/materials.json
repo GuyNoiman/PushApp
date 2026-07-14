@@ -4,5 +4,6 @@
       "map": "tex_8.png",
       "emissiveMap": "tex_9.png"
     }
-  }
+  },
+  "expressionVariants": {}
 }

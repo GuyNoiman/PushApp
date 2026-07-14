@@ -1,29 +1,35 @@
 {
   "format": "glTF 2.0 binary",
+  "sdkVersion": "1.0.0",
+  "exportSpecVersion": "3.0",
   "orientation": {
     "up": "Y",
     "forward": "+Z"
   },
   "heightMeters": 1.08,
   "texturesEmbedded": false,
+  "textureFormat": "PNG",
+  "maxTextureSize": 512,
   "vertexNormalsMandatory": true,
-  "normalMapsUsed": false,
-  "tangentsRequired": false,
+  "uvsMandatory": true,
+  "tangentsMandatoryWhenNormalMapUsed": true,
+  "allMeshesHaveTangents": true,
+  "maxMetallic": 0.2,
   "meshNames": [
-    "head",
+    "foot_L",
+    "foot_R",
+    "leg_L",
+    "leg_R",
     "body",
-    "ear_L",
-    "ear_R",
-    "inner_ear_L",
-    "inner_ear_R",
     "arm_L",
     "arm_R",
     "hand_L",
     "hand_R",
-    "leg_L",
-    "leg_R",
-    "foot_L",
-    "foot_R",
+    "head",
+    "ear_L",
+    "ear_R",
+    "inner_ear_L",
+    "inner_ear_R",
     "tail",
     "face_frame",
     "face_screen",
@@ -33,14 +39,9 @@
     "teleport_particle_3"
   ],
   "face": {
-    "canonicalSVG": "assets/push_face_neutral.svg",
-    "screenUV": "0..1 planar, no stretch",
-    "screenType": "flat inset mesh"
-  },
-  "rig": {
-    "boundSkeleton": false,
-    "animationClips": [],
-    "note": "Procedural animation retained for validation."
+    "canonicalSilhouette": "assets/push_face_outline.svg",
+    "screenMesh": "face_screen",
+    "expressionCount": 9
   },
   "optimizedBy": "tools/ingest_creature.py"
 }

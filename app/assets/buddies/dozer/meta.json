@@ -8,8 +8,8 @@
   "sizeBytes": {
     "srcGlb": 4560140,
     "outGlb": 1308184,
-    "outTextures": 32370,
-    "outTotal": 1340554
+    "outTextures": 21580,
+    "outTotal": 1329764
   },
   "bakedMaterials": {
     "mat_pajama": {
@@ -81,5 +81,6 @@
       "map": "tex_10.png",
       "emissiveMap": "tex_11.png"
     }
-  }
+  },
+  "expressionVariants": {}
 }

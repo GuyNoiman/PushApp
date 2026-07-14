@@ -81,5 +81,6 @@
       "map": "tex_11.png",
       "emissiveMap": "tex_12.png"
     }
-  }
+  },
+  "expressionVariants": {}
 }

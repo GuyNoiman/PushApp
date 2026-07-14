@@ -3,25 +3,31 @@
 ingest_creature.py — normalize ANY ChatGPT creature package into a small, RN-ready,
 MODULAR per-species runtime package, and regenerate the species registry.
 
-It reads the material -> texture bindings **straight from the GLB** (materials + embedded
-images), so it is agnostic to how `materials.json` happens to be shaped across ChatGPT
-generations (map, wrapped map, or a bare list — all seen in the wild). It does not need the
-external `textures/` folder or `materials.json` at all.
+Two source shapes are supported (auto-detected — HYBRID):
+  A) EMBEDDED (v2 packages): the GLB carries its own images + texture bindings. The tool
+     reads the material -> texture bindings straight from the GLB, agnostic to how
+     `materials.json` happens to be shaped.
+  B) EXTERNAL (v3+ packages): the GLB has NO embedded textures and NO texture bindings
+     (materials carry only baseColorFactor). The material -> texture mapping lives ONLY in
+     the external `materials.json` (matName -> {baseColorTexture, normalTexture,
+     metallicRoughnessTexture, emissiveTexture[, expressionVariants]}), and the pixels live
+     in the external `textures/` PNG files. The tool reads that mapping + those files.
 
-Why: ChatGPT ships each creature with EMBEDDED textures (which don't decode on React Native)
-that are usually FLAT solid colours. This tool bakes flat colours into the GLB as
-baseColorFactor + metallic/roughnessFactor (three applies them natively — no texture load),
-strips embedded images (GLB shrinks ~10x), and keeps only genuinely-detailed textures (the
-face) as small external PNGs. Metalness is clamped because expo-gl has no environment map
-(a fully-metallic material with no env map renders black).
+Why: flat solid colours are baked into the GLB as baseColorFactor + metallic/roughnessFactor
+(three applies them natively — no texture load). Genuinely-detailed textures are kept as small
+external PNGs (downscaled <=512) and loaded on-device via a pure-JS PNG decode -> DataTexture
+(see BuddyView.tsx). Kept slots: `map` (detailed baseColor, sRGB), `normalMap` (surface
+detail, linear), `emissiveMap` (glow, sRGB). metallicRoughness is ALWAYS baked to factors
+(the registry carries no metalRough slot). Metalness is clamped because expo-gl has no
+environment map (a fully-metallic material with no env map renders black).
 
 Per-species output  ->  app/assets/buddies/<id>/
   model/<id>.glb        geometry + baked factors (no embedded textures)
-  textures/*.png        only the detailed (face) textures, downscaled
+  textures/*.png        detailed baseColor / normal / emissive textures, downscaled
   species.json          SDK-conformant species definition
-  materials.json        { externalTextures } — what the renderer loads at runtime
+  materials.json        { externalTextures, expressionVariants } — what the renderer loads
   anchors.json mastery.json runtime_spec.json   (carried / normalized when present)
-  meta.json             provenance: source, before/after sizes, baked colours
+  meta.json             provenance: source, before/after sizes, baked colours, variants
 
 Registry (generated) -> app/src/core/buddies/registry.generated.ts   (static require()s)
 
@@ -104,11 +110,30 @@ def find_glb(src):
     raise FileNotFoundError(f"no .glb under {src}/model")
 
 
+def load_materials_json(src):
+    """Return matName -> {baseColorTexture, normalTexture, metallicRoughnessTexture,
+    emissiveTexture[, expressionVariants]}. Tolerant of shapes seen in the wild: a bare map,
+    or {"materials": {...}}. Paths inside are relative to `src`."""
+    p = os.path.join(src, "materials.json")
+    if not os.path.exists(p):
+        return {}
+    data = json.load(open(p))
+    if isinstance(data, dict) and "materials" in data and isinstance(data["materials"], dict):
+        data = data["materials"]
+    return data if isinstance(data, dict) else {}
+
+
 def optimize(src, species_id, display_name):
     """Produce app/assets/buddies/<id>/ from a package's GLB and return a registry-ready dict."""
     dst = os.path.join(BUDDIES_DIR, species_id)
     os.makedirs(os.path.join(dst, "model"), exist_ok=True)
-    os.makedirs(os.path.join(dst, "textures"), exist_ok=True)
+    tex_dir = os.path.join(dst, "textures")
+    # Start clean so a re-ingest never leaves orphan PNGs from a previous shape/version.
+    if os.path.isdir(tex_dir):
+        for f in os.listdir(tex_dir):
+            if f.lower().endswith(".png"):
+                os.remove(os.path.join(tex_dir, f))
+    os.makedirs(tex_dir, exist_ok=True)
 
     glb_in = find_glb(src)
     src_glb_size = os.path.getsize(glb_in)
@@ -126,74 +151,148 @@ def optimize(src, species_id, display_name):
         o = bv.get("byteOffset", 0)
         return BIN[o:o + bv["byteLength"]]
 
-    analyzed = {}  # image_index -> (flat, avg, far)
+    # HYBRID source detection: does the GLB carry its own images + texture bindings (v2),
+    # or is the mapping external in materials.json with pixels in textures/*.png (v3+)?
+    has_embedded = bool(images) and bool(textures)
 
-    def analyze_ii(ii):
-        if ii not in analyzed:
-            analyzed[ii] = analyze_image(Image.open(BytesIO(image_png(ii))))
-        return analyzed[ii]
+    # Source images are keyed uniformly: int -> embedded image index; str -> path relative to
+    # `src`. This lets one downstream writer/analyzer serve both source shapes.
+    src_images = {}  # key -> PIL.Image (RGBA)
+
+    def get_src_image(key):
+        if key not in src_images:
+            if isinstance(key, int):
+                src_images[key] = Image.open(BytesIO(image_png(key))).convert("RGBA")
+            else:
+                src_images[key] = Image.open(os.path.join(src, key)).convert("RGBA")
+        return src_images[key]
+
+    analyzed = {}  # key -> (flat, avg, far)
+
+    def analyze_key(key):
+        if key not in analyzed:
+            analyzed[key] = analyze_image(get_src_image(key))
+        return analyzed[key]
 
     def tex_index(node):
         return node["index"] if isinstance(node, dict) and "index" in node else None
 
-    kept_external = {}   # matName -> {slot: image_index}
+    kept_external = {}   # matName -> {slot: source_key}
     baked = {}
-    for mat in gltf.get("materials", []):
-        mname = mat.get("name", f"mat_{len(baked)}")
-        pbr = mat.setdefault("pbrMetallicRoughness", {})
-        ext = {}
+    expression_variants = {}  # matName -> variants block (external path only, for later use)
 
-        bt = tex_index(pbr.get("baseColorTexture"))
-        if bt is not None and image_index_of(bt) is not None:
-            ii = image_index_of(bt)
-            flat, avg, _ = analyze_ii(ii)
-            if flat:
-                pbr["baseColorFactor"] = [srgb_to_linear(avg[0]), srgb_to_linear(avg[1]),
-                                          srgb_to_linear(avg[2]), 1.0]
-            else:
-                ext["map"] = ii
-                pbr.setdefault("baseColorFactor", [1, 1, 1, 1])
-        pbr.pop("baseColorTexture", None)
+    if has_embedded:
+        # ---- A) EMBEDDED: read bindings straight from the GLB (v2 packages). ----
+        for mat in gltf.get("materials", []):
+            mname = mat.get("name", f"mat_{len(baked)}")
+            pbr = mat.setdefault("pbrMetallicRoughness", {})
+            ext = {}
 
-        mt = tex_index(pbr.get("metallicRoughnessTexture"))
-        if mt is not None and image_index_of(mt) is not None:
-            _, avg, _ = analyze_ii(image_index_of(mt))     # glTF: G=rough, B=metal
-            pbr["roughnessFactor"] = round(avg[1] / 255.0, 4)
-            pbr["metallicFactor"] = round(min(avg[2] / 255.0, METAL_CLAMP), 4)
-        pbr.pop("metallicRoughnessTexture", None)
+            bt = tex_index(pbr.get("baseColorTexture"))
+            if bt is not None and image_index_of(bt) is not None:
+                ii = image_index_of(bt)
+                flat, avg, _ = analyze_key(ii)
+                if flat:
+                    pbr["baseColorFactor"] = [srgb_to_linear(avg[0]), srgb_to_linear(avg[1]),
+                                              srgb_to_linear(avg[2]), 1.0]
+                else:
+                    ext["map"] = ii
+                    pbr.setdefault("baseColorFactor", [1, 1, 1, 1])
+            pbr.pop("baseColorTexture", None)
 
-        et = tex_index(mat.get("emissiveTexture"))
-        if et is not None and image_index_of(et) is not None:
-            flat, _, _ = analyze_ii(image_index_of(et))
-            mat.setdefault("emissiveFactor", [1, 1, 1])
-            if not flat:
-                ext["emissiveMap"] = image_index_of(et)
-        mat.pop("emissiveTexture", None)
+            nt = tex_index(mat.get("normalTexture"))
+            if nt is not None and image_index_of(nt) is not None:
+                ext["normalMap"] = image_index_of(nt)  # normals are inherently spatial -> keep
+            mat.pop("normalTexture", None)
 
-        if ext:
-            kept_external[mname] = ext
-        bcf = pbr.get("baseColorFactor", [1, 1, 1, 1])
-        baked[mname] = {
-            "baseColor_sRGB": [lin_to_srgb255(bcf[0]), lin_to_srgb255(bcf[1]), lin_to_srgb255(bcf[2])],
-            "roughness": pbr.get("roughnessFactor"), "metalness": pbr.get("metallicFactor"),
-            "external": list(ext.keys()),
-        }
+            mt = tex_index(pbr.get("metallicRoughnessTexture"))
+            if mt is not None and image_index_of(mt) is not None:
+                _, avg, _ = analyze_key(image_index_of(mt))    # glTF: G=rough, B=metal
+                pbr["roughnessFactor"] = round(avg[1] / 255.0, 4)
+                pbr["metallicFactor"] = round(min(avg[2] / 255.0, METAL_CLAMP), 4)
+            pbr.pop("metallicRoughnessTexture", None)
 
-    # write kept (detailed) images to external PNGs BEFORE stripping the buffer (dedup by image)
+            et = tex_index(mat.get("emissiveTexture"))
+            if et is not None and image_index_of(et) is not None:
+                flat, _, _ = analyze_key(image_index_of(et))
+                mat.setdefault("emissiveFactor", [1, 1, 1])
+                if not flat:
+                    ext["emissiveMap"] = image_index_of(et)
+            mat.pop("emissiveTexture", None)
+
+            if ext:
+                kept_external[mname] = ext
+            bcf = pbr.get("baseColorFactor", [1, 1, 1, 1])
+            baked[mname] = {
+                "baseColor_sRGB": [lin_to_srgb255(bcf[0]), lin_to_srgb255(bcf[1]), lin_to_srgb255(bcf[2])],
+                "roughness": pbr.get("roughnessFactor"), "metalness": pbr.get("metallicFactor"),
+                "external": list(ext.keys()),
+            }
+    else:
+        # ---- B) EXTERNAL: mapping in materials.json, pixels in textures/*.png (v3+). ----
+        mats_json = load_materials_json(src)
+
+        def rel_exists(relpath):
+            return isinstance(relpath, str) and os.path.exists(os.path.join(src, relpath))
+
+        for mat in gltf.get("materials", []):
+            mname = mat.get("name", f"mat_{len(baked)}")
+            pbr = mat.setdefault("pbrMetallicRoughness", {})
+            ext = {}
+            entry = mats_json.get(mname, {}) if isinstance(mats_json.get(mname), dict) else {}
+
+            bc = entry.get("baseColorTexture")
+            if rel_exists(bc):
+                flat, avg, _ = analyze_key(bc)
+                if flat:
+                    pbr["baseColorFactor"] = [srgb_to_linear(avg[0]), srgb_to_linear(avg[1]),
+                                              srgb_to_linear(avg[2]), 1.0]
+                else:
+                    ext["map"] = bc
+                    pbr["baseColorFactor"] = [1, 1, 1, 1]  # full-brightness so the map reads
+
+            nt = entry.get("normalTexture")
+            if rel_exists(nt):
+                ext["normalMap"] = nt  # keep every normal map — pure surface detail
+
+            et = entry.get("emissiveTexture")
+            if rel_exists(et):
+                ext["emissiveMap"] = et
+                mat.setdefault("emissiveFactor", [1, 1, 1])  # so the emissiveMap actually glows
+
+            mr = entry.get("metallicRoughnessTexture")
+            if rel_exists(mr):
+                _, avg, _ = analyze_key(mr)                  # glTF: G=rough, B=metal
+                pbr["roughnessFactor"] = round(avg[1] / 255.0, 4)
+                pbr["metallicFactor"] = round(min(avg[2] / 255.0, METAL_CLAMP), 4)
+
+            if isinstance(entry.get("expressionVariants"), dict):
+                expression_variants[mname] = entry["expressionVariants"]
+
+            if ext:
+                kept_external[mname] = ext
+            bcf = pbr.get("baseColorFactor", [1, 1, 1, 1])
+            baked[mname] = {
+                "baseColor_sRGB": [lin_to_srgb255(bcf[0]), lin_to_srgb255(bcf[1]), lin_to_srgb255(bcf[2])],
+                "roughness": pbr.get("roughnessFactor"), "metalness": pbr.get("metallicFactor"),
+                "external": list(ext.keys()),
+            }
+
+    # write kept (detailed) images to external PNGs BEFORE stripping the buffer (dedup by source)
     mat_tex_out = {}
-    written = {}  # image_index -> filename
+    written = {}  # source_key -> filename
     for mname, ext in kept_external.items():
         slot_map = {}
-        for slot, ii in ext.items():
-            if ii not in written:
-                fn = f"tex_{ii}.png"
-                im = Image.open(BytesIO(image_png(ii))).convert("RGBA")
+        for slot, key in ext.items():
+            if key not in written:
+                fn = f"tex_{key}.png" if isinstance(key, int) else os.path.basename(key)
+                im = get_src_image(key)
                 if max(im.size) > FACE_MAX_PX:
                     s = FACE_MAX_PX / max(im.size)
                     im = im.resize((round(im.size[0] * s), round(im.size[1] * s)), Image.LANCZOS)
                 im.save(os.path.join(dst, "textures", fn), optimize=True)
-                written[ii] = fn
-            slot_map[slot] = written[ii]
+                written[key] = fn
+            slot_map[slot] = written[key]
         mat_tex_out[mname] = slot_map
 
     # strip embedded images, reindex geometry bufferViews
@@ -251,7 +350,8 @@ def optimize(src, species_id, display_name):
         "anchors": "anchors.json", "materials": "materials.json", "mastery": "mastery.json",
     }
     json.dump(species, open(os.path.join(dst, "species.json"), "w"), indent=2)
-    json.dump({"externalTextures": mat_tex_out}, open(os.path.join(dst, "materials.json"), "w"), indent=2)
+    json.dump({"externalTextures": mat_tex_out, "expressionVariants": expression_variants},
+              open(os.path.join(dst, "materials.json"), "w"), indent=2)
 
     out_glb_size = os.path.getsize(glb_out)
     tex_total = sum(os.path.getsize(os.path.join(dst, "textures", f))
@@ -264,6 +364,7 @@ def optimize(src, species_id, display_name):
         "sizeBytes": {"srcGlb": src_glb_size, "outGlb": out_glb_size, "outTextures": tex_total,
                       "outTotal": out_glb_size + tex_total},
         "bakedMaterials": baked, "externalTextures": mat_tex_out,
+        "expressionVariants": expression_variants,
     }
     json.dump(meta, open(os.path.join(dst, "meta.json"), "w"), indent=2)
 
@@ -277,10 +378,11 @@ def generate_registry(entries):
     lines = [
         "// AUTO-GENERATED by tools/ingest_creature.py — do not edit by hand.",
         "// One entry per creature species. `glb` and every external-texture module are static",
-        "// require()s (Metro resolves them at build time). Colours are baked into each GLB as",
-        "// material factors, so only detailed face textures appear here.",
+        "// require()s (Metro resolves them at build time). Flat colours are baked into each GLB",
+        "// as material factors; only detailed textures (baseColor/normal/emissive) appear here.",
+        "// The renderer decodes each PNG to a THREE.DataTexture on device (see BuddyView.tsx).",
         "",
-        "export type ExternalSlot = 'map' | 'emissiveMap';",
+        "export type ExternalSlot = 'map' | 'normalMap' | 'emissiveMap';",
         "export interface SpeciesEntry {",
         "  id: string;",
         "  displayName: string;",

@@ -8,8 +8,8 @@
   "sizeBytes": {
     "srcGlb": 4770384,
     "outGlb": 1473160,
-    "outTextures": 34698,
-    "outTotal": 1507858
+    "outTextures": 23132,
+    "outTotal": 1496292
   },
   "bakedMaterials": {
     "mat_cloud_dark": {
@@ -81,5 +81,6 @@
       "map": "tex_10.png",
       "emissiveMap": "tex_11.png"
     }
-  }
+  },
+  "expressionVariants": {}
 }

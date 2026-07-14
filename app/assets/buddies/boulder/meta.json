@@ -8,8 +8,8 @@
   "sizeBytes": {
     "srcGlb": 6400672,
     "outGlb": 1279544,
-    "outTextures": 28317,
-    "outTotal": 1307861
+    "outTextures": 18878,
+    "outTotal": 1298422
   },
   "bakedMaterials": {
     "mat_stone": {
@@ -71,5 +71,6 @@
       "map": "tex_8.png",
       "emissiveMap": "tex_9.png"
     }
-  }
+  },
+  "expressionVariants": {}
 }

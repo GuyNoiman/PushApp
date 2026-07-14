@@ -8,8 +8,12 @@
  *  - GLB via expo-asset -> File.arrayBuffer -> GLTFLoader.parse(bytes, '', ...).
  *  - NO gl.setSize/setPixelRatio (corner bug); NO shadows/PMREM-IBL/bloom (render targets
  *    break on expo-gl) — plain lights only.
- *  - Colours are BAKED into each GLB as material factors (ingest_creature.py), so nothing
- *    fragile loads for the body. Only detailed FACE textures load externally, by material.
+ *  - Flat colours are BAKED into each GLB as material factors (ingest_creature.py); DETAILED
+ *    textures (baseColor `map`, `normalMap`, `emissiveMap`) load externally, by material.
+ *  - TEXTURE UPLOAD: RN/expo-gl has no browser Image/decode, so @react-three/fiber's patched
+ *    TextureLoader (and embedded glTF images) render BLANK. Instead we decode each PNG's bytes
+ *    to raw RGBA8 in JS (upng-js) and build a THREE.DataTexture — a plain texImage2D upload
+ *    that needs no Image. This is what makes the detailed albedo + normals + face actually show.
  *  - Recompute missing normals; normalize model + fixed camera; Y-up (no rotation).
  */
 import './polyfills';
@@ -21,27 +25,54 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import UPNG from 'upng-js';
 
-import type { SpeciesEntry } from '@/core/buddies/registry.generated';
+import type { ExternalSlot, SpeciesEntry } from '@/core/buddies/registry.generated';
 
 const TARGET_HEIGHT = 2.6; // world height the normalized model occupies; the fixed camera frames this.
 
-async function loadTexture(mod: number): Promise<THREE.Texture> {
-  // @react-three/fiber/native patches TextureLoader to accept a require() MODULE (number)
-  // and resolve it via expo-asset. Passing a resolved file:// URI does NOT work on RN.
-  const tex = await new THREE.TextureLoader().loadAsync(mod as unknown as string);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.flipY = false; // glTF UV convention
+type TexRole = 'color' | 'linear'; // sRGB for baseColor/emissive, linear for normal/data maps.
+
+/**
+ * Decode a require()'d PNG module to raw RGBA8 and build a DataTexture. We go through
+ * expo-asset -> File.arrayBuffer -> UPNG (pure JS) rather than any Image-based loader because
+ * expo-gl cannot decode PNGs itself; a DataTexture is a bare texImage2D upload that always works.
+ */
+async function loadDataTexture(mod: number, role: TexRole): Promise<THREE.Texture> {
+  const asset = Asset.fromModule(mod);
+  await asset.downloadAsync();
+  const uri = asset.localUri ?? asset.uri;
+  if (!uri) throw new Error('texture asset uri is undefined');
+  const bytes = await new File(uri).arrayBuffer();
+  const png = UPNG.decode(bytes);
+  const rgba = new Uint8Array(UPNG.toRGBA8(png)[0]); // frame 0, tightly-packed RGBA8
+
+  const tex = new THREE.DataTexture(rgba, png.width, png.height, THREE.RGBAFormat, THREE.UnsignedByteType);
+  // glTF UV convention is flipY=false; UPNG rows are top-to-bottom, matching the Image path that
+  // worked for v2. If any texture appears vertically mirrored on device, flip this to true.
+  tex.flipY = false;
+  tex.colorSpace = role === 'color' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter; // our PNGs are 512² (POT) so mipmaps are safe.
+  tex.generateMipmaps = true;
+  tex.anisotropy = 4; // three clamps to the device max; sharpens the albedo at grazing angles.
   tex.needsUpdate = true;
   return tex;
 }
 
-/** Recompute missing normals, force opaque, then overlay only the external face textures. */
+/** Recompute missing normals, force opaque, then apply the external map/normalMap/emissiveMap. */
 async function applyMaterials(root: THREE.Object3D, entry: SpeciesEntry) {
-  const cache = new Map<number, THREE.Texture>();
-  const get = async (mod: number) => {
-    if (!cache.has(mod)) cache.set(mod, await loadTexture(mod));
-    return cache.get(mod)!;
+  const cache = new Map<string, Promise<THREE.Texture>>();
+  const get = (mod: number, role: TexRole) => {
+    const key = `${mod}:${role}`;
+    let p = cache.get(key);
+    if (!p) {
+      p = loadDataTexture(mod, role);
+      cache.set(key, p);
+    }
+    return p;
   };
 
   const meshes: THREE.Mesh[] = [];
@@ -53,6 +84,8 @@ async function applyMaterials(root: THREE.Object3D, entry: SpeciesEntry) {
     meshes.push(m);
   });
 
+  const roleOf: Record<ExternalSlot, TexRole> = { map: 'color', normalMap: 'linear', emissiveMap: 'color' };
+
   for (const mesh of meshes) {
     const mat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as
       | THREE.MeshStandardMaterial
@@ -62,20 +95,34 @@ async function applyMaterials(root: THREE.Object3D, entry: SpeciesEntry) {
     mat.opacity = 1;
 
     const slots = entry.externalTextures[mat.name];
-    if (!slots) {
-      mat.needsUpdate = true; // colour already comes from the baked baseColorFactor
-      continue;
-    }
-    try {
-      if (slots.map != null) mat.map = await get(slots.map);
-      if (slots.emissiveMap != null) {
-        mat.emissiveMap = await get(slots.emissiveMap);
-        mat.emissiveIntensity = 1.35; // keep the baked emissiveFactor tint; make it glow
+    if (slots) {
+      try {
+        if (slots.map != null) mat.map = await get(slots.map, roleOf.map);
+        if (slots.normalMap != null) {
+          const g = mesh.geometry as THREE.BufferGeometry;
+          if (!g.getAttribute('tangent')) {
+            // three then derives tangents in-shader from screen-space derivatives, so the
+            // normal map still reads — just at slightly lower quality than vertex tangents.
+            console.log('[BuddyView] normalMap w/o vertex tangents (derivative fallback):', mat.name);
+          }
+          mat.normalMap = await get(slots.normalMap, roleOf.normalMap);
+          mat.normalScale = new THREE.Vector2(1, 1);
+        }
+        if (slots.emissiveMap != null) {
+          mat.emissiveMap = await get(slots.emissiveMap, roleOf.emissiveMap);
+          mat.emissive = new THREE.Color(0xffffff); // final emissive = emissive * map; must be non-black
+          mat.emissiveIntensity = 1.35;
+        }
+        if (mat.name === 'mat_face_screen' || mat.name === 'mat_screen') mat.side = THREE.DoubleSide;
+      } catch (e) {
+        console.warn('[BuddyView] texture load failed for', mat.name, e);
       }
-      if (mat.name === 'mat_face_screen') mat.side = THREE.DoubleSide;
-    } catch (e) {
-      console.warn('[BuddyView] face texture load failed for', mat.name, e);
     }
+
+    // Keep every material in a readable band: no near-mirror (renders dark/flat with no env map
+    // on expo-gl) and no 100%-rough (washes the normal detail out). metalness is already clamped
+    // at ingest. This lets the plain directional lights bring out the baked albedo + normals.
+    mat.roughness = Math.min(0.92, Math.max(0.45, mat.roughness));
     mat.needsUpdate = true;
   }
 }
@@ -89,6 +136,7 @@ function disposeScene(scene: THREE.Object3D) {
     for (const mat of mats) {
       const std = mat as THREE.MeshStandardMaterial;
       std?.map?.dispose();
+      std?.normalMap?.dispose();
       std?.emissiveMap?.dispose();
       std?.dispose?.();
     }
@@ -140,13 +188,17 @@ function Creature({ scene }: { scene: THREE.Group }) {
 }
 
 function Lights() {
+  // Plain lights only (no IBL/shadows on expo-gl). Ambient/hemisphere are pulled down a touch
+  // vs. the flat-colour era so the KEY directional casts a real gradient across the surface —
+  // that gradient is what makes the v3 normal maps + painted albedo read with depth. Fill + rim
+  // keep the shadow side from going muddy.
   return (
     <>
-      <ambientLight intensity={0.85} />
-      <hemisphereLight args={['#eaf0ff', '#2a2140', 1.1]} />
-      <directionalLight position={[3, 4, 5]} intensity={2.4} />
-      <directionalLight position={[-3.5, 1.5, 3]} intensity={1.1} color="#cfd8ff" />
-      <directionalLight position={[0, 3.5, -4]} intensity={1.2} color="#9fb8ff" />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={['#eaf0ff', '#2a2140', 0.8]} />
+      <directionalLight position={[3, 4, 5]} intensity={2.7} />
+      <directionalLight position={[-3.5, 1.5, 3]} intensity={1.0} color="#cfd8ff" />
+      <directionalLight position={[0, 3.5, -4]} intensity={1.1} color="#9fb8ff" />
     </>
   );
 }

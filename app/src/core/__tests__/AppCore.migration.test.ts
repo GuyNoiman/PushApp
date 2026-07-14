@@ -81,6 +81,16 @@ describe('AppCore migration — old snapshot', () => {
     expect(core.listReminderRules()).toEqual([]);
   });
 
+  it('backfills all-permissive schedulingPrefs (no behavior change)', async () => {
+    const core = new AppCore(repoWith(oldSnapshot()));
+    await core.start();
+    expect(core.getSchedulingPrefs()).toEqual({
+      window: undefined,
+      dayPart: 'either',
+      preferredDays: [],
+    });
+  });
+
   it('treats a pre-existing user as already onboarded (never shows onboarding)', async () => {
     const core = new AppCore(repoWith(oldSnapshot()));
     await core.start();

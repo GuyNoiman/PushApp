@@ -104,6 +104,24 @@ export interface ReminderRuleRemoved {
   ruleId: string;
 }
 
+/** The user's scheduling preferences changed (window / day-part / weekdays). */
+export interface SchedulingPrefsChanged {
+  type: 'SchedulingPrefsChanged';
+}
+
+/**
+ * The planner trimmed the desired notification set to stay under MAX_PENDING.
+ * Reports how many were dropped and which rules they belonged to (deduped), so a
+ * future surface can tell the user some reminders won't fire.
+ */
+export interface SchedulerCapped {
+  type: 'SchedulerCapped';
+  /** How many planned notifications were dropped by the cap. */
+  dropped: number;
+  /** Distinct rule ids that lost at least one notification to the cap. */
+  ruleIds: string[];
+}
+
 // ── RESERVED events ─────────────────────────────────────────────────────────
 // Declared-but-never-emitted contract members for deferred domains (profile /
 // interests / intervention). They keep the DomainEvent vocabulary stable so a
@@ -147,6 +165,8 @@ export type DomainEvent =
   | LoginRewardClaimed
   | ReminderRuleAdded
   | ReminderRuleRemoved
+  | SchedulingPrefsChanged
+  | SchedulerCapped
   // RESERVED — not yet emitted (deferred domains)
   | ProfileUpdated
   | InterestsUpdated

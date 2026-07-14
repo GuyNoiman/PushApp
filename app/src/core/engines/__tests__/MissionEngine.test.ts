@@ -47,6 +47,7 @@ function emptyState(): AppState {
       locationOptIn: false,
       calendarOptIn: false,
     },
+    schedulingPrefs: { window: undefined, dayPart: 'either', preferredDays: [] },
   };
 }
 

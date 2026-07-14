@@ -21,6 +21,7 @@ import {
 } from './engines/MissionEngine';
 import { EntitlementEngine } from './engines/EntitlementEngine';
 import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
+import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
 import type { GatedFeature } from './config/tiers';
@@ -37,6 +38,7 @@ import type {
   Journey,
   ReminderRule,
   ReminderTrigger,
+  SchedulingPrefs,
 } from './types/domain';
 import { createId } from './util/id';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
@@ -75,6 +77,14 @@ function defaultCommunicationPrefs(): CommunicationPrefs {
   };
 }
 
+/**
+ * Default scheduling prefs: all-permissive so nothing changes until the user sets
+ * one — no window, no day-part constraint, all weekdays allowed.
+ */
+function defaultSchedulingPrefs(): SchedulingPrefs {
+  return { window: undefined, dayPart: 'either', preferredDays: [] };
+}
+
 function emptyState(): AppState {
   return {
     dreams: [],
@@ -85,6 +95,7 @@ function emptyState(): AppState {
     login: { lastClaimedKey: null, dayIndex: 0 },
     reminderRules: [],
     communicationPrefs: defaultCommunicationPrefs(),
+    schedulingPrefs: defaultSchedulingPrefs(),
   };
 }
 
@@ -112,6 +123,7 @@ function migrateState(state: AppState): AppState {
     login: clampLogin({ ...base.login, ...state.login }),
     reminderRules: state.reminderRules ?? base.reminderRules,
     communicationPrefs: { ...base.communicationPrefs, ...state.communicationPrefs },
+    schedulingPrefs: { ...base.schedulingPrefs, ...state.schedulingPrefs },
     // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses
     // emptyState directly). So any state reaching here belongs to an existing user
     // who predates onboarding — treat them as already onboarded (a nonzero
@@ -145,6 +157,7 @@ export class AppCore {
   private readonly rewardEngine: RewardEngine;
   private readonly buddyEngine: BuddyEngine;
   private readonly reminderEngine: ReminderEngine;
+  private readonly communicationScheduler: CommunicationScheduler;
   private readonly shopEngine: ShopEngine;
   private readonly missionEngine: MissionEngine;
   private readonly entitlementEngine: EntitlementEngine;
@@ -172,10 +185,18 @@ export class AppCore {
     // location/calendar gateways are the DORMANT trigger seams — both resolve to
     // their Null gateway today (flags off), so those trigger kinds are graceful
     // no-ops.
-    this.reminderEngine = new ReminderEngine(this.bus, {
-      location: getLocationGateway(),
-      calendar: getCalendarGateway(),
-    });
+    const location = getLocationGateway();
+    const calendar = getCalendarGateway();
+    this.reminderEngine = new ReminderEngine(this.bus, { location, calendar });
+    // The central "Communication Scheduler" plans + applies the whole reminder set
+    // through the ReminderEngine. The location/calendar gateways stay dormant (Null),
+    // so those trigger kinds produce nothing and nothing leaves the device (R2).
+    this.communicationScheduler = new CommunicationScheduler(
+      this.bus,
+      getState,
+      this.reminderEngine,
+      { location, calendar },
+    );
     this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
     this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
     // Composition root owns the EntitlementEngine (like every other engine). It
@@ -216,6 +237,14 @@ export class AppCore {
     this.bus.on('LoginRewardClaimed', this.onChanged);
     this.bus.on('ReminderRuleAdded', this.onChanged);
     this.bus.on('ReminderRuleRemoved', this.onChanged);
+    this.bus.on('SchedulingPrefsChanged', this.onChanged);
+
+    // The Communication Scheduler re-plans the whole notification set whenever the
+    // inputs change. The reminder facade methods reconcile directly (right after
+    // persisting), so here we only wire the events they DON'T emit: a completed
+    // Journey (its reminders must stop) and a scheduling-prefs change.
+    this.bus.on('JourneyCompleted', this.onReconcile);
+    this.bus.on('SchedulingPrefsChanged', this.onReconcile);
 
     // start() runs the authoritative day/week rollover once on launch.
     this.missionEngine.start();
@@ -228,6 +257,11 @@ export class AppCore {
   private readonly onChanged = (): void => {
     void this.repo.save(this.state);
     this.notify();
+  };
+
+  /** Re-plan + re-apply the scheduler-owned notification set (fire-and-forget). */
+  private readonly onReconcile = (): void => {
+    void this.communicationScheduler.reconcile();
   };
 
   /** Seed ONE demo Journey (Starter Step + 2 ordinary Steps) so Home isn't empty. */
@@ -335,6 +369,9 @@ export class AppCore {
    */
   syncTime(): void {
     this.missionEngine.refresh();
+    // Re-plan reminders on the same lifecycle beat as the Mission rollover, so a
+    // day/week change (and any Journey that lapsed) is reflected in what's pending.
+    void this.communicationScheduler.reconcile();
     this.onChanged();
   }
 
@@ -351,10 +388,11 @@ export class AppCore {
   // ── Reminders / communication prefs ─────────────────────────────────────────
 
   /**
-   * Create a reminder for a Journey, schedule its OS notification(s), and persist.
-   * The rule owns the scheduled notification ids so it can later be cancelled.
-   * Scheduling is best-effort (no permission ⇒ no ids); the rule is still saved so
-   * it can be (re)scheduled once permission is granted.
+   * Create a reminder for a Journey, persist it, and let the Communication
+   * Scheduler (re)plan + apply the whole on-device notification set. Scheduling is
+   * best-effort (no permission ⇒ nothing pending); the rule is still saved so it is
+   * (re)scheduled once permission is granted. The scheduler owns the OS notification
+   * ids, so the rule's own `scheduledNotificationIds` stays empty.
    */
   async addReminderRule(input: {
     journeyId: string;
@@ -372,41 +410,41 @@ export class AppCore {
       enabled: input.enabled ?? true,
       scheduledNotificationIds: [],
     };
-    rule.scheduledNotificationIds = await this.reminderEngine.scheduleRule(rule);
     this.state.reminderRules.push(rule);
     this.bus.emit({ type: 'ReminderRuleAdded', rule });
+    await this.communicationScheduler.reconcile();
     return rule;
   }
 
   /**
-   * Replace an existing reminder rule: cancel its old OS notifications, reschedule
-   * from the new definition, and persist. No-op (returns null) if the id is unknown.
+   * Replace an existing reminder rule and re-plan through the Communication
+   * Scheduler (a full teardown + rebuild covers the change). No-op (returns null) if
+   * the id is unknown.
    */
   async updateReminderRule(
     id: string,
     changes: Partial<Pick<ReminderRule, 'trigger' | 'title' | 'body' | 'enabled'>>,
   ): Promise<ReminderRule | null> {
-    const existing = this.state.reminderRules.find((r) => r.id === id);
-    if (!existing) return null;
-    await this.reminderEngine.cancelRule(existing);
-    const next: ReminderRule = { ...existing, ...changes, scheduledNotificationIds: [] };
-    next.scheduledNotificationIds = await this.reminderEngine.scheduleRule(next);
     const idx = this.state.reminderRules.findIndex((r) => r.id === id);
+    if (idx < 0) return null;
+    const next: ReminderRule = { ...this.state.reminderRules[idx], ...changes, scheduledNotificationIds: [] };
     this.state.reminderRules[idx] = next;
     this.bus.emit({ type: 'ReminderRuleAdded', rule: next });
+    await this.communicationScheduler.reconcile();
     return next;
   }
 
   /**
-   * Remove a reminder rule: cancel its OS notifications, drop it, and persist.
-   * No-op (returns false) if the id is unknown.
+   * Remove a reminder rule, persist, and re-plan through the Communication
+   * Scheduler (its teardown cancels the dropped rule's notifications). No-op
+   * (returns false) if the id is unknown.
    */
   async removeReminderRule(id: string): Promise<boolean> {
     const existing = this.state.reminderRules.find((r) => r.id === id);
     if (!existing) return false;
-    await this.reminderEngine.cancelRule(existing);
     this.state.reminderRules = this.state.reminderRules.filter((r) => r.id !== id);
     this.bus.emit({ type: 'ReminderRuleRemoved', ruleId: id });
+    await this.communicationScheduler.reconcile();
     return true;
   }
 
@@ -420,6 +458,21 @@ export class AppCore {
   setCommunicationPref<K extends keyof CommunicationPrefs>(key: K, value: CommunicationPrefs[K]): void {
     this.state.communicationPrefs = { ...this.state.communicationPrefs, [key]: value };
     this.onChanged();
+  }
+
+  /**
+   * Set a single scheduling preference (window / day-part / weekdays) and persist.
+   * Emits SchedulingPrefsChanged, which re-plans the Communication Scheduler so the
+   * pending notification set reflects the new timing.
+   */
+  setSchedulingPref<K extends keyof SchedulingPrefs>(key: K, value: SchedulingPrefs[K]): void {
+    this.state.schedulingPrefs = { ...this.state.schedulingPrefs, [key]: value };
+    this.bus.emit({ type: 'SchedulingPrefsChanged' });
+  }
+
+  /** The user's current scheduling preferences (window / day-part / weekdays). */
+  getSchedulingPrefs(): SchedulingPrefs {
+    return this.state.schedulingPrefs;
   }
 
   /** Opt in/out of location-triggered reminders (dormant seam). Persists. */

@@ -170,6 +170,35 @@ export interface CommunicationPrefs {
   calendarOptIn: boolean;
 }
 
+/** Which part of the day the user prefers to be contacted in. */
+export type DayPart = 'morning' | 'evening' | 'either';
+
+/**
+ * The ALLOWED window a reminder may fire in, as local wall-clock bounds. Stored as
+ * the *allowed* range (not a quiet range); firing times outside it are clamped to
+ * the nearest edge, never dropped. May cross midnight (e.g. 22:00 → 06:00), which
+ * the scheduling helpers handle explicitly.
+ */
+export interface AllowedWindow {
+  start: { hour: number; minute: number };
+  end: { hour: number; minute: number };
+}
+
+/**
+ * How the user wants their reminders TIMED (distinct from CommunicationPrefs, which
+ * is per-channel opt-in). All-permissive by default so nothing changes until the
+ * user sets a preference. Consumed by the CommunicationScheduler when it plans the
+ * on-device notification set. No PII.
+ */
+export interface SchedulingPrefs {
+  /** Optional allowed firing window; undefined means any time of day. */
+  window?: AllowedWindow;
+  /** Preferred part of day; 'either' applies no day-part constraint. */
+  dayPart: DayPart;
+  /** Preferred weekdays in JS `Date.getDay()` convention (0=Sun … 6=Sat); empty = all days. */
+  preferredDays: number[];
+}
+
 /** The full persisted application state (offline-first). */
 export interface AppState {
   dreams: Dream[];
@@ -182,6 +211,8 @@ export interface AppState {
   reminderRules: ReminderRule[];
   /** How the user wants to be contacted (reminders / social / opt-ins). */
   communicationPrefs: CommunicationPrefs;
+  /** How the user wants reminders timed (window / day-part / weekdays). */
+  schedulingPrefs: SchedulingPrefs;
   /**
    * Epoch ms onboarding was completed, or undefined if the user has not yet
    * finished it. A pre-existing persisted snapshot (from before onboarding

@@ -13,26 +13,26 @@
  *
  * Presentational only — no business logic lives here (Engineering Bible §19).
  */
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Dimensions, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { EvolveReveal } from '@/components/buddy/EvolveReveal';
 import { GlossyTile } from '@/components/GlossyTile';
+import { RescheduleModal } from '@/components/journey/RescheduleModal';
 import { StepCard } from '@/components/journey/StepCard';
 import { ResourceBar } from '@/components/ResourceBar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WeekStepsSheet } from '@/components/WeekStepsSheet';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { featureFlags } from '@/core/config/featureFlags';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
-import { useSocial } from '@/state/SocialProvider';
 
 // TODO(data model): Grace Tokens are not yet tracked in AppState — no GraceTokenEngine
 // exists yet. Render a placeholder until one lands (see ResourceBar's `graceTokens` prop).
@@ -42,22 +42,55 @@ const GRACE_TOKENS_PLACEHOLDER = 2;
 // per Home_Screen.md ("lightened slightly so buttons/objects stay prominent") since
 // Home's top zone is much shorter than the full Buddy-tab scene and carries more
 // foreground UI (ResourceBar + buttons) on top of it.
-const HOME_SCENE_SKY = '#E7F5F1';
+const HOME_SCENE_SKY = '#DEEFE8';
 const HOME_SCENE_GROUND = '#B7DEB2';
 
-// The Week's-steps sheet's resting vs. fully-dragged-open heights. Sized off the
-// window so short/tall phones both get a sensible collapsed height that still
-// reads as "a larger share of the screen" than a small content card, per the
-// founder's "taller" correction, while leaving the frozen top's Buddy visible.
+// The four area buttons carry crisp, white, monochrome icons on their glossy 3D
+// faces (mockup screen-01) — not colourful emoji, which clash with the tile colour.
+const TILE_ICON_SIZE = 26;
+const TILE_ICON_COLOR = '#FFFFFF';
+
+// The Week's-steps sheet's resting vs. fully-dragged-open heights are derived at
+// runtime from MEASURED layout (see below): the collapsed sheet is exactly the
+// stage height minus the frozen top's real height, so the full Buddy scene + all
+// four area buttons + the greeting bubble are ALWAYS visible when collapsed (the
+// old fixed `windowHeight * 0.56` guessed too tall and buried the lower tiles +
+// Buddy base — founder's on-device report). These window-fraction values are only
+// fallbacks used for the first frame, before onLayout has measured the stage.
 const windowHeight = Dimensions.get('window').height;
-const SHEET_COLLAPSED_HEIGHT = Math.round(windowHeight * 0.56);
-const SHEET_EXPANDED_HEIGHT = Math.round(windowHeight * 0.82);
+const SHEET_COLLAPSED_FALLBACK = Math.round(windowHeight * 0.48);
+const SHEET_EXPANDED_FALLBACK = Math.round(windowHeight * 0.82);
+// Never let the measured collapsed height collapse to nothing on a very short
+// frozen top (e.g. mid-loading) — keep at least a third of the screen for Steps.
+const SHEET_MIN_COLLAPSED_HEIGHT = Math.round(windowHeight * 0.34);
+// Breathing room between the bottom of the frozen top (Buddy name pill) and the
+// top edge of the collapsed cream panel, matching the mockup's small gap.
+const SHEET_TOP_GAP = Spacing.three;
 
 export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
   const router = useRouter();
   const theme = useTheme();
-  const social = useSocial();
+
+  // Measured layout drives the sheet heights (see SHEET_* constants): the stage
+  // is the whole draggable-area box; the "top zone" is the frozen forest top
+  // (ResourceBar + greeting + Buddy + area buttons). Collapsing the sheet to
+  // exactly `stage − topZone` guarantees the full Buddy scene stays visible on
+  // every device instead of being buried by a fixed-fraction guess.
+  const [stageHeight, setStageHeight] = useState(0);
+  const [topZoneHeight, setTopZoneHeight] = useState(0);
+
+  const collapsedHeight =
+    stageHeight > 0 && topZoneHeight > 0
+      ? Math.max(
+          SHEET_MIN_COLLAPSED_HEIGHT,
+          Math.round(stageHeight - topZoneHeight - SHEET_TOP_GAP),
+        )
+      : SHEET_COLLAPSED_FALLBACK;
+  const expandedHeight = Math.max(
+    collapsedHeight + Spacing.six,
+    stageHeight > 0 ? Math.round(stageHeight * 0.92) : SHEET_EXPANDED_FALLBACK,
+  );
 
   // One-off Buddy moments. The evolution reveal is owned by the EvolveReveal
   // modal below; the reaction shows a small, non-childish celebration banner.
@@ -65,40 +98,44 @@ export default function HomeScreen() {
   const reward = reaction ? formatReactionReward(reaction) : null;
   const celebration = reward ? `Nice — ${reward}` : null;
 
-  const incomingFriendRequests = featureFlags.social
-    ? social.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming').length
-    : 0;
-
   // The greeting bubble is the Buddy speaking to the USER, so it should show the
   // user's name (mockup: "Hello, Guy"). AppState has no user profile/name yet, so
   // fall back to a warm default. TODO(data model): wire real user name once profiles land.
   const userName = 'friend';
 
-  // Swipe-left "missed" reports are visual-only for now — there is no MissEngine /
-  // missed-status field on the domain Step yet (TODO: data model). We track a
-  // local set of Step ids the user has swiped as missed so the card recolors
-  // (Home_Screen.md: "missed → red wash, no mark") without inventing persisted
-  // state the engines don't own. Cleared automatically once the Step itself
-  // leaves today's list (e.g. checked in later some other way).
-  const [locallyMissed, setLocallyMissed] = useState<Set<string>>(new Set());
-  const handleMiss = (_journeyId: string, stepId: string) => {
-    setLocallyMissed((prev) => new Set(prev).add(stepId));
-  };
+  // The ⋯ menu and the Reschedule modal are both driven from Home (StepCard stays
+  // presentational). `menuStep` is the Step whose three-dots menu is open;
+  // `rescheduleStep` is the Step whose Reschedule modal is open (reached via the
+  // menu OR a swipe-left on the card — founder decision 2026-07-14).
+  const [menuStep, setMenuStep] = useState<TodayStep | null>(null);
+  const [rescheduleStep, setRescheduleStep] = useState<TodayStep | null>(null);
 
-  const steps: TodayStep[] = snapshot?.todaySteps ?? [];
-  // Completed Steps sink to the bottom of the feed, shown disabled (Home_Screen.md).
+  // The full week's list INCLUDING done Steps (so a checked-in Step stays visible,
+  // marked done, instead of vanishing — Home_Screen.md). getTodaySteps still drives
+  // the actionable count elsewhere; this superset drives the Home feed. Completed
+  // Steps sink to the very bottom (dimmed + green sealed wash), with the actionable
+  // (pending) Steps on top (Home_Screen.md).
   const orderedSteps = useMemo(() => {
-    return [...steps].sort((a, b) => {
-      const aMissed = locallyMissed.has(a.step.id) ? 1 : 0;
-      const bMissed = locallyMissed.has(b.step.id) ? 1 : 0;
-      return aMissed - bMissed;
-    });
-  }, [steps, locallyMissed]);
+    const week: TodayStep[] = snapshot?.weekSteps ?? [];
+    const rank = (item: TodayStep) => (item.step.done ? 1 : 0);
+    return [...week].sort((a, b) => rank(a) - rank(b));
+  }, [snapshot?.weekSteps]);
+
+  // A small "{done}/{total}" read-out beside the "Week's steps" title — derived
+  // from the SAME weekSteps the list renders (done = step.done), so the count and
+  // the list can never disagree.
+  const weekTotal = orderedSteps.length;
+  const weekDone = orderedSteps.filter((item) => item.step.done).length;
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.stage}>
+      {/* Exclude the bottom edge: the native tab bar already owns the home-indicator
+          inset, so insetting here too would leave a dead strip between the sheet and
+          the tab bar (founder's "empty gap" report). The sheet sits flush above it. */}
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <View
+          style={styles.stage}
+          onLayout={(e) => setStageHeight(e.nativeEvent.layout.height)}>
           {/* ── Frozen top: never scrolls. The forest scene wash sits behind the
               ResourceBar + greeting + Buddy + area buttons (Home_Screen.md: "the
               whole screen sits on the forest background, same scene as the Buddy
@@ -107,7 +144,9 @@ export default function HomeScreen() {
           <View style={[styles.scene, { backgroundColor: HOME_SCENE_SKY }]}>
             <View style={[styles.ground, { backgroundColor: HOME_SCENE_GROUND }]} />
 
-            <View style={styles.sceneContent}>
+            <View
+              style={styles.sceneContent}
+              onLayout={(e) => setTopZoneHeight(e.nativeEvent.layout.height)}>
               <ResourceBar
                 level={snapshot?.buddy.level ?? 1}
                 xpInto={snapshot?.buddy.xpIntoLevel ?? 0}
@@ -123,24 +162,20 @@ export default function HomeScreen() {
                 </ThemedText>
               ) : (
                 <View style={styles.buddyRow}>
+                  {/* Left column: My Journeys (replaces the old Friends/Cheer tile —
+                      Friends stays reachable via the bottom tab) + Achievements. */}
                   <View style={styles.abCol}>
                     <GlossyTile
-                      color="gold"
-                      accessibilityLabel={
-                        snapshot.claimableRewards > 0
-                          ? `Missions — ${snapshot.claimableRewards} to claim`
-                          : 'Missions'
-                      }
-                      badge={snapshot.claimableRewards}
-                      onPress={() => router.push('/missions')}>
-                      <ThemedText style={styles.tileGlyph}>🎯</ThemedText>
+                      color="blue"
+                      accessibilityLabel="My Journeys"
+                      onPress={() => router.push('/journeys')}>
+                      <MaterialCommunityIcons name="map-marker-path" size={TILE_ICON_SIZE} color={TILE_ICON_COLOR} />
                     </GlossyTile>
                     <GlossyTile
-                      color="pink"
-                      accessibilityLabel="Consistency"
-                      // TODO: consistency screen — no route exists yet.
-                      onPress={() => {}}>
-                      <ThemedText style={styles.tileGlyph}>🔥</ThemedText>
+                      color="teal"
+                      accessibilityLabel="Achievements"
+                      onPress={() => router.push('/achievements')}>
+                      <Ionicons name="trophy" size={TILE_ICON_SIZE} color={TILE_ICON_COLOR} />
                     </GlossyTile>
                   </View>
 
@@ -161,21 +196,26 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
+                  {/* Right column: Missions (moved from the left so it sits on the
+                      right of the Buddy — founder decision 2026-07-14) + Consistency. */}
                   <View style={styles.abCol}>
-                    {featureFlags.social && (
-                      <GlossyTile
-                        color="purple"
-                        accessibilityLabel="Friends"
-                        badge={incomingFriendRequests}
-                        onPress={() => router.navigate('/friends')}>
-                        <ThemedText style={styles.tileGlyph}>🤝</ThemedText>
-                      </GlossyTile>
-                    )}
                     <GlossyTile
-                      color="teal"
-                      accessibilityLabel="Achievements"
-                      onPress={() => router.push('/achievements')}>
-                      <ThemedText style={styles.tileGlyph}>🏆</ThemedText>
+                      color="gold"
+                      accessibilityLabel={
+                        snapshot.claimableRewards > 0
+                          ? `Missions — ${snapshot.claimableRewards} to claim`
+                          : 'Missions'
+                      }
+                      badge={snapshot.claimableRewards}
+                      onPress={() => router.push('/missions')}>
+                      <MaterialCommunityIcons name="target" size={TILE_ICON_SIZE} color={TILE_ICON_COLOR} />
+                    </GlossyTile>
+                    <GlossyTile
+                      color="pink"
+                      accessibilityLabel="Consistency"
+                      // TODO: consistency screen — no route exists yet.
+                      onPress={() => {}}>
+                      <Ionicons name="flame" size={TILE_ICON_SIZE} color={TILE_ICON_COLOR} />
                     </GlossyTile>
                   </View>
                 </View>
@@ -193,11 +233,20 @@ export default function HomeScreen() {
 
           {/* ── Draggable "Week's steps" panel — the only thing that scrolls/drags. */}
           {ready && snapshot && (
-            <WeekStepsSheet collapsedHeight={SHEET_COLLAPSED_HEIGHT} expandedHeight={SHEET_EXPANDED_HEIGHT}>
+            <WeekStepsSheet collapsedHeight={collapsedHeight} expandedHeight={expandedHeight}>
               <View style={styles.panelHeader}>
-                <ThemedText type="subtitle" style={{ color: theme.text }}>
-                  Week&apos;s steps
-                </ThemedText>
+                <View style={styles.panelHeaderTitle}>
+                  <ThemedText type="subtitle" style={{ color: theme.text }}>
+                    Week&apos;s steps
+                  </ThemedText>
+                  {/* Progress read-out — how many of this week's Steps are done,
+                      out of the total. Derived from the same weekSteps feed. */}
+                  {weekTotal > 0 && (
+                    <ThemedText type="smallBold" themeColor="textMuted">
+                      {weekDone}/{weekTotal}
+                    </ThemedText>
+                  )}
+                </View>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Create a new Journey"
@@ -224,14 +273,23 @@ export default function HomeScreen() {
                 <FlatList
                   data={orderedSteps}
                   keyExtractor={(item) => item.step.id}
+                  // flex:1 gives the list a BOUNDED height so it scrolls INSIDE the
+                  // sheet (was unbounded → it overflowed/clipped and wouldn't scroll,
+                  // and the trailing padding read as dead space). Content packs from
+                  // the top (default flex-start), so pending → missed → done cards
+                  // flow contiguously with only the normal card gap between them.
+                  style={styles.stepListBox}
                   contentContainerStyle={styles.stepList}
                   showsVerticalScrollIndicator={false}
                   renderItem={({ item }) => (
                     <StepCard
                       item={item}
-                      status={locallyMissed.has(item.step.id) ? 'missed' : 'pending'}
+                      status={item.step.done ? 'done' : 'pending'}
                       onCheckIn={(journeyId, stepId) => core.checkInStep(journeyId, stepId)}
-                      onMiss={handleMiss}
+                      onReschedule={() => setRescheduleStep(item)}
+                      // The ⋯ menu is only meaningful on a pending Step (Mark done /
+                      // Reschedule); a completed card's dots stay inert.
+                      onOpenMenu={item.step.done ? undefined : () => setMenuStep(item)}
                     />
                   )}
                 />
@@ -250,7 +308,153 @@ export default function HomeScreen() {
           onCollect={dismissReveal}
         />
       )}
+
+      {/* ⋯ menu for a pending Step: Mark done (check-in) or Reschedule (opens the
+          modal below). Presented from Home so StepCard stays presentational. */}
+      {menuStep && (
+        <StepActionSheet
+          stepTitle={menuStep.step.title}
+          stepDescription={menuStep.step.description}
+          onMarkDone={() => {
+            core.checkInStep(menuStep.journeyId, menuStep.step.id);
+            setMenuStep(null);
+          }}
+          onReschedule={() => {
+            setRescheduleStep(menuStep);
+            setMenuStep(null);
+          }}
+          // TODO(data model): no Step-editing flow/route exists yet — closes for
+          // now. Wire to a real edit screen once Steps become editable.
+          onEditStep={() => setMenuStep(null)}
+          onClose={() => setMenuStep(null)}
+        />
+      )}
+
+      <RescheduleModal
+        visible={rescheduleStep !== null}
+        stepTitle={rescheduleStep?.step.title}
+        onConfirm={() => setRescheduleStep(null)}
+        onCancel={() => setRescheduleStep(null)}
+      />
     </ThemedView>
+  );
+}
+
+/**
+ * StepActionSheet — the ⋯ menu for a pending Step (founder decision 2026-07-14):
+ * a bottom sheet with "Mark done", "Reschedule", "Step details" and "Edit step".
+ * Kept local to Home since it only orchestrates Home's state; StepCard stays
+ * presentational. "Step details" swaps the sheet into a read-only details panel
+ * (title + description); the rest fire their action and close.
+ */
+function StepActionSheet({
+  stepTitle,
+  stepDescription,
+  onMarkDone,
+  onReschedule,
+  onEditStep,
+  onClose,
+}: {
+  stepTitle: string;
+  stepDescription?: string;
+  onMarkDone: () => void;
+  onReschedule: () => void;
+  onEditStep: () => void;
+  onClose: () => void;
+}) {
+  const theme = useTheme();
+  const [showDetails, setShowDetails] = useState(false);
+  const description = stepDescription?.trim();
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable accessibilityLabel="Dismiss menu" style={styles.menuBackdrop} onPress={onClose}>
+        <Pressable
+          style={[styles.menuSheet, { backgroundColor: theme.backgroundElement }]}
+          onPress={() => {}}>
+          {showDetails ? (
+            // Read-only details panel: title always, description only when present.
+            <View style={styles.menuDetails}>
+              <ThemedText type="subtitle" style={{ color: theme.text }}>
+                {stepTitle}
+              </ThemedText>
+              {description ? (
+                <ThemedText type="default" themeColor="textSecondary">
+                  {description}
+                </ThemedText>
+              ) : (
+                <ThemedText type="small" themeColor="textMuted">
+                  No description yet.
+                </ThemedText>
+              )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+                onPress={() => setShowDetails(false)}
+                style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+                <Ionicons name="chevron-back" size={22} color={theme.textSecondary} />
+                <ThemedText type="default" style={{ color: theme.text }}>
+                  Back
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <ThemedText
+                type="smallBold"
+                themeColor="textMuted"
+                numberOfLines={1}
+                style={styles.menuTitle}>
+                {stepTitle}
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Mark done"
+                onPress={onMarkDone}
+                style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+                <Ionicons name="checkmark-circle-outline" size={22} color={theme.tealStrong} />
+                <ThemedText type="default" style={{ color: theme.text }}>
+                  Mark done
+                </ThemedText>
+              </Pressable>
+              <View style={[styles.menuDivider, { backgroundColor: theme.hairline }]} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Reschedule"
+                onPress={onReschedule}
+                style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+                <Ionicons name="calendar-outline" size={22} color={theme.goldStrong} />
+                <ThemedText type="default" style={{ color: theme.text }}>
+                  Reschedule
+                </ThemedText>
+              </Pressable>
+              <View style={[styles.menuDivider, { backgroundColor: theme.hairline }]} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Step details"
+                onPress={() => setShowDetails(true)}
+                style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+                <Ionicons name="information-circle-outline" size={22} color={theme.tealStrong} />
+                <ThemedText type="default" style={{ color: theme.text }}>
+                  Step details
+                </ThemedText>
+              </Pressable>
+              <View style={[styles.menuDivider, { backgroundColor: theme.hairline }]} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit step"
+                onPress={onEditStep}
+                style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+                <Ionicons name="pencil-outline" size={22} color={theme.textSecondary} />
+                <ThemedText type="default" style={{ color: theme.text }}>
+                  Edit step
+                </ThemedText>
+              </Pressable>
+            </>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -300,10 +504,6 @@ const styles = StyleSheet.create({
   abCol: {
     gap: Spacing.three,
   },
-  tileGlyph: {
-    fontSize: 24,
-    lineHeight: 28,
-  },
   buddyCol: {
     flex: 1,
     alignItems: 'center',
@@ -350,6 +550,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.three,
   },
+  panelHeaderTitle: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.two,
+  },
   createButton: {
     width: 36,
     height: 36,
@@ -363,10 +568,16 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.6,
   },
+  stepListBox: {
+    flex: 1,
+  },
   stepList: {
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.four,
+    // The sheet now sits flush above the native tab bar (which owns the safe-area
+    // inset), so the list only needs a small trailing pad for the last card — not
+    // the full tab-bar inset, which previously left dead space at the list's foot.
+    paddingBottom: Spacing.four,
   },
   celebration: {
     alignSelf: 'stretch',
@@ -382,5 +593,41 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.four,
     gap: Spacing.two,
     alignItems: 'center',
+  },
+
+  // ── ⋯ Step action sheet ────────────────────────────────────────────────
+  menuBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(20, 20, 18, 0.45)',
+  },
+  menuSheet: {
+    borderTopLeftRadius: Radius.card,
+    borderTopRightRadius: Radius.card,
+    paddingTop: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.two,
+    gap: Spacing.one,
+  },
+  menuTitle: {
+    paddingHorizontal: Spacing.two,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.one,
+  },
+  menuDetails: {
+    paddingHorizontal: Spacing.two,
+    paddingTop: Spacing.two,
+    gap: Spacing.two,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.two,
+  },
+  menuDivider: {
+    height: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
   },
 });

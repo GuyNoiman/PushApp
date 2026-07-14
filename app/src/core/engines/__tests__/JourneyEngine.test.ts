@@ -209,3 +209,39 @@ describe('JourneyEngine.getTodaySteps', () => {
     expect(today[0].journeyTitle).toBe('Run 5km');
   });
 });
+
+describe('JourneyEngine.getWeekSteps', () => {
+  it('includes done AND not-done Steps of active Journeys (so a checked-in Step stays visible)', () => {
+    const { engine } = setup();
+    const a = engine.createJourney({
+      title: 'Run 5km',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ title: 'Walk' }, { title: 'Jog' }],
+    });
+
+    engine.checkInStep(a.id, a.steps[0].id); // Walk done, Jog still pending
+
+    const week = engine.getWeekSteps();
+    expect(week).toHaveLength(2);
+    expect(week.map((w) => w.step.title)).toEqual(['Walk', 'Jog']);
+    expect(week.find((w) => w.step.title === 'Walk')?.step.done).toBe(true);
+    expect(week.find((w) => w.step.title === 'Jog')?.step.done).toBe(false);
+  });
+
+  it('drops Steps of a fully-completed Journey (its completion is a bigger moment)', () => {
+    const { engine } = setup();
+    const b = engine.createJourney({
+      title: 'Read daily',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ title: 'Read a page' }],
+    });
+
+    engine.checkInStep(b.id, b.steps[0].id); // completes the whole Journey
+
+    expect(engine.getWeekSteps()).toHaveLength(0);
+  });
+});

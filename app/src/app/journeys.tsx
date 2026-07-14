@@ -3,17 +3,21 @@
  * finalized mockup v14, screen-02). Complements Home: Home is step-centric ("what
  * now?"), Journeys is journey-centric. Pushed over the tabs like missions/shop.
  *
- * Journeys are grouped **Active / Future / Completed** with counts. Each card speaks
- * the Home step-card language exactly — a small 26px Journey icon tile (colour keyed
- * to the Journey's theme via the shared `journeyGlyph`, same as StepCard), name,
- * "Phase x/y · ends-in", and a thin teal progress bar. Two bottom buttons: New
- * (coral +) and a prominent gold **Achievements** reward surface.
+ * Journeys are split into **Current · Completed · Future** segmented tabs (founder
+ * decision 2026-07-14), matching the Shop's sub-tab rhythm. Current = active (no
+ * `completedAt`); Completed = has `completedAt`; Future has no scheduled-start data
+ * model yet, so it renders a calm "Coming soon" placeholder (no fabricated data)
+ * until a real scheduling model lands. Each card speaks the Home step-card language
+ * exactly — a small 26px Journey icon tile (colour keyed to the Journey's theme via
+ * the shared `journeyGlyph`, same as StepCard), name, "Phase x/y · ends-in", and a
+ * thin teal progress bar. Two bottom buttons: New (coral +) and a prominent gold
+ * **Achievements** reward surface.
  *
  * Presentational only — reads snapshot.journeys and derives display values via
  * journeyView; no rewards/Buddy/Journey math lives here (Engineering Bible §19).
  */
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -34,6 +38,16 @@ import { useApp } from '@/state/AppProvider';
 const GOLD_STRONG = Colors.light.goldStrong;
 const GOLD_TINT = Colors.light.goldTint;
 const CORAL = Colors.light.coral;
+
+// Current · Completed · Future — the segmented tabs (founder decision 2026-07-14),
+// mirroring the Shop's sub-tab pattern. Current is the default landing tab.
+type JourneyTab = 'active' | 'completed' | 'future';
+
+const JOURNEY_TABS: { id: JourneyTab; label: string }[] = [
+  { id: 'active', label: 'Current' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'future', label: 'Future' },
+];
 
 // Same tile-tint mapping as StepCard, so a Journey's icon always reads the same
 // colour on Home and here (Design System §2 — colour encodes meaning).
@@ -57,21 +71,23 @@ export default function JourneysScreen() {
   const { snapshot } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const [activeTab, setActiveTab] = useState<JourneyTab>('active');
 
   const buckets = useMemo(() => {
     const now = Date.now();
     const views = (snapshot?.journeys ?? []).map((j) => toJourneyView(j, now));
     return {
       active: views.filter((v) => v.bucket === 'active'),
-      future: views.filter((v) => v.bucket === 'future'),
       completed: views.filter((v) => v.bucket === 'completed'),
     };
   }, [snapshot?.journeys]);
 
   const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  const isEmpty =
-    buckets.active.length === 0 && buckets.future.length === 0 && buckets.completed.length === 0;
+  // "Empty" = the user has no real Journeys at all (Current + Completed both empty).
+  // The Future tab is a placeholder (no scheduled-start model yet), so it never
+  // counts toward emptiness.
+  const isEmpty = buckets.active.length === 0 && buckets.completed.length === 0;
 
   return (
     <ThemedView style={styles.container}>
@@ -85,20 +101,75 @@ export default function JourneysScreen() {
           </Pressable>
         </View>
 
+        {/* Segmented tabs (Current · Completed · Future) — same rhythm as the Shop's
+            sub-tabs, painted in the reward gold used across this screen. */}
+        <View style={styles.tabRow}>
+          {JOURNEY_TABS.map((tab) => {
+            const active = tab.id === activeTab;
+            return (
+              <Pressable
+                key={tab.id}
+                accessibilityRole="button"
+                accessibilityLabel={tab.label}
+                accessibilityState={{ selected: active }}
+                onPress={() => setActiveTab(tab.id)}
+                style={[
+                  styles.tab,
+                  active
+                    ? { backgroundColor: GOLD_TINT }
+                    : { backgroundColor: theme.backgroundSelected },
+                ]}>
+                <ThemedText
+                  type="smallBold"
+                  style={active ? { color: GOLD_STRONG } : undefined}
+                  themeColor={active ? undefined : 'textSecondary'}>
+                  {tab.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {isEmpty ? (
+          {activeTab === 'future' ? (
+            <FutureComingSoon />
+          ) : activeTab === 'completed' ? (
+            buckets.completed.length === 0 ? (
+              <ThemedView type="backgroundElement" style={styles.empty}>
+                <ThemedText type="default">No completed Journeys yet 🌱</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+                  Finish a Journey and it will move here as a keepsake of what you did.
+                </ThemedText>
+              </ThemedView>
+            ) : (
+              <View style={styles.list}>
+                {buckets.completed.map((view) => (
+                  <JourneyCard key={view.id} view={view} bucket="completed" />
+                ))}
+              </View>
+            )
+          ) : isEmpty ? (
+            // Preserve the original empty state: shown on Current when the user has
+            // no real Journeys at all yet.
             <ThemedView type="backgroundElement" style={styles.empty}>
               <ThemedText type="default">No Journeys yet 🌱</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
                 Start your first Journey and it will appear here as you make progress.
               </ThemedText>
             </ThemedView>
+          ) : buckets.active.length === 0 ? (
+            <ThemedView type="backgroundElement" style={styles.empty}>
+              <ThemedText type="default">No current Journeys 🌱</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+                Start a new Journey, or revisit your completed ones in the Completed tab.
+              </ThemedText>
+            </ThemedView>
           ) : (
-            <>
-              <Section title="Active" bucket="active" items={buckets.active} />
-              <Section title="Future" bucket="future" items={buckets.future} />
-              <Section title="Completed" bucket="completed" items={buckets.completed} />
-            </>
+            <View style={styles.list}>
+              {buckets.active.map((view) => (
+                <JourneyCard key={view.id} view={view} bucket="active" />
+              ))}
+            </View>
           )}
         </ScrollView>
 
@@ -136,30 +207,26 @@ export default function JourneysScreen() {
   );
 }
 
-function Section({
-  title,
-  bucket,
-  items,
-}: {
-  title: string;
-  bucket: JourneyBucket;
-  items: JourneyView[];
-}) {
-  if (items.length === 0) return null;
+/**
+ * Future tab — a calm "Coming soon" placeholder. There is no scheduled/future-start
+ * data model yet, so we surface the tab (founder wants Current / Completed / Future)
+ * without fabricating any Journeys.
+ * TODO(data model): when a scheduled-start model lands, render real future Journeys
+ * here (bucket 'future') instead of this placeholder.
+ */
+function FutureComingSoon() {
+  const theme = useTheme();
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <ThemedText type="subtitle" style={{ color: Colors.light.goldStrong }}>
-          {title}
-        </ThemedText>
-        <ThemedText type="smallBold" themeColor="textMuted">
-          ({items.length})
-        </ThemedText>
-      </View>
-      {items.map((view) => (
-        <JourneyCard key={view.id} view={view} bucket={bucket} />
-      ))}
-    </View>
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.comingSoon, { borderColor: theme.hairline }]}>
+      <ThemedText type="smallBold" themeColor="textSecondary">
+        Coming soon 🌱
+      </ThemedText>
+      <ThemedText type="small" themeColor="textMuted" style={styles.comingSoonText}>
+        Journeys you schedule to start later will wait for you here.
+      </ThemedText>
+    </ThemedView>
   );
 }
 
@@ -263,19 +330,26 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
   },
+  tabRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.two,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.four,
-    gap: Spacing.four,
   },
-  section: {
+  list: {
     gap: Spacing.three,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: Spacing.two,
   },
   card: {
     borderRadius: Radius.card,
@@ -380,6 +454,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
+    textAlign: 'center',
+  },
+  comingSoon: {
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    padding: Spacing.four,
+    gap: Spacing.two,
+    alignItems: 'center',
+  },
+  comingSoonText: {
     textAlign: 'center',
   },
 });

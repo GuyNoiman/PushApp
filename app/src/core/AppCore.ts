@@ -53,6 +53,8 @@ export interface Snapshot {
   buddy: BuddyView;
   journeys: Journey[];
   todaySteps: TodayStep[];
+  /** Home's "Week's steps" list — todaySteps plus already-done Steps (kept visible, sunk to the bottom). */
+  weekSteps: TodayStep[];
   activeJourneyCount: number;
   /** Rewards ready to collect now (done-unclaimed Missions + today's Login) — drives the Home badge. */
   claimableRewards: number;
@@ -496,6 +498,7 @@ export class AppCore {
       buddy,
       journeys: this.state.journeys,
       todaySteps: this.journeyEngine.getTodaySteps(),
+      weekSteps: this.journeyEngine.getWeekSteps(),
       activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,
       claimableRewards: this.missionEngine.getClaimableCount(),
     };

@@ -1,18 +1,17 @@
 /**
  * StepCard — a single Step card for Home's "Week's steps" panel (v14 mockup
  * screen-01): a coloured icon tile, the Step name, a "{Journey} · Phase x/y"
- * line, a thin progress bar, and a 3-dot menu affordance. Supports the mockup's
- * visual states where the data allows: an "Ends today" floating badge, a green
- * DONE watermark wash for completed Steps, and a coral "Missed" tint.
+ * line, a thin progress bar, and a ⋯ (three-dots) menu affordance. Supports the
+ * mockup's visual states where the data allows: an "Ends today" floating badge, a
+ * green sealed/done wash for completed Steps, and a coral "Missed" tint.
  *
- * Reporting (Home_Screen.md "Finalized visual design"): swipe-right or long-press
- * reports the Step, alongside a tap "Check in" button (belt-and-braces — the
- * spec's swipe gesture plus a still-tappable control so nothing is swipe-only).
- * Swipe right = done (calls `onCheckIn`, same as the tap button); swipe left =
- * miss (calls `onMiss` — a low-friction "what happened?" per Home_Screen.md
- * Edge Cases, not an assumption of failure). Built on
- * `react-native-gesture-handler` + `react-native-reanimated` (already app deps,
- * bundled in Expo Go — no dev build needed).
+ * Reporting (Home_Screen.md "Finalized visual design", founder decision 2026-07-14):
+ * swipe-right = done (calls `onCheckIn`); swipe-left = reschedule/defer (calls
+ * `onReschedule`, which opens the Reschedule modal — the card springs back to rest
+ * rather than flying off, since the modal is the action). A tap ⋯ (three-dots)
+ * button opens a small menu with "Mark done" and "Reschedule" so nothing is
+ * swipe-only. Built on `react-native-gesture-handler` + `react-native-reanimated`
+ * (already app deps, bundled in Expo Go — no dev build needed).
  *
  * Presentational only: it reports the check-in/miss intent upward; all reward/
  * Buddy logic runs in the engines (Engineering Bible §19). The `item`/`onCheckIn`
@@ -20,12 +19,16 @@
  * this upgrade never breaks a caller that hasn't opted in yet.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -63,7 +66,7 @@ function tileColors(theme: ReturnType<typeof useTheme>, color: JourneyGlyphColor
 export function StepCard({
   item,
   onCheckIn,
-  onMiss,
+  onReschedule,
   phase,
   phases,
   progress,
@@ -73,8 +76,8 @@ export function StepCard({
 }: {
   item: TodayStep;
   onCheckIn: (journeyId: string, stepId: string) => void;
-  /** Swipe-left result — a low-friction "missed" report (Home_Screen.md Edge Cases: never assume failure). Omit to disable the left-swipe commit (card springs back instead). */
-  onMiss?: (journeyId: string, stepId: string) => void;
+  /** Swipe-left result — opens the "Reschedule / defer this Step" modal (founder decision 2026-07-14). Omit to disable the left-swipe (card springs back instead). */
+  onReschedule?: (journeyId: string, stepId: string) => void;
   /** Current Phase (1-based), if known — shown as "Journey · Phase x/y". */
   phase?: number;
   /** Total Phases in the Step's Journey, if known. */
@@ -83,9 +86,9 @@ export function StepCard({
   progress?: number;
   /** Whether this Step's window ends today — shows the floating "Ends today" badge. */
   endsToday?: boolean;
-  /** Visual state: pending (default) / done (green wash + DONE watermark) / missed (coral wash). */
+  /** Visual state: pending (default) / done (green sealed wash) / missed (coral wash). */
   status?: StepCardStatus;
-  /** Opens the 3-dot quick-action menu (more info / edit / snooze / report). */
+  /** Opens the ⋯ three-dots quick-action menu (Mark done / Reschedule). */
   onOpenMenu?: () => void;
 }) {
   const theme = useTheme();
@@ -111,7 +114,7 @@ export function StepCard({
   const translateX = useSharedValue(0);
 
   const commitCheckIn = () => onCheckIn(item.journeyId, step.id);
-  const commitMiss = () => onMiss?.(item.journeyId, step.id);
+  const commitReschedule = () => onReschedule?.(item.journeyId, step.id);
 
   const pan = Gesture.Pan()
     .enabled(reportable)
@@ -126,38 +129,59 @@ export function StepCard({
         translateX.value = withTiming(SWIPE_FLY_DISTANCE, { duration: 180 }, () => {
           runOnJS(commitCheckIn)();
         });
-      } else if (e.translationX < -SWIPE_COMMIT_DISTANCE && onMiss) {
-        // Swipe left → miss (only when a miss handler is wired up).
-        translateX.value = withTiming(-SWIPE_FLY_DISTANCE, { duration: 180 }, () => {
-          runOnJS(commitMiss)();
-        });
+      } else if (e.translationX < -SWIPE_COMMIT_DISTANCE && onReschedule) {
+        // Swipe left → reschedule: the modal IS the action, so snap the card back
+        // to rest (never fly off / leave a dead gap — item 3b) and open the modal.
+        translateX.value = withSpring(0, { damping: 16, stiffness: 180 });
+        runOnJS(commitReschedule)();
       } else {
         // Under the threshold — spring back to rest.
         translateX.value = withSpring(0, { damping: 16, stiffness: 180 });
       }
     });
 
+  // A brief, elegant on-card celebration the moment a Step is checked in: a green
+  // check "pops" over the card (Design_System §7 — tasteful, not childish). It fires
+  // ONLY on the pending→done transition (not when an already-done card mounts/scrolls
+  // into view), and snaps the card back to rest in case it flew off via swipe-right.
+  const burst = useSharedValue(0);
+  const wasDone = useRef(done);
+  useEffect(() => {
+    if (done && !wasDone.current) {
+      translateX.value = 0;
+      burst.value = 0;
+      burst.value = withSequence(
+        withTiming(1, { duration: 240, easing: Easing.out(Easing.back(2)) }),
+        withDelay(650, withTiming(0, { duration: 420 })),
+      );
+    }
+    wasDone.current = done;
+  }, [done, burst, translateX]);
+
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
-  // Green "done" wash fades in as the card is dragged right; coral "miss" wash as
-  // it's dragged left — a live preview of what letting go will commit to.
+  const burstStyle = useAnimatedStyle(() => ({
+    opacity: burst.value,
+    transform: [{ scale: 0.5 + burst.value * 0.6 }],
+  }));
+  // Green "done" hint fades in as the card is dragged right; a gold "reschedule"
+  // hint as it's dragged left — a live preview of what letting go will do.
   const doneHintStyle = useAnimatedStyle(() => ({
     opacity: Math.max(0, Math.min(1, translateX.value / SWIPE_COMMIT_DISTANCE)),
   }));
-  const missHintStyle = useAnimatedStyle(() => ({
+  const rescheduleHintStyle = useAnimatedStyle(() => ({
     opacity: Math.max(0, Math.min(1, -translateX.value / SWIPE_COMMIT_DISTANCE)),
   }));
 
   const card = (
     <Animated.View style={cardAnimatedStyle}>
-      <ThemedView style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-        {done && (
-          <Text style={styles.doneWatermark} pointerEvents="none">
-            DONE
-          </Text>
-        )}
-
+      <ThemedView
+        style={[
+          styles.card,
+          { backgroundColor: cardBg, borderColor: cardBorder },
+          done && styles.doneCard,
+        ]}>
         {reportable && (
           <>
             <Animated.View
@@ -167,8 +191,8 @@ export function StepCard({
             </Animated.View>
             <Animated.View
               pointerEvents="none"
-              style={[styles.swipeHint, styles.swipeHintLeft, { backgroundColor: theme.dangerTint }, missHintStyle]}>
-              <Ionicons name="close-circle" size={22} color={theme.danger} />
+              style={[styles.swipeHint, styles.swipeHintLeft, { backgroundColor: theme.goldTint }, rescheduleHintStyle]}>
+              <Ionicons name="calendar-outline" size={20} color={theme.goldStrong} />
             </Animated.View>
           </>
         )}
@@ -201,32 +225,24 @@ export function StepCard({
           )}
         </View>
 
-        {reportable ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Check in on ${step.title}`}
-            onPress={commitCheckIn}
-            style={({ pressed }) => [
-              styles.check,
-              { backgroundColor: theme.coral },
-              pressed && styles.pressed,
-            ]}>
-            {/* A distinct check-in glyph (Ionicons), separate from the coin icon
-                in ResourceBar, per the founder's "different icon for check-in"
-                correction — a checkmark reads as "report this done" at a glance. */}
-            <Ionicons name="checkmark" size={18} color={theme.text} />
-          </Pressable>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`More actions for ${step.title}`}
-            onPress={onOpenMenu}
-            hitSlop={8}
-            style={styles.dots}>
-            <Text style={[styles.dotsGlyph, { color: theme.textMuted }]}>⋮</Text>
-          </Pressable>
-        )}
+        {/* The trailing control is a ⋯ three-dots button (founder decision
+            2026-07-14): on a pending Step it opens a small menu (Mark done /
+            Reschedule); the old coral check button is gone (quick-done now lives
+            on swipe-right + the menu's "Mark done"). */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`More actions for ${step.title}`}
+          onPress={onOpenMenu}
+          hitSlop={8}
+          style={styles.dots}>
+          <Text style={[styles.dotsGlyph, { color: theme.textMuted }]}>⋮</Text>
+        </Pressable>
       </ThemedView>
+
+      {/* Check-in celebration burst — pops on the moment of completion, then fades. */}
+      <Animated.View pointerEvents="none" style={[styles.burst, burstStyle]}>
+        <Ionicons name="checkmark-circle" size={44} color={theme.success} />
+      </Animated.View>
     </Animated.View>
   );
 
@@ -273,17 +289,17 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     overflow: 'hidden',
   },
-  doneWatermark: {
-    position: 'absolute',
-    right: 34,
-    top: '50%',
-    marginTop: -16,
-    transform: [{ rotate: '-7deg' }],
-    fontFamily: FontFamily.headingBold,
-    fontSize: 28,
-    color: '#2E7D3C',
-    opacity: 0.15,
-    letterSpacing: 1,
+  doneCard: {
+    // Completed Steps read as "sealed / done and out of the way": a green wash
+    // (cardBg) + dimming, sunk to the bottom of the feed (Home_Screen.md). No DONE
+    // ribbon/watermark — the wash + dim is enough to read as done (founder 2026-07-14).
+    opacity: 0.72,
+  },
+  burst: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 4,
   },
   swipeHint: {
     position: 'absolute',
@@ -339,13 +355,6 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  check: {
-    borderRadius: Radius.button,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   dots: {
     width: 26,
     height: 32,
@@ -355,8 +364,5 @@ const styles = StyleSheet.create({
   dotsGlyph: {
     fontSize: 18,
     lineHeight: 18,
-  },
-  pressed: {
-    opacity: 0.6,
   },
 });

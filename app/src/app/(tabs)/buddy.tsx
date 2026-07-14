@@ -51,7 +51,12 @@ export default function BuddyScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+      {/* Exclude the bottom edge: the native tab bar already owns the home-indicator
+          inset, so insetting here too would leave a dead strip between the inventory
+          sheet and the tab bar (same "floating panel" bug the Home tab had). With the
+          bottom edge dropped, the column runs full-height and the inventory sits flush
+          just above the tab bar. */}
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {!ready || !buddy ? (
           <View style={styles.loading}>
             <ThemedText type="small" themeColor="textSecondary">
@@ -81,6 +86,17 @@ export default function BuddyScreen() {
                   showGrace={false}
                   onAddCoins={() => router.push('/shop')}
                 />
+                {/* Buddy identity, sitting directly under the level/XP meter: the
+                    name reads prominent (heading) with the evolution stage as a
+                    smaller sub-label beneath it. */}
+                <View style={styles.identity} pointerEvents="none">
+                  <ThemedText type="subtitle" themeColor="tealStrong" style={styles.buddyName}>
+                    {buddy.name}
+                  </ThemedText>
+                  <ThemedText type="smallBold" themeColor="textSecondary" style={styles.buddyStage}>
+                    {buddy.stageDisplayName}
+                  </ThemedText>
+                </View>
               </View>
               {reactionText && (
                 <ThemedView type="backgroundSelected" style={styles.reaction}>
@@ -150,6 +166,17 @@ const styles = StyleSheet.create({
     left: Spacing.four,
     right: Spacing.four,
     zIndex: 5,
+  },
+  identity: {
+    // Under the meter, aligned to the level orb on the left.
+    marginTop: Spacing.two,
+    marginLeft: Spacing.half,
+  },
+  buddyName: {
+    lineHeight: 24,
+  },
+  buddyStage: {
+    marginTop: -1,
   },
   reaction: {
     position: 'absolute',

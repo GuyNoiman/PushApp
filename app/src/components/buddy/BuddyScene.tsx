@@ -1,8 +1,9 @@
 /**
  * BuddyScene — presentational only. The Buddy's dedicated "stage": a calm forest
- * scene with the Buddy centered in it, two glossy side-buttons (Customize / Shop)
- * floating on the scene's right edge, and the Buddy's name + stage on a pill
- * beneath it. When a Shop cosmetic is equipped it shows here — an accessory worn
+ * scene with the Buddy centered in it and two glossy side-buttons (Customize /
+ * Shop) floating on the scene's right edge. The Buddy's name + stage read at the
+ * top of the screen, under the level/XP meter (see buddy.tsx), not on this scene.
+ * When a Shop cosmetic is equipped it shows here — an accessory worn
  * on the Buddy or a colour tint behind it. The shared `ResourceBar` (level/XP/
  * coins) lives ABOVE this scene in `buddy.tsx`, not inside it, so Buddy and Home
  * read as one visual language (Design System: reward surfaces get the game-juice).
@@ -13,10 +14,9 @@ import { StyleSheet, View } from 'react-native';
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { GlossyTile } from '@/components/GlossyTile';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import type { BuddyView } from '@/core/AppCore';
 import { type ShopItem } from '@/core/config/shopItems';
-import { useTheme } from '@/hooks/use-theme';
 
 // The Buddy scene's "forest" backdrop — a soft sky-teal top fading into a green
 // ground band. Layered flat colours (no gradient dependency) keep the warm,
@@ -36,8 +36,6 @@ export function BuddyScene({
   onOpenShop?: () => void;
   onCustomize?: () => void;
 }) {
-  const theme = useTheme();
-
   const tint = cosmetic?.kind === 'tint' ? cosmetic.value : undefined;
   const accessory = cosmetic?.kind === 'accessory' ? cosmetic.value : undefined;
 
@@ -67,11 +65,8 @@ export function BuddyScene({
             </ThemedText>
           )}
         </View>
-        <View style={[styles.namePill, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-            {buddy.name} · {buddy.stageDisplayName}
-          </ThemedText>
-        </View>
+        {/* Name + stage no longer sit under the Buddy — they now read directly
+            below the level/XP meter at the top of the screen (see buddy.tsx). */}
       </View>
     </View>
   );
@@ -129,12 +124,5 @@ const styles = StyleSheet.create({
     top: -8,
     fontSize: 64,
     lineHeight: 72,
-  },
-  namePill: {
-    alignItems: 'center',
-    gap: Spacing.half,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    borderRadius: Radius.pill,
   },
 });

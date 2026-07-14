@@ -12,8 +12,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
+
+// The bar is icon-only (no labels), so it only needs room for the glyph plus a
+// little breathing space — the stock height leaves a tall, empty band. Keep a
+// compact content height and add the device's home-indicator inset on top so the
+// icons never sit under the gesture bar (mockup screen-01: a slim icon-only bar).
+const TAB_BAR_CONTENT_HEIGHT = 52;
 
 // Per-tab active accent (Design System §2 — colour encodes meaning, not decoration).
 const activeColors = {
@@ -28,6 +35,7 @@ const activeColors = {
 const inactiveColor = Colors.light.textMuted;
 
 export default function AppTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -36,7 +44,11 @@ export default function AppTabs() {
         tabBarStyle: {
           backgroundColor: Colors.light.backgroundElement,
           borderTopColor: Colors.light.hairline,
+          height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 6,
         },
+        tabBarIconStyle: { marginTop: 2 },
       }}>
       <Tabs.Screen
         name="index"

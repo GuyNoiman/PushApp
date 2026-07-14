@@ -24,7 +24,7 @@
  * Presentational only — no business logic (Engineering Bible §19); equipping
  * calls straight into `core.equipItem` / `core.unequipItem`.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -40,6 +40,8 @@ interface Category {
   icon: string;
   /** Locked categories show a padlock on the tab itself and can't be selected. */
   locked?: boolean;
+  /** Level a locked category unlocks at — surfaced in the tap tooltip. */
+  unlockLevel?: number;
 }
 
 const CATEGORIES: Category[] = [
@@ -47,8 +49,11 @@ const CATEGORIES: Category[] = [
   { id: 'clothing', label: 'Clothing', icon: '👕' },
   { id: 'items', label: 'Items', icon: '⬡' },
   { id: 'location', label: 'Location', icon: '📍' },
-  { id: 'furniture', label: 'Furniture', icon: '🛋️', locked: true },
+  { id: 'furniture', label: 'Furniture', icon: '🛋️', locked: true, unlockLevel: 20 },
 ];
+
+/** How long the "Unlocks at level N" tooltip stays up after tapping a locked tab. */
+const LOCKED_TOOLTIP_MS = 2600;
 
 /** Placeholder tiles for categories with no real data model yet — clearly locked, never fake-owned. */
 const PLACEHOLDER_LOCKED_COUNT = 8;
@@ -80,6 +85,14 @@ export function BuddyInventory({
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState<CategoryId>('character');
   const [highlighted, setHighlighted] = useState<string | null>(equippedCosmetic);
+  // Which locked tab is currently showing its "Unlocks at level N" tooltip (v8
+  // spec / screen-10): a locked tab can't be entered, so tapping it explains why.
+  const [lockedHint, setLockedHint] = useState<CategoryId | null>(null);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (hintTimer.current) clearTimeout(hintTimer.current);
+  }, []);
 
   const tintItems = useMemo(() => cosmetics.filter((i) => i.kind === 'tint'), [cosmetics]);
   const accessoryItems = useMemo(() => cosmetics.filter((i) => i.kind === 'accessory'), [cosmetics]);
@@ -96,7 +109,14 @@ export function BuddyInventory({
       : 0;
 
   const selectTab = (cat: Category) => {
-    if (cat.locked) return;
+    if (cat.locked) {
+      // Reveal the tooltip pointing at this tab, then auto-dismiss it.
+      setLockedHint(cat.id);
+      if (hintTimer.current) clearTimeout(hintTimer.current);
+      hintTimer.current = setTimeout(() => setLockedHint(null), LOCKED_TOOLTIP_MS);
+      return;
+    }
+    setLockedHint(null);
     setActiveTab(cat.id);
   };
 
@@ -105,7 +125,22 @@ export function BuddyInventory({
       {/* Grabber handle — signals the whole sheet is one liftable object. */}
       <View style={[styles.grabber, { backgroundColor: theme.hairline }]} />
 
-      {/* Category tabs — icon-only, selected one highlighted as a white pill. */}
+      {/* Category tabs — icon-only, selected one highlighted as a white pill. The
+          wrapper anchors the locked-tab tooltip above the tab row. Furniture (the
+          only locked tab today) is rightmost, so the bubble hugs the right edge and
+          its caret points down at that tab; a differently-placed future locked tab
+          would want its anchor revisited. */}
+      <View style={styles.tabArea}>
+      {lockedHint && (
+        <View pointerEvents="none" style={styles.tooltipRow}>
+          <View style={[styles.tooltip, { backgroundColor: theme.text }]}>
+            <ThemedText type="small" style={styles.tooltipText}>
+              🔒 Unlocks at level {CATEGORIES.find((c) => c.id === lockedHint)?.unlockLevel ?? '—'}
+            </ThemedText>
+            <View style={[styles.tooltipCaret, { backgroundColor: theme.text }]} />
+          </View>
+        </View>
+      )}
       <View style={[styles.tabRow, { backgroundColor: theme.backgroundSelected }]}>
         {CATEGORIES.map((cat) => {
           const active = cat.id === activeTab;
@@ -130,6 +165,7 @@ export function BuddyInventory({
             </Pressable>
           );
         })}
+      </View>
       </View>
 
       {/* Active-category label so it's always clear what the grid below is showing. */}
@@ -321,11 +357,54 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginBottom: Spacing.half,
   },
+  tabArea: {
+    // Relative anchor so the tooltip can be positioned above a specific tab; a
+    // high zIndex/elevation keeps it above the grid below.
+    position: 'relative',
+    zIndex: 10,
+  },
   tabRow: {
     flexDirection: 'row',
     borderRadius: Radius.pill,
     padding: Spacing.half,
     gap: Spacing.half,
+  },
+  tooltipRow: {
+    // Sits directly above the tab row, hugging its right edge (over the rightmost
+    // locked tab). pointerEvents:none on the container keeps taps flowing through.
+    position: 'absolute',
+    right: 0,
+    bottom: '100%',
+    marginBottom: Spacing.two,
+    alignItems: 'flex-end',
+    zIndex: 20,
+  },
+  tooltip: {
+    maxWidth: 180,
+    borderRadius: Radius.chip,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: Spacing.one + 2,
+    alignItems: 'center',
+    shadowColor: 'rgba(40,20,50,0.4)',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  tooltipText: {
+    color: '#ffffff',
+    textAlign: 'center',
+  },
+  tooltipCaret: {
+    // Points down at the furniture (rightmost) tab: offset in from the right so it
+    // lands roughly over that tab's centre rather than the bubble's corner.
+    position: 'absolute',
+    bottom: -4,
+    right: 26,
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    transform: [{ rotate: '45deg' }],
   },
   tab: {
     flex: 1,

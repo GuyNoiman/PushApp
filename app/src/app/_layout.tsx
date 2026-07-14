@@ -67,7 +67,14 @@ export default function RootLayout() {
                   <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
                   <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
                   <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
-                  <Stack.Screen name="missions" options={{ presentation: 'modal' }} />
+                  {/* Missions is a centered floating modal (screen-16): a transparent
+                      presentation keeps Home visible (dimmed by the screen's own scrim)
+                      behind it, and a fade reads as a modal appearing over Home rather
+                      than a card sliding up over an opaque page. */}
+                  <Stack.Screen
+                    name="missions"
+                    options={{ presentation: 'transparentModal', animation: 'fade' }}
+                  />
                   <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
                 </Stack>
               </ThemeProvider>

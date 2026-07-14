@@ -128,4 +128,24 @@ export class JourneyEngine {
     }
     return today;
   }
+
+  /**
+   * Every Step of active (incomplete) Journeys — INCLUDING already-done ones —
+   * for Home's "Week's steps" list. This is the display SUPERSET of getTodaySteps:
+   * a checked-in Step stays in the list (the UI sinks it to the bottom, dimmed, with
+   * a done indicator) instead of vanishing (Home_Screen.md: "Completed Steps move to
+   * the bottom of the feed, shown disabled"). getTodaySteps() stays the "actionable"
+   * subset that drives counts. No filtering by date yet — the domain Step has no
+   * scheduled window (TODO: data model), so "week" mirrors getTodaySteps' scope.
+   */
+  getWeekSteps(): TodayStep[] {
+    const week: TodayStep[] = [];
+    for (const journey of this.getState().journeys) {
+      if (journey.completedAt) continue;
+      for (const step of journey.steps) {
+        week.push({ journeyId: journey.id, journeyTitle: journey.title, step });
+      }
+    }
+    return week;
+  }
 }

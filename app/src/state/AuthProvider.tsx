@@ -15,6 +15,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { getAuthGateway, type AuthUser } from '@/core/auth';
+import { checkBackendHealth } from '@/core/social/backendHealth';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'signedOut';
 
@@ -91,6 +92,15 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     void (async () => {
+      // Probe the backend BEFORE touching it. A configured-but-deleted project
+      // (Free-tier projects are eventually removed) would otherwise let Supabase's
+      // background token refresh fire an unguarded fetch and surface a red
+      // "Network request failed" banner, even though every local pillar is fine.
+      // Unreachable ⇒ the probe stops that timer and we skip session bootstrap
+      // entirely, leaving the app in its normal no-backend state.
+      const health = await checkBackendHealth();
+      if (health === 'unreachable') return;
+
       await guard(async () => {
         const u = await gateway.ensureSession();
         if (mounted) applyUser(u);

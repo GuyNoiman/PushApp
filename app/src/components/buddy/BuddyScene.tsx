@@ -11,10 +11,13 @@
  */
 import { StyleSheet, View } from 'react-native';
 
-import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
+// Aliased: `BuddyView` is also the name of the view-model type imported from AppCore
+// below, so the 3D renderer comes in as `Buddy3D` to keep both readable.
+import { BuddyView as Buddy3D } from '@/components/buddy3d/BuddyView';
 import { GlossyTile } from '@/components/GlossyTile';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { SPECIES_REGISTRY } from '@/core/buddies/registry.generated';
 import type { BuddyView } from '@/core/AppCore';
 import { type ShopItem } from '@/core/config/shopItems';
 
@@ -58,7 +61,13 @@ export function BuddyScene({
         <View style={styles.buddyStack}>
           {tint && <View style={[styles.tint, { backgroundColor: tint }]} />}
           {/* Glossy 3D-look Buddy (its own soft ground shadow is baked in). */}
-          <BuddyAvatar stage={buddy.stage} size={200} />
+          {/* The real 3D Buddy (Hopper), composited over the forest scene via the
+              renderer's transparent mode. Replaces the flat 2D avatar on this tab
+              only — Home still uses the lightweight <BuddyAvatar> for now. The GL
+              canvas needs an explicitly sized parent (its own root is flex:1). */}
+          <View style={styles.buddy3d} pointerEvents="none">
+            <Buddy3D species={SPECIES_REGISTRY.hopper} transparent />
+          </View>
           {accessory && (
             <ThemedText style={styles.accessory} accessibilityElementsHidden>
               {accessory}
@@ -111,6 +120,12 @@ const styles = StyleSheet.create({
   buddyStack: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Matches the old 2D avatar's footprint (200px) with a little extra room so the
+  // model's silhouette isn't clipped by the canvas edges.
+  buddy3d: {
+    width: 240,
+    height: 240,
   },
   tint: {
     position: 'absolute',

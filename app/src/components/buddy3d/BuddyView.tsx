@@ -47,10 +47,18 @@ async function loadDataTexture(mod: number, role: TexRole): Promise<THREE.Textur
   const png = UPNG.decode(bytes);
   const rgba = new Uint8Array(UPNG.toRGBA8(png)[0]); // frame 0, tightly-packed RGBA8
 
-  const tex = new THREE.DataTexture(rgba, png.width, png.height, THREE.RGBAFormat, THREE.UnsignedByteType);
-  // glTF UV convention is flipY=false; UPNG rows are top-to-bottom, matching the Image path that
-  // worked for v2. If any texture appears vertically mirrored on device, flip this to true.
-  tex.flipY = false;
+  // WebGL ignores texture.flipY for DataTexture (raw-pixel) uploads — UNPACK_FLIP_Y only
+  // applies to Image/Canvas sources. UPNG rows are top-to-bottom but glTF UVs put v=0 at the
+  // bottom, so the image renders upside-down (Hopper's face: mouth up, eyes down). Flip the
+  // rows here in JS to match the glTF UV convention.
+  const rowBytes = png.width * 4;
+  const flipped = new Uint8Array(rgba.length);
+  for (let y = 0; y < png.height; y++) {
+    flipped.set(rgba.subarray(y * rowBytes, y * rowBytes + rowBytes), (png.height - 1 - y) * rowBytes);
+  }
+
+  const tex = new THREE.DataTexture(flipped, png.width, png.height, THREE.RGBAFormat, THREE.UnsignedByteType);
+  tex.flipY = false; // rows already flipped above; keep the WebGL unpack flag off.
   tex.colorSpace = role === 'color' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
@@ -236,11 +244,20 @@ export function BuddyView({
   onFps,
   onStatus,
   background = '#15101f',
+  transparent = false,
 }: {
   species: SpeciesEntry;
   onFps?: (fps: number) => void;
   onStatus?: (status: string) => void;
   background?: string;
+  /**
+   * Render the creature over a transparent canvas instead of filling it with
+   * `background`. Used by the Buddy tab, where the creature has to composite onto
+   * the forest scene's own sky/ground bands — an opaque background there would
+   * paint a solid rectangle over them. The spike route keeps the default (opaque)
+   * so its dark backdrop is unchanged.
+   */
+  transparent?: boolean;
 }) {
   const [scene, setScene] = useState<THREE.Group | null>(null);
 
@@ -298,8 +315,13 @@ export function BuddyView({
 
   return (
     <View style={styles.root}>
-      <Canvas style={styles.canvas} gl={{ antialias: true }} camera={{ position: [0, 0, 3.6], fov: 45 }}>
-        <color attach="background" args={[background]} />
+      <Canvas
+        style={styles.canvas}
+        gl={{ antialias: true, alpha: transparent }}
+        camera={{ position: [0, 0, 3.6], fov: 45 }}>
+        {/* Attaching a scene background makes the canvas opaque; skip it entirely in
+            transparent mode so the forest scene behind shows through. */}
+        {!transparent && <color attach="background" args={[background]} />}
         <RendererTuning />
         <Lights />
         {scene && <Creature scene={scene} />}

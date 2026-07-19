@@ -1,14 +1,16 @@
 /**
  * ResourceBar — the floating top resource strip from the v14 mockup (screen-01 /
- * screen-10): a blue Level orb + XP progress bar sharing ONE white-outlined pill
- * reading "{into}/{next} EXP" (Home_Screen.md "Finalized visual design") so they
- * read as a single framed unit, a purple Grace-Token shield badge lettered "GT",
- * and a gold Coins pill showing a small stack of flat gold coins with a "+"
- * affordance. No background bar behind it — the pieces float directly on the page,
- * each with its own glossy depth (inner highlight + drop shadow) so it reads as
- * game UI.
+ * screen-10): a blue Level orb overlapping a SEPARATE XP progress-bar ellipse
+ * reading "{into}/{next} EXP" (Home_Screen.md "Finalized visual design") — the orb
+ * and the bar keep their own distinct shapes/sizes, each wearing its own thin white
+ * ring (founder reverted the "merged pill" on 2026-07-14; the only new bit is the
+ * white outline now also wraps the XP bar). Plus a purple Grace-Token shield badge
+ * lettered "GT", and a gold Coins pill showing a little pile of gold coins with one
+ * face-on coin leaning against the front, and a "+" affordance. No background bar
+ * behind it — the pieces float directly on the page, each with its own glossy depth
+ * (inner highlight + drop shadow) so it reads as game UI.
  *
- * The coin stack, GT shield, and Level orb are drawn with inline `react-native-svg`
+ * The coin pile, GT shield, and Level orb are drawn with inline `react-native-svg`
  * (bevel + rim) so each currency reads as a distinct, high-contrast game token
  * rather than a flat chip — founder-approved visual pass (2026-07-14).
  *
@@ -20,6 +22,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, {
   Circle,
   Defs,
+  Ellipse,
   LinearGradient,
   Path,
   Polygon,
@@ -39,11 +42,11 @@ const COIN_EDGE = '#DFA62C';
 const COIN_INK = '#7A4E00';
 const COIN_PLUS_BG = '#FBE7BE';
 
-// Coin-disc palette (used by the stack): a FLAT vertical gradient (bright top →
-// deeper bottom) that reads as a flat coin face, a crisp dark-gold rim stroke, and
-// an inner bevel ring — so the discs read unmistakably as stacked flat COINS, not
-// eggs. Dropped the tall radial-oval gradient that made them egg-shaped (founder
-// note 2026-07-14).
+// Coin-disc palette (used by the pile): a bright top-lit gold for the coin faces,
+// a deeper gold for the edge-on side bands (the "rims" of the stacked cylinders),
+// and a crisp dark-gold rim stroke so each coin separates cleanly against the gold
+// pill background. Founder note 2026-07-14: a little PILE of edge-on coins + one
+// face-on coin leaning against the front.
 const COIN_DISC_LIGHT = '#FFF1C4';
 const COIN_DISC_MID = '#F6C445';
 const COIN_DISC_DEEP = '#DE9A16';
@@ -61,35 +64,74 @@ const LV_ORB_MID = '#4A80E0';
 const LV_ORB_DEEP = '#185FA5';
 
 /**
- * A small stack of flat gold coins — three overlapping FLAT discs (crisp gold rim +
- * flat top-lit face), offset vertically so you read 2–3 coin edges, with an inner
- * bevel ring, embossed star, and a shine on the front coin. Reads unmistakably as
- * coins, not eggs (founder note 2026-07-14: dropped the radial-oval gradient).
+ * One edge-on coin in the pile — a short gold cylinder seen slightly from the side:
+ * a deeper-gold side band (the visible rim) capped by a bright top ellipse, both with
+ * a crisp dark-gold rim stroke. Drawn back-to-front by the caller so the coins above
+ * cover all but each lower coin's rim, reading as a stack.
+ */
+function EdgeCoin({ cx, cy, rx, ry, band }: {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+  band: number;
+}) {
+  return (
+    <>
+      {/* Side band (its horizontal top/bottom edges are hidden under the ellipses,
+          leaving only the vertical rim strokes showing). */}
+      <Path
+        d={`M ${cx - rx} ${cy} H ${cx + rx} V ${cy + band} H ${cx - rx} Z`}
+        fill={COIN_DISC_DEEP}
+        stroke={COIN_DISC_RIM}
+        strokeWidth={1}
+      />
+      {/* Bottom edge — rounds the cylinder base and gives the bottom rim. */}
+      <Ellipse cx={cx} cy={cy + band} rx={rx} ry={ry} fill={COIN_DISC_DEEP} stroke={COIN_DISC_RIM} strokeWidth={1} />
+      {/* Top face — bright top-lit gold. */}
+      <Ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#coinTop)" stroke={COIN_DISC_RIM} strokeWidth={1.1} />
+    </>
+  );
+}
+
+/**
+ * A little pile of gold coins: three EDGE-ON coins stacked so you read three rims,
+ * with one full FACE-ON coin (embossed star + shine) leaning against the front of
+ * the pile toward the viewer. Crisp dark-gold rims keep it high-contrast against the
+ * gold pill (founder note 2026-07-14).
  */
 function CoinStack() {
-  // 5-point star centred on the front coin (cx 13, cy 13.5), outer r 3.2 / inner r 1.4.
+  // 5-point star embossed on the face-on coin (centre cx 8, cy 13.5, outer 3 / inner 1.3).
   const star =
-    '13,10.30 13.82,12.37 16.04,12.51 14.33,13.93 14.88,16.09 ' +
-    '13,14.90 11.12,16.09 11.67,13.93 9.96,12.51 12.18,12.37';
+    '8,10.5 8.764,12.448 10.853,12.573 9.236,13.902 9.763,15.927 ' +
+    '8,14.8 6.237,15.927 6.764,13.902 5.147,12.573 7.236,12.448';
   return (
-    <Svg width={24} height={20} viewBox="0 0 26 22">
+    <Svg width={27} height={21} viewBox="0 0 28 22">
       <Defs>
-        {/* Flat coin face: bright top → deeper bottom (a flat top highlight, NOT an
-            off-centre radial oval — that read as an egg). */}
-        <LinearGradient id="coinFlat" x1="0" y1="0" x2="0" y2="1">
+        {/* Edge-on top faces: flat top-lit vertical gradient. */}
+        <LinearGradient id="coinTop" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={COIN_DISC_LIGHT} />
           <Stop offset="0.55" stopColor={COIN_DISC_MID} />
           <Stop offset="1" stopColor={COIN_DISC_DEEP} />
         </LinearGradient>
+        {/* Face-on coin: a rounder radial gradient so the front coin reads as a full disc. */}
+        <RadialGradient id="coinFace" cx="38%" cy="30%" r="72%">
+          <Stop offset="0" stopColor={COIN_DISC_LIGHT} />
+          <Stop offset="0.55" stopColor={COIN_DISC_MID} />
+          <Stop offset="1" stopColor={COIN_DISC_DEEP} />
+        </RadialGradient>
       </Defs>
-      {/* Two coins behind, offset up so their rims peek out — reads as a small stack. */}
-      <Circle cx={13} cy={7} r={6.2} fill="url(#coinFlat)" stroke={COIN_DISC_RIM} strokeWidth={1.3} />
-      <Circle cx={13} cy={10.2} r={6.6} fill="url(#coinFlat)" stroke={COIN_DISC_RIM} strokeWidth={1.3} />
-      {/* Front coin: flat disc, crisp gold rim, inner bevel ring, star + shine. */}
-      <Circle cx={13} cy={13.5} r={7} fill="url(#coinFlat)" stroke={COIN_DISC_RIM} strokeWidth={1.4} />
-      <Circle cx={13} cy={13.5} r={4.9} fill="none" stroke={COIN_DISC_DEEP} strokeWidth={0.8} opacity={0.6} />
+      {/* The pile — three edge-on coins, back (lowest) drawn first so each upper coin
+          covers all but the lower one's rim. */}
+      <EdgeCoin cx={17.5} cy={11.5} rx={5} ry={1.9} band={2.6} />
+      <EdgeCoin cx={17.5} cy={9.4} rx={5} ry={1.9} band={2.6} />
+      <EdgeCoin cx={17.5} cy={7.3} rx={5} ry={1.9} band={2.6} />
+      {/* Face-on coin leaning against the FRONT of the pile — full disc, crisp rim,
+          inner bevel ring, embossed star + shine. */}
+      <Circle cx={8} cy={13.5} r={6} fill="url(#coinFace)" stroke={COIN_DISC_RIM} strokeWidth={1.4} />
+      <Circle cx={8} cy={13.5} r={4.2} fill="none" stroke={COIN_DISC_DEEP} strokeWidth={0.8} opacity={0.6} />
       <Polygon points={star} fill={COIN_STAR} />
-      <Circle cx={10.6} cy={11.2} r={1.2} fill="rgba(255,255,255,0.55)" />
+      <Circle cx={5.8} cy={11.1} r={1.2} fill="rgba(255,255,255,0.55)" />
     </Svg>
   );
 }
@@ -119,15 +161,15 @@ function GTShield({ stroke }: { stroke: string }) {
 }
 
 /**
- * The blue Level orb — a bevelled 3D disc with the level number. The white outline
- * now belongs to the shared pill (LevelMeter), not the orb, so the circle and XP bar
- * read as one framed unit (founder note 2026-07-14); the orb is a plain disc here and
- * its left half aligns with the pill's left cap.
+ * The blue Level orb — a comfortably-sized bevelled 3D disc (~40px) with the level
+ * number, wearing its OWN thin white ring (the container border) and overlapping the
+ * left of the separate XP bar. Founder reverted the "merged pill" on 2026-07-14: the
+ * orb stays a distinct, full-size disc rather than a shrunken shared left cap.
  */
 function LevelOrb({ level }: { level: number }) {
   return (
     <View style={styles.lvCirc}>
-      <Svg width={28} height={28} viewBox="0 0 28 28" style={StyleSheet.absoluteFill}>
+      <Svg width={40} height={40} viewBox="0 0 40 40" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="lvOrb" cx="34%" cy="28%" r="72%">
             <Stop offset="0" stopColor={LV_ORB_LIGHT} />
@@ -135,7 +177,7 @@ function LevelOrb({ level }: { level: number }) {
             <Stop offset="1" stopColor={LV_ORB_DEEP} />
           </RadialGradient>
         </Defs>
-        <Circle cx={14} cy={14} r={14} fill="url(#lvOrb)" />
+        <Circle cx={20} cy={20} r={20} fill="url(#lvOrb)" />
       </Svg>
       <Text style={styles.lvCircText}>{level}</Text>
     </View>
@@ -171,18 +213,16 @@ export function ResourceBar({
 
   return (
     <View style={styles.row}>
-      {/* Level orb + XP track share ONE white-outlined pill (founder note 2026-07-14):
-          outer view carries the drop shadow (overflow-hidden clips iOS shadows), the
-          inner pill carries the single white frame + dark fill for both. */}
+      {/* Level orb overlapping a SEPARATE, white-outlined XP bar (founder reverted the
+          merged pill 2026-07-14): the orb keeps its own white ring, the XP bar wears a
+          matching white ring — two distinct shapes, not one fused pill. */}
       <View style={styles.lvMeter}>
-        <View style={styles.lvPill}>
-          <LevelOrb level={level} />
-          <View style={styles.lvTrack}>
-            <View style={[styles.lvFill, { width: `${fill * 100}%`, backgroundColor: theme.blue }]} />
-            <Text style={styles.lvCnt}>
-              {xpInto}/{xpForNext} EXP
-            </Text>
-          </View>
+        <LevelOrb level={level} />
+        <View style={styles.lvTrack}>
+          <View style={[styles.lvFill, { width: `${fill * 100}%`, backgroundColor: theme.blue }]} />
+          <Text style={styles.lvCnt}>
+            {xpInto}/{xpForNext} EXP
+          </Text>
         </View>
       </View>
 
@@ -230,53 +270,47 @@ const styles = StyleSheet.create({
 
   // ── Level meter ────────────────────────────────────────────────────────
   lvMeter: {
-    // Outer wrapper: shadow only. The inner pill uses overflow-hidden (to clip the
-    // XP fill to the rounded frame), which would swallow an iOS drop shadow — so the
-    // shadow lives out here on a matching rounded, opaque backing.
-    alignSelf: 'flex-start',
-    borderRadius: 16,
-    backgroundColor: '#2B3B54',
+    // Orb + separate XP bar sit in a row; the orb overlaps the bar's left end. Each
+    // piece carries its own depth (the orb its shadow, the bar its border).
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  lvCirc: {
+    // Comfortably-sized blue 3D disc (~40px) with its OWN thin white ring (the border
+    // draws inward over the disc's outer edge). Overlaps the XP bar's left end; kept
+    // full-size — NOT shrunk into a shared pill cap (founder note 2026-07-14).
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
     shadowColor: '#14336F',
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.5,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  lvPill: {
-    // The single framed unit: one white outline wrapping BOTH the level orb (left
-    // cap) and the XP bar (founder note 2026-07-14). Inner content height = 32 - 2*2.
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: '#2B3B54',
-    overflow: 'hidden',
-  },
-  lvCirc: {
-    // Plain blue disc sized to the pill's inner height (28); its left half aligns
-    // with the pill's left cap so the shared white frame reads as the orb's ring.
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
   lvCircText: {
     color: '#fff',
     fontFamily: FontFamily.headingBold,
-    fontSize: 15,
+    fontSize: 16,
   },
   lvTrack: {
-    // Fills the pill's inner height and tucks under the orb so the orb + bar fuse
-    // inside the one frame; widened so "{into}/{next} EXP" always fits (Home_Screen.md
-    // "Finalized visual design").
-    alignSelf: 'stretch',
+    // The XP bar — its OWN separate rounded ellipse tucked under the orb, now with a
+    // matching thin white ring (the new bit, founder note 2026-07-14) so both the orb
+    // and the bar read as outlined. Widened so "{into}/{next} EXP" always fits.
+    height: 24,
     minWidth: 104,
-    marginLeft: -13,
-    paddingLeft: 18,
-    paddingRight: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: '#2B3B54',
+    marginLeft: -16,
+    paddingLeft: 20,
+    paddingRight: 10,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -285,6 +319,8 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
+    borderRadius: 11,
+    opacity: 0.85,
   },
   lvCnt: {
     color: '#fff',

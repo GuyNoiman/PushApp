@@ -75,10 +75,11 @@ export const SPECIES_REGISTRY = {
     glb: require('@/assets/buddies/hopper/model/hopper.glb'),
     externalTextures: {
       mat_body: { map: require('@/assets/buddies/hopper/textures/body_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/body_normal.png') },
+      mat_belly: { map: require('@/assets/buddies/hopper/textures/belly_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/belly_normal.png') },
       mat_inner_ear: { map: require('@/assets/buddies/hopper/textures/inner_ear_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/inner_ear_normal.png') },
-      mat_face_frame: { map: require('@/assets/buddies/hopper/textures/frame_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/frame_normal.png') },
-      mat_face_screen: { map: require('@/assets/buddies/hopper/textures/face_neutral_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/face_normal.png'), emissiveMap: require('@/assets/buddies/hopper/textures/face_neutral_emissive.png') },
-      mat_teleport: { map: require('@/assets/buddies/hopper/textures/teleport_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/teleport_normal.png'), emissiveMap: require('@/assets/buddies/hopper/textures/teleport_emissive.png') },
+      mat_frame: { normalMap: require('@/assets/buddies/hopper/textures/frame_normal.png') },
+      mat_face: { map: require('@/assets/buddies/hopper/textures/face_neutral_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/face_normal.png'), emissiveMap: require('@/assets/buddies/hopper/textures/face_neutral_emissive.png') },
+      mat_portal: { map: require('@/assets/buddies/hopper/textures/portal_basecolor.png'), normalMap: require('@/assets/buddies/hopper/textures/portal_normal.png'), emissiveMap: require('@/assets/buddies/hopper/textures/portal_emissive.png') },
     },
   },
   horse: {

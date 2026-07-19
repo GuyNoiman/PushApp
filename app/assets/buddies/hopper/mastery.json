@@ -3,26 +3,32 @@
   "levels": {
     "1": {
       "visibleMeshes": [
-        "teleport_particle_0"
-      ],
-      "expression": "neutral"
+        "portal_ring_2",
+        "portal_core",
+        "portal_particle_0"
+      ]
     },
     "2": {
       "visibleMeshes": [
-        "teleport_particle_0",
-        "teleport_particle_1",
-        "teleport_particle_2"
-      ],
-      "expression": "determined"
+        "portal_ring_1",
+        "portal_ring_2",
+        "portal_core",
+        "portal_particle_0",
+        "portal_particle_1",
+        "portal_particle_2"
+      ]
     },
     "3": {
       "visibleMeshes": [
-        "teleport_particle_0",
-        "teleport_particle_1",
-        "teleport_particle_2",
-        "teleport_particle_3"
-      ],
-      "expression": "excited"
+        "portal_ring_0",
+        "portal_ring_1",
+        "portal_ring_2",
+        "portal_core",
+        "portal_particle_0",
+        "portal_particle_1",
+        "portal_particle_2",
+        "portal_particle_3"
+      ]
     }
   }
 }

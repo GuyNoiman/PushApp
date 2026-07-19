@@ -4,7 +4,7 @@
     "front": "+Z",
     "units": "meters"
   },
-  "origin": "centered X/Z, feet on Y=0",
+  "origin": "feet on Y=0",
   "heightMeters": 1.08,
   "anchors": {
     "hat": [
@@ -64,8 +64,8 @@
     ],
     "face_center": [
       0,
-      0.72,
-      0.22
+      0.74,
+      0.228
     ]
   }
 }

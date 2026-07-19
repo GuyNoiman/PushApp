@@ -4,27 +4,30 @@
       "map": "body_basecolor.png",
       "normalMap": "body_normal.png"
     },
+    "mat_belly": {
+      "map": "belly_basecolor.png",
+      "normalMap": "belly_normal.png"
+    },
     "mat_inner_ear": {
       "map": "inner_ear_basecolor.png",
       "normalMap": "inner_ear_normal.png"
     },
-    "mat_face_frame": {
-      "map": "frame_basecolor.png",
+    "mat_frame": {
       "normalMap": "frame_normal.png"
     },
-    "mat_face_screen": {
+    "mat_face": {
       "map": "face_neutral_basecolor.png",
       "normalMap": "face_normal.png",
       "emissiveMap": "face_neutral_emissive.png"
     },
-    "mat_teleport": {
-      "map": "teleport_basecolor.png",
-      "normalMap": "teleport_normal.png",
-      "emissiveMap": "teleport_emissive.png"
+    "mat_portal": {
+      "map": "portal_basecolor.png",
+      "normalMap": "portal_normal.png",
+      "emissiveMap": "portal_emissive.png"
     }
   },
   "expressionVariants": {
-    "mat_face_screen": {
+    "mat_face": {
       "neutral": {
         "baseColorTexture": "textures/face_neutral_basecolor.png",
         "emissiveTexture": "textures/face_neutral_emissive.png"
@@ -33,9 +36,13 @@
         "baseColorTexture": "textures/face_happy_basecolor.png",
         "emissiveTexture": "textures/face_happy_emissive.png"
       },
-      "sad": {
-        "baseColorTexture": "textures/face_sad_basecolor.png",
-        "emissiveTexture": "textures/face_sad_emissive.png"
+      "excited": {
+        "baseColorTexture": "textures/face_excited_basecolor.png",
+        "emissiveTexture": "textures/face_excited_emissive.png"
+      },
+      "sleepy": {
+        "baseColorTexture": "textures/face_sleepy_basecolor.png",
+        "emissiveTexture": "textures/face_sleepy_emissive.png"
       },
       "determined": {
         "baseColorTexture": "textures/face_determined_basecolor.png",
@@ -45,17 +52,13 @@
         "baseColorTexture": "textures/face_surprised_basecolor.png",
         "emissiveTexture": "textures/face_surprised_emissive.png"
       },
-      "sleepy": {
-        "baseColorTexture": "textures/face_sleepy_basecolor.png",
-        "emissiveTexture": "textures/face_sleepy_emissive.png"
+      "sad": {
+        "baseColorTexture": "textures/face_sad_basecolor.png",
+        "emissiveTexture": "textures/face_sad_emissive.png"
       },
-      "excited": {
-        "baseColorTexture": "textures/face_excited_basecolor.png",
-        "emissiveTexture": "textures/face_excited_emissive.png"
-      },
-      "confused": {
-        "baseColorTexture": "textures/face_confused_basecolor.png",
-        "emissiveTexture": "textures/face_confused_emissive.png"
+      "in_love": {
+        "baseColorTexture": "textures/face_in_love_basecolor.png",
+        "emissiveTexture": "textures/face_in_love_emissive.png"
       },
       "celebrate": {
         "baseColorTexture": "textures/face_celebrate_basecolor.png",

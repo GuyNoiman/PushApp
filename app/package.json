@@ -54,6 +54,7 @@
   },
   "scripts": {
     "start": "expo start",
+    "dev": "REACT_NATIVE_PACKAGER_HOSTNAME=$(scutil --get LocalHostName).local expo start --lan",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",

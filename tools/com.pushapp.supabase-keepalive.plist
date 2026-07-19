@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Weekly keep-alive for the Free-tier Supabase project (macOS launchd, $0).
+
+  Chosen over a GitHub Actions cron because this costs nothing at all, whereas a
+  scheduled workflow consumes CI minutes on a private repo. Trade-off: launchd only
+  fires while this Mac is awake. `RunAtLoad` plus StartCalendarInterval means a
+  missed run is picked up the next time you log in, which covers short absences —
+  but if the Mac is off for more than a week or two, prefer the Actions route.
+
+  INSTALL
+    cp tools/com.pushapp.supabase-keepalive.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.pushapp.supabase-keepalive.plist
+
+  VERIFY
+    launchctl list | grep pushapp
+    cat /tmp/pushapp-keepalive.log
+
+  REMOVE
+    launchctl unload ~/Library/LaunchAgents/com.pushapp.supabase-keepalive.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.pushapp.supabase-keepalive</string>
+
+  <!-- The script is run from ~/Library/Application Support, NOT from the repo:
+       macOS TCC blocks launchd from executing anything under ~/Documents
+       ("Operation not permitted"). Install with tools/install_keepalive.sh, which
+       copies the script there and keeps the two in sync. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/guynoiman/Library/Application Support/PushApp/supabase_keepalive.sh</string>
+    <string>--quiet</string>
+  </array>
+
+  <!-- TCC blocks reading ~/Documents too, so point at the mirrored config that
+       tools/install_keepalive.sh writes (publishable values only). -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PUSHAPP_ENV_FILE</key>
+    <string>/Users/guynoiman/Library/Application Support/PushApp/keepalive.env</string>
+  </dict>
+
+  <!-- Sunday 10:00. Well inside Supabase's inactivity window, so a single missed
+       run is not enough to let the project pause. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>0</integer>
+    <key>Hour</key><integer>10</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- Catch up after the Mac has been asleep/off through a scheduled slot. -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/pushapp-keepalive.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/pushapp-keepalive.log</string>
+</dict>
+</plist>

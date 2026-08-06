@@ -221,6 +221,13 @@ export class CommunicationScheduler {
     prefs: SchedulingPrefs,
     now: Date,
   ): Candidate[] {
+    // Miss-Recovery constraint gate: if the location signal says the user is AWAY and
+    // EVERY still-pending Step of this Journey is home-only, there's nothing to nudge
+    // for — produce no candidates for this rule. PERMISSIVE by construction: the real
+    // Null gateway (and every case with the dev mock off) returns 'unknown', which
+    // never gates, so existing behaviour + tests are unchanged.
+    if (this.constraintGatedOut(journey)) return [];
+
     const t = rule.trigger;
     if (t.kind === 'calendar') {
       // Dormant seam: an enabled gateway would resolve device-local events here.
@@ -255,6 +262,23 @@ export class CommunicationScheduler {
     }
     return days.map((weekday) =>
       this.candidate(rule, journey, clamped.hour, clamped.minute, weekday, now),
+    );
+  }
+
+  /**
+   * Whether a Journey's reminders should be suppressed by the location constraint
+   * (Miss-Recovery). True ONLY when the location gateway concretely reports 'away'
+   * AND every pending Step of the Journey requires being at home. Any 'unknown'
+   * signal (the default) — or any pending Step doable while away — keeps the reminder.
+   * The gateway read is transient/gating-only and is never persisted or emitted (G4).
+   */
+  private constraintGatedOut(journey: Journey): boolean {
+    const place = this.gateways.location.currentPlace?.() ?? 'unknown';
+    if (place !== 'away') return false;
+    const pending = journey.steps.filter((s) => !s.done);
+    if (pending.length === 0) return false;
+    return pending.every((s) =>
+      (s.constraints ?? []).some((c) => c.kind === 'location' && c.place === 'home'),
     );
   }
 

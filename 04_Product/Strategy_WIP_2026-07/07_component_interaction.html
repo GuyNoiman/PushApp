@@ -1,0 +1,259 @@
+<title>PushApp — Component Interaction Diagram</title>
+<style>
+  :root{
+    --ground:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC;
+    --line:#E1DCD1; --ink:#2E2E2C; --muted:#6E6A62; --faint:#9B968C;
+    --brand:#128B8B; --brand-bg:#E3F0EF; --spark:#FF6B5A; --gate:#C9891F;
+    --built:#1E9E67; --new:#5462D6; --edge:#B7B0A4;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 5px 14px rgba(40,38,34,.06);
+    --font-display:"Baloo 2",ui-rounded,"Segoe UI Rounded",system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#1A1917; --surface:#232220; --surface-2:#2A2825; --line:#3A372F;
+      --ink:#F1EDE5; --muted:#A9A399; --faint:#7E7A70;
+      --brand:#3FC4C0; --brand-bg:#153230; --spark:#FF7E6E; --gate:#E9B85A;
+      --built:#4FD394; --new:#8C97EE; --edge:#5A554C;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"]{--ground:#FAF9F6;--surface:#FFFFFF;--surface-2:#F4F2EC;--line:#E1DCD1;--ink:#2E2E2C;--muted:#6E6A62;--faint:#9B968C;--brand:#128B8B;--brand-bg:#E3F0EF;--spark:#FF6B5A;--gate:#C9891F;--built:#1E9E67;--new:#5462D6;--edge:#B7B0A4;--shadow:0 1px 2px rgba(40,38,34,.05),0 5px 14px rgba(40,38,34,.06);}
+  :root[data-theme="dark"]{--ground:#1A1917;--surface:#232220;--surface-2:#2A2825;--line:#3A372F;--ink:#F1EDE5;--muted:#A9A399;--faint:#7E7A70;--brand:#3FC4C0;--brand-bg:#153230;--spark:#FF7E6E;--gate:#E9B85A;--built:#4FD394;--new:#8C97EE;--edge:#5A554C;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.28);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1160px;margin:0 auto;padding:clamp(20px,4vw,48px) clamp(14px,3.5vw,36px) 80px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:600;margin:0 0 12px;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(27px,4.4vw,44px);line-height:1.05;letter-spacing:-.01em;margin:0 0 14px;text-wrap:balance;}
+  h1 .spark{color:var(--spark);}
+  .lede{font-size:clamp(15px,1.5vw,17px);color:var(--muted);max-width:70ch;margin:0;}
+  .lede b{color:var(--ink);font-weight:600;}
+  h2{font-family:var(--font-display);font-size:clamp(18px,2.3vw,23px);font-weight:650;margin:42px 0 3px;letter-spacing:-.01em;}
+  .h2sub{font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:70ch;}
+  .h2sub code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:5px;}
+
+  .scroll{overflow-x:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:18px;padding:8px;}
+  .canvas{position:relative;margin:0 auto;}
+  .canvas svg.edges{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:visible;}
+  .rowflex{display:flex;justify-content:space-around;align-items:center;gap:10px;position:relative;z-index:1;}
+
+  .node{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:9px 13px;box-shadow:var(--shadow);text-align:center;position:relative;z-index:1;}
+  .node .nm{font-weight:650;font-size:13px;letter-spacing:-.01em;white-space:nowrap;}
+  .node .cap{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap;}
+  .node.built{border-bottom:3px solid var(--built);}
+  .node.new{border-bottom:3px solid var(--new);}
+  .node.bus{background:var(--brand-bg);border:1.5px solid var(--brand);border-radius:13px;padding:12px;width:82%;}
+  .node.bus .nm{font-family:var(--font-display);color:var(--brand);font-size:15px;}
+  .node.bus .cap{color:var(--brand);}
+  .node.gate{background:transparent;border:1.5px dashed var(--gate);}
+  .node.gate .nm{font-family:var(--font-mono);font-size:11.5px;font-weight:700;}
+
+  .lane{font-family:var(--font-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:600;position:absolute;left:6px;z-index:2;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:14px;font-size:12.5px;color:var(--muted);align-items:center;}
+  .legend b{color:var(--ink);font-weight:600;}
+  .lgl{display:inline-block;width:26px;height:0;vertical-align:middle;margin-right:6px;}
+  .lgl.solid{border-top:2px solid var(--edge);}
+  .lgl.spark{border-top:2px solid var(--spark);}
+  .lgl.off{border-top:2px dashed var(--brand);}
+
+  footer{margin-top:32px;font-size:12px;color:var(--faint);font-family:var(--font-mono);text-align:center;letter-spacing:.03em;}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">PushApp · Component Interaction · WIP 2026-07-21</p>
+  <h1>Which part talks to which — <span class="spark">and how</span></h1>
+  <p class="lede">PushApp has exactly <b>two ways</b> components communicate. <b>Inside the app</b>, engines never call each other directly — they <b>emit and react to events on the EventBus</b>. <b>To the outside</b>, the app reaches every backend only through a <b>gateway</b>. These two diagrams show the real connections and what travels along each one.</p>
+
+  <h2>① Inside the app — engines talk through the EventBus</h2>
+  <p class="h2sub">No engine imports another. Each arrow is a real event: an engine <b>emits</b> it (arrow into the bus) and other engines <b>react</b> to it (arrow out to them). This is why a new engine can plug in without touching the others. <code>StepMissed ★</code> is the keystone — it's the one event nothing emits yet.</p>
+
+  <div class="scroll">
+    <div class="canvas" id="cvA" style="min-width:900px;height:430px">
+      <svg class="edges" id="svgA"></svg>
+      <span class="lane" style="top:6px">emit ▸</span>
+      <div class="rowflex" style="position:absolute;top:14px;left:0;right:0;padding:0 40px">
+        <div class="node built" id="A_journey"><div class="nm">Journey</div></div>
+        <div class="node built" id="A_mission"><div class="nm">Mission</div></div>
+        <div class="node built" id="A_shop"><div class="nm">Shop</div></div>
+        <div class="node built" id="A_sched"><div class="nm">CommScheduler</div></div>
+      </div>
+      <div class="rowflex" style="position:absolute;top:188px;left:0;right:0">
+        <div class="node bus" id="A_bus"><div class="nm">◈ EventBus</div><div class="cap">the single channel every engine shares</div></div>
+      </div>
+      <span class="lane" style="bottom:6px">react ▸</span>
+      <div class="rowflex" style="position:absolute;bottom:14px;left:0;right:0;padding:0 30px">
+        <div class="node built" id="A_reward"><div class="nm">Reward</div><div class="cap">XP · Coins</div></div>
+        <div class="node built" id="A_buddy"><div class="nm">Buddy</div></div>
+        <div class="node new" id="A_miss"><div class="nm">Miss-Recovery</div></div>
+        <div class="node new" id="A_interv"><div class="nm">Intervention</div></div>
+        <div class="node built" id="A_social"><div class="nm">Social</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><span class="lgl solid"></span><b>event</b> (emit → react)</span>
+    <span><span class="lgl spark"></span><b>StepMissed ★</b> — the keystone event</span>
+    <span style="color:var(--built)">▎ built engine</span>
+    <span style="color:var(--new)">▎ new engine</span>
+  </div>
+
+  <h2>② To the backend — the app talks only through gateways</h2>
+  <p class="h2sub">Every outside call crosses a vendor-isolated <b>gateway</b> (interface + a Null fallback + a feature flag). Flip a flag off and that gateway returns nothing — which is exactly why the app runs fully offline at $0. Note <b>Journey</b>: it talks to no backend at all — it persists to the on-device Repository.</p>
+
+  <div class="scroll">
+    <div class="canvas" id="cvB" style="min-width:940px;height:470px">
+      <svg class="edges" id="svgB"></svg>
+      <span class="lane" style="top:6px">client</span>
+      <div class="rowflex" style="position:absolute;top:14px;left:0;right:0;padding:0 20px">
+        <div class="node built" id="B_journey"><div class="nm">Journey</div></div>
+        <div class="node built" id="B_social"><div class="nm">Social</div></div>
+        <div class="node new" id="B_ai"><div class="nm">AI-Coach client</div></div>
+        <div class="node new" id="B_mkt"><div class="nm">Marketplace</div><div class="cap">/ Authoring</div></div>
+        <div class="node built" id="B_auth"><div class="nm">Auth</div></div>
+      </div>
+      <span class="lane" style="top:130px">gateways</span>
+      <div class="rowflex" style="position:absolute;top:138px;left:0;right:0;padding:0 140px">
+        <div class="node gate built" id="B_socg"><div class="nm">SocialGateway</div></div>
+        <div class="node gate new" id="B_aig"><div class="nm">AiCoachGateway</div></div>
+        <div class="node gate new" id="B_catg"><div class="nm">CatalogGateway</div></div>
+        <div class="node gate built" id="B_authg"><div class="nm">AuthGateway</div></div>
+      </div>
+      <span class="lane" style="top:262px">backend</span>
+      <div class="rowflex" style="position:absolute;top:270px;left:0;right:0;padding:0 90px">
+        <div class="node new" id="B_aisvc"><div class="nm">AI Coach svc</div><div class="cap">Edge fn</div></div>
+        <div class="node new" id="B_safety"><div class="nm">AI Safety</div><div class="cap">gate</div></div>
+        <div class="node new" id="B_catsvc"><div class="nm">Catalog svc</div></div>
+        <div class="node built" id="B_supa"><div class="nm">Supabase Auth</div></div>
+      </div>
+      <span class="lane" style="bottom:6px">data / external</span>
+      <div class="rowflex" style="position:absolute;bottom:14px;left:0;right:0;padding:0 24px">
+        <div class="node built" id="B_repo"><div class="nm">Local Repository</div><div class="cap">on-device</div></div>
+        <div class="node built" id="B_pg"><div class="nm">Postgres + RLS</div></div>
+        <div class="node new" id="B_cdn"><div class="nm">Object storage + CDN</div></div>
+        <div class="node new" id="B_claude"><div class="nm">Claude API</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><span class="lgl solid"></span><b>request</b> through a gateway</span>
+    <span><span class="lgl off"></span><b>offline</b> — no network</span>
+    <span style="color:var(--gate)">▚ gateway = vendor-isolation seam</span>
+  </div>
+
+  <footer>Working draft · not an approved architecture · the real event &amp; gateway topology from app/src/core &amp; Module_Architecture.md (E4)</footer>
+</div>
+
+<script>
+(function(){
+  var NS="http://www.w3.org/2000/svg";
+  // edges: from,to (element ids), label, kind: 'evt'|'key'|'off', o1/o2 = x-offset at each anchor to separate parallel edges
+  var edgesA=[
+    ["A_journey","A_bus","StepCheckedIn","evt",0,0],
+    ["A_mission","A_bus","MissionClaimed","evt",0,0],
+    ["A_shop","A_bus","ItemEquipped","evt",0,0],
+    ["A_sched","A_bus","StepMissed ★","key",0,70],
+    ["A_reward","A_bus","","evt",-20,-40],
+    ["A_bus","A_reward","check-ins","evt",42,20],
+    ["A_bus","A_buddy","RewardGranted","evt",-10,0],
+    ["A_bus","A_miss","StepMissed","key",30,0],
+    ["A_bus","A_interv","StepMissed","key",55,0],
+    ["A_bus","A_social","StepMissed","key",80,0]
+  ];
+  var edgesB=[
+    ["B_journey","B_repo","persists · offline","off",0,0],
+    ["B_social","B_socg","","evt",0,0],
+    ["B_socg","B_pg","query (RLS)","evt",0,0],
+    ["B_ai","B_aig","","evt",0,0],
+    ["B_aig","B_aisvc","","evt",0,0],
+    ["B_aisvc","B_safety","checks","evt",0,0],
+    ["B_aisvc","B_claude","prompt","evt",0,0],
+    ["B_mkt","B_catg","","evt",0,0],
+    ["B_catg","B_catsvc","","evt",0,0],
+    ["B_catsvc","B_pg","content","evt",14,40],
+    ["B_catsvc","B_cdn","media","evt",0,0],
+    ["B_auth","B_authg","","evt",0,0],
+    ["B_authg","B_supa","sign-in","evt",0,0]
+  ];
+
+  function color(kind){ if(kind==="key")return getVar("--spark"); if(kind==="off")return getVar("--brand"); return getVar("--edge"); }
+  function getVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#999"; }
+
+  function anchor(rect, crect, towardX, towardY, ox){
+    var cx=rect.left+rect.width/2-crect.left, cy=rect.top+rect.height/2-crect.top;
+    var top=rect.top-crect.top, bottom=rect.bottom-crect.top, left=rect.left-crect.left, right=rect.right-crect.left;
+    var x=Math.max(left+10, Math.min(right-10, towardX))+ox;
+    x=Math.max(left+6, Math.min(right-6, x));
+    var y=(towardY<cy)? top : bottom;
+    return {x:x, y:y, top:(towardY<cy)};
+  }
+
+  function draw(canvasId, svgId, edges){
+    var canvas=document.getElementById(canvasId), svg=document.getElementById(svgId);
+    if(!canvas||!svg) return;
+    var crect=canvas.getBoundingClientRect();
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    edges.forEach(function(e,i){
+      var A=document.getElementById(e[0]), B=document.getElementById(e[1]);
+      if(!A||!B) return;
+      var ra=A.getBoundingClientRect(), rb=B.getBoundingClientRect();
+      var bcx=rb.left+rb.width/2-crect.left, bcy=rb.top+rb.height/2-crect.top;
+      var acx=ra.left+ra.width/2-crect.left, acy=ra.top+ra.height/2-crect.top;
+      var pa=anchor(ra,crect,bcx,bcy,e[4]||0);
+      var pb=anchor(rb,crect,acx,acy,e[5]||0);
+      var col=color(e[3]);
+      var dy=pb.y-pa.y;
+      var c1y=pa.y+dy*0.42, c2y=pb.y-dy*0.42;
+      var d="M "+pa.x+" "+pa.y+" C "+pa.x+" "+c1y+" "+pb.x+" "+c2y+" "+pb.x+" "+pb.y;
+      var path=document.createElementNS(NS,"path");
+      path.setAttribute("d",d);
+      path.setAttribute("fill","none");
+      path.setAttribute("stroke",col);
+      path.setAttribute("stroke-width", e[3]==="key"?2.4:1.7);
+      if(e[3]==="off") path.setAttribute("stroke-dasharray","6 5");
+      svg.appendChild(path);
+      // arrowhead (points from the control tangent into the target)
+      addArrow(svg, pb.x, pb.y, pb.x, c2y, col);
+      // label
+      if(e[2]){
+        var mx=(pa.x+pb.x)/2, my=(pa.y+pb.y)/2;
+        var t=document.createElementNS(NS,"text");
+        t.setAttribute("x",mx); t.setAttribute("y",my);
+        t.setAttribute("text-anchor","middle");
+        t.setAttribute("dominant-baseline","middle");
+        t.setAttribute("font-family","ui-monospace,Menlo,monospace");
+        t.setAttribute("font-size","10.5");
+        t.setAttribute("font-weight", e[3]==="key"?"700":"500");
+        t.setAttribute("fill", e[3]==="evt"?getVar("--muted"):col);
+        t.setAttribute("stroke",getVar("--ground"));
+        t.setAttribute("stroke-width","4");
+        t.setAttribute("paint-order","stroke");
+        t.setAttribute("stroke-linejoin","round");
+        t.textContent=e[2];
+        svg.appendChild(t);
+      }
+    });
+  }
+
+  function addArrow(svg,x,y,fromx,fromy,col){
+    // direction from (fromx,fromy) -> (x,y)
+    var dx=x-fromx, dy=y-fromy, len=Math.hypot(dx,dy)||1;
+    var ux=dx/len, uy=dy/len, s=7;
+    var px=-uy, py=ux;
+    var p1x=x - ux*s + px*s*0.6, p1y=y - uy*s + py*s*0.6;
+    var p2x=x - ux*s - px*s*0.6, p2y=y - uy*s - py*s*0.6;
+    var tri=document.createElementNS(NS,"path");
+    tri.setAttribute("d","M "+x+" "+y+" L "+p1x+" "+p1y+" L "+p2x+" "+p2y+" Z");
+    tri.setAttribute("fill",col);
+    svg.appendChild(tri);
+  }
+
+  function drawAll(){ draw("cvA","svgA",edgesA); draw("cvB","svgB",edgesB); }
+  if(document.readyState==="complete"||document.readyState==="interactive") setTimeout(drawAll,60);
+  window.addEventListener("load",drawAll);
+  window.addEventListener("resize",function(){ clearTimeout(window.__rt); window.__rt=setTimeout(drawAll,150); });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(drawAll);
+})();
+</script>

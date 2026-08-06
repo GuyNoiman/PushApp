@@ -1,0 +1,284 @@
+<title>PushApp — Architecture Wiring & Critical Paths</title>
+<style>
+  :root{
+    --ground:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC;
+    --line:#E1DCD1; --line-soft:#EDEAE2;
+    --ink:#2E2E2C; --muted:#6E6A62; --faint:#9B968C;
+    --brand:#128B8B; --brand-bg:#E3F0EF; --spark:#FF6B5A; --spark-bg:#FDE7E2;
+    --built:#1E9E67; --new:#5462D6; --gate:#C9891F;
+    --bus:#128B8B; --bus-bg:#E3F0EF;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 6px 16px rgba(40,38,34,.05);
+    --font-display:"Baloo 2",ui-rounded,"Segoe UI Rounded",system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#1A1917; --surface:#232220; --surface-2:#2A2825;
+      --line:#3A372F; --line-soft:#312F29;
+      --ink:#F1EDE5; --muted:#A9A399; --faint:#7E7A70;
+      --brand:#3FC4C0; --brand-bg:#153230; --spark:#FF7E6E; --spark-bg:#3A211C;
+      --built:#4FD394; --new:#8C97EE; --gate:#E9B85A;
+      --bus:#3FC4C0; --bus-bg:#153230;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#FAF9F6;--surface:#FFFFFF;--surface-2:#F4F2EC;--line:#E1DCD1;--line-soft:#EDEAE2;
+    --ink:#2E2E2C;--muted:#6E6A62;--faint:#9B968C;--brand:#128B8B;--brand-bg:#E3F0EF;--spark:#FF6B5A;--spark-bg:#FDE7E2;
+    --built:#1E9E67;--new:#5462D6;--gate:#C9891F;--bus:#128B8B;--bus-bg:#E3F0EF;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 6px 16px rgba(40,38,34,.05);
+  }
+  :root[data-theme="dark"]{
+    --ground:#1A1917;--surface:#232220;--surface-2:#2A2825;--line:#3A372F;--line-soft:#312F29;
+    --ink:#F1EDE5;--muted:#A9A399;--faint:#7E7A70;--brand:#3FC4C0;--brand-bg:#153230;--spark:#FF7E6E;--spark-bg:#3A211C;
+    --built:#4FD394;--new:#8C97EE;--gate:#E9B85A;--bus:#3FC4C0;--bus-bg:#153230;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.28);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1160px;margin:0 auto;padding:clamp(20px,4vw,48px) clamp(14px,3.5vw,36px) 80px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:600;margin:0 0 12px;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.6vw,46px);line-height:1.05;letter-spacing:-.01em;margin:0 0 14px;text-wrap:balance;}
+  h1 .spark{color:var(--spark);}
+  .lede{font-size:clamp(15px,1.5vw,17px);color:var(--muted);max-width:68ch;margin:0;}
+  .lede b{color:var(--ink);font-weight:600;}
+
+  h2{font-family:var(--font-display);font-size:clamp(19px,2.4vw,24px);font-weight:650;margin:44px 0 4px;letter-spacing:-.01em;}
+  .h2sub{font-size:13.5px;color:var(--muted);margin:0 0 20px;max-width:66ch;}
+
+  /* ===== Part A: layered wiring ===== */
+  .diagram{background:var(--surface-2);border:1px solid var(--line);border-radius:20px;padding:clamp(14px,3vw,26px);}
+  .band{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow);}
+  .band-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:10px;display:flex;gap:8px;align-items:center;}
+  .band-label .side{margin-left:auto;color:var(--muted);text-transform:none;letter-spacing:0;font-family:var(--font-body);font-size:11px;}
+  .clusters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+  .cluster{border:1px dashed var(--line);border-radius:11px;padding:9px 10px;}
+  .cluster .cl-t{font-size:11px;font-weight:600;color:var(--brand);margin-bottom:7px;letter-spacing:.01em;}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;}
+  .chip{font-size:11.5px;font-weight:500;padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--surface);white-space:nowrap;}
+  .chip.b{border-left:3px solid var(--built);}
+  .chip.n{border-left:3px solid var(--new);}
+  .chip.key{background:var(--spark-bg);border:1px solid var(--spark);color:var(--ink);font-weight:600;}
+
+  /* event bus bar */
+  .bus{background:var(--bus-bg);border:1px solid var(--bus);border-radius:12px;padding:11px 15px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .bus-name{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--bus);white-space:nowrap;}
+  .bus .chips{flex:1;}
+  .bus .chip{background:var(--surface);border-color:var(--bus);font-family:var(--font-mono);font-size:10.5px;}
+
+  /* gateway boundary */
+  .gateway{border:1.5px dashed var(--gate);border-radius:12px;padding:11px 15px;background:transparent;}
+  .gateway .band-label{color:var(--gate);}
+  .gateway .chip{font-family:var(--font-mono);font-size:10.5px;border-color:var(--line);}
+
+  /* vertical connector */
+  .vconn{display:flex;justify-content:center;padding:2px 0;}
+  .vconn .l{width:2px;height:22px;background:var(--faint);position:relative;opacity:.6;}
+  .vconn .l::after{content:"";position:absolute;bottom:-1px;left:-3px;width:0;height:0;border:4px solid transparent;border-top-color:var(--faint);}
+  .vconn.updown .l::before{content:"";position:absolute;top:-1px;left:-3px;width:0;height:0;border:4px solid transparent;border-bottom-color:var(--faint);}
+
+  .legend{display:flex;flex-wrap:wrap;gap:7px 18px;margin-top:16px;font-size:12.5px;color:var(--muted);}
+  .legend b{color:var(--ink);font-weight:600;}
+  .sw{display:inline-block;width:20px;height:0;border-top:3px solid var(--c);vertical-align:middle;margin-right:6px;border-radius:2px;}
+
+  /* ===== Part B: critical paths ===== */
+  .path{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;}
+  .path-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .path-head h3{font-family:var(--font-display);font-size:16px;margin:0;font-weight:650;}
+  .path-tag{font-family:var(--font-mono);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
+  .path-tag.mkt{color:var(--new);background:var(--surface-2);border:1px solid var(--new);}
+  .path-tag.ai{color:var(--spark);background:var(--surface-2);border:1px solid var(--spark);}
+  .path-note{font-size:12.5px;color:var(--muted);}
+
+  .flowscroll{overflow-x:auto;padding-bottom:4px;}
+  .flow{display:flex;align-items:center;gap:0;min-width:min-content;}
+  .flow + .flow{margin-top:14px;}
+  .node{flex:none;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:550;line-height:1.25;max-width:150px;box-shadow:var(--shadow);position:relative;}
+  .node small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:2px;}
+  .node.key{background:var(--spark-bg);border:1.5px solid var(--spark);}
+  .node.key .kf{position:absolute;top:-9px;right:8px;background:var(--spark);color:#fff;font-family:var(--font-mono);font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;letter-spacing:.03em;}
+  .node.start{border-left:4px solid var(--built);}
+  .arr{flex:none;width:30px;height:2px;background:var(--faint);position:relative;opacity:.65;margin:0 2px;}
+  .arr::after{content:"";position:absolute;right:-1px;top:-3px;width:0;height:0;border:4px solid transparent;border-left-color:var(--faint);}
+  .gatebadge{flex:none;display:flex;flex-direction:column;align-items:center;margin:0 2px;}
+  .gatebadge .g{font-family:var(--font-mono);font-size:9.5px;font-weight:700;color:var(--gate);background:transparent;border:1px dashed var(--gate);border-radius:7px;padding:3px 7px;white-space:nowrap;}
+  .gatebadge .gv{width:2px;height:12px;background:var(--gate);opacity:.6;}
+  .branchlabel{font-family:var(--font-mono);font-size:10px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px 2px;}
+
+  /* ===== Part C: keystones ===== */
+  .keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:6px;}
+  .keycard{border:1px solid var(--spark);border-radius:16px;padding:16px 18px;background:var(--spark-bg);}
+  .keycard h3{font-family:var(--font-display);font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:9px;}
+  .keycard h3 .kf{font-family:var(--font-mono);font-size:9.5px;font-weight:700;color:#fff;background:var(--spark);padding:2px 7px;border-radius:20px;letter-spacing:.03em;}
+  .keycard p{font-size:13px;color:var(--ink);margin:6px 0 0;line-height:1.45;}
+  .keycard p b{color:var(--ink);}
+
+  footer{margin-top:34px;font-size:12px;color:var(--faint);font-family:var(--font-mono);text-align:center;letter-spacing:.03em;}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">PushApp · Architecture Wiring · WIP 2026-07-21</p>
+  <h1>How the system is wired — and <span class="spark">what unblocks what</span></h1>
+  <p class="lede">Two views the status-map didn't show. <b>Above:</b> the structural wiring — engines talk only through the <b>EventBus</b>, and the client reaches every backend only through <b>vendor-isolated gateways</b>. <b>Below:</b> the two dependency chains that decide build order, with their gates and keystones. Grounded in the architect's pass over the real code.</p>
+
+  <h2>① Structural wiring — the layers &amp; their boundaries</h2>
+  <p class="h2sub">Engines never import each other; they emit and react over the bus. Everything below the dashed line is reachable only through a gateway interface (with a Null fallback + feature flag) — so the app runs at $0, fully offline, with every backend switched off.</p>
+
+  <div class="diagram">
+    <!-- CLIENT ENGINES -->
+    <div class="band">
+      <div class="band-label">Client engines <span class="side">framework-free · offline-first</span></div>
+      <div class="clusters">
+        <div class="cluster">
+          <div class="cl-t">Transformation core</div>
+          <div class="chips"><span class="chip b">Journey</span><span class="chip b">Reminder</span><span class="chip b">CommScheduler</span><span class="chip n">Categories</span></div>
+        </div>
+        <div class="cluster">
+          <div class="cl-t">Companion · economy · loop</div>
+          <div class="chips"><span class="chip b">Buddy</span><span class="chip b">Shop</span><span class="chip b">Mission</span><span class="chip b">Reward</span><span class="chip n">Progression</span></div>
+        </div>
+        <div class="cluster">
+          <div class="cl-t">Adaptive intelligence</div>
+          <div class="chips"><span class="chip n">Profiling</span><span class="chip n">Intervention</span><span class="chip n">Interests</span><span class="chip n">Motivation</span></div>
+        </div>
+        <div class="cluster">
+          <div class="cl-t">Support Circle</div>
+          <div class="chips"><span class="chip b">Social</span><span class="chip n">Competitions</span><span class="chip n">Matchmaking</span></div>
+        </div>
+        <div class="cluster">
+          <div class="cl-t">Discovery &amp; authoring</div>
+          <div class="chips"><span class="chip n">Marketplace</span><span class="chip n">Authoring</span><span class="chip n">AI-Coach client</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vconn updown"><div class="l"></div></div>
+
+    <!-- EVENT BUS -->
+    <div class="bus">
+      <span class="bus-name">◈ EventBus</span>
+      <div class="chips">
+        <span class="chip">JourneyCreated</span><span class="chip">StepCheckedIn</span><span class="chip">RewardGranted</span><span class="chip">MissionClaimed</span><span class="chip key">StepMissed ★</span><span class="chip">ProfileUpdated</span><span class="chip">InterventionScheduled</span><span class="chip">JourneyPublished</span><span class="chip">LevelUp</span>
+      </div>
+    </div>
+
+    <div class="vconn"><div class="l"></div></div>
+
+    <!-- GATEWAY BOUNDARY -->
+    <div class="gateway">
+      <div class="band-label">Gateway boundary <span class="side">the client ↔ backend seam · Interface + Null* + feature flag</span></div>
+      <div class="chips">
+        <span class="chip b">AuthGateway</span><span class="chip b">SocialGateway</span><span class="chip b">EntitlementGateway</span><span class="chip n">ProfileGateway</span><span class="chip n">InterestsGateway</span><span class="chip n">Location/Calendar</span><span class="chip n">AiCoachGateway</span><span class="chip n">CatalogGateway</span><span class="chip n">MediaGateway</span><span class="chip n">PushGateway</span><span class="chip n">ModerationGateway</span><span class="chip n">BillingGateway</span><span class="chip n">AnalyticsGateway</span>
+      </div>
+    </div>
+
+    <div class="vconn"><div class="l"></div></div>
+
+    <!-- BACKEND -->
+    <div class="band">
+      <div class="band-label">Backend services <span class="side">Supabase · Edge Functions · Claude API</span></div>
+      <div class="chips">
+        <span class="chip b">Supabase Auth</span><span class="chip b">Social + RLS</span><span class="chip b">Entitlement</span><span class="chip n">Catalog &amp; Publishing</span><span class="chip n">Search</span><span class="chip n">AI Coach svc</span><span class="chip n">AI Safety</span><span class="chip n">Push &amp; Comms</span><span class="chip n">Economy authority</span><span class="chip n">Trust &amp; Safety</span><span class="chip n">Billing</span><span class="chip n">Analytics</span>
+      </div>
+    </div>
+
+    <div class="vconn"><div class="l"></div></div>
+
+    <!-- DATA -->
+    <div class="band">
+      <div class="band-label">Data</div>
+      <div class="chips">
+        <span class="chip b">Local Repository</span><span class="chip b">Postgres + RLS</span><span class="chip n">Object storage + CDN</span><span class="chip n">Sync / conflict</span><span class="chip n">Vector / analytics store</span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><span class="sw" style="--c:var(--built)"></span><b>built</b></span>
+      <span><span class="sw" style="--c:var(--new)"></span><b>new / to build</b></span>
+      <span><span class="chip key" style="padding:1px 7px;font-size:10px">★</span> keystone event</span>
+      <span style="color:var(--gate)">▚ gateway = vendor isolation seam</span>
+    </div>
+  </div>
+
+  <h2>② Dependency wiring — the two critical paths</h2>
+  <p class="h2sub">This is the part the status-map couldn't show: what must exist before what. Follow the arrows to read build order. Green-edged node = already built (the chain starts from something real). Dashed badges are hard gates that block the next step.</p>
+
+  <!-- MARKETPLACE PATH -->
+  <div class="path">
+    <div class="path-head">
+      <span class="path-tag mkt">Marketplace path</span>
+      <h3>Single-player → two-sided network</h3>
+      <span class="path-note">multi-quarter · the highest-risk chain</span>
+    </div>
+    <div class="flowscroll">
+      <div class="flow">
+        <div class="node">Media storage + CDN<small>bandwidth cost line</small></div>
+        <div class="arr"></div>
+        <div class="node">Multi-data-type Steps<small>video · audio · quiz</small></div>
+        <div class="arr"></div>
+        <div class="node">Authoring &amp; Templates</div>
+        <div class="arr"></div>
+        <div class="node">Catalog + versioning<small>pin installed version</small></div>
+        <div class="gatebadge"><div class="g">Trust &amp; Safety<br>gate</div><div class="gv"></div></div>
+        <div class="arr"></div>
+        <div class="node">Search</div>
+        <div class="arr"></div>
+        <div class="node">Marketplace browse</div>
+      </div>
+    </div>
+    <p class="path-note" style="margin-top:12px">Gates hanging off the chain: <b style="color:var(--gate)">Trust &amp; Safety</b> (moderation + near-duplicate/anti-spam) must exist before strangers publish · <b style="color:var(--gate)">Sync &amp; conflict</b> once installed Journeys are edited offline. Cold-start is solved <b>strategically</b> — seed first-party Journeys so the shelf is full before creators arrive.</p>
+  </div>
+
+  <!-- AI / LEARNING PATH -->
+  <div class="path">
+    <div class="path-head">
+      <span class="path-tag ai">AI / learning path</span>
+      <h3>Signal → understanding → action</h3>
+      <span class="path-note">two chains, joined by the Buddy</span>
+    </div>
+    <div class="flowscroll">
+      <p class="branchlabel">Learning chain</p>
+      <div class="flow">
+        <div class="node key"><span class="kf">KEYSTONE</span>Analytics<small>privacy-safe signal</small></div>
+        <div class="arr"></div>
+        <div class="node">Profiling<small>per-user reason profile</small></div>
+        <div class="arr"></div>
+        <div class="node">Motivation<small>relevant lines from the “why”</small></div>
+      </div>
+    </div>
+    <div class="flowscroll" style="margin-top:16px">
+      <p class="branchlabel">Intervention chain</p>
+      <div class="flow">
+        <div class="node key start"><span class="kf">KEYSTONE</span>StepMissed<small>emit from Scheduler</small></div>
+        <div class="arr"></div>
+        <div class="node">Miss-Recovery<small>closed list → “Other”</small></div>
+        <div class="arr"></div>
+        <div class="node">AI Coach</div>
+        <div class="gatebadge"><div class="g">AI Safety<br>gate</div><div class="gv"></div></div>
+        <div class="arr"></div>
+        <div class="node">Intervention<small>when &amp; how to nudge</small></div>
+        <div class="arr"></div>
+        <div class="node">Push delivery</div>
+        <div class="arr"></div>
+        <div class="node">Stall alerts<small>tell an Ally</small></div>
+      </div>
+    </div>
+    <p class="path-note" style="margin-top:12px"><b style="color:var(--gate)">AI Safety</b> (crisis detection + no-treatment-claims) is a hard gate on every AI call — nothing AI ships before it. The two chains meet at the Buddy: Profiling feeds Motivation, and the reason a Step was missed feeds Profiling.</p>
+  </div>
+
+  <h2>③ If you build one thing first</h2>
+  <p class="h2sub">Two nodes carry disproportionate leverage. Everything adaptive hangs off them.</p>
+  <div class="keys">
+    <div class="keycard">
+      <h3><span class="kf">★</span>StepMissed</h3>
+      <p>Nothing emits it today. The moment the Scheduler does, it unlocks — in order — <b>Miss-Recovery → Stall alerts → Intervention → Profiling → Motivation</b>. It's a cheap change with the widest blast radius in the whole plan.</p>
+    </div>
+    <div class="keycard">
+      <h3><span class="kf">★</span>Analytics</h3>
+      <p>You didn't list it, but it's the <b>hidden root</b> of every "learning" feature. Profiling, Motivation, adaptive comms and recommendations all drink from it. Design its privacy-safe signal schema early, or each loop invents its own collection — a privacy landmine.</p>
+    </div>
+  </div>
+
+  <footer>Working draft · not an approved architecture · hand-drawn from the architect's pass over app/src/core &amp; Module_Architecture.md (E4)</footer>
+</div>

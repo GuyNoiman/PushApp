@@ -351,3 +351,124 @@ Two parts, both landed in commit `746c685`:
   `746c685`, `app/src/core/profile/`, `app/src/core/interests/`, `app/src/core/events/events.ts`,
   `app/src/core/engines/ReminderEngine.ts`, `app/src/core/config/featureFlags.ts`,
   `Current_Context.md`.
+
+---
+
+## E5 — Hub-and-loop engine design (the AI-adaptive-coach core architecture)
+
+- **Date:** 2026-08-03
+- **Owner:** Engineering. Docs-only recording of the architecture that the product pivot (D23)
+  requires; no code lands with this entry (task S0.2).
+- **Stage:** POC — this is the design the **S1 simulation** stage (see
+  `04_Product/Build_Plan_and_Method.md`) is built to validate, before any UI depends on it.
+
+### Context
+`06_Decisions/Decision_Log.md` **D23** (2026-08-01) repositions PushApp's mechanism to an **AI
+adaptive coach** and states the moat is "**the closed feedback loop, not any single feature**" —
+adaptive personalization + human accountability, working together. D23 explicitly left the
+engineering shape of that loop undocumented, flagging it as a follow-up (task S0.2, this entry).
+The existing architecture (E1 engines-over-event-bus, E4's reserved seams and events —
+`ProfileUpdated`, `InterestsUpdated`, `InterventionScheduled`, `StepMissed` already declared in
+`app/src/core/events/events.ts`, plus the reserved `EventBus` param on `ReminderEngine`) was
+already shaped to fit this before the pivot was named — D23 confirms "no new codebase" and this
+entry makes that fit explicit and concrete.
+
+### Decision
+Adopt a **hub-and-loop** design for the adaptive-coach core, built entirely from the existing
+engine/event-bus/`Repository` architecture — no new architectural primitives, only new engines and
+events inside the existing pattern:
+
+1. **The closed feedback loop is the product.** One cycle:
+   `Step outcome` → `BehaviorModel` updates → `InsightUpdated` (event) → `AdaptivePlanner`
+   re-plans → `PlanAdapted` (event) + a nudge hint → `Scheduler`/Coach act on the user → the next
+   `Step outcome`, closing the loop. Every stage is a plain engine reacting to and emitting
+   `DomainEvent`s — consistent with the existing `JourneyCheckedIn → Reward → Buddy` chain (E1).
+2. **One shared, live user-model as the hub — `InsightModel`.** Rather than each engine keeping
+   its own partial view of the user, `BehaviorModel`, `AdaptivePlanner`, the `Scheduler`, and the
+   human-ally projection all **read from and update the same `InsightModel`** (the concrete shape
+   the already-reserved `ProfileGateway`/`UserProfile` seam from E4 takes on). This is the "hub";
+   the loop stages are "spokes" around it, not a chain of engines each holding private state.
+3. **Event-bus choreography, never point-to-point.** No engine calls another engine directly (same
+   rule as E1 §2 "Engines never know their consumers"). `AdaptivePlanner` never calls `Scheduler`;
+   it emits `PlanAdapted`, and `Scheduler` subscribes. This keeps every stage independently
+   testable and lets the **S1 simulation** run the loop headless (no UI, no engine wiring changes)
+   exactly as it will run in the app.
+4. **An explicit, tunable `adaptivePolicy`, config-before-code (Bible §3, E1 §3).** How
+   aggressively `AdaptivePlanner` re-plans, how nudge hints are weighted, and the orchestration
+   cadence all live as data in `app/src/core/config/` (mirroring `featureFlags.ts`,
+   `schedulerLimits.ts`), not hardcoded logic — so the loop's behavior is tunable and reviewable
+   without a code change, and the S1 simulation can sweep policy values.
+5. **A pluggable `DomainExpert` seam.** The core loop (`BehaviorModel`, `AdaptivePlanner`,
+   `InsightModel`) stays **domain-agnostic**, per D23 point 4 ("the domain is not the bet, the
+   engine is"). A `DomainExpert` interface is the seam where domain-specific knowledge (sports,
+   certification, nutrition, …) plugs in **later**, as D23's Future Vision domain-expert modules —
+   consistent with the E4 reserved-seam pattern (build the boundary now, the domain logic later,
+   after its own review).
+6. **The human ally consumes the same loop, via a minimal `OutreachInsight` projection.** Rather
+   than a separate data path for Allies, the Support Circle/ally-notification surface reads a
+   small, privacy-minimized projection of `InsightModel` (enums/buckets, no free text — consistent
+   with D23 point 5's local-first privacy split and the existing R1–R3 red-lines). One hub, two
+   consumers (automated Scheduler/Coach + human ally), not two parallel models to keep in sync.
+7. **Prove loop quality before any UI.** The **S1 simulation** stage (`Build_Plan_and_Method.md`)
+   runs the full loop headless against synthetic Step-outcome sequences to validate that
+   `AdaptivePlanner` converges/behaves sanely under the `adaptivePolicy` config, before Scheduler/
+   Coach UI or the human-ally surface are built on top of it.
+
+### Why
+- **The moat is the integration, not a feature** (D23) — a hub-and-loop shape is what makes that
+  literal: every stage shares one live model and one event contract, so the *combination* is the
+  hard-to-copy asset, not any single engine.
+- **Reuses, rather than replaces, E1/E4.** No new architectural primitive is introduced; `E1`'s
+  engine-over-event-bus pattern and `E4`'s reserved events/seams were already shaped for exactly
+  this, so adopting hub-and-loop costs no rewrite — it names and completes a shape already begun.
+- **Config-before-code for `adaptivePolicy`** keeps the loop's tuning reviewable and testable
+  (including by non-engineers) and lets the S1 simulation sweep behavior without code changes,
+  matching the existing `featureFlags`/`schedulerLimits` convention.
+- **Domain-agnostic core + pluggable `DomainExpert`** directly implements D23 point 4 — the
+  domain-expert modules are Future Vision (D23), so the core must not hard-wire any one domain in
+  order for that door to stay open.
+- **Simulate before UI** avoids building Scheduler/Coach/ally UI on top of an unvalidated
+  planner — cheaper to discover a bad loop in a headless sim than after screens depend on it.
+
+### Alternatives considered
+- **Point-to-point engine calls** (e.g. `AdaptivePlanner` calling `Scheduler` directly) — rejected:
+  breaks the "engines never know their consumers" rule (E1), makes headless simulation harder (the
+  sim would need to fake the same call graph as the app), and re-couples exactly what the event bus
+  exists to decouple.
+- **Per-engine private user state** instead of one shared `InsightModel` hub — rejected: would
+  require explicit sync logic between `BehaviorModel`'s view and `AdaptivePlanner`'s view (and the
+  ally projection's view) of the same user, reintroducing a consistency problem the hub avoids by
+  construction.
+- **Build a sharp-domain expert now** (e.g. hard-code sports or habit logic into the planner) —
+  rejected per D23: the domain is explicitly not the bet yet; hard-wiring one domain would also
+  pre-empt the still-open general-vs-sharp positioning question (D23's Open Question).
+- **Skip the S1 simulation and build UI directly** — rejected: the loop is the entire value
+  proposition (D23), so validating it headless, before UI investment, is cheaper risk management
+  than discovering a bad planner after Scheduler/Coach screens are built on it.
+
+### Tradeoffs accepted
+- The hub (`InsightModel`) becomes a central, must-not-break contract that most of the loop depends
+  on — more design care is needed here than for a typical single-purpose engine. Accepted because
+  the alternative (N private models) is a worse, hidden version of the same coupling.
+- `adaptivePolicy` as config adds a data-shape to design and document (mirroring existing
+  `schedulerLimits`/`featureFlags` conventions), rather than letting the first implementation's
+  hardcoded constants stand in for it.
+
+### Future considerations
+- The concrete `InsightModel`/`BehaviorModel`/`AdaptivePlanner`/`adaptivePolicy` schemas, and the
+  exact `DomainEvent` additions beyond the four already reserved in E4, are **not decided by this
+  entry** — they are implementation detail for the S1/S2 build stages, gated by their own
+  security-privacy review before any real data is collected (per CLAUDE.md §5, same rule E4 set
+  for its reserved seams).
+- `DomainExpert` plugging-in is Future Vision (D23) — not scheduled; this entry only reserves the
+  seam's existence and its domain-agnostic-core constraint.
+- Reconcile D23 point 5's local-first privacy split with the existing R1 (auth)/R2 (secure-store)/
+  R3 (location/calendar) red-lines into one place if/when a global red-line registry is created —
+  flagged in D23 itself, restated here because `OutreachInsight` is exactly the kind of surface
+  that registry would need to cover.
+
+### Reflected in
+- This entry; `06_Decisions/Decision_Log.md` **D23**; `04_Product/Build_Plan_and_Method.md` (S1
+  simulation stage); `11_Engineering_Bible/Module_Architecture.md`'s existing reserved seams
+  (Profile/Intervention/Interests) and `app/src/core/events/events.ts`'s reserved events, which
+  this design builds on rather than replaces.

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>PushApp — AI Coach MVP Screens</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#FAFAF8; --card:#FFFFFF; --border:#ECECE8; --ink:#2E2E2C; --ink-2:#6E6E69; --muted:#9A9A93;
+    --coral-tint:#FAECE7; --coral:#FF8A5B; --coral-strong:#D85A30;
+    --teal-tint:#DCEFF1; --teal:#2E9BA6; --teal-strong:#1F7C86;
+    --blue-tint:#E6F1FB; --blue:#378ADD; --blue-strong:#185FA5;
+    --purple-tint:#EEEDFE; --purple:#7F77DD; --purple-strong:#534AB7;
+    --gold-tint:#FCEFC9; --gold:#F0B429; --gold-strong:#C98A0E;
+    --danger:#E86A5A; --danger-tint:#FCEAE7;
+    --page-bg:#F1F1EC; --shadow: 0 24px 48px -18px rgba(46,46,44,0.28), 0 4px 14px -4px rgba(46,46,44,0.10);
+  }
+  [data-theme="dark"]{
+    --bg:#1C1C1A; --card:#242422; --border:#34342F; --ink:#F5F3EF; --ink-2:#B8B7B1; --muted:#8A8A84;
+    --coral-tint:#3A281F; --danger-tint:#3A2320;
+    --teal-tint:#17302F; --blue-tint:#152736; --purple-tint:#241F38; --gold-tint:#332B14;
+    --page-bg:#121211; --shadow: 0 24px 54px -18px rgba(0,0,0,0.6), 0 4px 14px -4px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:40px 32px 80px; background:var(--page-bg);
+    font-family:-apple-system, "Inter", ui-sans-serif, system-ui, sans-serif;
+    color:var(--ink); transition:background .2s ease;
+  }
+  h1,h2,h3,.display{
+    font-family:"Baloo 2", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+    font-weight:600; margin:0;
+  }
+  .page-head{ max-width:1400px; margin:0 auto 36px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  .page-head h1{ font-size:28px; color:var(--ink); }
+  .page-head p{ margin:8px 0 0; color:var(--ink-2); font-size:14px; max-width:640px; line-height:1.55;}
+  .theme-toggle{
+    border:1px solid var(--border); background:var(--card); color:var(--ink);
+    font-family:inherit; font-size:13px; font-weight:500; padding:10px 16px; border-radius:14px;
+    cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:0 1px 2px rgba(0,0,0,0.04);
+  }
+  .theme-toggle svg{width:16px;height:16px;}
+
+  .group{ max-width:1400px; margin:0 auto 56px; }
+  .group-header{ display:flex; align-items:baseline; gap:12px; margin-bottom:18px; flex-wrap:wrap;}
+  .group-header h2{ font-size:20px; color:var(--ink); }
+  .group-header .sub{ font-size:13px; color:var(--ink-2); font-family:"Inter",sans-serif; }
+  .stage-tag{
+    font-family:"Inter",sans-serif; font-size:11px; font-weight:600; letter-spacing:.02em;
+    color:var(--teal-strong); background:var(--teal-tint); padding:4px 10px; border-radius:8px;
+  }
+  .row{ display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start; }
+  .frame-wrap{ width:328px; }
+  .frame-label{
+    font-family:"Inter",sans-serif; font-size:12.5px; font-weight:600; color:var(--ink-2);
+    margin:0 0 10px 4px; display:flex; align-items:center; gap:6px;
+  }
+  .frame-label .dot{ width:6px; height:6px; border-radius:50%; background:var(--coral); flex:none;}
+
+  /* ---------- phone frame ---------- */
+  .phone{
+    width:328px; height:706px; border-radius:40px; background:var(--bg);
+    box-shadow:var(--shadow); overflow:hidden; position:relative; border:1px solid var(--border);
+    display:flex; flex-direction:column;
+  }
+  .statusbar{
+    height:30px; flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:0 22px; font-family:"Inter",sans-serif; font-size:12px; font-weight:600; color:var(--ink);
+  }
+  .statusbar .icons{ display:flex; gap:4px; align-items:center; }
+  .notch{
+    position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:22px;
+    background:var(--ink); border-radius:0 0 16px 16px; z-index:5; opacity:.9;
+  }
+  .screen{ flex:1; overflow-y:auto; position:relative; }
+  .screen::-webkit-scrollbar{ width:0; }
+
+  /* ---------- shared bits ---------- */
+  .topbar{ padding:14px 18px 6px; display:flex; align-items:center; justify-content:space-between; }
+  .topbar .title{ font-family:"Baloo 2", ui-rounded, sans-serif; font-size:15px; font-weight:600; }
+  .topbar .eyebrow{ font-family:"Inter",sans-serif; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; }
+  .icon-btn{
+    width:34px; height:34px; border-radius:10px; background:var(--card); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .icon-btn svg{ width:18px; height:18px; }
+
+  /* progression avatar */
+  .avatar{ position:relative; width:44px; height:44px; flex:none; }
+  .avatar .ring{
+    width:44px; height:44px; border-radius:50%;
+    background: conic-gradient(var(--blue) var(--pct,65%), var(--border) 0);
+    padding:3px; display:flex; align-items:center; justify-content:center;
+  }
+  .avatar .inner{ width:100%; height:100%; border-radius:50%; background:var(--bg); padding:2.5px; }
+  .avatar .orb{
+    width:100%; height:100%; border-radius:50%;
+    background:linear-gradient(135deg, var(--teal), var(--blue));
+    display:flex; align-items:center; justify-content:center;
+  }
+  .avatar .orb svg{ width:18px; height:18px; }
+  .avatar .lvl{
+    position:absolute; right:-2px; bottom:-2px; min-width:16px; height:16px; padding:0 3px;
+    border-radius:8px; background:var(--blue-strong); color:#fff; font-family:"Inter",sans-serif;
+    font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg);
+  }
+  .avatar.sm{ width:30px; height:30px; }
+  .avatar.sm .ring{ width:30px; height:30px; padding:2px; }
+  .avatar.sm .orb svg{ width:13px; height:13px; }
+  .avatar.sm .lvl{ min-width:13px; height:13px; font-size:7.5px; right:-1px; bottom:-1px; }
+
+  .streak-pill{
+    display:flex; align-items:center; gap:5px; background:var(--gold-tint); color:var(--gold-strong);
+    font-family:"Inter",sans-serif; font-weight:700; font-size:12px; padding:6px 10px 6px 8px; border-radius:12px;
+  }
+  .streak-pill svg{ width:14px; height:14px; }
+
+  /* chat */
+  .chat{ padding:6px 16px 14px; display:flex; flex-direction:column; gap:12px; }
+  .bubble-row{ display:flex; gap:8px; align-items:flex-end; }
+  .bubble-row.user{ justify-content:flex-end; }
+  .bubble{
+    max-width:78%; padding:11px 14px; border-radius:16px; font-family:"Inter",sans-serif;
+    font-size:13.5px; line-height:1.5; box-shadow:0 1px 2px rgba(0,0,0,0.03);
+  }
+  .bubble.coach{ background:var(--card); border:1px solid var(--border); border-bottom-left-radius:5px; color:var(--ink); }
+  .bubble.user{ background:var(--coral-tint); color:var(--ink); border-bottom-right-radius:5px; }
+  .coach-mark{
+    width:26px; height:26px; border-radius:50%; flex:none;
+    background:linear-gradient(135deg, var(--teal), var(--blue));
+    display:flex; align-items:center; justify-content:center;
+  }
+  .coach-mark svg{ width:13px; height:13px; }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; font-family:"Inter",sans-serif; font-weight:600;
+    font-size:11px; padding:5px 9px; border-radius:8px; margin:2px 0 8px 34px;
+  }
+  .badge.teal{ background:var(--teal-tint); color:var(--teal-strong); }
+  .badge.gold{ background:var(--gold-tint); color:var(--gold-strong); }
+  .badge svg{ width:12px; height:12px; }
+
+  .chip-wrap{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 4px 34px; }
+  .chip{
+    font-family:"Inter",sans-serif; font-size:12.5px; font-weight:500; padding:9px 13px; border-radius:13px;
+    border:1.4px solid var(--border); background:var(--card); color:var(--ink); display:flex; align-items:center; gap:6px;
+    cursor:pointer; user-select:none;
+  }
+  .chip.selected{ border-color:var(--coral); background:var(--coral-tint); color:var(--coral-strong); font-weight:600; }
+  .chip.selected svg{ width:12px; height:12px; }
+  .chip.other{ border-style:dashed; color:var(--ink-2); }
+  .chip-hint{ font-family:"Inter",sans-serif; font-size:11px; color:var(--muted); margin:0 0 6px 34px; }
+
+  .goal-card{
+    margin:2px 0 4px 34px; padding:12px 13px; border-radius:14px; border:1.6px solid var(--border);
+    background:var(--card); display:flex; gap:10px; align-items:flex-start; max-width:82%;
+  }
+  .goal-card.active{ border-color:var(--coral); background:var(--coral-tint); }
+  .goal-card.saved{ opacity:.55; }
+  .goal-card .gicon{
+    width:30px; height:30px; border-radius:9px; flex:none; display:flex; align-items:center; justify-content:center;
+  }
+  .goal-card.active .gicon{ background:var(--coral); }
+  .goal-card.saved .gicon{ background:var(--border); }
+  .goal-card .gicon svg{ width:15px; height:15px; color:#fff; }
+  .goal-card .gtext .gtitle{ font-family:"Inter",sans-serif; font-weight:700; font-size:13px; margin-bottom:2px; }
+  .goal-card .gtext .gmeta{ font-family:"Inter",sans-serif; font-size:11px; color:var(--ink-2); }
+  .goal-card .gtag{
+    margin-top:6px; display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700;
+    color:var(--muted); background:var(--bg); padding:3px 7px; border-radius:7px;
+  }
+  .goal-card .gtag svg{ width:10px; height:10px; }
+
+  .journey-preview{
+    margin:6px 0 4px 34px; padding:13px 14px; border-radius:14px; background:var(--teal-tint);
+    max-width:82%;
+  }
+  .journey-preview .jp-title{ font-family:"Baloo 2", ui-rounded, sans-serif; font-weight:600; font-size:14px; color:var(--teal-strong); }
+  .journey-preview .jp-meta{ font-family:"Inter",sans-serif; font-size:11.5px; color:var(--teal-strong); opacity:.85; margin-top:3px; }
+
+  .input-bar{
+    flex:none; display:flex; align-items:center; gap:8px; padding:12px 14px 18px; border-top:1px solid var(--border);
+    background:var(--bg);
+  }
+  .input-pill{
+    flex:1; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--border);
+    display:flex; align-items:center; padding:0 15px; font-family:"Inter",sans-serif; font-size:13px; color:var(--muted);
+  }
+  .send-btn{
+    width:42px; height:42px; border-radius:50%; background:var(--coral); display:flex; align-items:center; justify-content:center; flex:none;
+    box-shadow:0 4px 10px -3px rgba(216,90,48,0.5);
+  }
+  .send-btn svg{ width:18px; height:18px; color:var(--ink); }
+
+  .btn-primary{
+    display:flex; align-items:center; justify-content:center; gap:8px; height:46px; border-radius:14px;
+    background:var(--coral); color:var(--ink); font-family:"Inter",sans-serif; font-weight:700; font-size:14px;
+    margin:6px 16px 4px; box-shadow:0 4px 10px -3px rgba(216,90,48,0.45);
+  }
+  .btn-primary svg{ width:16px; height:16px; }
+  .link-row{ text-align:center; font-family:"Inter",sans-serif; font-size:12px; color:var(--ink-2); margin:2px 0 14px; }
+
+  /* journey screen */
+  .progress-outer{ padding:6px 18px 14px; }
+  .progress-card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .progress-top{ display:flex; align-items:center; justify-content:space-between; }
+  .bar-track{ height:7px; border-radius:4px; background:var(--border); overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg, var(--teal), var(--teal-strong)); }
+  .progress-meta{ display:flex; justify-content:space-between; font-family:"Inter",sans-serif; font-size:11px; color:var(--ink-2); }
+
+  .milestone{ padding:2px 18px 4px; }
+  .m-head{ display:flex; align-items:center; gap:9px; margin:14px 0 8px; }
+  .m-dot{ width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none; }
+  .m-dot.done{ background:var(--teal); }
+  .m-dot.current{ background:var(--card); border:2px solid var(--teal); }
+  .m-dot.upcoming{ background:var(--card); border:2px solid var(--border); }
+  .m-dot svg{ width:11px; height:11px; }
+  .m-title{ font-family:"Inter",sans-serif; font-weight:700; font-size:13.5px; }
+  .m-title.dim{ color:var(--muted); }
+  .m-line{ width:2px; flex:1; background:var(--border); margin-left:10px; min-height:10px; }
+
+  .step-card{
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:11px 12px;
+    display:flex; align-items:center; gap:10px; margin:0 0 8px 31px;
+  }
+  .step-card.dim{ opacity:.5; }
+  .step-ico{ width:32px; height:32px; border-radius:9px; background:var(--teal-tint); display:flex; align-items:center; justify-content:center; flex:none; }
+  .step-ico svg{ width:16px; height:16px; color:var(--teal-strong); }
+  .step-main{ flex:1; min-width:0; }
+  .step-name{ font-family:"Inter",sans-serif; font-weight:600; font-size:13px; margin-bottom:4px; }
+  .step-tag{
+    display:inline-flex; align-items:center; gap:4px; font-family:"Inter",sans-serif; font-size:10.5px; font-weight:600;
+    padding:3px 7px; border-radius:7px; background:var(--bg); color:var(--ink-2); border:1px solid var(--border);
+  }
+  .step-tag svg{ width:10px; height:10px; }
+  .step-tag.freq{ color:var(--teal-strong); background:var(--teal-tint); border-color:transparent; }
+  .step-tag.dated{ color:var(--blue-strong); background:var(--blue-tint); border-color:transparent; }
+  .step-report{
+    width:30px; height:30px; border-radius:9px; flex:none; display:flex; align-items:center; justify-content:center;
+    border:1.6px solid var(--border);
+  }
+  .step-report.plus{ color:var(--ink-2); }
+  .step-report svg{ width:15px; height:15px; }
+  .step-report.done{ background:var(--teal); border-color:var(--teal); color:#fff; }
+
+  /* step reporting */
+  .rep-context{ padding:16px 18px; }
+  .rep-context .step-card{ margin-left:0; }
+  .dim-overlay{
+    position:absolute; inset:0; background:rgba(20,20,18,0.36); opacity:0; pointer-events:none;
+  }
+  [data-theme="dark"] .dim-overlay{ background:rgba(0,0,0,0.5); }
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:22px 22px 0 0;
+    box-shadow:0 -10px 30px rgba(0,0,0,0.12); padding:10px 18px 26px;
+  }
+  .sheet-grabber{ width:36px; height:4px; border-radius:2px; background:var(--border); margin:2px auto 14px; }
+  .sheet-head{ font-family:"Baloo 2", ui-rounded, sans-serif; font-size:16px; font-weight:600; margin-bottom:2px; }
+  .sheet-sub{ font-family:"Inter",sans-serif; font-size:12.5px; color:var(--ink-2); margin-bottom:16px; }
+  .rep-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .rep-btn{
+    border-radius:16px; padding:16px 12px; display:flex; flex-direction:column; align-items:flex-start; gap:10px;
+    border:1.6px solid var(--border); background:var(--bg);
+  }
+  .rep-btn .rico{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .rep-btn .rico svg{ width:17px; height:17px; }
+  .rep-btn .rlabel{ font-family:"Inter",sans-serif; font-weight:700; font-size:13px; }
+  .rep-btn .rsub{ font-family:"Inter",sans-serif; font-size:10.5px; color:var(--ink-2); margin-top:-6px; }
+  .rep-btn.done .rico{ background:var(--teal-tint); color:var(--teal-strong); }
+  .rep-btn.partial .rico{ background:var(--gold-tint); color:var(--gold-strong); }
+  .rep-btn.couldnt .rico{ background:var(--danger-tint); color:var(--danger); }
+  .rep-btn.postpone .rico{ background:var(--border); color:var(--ink-2); }
+
+  /* dashboard */
+  .home-top{ padding:16px 18px 4px; display:flex; align-items:center; justify-content:space-between; }
+  .greeting{ display:flex; align-items:center; gap:10px; }
+  .greeting .htext .hi{ font-family:"Baloo 2", ui-rounded, sans-serif; font-size:16px; font-weight:600; }
+  .greeting .htext .sub{ font-family:"Inter",sans-serif; font-size:11.5px; color:var(--ink-2); }
+
+  .section-label{ padding:16px 18px 8px; font-family:"Inter",sans-serif; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; }
+
+  .hero-card{
+    margin:0 18px 6px; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px;
+    position:relative; overflow:hidden;
+  }
+  .hero-card:before{
+    content:""; position:absolute; top:0; right:0; width:120px; height:120px; border-radius:50%;
+    background:radial-gradient(circle, var(--coral-tint) 0%, transparent 70%); opacity:.9;
+  }
+  .hero-tag{ display:inline-flex; align-items:center; gap:6px; font-family:"Inter",sans-serif; font-size:11px; font-weight:700; color:var(--coral-strong); background:var(--coral-tint); padding:4px 9px; border-radius:8px; }
+  .hero-title{ font-family:"Baloo 2", ui-rounded, sans-serif; font-size:17px; font-weight:600; margin:10px 0 3px; position:relative; }
+  .hero-meta{ font-family:"Inter",sans-serif; font-size:12px; color:var(--ink-2); margin-bottom:12px; position:relative; }
+  .hero-bottom{ display:flex; align-items:center; justify-content:space-between; gap:12px; position:relative; }
+  .hero-bottom .bar-track{ flex:1; }
+  .hero-report{
+    width:44px; height:44px; border-radius:13px; background:var(--coral); display:flex; align-items:center; justify-content:center;
+    flex:none; box-shadow:0 5px 12px -4px rgba(216,90,48,0.5);
+  }
+  .hero-report svg{ width:20px; height:20px; color:var(--ink); }
+
+  .mini-step{
+    margin:0 18px 8px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:11px 12px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .mini-step.completed{ background:var(--bg); opacity:.6; }
+  .mini-ico{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .mini-ico svg{ width:14px; height:14px; }
+  .mini-main .mn{ font-family:"Inter",sans-serif; font-weight:600; font-size:12.5px; }
+  .mini-main .mj{ font-family:"Inter",sans-serif; font-size:10.5px; color:var(--ink-2); margin-top:1px; }
+  .mini-report{ width:26px; height:26px; border-radius:8px; border:1.4px solid var(--border); display:flex; align-items:center; justify-content:center; flex:none; margin-left:auto; }
+  .mini-report svg{ width:13px; height:13px; color:var(--ink-2); }
+  .mini-report.done{ background:var(--teal); border-color:var(--teal); }
+  .mini-report.done svg{ color:#fff; }
+
+  .journeys-scroll{ display:flex; gap:10px; padding:0 18px 6px; overflow-x:auto; }
+  .jcard{ min-width:168px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; flex:none; }
+  .jcard .jc-top{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .jcard .jc-ico{ width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .jcard .jc-ico svg{ width:13px; height:13px; }
+  .jcard .jc-name{ font-family:"Inter",sans-serif; font-weight:700; font-size:12px; }
+  .jcard .jc-meta{ font-family:"Inter",sans-serif; font-size:10.5px; color:var(--ink-2); margin-bottom:8px; }
+
+  .fab{
+    position:absolute; right:16px; bottom:20px; display:flex; align-items:center; gap:8px;
+    background:var(--coral); color:var(--ink); padding:13px 18px 13px 15px; border-radius:26px;
+    font-family:"Inter",sans-serif; font-weight:700; font-size:13px; box-shadow:0 10px 22px -8px rgba(216,90,48,0.6);
+  }
+  .fab svg{ width:17px; height:17px; }
+
+  .footnote{ max-width:1400px; margin:8px auto 0; font-family:"Inter",sans-serif; font-size:12.5px; color:var(--ink-2); line-height:1.7; }
+  .footnote strong{ color:var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div>
+    <h1>PushApp — AI Coach · Core MVP Screens</h1>
+    <p>Dashboard-first, coach-in-the-loop. Design-system tokens (warm neutral base, coral CTA / teal growth / blue level / gold consistency), Baloo&nbsp;2 + Inter. Illustration is intentionally restrained here — a mature, abstract progression mark instead of a cartoon companion — since these are work &amp; identity surfaces for an AI coach product, not celebration surfaces.</p>
+  </div>
+  <button class="theme-toggle" onclick="document.body.toggleAttribute('data-theme-off'); const b=document.body; b.setAttribute('data-theme', b.getAttribute('data-theme')==='dark' ? 'light':'dark');">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+    Toggle light / dark
+  </button>
+</div>
+
+<!-- ================= GROUP 1 — COACH CONVERSATION ================= -->
+<div class="group">
+  <div class="group-header">
+    <h2>1 · Coach conversation</h2>
+    <span class="stage-tag">Stage: MVP</span>
+    <span class="sub">Meta-agent voice — professional, warm, plan-oriented. Read left to right as one conversation.</span>
+  </div>
+  <div class="row">
+
+    <!-- 1A Opening -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>A · Opening</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen">
+          <div class="topbar"><span class="eyebrow">Coach</span><div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div>
+          <div class="chat">
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">Hi — I'm here to help you turn what matters to you into a real plan. Nothing you say is wrong, and nothing is too small.</div>
+            </div>
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach" style="font-weight:600;">So — what would you like to work on?</div>
+            </div>
+          </div>
+        </div>
+        <div class="input-bar">
+          <div class="input-pill">Type anything…</div>
+          <div class="send-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14-7-7 14-2-5-5-2z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1B Multi-goal focus -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>B · Multi-goal focus</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen">
+          <div class="topbar"><span class="eyebrow">Coach</span><div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div>
+          <div class="chat">
+            <div class="bubble-row user"><div class="bubble user">I want to start drinking more protein every day, and I keep meaning to build up my push-ups but never actually start.</div></div>
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">Sounds like two things: a daily habit — drink protein; and a step-by-step plan — build up your push-ups. Let's start with one, so we don't spread you thin — I'll save the other for later.</div>
+            </div>
+            <div class="chip-hint" style="margin-left:0;">Which one first?</div>
+            <div class="goal-card active" style="margin-left:0;">
+              <div class="gicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.4-9A5.4 5.4 0 0112 5a5.4 5.4 0 019.4 7c-2.4 4.4-9.4 9-9.4 9z"/></svg></div>
+              <div class="gtext"><div class="gtitle">Build up my push-ups</div><div class="gmeta">Step-by-step plan · Body Image</div></div>
+            </div>
+            <div class="goal-card saved" style="margin-left:0;">
+              <div class="gicon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.5 3-4 4-4 7a4 4 0 008 0c0-3-2.5-4-4-7z"/></svg></div>
+              <div class="gtext">
+                <div class="gtitle">Drink more protein daily</div><div class="gmeta">Daily habit</div>
+                <div class="gtag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Saved for later</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="input-bar">
+          <div class="input-pill">Type anything…</div>
+          <div class="send-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14-7-7 14-2-5-5-2z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1C Expert question, chips -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>C · Expert questions</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen">
+          <div class="topbar"><span class="eyebrow">Coach</span><div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div>
+          <div class="chat">
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">Good — let's shape this properly. A couple of quick questions first.</div>
+            </div>
+            <div class="badge teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>Routed to: Body Image coach</div>
+
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">Where are you starting from with push-ups right now?</div>
+            </div>
+            <div class="chip-wrap">
+              <div class="chip">Can't do a full one yet</div>
+              <div class="chip selected"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>1–5 in a row</div>
+              <div class="chip">6–15 in a row</div>
+              <div class="chip other">+ Other (type your own)</div>
+            </div>
+
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">What tends to get in the way?</div>
+            </div>
+            <div class="chip-hint">Select all that apply</div>
+            <div class="chip-wrap">
+              <div class="chip selected"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No time</div>
+              <div class="chip selected"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Low motivation</div>
+              <div class="chip">Sore / injury</div>
+              <div class="chip">Forget</div>
+              <div class="chip other">+ Other (type your own)</div>
+            </div>
+          </div>
+        </div>
+        <div class="input-bar">
+          <div class="input-pill">Type anything…</div>
+          <div class="send-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14-7-7 14-2-5-5-2z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1D Feasibility -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>D · Reality check → build</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen">
+          <div class="topbar"><span class="eyebrow">Coach</span><div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div>
+          <div class="chat">
+            <div class="badge teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>Routed to: Body Image coach</div>
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">Thanks — here's an honest read.</div>
+            </div>
+            <div class="badge gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>Ambitious, not unrealistic</div>
+            <div class="bubble-row">
+              <div class="coach-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div>
+              <div class="bubble coach">Going from zero to a strong set in 3 weeks is a stretch. A steady 6–8 week build is a realistic fit — and it still gets you a real change, not just a number.</div>
+            </div>
+            <div class="journey-preview" style="margin-left:0;">
+              <div class="jp-title">Push-Up Progression</div>
+              <div class="jp-meta">3 Milestones · ~7 weeks · Body Image</div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Build my Journey</div>
+        <div class="link-row">Or adjust the pace first</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= GROUP 2 — JOURNEY / STEP REPORT / DASHBOARD ================= -->
+<div class="group">
+  <div class="group-header">
+    <h2>2 · Journey, Step reporting &amp; Dashboard</h2>
+    <span class="stage-tag">Stage: MVP</span>
+    <span class="sub">The built Journey, the low-friction report control, and the daily home base.</span>
+  </div>
+  <div class="row">
+
+    <!-- 2A Journey view -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>A · Journey view</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen">
+          <div class="topbar">
+            <div><div class="eyebrow">Journey</div><div class="title">Push-Up Progression</div></div>
+            <div class="avatar sm"><div class="ring" style="--pct:55%;"><div class="inner"><div class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l4-6 4 3 5-8 5 5"/></svg></div></div></div><div class="lvl">6</div></div>
+          </div>
+          <div class="progress-outer">
+            <div class="progress-card">
+              <div class="progress-top"><span style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;">Milestone 2 of 3</span><span style="font-family:Inter,sans-serif;font-size:12px;color:var(--ink-2);">58%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:58%;"></div></div>
+              <div class="progress-meta"><span>Started Jul 14</span><span>Est. finish Sep 2</span></div>
+            </div>
+          </div>
+
+          <div class="milestone">
+            <div class="m-head">
+              <div class="m-dot done"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <div class="m-title dim">Milestone 1 — Foundation (knee push-ups)</div>
+            </div>
+          </div>
+
+          <div class="milestone">
+            <div class="m-head">
+              <div class="m-dot current"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="3"><circle cx="12" cy="12" r="4"/></svg></div>
+              <div class="m-title">Milestone 2 — Building reps</div>
+            </div>
+            <div class="step-card">
+              <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.4 6.4L4 4M17.6 17.6L20 20M2 12h3M19 12h3M6.4 17.6L4 20M17.6 6.4L20 4"/><rect x="8" y="9" width="8" height="6" rx="1.5"/></svg></div>
+              <div class="step-main">
+                <div class="step-name">Push-up sets × 3</div>
+                <span class="step-tag freq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>≈4×/week · flexible days · 2/4 done</span>
+              </div>
+              <div class="step-report plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+            <div class="step-card">
+              <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M4 19V9l8-5 8 5v10"/></svg></div>
+              <div class="step-main">
+                <div class="step-name">Log today's max reps</div>
+                <span class="step-tag freq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>≈4×/week · flexible days</span>
+              </div>
+              <div class="step-report plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+
+          <div class="milestone">
+            <div class="m-head">
+              <div class="m-dot upcoming"></div>
+              <div class="m-title dim">Milestone 3 — 15 in a row</div>
+            </div>
+            <div class="step-card dim">
+              <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+              <div class="step-main">
+                <div class="step-name">Push-up test — go for 15</div>
+                <span class="step-tag dated"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Tue, Sep 2</span>
+              </div>
+              <div class="step-report plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+
+          <div class="link-row" style="margin-top:8px;">Talk to your coach about this Journey →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2B Step reporting -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>B · Step reporting</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen" style="position:relative;">
+          <div class="rep-context">
+            <div class="topbar" style="padding:0 0 12px;"><div class="title">Today</div></div>
+            <div class="step-card" style="margin-bottom:10px;">
+              <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M4 19V9l8-5 8 5v10"/></svg></div>
+              <div class="step-main"><div class="step-name">Push-up sets × 3</div><span class="step-tag freq">Push-Up Progression</span></div>
+            </div>
+            <div class="step-card dim">
+              <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5M5 21V8M19 21V8"/></svg></div>
+              <div class="step-main"><div class="step-name">10-minute walk</div><span class="step-tag" style="background:var(--bg);">Stay Active</span></div>
+            </div>
+          </div>
+          <div class="dim-overlay" style="opacity:1;"></div>
+          <div class="sheet">
+            <div class="sheet-grabber"></div>
+            <div class="sheet-head">How did it go?</div>
+            <div class="sheet-sub">Push-up sets × 3</div>
+            <div class="rep-grid">
+              <div class="rep-btn done">
+                <div class="rico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+                <div class="rlabel">Done</div>
+              </div>
+              <div class="rep-btn partial">
+                <div class="rico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3a9 9 0 000 18z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/></svg></div>
+                <div class="rlabel">Partial</div>
+                <div class="rsub">Did some of it</div>
+              </div>
+              <div class="rep-btn couldnt">
+                <div class="rico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg></div>
+                <div class="rlabel">Couldn't</div>
+                <div class="rsub">Life happened</div>
+              </div>
+              <div class="rep-btn postpone">
+                <div class="rico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M12 14l3 3-3 3M15 17H9"/></svg></div>
+                <div class="rlabel">Postpone</div>
+                <div class="rsub">Move it, keep the streak</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2C Dashboard -->
+    <div class="frame-wrap">
+      <div class="frame-label"><span class="dot"></span>C · Dashboard / Home</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+        <div class="screen" style="position:relative;">
+          <div class="home-top">
+            <div class="greeting">
+              <div class="avatar"><div class="ring" style="--pct:65%;"><div class="inner"><div class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l4-6 4 3 5-8 5 5"/></svg></div></div></div><div class="lvl">6</div></div>
+              <div class="htext"><div class="hi">Good morning, Noa</div><div class="sub">2 Journeys in motion</div></div>
+            </div>
+            <div class="streak-pill"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2c1 3-2 4-2 7a4 4 0 008 0c0-1-1-2-1-2s2 1 2 5a7 7 0 11-14 0c0-5 3-6 4-7 1-1 2-2 3-3z"/></svg>12</div>
+          </div>
+
+          <div class="section-label">Today's focus</div>
+          <div class="hero-card">
+            <span class="hero-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Most urgent today</span>
+            <div class="hero-title">Push-up sets × 3</div>
+            <div class="hero-meta">Push-Up Progression · Milestone 2 · 2/4 this week</div>
+            <div class="hero-bottom">
+              <div class="bar-track" style="width:60%;"><div class="bar-fill" style="width:50%;"></div></div>
+              <div class="hero-report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+            </div>
+          </div>
+
+          <div class="mini-step">
+            <div class="mini-ico" style="background:var(--blue-tint);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5M5 21V8M19 21V8"/></svg></div>
+            <div class="mini-main"><div class="mn">10-minute walk</div><div class="mj">Stay Active · flexible</div></div>
+            <div class="mini-report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+          </div>
+          <div class="mini-step completed">
+            <div class="mini-ico" style="background:var(--teal-tint);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal-strong)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="mini-main"><div class="mn">Morning check-in</div><div class="mj">Push-Up Progression · done</div></div>
+            <div class="mini-report done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          </div>
+
+          <div class="section-label">Your Journeys</div>
+          <div class="journeys-scroll">
+            <div class="jcard">
+              <div class="jc-top"><div class="jc-ico" style="background:var(--teal-tint);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="6" rx="1.5"/></svg></div><div class="jc-name">Push-Up Progression</div></div>
+              <div class="jc-meta">Milestone 2/3 · 58%</div>
+              <div class="bar-track"><div class="bar-fill" style="width:58%;"></div></div>
+            </div>
+            <div class="jcard">
+              <div class="jc-top"><div class="jc-ico" style="background:var(--blue-tint);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5M5 21V8M19 21V8"/></svg></div><div class="jc-name">Stay Active</div></div>
+              <div class="jc-meta">No Milestones · 30%</div>
+              <div class="bar-track"><div class="bar-fill" style="width:30%; background:linear-gradient(90deg,var(--blue),var(--blue-strong));"></div></div>
+            </div>
+          </div>
+
+          <div style="height:76px;"></div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 01-8.9 8.4A8.9 8.9 0 013 12.5 8.4 8.4 0 0111.4 4a8.9 8.9 0 019.6 7.5z"/></svg>Talk to your coach</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footnote">
+  <strong>Notes for review:</strong> chips in 1C are tap-toggle (try clicking) to preview the multi-select
+  state; the theme button switches every frame to a dark variant using the same tokens. Fonts render via
+  a <em>ui-rounded</em> fallback in this sandboxed preview — on-device this renders in Baloo&nbsp;2 (display)
+  + Inter (body) per <code>Design_System.md</code>.
+</div>
+
+<script>
+  document.querySelectorAll('.chip:not(.other)').forEach(function(c){
+    c.addEventListener('click', function(){
+      var isMulti = c.parentElement.previousElementSibling && c.parentElement.previousElementSibling.classList.contains('chip-hint');
+      if(!isMulti){
+        Array.from(c.parentElement.children).forEach(function(sib){
+          if(sib!==c && !sib.classList.contains('other')) sib.classList.remove('selected');
+        });
+      }
+      c.classList.toggle('selected');
+    });
+  });
+</script>
+</body>
+</html>

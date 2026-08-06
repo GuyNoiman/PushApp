@@ -4,6 +4,194 @@ Status: Living Document
 
 ---
 
+# 2026-08-06 — Conversational coach built out: understanding-based multi-goal triage, SX realigned to 4 domains, communication-style + frequency-based scheduling infra, design brief + authoring guide (branch `feat/buddy-3d-and-reminders`, unmerged, behind off-by-default flag)
+
+Continues the 2026-08-05 sprint below on the same branch and flag. Test suite grew **177 → 449**
+(41 suites), all green; `tsc` clean throughout. Cross-reference: `06_Decisions/Decision_Log.md`
+**D23** (the pivot) and the new decision entries this session added (domain realignment, the
+framework-not-content philosophy, the UX/design bundle, paid Gemini tier, single-user auth).
+
+## S2 — conversational coach: understanding-based multi-goal triage
+- The coach front door is now a **single "understanding" LLM call** that reads the user's free-text
+  goal, detects **multiple** distinct goals (each tagged `kind: recurring | process` + `domain`),
+  reflects them back to the user in one message, and **focuses one** to interview now while the
+  rest are deferred on-device (not dropped).
+- The focused goal is **routed to a `DomainExpert`**, whose own interview drives **closed-option
+  chip questions (+ an "Other" free-text escape hatch)**, one question at a time, some multi-select,
+  followed by a feasibility/reality-check step before a plan is produced.
+
+## SX — realigned to four new domains (replaces the four first-cut experts)
+- **Addiction · Relationships & Loneliness · Body Image (nutrition+fitness) · Career** replace the
+  earlier first-cut set (`recovery`, `self-confidence`, `nutrition`, `sport`) recorded in the
+  2026-08-05 entry below. New files: `app/src/core/learning/experts/AddictionExpert.ts`,
+  `RelationshipsExpert.ts`, `BodyImageExpert.ts`, `CareerExpert.ts`, plus a shared `expertKit.ts`
+  and a `registry.ts` with human-readable `displayName`s for each domain.
+- **Addiction and Relationships & Loneliness are the two most sensitive domains** and are gated:
+  they stay flag/dev-only until the safety floor (below) and a clinical review land — not yet
+  cleared for a real user.
+
+## Communication-style infrastructure
+- `app/src/core/coach/communicationStyles.ts` — four named styles (**Steady · Direct · Gentle ·
+  Spark**). Only **Steady** (professional, warm, accepting, non-judgmental, plan-oriented,
+  explicitly not a therapist) is populated; the other three are intentional empty stubs for later
+  personalization work, not forgotten gaps.
+
+## Frequency-based scheduling + "honor time"
+- Domain-expert plans are now expressed as **frequency** ("≈N×/week, flexible days") rather than
+  fixed calendar dates, unless the user explicitly names specific days — reflecting that most goals
+  (workouts, check-ins, social outreach) don't have a real fixed slot and forcing one creates false
+  misses.
+
+## Privacy / persistence (carried forward, already noted 2026-08-05, reconfirmed still in place)
+- `EncryptedLocalRepository` and the `deriveOutreachInsight` boundary remain the S0 foundation this
+  session builds on; no change to their design this session, but the **outbound-redaction wiring
+  (`redactForCloud`) is still an open follow-up**, not yet connected to the live LLM call path.
+
+## Design / product docs added
+- **`04_Product/UX/App_and_Screens_Design_Brief.md`** — comprehensive design brief: reuse the
+  existing app design (minimal visual change), remove the avatar/Buddy tab and the Shop tab; Home
+  priority = weekly tasks (incl. an urgent/"today's-focus" block) → Coach CTA → Friends (3
+  need-help + 3 deserve-encouragement) → My Journeys; streak breaks only on an urgent miss; levels
+  kept but reward breadth (parallel Journeys) not depth; Dream = coach-suggested / user-approved
+  Journey grouping; Journey editing led by the coach + a Freeze/Resume button; Step reporting is
+  small and emotional (happy Done / sad Couldn't / Partial / Postpone); the whole coach conversation
+  runs on-phone; the people/support layer (Ally, Support Circle, reciprocal friends, Dream
+  Communities) is first-class in the brief, not an afterthought. **Not yet final** — the founder is
+  getting a second, external-AI design proposal before any screens get wired.
+- **`04_Product/Domain_Expert_Authoring_Guide.md`** — a colleague-facing guide for authoring a new
+  domain expert's interview + knowledge without needing to read the engine code.
+- **`04_Product/Build_Plan_and_Method.md`** and **`04_Product/Miss_Recovery_PRD.md`** also present
+  in the working tree from this stretch of work (see `Current_Context.md` for their current role in
+  the S0–S7 method).
+
+## Testing infra
+- `npm --prefix app run coach` — interactive dev harness; `COACH_SCRIPT=<path> npm run coach` —
+  scripted run (see `app/src/core/coach/sample.script.txt`). Runs against **paid** Gemini
+  (`gemini-2.5-flash`, founder-approved ~$10/mo cap, key in git-ignored `app/.env.local`).
+
+## S3 auth — in progress
+- Single-user Supabase sign-in + UID verification built (`app/src/core/auth/`: `AuthGateway.ts`,
+  `SupabaseAuthGateway.ts`, `authUser.ts`, `singleUser.ts`). Not yet activated — needs the founder
+  to set a Supabase password for `guynoiman3@gmail.com` and populate three
+  `EXPO_PUBLIC_SINGLE_USER_*` env vars.
+
+## Open follow-ups (explicit next tasks, not silent gaps — carried and expanded from 2026-08-05)
+- Reconcile the `Phase` → `Milestone` rename across remaining docs/code (still deferred).
+- Harden device crypto (authenticated encryption + secure RNG).
+- A completed-Journey `atRisk` nit in the behavior model.
+- Wire `redactForCloud` on the outbound LLM path before real users reach it.
+- **Build the safety floor**: bilingual (Hebrew/English) inbound crisis-detection + escalation,
+  disclaimers/consent, hardened `SafetyLayer` + substance-use gating — required before Addiction and
+  Relationships & Loneliness can leave flag/dev-only status, alongside a clinical review.
+
+## Status
+- Not merged to `main`. 449/449 tests green, `tsc` clean. Founder is getting a second design
+  proposal before screens get wired — see `Current_Context.md`'s 2026-08-06 snapshot for the full
+  next-steps order.
+
+## Next
+- See `Current_Context.md` → "⭐ HANDOFF SNAPSHOT — 2026-08-06" → "Next steps, in order".
+
+---
+
+# 2026-08-05 — AI-adaptive-coach pivot: S0–S2 built and proven, SX in progress (branch `feat/buddy-3d-and-reminders`, unmerged, behind off-by-default flag)
+
+Cross-reference: `06_Decisions/Decision_Log.md` **D23** (the pivot decision this sprint implements)
+and `11_Engineering_Bible/Engineering_Decisions.md` **§E5** (the hub-and-loop architecture). Follows
+the founder's working method (`04_Product/Build_Plan_and_Method.md`): one status-tracked S0–S7 task
+list, sequential, each component built + tested in isolation before integration. **Everything below
+ships behind the off-by-default `adaptiveCoach` feature flag
+(`app/src/core/config/featureFlags.ts`) — the existing engine (Journey/Reward/Buddy/Shop/Mission/
+Reminder/Auth/Social/Entitlement) is untouched when the flag is off.**
+
+## S0 (done) — foundation, docs-only
+- Pivot recorded (D23); **Milestone** adopted as the canonical mid-layer term (supersedes the
+  working name "Phase" for new work; a full reconciliation pass across remaining docs/code is a
+  separate, deliberately deferred task).
+- **Hub-and-loop architecture** designed (`Engineering_Decisions.md` §E5) +
+  `04_Product/Build_Plan_and_Method.md` written (the S0–S7 + SX task-list method).
+- **Encrypted local store** — AES encryption + `expo-secure-store`, with migration and key rotation.
+- **Privacy types** + the **`deriveOutreachInsight` boundary** (raw personal disclosures never leave
+  the device; only a minimal derived insight — enums/buckets, no free text — may cross it, and only
+  to power outreach timing) + guard tests + a `NullInsightGateway`.
+
+## S1 (done, PROVEN) — the adaptive engine
+- **Planner** (goal → Journey), a **DomainExpert** seam + `GeneralExpert` (the domain-agnostic
+  default expert), **BehaviorModelEngine** (on-device raw behavior log + a slip detector — the first
+  producer of `StepMissed`), **AdaptivePlanner** (`replan` + `applyReplan`), a **CoachNarrator** seam.
+- A **headless simulation running 4 personas** proves the closed loop (behavior → insight → re-plan
+  → nudge → behavior) actually adapts: compress/shrink/shed/at-risk responses, weekend-concentration
+  detection, and early-warning behavior.
+- Wired into `AppCore` behind `featureFlags.adaptiveCoach`.
+
+## S2 (done, testable) — the conversational coach
+- **Gemini client** behind an `LlmClient` seam (`gemini-2.5-flash`; API key in a git-ignored env
+  file — no silent spend per CLAUDE.md §3.10).
+- Editable **interview playbook** + coach prompts; a **Coach Orchestrator** where the playbook
+  controls *what* to ask and the LLM only handles phrasing/parsing, not decision logic.
+- A hardened disclosure parser, a **SafetyLayer**, `GoalSpec` → Journey conversion.
+- An interactive dev harness (`npm --prefix app run coach`) to test converse → build →
+  report/non-report → adapt live.
+
+## SX (in progress) — domain-expert validation track
+- Four first-cut `DomainExpert`s (recovery, self-confidence, nutrition, sport) + a registry, built to
+  validate the expert-partition seam introduced in S1. Per-domain knowledge bases and a
+  safety/clinical review are the next phase before any of these are real. Per D23, SX is explicitly
+  **Future Vision** — parallel to, not part of, the sequential S0–S7 spine.
+
+## Test suite
+- Grew from 177 → 338 tests, all green; `tsc` clean throughout.
+
+## Open follow-ups logged (explicit next tasks, not silent gaps)
+- Wire outbound redaction before real users reach this path.
+- Harden device crypto (authenticated encryption + a secure RNG).
+- A completed-Journey `atRisk` nit in the behavior model.
+- Reconcile the `Phase` → `Milestone` rename across the remaining docs/code that still use "Phase"
+  as the mid-layer term (D23 flagged this as deliberately deferred at pivot time).
+- A safety/clinical review must gate the sensitive SX domains before they get real knowledge bases.
+
+## Status
+- Not merged to `main`. Founder's working method: one status-tracked S0–S7 (+SX) task list,
+  currently **~29/51 tasks done**.
+
+## Next
+- Continue the SX per-domain knowledge-base + safety-review track, or resume the sequential S0–S7
+  spine — founder's call. See `04_Product/Build_Plan_and_Method.md` for the full stage table.
+
+---
+
+# 2026-07-20 — Hopper in Buddy tab + backend-health + dev tooling + competitive research v2 (merged to `main`); strategy thinking captured (WIP)
+
+Branch `feat/buddy-3d-and-reminders`; `main` fast-forwarded to include this work. Six topic commits
+plus a merge that also brought the earlier panel-position fix onto `main`.
+
+## Shipped code
+- **feat(buddy):** the registry-driven 3D Hopper now renders in the Buddy tab (2D egg replaced there
+  only). `BuddyView` gains an additive `transparent` prop so the creature composites over the forest
+  scene; the `/buddy3d-spike` route keeps its opaque default. Verified on device (Expo Go); web
+  cannot render GLB.
+- **fix(social):** `backendHealth.ts` — one cheap `/auth/v1/health` probe at startup; unreachable or
+  5xx ⇒ `stopAutoRefresh()` and the social/auth/entitlement pillars degrade quietly (no red
+  "Network request failed"). Prompted by a deleted Free-tier Supabase project (DNS NXDOMAIN); 4xx =
+  healthy, 5xx (Cloudflare 521 during restore) ≠ healthy.
+- **chore(dev):** `npm run dev` binds Metro to the Mac's Bonjour hostname so the Expo Go recent-URL
+  survives DHCP IP changes; `tools/supabase_keepalive.sh` + `install_keepalive.sh` + launchd plist =
+  weekly $0 keep-alive so the Free-tier project never idles out (installed copy lives under
+  `~/Library/Application Support` — macOS TCC blocks launchd under `~/Documents`).
+- **docs(research):** `05_Research/PushApp_Competitive_Research_v2_2026-07` (.docx + .pdf) — 15
+  competitors, official App-Store screenshots, per-competitor AI-implementation tables, original 8
+  comparison tables carried over, "what died and why" chapter, NLP evidence + claim-risk. Hebrew RTL.
+- **feat(ui):** resource-bar polish (founder art direction). **assets(buddy):** Hopper v3 package.
+
+## Strategy — WORK IN PROGRESS (not decided)
+- `04_Product/Strategy_WIP_2026-07/` (README + 3 standalone HTML visuals for a future deck).
+  All **Open Questions**, none logged to Decision_Log yet: Finch as benchmark + the defensible trio;
+  "Ignition, not Maintenance" reframe; AI economics/architecture (Haiku + caching, Level-1-first,
+  no model training); the miss-recovery closed-list→AI funnel with rule-based reason→lever mapping;
+  categories **Option B chosen** (build `categories.ts` + `Journey.categoryId`, not yet done).
+
+---
+
 # 2026-07-14 — Buddy 3D registry + texture fix + 17 species; finite-step Journey model + Reminder
 # engine + Communication Scheduler; UI polish pass (branch `feat/buddy-3d-and-reminders`, unmerged)
 

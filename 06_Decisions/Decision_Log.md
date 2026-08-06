@@ -10,6 +10,223 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
+
+> Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the
+> off-by-default `adaptiveCoach` flag. See `Current_Context.md` → "⭐ HANDOFF SNAPSHOT — 2026-08-06"
+> and `00_Foundation/CHANGELOG.md`'s 2026-08-06 entry for full engineering detail; this log records
+> the decisions and their reasoning.
+
+### D24 — Domain realignment: Addiction · Relationships & Loneliness · Body Image · Career
+**Decision:** The set of first-cut `DomainExpert`s changes from the original SX exploration
+(`recovery`, `self-confidence`, `nutrition`, `sport` — recorded implicitly in the 2026-08-05
+CHANGELOG entry, never itself logged as a D-decision) to **four new domains**: **Addiction**,
+**Relationships & Loneliness**, **Body Image** (covering both nutrition and fitness together, not
+as two separate domains), and **Career**.
+**Why:** the new set was chosen to better match the kinds of goals a general adaptive coach
+realistically needs to triage from open-ended free text, and to consolidate nutrition+fitness
+(which users rarely separate cleanly when describing a body-image goal) into one domain rather than
+two competing experts.
+**Safety implication:** **Addiction** and **Relationships & Loneliness** are the two most
+sensitive domains in this new set (substance use / crisis risk; loneliness / relational distress
+risk). Per this decision, both **must stay flag/dev-only** — never reachable by a real user — until
+(a) the safety floor is built (bilingual Hebrew/English inbound crisis-detection + escalation,
+disclaimers/consent, a hardened `SafetyLayer`, substance-use gating) and (b) a clinical review has
+happened. This is a hard gate, not a soft target.
+**Categorization:** Approved (the domain set itself, as the current SX validation target) +
+**Open Question / gated** (Addiction and Relationships & Loneliness cannot ship to real users until
+the safety floor + clinical review above are satisfied — do not treat their current dev-only
+buildout as launch-ready).
+**Reflected in:** `app/src/core/learning/experts/AddictionExpert.ts`, `RelationshipsExpert.ts`,
+`BodyImageExpert.ts`, `CareerExpert.ts`, `registry.ts`; `Current_Context.md`;
+`00_Foundation/CHANGELOG.md` (2026-08-06 entry).
+
+### D25 — Framework-not-content philosophy for domain experts
+**Decision:** The coach and its domain experts are explicitly a **framework, not content**. The
+system structures goals, interviews, feasibility-checks, and adapts plans over time — it does
+**not** supply expert domain knowledge as if it were a licensed professional. Concretely: the coach
+is **not** a nutritionist, **not** a trainer, **not** a matchmaker, **not** a therapist. Domain
+experts encode *interview structure and planning logic* (what to ask, how to turn answers into a
+frequency-based plan, how to detect risk and re-plan), not clinical/professional content.
+**Why:** this keeps the product's actual claim honest and legally/ethically bounded — it is a
+structuring and accountability tool built on top of the user's own goal, not a substitute for
+professional guidance in domains (addiction, relationships, nutrition, career) where bad
+"expert-sounding" content from an LLM could cause real harm. It also keeps each `DomainExpert`
+implementation genuinely domain-agnostic in shape (same seam, same interview pattern), which is
+consistent with D23's "the domain is not the bet, the engine is" principle.
+**Categorization:** Approved — this is a standing design constraint on every current and future
+`DomainExpert`, not a one-off choice for the current four.
+**Reflected in:** `app/src/core/learning/DomainExpert.ts` seam design and all four expert
+implementations; `04_Product/Domain_Expert_Authoring_Guide.md` (the colleague-facing guide that
+teaches this constraint to whoever authors the next domain); `Current_Context.md`.
+
+### D26 — UX/design decisions bundle for the coach-first app
+**Decision:** A bundle of linked UX/design decisions for the coach-first rebuild, captured in full
+in **`04_Product/UX/App_and_Screens_Design_Brief.md`** (comprehensive brief — **not yet final**, see
+status note below):
+1. **Reuse the existing app design** (minimal visual change) rather than a ground-up redesign.
+2. **Remove the avatar/Buddy tab and the Shop tab.** (Note: D23 had said the Buddy "stays" but
+   evolves per level rather than via dress-up cosmetics — this decision goes further, removing the
+   Buddy/avatar and Shop **tabs** from the navigation entirely as part of the coach-first redesign.
+   This is flagged here explicitly as a refinement of D23's framing, not a silent contradiction —
+   see the note under "Reflected in" below.)
+3. **Home priority order:** weekly tasks (including an **urgent / "today's-focus"** block) → a
+   central **Coach CTA** → **Friends** (3 who need help + 3 who deserve encouragement) → **My
+   Journeys**.
+4. **Streak** = a prominent day-count that **breaks only when an urgent task is missed** (not any
+   miss) — a non-punishing streak design consistent with D11 (flexible, non-punishing streaks).
+5. **Levels are kept**, reframed to reward **breadth** (running multiple parallel Journeys, up to a
+   cap) rather than depth/grind within one Journey — consistent with D23's "mature progression, not
+   childish gamification."
+6. **Urgent is computed**: a task becomes urgent when
+   `remaining-days-in-week == remaining-required-sessions`.
+7. **Dream = coach-suggested, user-approved.** The coach suggests linking related Journeys into a
+   Dream; the user must explicitly approve before "My Journeys" groups by that Dream.
+8. **Journey editing is coach-led**, plus a simple **Freeze/Resume** button for pausing without
+   deleting.
+9. **Step reporting is small and emotional/visual**: happy-face Done / sad-face Couldn't / Partial
+   / Postpone — not a form.
+10. **The entire coach conversation runs fully on the phone.**
+11. **The people/support layer** (Ally, Support Circle, reciprocal friends, goal/Dream Communities)
+    is first-class in the brief, not deferred.
+**Why:** minimizes redesign risk/cost by reusing proven UI where the mechanism change (companion
+app → coach) doesn't require new visuals; removing Buddy/Shop tabs reflects that the coach, not the
+Buddy/economy loop, is now the primary daily surface; the Home ordering and urgent/streak/breadth
+rules translate D23's "mature progression" and D11's "non-punishing streaks" principles into
+concrete screen behavior; coach-led editing + Freeze/Resume keeps Journey structure changes
+consistent with the adaptive loop rather than ad hoc manual edits; frequency/coach-suggested-Dream
+keep the system honest about what it actually knows vs. assumes.
+**Categorization:** **Approved direction for planning purposes**, but explicitly **not final** — the
+founder is obtaining a **second, external-AI design proposal** before any screens are actually
+wired. Treat this bundle as the working direction, subject to revision once that proposal is
+compared.
+**Reflected in:** `04_Product/UX/App_and_Screens_Design_Brief.md` (full detail);
+`Current_Context.md` (2026-08-06 snapshot). **Note on D23 interaction:** D23 said "The Buddy avatar
+stays... it evolves per level" — this decision's "remove the avatar/Buddy tab" is a later
+refinement made during the coach-first UX pass, not a silent reversal. Both are preserved here; if
+the Buddy's fate needs to be read as a single current answer, this D26 entry (2026-08-06, more
+recent) is the current direction, pending the second design proposal.
+
+### D27 — Gemini paid tier for coach testing (~$10/mo cap)
+**Decision:** The founder enabled billing on the Gemini API to unblock realistic coach testing,
+capped at **~$10/month**. Model used: `gemini-2.5-flash`. API key lives in the git-ignored
+`app/.env.local` as `GEMINI_API_KEY` — never committed.
+**Why:** the free tier's rate limits were insufficient for iterative interactive testing of the
+multi-turn coach conversation; a small, capped paid tier unblocks real testing without open-ended
+spend risk (per CLAUDE.md §3.10 — the founder was asked and approved before this was enabled).
+**Categorization:** Approved, POC-scale only. **Open note:** shipping to real users would need the
+key handled differently (currently would need `EXPO_PUBLIC_…` client exposure, which is a
+POC-personal-testing shortcut, not a production-safe secret-handling pattern — flagged as a
+pre-launch follow-up, not yet an open question requiring a decision today).
+**Reflected in:** `app/.env.local` (git-ignored), `app/src/core/coach/` (the `LlmClient` seam),
+`Current_Context.md`.
+
+### D28 — Single-user Supabase auth for the POC (S3)
+**Decision:** For the current POC stage, auth is scoped to a **single, known user**
+(`guynoiman3@gmail.com`, Supabase UID `d87033dc-254d-4b95-92ba-10c8ba62a87f`) rather than building
+out general multi-user sign-up flows yet. Activation requires the founder to set a Supabase
+password for that user and populate `EXPO_PUBLIC_SINGLE_USER_EMAIL` /
+`EXPO_PUBLIC_SINGLE_USER_PASSWORD` / `EXPO_PUBLIC_SINGLE_USER_UID` in `app/.env.local`.
+**Why:** at this stage the only real user is the founder himself; building single-user auth first
+lets S3 (auth/backend) proceed and be tested end-to-end without the added scope of general
+sign-up/sign-in flows, which can be layered on later once the coach itself is validated. This is a
+narrower, deliberately-scoped step within the existing D19 auth direction (Apple + Google,
+passwordless, no real-name collection) — it does not replace or contradict D19, it is an interim
+POC-stage narrowing of it.
+**Categorization:** Approved, POC-scale only — general multi-user sign-up remains Future Vision per
+the existing D19 phasing (P3+).
+**Reflected in:** `app/src/core/auth/` (`AuthGateway.ts`, `SupabaseAuthGateway.ts`, `authUser.ts`,
+`singleUser.ts`), `Current_Context.md`.
+
+---
+
+## 2026-08-01 — Product pivot: AI adaptive coach (repositioning, mechanism change)
+
+### D23 — Reposition from gamified-companion app to AI adaptive coach; mission unchanged; continue the same repo/codebase
+**Decision:** PushApp repositions its **mechanism** from a gamified-companion app to an **AI
+adaptive coach**. The **mission is unchanged** — "help people become who they choose to be;
+close the gap between intention and action" (`09_Product_Philosophy/Product_Philosophy.md`) still
+holds exactly as written. What changes is *how* the product delivers on that mission:
+1. **Continue the same repo/codebase.** This is an **evolution, not a rewrite** — the existing
+   engine-based architecture (pure-TS engines over an event bus, config-before-code, vendor-isolated
+   gateways) already fits; several reserved seams/events/flags already exist for this
+   (`11_Engineering_Bible/Module_Architecture.md` §E4 — User-Model/Profiling, Intervention/
+   Communication, Interests seams). No new codebase.
+2. **Mature progression, not childish gamification.** Points/levels and daily/weekly Missions stay.
+   The Buddy avatar stays, but it is **NOT dress-up/cosmetic customization** — it **evolves per
+   level** (a fixed form per level), reusing the existing Buddy 3D pipeline
+   (`11_Engineering_Bible/Buddy_3D_Spike_Findings.md`, `app/tools/ingest_creature.py`).
+3. **The moat is the closed feedback loop, not any single feature.** Two moats — **adaptive
+   personalization** + **human accountability** — working *together*. The defensible core is the
+   **integration**: a closed loop of **behavior → insight → re-plan → nudge → behavior**.
+   Competitors have disconnected pieces (an AI planner here, a buddy system there, an accountability
+   partner somewhere else); PushApp builds the loop connecting them.
+4. **Domain strategy: the domain is not the bet, the engine is.** Build a **domain-agnostic**
+   engine now. **General habits/goals is the current build target** (not a specific vertical).
+   Sharp vs. general positioning (the "wedge") is a separate, **deliberately deferred** question
+   (see Open Question below).
+5. **Privacy = local-first split.** Raw personal disclosures stay **encrypted on-device**; only a
+   minimal **derived "insight model"** (enums/buckets/preferences — no free text) may persist
+   server-side, and only to power outreach timing. This is consistent with the existing
+   on-device-only red-line pattern already set for location/calendar data (D21, R3) and should be
+   reconciled with it as a broader privacy principle when the engineering plan for this pivot lands.
+6. **Build approach:** one status-tracked task list to MVP-in-store; sequential; each component
+   built in isolation with tests, then integrated; any partial work always gets an explicit
+   follow-up completion task (never left silently unfinished).
+
+**Considered and rejected:**
+- **Professional certification-completion vertical** — explored as a possible sharp domain wedge,
+  then dropped. Reason: a cert-completion product forces the app to **assess the user's prior
+  knowledge** before it can plan a path (a hard, domain-expert-heavy problem). General habits/goals
+  sidesteps this entirely — no prior-knowledge assessment is needed to help someone build a habit.
+- **Sports vertical** — also considered as a possible sharp wedge and set aside for the same reason:
+  committing to a vertical now would mean building domain expertise before the domain-agnostic
+  engine is proven. Not rejected forever — see Future Vision below.
+
+**Why (validated by two competitive scans, `05_Research/`):** AI plan-generation is now a
+commodity — many apps already generate a plan from a goal. The defensible, hard-to-copy asset is
+the **persistence loop + human ally**, not any one AI feature. Closest competitive threats
+identified: **Commit** (general-purpose AI coach) and **CertPrep / TrackMates** (certification-
+space competitors relevant to the now-rejected cert-vertical exploration).
+
+**Categorization (per `Repository_Guidelines.md` Approved/Future Vision/Open Question):**
+- **Approved:** mission unchanged; mechanism = AI adaptive coach; continue same repo; mature
+  progression (levels/Missions kept, Buddy evolves per level instead of dress-up cosmetics);
+  domain-agnostic engine with general habits/goals as the current build target; local-first privacy
+  split; sequential one-task-list build method.
+- **Future Vision:** **domain-expert modules** (relationships, learning, nutrition, sports,
+  professional certification, etc.) as **pluggable add-ons**, built **later**, only after the
+  domain-agnostic infrastructure has proven itself. The sports and cert-completion explorations
+  above are preserved here as candidate future modules, not deleted ideas.
+- **Open Question — deliberately deferred:** **general vs. sharp ("wedge") positioning.** Whether
+  PushApp should eventually launch/market around one sharp vertical (like the rejected sports/cert
+  explorations) or stay general-purpose is **not decided**. Revisit explicitly **before design and
+  launch** — do not let a design or marketing decision silently pre-empt this question.
+
+**Supersedes (marked, not deleted — see each doc for the "why" that is being preserved):**
+`09_Product_Philosophy/Product_Philosophy.md` (Buddy-customization framing inside "Gamification
+Exists To Reinforce Reality"), `04_Product/Product_Bible.md` §21.5 (Buddy customization as a
+retention system) and §15.1 (AI framed as enhancement-only, D2), `00_Foundation/
+Information_Architecture.md` (the "Buddy" section's customization/equipment/shop framing),
+`Current_Context.md` (top-of-file pivot notice — all prior handoff snapshots stay as accurate
+engineering/process history, only the positioning framing they inherit is superseded).
+
+**Reflected in:** this entry; superseded-notes added 2026-08-03 to the four docs listed above.
+Terminology (`Product_Terminology.md`), the engineering/architecture docs, and the working-method
+docs were intentionally **not yet updated** at the time this entry was written — tracked as a
+separate follow-up task (S0.2).
+**S0.2 follow-up landed 2026-08-03:** `Product_Terminology.md` (mid-layer term renamed Phase →
+**Milestone**, founder decision 2026-08-01, old "Phase" text preserved as superseded, not deleted);
+`11_Engineering_Bible/Engineering_Decisions.md` **E5** (hub-and-loop engine design recorded); new
+`04_Product/Build_Plan_and_Method.md` (the S0–S7 (+SX) task-list method this entry's "Build
+approach" point named). `CLAUDE.md` §3 rule 2's protected-terms list updated Phase → Milestone.
+Other docs still using "Phase" as the mid-layer term (`Product_Bible.md` §3.4A/§35,
+`Information_Architecture.md`, `Module_Architecture.md`, several `UX/*.md` docs, and UI copy in
+`app/src/`) were **deliberately left unchanged** — a full reconciliation pass is a separate later
+task, not bundled into S0.2.
+
+---
+
 ## 2026-07-14 — Reminders / Communication Scheduler + onboarding (branch `feat/buddy-3d-and-reminders`, unmerged)
 
 > **Branch note:** D20–D22 and their implementation land on branch `feat/buddy-3d-and-reminders`,

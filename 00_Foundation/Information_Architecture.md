@@ -12,7 +12,9 @@ The main navigation should remain focused and avoid unnecessary tabs. The curren
 2. **Journeys** — the user's active, future, paused, completed and archived journeys.
 3. **Explore** — discovery and creation of new journeys.
 4. **Friends** — social graph, support and helping others.
-5. **Buddy** — the user's game companion, customization and game identity.
+5. **Buddy** — the user's game companion, customization and game identity. *(SUPERSEDED
+   2026-08-01 → see Decision Log D23 (AI adaptive-coach pivot) and the "Buddy" section below —
+   Buddy is no longer a customization surface; it evolves per level instead.)*
 6. **Profile** — account, statistics, achievements, settings and integrations.
 
 **Inbox** should exist, but should not be a main tab. It should be accessible as an entry point, likely from the top navigation.
@@ -190,6 +192,13 @@ Buddy should support:
 - Shop/inventory.
 - Future personality or communication style.
 - Future AI conversations.
+
+> **SUPERSEDED 2026-08-01 → see Decision Log D23 (AI adaptive-coach pivot).** "Character
+> customization" / "Equipment/clothing" / "Shop/inventory" (Buddy dress-up) are superseded —
+> Buddy now **evolves per level** (a fixed form per level) instead of being customized with
+> purchasable outfits/equipment. Emotional state, progress expression, adaptive communication
+> style and future AI conversations are unaffected and become *more* central under the pivot
+> (Buddy as the face of the AI-coach loop), not less.
 
 Buddy can include non-human characters and should be allowed to feel more original, playful and game-like than a realistic human avatar.
 

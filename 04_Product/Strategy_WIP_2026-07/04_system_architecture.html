@@ -1,0 +1,453 @@
+<title>PushApp — System Architecture Map</title>
+<style>
+  :root{
+    --ground:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC;
+    --line:#E7E3DA; --line-soft:#EFECE4;
+    --ink:#2E2E2C; --muted:#6E6A62; --faint:#928D83;
+    --brand:#128B8B; --brand-soft:#E1F1F0;
+    --spark:#FF6B5A;
+    --built:#1E9E67; --built-bg:#E6F4EC;
+    --seam:#C9891F; --seam-bg:#F8EFDC;
+    --new:#5462D6;  --new-bg:#E9EBFA;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 6px 18px rgba(40,38,34,.05);
+    --font-display:"Baloo 2",ui-rounded,"Segoe UI Rounded",system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#1A1917; --surface:#232220; --surface-2:#2A2825;
+      --line:#37342E; --line-soft:#302E29;
+      --ink:#F1EDE5; --muted:#A9A399; --faint:#847F76;
+      --brand:#3FC4C0; --brand-soft:#173230;
+      --spark:#FF7E6E;
+      --built:#4FD394; --built-bg:#14301F;
+      --seam:#E9B85A; --seam-bg:#33280F;
+      --new:#8C97EE;  --new-bg:#1E2140;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC;
+    --line:#E7E3DA; --line-soft:#EFECE4;
+    --ink:#2E2E2C; --muted:#6E6A62; --faint:#928D83;
+    --brand:#128B8B; --brand-soft:#E1F1F0; --spark:#FF6B5A;
+    --built:#1E9E67; --built-bg:#E6F4EC;
+    --seam:#C9891F; --seam-bg:#F8EFDC;
+    --new:#5462D6; --new-bg:#E9EBFA;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 6px 18px rgba(40,38,34,.05);
+  }
+  :root[data-theme="dark"]{
+    --ground:#1A1917; --surface:#232220; --surface-2:#2A2825;
+    --line:#37342E; --line-soft:#302E29;
+    --ink:#F1EDE5; --muted:#A9A399; --faint:#847F76;
+    --brand:#3FC4C0; --brand-soft:#173230; --spark:#FF7E6E;
+    --built:#4FD394; --built-bg:#14301F;
+    --seam:#E9B85A; --seam-bg:#33280F;
+    --new:#8C97EE; --new-bg:#1E2140;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.28);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);
+    line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,40px) 80px;}
+
+  /* ---- header ---- */
+  header{margin-bottom:34px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--brand);font-weight:600;margin:0 0 12px;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,5vw,50px);
+    line-height:1.04;letter-spacing:-.01em;margin:0 0 14px;text-wrap:balance;}
+  h1 .spark{color:var(--spark);}
+  .lede{font-size:clamp(15px,1.6vw,18px);color:var(--muted);max-width:64ch;margin:0;}
+  .lede b{color:var(--ink);font-weight:600;}
+
+  /* ---- legend ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:24px;padding:14px 18px;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);}
+  .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 0 3px var(--dot-halo,transparent);}
+  .dot.built{background:var(--built);--dot-halo:var(--built-bg);}
+  .dot.seam{background:var(--seam);--dot-halo:var(--seam-bg);}
+  .dot.new{background:var(--new);--dot-halo:var(--new-bg);}
+  .lg b{color:var(--ink);font-weight:600;}
+
+  /* ---- layer band ---- */
+  .band{position:relative;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:20px;padding:20px;margin-top:22px;}
+  .band-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    flex-wrap:wrap;margin:2px 4px 16px;}
+  .band-title{font-family:var(--font-display);font-weight:600;font-size:20px;margin:0;}
+  .band-sub{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);}
+
+  .cluster{margin-bottom:16px;}
+  .cluster:last-child{margin-bottom:0;}
+  .cluster-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--brand);font-weight:600;margin:0 4px 9px;display:flex;align-items:center;gap:9px;}
+  .cluster-label::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:11px;}
+
+  /* ---- module card ---- */
+  .mod{background:var(--surface);border:1px solid var(--line);border-radius:13px;
+    padding:13px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .mod::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--rail,var(--line));}
+  .mod.built{--rail:var(--built);}
+  .mod.seam{--rail:var(--seam);}
+  .mod.new{--rail:var(--new);}
+  .mod-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .mod-name{font-weight:650;font-size:14.5px;letter-spacing:-.01em;line-height:1.2;}
+  .mod-cap{font-size:12.5px;color:var(--muted);line-height:1.4;}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;}
+  .tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;padding:2px 7px;border-radius:20px;
+    font-weight:600;text-transform:uppercase;}
+  .tag.built{background:var(--built-bg);color:var(--built);}
+  .tag.seam{background:var(--seam-bg);color:var(--seam);}
+  .tag.new{background:var(--new-bg);color:var(--new);}
+  .tag.ext{background:transparent;color:var(--faint);border:1px solid var(--line);}
+
+  /* ---- spine ---- */
+  .spine{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:13px 16px;
+    background:var(--brand-soft);border:1px dashed var(--brand);border-radius:13px;
+    align-items:center;}
+  .spine-lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--brand);font-weight:700;}
+  .spine-item{font-size:13px;color:var(--ink);font-weight:500;background:var(--surface);
+    border:1px solid var(--line);border-radius:8px;padding:5px 11px;}
+  .spine-item span{color:var(--muted);font-weight:400;}
+
+  /* ---- connector ---- */
+  .flow{display:flex;justify-content:center;align-items:center;gap:10px;color:var(--faint);
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    margin:14px 0 0;}
+  .flow::before,.flow::after{content:"";height:1px;width:min(60px,10vw);background:var(--line);}
+
+  /* ---- data band as strip ---- */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;}
+
+  /* ---- crosscut footer ---- */
+  .crosscut{margin-top:22px;padding:18px 20px;border:1px solid var(--line);border-radius:18px;
+    background:var(--surface);box-shadow:var(--shadow);}
+  .crosscut h3{font-family:var(--font-display);font-size:17px;margin:0 0 12px;font-weight:600;}
+  .cc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px 22px;}
+  .cc{font-size:13px;color:var(--muted);display:flex;gap:9px;align-items:flex-start;}
+  .cc b{color:var(--ink);font-weight:600;}
+  .cc .k{color:var(--spark);font-family:var(--font-mono);font-weight:700;font-size:12px;flex:none;margin-top:1px;}
+
+  footer{margin-top:30px;font-size:12px;color:var(--faint);font-family:var(--font-mono);
+    text-align:center;letter-spacing:.03em;}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">PushApp · System Architecture · WIP 2026-07-20</p>
+    <h1>One map, three layers — from a single-player app to a <span class="spark">creator network with a coach</span></h1>
+    <p class="lede">Every capability you described, placed on the architecture we already have. The engine-over-event-bus, config-before-code, vendor-isolated-gateway shape stays. What changes is <b>scale of the backend</b> and the arrival of two heavy new domains: a <b>content marketplace</b> and an <b>AI coach</b>. Colour = build status, not importance.</p>
+
+    <div class="legend">
+      <span class="lg"><span class="dot built"></span><b>Built</b> — shipped &amp; on main</span>
+      <span class="lg"><span class="dot seam"></span><b>Seam reserved</b> — boundary exists, needs logic</span>
+      <span class="lg"><span class="dot new"></span><b>New</b> — to design &amp; build</span>
+      <span class="lg" style="color:var(--faint)"><span class="tag ext" style="font-size:10px">EXTEND</span>&nbsp;built module that grows</span>
+    </div>
+  </header>
+
+  <!-- ============ CLIENT ============ -->
+  <section class="band">
+    <div class="band-head">
+      <h2 class="band-title">① Client — the app on the phone</h2>
+      <span class="band-sub">Expo · React Native · offline-first · framework-free engines</span>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Transformation core</p>
+      <div class="grid">
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Journey</span></div>
+          <div class="mod-cap">Dream → Journey → Phase → Step. Now grows: multiple Step data-types, Grace-Token model, edit-flexibility rules, points model.</div>
+          <div class="tags"><span class="tag built">built</span><span class="tag ext">extend</span></div>
+        </div>
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Reminder</span></div>
+          <div class="mod-cap">On-device local notifications. The only file that touches expo-notifications.</div>
+          <div class="tags"><span class="tag built">built</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Categories</span></div>
+          <div class="mod-cap">Journey category field (Option B palette). config/categories.ts as source of truth.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Identity &amp; progression</p>
+      <div class="grid">
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Auth</span></div>
+          <div class="mod-cap">Session, sign-in method, identity. PII (email) quarantined server-side.</div>
+          <div class="tags"><span class="tag built">built</span></div>
+        </div>
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Reward · XP · Coins</span></div>
+          <div class="mod-cap">Turns milestones into XP/Coins balances. Feeds level.</div>
+          <div class="tags"><span class="tag built">built</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Progression</span></div>
+          <div class="mod-cap">Level-gated feature unlock — which parts of the app reveal at which level.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Entitlement</span></div>
+          <div class="mod-cap">Account tier (free / trial / subscriber), read-only from server.</div>
+          <div class="tags"><span class="tag built">built</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Companion, economy &amp; game-loop</p>
+      <div class="grid">
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Buddy</span></div>
+          <div class="mod-cap">3D companion — reacts, evolves through stages, wears cosmetics.</div>
+          <div class="tags"><span class="tag built">built</span></div>
+        </div>
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Shop</span></div>
+          <div class="mod-cap">Coins-spend catalog. Grows to items · outfits · backgrounds · furniture.</div>
+          <div class="tags"><span class="tag built">built</span><span class="tag ext">extend</span></div>
+        </div>
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Mission</span></div>
+          <div class="mod-cap">Daily/Weekly missions + login rail. App-driven game loop.</div>
+          <div class="tags"><span class="tag built">built</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Achievements &amp; Celebration</span></div>
+          <div class="mod-cap">Victory FX + a shareable achievement each user can post to social networks.</div>
+          <div class="tags"><span class="tag new">new</span><span class="tag ext">extend</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Discovery &amp; authoring</p>
+      <div class="grid">
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Marketplace (browse)</span></div>
+          <div class="mod-cap">Search + filters over the Journey catalog. The consumer side of the network.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Authoring &amp; Templates</span></div>
+          <div class="mod-cap">Build-a-Journey from our templates (video / audio / questionnaire / text-log Steps).</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">AI Coach (chat UI)</span></div>
+          <div class="mod-cap">On-demand conversation: find a Journey · find motivation · recover a miss · pick the next goal.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Support Circle</p>
+      <div class="grid">
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Social graph</span></div>
+          <div class="mod-cap">Friends, per-Journey progress visibility, cheers. Only a summary leaves the device.</div>
+          <div class="tags"><span class="tag built">built</span><span class="tag ext">extend</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Stall alerts</span></div>
+          <div class="mod-cap">Let chosen allies know when I fall behind — opt-in, never a shaming broadcast.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Competitions &amp; shared missions</span></div>
+          <div class="mod-cap">Group challenges, co-op goals between people on similar Journeys.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Matchmaking</span></div>
+          <div class="mod-cap">Connect people doing similar Journeys. Consent-first, privacy-reviewed.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Adaptive intelligence — the "learning" you described (our reserved seams, now waking up)</p>
+      <div class="grid">
+        <div class="mod seam">
+          <div class="mod-top"><span class="dot seam"></span><span class="mod-name">User-Model / Profiling</span></div>
+          <div class="mod-cap">Privacy-safe picture of how a user acts (preferred time, follow-through). No PII, no free text.</div>
+          <div class="tags"><span class="tag seam">seam ready</span></div>
+        </div>
+        <div class="mod seam">
+          <div class="mod-top"><span class="dot seam"></span><span class="mod-name">Intervention / Communication</span></div>
+          <div class="mod-cap">Learns when &amp; how to nudge — which channel, which wording — and adapts over time.</div>
+          <div class="tags"><span class="tag seam">seam ready</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Motivation</span></div>
+          <div class="mod-cap">Learns why a user chose a Journey → serves relevant motivation lines. Part rules, part AI.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod seam">
+          <div class="mod-top"><span class="dot seam"></span><span class="mod-name">Interests</span></div>
+          <div class="mod-cap">Coarse, user-chosen topics powering Explore / recommendation surfaces.</div>
+          <div class="tags"><span class="tag seam">seam ready</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spine">
+      <span class="spine-lbl">Backbone</span>
+      <span class="spine-item">EventBus <span>· engines talk only through events</span></span>
+      <span class="spine-item">Repository <span>· offline-first local store</span></span>
+      <span class="spine-item">Feature Flags + Config registries <span>· config-before-code</span></span>
+      <span class="spine-item">Location &amp; Calendar gateways <span>· Null seams, opt-in</span></span>
+    </div>
+  </section>
+
+  <div class="flow">talks to backend only through vendor-isolated gateways</div>
+
+  <!-- ============ BACKEND ============ -->
+  <section class="band">
+    <div class="band-head">
+      <h2 class="band-title">② Backend — services behind the gateways</h2>
+      <span class="band-sub">Supabase (Postgres · Auth · RLS) · Edge Functions · Claude API</span>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Content network — the marketplace machine</p>
+      <div class="grid">
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Catalog &amp; Publishing</span></div>
+          <div class="mod-cap">Journeys as published content: versioning, first-party seeding, creator profiles, ratings/reviews.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Search &amp; Recommendations</span></div>
+          <div class="mod-cap">Full-text + filtered search; later, "journeys like yours" from Interests + Profile.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Media storage + CDN</span></div>
+          <div class="mod-cap">Hosts the video / audio / image inside rich Step types. Bandwidth = a real cost line.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Intelligence &amp; communication</p>
+      <div class="grid">
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">AI Coach service</span></div>
+          <div class="mod-cap">Edge fn → Claude Haiku + Prompt Caching + Structured Outputs. ~¢/conversation. Level-1 first.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">AI Safety layer</span></div>
+          <div class="mod-cap">Crisis detection + escalation, no-treatment-claims guard, content filter. Non-negotiable.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Push &amp; Comms delivery</span></div>
+          <div class="mod-cap">Server-initiated push. Executes what the Intervention engine decides (channel, timing, wording).</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <p class="cluster-label">Social, economy &amp; trust</p>
+      <div class="grid">
+        <div class="mod built">
+          <div class="mod-top"><span class="dot built"></span><span class="mod-name">Social graph + RLS</span></div>
+          <div class="mod-cap">Friendships, progress summaries, cheers — RLS-enforced. Grows: competitions, matchmaking.</div>
+          <div class="tags"><span class="tag built">built</span><span class="tag ext">extend</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Economy authority</span></div>
+          <div class="mod-cap">Server-validates anything social/competitive (XP, wins) so leaderboards can't be cheated.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Trust &amp; Safety</span></div>
+          <div class="mod-cap">Moderation queue, abuse reports, rate-limit + near-duplicate detection — your "don't let people spam similar Journeys."</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Billing</span></div>
+          <div class="mod-cap">StoreKit / Play Billing → receipt validation → writes the tier Entitlement reads.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+        <div class="mod new">
+          <div class="mod-top"><span class="dot new"></span><span class="mod-name">Analytics (privacy-safe)</span></div>
+          <div class="mod-cap">The signal source the learning loops feed on. Aggregate, consented, minimised.</div>
+          <div class="tags"><span class="tag new">new</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">persists to</div>
+
+  <!-- ============ DATA ============ -->
+  <section class="band">
+    <div class="band-head">
+      <h2 class="band-title">③ Data</h2>
+      <span class="band-sub">offline-first on device · authoritative in the cloud</span>
+    </div>
+    <div class="strip">
+      <div class="mod built">
+        <div class="mod-name">Local Repository</div>
+        <div class="mod-cap">Device store — Journeys, Steps, balances. Works with no network.</div>
+        <div class="tags"><span class="tag built">built</span></div>
+      </div>
+      <div class="mod built">
+        <div class="mod-name">Postgres + RLS</div>
+        <div class="mod-cap">Auth, social, entitlement today; catalog + economy next.</div>
+        <div class="tags"><span class="tag built">built</span><span class="tag ext">extend</span></div>
+      </div>
+      <div class="mod new">
+        <div class="mod-name">Object storage + CDN</div>
+        <div class="mod-cap">Media for rich Steps &amp; creator content.</div>
+        <div class="tags"><span class="tag new">new</span></div>
+      </div>
+      <div class="mod new">
+        <div class="mod-name">Sync &amp; conflict resolution</div>
+        <div class="mod-cap">Reconciles offline edits with shared server content.</div>
+        <div class="tags"><span class="tag new">new</span></div>
+      </div>
+      <div class="mod new">
+        <div class="mod-name">Vector / analytics store</div>
+        <div class="mod-cap">Optional — recommendation embeddings + event analytics.</div>
+        <div class="tags"><span class="tag new">new</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CROSS-CUTTING ============ -->
+  <div class="crosscut">
+    <h3>Cross-cutting — true of every box above</h3>
+    <div class="cc-grid">
+      <div class="cc"><span class="k">§</span><span><b>Privacy &amp; data-minimisation.</b> RLS everywhere, PII quarantined, consent + account deletion + data export. Every new domain routes through security-privacy first.</span></div>
+      <div class="cc"><span class="k">§</span><span><b>Config-before-code.</b> Categories, templates, rewards, tiers, missions all live in registries, not hard-coded logic.</span></div>
+      <div class="cc"><span class="k">§</span><span><b>Store compliance.</b> UGC + AI + social all change the App Privacy label and add review surface (moderation, deletion).</span></div>
+      <div class="cc"><span class="k">§</span><span><b>Cost governance.</b> AI usage caps, CDN bandwidth, push volume — each metered before it ships (CLAUDE.md §3.10).</span></div>
+      <div class="cc"><span class="k">§</span><span><b>Localisation.</b> Repo is English; users are Israeli — a he/en layer becomes real once content is user-facing at scale.</span></div>
+      <div class="cc"><span class="k">§</span><span><b>Onboarding / first 30 seconds.</b> The "ignition" moment that makes a stuck user feel understood — cuts across Auth, AI, Journey.</span></div>
+    </div>
+  </div>
+
+  <footer>Working draft · not an approved architecture · maps the 2026-07-20 strategy conversation onto Module_Architecture.md (E4)</footer>
+</div>

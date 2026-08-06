@@ -142,3 +142,25 @@ describe('AppCore reminders facade', () => {
     expect(() => core.setCalendarOptIn(true)).not.toThrow();
   });
 });
+
+describe('AppCore adaptive coach — DORMANT by default (flag off)', () => {
+  it('generateJourney is inert and creates no Journey when the flag is off', async () => {
+    const core = new AppCore(repoWith(null)); // first run seeds ONE demo Journey
+    await core.start();
+    const before = core.getSnapshot().journeys.length;
+
+    // adaptiveCoach is off in production/test, so the pivot never engages.
+    expect(core.generateJourney({ title: 'Learn guitar', isHabit: true }, {
+      weeklyAvailabilityMinutes: 120,
+      preferredDays: [1, 3, 5],
+      daypart: 'evening',
+    })).toBeNull();
+    expect(core.adaptJourney('anything', {
+      weeklyAvailabilityMinutes: 0,
+      preferredDays: [],
+      daypart: 'either',
+    })).toBe(false);
+
+    expect(core.getSnapshot().journeys.length).toBe(before);
+  });
+});

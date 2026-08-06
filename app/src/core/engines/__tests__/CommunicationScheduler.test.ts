@@ -35,7 +35,7 @@ import { MAX_PENDING } from '../../config/schedulerLimits';
 import { EventBus } from '../../events/EventBus';
 import type { EventOf } from '../../events/events';
 import { NullLocationGateway } from '../../location/LocationGateway';
-import type { AppState, Journey, ReminderRule, ReminderTrigger, SchedulingPrefs } from '../../types/domain';
+import type { AppState, Journey, ReminderRule, ReminderTrigger, SchedulingPrefs, Step } from '../../types/domain';
 import { CommunicationScheduler } from '../CommunicationScheduler';
 import { ReminderEngine } from '../ReminderEngine';
 
@@ -286,6 +286,56 @@ describe('planSchedule — dormant calendar/location seams (R2)', () => {
     );
     expect(plan).toEqual([]);
     expect(watchPlace).not.toHaveBeenCalled();
+  });
+});
+
+describe('planSchedule — Miss-Recovery location constraint gate (permissive)', () => {
+  const homeStep = (done = false): Step => ({
+    id: `step_${done ? 'done' : 'pending'}`,
+    title: 'Home workout',
+    isStarterStep: false,
+    cadence: 'once',
+    done,
+    constraints: [{ kind: 'location', place: 'home' }],
+  });
+
+  /** A scheduler whose location gateway concretely reports the given place. */
+  function schedulerAt(place: 'home' | 'away' | 'unknown') {
+    return new CommunicationScheduler(
+      new EventBus(),
+      () => ({}) as AppState,
+      new ReminderEngine(),
+      {
+        location: { ...NullLocationGateway, currentPlace: () => place },
+        calendar: NullCalendarGateway,
+      },
+      () => NOW,
+    );
+  }
+
+  it('suppresses a Journey whose every pending Step is home-only while away', () => {
+    const j = journey({ steps: [homeStep()] });
+    const plan = schedulerAt('away').planSchedule([rule()], [j], permissivePrefs(), NOW);
+    expect(plan).toEqual([]);
+  });
+
+  it('keeps the reminder when home (permissive)', () => {
+    const j = journey({ steps: [homeStep()] });
+    const plan = schedulerAt('home').planSchedule([rule()], [j], permissivePrefs(), NOW);
+    expect(plan).toHaveLength(1);
+  });
+
+  it('keeps the reminder on an unknown location signal (real Null-gateway default)', () => {
+    const j = journey({ steps: [homeStep()] });
+    const plan = schedulerAt('unknown').planSchedule([rule()], [j], permissivePrefs(), NOW);
+    expect(plan).toHaveLength(1);
+  });
+
+  it('keeps the reminder while away when a pending Step is doable away', () => {
+    const anywhere: Step = { ...homeStep(), id: 'step_anywhere', constraints: [] };
+    const j = journey({ steps: [homeStep(), anywhere] });
+    const plan = schedulerAt('away').planSchedule([rule()], [j], permissivePrefs(), NOW);
+    expect(plan).toHaveLength(1);
   });
 });
 

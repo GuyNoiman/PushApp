@@ -16,6 +16,18 @@ export type Rhythm = 'daily' | 'few-times-week' | 'weekly';
 /** Buddy evolution stages, egg → guardian. Thresholds live in config/buddyStages.ts. */
 export type BuddyStage = 'egg' | 'hatchling' | 'sprout' | 'companion' | 'guardian';
 
+/**
+ * A condition that must hold for a reminder to be worth firing (Miss-Recovery
+ * slice). A discriminated union — designed to GROW (energy/equipment/low-noise
+ * later) exactly like {@link ReminderTrigger}. V1 supports only `location`: a
+ * home-only Step should not nudge the user when they are away.
+ */
+export type Constraint = {
+  kind: 'location';
+  /** The place the Step needs. `'home'` is the V1 value; the slot is open to grow. */
+  place: 'home' | string;
+};
+
 /** The smallest unit of progress inside a Journey. Always belongs to one Journey. */
 export interface Step {
   id: string;
@@ -28,6 +40,48 @@ export interface Step {
   /** Epoch ms of the most recent check-in on this Step, if any. */
   lastCheckInAt?: number;
   done: boolean;
+  /**
+   * Minutes the Step is expected to take (Miss-Recovery slice). Optional — existing
+   * Steps stay valid. Lets recovery only propose a time when a slot actually fits,
+   * and powers the Reshape lever (a long Step + "No time" → offer to shrink).
+   */
+  estimatedDuration?: number;
+  /**
+   * Conditions that gate whether a reminder for this Step is worth firing
+   * (Miss-Recovery slice). Optional and extensible; V1 supports a `location` place.
+   */
+  constraints?: Constraint[];
+  /**
+   * Epoch ms the Planner scheduled this occurrence for (adaptive coach, S1). Optional —
+   * a manually-created Step (or a pre-Planner Journey) simply has none.
+   */
+  plannedFor?: number;
+  /** The {@link Milestone} (mid-layer) this Step belongs to, when the Journey has Milestones. */
+  milestoneId?: string;
+  /** Relative difficulty 1..5 the Planner/DomainExpert assigned. Optional metadata. */
+  difficulty?: number;
+  /**
+   * True once the adaptive coach shed this Step from scope to hold a deadline
+   * (AdaptivePlanner load-shed, applied via JourneyEngine.dropStep). A dropped Step is
+   * NOT deleted (history is preserved) but is excluded from completion, the actionable /
+   * week lists, progress, and slip detection. Optional — an unshed Step simply has none.
+   */
+  dropped?: boolean;
+}
+
+/**
+ * A Milestone — the mid-layer object between a Journey and its Steps (adaptive coach, S1).
+ * The Planner groups Steps into an ordered arc of Milestones. Optional and additive: a
+ * Journey created before Milestones existed (or by the manual flow) simply has none, so
+ * existing Journeys stay valid. Terminology is canonical — Milestone, never "Phase".
+ */
+export interface Milestone {
+  id: string;
+  title: string;
+  /** 0-based position within the Journey. */
+  order: number;
+  /** Optional relative effort/importance weight the Planner uses to size the arc. */
+  weight?: number;
 }
 
 /** A finite transformation — the core object of PushApp. */
@@ -45,6 +99,11 @@ export interface Journey {
   completedAt?: number;
   /** Optional link to the long-term Dream this Journey serves. */
   dreamId?: string;
+  /**
+   * The ordered {@link Milestone}s grouping this Journey's Steps (Planner output, S1).
+   * Optional — absent on manually-created or pre-Planner Journeys.
+   */
+  milestones?: Milestone[];
 }
 
 /** A long-term aspiration — the person the user wants to become. Never "completed". */
@@ -199,6 +258,185 @@ export interface SchedulingPrefs {
   preferredDays: number[];
 }
 
+// ── Miss-Recovery — reasons, levers, and the per-user reason log ─────────────
+// The user says WHAT HAPPENED (a closed reason); a rules engine (config, not AI)
+// maps the reason to a LEVER that changes the next reminder / plan. The reason list
+// and the reason→lever mapping are config-before-code (config/reasons.ts,
+// config/levers.ts) — never hard-coded in an engine. Lever names are INTERNAL to
+// the taxonomy (a reserved Intervention-domain vocabulary); the user-facing history
+// label is "see past reasons", never "Mirror" (which would collide with Reflection).
+
+/** The closed set of reasons a Step didn't happen (source of truth: config/reasons.ts). */
+export type ReasonId =
+  | 'forgot'
+  | 'no_time'
+  | 'lost_motivation'
+  | 'too_hard'
+  | 'did_partially'
+  | 'couldnt'
+  | 'not_relevant'
+  | 'other';
+
+/** The internal lever taxonomy a reason maps to (source of truth: config/levers.ts). */
+export type LeverId =
+  | 'retime'
+  | 'refrequency'
+  | 'retone'
+  | 'rally'
+  | 'reconnect_why'
+  | 'reshape'
+  | 'mirror'
+  | 'grace';
+
+/** The two Screen-1 choices: keep-and-move (postpone) or let-this-occurrence-go (cancel). */
+export type PostponeAction = 'postpone' | 'cancel';
+
+/** What actually happened to the Step as a result of the chosen lever(s). */
+export type ReasonOutcome = 'rescheduled' | 'partial' | 'accepted' | 'edited' | 'logged';
+
+/**
+ * One structured record in the per-user reason history — the seed of the "learn the
+ * user" data and the source for the "see past reasons" view. Minimal and structured
+ * from day one: ids + enums + a timestamp, so a future Profiling/Analytics layer can
+ * consume it. NO PII beyond the optional on-device `note` (see below).
+ *
+ * SECURITY-PRIVACY G6 (forward): this log — INCLUDING `note` — must be in scope for
+ * account deletion/export when that lands (E3 P7).
+ */
+export interface ReasonEntry {
+  id: string;
+  stepId: string;
+  journeyId: string;
+  reasonId: ReasonId;
+  /** The lever(s) the rules engine resolved for this reason (placeholders included). */
+  leverIds: LeverId[];
+  outcome: ReasonOutcome;
+  /** Epoch ms the reason was captured. */
+  at: number;
+  /**
+   * The free-text captured only for the `other` reason.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, FOREVER. This string must NEVER be copied
+   * into a DomainEvent, a ProgressSummary, an OutreachInsight, a log line, or any
+   * Profiling/Analytics signal. It never leaves the device. Moving it anywhere needs a
+   * fresh security-privacy review. The reason→lever code must never read it into an event.
+   *
+   * This same G1 rule covers, verbatim, EVERY on-device-only raw signal of the adaptive
+   * coach: coach conversation text, {@link RawBehaviorRecord} rows, and the exact
+   * goal/title specifics of a Journey/Step. None of these may leave the device; only the
+   * enum/bucket {@link OutreachInsight} projection may (via deriveOutreachInsight).
+   */
+  note?: string;
+}
+
+// ── Adaptive coach — on-device signal, derived model, minimal outreach projection ──
+// A privacy boundary in three layers (S0.5/S0.6). RawBehaviorRecord is the ON-DEVICE-ONLY
+// raw signal; InsightModel is the ON-DEVICE derived model the adaptive engine consumes;
+// OutreachInsight is the ONE minimal, server-eligible projection. The single chokepoint
+// where data becomes server-eligible is deriveOutreachInsight (core/insights). Nothing
+// crosses that line except enums, buckets, booleans, opt-in prefs, and a pseudonymous uid.
+
+/**
+ * A single raw behavioural signal about one Step occurrence — the seed of the adaptive
+ * coach's "learn the user" data. Structured (ids + enum + timestamps) from day one so the
+ * on-device InsightModel can be derived from it.
+ *
+ * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, FOREVER (same invariant as {@link ReasonEntry.note}).
+ * A RawBehaviorRecord — and any raw timestamp series built from it — must NEVER be copied
+ * into a DomainEvent, a ProgressSummary, an OutreachInsight, a log line, or any sync path.
+ * It never leaves the device. Only the bucketed {@link OutreachInsight} may leave, and only
+ * via deriveOutreachInsight. In scope for account deletion/export (G6) when that lands.
+ */
+export interface RawBehaviorRecord {
+  id: string;
+  stepId: string;
+  journeyId: string;
+  /** The Milestone (mid-layer object) this Step belongs to, if any. */
+  milestoneId?: string;
+  /** What happened to the occurrence. */
+  kind: 'done' | 'partial' | 'couldnt' | 'slipped' | 'postponed';
+  /** Epoch ms the signal was recorded. */
+  at: number;
+  /** Epoch ms the occurrence was planned for, if it was scheduled. */
+  plannedFor?: number;
+  /** Actual minutes spent, when known (e.g. a timed session). */
+  actualMinutes?: number;
+}
+
+/**
+ * The DERIVED model the adaptive engine consumes, computed on-device from
+ * {@link RawBehaviorRecord}s (deriveInsights). It MAY be richer than what ever leaves the
+ * device — because it never does. STAYS ON DEVICE (G1). Only {@link OutreachInsight} is
+ * server-eligible.
+ */
+export interface InsightModel {
+  /** Per-Milestone reliability, 0..1 = done / total occurrences for that Milestone. */
+  reliabilityByMilestone: Record<string, number>;
+  /** 0..1 share of occurrences that slipped. */
+  slipRate: number;
+  /** Which part of day the user actually completes Steps in. */
+  preferredDaypart: DayPart;
+  /** Mean minutes of a typical completed session (0 when unknown). */
+  typicalSessionMinutes: number;
+  /** 0..1 = planned occurrences completed on-plan / planned occurrences. */
+  paceRatio: number;
+  /** True when the user is trending toward falling off (slips/pace/recency). */
+  atRisk: boolean;
+  /** Epoch ms of the most recent raw signal, or null when there is none. */
+  lastActivityAt: number | null;
+  /** Whole days between {@link lastActivityAt} and `now` (0 when there is none). */
+  daysSinceLastActivity: number;
+}
+
+/** Coarse engagement bucket for outreach. Enum only — no raw activity dates. */
+export type EngagementState = 'active' | 'cooling' | 'dormant';
+/** Coarse streak bucket for outreach. Enum only — no exact streak length. */
+export type StreakBucket = 'none' | 'building' | 'strong';
+/**
+ * Coarse proximity of a goal deadline (cert exam, event, …). Generalized from the
+ * exam-only original. Enum only — the exact target date never leaves the device.
+ */
+export type TargetProximity = 'none' | 'far' | 'weeks' | 'days' | 'past';
+
+/** Preferred contact window for outreach — a coarse day-part, never exact wall-clock times. */
+export type ContactWindow = DayPart;
+
+/**
+ * Which channels outreach may use. Booleans only — mirrors the {@link CommunicationPrefs}
+ * opt-ins, carries no PII.
+ */
+export interface ChannelPrefs {
+  push: boolean;
+  social: boolean;
+}
+
+/**
+ * The MINIMAL, server-eligible projection of the on-device {@link InsightModel} — the ONLY
+ * adaptive-coach artefact allowed to leave the device (later, behind an InsightGateway).
+ *
+ * SECURITY-PRIVACY (G2, data minimization Bible §8): this is a WHITELIST, exactly like
+ * {@link ProgressSummary}. Every field is an enum, a bucket, a boolean, an opt-in pref, a
+ * pseudonymous uid, or a single scalar timestamp — NEVER free text, coach conversation
+ * text, an exact goal/title, or a raw timestamp series. Never add a field that carries any
+ * of those without a fresh security-privacy review. deriveOutreachInsight is the single
+ * chokepoint that produces this.
+ */
+export interface OutreachInsight {
+  /** Pseudonymous account id (not an email, name, or handle). */
+  uid: string;
+  engagementState: EngagementState;
+  slippageFlag: boolean;
+  streakBucket: StreakBucket;
+  contactWindow: ContactWindow;
+  channelPrefs: ChannelPrefs;
+  /** Coarse deadline proximity; omitted/`'none'` when there is no tracked goal date. */
+  targetProximity?: TargetProximity;
+  /** Epoch ms the user was last nudged, if ever (a single scalar — never a series). */
+  lastNudgeAt?: number;
+  /** Epoch ms this projection was computed. */
+  updatedAt: number;
+}
+
 /** The full persisted application state (offline-first). */
 export interface AppState {
   dreams: Dream[];
@@ -227,4 +465,34 @@ export interface AppState {
    * never stored here. Carries NO PII.
    */
   entitlement?: Entitlement;
+  /**
+   * The per-user Miss-Recovery reason history (Miss-Recovery slice). Optional so an
+   * older snapshot loads without it (backfilled to `[]` in AppCore.migrateState).
+   *
+   * SECURITY-PRIVACY: this log is ON-DEVICE ONLY and is WHITELIST-EXCLUDED from the
+   * Social sync path — SocialProvider must never read it, and no reason/reflection
+   * data ever enters a ProgressSummary (G2). The JourneyEngine caps it to a rolling
+   * window per Step (G5); a future Profiling layer may derive only coarse aggregates
+   * from it, never raw records and never the `note`.
+   */
+  reasonLog?: ReasonEntry[];
+  /**
+   * The adaptive coach's ON-DEVICE raw behaviour log (adaptive coach, S1.16). Optional so
+   * an older snapshot loads without it (backfilled to `[]` in AppCore.migrateState). Only
+   * populated when the `adaptiveCoach` flag is on; the BehaviorModelEngine hydrates from it
+   * on load and writes {@link BehaviorModelEngine.getRawLog} back through the save path.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, FOREVER. A {@link RawBehaviorRecord} must NEVER be
+   * copied into a DomainEvent, a ProgressSummary, an OutreachInsight, a log line, or any sync
+   * path. WHITELIST-EXCLUDED from the Social path exactly like {@link reasonLog}. In scope for
+   * account deletion/export (G6) when that lands.
+   */
+  behaviorLog?: RawBehaviorRecord[];
+  /**
+   * The adaptive coach's DERIVED on-device {@link InsightModel} (adaptive coach, S1.16),
+   * recomputed from {@link behaviorLog} on each change and cached here. Optional; only
+   * populated when the `adaptiveCoach` flag is on. STAYS ON DEVICE (G1) — only the bucketed
+   * {@link OutreachInsight} is ever server-eligible.
+   */
+  insightModel?: InsightModel;
 }

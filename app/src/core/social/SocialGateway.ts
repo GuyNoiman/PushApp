@@ -30,7 +30,18 @@ export interface Friend {
   direction: 'incoming' | 'outgoing';
 }
 
-/** What the OWNER publishes about one of their Journeys. Summary only. */
+/**
+ * What the OWNER publishes about one of their Journeys. Summary only.
+ *
+ * SECURITY-PRIVACY (G2, data minimization Bible §8): this is a WHITELIST of the ONLY
+ * fields that may ever leave the device for a Journey. The Miss-Recovery reason log
+ * (AppState.reasonLog) — reasons, chosen levers, and especially the on-device `note` —
+ * is BARRED from this summary and from every other sync path. Equally BARRED: the adaptive
+ * coach's on-device raw signal (RawBehaviorRecord), any coach conversation text, and exact
+ * goal/title specifics — those never leave the device; only the bucketed OutreachInsight
+ * projection may (via deriveOutreachInsight). Never add a reason/reflection/why/step-detail
+ * field here without a fresh security-privacy review.
+ */
 export interface ProgressSummary {
   journeyId: string;
   title: string;

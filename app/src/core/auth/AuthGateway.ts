@@ -39,6 +39,19 @@ export class AuthNotAvailableError extends Error {
   }
 }
 
+/**
+ * Thrown when the single-user server sign-in succeeded but the returned identity is
+ * NOT the expected user (uid mismatch). The gateway signs out before throwing this,
+ * so the app is left unauthenticated rather than proceeding as the wrong identity.
+ * Typed so callers can distinguish a verification failure from a transport error.
+ */
+export class AuthIdentityMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthIdentityMismatchError';
+  }
+}
+
 export interface AuthGateway {
   /** Whether the pillar is configured/active (feature flag + env present). */
   readonly enabled: boolean;

@@ -11,14 +11,42 @@
  * planned Steps (future: the weekly-planning flow generates them).
  */
 import type { EventBus } from '../events/EventBus';
-import type { AppState, Cadence, Journey, Rhythm, Step } from '../types/domain';
+import type {
+  AppState,
+  Cadence,
+  Constraint,
+  Journey,
+  Milestone,
+  ReasonEntry,
+  ReasonId,
+  Rhythm,
+  Step,
+} from '../types/domain';
 import { createId } from '../util/id';
+
+/**
+ * SECURITY-PRIVACY G5: cap the per-user reason log to a rolling window PER STEP so it
+ * never grows unbounded on disk. Keep the most recent N entries for each Step; a
+ * future Profiling layer may derive only coarse aggregates from this — never raw
+ * records, and never the `note`.
+ */
+const MAX_REASONS_PER_STEP = 20;
 
 export interface NewStepInput {
   title: string;
   description?: string;
   isStarterStep?: boolean;
   cadence?: Cadence;
+  /** Optional expected length in minutes (Miss-Recovery: powers Reshape + slot fit). */
+  estimatedDuration?: number;
+  /** Optional gating constraints (Miss-Recovery: e.g. a home-only Step). */
+  constraints?: Constraint[];
+  /** Optional Planner schedule for this occurrence, epoch ms (adaptive coach, S1). */
+  plannedFor?: number;
+  /** Optional owning {@link Milestone} id (adaptive coach, S1). */
+  milestoneId?: string;
+  /** Optional relative difficulty 1..5 (adaptive coach, S1). */
+  difficulty?: number;
 }
 
 export interface NewJourneyInput {
@@ -29,6 +57,10 @@ export interface NewJourneyInput {
   rhythm: Rhythm;
   steps: NewStepInput[];
   dreamId?: string;
+  /** Optional ordered Milestones grouping the Steps (Planner output, S1). */
+  milestones?: Milestone[];
+  /** Weekly session target for a FREQUENCY-BASED plan (no fixed dates); undefined when Steps are dated. */
+  sessionsPerWeek?: number;
 }
 
 /** A Step surfaced for action, paired with its Journey for display/context. */
@@ -53,6 +85,11 @@ export class JourneyEngine {
       isStarterStep: s.isStarterStep ?? false,
       cadence: s.cadence ?? 'once',
       done: false,
+      ...(s.estimatedDuration !== undefined ? { estimatedDuration: s.estimatedDuration } : {}),
+      ...(s.constraints !== undefined ? { constraints: s.constraints } : {}),
+      ...(s.plannedFor !== undefined ? { plannedFor: s.plannedFor } : {}),
+      ...(s.milestoneId !== undefined ? { milestoneId: s.milestoneId } : {}),
+      ...(s.difficulty !== undefined ? { difficulty: s.difficulty } : {}),
     }));
 
     const journey: Journey = {
@@ -65,6 +102,7 @@ export class JourneyEngine {
       steps,
       createdAt: now,
       dreamId: input.dreamId,
+      ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
     };
 
     this.getState().journeys.push(journey);
@@ -93,8 +131,9 @@ export class JourneyEngine {
     state.checkIns.push(checkIn);
     this.bus.emit({ type: 'StepCheckedIn', journeyId, step, checkIn });
 
-    // Finite Steps: the Journey completes when the last Step is done.
-    if (!journey.completedAt && journey.steps.every((s) => s.done)) {
+    // Finite Steps: the Journey completes when every non-dropped Step is done (a Step shed
+    // by the adaptive coach is out of scope and never blocks completion).
+    if (!journey.completedAt && journey.steps.every((s) => s.done || s.dropped)) {
       journey.completedAt = now;
       this.bus.emit({ type: 'JourneyCompleted', journey });
     }
@@ -109,10 +148,139 @@ export class JourneyEngine {
   journeyProgress(journeyId: string): number {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
     if (!journey) return 0;
-    const total = journey.steps.length;
+    // Dropped Steps are out of scope: they count toward neither the numerator nor denominator.
+    const inScope = journey.steps.filter((s) => !s.dropped);
+    const total = inScope.length;
     if (total === 0) return 0;
-    const done = journey.steps.filter((s) => s.done).length;
+    const done = inScope.filter((s) => s.done).length;
     return done / total;
+  }
+
+  // ── Miss-Recovery (user-triggered) ───────────────────────────────────────
+  // Additive methods behind the Postpone loop. They emit ids/enums only (never the
+  // reason `note`), perform NO Grace-Token math (Cancel is FREE this slice), and never
+  // emit the reserved StepMissed keystone.
+
+  /**
+   * Postpone a Step: the user kept it and will move it. Emits StepPostponed; makes NO
+   * `done` change. No-op if the Journey/Step is missing or already done.
+   */
+  postponeStep(journeyId: string, stepId: string): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step || step.done) return;
+    this.bus.emit({ type: 'StepPostponed', journeyId, stepId });
+  }
+
+  /**
+   * Let THIS occurrence of a Step go ("Not this time"). Emits StepCancelled with the
+   * closed reason id only. Cancel is FREE — deliberately NO Grace-Token cost and no
+   * token language (founder decision, PRD §9). Steps are one-shot with no occurrence
+   * model yet, so the Step is left pending (the "let it go" is captured in the reason
+   * log); a true occurrence/skip model is a later slice. No-op if the Step is missing.
+   */
+  cancelStep(journeyId: string, stepId: string, reasonId: ReasonId): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step) return;
+    this.bus.emit({ type: 'StepCancelled', journeyId, stepId, reasonId });
+  }
+
+  /**
+   * The SOLE writer of the per-user reason log. Appends the entry and applies the G5
+   * rolling-window cap per Step. The caller (RecoveryEngine) always emits a
+   * StepPostponed/StepCancelled alongside, which is what persists the new state.
+   */
+  recordReason(entry: ReasonEntry): void {
+    const state = this.getState();
+    if (!state.reasonLog) state.reasonLog = [];
+    state.reasonLog.push(entry);
+    this.capReasonLog(state, entry.stepId);
+  }
+
+  /**
+   * The Step's reason history, newest first — the read model behind the user-facing
+   * "see past reasons" view (internally the Mirror lever). Reflective, not a
+   * scoreboard. Returns `[]` when the Step has no history.
+   */
+  getReasonHistory(stepId: string): ReasonEntry[] {
+    const log = this.getState().reasonLog ?? [];
+    return log.filter((e) => e.stepId === stepId).sort((a, b) => b.at - a.at);
+  }
+
+  /**
+   * Record a PARTIAL check-in: the user did some of the Step. Touches the Step
+   * (lastCheckInAt) but leaves it NOT done — a partial isn't a completion (no
+   * celebration, no Journey completion). Emits StepPartial (ids only) so the
+   * BehaviorModelEngine records the signal. No-op if the Step is missing or already done.
+   */
+  markPartial(journeyId: string, stepId: string): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step || step.done) return;
+    step.lastCheckInAt = Date.now();
+    this.bus.emit({ type: 'StepPartial', journeyId, stepId });
+  }
+
+  /**
+   * Move a Step's scheduled occurrence — the Planner's retime lever. Updates
+   * Step.plannedFor and emits PlanAdapted (ids + the new scalar timestamp only). No-op
+   * if the Journey/Step is missing. Leaves `done` untouched.
+   */
+  rescheduleStep(journeyId: string, stepId: string, plannedFor: number): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step) return;
+    step.plannedFor = plannedFor;
+    this.bus.emit({ type: 'PlanAdapted', journeyId, stepId, plannedFor });
+  }
+
+  /**
+   * Reshape a Step in place — the Reshape lever (resize/edit), also the AdaptivePlanner's
+   * resize apply. Applies the given partial (e.g. a shrunk estimatedDuration, an eased
+   * difficulty, an edited title). No-op if the Step is missing. True retire/archive of a
+   * Step or Journey is a flagged follow-up.
+   */
+  resizeStep(
+    journeyId: string,
+    stepId: string,
+    changes: Partial<Pick<Step, 'title' | 'description' | 'estimatedDuration' | 'difficulty'>>,
+  ): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step) return;
+    if (changes.title !== undefined) step.title = changes.title;
+    if (changes.description !== undefined) step.description = changes.description;
+    if (changes.estimatedDuration !== undefined) step.estimatedDuration = changes.estimatedDuration;
+    if (changes.difficulty !== undefined) step.difficulty = changes.difficulty;
+  }
+
+  /**
+   * Drop a remaining Step from scope — the AdaptivePlanner's load-shed lever, applied when a
+   * deadline plan cannot be held after compression + shrinking. Marks the Step `dropped`
+   * (excluded from completion, the actionable / week lists, progress, and slip detection) and
+   * emits StepDropped (ids only). The Step is NOT deleted — history is preserved. No-op if the
+   * Step is missing, already done, or already dropped.
+   */
+  dropStep(journeyId: string, stepId: string): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step || step.done || step.dropped) return;
+    step.dropped = true;
+    this.bus.emit({ type: 'StepDropped', journeyId, stepId });
+  }
+
+  /** Find a Step within a Journey, or undefined if either is missing. */
+  private findStep(journeyId: string, stepId: string): Step | undefined {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    return journey?.steps.find((s) => s.id === stepId);
+  }
+
+  /** Trim the reason log so no Step keeps more than MAX_REASONS_PER_STEP entries (G5). */
+  private capReasonLog(state: AppState, stepId: string): void {
+    const log = state.reasonLog;
+    if (!log) return;
+    const forStep = log.filter((e) => e.stepId === stepId);
+    if (forStep.length <= MAX_REASONS_PER_STEP) return;
+    // Keep only the newest N for this Step; other Steps' entries are untouched.
+    const keep = new Set(
+      [...forStep].sort((a, b) => b.at - a.at).slice(0, MAX_REASONS_PER_STEP).map((e) => e.id),
+    );
+    state.reasonLog = log.filter((e) => e.stepId !== stepId || keep.has(e.id));
   }
 
   /** Steps the user can act on now: the not-yet-done Steps of active (incomplete) Journeys. */
@@ -121,7 +289,7 @@ export class JourneyEngine {
     for (const journey of this.getState().journeys) {
       if (journey.completedAt) continue;
       for (const step of journey.steps) {
-        if (!step.done) {
+        if (!step.done && !step.dropped) {
           today.push({ journeyId: journey.id, journeyTitle: journey.title, step });
         }
       }
@@ -143,6 +311,7 @@ export class JourneyEngine {
     for (const journey of this.getState().journeys) {
       if (journey.completedAt) continue;
       for (const step of journey.steps) {
+        if (step.dropped) continue; // shed from scope — not shown in the week's steps.
         week.push({ journeyId: journey.id, journeyTitle: journey.title, step });
       }
     }

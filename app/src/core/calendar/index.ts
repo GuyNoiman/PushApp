@@ -10,6 +10,7 @@
  * changes.
  */
 import { featureFlags } from '../config/featureFlags';
+import { MockCalendarGateway } from './MockCalendarGateway';
 import { NullCalendarGateway, type CalendarGateway } from './CalendarGateway';
 
 let instance: CalendarGateway | null = null;
@@ -20,7 +21,11 @@ export function getCalendarGateway(): CalendarGateway {
     // (after a security-privacy + store review), construct it here behind
     // `featureFlags.calendar`; until then the flag is off and we stay inert.
     void featureFlags.calendar;
-    instance = NullCalendarGateway;
+    // DEV-ONLY (Miss-Recovery): when `devMockRecovery` is on, return the in-memory
+    // mock so the recovery loop is exercisable in Expo Go. It stays enabled=false
+    // (the trigger kind is still dormant); it only adds the gating-only isBusy()
+    // read. OFF in production ⇒ the inert Null gateway, unchanged behaviour.
+    instance = featureFlags.devMockRecovery ? MockCalendarGateway : NullCalendarGateway;
   }
   return instance;
 }

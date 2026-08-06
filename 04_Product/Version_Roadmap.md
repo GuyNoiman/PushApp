@@ -76,3 +76,8 @@ Goal: creator/business ecosystem and the differentiated AI/experience layer that
 - Every new feature should carry a `Stage:`/version tag. Assignments will shift as we learn.
 - Cross-refs: `POC_and_MVP_Scope.md` (V1/V2 detail), `Product_Roadmap_and_Scope.md` (framework),
   `Product_Bible.md` §30 (Intervention Engine), §31 (Competition), §35 (Rich Step Types), §7 (Marketplace).
+- **Future-vision candidates (not yet placed as approved line-items):** two founder ideas that extend
+  V3–V4 are characterized in `Strategy_WIP_2026-07/09_future_vision_notes.md` (Open/Future Vision, not
+  decided) — **(a)** *Journey Templates + aggregate-outcomes recommendation* (extends V3 "Journey
+  Template foundations / Community Insights" → V4 Marketplace ranking) and **(b)** *goal-linked
+  communities* (extends V4 "Broader Ally types" — the group-scale expansion of the MVP's 1:1 Ally).

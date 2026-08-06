@@ -1,0 +1,278 @@
+<title>PushApp — Version × Capability Matrix</title>
+<style>
+  :root{
+    --ground:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC;
+    --line:#E7E3DA; --line-soft:#EFECE4;
+    --ink:#2E2E2C; --muted:#6E6A62; --faint:#928D83;
+    --brand:#128B8B; --spark:#FF6B5A;
+    --built:#1E9E67; --built-bg:#E6F4EC;
+    --ext:#C9891F;  --ext-bg:#F8EFDC;
+    --new:#5462D6;  --new-bg:#E9EBFA;
+    --v1:#1E9E67; --v2:#128B8B; --v3:#5462D6; --v4:#8A4FD6; --vf:#928D83;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 6px 18px rgba(40,38,34,.05);
+    --font-display:"Baloo 2",ui-rounded,"Segoe UI Rounded",system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#1A1917; --surface:#232220; --surface-2:#2A2825;
+      --line:#37342E; --line-soft:#302E29;
+      --ink:#F1EDE5; --muted:#A9A399; --faint:#847F76;
+      --brand:#3FC4C0; --spark:#FF7E6E;
+      --built:#4FD394; --built-bg:#14301F;
+      --ext:#E9B85A; --ext-bg:#33280F;
+      --new:#8C97EE; --new-bg:#1E2140;
+      --v1:#4FD394; --v2:#3FC4C0; --v3:#8C97EE; --v4:#B487F0; --vf:#847F76;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC; --line:#E7E3DA; --line-soft:#EFECE4;
+    --ink:#2E2E2C; --muted:#6E6A62; --faint:#928D83; --brand:#128B8B; --spark:#FF6B5A;
+    --built:#1E9E67; --built-bg:#E6F4EC; --ext:#C9891F; --ext-bg:#F8EFDC; --new:#5462D6; --new-bg:#E9EBFA;
+    --v1:#1E9E67; --v2:#128B8B; --v3:#5462D6; --v4:#8A4FD6; --vf:#928D83;
+    --shadow:0 1px 2px rgba(40,38,34,.05),0 6px 18px rgba(40,38,34,.05);
+  }
+  :root[data-theme="dark"]{
+    --ground:#1A1917; --surface:#232220; --surface-2:#2A2825; --line:#37342E; --line-soft:#302E29;
+    --ink:#F1EDE5; --muted:#A9A399; --faint:#847F76; --brand:#3FC4C0; --spark:#FF7E6E;
+    --built:#4FD394; --built-bg:#14301F; --ext:#E9B85A; --ext-bg:#33280F; --new:#8C97EE; --new-bg:#1E2140;
+    --v1:#4FD394; --v2:#3FC4C0; --v3:#8C97EE; --v4:#B487F0; --vf:#847F76;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.28);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1320px;margin:0 auto;padding:clamp(20px,4vw,48px) clamp(14px,3vw,34px) 80px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:600;margin:0 0 12px;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.6vw,46px);line-height:1.05;letter-spacing:-.01em;margin:0 0 14px;text-wrap:balance;}
+  h1 .spark{color:var(--spark);}
+  .lede{font-size:clamp(15px,1.5vw,17px);color:var(--muted);max-width:70ch;margin:0;}
+  .lede b{color:var(--ink);font-weight:600;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:22px 0 6px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);}
+  .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .dot.built{background:var(--built);} .dot.ext{background:var(--ext);} .dot.new{background:var(--new);}
+  .lg b{color:var(--ink);font-weight:600;}
+
+  .scroller{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2);}
+  .matrix{display:grid;grid-template-columns:172px repeat(5,minmax(190px,1fr));min-width:1120px;}
+  .cell{border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:10px;}
+  .matrix > .cell:nth-child(6n){border-right:none;}
+
+  /* header row */
+  .hcell{position:sticky;top:0;z-index:2;background:var(--surface);padding:12px 12px 13px;border-bottom:2px solid var(--line);}
+  .vtag{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--vc);}
+  .vname{font-family:var(--font-display);font-weight:700;font-size:16px;margin:2px 0 3px;}
+  .vthesis{font-size:11.5px;color:var(--muted);line-height:1.35;}
+  .corner{position:sticky;top:0;left:0;z-index:3;background:var(--surface);border-bottom:2px solid var(--line);display:flex;align-items:flex-end;}
+  .corner span{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .vbar{height:4px;border-radius:3px;background:var(--vc);margin-top:9px;}
+
+  /* pillar label cell */
+  .pcell{position:sticky;left:0;z-index:1;background:var(--surface);border-right:2px solid var(--line);display:flex;align-items:center;}
+  .pcell b{font-size:13px;font-weight:650;line-height:1.25;letter-spacing:-.01em;}
+  .pcell .pn{font-family:var(--font-mono);font-size:10px;color:var(--faint);display:block;margin-bottom:3px;}
+
+  .stack{display:flex;flex-direction:column;gap:6px;}
+  .chip{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px 7px 14px;font-size:12px;line-height:1.32;color:var(--ink);box-shadow:0 1px 1px rgba(40,38,34,.04);}
+  .chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:9px 0 0 9px;background:var(--rail);}
+  .chip.built{--rail:var(--built);} .chip.ext{--rail:var(--ext);} .chip.new{--rail:var(--new);}
+  .chip .note{color:var(--spark);font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:.03em;display:block;margin-top:2px;text-transform:uppercase;}
+  .empty{min-height:20px;}
+
+  .foot{margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px 26px;}
+  .note-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow);}
+  .note-card h3{font-family:var(--font-display);font-size:15px;margin:0 0 9px;}
+  .note-card ul{margin:0;padding-left:18px;}
+  .note-card li{font-size:12.5px;color:var(--muted);margin-bottom:6px;line-height:1.4;}
+  .note-card li b{color:var(--ink);}
+  .flag{color:var(--spark);font-weight:700;}
+  footer{margin-top:26px;font-size:12px;color:var(--faint);font-family:var(--font-mono);text-align:center;letter-spacing:.03em;}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">PushApp · Version × Capability Matrix · WIP 2026-07-21</p>
+  <h1>Every capability, mapped to the version it <span class="spark">actually ships in</span></h1>
+  <p class="lede">Read a <b>column</b> top-to-bottom to see everything one version delivers. Read a <b>row</b> to watch one pillar deepen over time. Nothing from the vision is dropped — hard things move <b>right</b>, never away (CLAUDE.md §3). Reconciles the D15 roadmap with the full feature vision and the architect's plan; refinements are flagged at the bottom.</p>
+
+  <div class="legend">
+    <span class="lg"><span class="dot built"></span><b>Built</b> — shipped &amp; on main</span>
+    <span class="lg"><span class="dot ext"></span><b>Extend</b> — grow a built module</span>
+    <span class="lg"><span class="dot new"></span><b>New</b> — to design &amp; build</span>
+    <span class="lg" style="color:var(--faint)"><span class="flag" style="font-family:var(--font-mono);font-size:10px">▲ FLAG</span>&nbsp;= refined vs D15 roadmap</span>
+  </div>
+
+  <div class="scroller">
+    <div class="matrix" id="matrix"></div>
+  </div>
+
+  <div class="foot">
+    <div class="note-card">
+      <h3>▲ Refinements vs the D15 roadmap (not silent — your call)</h3>
+      <ul>
+        <li><b>AI Coach Level-1 pulled into V2.</b> The roadmap put most AI at V3. The "Ignition" thesis says the first-30-seconds AI discovery <i>is</i> the MVP wedge. Placed in V2 but cost-gated/capped. <span class="flag">Open question — V2 or V3?</span></li>
+        <li><b>Categories added to V1</b> (leaf node, cheap; Option B palette already chosen).</li>
+        <li><b>i18n + RTL foundation added to V2</b> — your new requirement; cheaper as a foundation than a retrofit.</li>
+        <li><b>Analytics foundation added to V2</b> — the architect flagged it as the hidden root every learning loop feeds on.</li>
+        <li><b>Miss-Recovery + Weekly review split</b> basic (V2, no AI) → AI-assisted (V3).</li>
+      </ul>
+    </div>
+    <div class="note-card">
+      <h3>How to read the shape</h3>
+      <ul>
+        <li><b>V1</b> is almost entirely green — the loop is built. V1's only new piece is Categories.</li>
+        <li><b>V2</b> is where "ignition" lands: onboarding, first-party library, light + Level-1 AI, miss-recovery, Grace, i18n.</li>
+        <li><b>V3</b> turns on money and depth: subscription, adaptive intervention, authoring, real-life accountability, weekly-AI.</li>
+        <li><b>V4</b> is the platform bet: open marketplace, creator economy, rich media, competition, moderation, JITAI — <span class="flag">the highest-risk column</span>.</li>
+        <li><b>Future</b> holds what we <i>architect for</i> but don't ship until proven (unbounded free AI chat).</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>Working draft · not an approved roadmap · reconciles Version_Roadmap.md (D15) with the 2026-07-20 strategy &amp; architecture work</footer>
+</div>
+
+<script>
+(function(){
+  var versions=[
+    {id:"v1",tag:"V1",name:"POC",thesis:"Does the loop drive persistence?",c:"var(--v1)"},
+    {id:"v2",tag:"V2",name:"MVP",thesis:"Adoptable solo — the ignition moment",c:"var(--v2)"},
+    {id:"v3",tag:"V3",name:"Commercial",thesis:"First paid; deepen the loops",c:"var(--v3)"},
+    {id:"v4",tag:"V4",name:"Scale / Ecosystem",thesis:"Platform, network & adaptive AI",c:"var(--v4)"},
+    {id:"vf",tag:"F",name:"Future",thesis:"Architected, not yet shipped",c:"var(--vf)"}
+  ];
+  var pillars=[
+    "Transformation core","Miss-recovery & reflection","Companion & economy",
+    "Game loop & progression","Support Circle","Marketplace & authoring",
+    "AI & adaptive intelligence","Communication & context","Identity & monetization",
+    "Platform infra & guardrails"
+  ];
+  // [pillarIndex, versionId, status, label, note?]
+  var caps=[
+    // Transformation core
+    [0,"v1","built","Journey create — name · rhythm · Steps · Starter · why"],
+    [0,"v1","built","Check-in loop + Home “what to do now”"],
+    [0,"v1","built","Finite-Step model + per-Step celebration"],
+    [0,"v1","new","Categories (Option B palette)","▲ added"],
+    [0,"v2","new","Journey Phases (mid-layer)"],
+    [0,"v2","new","Full Journey types — frequency · completion · avoidance · hybrid"],
+    [0,"v2","new","Grace Tokens — minimal"],
+    [0,"v2","ext","Points model (config)"],
+    [0,"v3","new","Grace Tokens — full (gifting · policy · regenerating floor)"],
+    [0,"v3","new","Edit-flexibility level for adopted Journeys"],
+    [0,"v3","new","Step types — basic (text-log · questionnaire)"],
+    [0,"v4","new","Rich Step Types — video · audio · quiz · meditation · PDF · slides"],
+    [0,"v4","new","Interactive Journey Experiences"],
+    // Miss-recovery & reflection
+    [1,"v2","new","Miss-Recovery closed-list (Postpone / Cancel / reason) — no AI"],
+    [1,"v2","new","StepMissed event — the keystone that unlocks the learning loop","▲ keystone"],
+    [1,"v2","new","Weekly review — basic (summarize week + confirm next week)","▲ split"],
+    [1,"v3","new","Miss-Recovery “Other” → AI (empathy + classify to a lever)"],
+    [1,"v3","new","Weekly review — AI-assisted conversation"],
+    [1,"v3","new","Per-user reason-profile (learns your patterns)"],
+    // Companion & economy
+    [2,"v1","built","Buddy — 3D, evolves, reacts, celebrates"],
+    [2,"v1","built","Coins + Shop (small cosmetic set)"],
+    [2,"v2","new","Buddy meaning / personality direction (design call)"],
+    [2,"v3","new","Buddy customization depth — clothing · items · location · furniture"],
+    [2,"v3","new","Deeper economy — 2nd currency · offers · richer Shop"],
+    [2,"v4","new","Buddy voice & conversations"],
+    // Game loop & progression
+    [3,"v1","built","Missions + Login rewards (shallow)"],
+    [3,"v1","built","XP · Coins · Level"],
+    [3,"v2","new","Level-up → progressive feature disclosure"],
+    [3,"v2","ext","Victory celebration FX"],
+    [3,"v3","new","Achievements wall"],
+    [3,"v3","new","Shareable achievements (to social networks)"],
+    [3,"v3","new","Shared / co-op missions"],
+    [3,"v4","new","Competition Mode (leaderboards)"],
+    // Support Circle
+    [4,"v1","built","Friends → Allies see progress → cheer / nudge"],
+    [4,"v3","new","Broader Ally types + fuller Support Circle"],
+    [4,"v3","new","Stall alerts — tell Allies when I fall behind (opt-in)"],
+    [4,"v3","new","Real-life accountability — documentation + approving friend","▲ the wedge"],
+    [4,"v3","new","Community insights / Journey reviews"],
+    [4,"v4","new","Matchmaking — connect people on similar Journeys"],
+    // Marketplace & authoring
+    [5,"v2","new","Explore + starter library — adopt first-party Journeys"],
+    [5,"v2","new","First-party Journey seeding (solves cold-start)"],
+    [5,"v3","new","Journey Templates + authoring (self / first-party)"],
+    [5,"v3","new","Marketplace search (full-text + filters)"],
+    [5,"v4","new","Full Marketplace + Creator economy — publish · monetize · profiles"],
+    [5,"v4","new","Business / branded Journeys"],
+    [5,"v4","new","Recommendations (embeddings)"],
+    // AI & adaptive intelligence
+    [6,"v2","new","Light AI — encouragement from the “why” + smarter reminders"],
+    [6,"v2","new","AI Coach Level-1 — ignition onboarding discovery","▲ cost-gated"],
+    [6,"v2","new","AI Safety layer — crisis detect · no-treatment-claims (blocking)"],
+    [6,"v2","new","Analytics foundation — privacy-safe signal source","▲ added"],
+    [6,"v3","new","AI drafts-your-Journey (paid) + conversational refinement"],
+    [6,"v3","new","Buddy-AI discovery — find Journeys / find motivation"],
+    [6,"v3","new","User-Model / Profiling"],
+    [6,"v3","new","Interests (topic tags)"],
+    [6,"v4","new","Full dynamic Intervention (JITAI)"],
+    [6,"v4","new","AI-generated personal roadmaps"],
+    [6,"v4","new","Advanced psychological personalization"],
+    [6,"vf","new","AI Level-2 — free Buddy chat (unbounded; econ-gated)"],
+    // Communication & context
+    [7,"v1","built","Basic reminders (time / day)"],
+    [7,"v2","ext","Smarter-timed reminders"],
+    [7,"v3","new","Adaptive Intervention Engine — learns channel · wording · timing"],
+    [7,"v3","new","Push notification server infra"],
+    [7,"v3","new","Location / Calendar opt-in comm rules (seams-only)"],
+    [7,"v4","new","Background geofencing / deep context"],
+    // Identity & monetization
+    [8,"v1","built","Anonymous auth"],
+    [8,"v1","built","Entitlement tier (seam)"],
+    [8,"v2","new","Native Apple / Google sign-in","cost-gated $99/yr"],
+    [8,"v3","new","Subscription / monetization"],
+    [8,"v3","new","Billing — StoreKit / Play + receipt validation"],
+    [8,"v3","new","AI behind paid tier + usage caps"],
+    // Platform infra & guardrails
+    [9,"v2","new","i18n + RTL-switchable foundation","▲ your requirement"],
+    [9,"v2","new","Onboarding / first-30-seconds ignition"],
+    [9,"v3","new","Anti-spam basics (rate-limit)"],
+    [9,"v4","new","Trust & Safety / moderation — gate for open publishing"],
+    [9,"v4","new","Near-duplicate detection (server-load guard)"],
+    [9,"v4","new","Media storage + CDN"],
+    [9,"v4","new","Sync & conflict resolution"],
+    [9,"v4","new","Economy authority / anti-cheat"]
+  ];
+
+  var m=document.getElementById("matrix");
+  function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+
+  // header row
+  var corner=el("div","cell corner");corner.appendChild(el("span",null,"Pillar ╲ Version"));m.appendChild(corner);
+  versions.forEach(function(v){
+    var h=el("div","cell hcell");h.style.setProperty("--vc",v.c);
+    h.appendChild(el("div","vtag",v.tag));
+    h.appendChild(el("div","vname",v.name));
+    h.appendChild(el("div","vthesis",v.thesis));
+    h.appendChild(el("div","vbar"));
+    m.appendChild(h);
+  });
+
+  // body rows
+  pillars.forEach(function(p,pi){
+    var pc=el("div","cell pcell");
+    pc.appendChild(el("b",null,'<span class="pn">'+String(pi+1).padStart(2,"0")+'</span>'+p));
+    m.appendChild(pc);
+    versions.forEach(function(v){
+      var c=el("div","cell");
+      var mine=caps.filter(function(x){return x[0]===pi && x[1]===v.id;});
+      if(mine.length){
+        var s=el("div","stack");
+        mine.forEach(function(x){
+          var chip=el("div","chip "+x[2],x[3]+(x[4]?'<span class="note">'+x[4]+'</span>':''));
+          s.appendChild(chip);
+        });
+        c.appendChild(s);
+      }else{ c.appendChild(el("div","empty")); }
+      m.appendChild(c);
+    });
+  });
+})();
+</script>

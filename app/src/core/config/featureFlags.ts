@@ -63,6 +63,24 @@ export const featureFlags = {
    * before enabling.
    */
   calendar: false,
+  /**
+   * RESERVED (deferred, POC scope). Adaptive-coach pivot — the "learn the user"
+   * BehaviorModelEngine plus the deterministic Planner/AdaptivePlanner. Off: AppCore
+   * constructs none of it, persists no behaviour log, and generateJourney is inert —
+   * production behaviour is unchanged. The raw behaviour log is ON-DEVICE ONLY (G1);
+   * must pass security-privacy review before it is ever turned on.
+   */
+  adaptiveCoach: false,
+  /**
+   * DEV-ONLY (Miss-Recovery slice). Turns on the in-memory mock gateways that let
+   * a developer/founder exercise the recovery loop end-to-end in Expo Go at $0:
+   * a `home/away` location and a `busy/free` calendar the dev panel toggles. OFF in
+   * production — the real Location/Calendar gateways stay Null and permissive
+   * ('unknown'), so nothing new is read and no PII surface opens (red-line R3). This
+   * NEVER enables the location/calendar reminder TRIGGER kinds (the mocks keep
+   * `enabled: false`); it only feeds the transient, gating-only device reads.
+   */
+  devMockRecovery: false,
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

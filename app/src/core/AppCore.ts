@@ -24,11 +24,20 @@ import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngin
 import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
+import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
+import { setMockBusy, setMockLocation, type MockPlace } from './recovery/mockEnv';
+import { BehaviorModelEngine } from './learning/BehaviorModelEngine';
+import { planJourney } from './learning/Planner';
+import { GeneralExpert } from './learning/DomainExpert';
+import { replan } from './learning/AdaptivePlanner';
+import { applyReplan } from './learning/applyReplan';
+import type { GoalInput, PlanConstraints } from './learning/types';
+import { featureFlags } from './config/featureFlags';
 import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
 import { getLocationGateway } from './location';
 import { getCalendarGateway } from './calendar';
-import { LocalRepository } from './persistence/LocalRepository';
+import { EncryptedLocalRepository } from './persistence/EncryptedLocalRepository';
 import type { Repository } from './persistence/Repository';
 import type {
   AppState,
@@ -36,10 +45,13 @@ import type {
   BuddyStage,
   CommunicationPrefs,
   Journey,
+  ReasonEntry,
+  ReasonId,
   ReminderRule,
   ReminderTrigger,
   SchedulingPrefs,
 } from './types/domain';
+import type { Candidate } from './util/reschedule';
 import { createId } from './util/id';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
 
@@ -124,6 +136,15 @@ function migrateState(state: AppState): AppState {
     reminderRules: state.reminderRules ?? base.reminderRules,
     communicationPrefs: { ...base.communicationPrefs, ...state.communicationPrefs },
     schedulingPrefs: { ...base.schedulingPrefs, ...state.schedulingPrefs },
+    // Miss-Recovery reason log — backfill to [] for a snapshot that predates it. Kept
+    // on-device only; whitelist-excluded from the Social sync path (G2).
+    reasonLog: state.reasonLog ?? [],
+    // Adaptive-coach on-device signal (S1.16) — backfill the raw log to [] for a snapshot
+    // that predates it, so hydrate never dereferences an absent field. The derived
+    // insightModel carries over untouched (undefined until first recomputed). ON-DEVICE
+    // ONLY (G1); only populated when the adaptiveCoach flag is on.
+    behaviorLog: state.behaviorLog ?? [],
+    insightModel: state.insightModel,
     // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses
     // emptyState directly). So any state reaching here belongs to an existing user
     // who predates onboarding — treat them as already onboarded (a nonzero
@@ -161,6 +182,13 @@ export class AppCore {
   private readonly shopEngine: ShopEngine;
   private readonly missionEngine: MissionEngine;
   private readonly entitlementEngine: EntitlementEngine;
+  private readonly recoveryEngine: RecoveryEngine;
+  /**
+   * The adaptive coach's "learn the user" engine — constructed ONLY when the
+   * `adaptiveCoach` flag is on (undefined otherwise, so production wires nothing new).
+   * The raw behaviour log it holds is ON-DEVICE ONLY (G1).
+   */
+  private readonly behaviorModel?: BehaviorModelEngine;
 
   /**
    * Reads the entitlement the EntitlementEngine should compute against. Defaults
@@ -174,7 +202,7 @@ export class AppCore {
   private readonly listeners = new Set<() => void>();
   private started = false;
 
-  constructor(repo: Repository = new LocalRepository()) {
+  constructor(repo: Repository = new EncryptedLocalRepository()) {
     this.repo = repo;
     const getState = () => this.state;
     this.journeyEngine = new JourneyEngine(this.bus, getState);
@@ -207,6 +235,29 @@ export class AppCore {
       () => this.entitlementReader(),
       (e) => this.setEntitlement(e),
     );
+    // The RecoveryEngine orchestrates the user-triggered Miss-Recovery loop. It reuses
+    // the reminder facade (add/update/list) so rule mutation + reconcile stay in ONE
+    // place, and reads the SAME location/calendar gateways (Null/permissive in prod;
+    // the dev mock only when featureFlags.devMockRecovery). It never emits StepMissed
+    // and never touches Grace Tokens (Cancel is free — PRD §9).
+    this.recoveryEngine = new RecoveryEngine(
+      this.bus,
+      getState,
+      this.journeyEngine,
+      {
+        listReminderRules: (journeyId) => this.listReminderRules(journeyId),
+        addReminderRule: (input) => this.addReminderRule(input),
+        updateReminderRule: (id, changes) => this.updateReminderRule(id, changes),
+      },
+      location,
+      calendar,
+    );
+    // Adaptive-coach pivot (S1.16): DORMANT in production. Only when the flag is on do we
+    // construct the BehaviorModelEngine (shared bus + getState + default clock). Off ⇒ this
+    // stays undefined and no behaviour is observed, recorded, or persisted.
+    if (featureFlags.adaptiveCoach) {
+      this.behaviorModel = new BehaviorModelEngine(this.bus, getState);
+    }
   }
 
   /** Load persisted state (seeding a demo Journey on first run) and start engines. */
@@ -219,6 +270,16 @@ export class AppCore {
       this.state = migrateState(loaded);
     } else {
       this.state = emptyState();
+    }
+
+    // Adaptive coach (flag on only): seed the engine from the persisted on-device log, then
+    // persist the log + derived insights back through onChanged whenever a new signal lands.
+    // InsightUpdated fires on every appended record (including the slip detector's), so it is
+    // the single hook that captures all log changes. Off ⇒ behaviorModel is undefined, nothing
+    // is hydrated or subscribed, and production behaviour is untouched.
+    if (this.behaviorModel) {
+      this.behaviorModel.hydrate(this.state.behaviorLog ?? []);
+      this.bus.on('InsightUpdated', this.onBehaviorChanged);
     }
 
     this.rewardEngine.start();
@@ -238,6 +299,11 @@ export class AppCore {
     this.bus.on('ReminderRuleAdded', this.onChanged);
     this.bus.on('ReminderRuleRemoved', this.onChanged);
     this.bus.on('SchedulingPrefsChanged', this.onChanged);
+    // Miss-Recovery loop: persist the reason log + any Step/reminder change it makes.
+    // recordReason mutates state without its own event, so these are what save it.
+    this.bus.on('StepPostponed', this.onChanged);
+    this.bus.on('StepCancelled', this.onChanged);
+    this.bus.on('ReminderRescheduled', this.onChanged);
 
     // The Communication Scheduler re-plans the whole notification set whenever the
     // inputs change. The reminder facade methods reconcile directly (right after
@@ -264,6 +330,18 @@ export class AppCore {
     void this.communicationScheduler.reconcile();
   };
 
+  /**
+   * Adaptive coach (flag on only): mirror the engine's on-device raw log + derived insights
+   * into AppState and persist them through the existing save path. Both stay ON DEVICE (G1) —
+   * they are only written to the local Repository, never emitted or synced.
+   */
+  private readonly onBehaviorChanged = (): void => {
+    if (!this.behaviorModel) return;
+    this.state.behaviorLog = this.behaviorModel.getRawLog();
+    this.state.insightModel = this.behaviorModel.getInsights();
+    this.onChanged();
+  };
+
   /** Seed ONE demo Journey (Starter Step + 2 ordinary Steps) so Home isn't empty. */
   private seedDemoJourney(): void {
     this.journeyEngine.createJourney({
@@ -277,9 +355,14 @@ export class AppCore {
           description: 'The Starter Step — just get out the door.',
           isStarterStep: true,
           cadence: 'once',
+          // Miss-Recovery demo: an expected length (powers Reshape + slot fit) and a
+          // home-only constraint (the reschedule gate drops proposed times when the
+          // dev mock says "away").
+          estimatedDuration: 20,
+          constraints: [{ kind: 'location', place: 'home' }],
         },
-        { title: 'Jog for 15 minutes', cadence: 'weekly' },
-        { title: 'Run a full 2km without stopping', cadence: 'weekly' },
+        { title: 'Jog for 15 minutes', cadence: 'weekly', estimatedDuration: 30 },
+        { title: 'Run a full 2km without stopping', cadence: 'weekly', estimatedDuration: 40 },
       ],
     });
   }
@@ -288,6 +371,34 @@ export class AppCore {
 
   createJourney(input: NewJourneyInput): Journey {
     return this.journeyEngine.createJourney(input);
+  }
+
+  /**
+   * Adaptive coach (flag on only): deterministically PLAN a Journey from a goal + real-world
+   * constraints (via the pure {@link planJourney} over the default {@link GeneralExpert}), then
+   * create it through the SAME JourneyEngine path as {@link createJourney} — so it persists and
+   * notifies exactly like any other Journey. Returns null (inert) when the flag is off, so
+   * production behaviour is unchanged. The goal title/specifics stay ON DEVICE (G1).
+   */
+  generateJourney(goal: GoalInput, constraints: PlanConstraints): Journey | null {
+    if (!featureFlags.adaptiveCoach) return null;
+    const input = planJourney(goal, constraints, GeneralExpert);
+    return this.journeyEngine.createJourney(input);
+  }
+
+  /**
+   * Adaptive coach (flag on only): re-plan an existing Journey from the on-device InsightModel
+   * (pure {@link replan}) and enact the intended per-Step changes via the JourneyEngine
+   * ({@link applyReplan}). Returns whether anything changed; false + inert when the flag is off
+   * or the id is unknown. All reasoning stays in the pure planner; nothing new leaves the device.
+   */
+  adaptJourney(journeyId: string, constraints: PlanConstraints): boolean {
+    if (!featureFlags.adaptiveCoach || !this.behaviorModel) return false;
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey) return false;
+    const result = replan(journey, this.behaviorModel.getInsights(), constraints, undefined, Date.now());
+    applyReplan(this.journeyEngine, journey, result);
+    return result.changed;
   }
 
   checkInStep(journeyId: string, stepId: string): void {
@@ -473,6 +584,50 @@ export class AppCore {
   /** The user's current scheduling preferences (window / day-part / weekdays). */
   getSchedulingPrefs(): SchedulingPrefs {
     return this.state.schedulingPrefs;
+  }
+
+  // ── Miss-Recovery (user-triggered) ──────────────────────────────────────────
+  // Thin pass-throughs to the RecoveryEngine — no business logic here (the facade
+  // just wires). Cancel is FREE (no Grace Tokens); the reason `note` never leaves the
+  // device (G1). The engine emits StepPostponed/StepCancelled/ReminderRescheduled,
+  // which persist through onChanged.
+
+  /**
+   * Run the recovery loop for a Step: apply the Screen-1 action, map the reason to
+   * lever(s), execute the reminder/plan levers, and log the reason. Returns the
+   * recorded entry.
+   */
+  submitReason(input: SubmitReasonInput): Promise<ReasonEntry> {
+    return this.recoveryEngine.submitReason(input);
+  }
+
+  /** Propose a few good reschedule times for a Step (Retime), gated by the env. */
+  proposeStepTimes(journeyId: string, stepId: string): Candidate[] {
+    return this.recoveryEngine.proposeStepTimes(journeyId, stepId);
+  }
+
+  /** A Step's reason history, newest first — the "see past reasons" view. */
+  getReasonHistory(stepId: string): ReasonEntry[] {
+    return this.recoveryEngine.getReasonHistory(stepId);
+  }
+
+  /** Whether a reason routes through the propose-times step (Retime). Drives the UI flow. */
+  reasonNeedsReschedule(reasonId: ReasonId): boolean {
+    return this.recoveryEngine.needsReschedule(reasonId);
+  }
+
+  /**
+   * DEV-ONLY (behind featureFlags.devMockRecovery): set the mock "where am I" place so
+   * the founder can watch the reschedule gate respond. No-op effect in production
+   * (the real gateway ignores it). Not persisted.
+   */
+  setMockLocation(place: MockPlace): void {
+    setMockLocation(place);
+  }
+
+  /** DEV-ONLY: set the mock calendar busy/free flag (see setMockLocation). Not persisted. */
+  setMockBusy(busy: boolean): void {
+    setMockBusy(busy);
   }
 
   /** Opt in/out of location-triggered reminders (dormant seam). Persists. */

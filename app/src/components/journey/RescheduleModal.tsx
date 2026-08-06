@@ -1,68 +1,69 @@
 /**
- * RescheduleModal — the "Reschedule / defer this Step" surface (founder decision
- * 2026-07-14). Reached two ways from Home: swipe-left on a Step card, or the
- * card's ⋯ menu → "Reschedule". A calm work surface (Design_System §1 "calm where
- * it works", §1 "never shame") — deferring a Step is a gentle, blame-free choice.
+ * RescheduleModal — the propose-times / confirm sheet for the Retime lever
+ * (Miss-Recovery slice). Given the candidate times the engine proposed (heuristic +
+ * constraint/free-busy gating), the user confirms one, with an "Other time" fallback
+ * that reveals a few more specific presets. Part of the "Forgot" bundle it can also
+ * offer a zero-permission "Add to calendar" action (the user creates the event, so
+ * the app needs no calendar-write permission).
  *
- * PLACEHOLDER: there is no reschedule/defer data model yet (no field on the domain
- * Step, no engine that moves a Step's window). Confirm and Cancel both just close;
- * the reason + timing selections are collected but not persisted. Wire to a real
- * engine when the defer/schedule model lands (see TODO in `onConfirm`).
+ * A calm work surface (Design_System §1 "calm where it works", "never shame") —
+ * moving a Step is a gentle, blame-free choice. No Grace-Token / streak language.
  *
- * Presentational only — reports intent upward; no business logic here (Bible §19).
+ * Presentational only — reports the chosen time upward; no business logic (Bible §19).
  */
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
+import type { Candidate } from '@/core/util/reschedule';
 import { useTheme } from '@/hooks/use-theme';
-
-/** Placeholder deferral windows — no scheduling model backs these yet (TODO). */
-const WHEN_OPTIONS = ['Later today', 'Tomorrow', 'This week'] as const;
-type WhenOption = (typeof WHEN_OPTIONS)[number];
 
 export function RescheduleModal({
   visible,
   stepTitle,
+  candidates,
   onConfirm,
   onCancel,
+  onAddToCalendar,
 }: {
   visible: boolean;
-  /** The Step being deferred — shown for context. */
+  /** The Step being moved — shown for context. */
   stepTitle?: string;
-  /** Confirm the deferral. PLACEHOLDER: nothing is persisted yet — just closes. */
-  onConfirm: () => void;
-  /** Dismiss without deferring. */
+  /** Engine-proposed times (already gated). May be empty when everything was ruled out. */
+  candidates: Candidate[];
+  /** Confirm the chosen start time (epoch ms). */
+  onConfirm: (chosenAt: number) => void;
+  /** Dismiss without moving. */
   onCancel: () => void;
+  /** Optional "add to calendar" (the "Forgot" bundle) — opens a zero-permission link. */
+  onAddToCalendar?: (chosenAt: number) => void;
 }) {
   const theme = useTheme();
-  const [reason, setReason] = useState('');
-  const [when, setWhen] = useState<WhenOption | null>(null);
+  const [chosen, setChosen] = useState<number | null>(null);
+  const [showOther, setShowOther] = useState(false);
 
-  // Reset the transient placeholder inputs whenever the sheet closes, so the next
-  // Step opens on a clean slate (there is no per-Step persistence to restore).
-  const close = (commit: boolean) => {
-    setReason('');
-    setWhen(null);
-    // TODO(data model): once a defer/schedule engine exists, pass { reason, when }
-    // and the Step's id up so the engine can move the Step's window. For now both
-    // paths simply dismiss.
-    (commit ? onConfirm : onCancel)();
+  // A few extra "specific time" presets revealed by "Other time" — pure UI presets
+  // (no scheduling model needed): tomorrow morning / evening, and in three days.
+  const otherPresets = useMemo<Candidate[]>(() => buildOtherPresets(), [visible]);
+
+  const options = showOther ? [...candidates, ...otherPresets] : candidates;
+
+  const close = (chosenAt: number | null) => {
+    setChosen(null);
+    setShowOther(false);
+    if (chosenAt !== null) onConfirm(chosenAt);
+    else onCancel();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => close(false)}>
-      <Pressable
-        accessibilityLabel="Dismiss"
-        style={styles.backdrop}
-        onPress={() => close(false)}>
-        {/* Stop backdrop taps from closing when they land on the card itself. */}
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => close(null)}>
+      <Pressable accessibilityLabel="Dismiss" style={styles.backdrop} onPress={() => close(null)}>
         <Pressable
           style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}
           onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.title}>
-            Reschedule this step
+            When would you like to do it?
           </ThemedText>
           {stepTitle ? (
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
@@ -70,72 +71,81 @@ export function RescheduleModal({
             </ThemedText>
           ) : null}
 
-          <View style={styles.field}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              Why are you deferring? (optional)
-            </ThemedText>
-            <TextInput
-              value={reason}
-              onChangeText={setReason}
-              placeholder="A word about what happened…"
-              placeholderTextColor={theme.textMuted}
-              multiline
-              style={[
-                styles.input,
-                { borderColor: theme.hairline, color: theme.text, backgroundColor: theme.background },
-              ]}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              When would you like to do it?
-            </ThemedText>
-            <View style={styles.whenRow}>
-              {WHEN_OPTIONS.map((opt) => {
-                const selected = when === opt;
+          <ScrollView style={styles.optionsBox} contentContainerStyle={styles.options}>
+            {options.length === 0 ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                No open slots came up — tap “Other time” to pick one that works.
+              </ThemedText>
+            ) : (
+              options.map((c) => {
+                const selected = chosen === c.at;
                 return (
                   <Pressable
-                    key={opt}
+                    key={`${c.kind}-${c.at}`}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    onPress={() => setWhen(opt)}
+                    onPress={() => setChosen(c.at)}
                     style={[
-                      styles.whenChip,
+                      styles.timeChip,
                       { borderColor: selected ? theme.teal : theme.hairline },
                       selected && { backgroundColor: theme.tealTint },
                     ]}>
                     <ThemedText
                       type="smallBold"
                       style={{ color: selected ? theme.tealStrong : theme.textSecondary }}>
-                      {opt}
+                      {formatWhen(c.at)}
                     </ThemedText>
                   </Pressable>
                 );
-              })}
-            </View>
-          </View>
+              })
+            )}
+
+            {!showOther && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Other time"
+                onPress={() => setShowOther(true)}
+                style={[styles.timeChip, { borderColor: theme.hairline }]}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  Other time…
+                </ThemedText>
+              </Pressable>
+            )}
+          </ScrollView>
+
+          {onAddToCalendar && chosen !== null && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add to calendar"
+              onPress={() => onAddToCalendar(chosen)}
+              style={({ pressed }) => [styles.calendarRow, pressed && styles.pressed]}>
+              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                + Add to my calendar
+              </ThemedText>
+            </Pressable>
+          )}
 
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Cancel"
-              onPress={() => close(false)}
-              style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.pressed]}>
+              onPress={() => close(null)}
+              style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Cancel
               </ThemedText>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Confirm reschedule"
-              onPress={() => close(true)}
+              accessibilityLabel="Confirm time"
+              disabled={chosen === null}
+              onPress={() => close(chosen)}
               style={({ pressed }) => [
                 styles.button,
-                { backgroundColor: theme.coral },
+                { backgroundColor: chosen === null ? theme.backgroundSelected : theme.coral },
                 pressed && styles.pressed,
               ]}>
-              <ThemedText type="smallBold" style={{ color: theme.text }}>
+              <ThemedText type="smallBold" style={{ color: chosen === null ? theme.textMuted : theme.text }}>
                 Confirm
               </ThemedText>
             </Pressable>
@@ -144,6 +154,29 @@ export function RescheduleModal({
       </Pressable>
     </Modal>
   );
+}
+
+/** Friendly local label for a proposed time (Today/Tomorrow/weekday + clock). */
+function formatWhen(at: number): string {
+  const d = new Date(at);
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (d.toDateString() === now.toDateString()) return `Today · ${time}`;
+  if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow · ${time}`;
+  return `${d.toLocaleDateString([], { weekday: 'short' })} · ${time}`;
+}
+
+/** Build the "Other time" presets (specific times), computed from the current clock. */
+function buildOtherPresets(): Candidate[] {
+  const at = (addDays: number, hour: number): Candidate => {
+    const d = new Date();
+    d.setDate(d.getDate() + addDays);
+    d.setHours(hour, 0, 0, 0);
+    return { at: d.getTime(), hour, minute: 0, kind: 'tomorrow' };
+  };
+  return [at(1, 9), at(1, 19), at(3, 9)];
 }
 
 const styles = StyleSheet.create({
@@ -166,27 +199,23 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FontFamily.headingBold,
   },
-  field: {
-    gap: Spacing.two,
+  optionsBox: {
+    maxHeight: 220,
   },
-  input: {
-    minHeight: 64,
-    borderWidth: 1,
-    borderRadius: Radius.input,
-    padding: Spacing.three,
-    textAlignVertical: 'top',
-    fontFamily: FontFamily.bodyRegular,
-  },
-  whenRow: {
+  options: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
   },
-  whenChip: {
+  timeChip: {
     borderWidth: 1,
     borderRadius: Radius.chip,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  calendarRow: {
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.one,
   },
   actions: {
     flexDirection: 'row',
@@ -202,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.three,
   },
-  cancel: {
+  ghost: {
     backgroundColor: 'transparent',
   },
   pressed: {

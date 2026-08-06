@@ -1327,6 +1327,16 @@ However, the MVP must not depend on AI in order to provide value. Every core use
 
 AI should be treated as an enhancement layer over a product that already works without it.
 
+> **SUPERSEDED-IN-FRAMING 2026-08-01 → see Decision Log D23 (AI adaptive-coach pivot).**
+> D2 (AI enhances but nothing core depends on it) is **not reversed as an engineering
+> resilience principle** — offline/AI-unavailable fallback behavior is still a reasonable
+> engineering target. What changes is the **positioning**: PushApp now identifies as an **AI
+> adaptive coach** (a closed behavior → insight → re-plan → nudge → behavior loop is the
+> product's core moat, per D23), not a gamified companion app where AI is an optional add-on
+> layer. This section's original reasoning is preserved below; it needs a full reconciliation
+> pass against D23 as part of a later task — do not treat either version as final until that
+> reconciliation happens.
+
 ## 15.2 Future AI Discovery
 
 Paid users may eventually use AI conversations to explore:
@@ -1650,6 +1660,11 @@ Example:
 
 Christmas outfit available only during Christmas period.
 
+> **SUPERSEDED 2026-08-01 → see Decision Log D23 (AI adaptive-coach pivot) and §21.5's note.**
+> The "Christmas outfit" example assumes Buddy dress-up cosmetics, which the pivot replaces with
+> a fixed evolve-per-level Buddy. Seasonal *achievements* (and non-Buddy seasonal rewards, e.g.
+> app themes) are unaffected; only Buddy-outfit-style examples like this one are superseded.
+
 ---
 
 ## 20.7 XP vs Coins
@@ -1756,6 +1771,16 @@ Buddy represents the relationship between the user and PushApp:
 Buddy can be human-like, creature-like or something more original, similar in spirit to collectible game companions rather than realistic human avatars.
 
 Buddy customization is intended to become one of PushApp's strongest long-term retention systems. It may include outfits, accessories, hairstyles (where applicable), colors, animations, emotes, and rare or seasonal cosmetics. Future directions include different Buddy species — robotic companions, fantasy creatures, or original "cute monster" characters — without imitating any existing franchise.
+
+> **SUPERSEDED 2026-08-01 → see Decision Log D23 (AI adaptive-coach pivot).** The retention-
+> through-customization model above (outfits/accessories/dress-up as the long-term retention
+> system) is superseded. The pivot's "mature progression, not childish gamification" direction
+> keeps Buddy as the companion/identity anchor, but Buddy now **evolves per level** — a **fixed
+> form per level**, reusing the same species/mastery pipeline already built
+> (`11_Engineering_Bible/Buddy_3D_Spike_Findings.md`, `app/tools/ingest_creature.py`) — instead
+> of being dressed up with purchasable cosmetics. The rest of this section (Buddy as companion,
+> not the user's representation of themselves; consistent presence across surfaces; adaptive
+> communication style) is unaffected and still holds.
 
 Because Buddy is the user's public identity, it should appear consistently across every surface that would otherwise show a profile picture: friend lists, inbox, Journey participants, leaderboards, support requests, Ally cards, and chat.
 

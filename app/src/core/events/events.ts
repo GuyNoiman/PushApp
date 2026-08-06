@@ -3,7 +3,7 @@
  * Engines never call each other directly; they emit and react to these events
  * (Engineering Bible §7 event-driven). Pure TS — no React/UI/vendor imports.
  */
-import type { Buddy, BuddyStage, CheckIn, Journey, ReminderRule, Step } from '../types/domain';
+import type { Buddy, BuddyStage, CheckIn, Journey, LeverId, ReasonId, ReminderRule, Step } from '../types/domain';
 
 export interface JourneyCreated {
   type: 'JourneyCreated';
@@ -109,6 +109,42 @@ export interface SchedulingPrefsChanged {
   type: 'SchedulingPrefsChanged';
 }
 
+// ── Miss-Recovery (user-triggered) ───────────────────────────────────────────
+// Emitted when the user taps Postpone and works through the recovery loop. Ids/enums
+// ONLY — no free text, no `note`, no Grace-Token cost (Cancel is FREE this slice).
+// These are NOT the reserved auto-miss keystone: StepMissed stays reserved (below)
+// and is never emitted here, and `featureFlags.intervention` stays off.
+
+/** The user postponed a Step (kept it, will move it). Drives persistence. No `done` change. */
+export interface StepPostponed {
+  type: 'StepPostponed';
+  journeyId: string;
+  stepId: string;
+}
+
+/**
+ * The user let THIS occurrence of a Step go ("Not this time"). Carries the closed
+ * reason id only. Cancel is FREE this slice — there is deliberately NO graceTokenCost
+ * and no token language anywhere (founder decision, PRD §9).
+ */
+export interface StepCancelled {
+  type: 'StepCancelled';
+  journeyId: string;
+  stepId: string;
+  reasonId: ReasonId;
+}
+
+/**
+ * A recovery lever changed the Step's/Journey's reminder schedule. Carries the
+ * lever ids that acted — never the reason `note` or any free text (G1).
+ */
+export interface ReminderRescheduled {
+  type: 'ReminderRescheduled';
+  journeyId: string;
+  stepId: string;
+  leverIds: LeverId[];
+}
+
 /**
  * The planner trimmed the desired notification set to stay under MAX_PENDING.
  * Reports how many were dropped and which rules they belonged to (deduped), so a
@@ -120,6 +156,66 @@ export interface SchedulerCapped {
   dropped: number;
   /** Distinct rule ids that lost at least one notification to the cap. */
   ruleIds: string[];
+}
+
+// ── Adaptive coach — behaviour tracking ──────────────────────────────────────
+// Emitted by the JourneyEngine (partial/reschedule hooks) and the
+// BehaviorModelEngine (slip detector + insight refresh). Ids/enums/scalars ONLY —
+// never the reason `note`, a goal/title, or any free text (G1/G2).
+
+/**
+ * A Step was worked on partially — touched but not completed (no celebration, no
+ * Journey completion). Ids only. The BehaviorModelEngine records this as a `partial`.
+ */
+export interface StepPartial {
+  type: 'StepPartial';
+  journeyId: string;
+  stepId: string;
+}
+
+/**
+ * A Step's scheduled occurrence was moved (JourneyEngine.rescheduleStep — the Planner's
+ * retime lever). Carries the new `plannedFor` as a single scalar epoch ms (allowed) plus
+ * ids only — never any free text.
+ */
+export interface PlanAdapted {
+  type: 'PlanAdapted';
+  journeyId: string;
+  stepId: string;
+  /** Epoch ms the Step is now planned for. */
+  plannedFor: number;
+}
+
+/**
+ * A remaining Step was shed from scope so a deadline plan could be held — the AdaptivePlanner
+ * load-shed lever, applied via JourneyEngine.dropStep. Ids only, no free text (G1/G2). The Step
+ * is not deleted; it is simply excluded from completion, the actionable / week lists, progress,
+ * and slip detection thereafter.
+ */
+export interface StepDropped {
+  type: 'StepDropped';
+  journeyId: string;
+  stepId: string;
+}
+
+/**
+ * The on-device InsightModel changed because a new {@link RawBehaviorRecord} landed. A
+ * PURE signal — it deliberately carries NO derived values, because the InsightModel stays
+ * on-device forever (G1). A consumer re-reads BehaviorModelEngine.getInsights() itself.
+ */
+export interface InsightUpdated {
+  type: 'InsightUpdated';
+}
+
+/**
+ * A Step's planned occurrence elapsed while it was still not done. First emitted by the
+ * BehaviorModelEngine slip detector (`tick`) — its first real producer. Ids only; a
+ * future InterventionEngine consumes it to decide a nudge.
+ */
+export interface StepMissed {
+  type: 'StepMissed';
+  journeyId: string;
+  stepId: string;
 }
 
 // ── RESERVED events ─────────────────────────────────────────────────────────
@@ -143,13 +239,6 @@ export interface InterventionScheduled {
   type: 'InterventionScheduled';
 }
 
-/** RESERVED — not yet emitted. A Step's expected cadence window elapsed unmet. */
-export interface StepMissed {
-  type: 'StepMissed';
-  journeyId: string;
-  stepId: string;
-}
-
 export type DomainEvent =
   | JourneyCreated
   | StepCheckedIn
@@ -167,11 +256,19 @@ export type DomainEvent =
   | ReminderRuleRemoved
   | SchedulingPrefsChanged
   | SchedulerCapped
+  | StepPostponed
+  | StepCancelled
+  | ReminderRescheduled
+  // Adaptive coach — behaviour tracking
+  | StepPartial
+  | PlanAdapted
+  | StepDropped
+  | InsightUpdated
+  | StepMissed
   // RESERVED — not yet emitted (deferred domains)
   | ProfileUpdated
   | InterestsUpdated
-  | InterventionScheduled
-  | StepMissed;
+  | InterventionScheduled;
 
 export type DomainEventType = DomainEvent['type'];
 

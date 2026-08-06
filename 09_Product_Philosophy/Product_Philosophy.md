@@ -24,6 +24,12 @@ Everything PushApp does should contribute to this mission.
 
 If a feature does not help people become closer to the person they aspire to become, it probably does not belong in the product.
 
+> **Pointer (not a change to the mission above):** a founder-framed *north-star essence* sentence —
+> "building personal plans, and helping / being helped by one another in order to persist in them" —
+> is recorded as an **Open Question / positioning refinement** in
+> `04_Product/Strategy_WIP_2026-07/09_future_vision_notes.md`. It **sharpens** (does not replace) the
+> mission and is not yet an approved positioning line.
+
 ---
 
 # Our Belief
@@ -198,6 +204,14 @@ But they are not the goal.
 They exist only to amplify real-world achievements.
 
 Virtual progress should never replace real progress.
+
+> **SUPERSEDED 2026-08-01 → see Decision Log D23 (AI adaptive-coach pivot).** The principle
+> above (gamification reinforces reality, it is never the goal) still holds and is reinforced by
+> the pivot's "mature progression, not childish gamification" direction — XP, Coins, Achievements
+> and Levels are unchanged. What changes: **Buddy customization/cosmetics** is no longer the
+> model. The Buddy avatar now **evolves per level** (a fixed form per level) instead of being
+> dressed up with purchasable outfits/accessories. See D23 for the full reasoning; the "why
+> gamification exists" reasoning on this page is preserved as-is.
 
 ---
 

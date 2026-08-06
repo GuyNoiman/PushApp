@@ -8,7 +8,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppState } from '../types/domain';
 import type { Repository } from './Repository';
 
-const STORAGE_KEY = 'pushapp.state.v1';
+/**
+ * The plaintext storage key. Exported so EncryptedLocalRepository can find and
+ * migrate a legacy (pre-encryption) snapshot written here — single source of truth
+ * for the key, no magic-string duplication.
+ */
+export const STORAGE_KEY = 'pushapp.state.v1';
 
 export class LocalRepository implements Repository {
   async load(): Promise<AppState | null> {

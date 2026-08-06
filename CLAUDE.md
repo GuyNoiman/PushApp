@@ -31,7 +31,7 @@ doc temporarily overrides files until merged.
 1. **Never overwrite or silently rewrite.** Prefer small, incremental edits. Preserve prior
    content and the **reasoning** behind decisions (why chosen, what was rejected). Git holds
    history — don't blindly append, but never destroy meaning. If unsure, leave a note, don't guess.
-2. **Protect the terminology.** Use official terms exactly (Dream · Journey · Phase · Step ·
+2. **Protect the terminology.** Use official terms exactly (Dream · Journey · Milestone · Step ·
    Buddy · Ally · Support Circle · Mission · XP · Coins · Grace Tokens …). Never introduce
    synonyms (no "Challenge / Program / Plan" for Journey). Canonical: `09_Product_Philosophy/Product_Terminology.md`.
 3. **The vision never shrinks.** If something is hard, move it *later* in the roadmap — never

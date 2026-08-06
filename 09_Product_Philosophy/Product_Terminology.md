@@ -163,7 +163,45 @@ These Journeys may provide richer user experiences than simple checklists.
 
 ---
 
-# Phase
+# Milestone
+
+**Canonical mid-layer term — renamed from "Phase" on 2026-08-01 (founder decision).** This is
+part of the AI-adaptive-coach pivot follow-up (`06_Decisions/Decision_Log.md` **D23**, task
+S0.2, docs updated 2026-08-03). The object model itself is unchanged — only the name of this
+layer changes.
+
+An optional, sequential grouping of Steps inside a Journey.
+
+- Optional: a Journey may attach Steps directly, without Milestones.
+- Sequential: when present, Milestones are completed in order.
+
+Example: a "2-month training plan" Journey may contain Milestone A (full-body), Milestone B
+(targeted area) and Milestone C (intense), each holding several Steps.
+
+Object hierarchy: Dream → Journey → **Milestone** (optional) → Step.
+
+**Lineage of this name (preserved for history, not deleted):**
+- **D5** (2026-07-06) introduced the layer as a **working name**: "Phase" (candidates considered:
+  Phase, Chapter, Part).
+- **D22** (2026-07-14) closed that naming question and **kept "Phase"** as the permanent display
+  name — no rename, at the time.
+- **2026-08-01** (founder decision, recorded here per the D23 follow-up, task S0.2): **renamed
+  again, from "Phase" to "Milestone."** This supersedes D22's "no rename" conclusion. The
+  reasoning below (from the original "Phase" entry) is preserved verbatim, since it still explains
+  *why the layer itself exists* — only the label changed.
+
+> **Note for whoever reconciles usage:** the word "milestone" (lowercase) is already used
+> generically elsewhere in this document — in **Achievement** ("A predefined milestone available
+> to every user") and **Reflection** ("Major milestones"). Those are generic-English uses, not
+> the proper-noun mid-layer object. Watch for ambiguity in copy/UI when both meanings could appear
+> in the same sentence; disambiguate with capitalization/context, not a synonym.
+
+---
+
+## Superseded — former name "Phase" (kept for history; do not use going forward)
+
+*The following is the original entry, preserved verbatim for the reasoning it carries. As of
+2026-08-01 the mid-layer term is **Milestone** (above), not Phase.*
 
 Working name — not yet finalized (candidates: Phase, Chapter, Part).
 
@@ -445,13 +483,18 @@ The following concepts (migrated from the former Glossary) are official PushApp 
 - Creator
 - User
 - Report
-- Milestone
 - Progress
 - Recommendation
 - AI Coach
 - Growth Library
 
-(Support Circle, Ally, Check-in, Reflection, Intervention, Community Insight and Marketplace — plus the core Dream / Journey / Phase / Step / Buddy / Mission / XP / Coins terms — are already defined here or in the Product Bible.)
+**Note (2026-08-03):** "Milestone" was removed from this to-define list because it is now the
+canonical mid-layer term (see the **Milestone** section above, renamed from "Phase" on
+2026-08-01) — it already has a full definition, it is not still-to-define. If a *different*,
+generic sense of "milestone" (e.g. a celebratory checkpoint distinct from the mid-layer object)
+is ever wanted, it must not fork the term — see the disambiguation note in the Milestone section.
+
+(Support Circle, Ally, Check-in, Reflection, Intervention, Community Insight and Marketplace — plus the core Dream / Journey / Milestone / Step / Buddy / Mission / XP / Coins terms — are already defined here or in the Product Bible.)
 
 ---
 

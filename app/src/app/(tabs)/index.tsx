@@ -22,8 +22,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
 import { EvolveReveal } from '@/components/buddy/EvolveReveal';
 import { GlossyTile } from '@/components/GlossyTile';
-import { RescheduleModal } from '@/components/journey/RescheduleModal';
+import { DevRecoveryPanel } from '@/components/journey/DevRecoveryPanel';
+import { RecoveryFlow } from '@/components/journey/RecoveryFlow';
+import { ReasonHistorySheet } from '@/components/journey/ReasonHistorySheet';
 import { StepCard } from '@/components/journey/StepCard';
+import { featureFlags } from '@/core/config/featureFlags';
 import { ResourceBar } from '@/components/ResourceBar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -103,12 +106,14 @@ export default function HomeScreen() {
   // fall back to a warm default. TODO(data model): wire real user name once profiles land.
   const userName = 'friend';
 
-  // The ⋯ menu and the Reschedule modal are both driven from Home (StepCard stays
+  // The ⋯ menu and the recovery sheets are driven from Home (StepCard stays
   // presentational). `menuStep` is the Step whose three-dots menu is open;
-  // `rescheduleStep` is the Step whose Reschedule modal is open (reached via the
-  // menu OR a swipe-left on the card — founder decision 2026-07-14).
+  // `recoveryStep` is the Step in the Miss-Recovery loop (Postpone → reason → times),
+  // reached via the menu OR a swipe-left on the card; `historyStep` is the Step whose
+  // "see past reasons" view is open.
   const [menuStep, setMenuStep] = useState<TodayStep | null>(null);
-  const [rescheduleStep, setRescheduleStep] = useState<TodayStep | null>(null);
+  const [recoveryStep, setRecoveryStep] = useState<TodayStep | null>(null);
+  const [historyStep, setHistoryStep] = useState<TodayStep | null>(null);
 
   // The full week's list INCLUDING done Steps (so a checked-in Step stays visible,
   // marked done, instead of vanishing — Home_Screen.md). getTodaySteps still drives
@@ -228,6 +233,10 @@ export default function HomeScreen() {
                   </ThemedText>
                 </View>
               )}
+
+              {/* DEV-ONLY: the Miss-Recovery mock toggles (home/away · busy/free).
+                  Hidden unless featureFlags.devMockRecovery is on (off in prod). */}
+              {featureFlags.devMockRecovery && <DevRecoveryPanel />}
             </View>
           </View>
 
@@ -286,9 +295,9 @@ export default function HomeScreen() {
                       item={item}
                       status={item.step.done ? 'done' : 'pending'}
                       onCheckIn={(journeyId, stepId) => core.checkInStep(journeyId, stepId)}
-                      onReschedule={() => setRescheduleStep(item)}
+                      onReschedule={() => setRecoveryStep(item)}
                       // The ⋯ menu is only meaningful on a pending Step (Mark done /
-                      // Reschedule); a completed card's dots stay inert.
+                      // Postpone / see past reasons); a completed card's dots stay inert.
                       onOpenMenu={item.step.done ? undefined : () => setMenuStep(item)}
                     />
                   )}
@@ -309,8 +318,9 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* ⋯ menu for a pending Step: Mark done (check-in) or Reschedule (opens the
-          modal below). Presented from Home so StepCard stays presentational. */}
+      {/* ⋯ menu for a pending Step: Mark done (check-in), Postpone (the Miss-Recovery
+          loop), or See past reasons. Presented from Home so StepCard stays
+          presentational. */}
       {menuStep && (
         <StepActionSheet
           stepTitle={menuStep.step.title}
@@ -319,8 +329,12 @@ export default function HomeScreen() {
             core.checkInStep(menuStep.journeyId, menuStep.step.id);
             setMenuStep(null);
           }}
-          onReschedule={() => {
-            setRescheduleStep(menuStep);
+          onPostpone={() => {
+            setRecoveryStep(menuStep);
+            setMenuStep(null);
+          }}
+          onSeePastReasons={() => {
+            setHistoryStep(menuStep);
             setMenuStep(null);
           }}
           // TODO(data model): no Step-editing flow/route exists yet — closes for
@@ -330,11 +344,17 @@ export default function HomeScreen() {
         />
       )}
 
-      <RescheduleModal
-        visible={rescheduleStep !== null}
-        stepTitle={rescheduleStep?.step.title}
-        onConfirm={() => setRescheduleStep(null)}
-        onCancel={() => setRescheduleStep(null)}
+      {/* The Miss-Recovery loop (Postpone → what happened? → propose times). Mounted
+          per Step so its internal stage resets cleanly each time it opens. */}
+      {recoveryStep && (
+        <RecoveryFlow step={recoveryStep} core={core} onClose={() => setRecoveryStep(null)} />
+      )}
+
+      <ReasonHistorySheet
+        visible={historyStep !== null}
+        stepTitle={historyStep?.step.title ?? ''}
+        entries={historyStep ? core.getReasonHistory(historyStep.step.id) : []}
+        onClose={() => setHistoryStep(null)}
       />
     </ThemedView>
   );
@@ -342,23 +362,25 @@ export default function HomeScreen() {
 
 /**
  * StepActionSheet — the ⋯ menu for a pending Step (founder decision 2026-07-14):
- * a bottom sheet with "Mark done", "Reschedule", "Step details" and "Edit step".
- * Kept local to Home since it only orchestrates Home's state; StepCard stays
- * presentational. "Step details" swaps the sheet into a read-only details panel
- * (title + description); the rest fire their action and close.
+ * a bottom sheet with "Mark done", "Postpone", "See past reasons", "Step details"
+ * and "Edit step". Kept local to Home since it only orchestrates Home's state;
+ * StepCard stays presentational. "Step details" swaps the sheet into a read-only
+ * details panel (title + description); the rest fire their action and close.
  */
 function StepActionSheet({
   stepTitle,
   stepDescription,
   onMarkDone,
-  onReschedule,
+  onPostpone,
+  onSeePastReasons,
   onEditStep,
   onClose,
 }: {
   stepTitle: string;
   stepDescription?: string;
   onMarkDone: () => void;
-  onReschedule: () => void;
+  onPostpone: () => void;
+  onSeePastReasons: () => void;
   onEditStep: () => void;
   onClose: () => void;
 }) {
@@ -420,12 +442,23 @@ function StepActionSheet({
               <View style={[styles.menuDivider, { backgroundColor: theme.hairline }]} />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Reschedule"
-                onPress={onReschedule}
+                accessibilityLabel="Postpone"
+                onPress={onPostpone}
                 style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
                 <Ionicons name="calendar-outline" size={22} color={theme.goldStrong} />
                 <ThemedText type="default" style={{ color: theme.text }}>
-                  Reschedule
+                  Postpone
+                </ThemedText>
+              </Pressable>
+              <View style={[styles.menuDivider, { backgroundColor: theme.hairline }]} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="See past reasons"
+                onPress={onSeePastReasons}
+                style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+                <Ionicons name="time-outline" size={22} color={theme.tealStrong} />
+                <ThemedText type="default" style={{ color: theme.text }}>
+                  See past reasons
                 </ThemedText>
               </Pressable>
               <View style={[styles.menuDivider, { backgroundColor: theme.hairline }]} />

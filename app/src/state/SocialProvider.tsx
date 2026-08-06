@@ -163,6 +163,11 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   friendsRef.current = friends;
 
   // ── Publish progress for each shared Journey when the snapshot changes ──
+  // SECURITY-PRIVACY (G2): this publish path may read ONLY the progress SUMMARY
+  // (title + completion). It must NEVER read AppState.reasonLog (the Miss-Recovery
+  // reasons / levers / on-device `note`) — that data is whitelist-excluded from all
+  // sync (see ProgressSummary's barring note). Keep this reading `getSnapshot()`
+  // journeys + `journeyProgress()` only.
   const publishTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const publishAll = useCallback(() => {
     void guard(async () => {

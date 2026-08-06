@@ -1,0 +1,40 @@
+# sample.script.txt — a reproducible scripted conversation for the coach dev harness.
+#
+# Run it (from app/) with:  COACH_SCRIPT=src/core/coach/sample.script.txt npm run coach
+#
+# Format: the FIRST non-comment line is the free-text OPENING that triage() understands (the only LLM
+# call). If it names more than ONE goal the coach asks a FOCUS question — the next line picks which
+# goal to build first (a NUMBER, 1-based). Each line after that answers the next question in order — a
+# NUMBER, `1,3` to pick SEVERAL on a multi-select, or `other: <your own text>` where offered. The last
+# answer is the closing scheduling-preference meta question. Blank lines and `#`-comments are ignored.
+#
+# Scenario: the founder's two-goal opening. Understanding should detect TWO distinct goals of DIFFERENT
+# kinds — "drink protein every day" (a recurring habit) and "pushups 100→500/week" (a step-by-step
+# process) — and ask which to build first. We pick the pushups process (→ Body Image, staged flow).
+
+# The opening — names two goals of different kinds (understanding input).
+i want to do 2 things: drink protein everyday and do pushups starting from 100 in the first week till 500 per week
+
+# meta.focus — which goal to build first? → 2. the pushups step-by-step process
+2
+
+# body_image.foundation (multi-select) — why it matters → 1 and 3
+1,3
+
+# body_image.baseline — where I'm starting → 2
+2
+
+# body_image.time — weekly time → 2. 1–3 hours
+2
+
+# body_image.obstacles (multi-select) — what throws it off → 2
+2
+
+# body_image.motivation (multi-select) — what success looks like → my own words (Other)
+other: Proving to myself I can stay consistent and hit 500 pushups a week
+
+# body_image.milestones — approach → 1. Build up in clear stages
+1
+
+# meta.scheduling — any specific days/times? → my own words (Other)
+other: Tuesday and Thursday evenings

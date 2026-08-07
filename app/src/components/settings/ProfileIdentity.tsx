@@ -17,15 +17,18 @@
  * this component owns only state + rendering (Engineering Bible §19).
  *
  * TODO(auth): signing in with Apple/Google will later supply a real display name,
- * avatar and identity here; until then the display name is a placeholder and the
- * username is a local, editable handle that persists through the existing
- * setHandle path once the social backend is wired.
+ * avatar and identity here. A DEV SIMULATION of a Google sign-in (core/profile/
+ * simulatedUser) fills the display name + email today when the founder sets the
+ * env vars; without them the display name stays a placeholder. The username stays a
+ * local, editable handle that persists through the existing setHandle path once the
+ * social backend is wired.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } from '@/core/social/username';
 import { Radius, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
@@ -43,6 +46,10 @@ function initialsFor(name: string): string {
 export function ProfileIdentity() {
   const theme = useTheme();
   const social = useSocial();
+
+  // A dev-simulated Google sign-in supplies a real display name + email when the
+  // founder's env vars are set; otherwise we fall back to the placeholder below.
+  const simUser = getSimulatedUser();
 
   // The demo "taken" registry: the sample friends' names + a few reserved words,
   // normalized. Editing a username validates against this local set.
@@ -80,16 +87,32 @@ export function ProfileIdentity() {
       <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
         <View style={styles.headerRow}>
           <View style={[styles.avatar, { backgroundColor: theme.tealTint }]}>
+            {/* Avatar keeps initials — from the display name when signed in, else the
+                username. TODO(auth): a real sign-in supplies a profile photo later. */}
             <ThemedText type="subtitle" style={{ color: theme.tealStrong }}>
-              {initialsFor(username)}
+              {initialsFor(simUser.signedIn && simUser.name ? simUser.name : username)}
             </ThemedText>
           </View>
 
           <View style={styles.identity}>
-            {/* Display name is a placeholder until sign-in supplies a real one. */}
-            <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
-              Your name (from sign-in)
-            </ThemedText>
+            {/* Display name + email come from the (dev-simulated) sign-in; otherwise
+                a placeholder invites signing in. */}
+            {simUser.signedIn && simUser.name ? (
+              <>
+                <ThemedText type="default" numberOfLines={1}>
+                  {simUser.name}
+                </ThemedText>
+                {simUser.email ? (
+                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                    {simUser.email}
+                  </ThemedText>
+                ) : null}
+              </>
+            ) : (
+              <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
+                Your name (from sign-in)
+              </ThemedText>
+            )}
             <View style={styles.usernameRow}>
               <ThemedText type="smallBold" numberOfLines={1} style={styles.username}>
                 @{username}

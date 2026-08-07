@@ -2,23 +2,17 @@
  * Coach — the conversation tab. A calm chat surface where the meta-agent voice
  * ("Steady") interviews the user and turns what they say into a named Journey.
  *
- * ── This is a UI PROTOTYPE, not the live coach ───────────────────────────────
- * The conversation is driven ENTIRELY by a local scripted array
- * ({@link COACH_SCRIPT}) plus local UI state — there is NO LLM call and NO
- * network here. The screen walks the script one stage at a time: each reply the
- * user "sends" (free text, an option card, or "Other") simply advances
- * `stageIndex` to the next canned turn.
+ * ── Two renderers behind ONE flag (config-before-code) ───────────────────────
+ * `featureFlags.liveCoach` (on only on the founder's device, where
+ * `EXPO_PUBLIC_GEMINI_API_KEY` is present) selects between:
+ *   • LiveCoachScreen — the REAL {@link CoachOrchestrator} over live Gemini via
+ *     {@link useLiveCoach}; the "Build my Journey" CTA creates a persisted Journey.
+ *   • ScriptedCoachScreen — the offline UI PROTOTYPE below, driven ENTIRELY by a
+ *     local scripted array ({@link COACH_SCRIPT}); NO LLM call, NO network. It is
+ *     the default for every other build, so the flag-off path is zero-regression.
  *
- * TODO(coach): wire the real engine from `src/core/coach/` (CoachOrchestrator).
- *   The orchestrator emits coach utterances + expected answers per turn, matching
- *   the `CoachStage` shape here — so going live means: (1) replace COACH_SCRIPT
- *   with orchestrator output, (2) feed `handleSendText` / `handlePickOption` /
- *   `handleSubmitOther` back into the orchestrator, (3) render the returned turn.
- *   It also needs an LLM API key + a founder decision on cost, so it stays
- *   offline/free for now (do NOT import or instantiate the Gemini/LLM client).
- *
- * Presentational + local state only — no business logic, no Journey creation.
- * "Build my Journey" and the mic are visual affordances until those seams land.
+ * Presentational + local state only — the live path keeps its business logic in
+ * {@link useLiveCoach} (Engineering Bible §19).
  */
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -31,12 +25,213 @@ import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { CoachInsight, CoachJourneyCard } from '@/components/coach/CoachJourneyCard';
 import { CoachOptions } from '@/components/coach/CoachOptions';
 import { COACH_SCRIPT } from '@/components/coach/coachScript';
+import { useLiveCoach } from '@/components/coach/useLiveCoach';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { featureFlags } from '@/core/config/featureFlags';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useApp } from '@/state/AppProvider';
 
+/**
+ * Route the Coach tab to the live orchestrator when the founder's key is present, else the offline
+ * scripted prototype. The flag is a build-time constant, so hooks stay unconditional in each screen.
+ */
 export default function CoachScreen() {
+  return featureFlags.liveCoach ? <LiveCoachScreen /> : <ScriptedCoachScreen />;
+}
+
+/**
+ * LiveCoachScreen — renders the REAL coach from {@link useLiveCoach}: the transcript, the current
+ * question's option cards, a "thinking…" state during triage, and a CTA that either builds the
+ * Journey (`createJourneyFromGoalSpec`) or, on a sensitive-domain hand-off, points to manual creation.
+ */
+function LiveCoachScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const { core } = useApp();
+  const coach = useLiveCoach();
+
+  const barBottomInset = Math.max(BottomTabInset, insets.bottom);
+
+  /** The bottom input-bar draft (the opening free-text). */
+  const [draft, setDraft] = useState('');
+  /** Local selection for the current multi-select question (single-select submits on tap). */
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const scrollToEnd = useCallback(() => {
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }, []);
+
+  const handleSend = useCallback(() => {
+    const typed = draft.trim();
+    if (typed.length === 0) return;
+    setDraft('');
+    coach.sendOpening(typed);
+    scrollToEnd();
+  }, [draft, coach, scrollToEnd]);
+
+  const handleSelect = useCallback(
+    (id: string) => {
+      const question = coach.question;
+      if (!question) return;
+      if (question.multiSelect) {
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+      } else {
+        setSelectedIds([]);
+        coach.selectSingle(id);
+        scrollToEnd();
+      }
+    },
+    [coach, scrollToEnd],
+  );
+
+  const handleAdvance = useCallback(() => {
+    if (!coach.question?.multiSelect) return; // single-select already submitted on tap
+    coach.selectMulti(selectedIds);
+    setSelectedIds([]);
+    scrollToEnd();
+  }, [coach, selectedIds, scrollToEnd]);
+
+  const handleSubmitOther = useCallback(
+    (text: string) => {
+      setSelectedIds([]);
+      coach.answerOther(text);
+      scrollToEnd();
+    },
+    [coach, scrollToEnd],
+  );
+
+  const handleBuild = useCallback(() => {
+    if (!coach.goalSpec) return;
+    core.createJourneyFromGoalSpec(coach.goalSpec);
+    router.replace('/');
+  }, [coach.goalSpec, core]);
+
+  const headerBorder = useMemo(() => ({ borderBottomColor: theme.hairline }), [theme.hairline]);
+
+  return (
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, headerBorder]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close conversation"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            hitSlop={8}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+            <Ionicons name="chevron-back" size={24} color={theme.text} />
+          </Pressable>
+          <ThemedText type="smallBold">New plan</ThemedText>
+        </View>
+
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.flex}
+            contentContainerStyle={styles.chat}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={scrollToEnd}>
+            {coach.items.map((item, i) => {
+              switch (item.kind) {
+                case 'coach':
+                  return <CoachBubble key={i} role="coach" text={item.text} strong={item.strong} />;
+                case 'user':
+                  return <CoachBubble key={i} role="user" text={item.text} />;
+                case 'insight':
+                  return <CoachInsight key={i} text={item.text} />;
+                case 'journey':
+                  return (
+                    <CoachJourneyCard
+                      key={i}
+                      eyebrow={item.eyebrow}
+                      title={item.title}
+                      description={item.description}
+                      meta={item.meta}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })}
+
+            {coach.status === 'thinking' && <CoachBubble role="coach" text="Thinking…" />}
+
+            {coach.question && (
+              <CoachOptions
+                prompt={coach.question.label}
+                options={coach.question.options}
+                multiSelect={coach.question.multiSelect}
+                allowOther={coach.question.allowOther}
+                continueLabel="Continue"
+                selectedIds={selectedIds}
+                disabled={false}
+                onSelect={handleSelect}
+                onAdvance={handleAdvance}
+                onSubmitOther={handleSubmitOther}
+              />
+            )}
+          </ScrollView>
+
+          {/* Bottom region: the opening free-text bar, the Build CTA, or the sensitive-domain hand-off. */}
+          {coach.awaitingOpening && (
+            <CoachInputBar
+              value={draft}
+              placeholder="Type or speak…"
+              bottomInset={barBottomInset}
+              onChangeText={setDraft}
+              onSend={handleSend}
+            />
+          )}
+
+          {coach.goalSpec && (
+            <View
+              style={[
+                styles.ctaBar,
+                { backgroundColor: theme.background, paddingBottom: Spacing.three + barBottomInset },
+              ]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Build my Journey"
+                onPress={handleBuild}
+                style={({ pressed }) => [styles.ctaPrimary, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
+                <Ionicons name="checkmark" size={17} color={theme.backgroundElement} />
+                <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
+                  Build my Journey
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {coach.handoff && (
+            <View
+              style={[
+                styles.ctaBar,
+                { backgroundColor: theme.background, paddingBottom: Spacing.three + barBottomInset },
+              ]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Set it up myself"
+                onPress={() => router.push('/journey/new')}
+                style={({ pressed }) => [styles.ctaPrimary, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
+                <Ionicons name="create-outline" size={17} color={theme.backgroundElement} />
+                <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
+                  Set it up myself
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
+function ScriptedCoachScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);

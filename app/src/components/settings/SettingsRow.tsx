@@ -19,6 +19,7 @@ export function SettingsRow({
   detail,
   value,
   badge,
+  connected,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
@@ -29,6 +30,8 @@ export function SettingsRow({
   value?: string;
   /** Optional pill on the right (e.g. "Coming soon") — marks a not-yet row. */
   badge?: string;
+  /** When true, the row reads as linked: a success checkmark + "Connected". */
+  connected?: boolean;
   onPress?: () => void;
 }) {
   const theme = useTheme();
@@ -51,7 +54,14 @@ export function SettingsRow({
         ) : null}
       </View>
 
-      {badge ? (
+      {connected ? (
+        <View style={styles.connected}>
+          <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+          <ThemedText type="smallBold" style={{ color: theme.success }}>
+            Connected
+          </ThemedText>
+        </View>
+      ) : badge ? (
         <View style={[styles.badge, { backgroundColor: theme.backgroundSelected }]}>
           <ThemedText type="small" themeColor="textMuted">
             {badge}
@@ -107,6 +117,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     paddingVertical: Spacing.half,
     paddingHorizontal: Spacing.two,
+  },
+  connected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   pressed: {
     opacity: 0.6,

@@ -36,6 +36,7 @@ import { ThemedView } from '@/components/themed-view';
 import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty } from '@/dev/sampleSocial';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
+import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import type { Dream, Journey, Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
@@ -128,9 +129,14 @@ export default function HomeScreen() {
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
-  // The greeting shows the user's name when a public handle exists, else a warm
-  // fallback. TODO(data): swap the handle for a real display name once profiles land.
-  const name = social.profile?.handle?.trim() || 'there';
+  // The greeting prefers the (simulated) signed-in user's first name, then a public
+  // handle, then a warm fallback. TODO(auth): the sim is a dev stand-in for a real
+  // Google/Apple sign-in (see core/profile/simulatedUser).
+  const simUser = getSimulatedUser();
+  const name =
+    (simUser.signedIn ? firstName(simUser.name) : '') ||
+    social.profile?.handle?.trim() ||
+    'there';
 
   const journeyById = useMemo(() => {
     const map = new Map<string, Journey>();

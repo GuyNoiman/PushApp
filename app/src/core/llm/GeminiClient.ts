@@ -4,19 +4,24 @@
  * swapping providers touches this file alone.
  *
  * Talks to the v1beta `generateContent` REST endpoint directly (no SDK — one less dependency and
- * no bundle weight). Provider = Gemini FREE tier; the default model is `gemini-2.5-flash`, which a
- * 2026-08-04 connectivity smoke test confirmed answers on this key's free tier (`gemini-2.0-flash`
- * returned free-tier quota `limit: 0`). Both `x-goog-api-key` header and `?key=` query auth work;
- * we use the HEADER so the key never lands in a URL, a redirect, or a request log.
+ * no bundle weight). Provider = Gemini on the founder's **billing-enabled (PAID) project**, capped
+ * ~$10/mo (default model `gemini-2.5-flash`). This tier matters for privacy: on the paid/billed
+ * Gemini API, prompt content is NOT used to train Google's models and retention is limited — the
+ * basis for "the user's disclosures aren't used beyond serving them". (Earlier this key was on the
+ * free tier, where prompts CAN be used to improve Google's products — do not regress to it.) Both
+ * `x-goog-api-key` header and `?key=` query auth work; we use the HEADER so the key never lands in
+ * a URL, a redirect, or a request log.
  *
- * SECURITY-PRIVACY: the key is read from `GEMINI_API_KEY` (git-ignored `.env.local`) or an explicit
- * constructor option — NEVER hardcoded, NEVER logged, NEVER placed in an error message or URL. A
- * request body carries the user's ON-DEVICE-ONLY goal specifics (G1); it is sent only to serve the
+ * SECURITY-PRIVACY: the key is read (in order) from an explicit constructor option, then
+ * `EXPO_PUBLIC_GEMINI_API_KEY` (the on-device / Metro-inlined var), then `GEMINI_API_KEY` (Node /
+ * tests / the dev harness) — NEVER hardcoded, NEVER logged, NEVER placed in an error message or URL.
+ * A request body carries the user's ON-DEVICE-ONLY goal specifics (G1); it is sent only to serve the
  * user and is never persisted or synced by this client.
  *
- * NOTE (Expo runtime): only `EXPO_PUBLIC_`-prefixed vars are inlined into the RN bundle, so
- * `process.env.GEMINI_API_KEY` resolves in Node/tests and via an explicit option; wiring the key
- * into the on-device build (secure config) is the integration step's job (S2.3+), not this seam's.
+ * NOTE (Expo runtime): only `EXPO_PUBLIC_`-prefixed vars are inlined into the RN bundle, so the
+ * on-device build reads `process.env.EXPO_PUBLIC_GEMINI_API_KEY` (Metro inlines the literal below at
+ * build time) while Node/tests and the harness read `GEMINI_API_KEY` — both from the founder's
+ * git-ignored `.env.local`. Opt-in and founder-device-only (see `featureFlags.liveCoach`).
  *
  * Pure TypeScript — no React, no UI, no vendor SDK.
  */
@@ -35,7 +40,10 @@ const DEFAULT_TIMEOUT_MS = 20000;
 
 /** Construction options — everything is overridable so the client is testable and re-targetable. */
 export interface GeminiClientOptions {
-  /** The API key; defaults to `process.env.GEMINI_API_KEY`. Never logged. */
+  /**
+   * The API key; when omitted, defaults to `EXPO_PUBLIC_GEMINI_API_KEY` (on-device / Metro-inlined)
+   * then `GEMINI_API_KEY` (Node / tests / harness). Never logged. Keep passing it in tests.
+   */
   apiKey?: string;
   /** Model id, e.g. `gemini-2.5-flash`; defaults to a confirmed free-tier flash model. */
   model?: string;
@@ -65,7 +73,14 @@ export class GeminiClient implements LlmClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: GeminiClientOptions = {}) {
-    this.apiKey = (options.apiKey ?? process.env.GEMINI_API_KEY ?? '').trim();
+    // The `process.env.EXPO_PUBLIC_GEMINI_API_KEY` literal MUST stay verbatim so Metro inlines it
+    // into the on-device bundle; `GEMINI_API_KEY` covers Node/tests/the harness.
+    this.apiKey = (
+      options.apiKey ??
+      process.env.EXPO_PUBLIC_GEMINI_API_KEY ??
+      process.env.GEMINI_API_KEY ??
+      ''
+    ).trim();
     this.model = options.model ?? DEFAULT_MODEL;
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;

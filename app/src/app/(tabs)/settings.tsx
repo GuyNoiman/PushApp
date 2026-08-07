@@ -27,10 +27,16 @@ import { SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function SettingsScreen() {
   const theme = useTheme();
+
+  // A dev-simulated Google sign-in (core/profile/simulatedUser) marks the Google row
+  // as connected when the founder's env vars are set; Apple stays "coming soon".
+  // TODO(auth): replace with a real OAuth session for both providers.
+  const simUser = getSimulatedUser();
 
   return (
     <ThemedView style={styles.container}>
@@ -43,10 +49,23 @@ export default function SettingsScreen() {
           {/* Profile — the username lives here now (moved out of Circle). */}
           <ProfileIdentity />
 
-          {/* Account — sign-in is not wired yet; the rows read as "coming soon". */}
+          {/* Account — Apple is still "coming soon"; Google reads as connected via the
+              dev-simulated sign-in when the founder's env vars are set. The email +
+              "Simulated" note keep it honest that no real OAuth ran. TODO(auth). */}
           <SettingsSection title="Account">
             <SettingsRow icon="logo-apple" label="Sign in with Apple" badge="Coming soon" />
-            <SettingsRow icon="logo-google" label="Sign in with Google" badge="Coming soon" />
+            {simUser.signedIn ? (
+              <SettingsRow
+                icon="logo-google"
+                label="Sign in with Google"
+                detail={
+                  simUser.email ? `${simUser.email} · Simulated` : 'Simulated (dev testing)'
+                }
+                connected
+              />
+            ) : (
+              <SettingsRow icon="logo-google" label="Sign in with Google" badge="Coming soon" />
+            )}
           </SettingsSection>
 
           {/* App — light presentational placeholders (no logic wired yet). */}

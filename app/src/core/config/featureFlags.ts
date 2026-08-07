@@ -72,6 +72,15 @@ export const featureFlags = {
    */
   adaptiveCoach: false,
   /**
+   * LIVE conversational coach — routes the Coach tab through the REAL {@link CoachOrchestrator}
+   * over live Gemini (behind the LlmClient seam) instead of the scripted UI prototype. OPT-IN and
+   * FOUNDER-DEVICE-ONLY: on only when `EXPO_PUBLIC_GEMINI_API_KEY` is present, which lives solely in
+   * the founder's git-ignored `.env.local` and is never committed — so every other build (and CI)
+   * keeps the free, offline scripted prototype with zero behaviour change. Outbound text is redacted
+   * ({@link ../llm/RedactingLlmClient}) before it crosses the cloud boundary (G1).
+   */
+  liveCoach: Boolean(process.env.EXPO_PUBLIC_GEMINI_API_KEY),
+  /**
    * DEV-ONLY (Miss-Recovery slice). Turns on the in-memory mock gateways that let
    * a developer/founder exercise the recovery loop end-to-end in Expo Go at $0:
    * a `home/away` location and a `busy/free` calendar the dev panel toggles. OFF in

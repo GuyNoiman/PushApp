@@ -24,6 +24,8 @@ import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngin
 import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
+import { createJourneyFromGoalSpec } from './coach/goalSpecToJourney';
+import type { GoalSpec } from './coach/interviewPlaybook';
 import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
 import { setMockBusy, setMockLocation, type MockPlace } from './recovery/mockEnv';
 import { BehaviorModelEngine } from './learning/BehaviorModelEngine';
@@ -411,6 +413,17 @@ export class AppCore {
 
   createJourney(input: NewJourneyInput): Journey {
     return this.journeyEngine.createJourney(input);
+  }
+
+  /**
+   * Create a real Journey from a finished coach interview's {@link GoalSpec} — the one-call bridge
+   * the live coach's "Build my Journey" CTA calls. Delegates to the {@link ./coach/goalSpecToJourney}
+   * helper over this core's JourneyEngine, so it plans + persists + notifies through the SAME
+   * `JourneyCreated` path as {@link createJourney}. This is a NORMAL Journey creation — it is NOT
+   * gated behind `adaptiveCoach`; the goal specifics stay ON DEVICE (G1). No planning logic here.
+   */
+  createJourneyFromGoalSpec(spec: GoalSpec): Journey {
+    return createJourneyFromGoalSpec(this.journeyEngine, spec);
   }
 
   /**

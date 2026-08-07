@@ -55,10 +55,18 @@ and `.../figma_make/`.
 - **Journeys** (`(tabs)/journeys.tsx`): promoted from modal to a TAB; Active/Completed/Future;
   **Dream name eyebrow** on each card; "Create journey" (→ `/journey/new`). The old
   `app/src/app/journeys.tsx` modal was deleted (route collision).
-- **Coach** (`(tabs)/coach.tsx` + `components/coach/*`): **UI PROTOTYPE only — scripted,
-  NOT wired to the live LLM.** No persona name on-screen (moved to Settings idea). Off the
-  tab bar (`href:null`), opened from Home. Going live needs an API key + a founder COST
-  decision (~$10/mo Gemini) — DO NOT wire silently.
+- **Coach** (`(tabs)/coach.tsx` + `components/coach/*`): **now WIRED to the live LLM** (real
+  `CoachOrchestrator` → Gemini) behind `featureFlags.liveCoach` — ON only when
+  `EXPO_PUBLIC_GEMINI_API_KEY` is in the git-ignored `.env.local` (**founder-device-only**); no key ⇒
+  the unchanged scripted prototype (zero regression). Privacy on the seam: `RedactingLlmClient`
+  (redactForCloud on outbound) + `SafetyLayer` guard + **addiction/relationships STOP-and-handoff**
+  in `useLiveCoach`; on completion `AppCore.createJourneyFromGoalSpec` builds a real Journey. No
+  persona name on-screen; off the tab bar, opened from Home. **Security-privacy reviewed 2026-08-07:
+  safe on the founder's OWN device for GENERAL goals only** (his own capped PAID key; the first
+  triage call is unredacted-for-content, so avoid real sensitive disclosures while testing).
+- **Simulated Google sign-in (dev-only):** `core/profile/simulatedUser.ts` reads
+  `EXPO_PUBLIC_SIM_USER_NAME/EMAIL` (git-ignored) → Home greets by name + Settings shows name/email
+  ("Connected · Simulated"). Never sent to the LLM. `TODO(auth)` = real OAuth.
 - **Circle** (`(tabs)/friends.tsx`): single Support-Circle friends list + Invite/Add. The
   editable identity/username **moved OUT to Settings**.
 - **Inbox** (`(tabs)/inbox.tsx`): Friends · Allies · Groups · Requested tabs + search +
@@ -83,16 +91,31 @@ run — to see it on an existing device/browser you must clear storage / use Inc
 1. **Real sign-in (Apple/Google)** to supply a real display name (replaces the "there"
    greeting placeholder). Needs the **~$99/yr Apple Developer Program** + a native dev build
    (Expo Go can't do native Apple/Google). NOT built — awaiting founder go-ahead on the cost.
-2. **Wire the Coach to a live LLM** (API key + monthly cost decision).
-3. **Streak engine** (Home streak is a placeholder `4`); **real per-Step due-dates** (Today
-   vs This-week split + urgency reddening are hour-heuristics); **expert-driven Journey icons**
-   (currently a neutral glyph); **in-app light/dark toggle**; a real backend uniqueness check
-   for usernames; a dedicated "nudge" outreach (reuses `sendCheer` for now).
-4. Voice input: the in-app Claude mic doesn't support Hebrew (use macOS Dictation) — unrelated
-   to PushApp; no action.
+2. **Coach → live LLM: DONE for founder-device testing** (behind `liveCoach`, see above). **HARD
+   prerequisites before ANY real (non-founder) user** — none built yet, do not ship the live coach
+   without them: (a) a **server-side key proxy** (never ship an `EXPO_PUBLIC_` provider key — it's
+   extractable from the bundle); (b) the **bilingual crisis-detection SAFETY FLOOR** + a
+   consent/disclaimer surface before free-text reaches the cloud (the first `triage` call is
+   unredacted-for-content); (c) **engine-level** sensitive-domain containment (today the stop lives
+   in `useLiveCoach`, not `CoachOrchestrator` — a future caller could bypass it; also add `body_image`);
+   (d) **clinical review** gating Addiction/Relationships. `redactForCloud` currently strips only
+   emails/phones (not names/health) — minimisation, not anonymisation.
+3. **Device notifications on the physical phone** (founder's stated next target): the `ReminderEngine`
+   + `expo-notifications` are BUILT (schedules local notifications) but need a permission-ask wired +
+   likely a **dev build** (Expo Go notification limits on SDK 54) → the **~$99 Apple Developer
+   Program**. Free first step: demo on the iOS Simulator, then decide the dev build.
+4. **Wire the adaptive report→replan loop to the UI** (founder's "mechanism that changes
+   dynamically"): the `AdaptivePlanner`/`BehaviorModelEngine` are built + sim-proven behind
+   `adaptiveCoach` but NOT surfaced — reporting a miss/postpone should visibly re-plan the week.
+5. **Real sign-in (Apple/Google)** to replace the simulated sign-in (needs the ~$99 Apple program +
+   native dev build). **Streak engine** (Home streak placeholder `4`); **real per-Step due-dates**
+   (Today/This-week + urgency reddening are hour-heuristics); **expert-driven Journey icons**;
+   **in-app light/dark toggle**; backend username-uniqueness; a dedicated "nudge" outreach.
 
-**▶ NEXT:** pick up item (1) or (2) with the founder (both are cost decisions), or continue
-polishing the redesigned screens per the next round of feedback. The old snapshots below are
+**▶ NEXT (founder's end-to-end target):** finish the loop at $0 in Expo Go / the iOS Simulator —
+talk to the coach → it builds a real Journey with weekly Steps → report/refuse/postpone → wire the
+adaptive replan so the plan visibly changes (item 4) → demo local notifications on the Simulator;
+THEN take the ~$99 Apple dev build for real on-device notifications (item 3). Old snapshots below are
 accurate ENGINEERING history but their UI/positioning framing predates this redesign.
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-08-06 (session end — supersedes the 2026-08-05 snapshot below as "most current")

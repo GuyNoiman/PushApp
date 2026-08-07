@@ -16,12 +16,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /** How much time-pressure a pending Step carries — drives its accent. */
 export type StepUrgency = 'calm' | 'warn' | 'urgent';
+
+// The card's corner radius, shared with the swipe-reveal panels behind it.
+const CARD_RADIUS = Radius.card + 2;
 
 export function TodayFocusCard({
   icon,
@@ -30,6 +34,9 @@ export function TodayFocusCard({
   progress,
   urgency,
   onPress,
+  onDone,
+  onPostpone,
+  onLetGo,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
@@ -39,6 +46,12 @@ export function TodayFocusCard({
   urgency: StepUrgency;
   /** Opens the report sheet (Done · Partial · Couldn't · Postpone · Reschedule). */
   onPress: () => void;
+  /** Swipe-right → report done (fires Home's confetti). */
+  onDone: () => void;
+  /** Swipe-left Postpone button. */
+  onPostpone: () => void;
+  /** Swipe-left Let-go button. */
+  onLetGo: () => void;
 }) {
   const theme = useTheme();
 
@@ -58,54 +71,65 @@ export function TodayFocusCard({
   const pct = Math.round(Math.max(0, Math.min(1, progress)) * 100);
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Report on ${title}`}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.hairline, shadowColor: '#000' },
-        pressed && styles.pressed,
-      ]}>
-      <View style={[styles.edge, { backgroundColor: accent, width: edgeWidth }]} />
+    <SwipeableStepRow
+      onDone={onDone}
+      onPostpone={onPostpone}
+      onLetGo={onLetGo}
+      borderRadius={CARD_RADIUS}
+      containerStyle={styles.swipe}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Report on ${title}`}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: theme.backgroundElement, borderColor: theme.hairline, shadowColor: '#000' },
+          pressed && styles.pressed,
+        ]}>
+        <View style={[styles.edge, { backgroundColor: accent, width: edgeWidth }]} />
 
-      <View style={styles.head}>
-        <View style={[styles.tile, { backgroundColor: accentTint }]}>
-          <Ionicons name={icon} size={20} color={accentStrong} />
-        </View>
-        <View style={styles.main}>
-          <ThemedText numberOfLines={2} style={[styles.title, { color: theme.text }]}>
-            {title}
-          </ThemedText>
-          {meta.length > 0 && (
-            <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
-              {meta}
+        <View style={styles.head}>
+          <View style={[styles.tile, { backgroundColor: accentTint }]}>
+            <Ionicons name={icon} size={20} color={accentStrong} />
+          </View>
+          <View style={styles.main}>
+            <ThemedText numberOfLines={2} style={[styles.title, { color: theme.text }]}>
+              {title}
             </ThemedText>
-          )}
+            {meta.length > 0 && (
+              <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
+                {meta}
+              </ThemedText>
+            )}
+          </View>
+          <View style={styles.dots} accessibilityElementsHidden>
+            <Ionicons name="ellipsis-horizontal" size={20} color={theme.textMuted} />
+          </View>
         </View>
-        <View style={styles.dots} accessibilityElementsHidden>
-          <Ionicons name="ellipsis-horizontal" size={20} color={theme.textMuted} />
-        </View>
-      </View>
 
-      <View style={styles.progressRow}>
-        <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
-          <View style={[styles.fill, { backgroundColor: theme.tint, width: `${pct}%` }]} />
+        <View style={styles.progressRow}>
+          <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
+            <View style={[styles.fill, { backgroundColor: theme.tint, width: `${pct}%` }]} />
+          </View>
+          <ThemedText type="smallBold" style={[styles.pct, { color: theme.textSecondary }]}>
+            {pct}%
+          </ThemedText>
         </View>
-        <ThemedText type="smallBold" style={[styles.pct, { color: theme.textSecondary }]}>
-          {pct}%
-        </ThemedText>
-      </View>
-    </Pressable>
+      </Pressable>
+    </SwipeableStepRow>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  // The swipe wrapper carries the card's outer margin so the reveal panels align to
+  // the card's edges (the card itself is now flush inside the swipeable).
+  swipe: {
     marginHorizontal: Spacing.four,
+  },
+  card: {
     padding: Spacing.three,
     paddingLeft: Spacing.three + Spacing.one,
-    borderRadius: Radius.card + 2,
+    borderRadius: CARD_RADIUS,
     borderWidth: 1,
     overflow: 'hidden',
     gap: Spacing.two,

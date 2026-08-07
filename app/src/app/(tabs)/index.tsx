@@ -19,7 +19,7 @@
  * the support board falls back to DEV sample people until the social backend fills.
  */
 import { useRouter, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -160,6 +160,40 @@ export default function HomeScreen() {
     [journeyById],
   );
 
+  // ── Quick-swipe report paths — the SAME facade calls the ⋯ menu uses, so swipe and
+  // menu stay in lock-step (Engineering Bible §19: the engines own the logic). Done
+  // routes through the shared confetti trigger so the burst pops on the screen.
+  const reportDone = useCallback(
+    (item: TodayStep) => {
+      core.checkInStep(item.journeyId, item.step.id);
+      setConfettiKey((k) => k + 1);
+    },
+    [core],
+  );
+  const reportPostpone = useCallback(
+    (item: TodayStep) => {
+      void core.submitReason({
+        journeyId: item.journeyId,
+        stepId: item.step.id,
+        action: 'postpone',
+        reasonId: 'did_partially',
+      });
+    },
+    [core],
+  );
+  const reportLetGo = useCallback(
+    (item: TodayStep) => {
+      // A free, no-shame let-go of this occurrence (couldnt → grace lever).
+      void core.submitReason({
+        journeyId: item.journeyId,
+        stepId: item.step.id,
+        action: 'cancel',
+        reasonId: 'couldnt',
+      });
+    },
+    [core],
+  );
+
   // TODAY'S FOCUS — the next pending Step of EACH active Journey (so with the current
   // 3 seeded Journeys the stack shows ~3), never a checked-in Step. TODO(data): this is
   // a heuristic "today" — one Step per active Journey — until real per-Step due-dates
@@ -200,13 +234,25 @@ export default function HomeScreen() {
         meta: metaFor(item),
         done: item.step.done,
         onPress: () => setReportStep(item),
+        onDone: () => reportDone(item),
+        onPostpone: () => reportPostpone(item),
+        onLetGo: () => reportLetGo(item),
       };
       const group = groups.get(key);
       if (group) group.steps.push(row);
       else groups.set(key, { key, title, isDream: Boolean(dream), steps: [row] });
     }
     return [...groups.values()];
-  }, [snapshot?.weekSteps, focusStepIds, journeyById, dreamById, metaFor]);
+  }, [
+    snapshot?.weekSteps,
+    focusStepIds,
+    journeyById,
+    dreamById,
+    metaFor,
+    reportDone,
+    reportPostpone,
+    reportLetGo,
+  ]);
 
   const weekCount = useMemo(
     () => weekGroups.reduce((n, g) => n + g.steps.length, 0),
@@ -338,6 +384,9 @@ export default function HomeScreen() {
                   progress={core.journeyProgress(item.journeyId)}
                   urgency={focusUrgency}
                   onPress={() => setReportStep(item)}
+                  onDone={() => reportDone(item)}
+                  onPostpone={() => reportPostpone(item)}
+                  onLetGo={() => reportLetGo(item)}
                 />
               ))}
             </View>

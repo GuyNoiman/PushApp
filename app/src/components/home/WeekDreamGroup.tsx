@@ -16,6 +16,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -31,6 +32,12 @@ export interface WeekStepView {
   meta: string;
   done: boolean;
   onPress: () => void;
+  /** Swipe-right → report done (fires Home's confetti). */
+  onDone: () => void;
+  /** Swipe-left Postpone button. */
+  onPostpone: () => void;
+  /** Swipe-left Let-go button. */
+  onLetGo: () => void;
 }
 
 export function WeekDreamGroup({
@@ -74,52 +81,61 @@ export function WeekDreamGroup({
               />
             </View>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={row.done ? `${row.title}, done` : `Report on ${row.title}`}
-              onPress={row.onPress}
-              style={({ pressed }) => [
-                styles.card,
-                {
-                  backgroundColor: theme.backgroundElement,
-                  borderColor: theme.hairline,
-                  shadowColor: '#000',
-                  opacity: row.done ? 0.55 : 1,
-                },
-                pressed && styles.pressed,
-              ]}>
-              <View style={[styles.tile, { backgroundColor: row.done ? theme.tint : theme.tealTint }]}>
-                <Ionicons
-                  name={row.done ? 'checkmark' : row.icon}
-                  size={15}
-                  color={row.done ? onAccent : theme.tint}
-                />
-              </View>
+            {/* Each pending Step is individually swipeable (right → done, left →
+                Postpone / Let go); a done Step renders plain, no swipe. */}
+            <SwipeableStepRow
+              enabled={!row.done}
+              onDone={row.onDone}
+              onPostpone={row.onPostpone}
+              onLetGo={row.onLetGo}
+              containerStyle={styles.swipe}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={row.done ? `${row.title}, done` : `Report on ${row.title}`}
+                onPress={row.onPress}
+                style={({ pressed }) => [
+                  styles.card,
+                  {
+                    backgroundColor: theme.backgroundElement,
+                    borderColor: theme.hairline,
+                    shadowColor: '#000',
+                    opacity: row.done ? 0.55 : 1,
+                  },
+                  pressed && styles.pressed,
+                ]}>
+                <View style={[styles.tile, { backgroundColor: row.done ? theme.tint : theme.tealTint }]}>
+                  <Ionicons
+                    name={row.done ? 'checkmark' : row.icon}
+                    size={15}
+                    color={row.done ? onAccent : theme.tint}
+                  />
+                </View>
 
-              <View style={styles.main}>
-                <ThemedText type="smallBold" numberOfLines={1} style={{ color: theme.text }}>
-                  {row.title}
-                </ThemedText>
-                {row.meta.length > 0 && (
-                  <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
-                    {row.meta}
+                <View style={styles.main}>
+                  <ThemedText type="smallBold" numberOfLines={1} style={{ color: theme.text }}>
+                    {row.title}
                   </ThemedText>
+                  {row.meta.length > 0 && (
+                    <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
+                      {row.meta}
+                    </ThemedText>
+                  )}
+                </View>
+
+                {row.done ? (
+                  <View style={[styles.check, { backgroundColor: theme.tint }]}>
+                    <Ionicons name="checkmark" size={13} color={onAccent} />
+                  </View>
+                ) : (
+                  <View style={styles.dots} accessibilityElementsHidden>
+                    <Ionicons name="ellipsis-horizontal" size={18} color={theme.textMuted} />
+                  </View>
                 )}
-              </View>
 
-              {row.done ? (
-                <View style={[styles.check, { backgroundColor: theme.tint }]}>
-                  <Ionicons name="checkmark" size={13} color={onAccent} />
-                </View>
-              ) : (
-                <View style={styles.dots} accessibilityElementsHidden>
-                  <Ionicons name="ellipsis-horizontal" size={18} color={theme.textMuted} />
-                </View>
-              )}
-
-              {/* Subtle grip — hints the card can be swiped aside. */}
-              <View style={[styles.grip, { backgroundColor: theme.hairline }]} accessibilityElementsHidden />
-            </Pressable>
+                {/* Subtle grip — hints the card can be swiped aside. */}
+                <View style={[styles.grip, { backgroundColor: theme.hairline }]} accessibilityElementsHidden />
+              </Pressable>
+            </SwipeableStepRow>
           </View>
         ))}
       </View>
@@ -168,6 +184,10 @@ const styles = StyleSheet.create({
   },
   rowGap: {
     marginBottom: Spacing.two,
+  },
+  // The swipe wrapper takes the remaining row width beside the rail; the card fills it.
+  swipe: {
+    flex: 1,
   },
   railCol: {
     width: RAIL_W,

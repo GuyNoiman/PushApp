@@ -16,7 +16,86 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-08-06 (session end — READ THIS FIRST, supersedes the 2026-08-05 snapshot below as "most current")
+## ⭐ HANDOFF SNAPSHOT — 2026-08-07 (MATURE UI REDESIGN — READ THIS FIRST, supersedes 2026-08-06)
+
+**A full mature-redesign of the app UI shipped this session** on branch
+`feat/buddy-3d-and-reminders` (commit `138ad4a` + this docs commit). It is **NOT behind a
+flag** — it replaces the old playful/gamified UI. The founder drove it live over many
+iterative rounds; `tsc` + `eslint` are clean throughout. Verified by web screenshots (light +
+dark) at 460×920 — see the design decisions below.
+
+### What changed (the direction)
+The founder repositioned the app's *look* from the playful gamified companion to a **mature,
+calm, technical, elegant "adaptive coach"** language: "no longer a game — convey calm,
+motivation, seriousness, technology, progress." External design tools (Stitch, UX Pilot,
+Figma Make) were evaluated and **rejected**; we built from our own `04_Product/UX/
+coach_mvp_mockup.html` direction. Refs archived under `04_Product/UX/UX_References/stitch/`
+and `.../figma_make/`.
+
+### Design system (`app/src/constants/theme.ts`)
+- **Mature palette**, light + dark: warm-neutral ground, **ONE deep-turquoise accent**
+  (`teal`/`tint`) for progress AND action, **amber (`gold`) reserved for urgency only**
+  (streak / most-urgent). Legacy accents kept as keys but muted. Dark was lifted OFF pure
+  black (founder: "too black").
+- **Typography: Inter only** (display + body by weight); **Baloo 2 dropped** (too playful).
+  `FontFamily.heading*` now resolve to Inter; `Inter_700Bold` added to `FontAssets`.
+- **Both themes are real now**: `use-color-scheme(.web)` follow the device;
+  `app/_layout.tsx` branches `NavThemes` by scheme. (Founder wants BOTH kept + a switch;
+  an in-app theme toggle is a TODO — currently follows the OS.)
+
+### Navigation & screens (all under `app/src/app/(tabs)/` + `app/src/components/<area>/`)
+5-tab bar (bar on the LIFTED surface): **Home · Journeys · Circle · Inbox · Settings.**
+- **Home** (`index.tsx` + `components/home/*`): top strip (level + XP bar, coins, streak —
+  icons only); a **coach hero card** ("Talk to your coach" → `/coach`); **"Today's focus"**
+  = next pending Step of each active Journey (multi-card, time-of-day urgency colour);
+  **"This week"** = remaining Steps **grouped by Dream** as separated cards on a rail;
+  **"Give support"** people board with **two tabs** (Needs-support / Deserve-praise) showing
+  the *reason*; **confetti** on check-in; a **⋯ report menu** (Done/Partial/Couldn't/Postpone/
+  Reschedule, reusing the old `journey/*` sheets).
+- **Journeys** (`(tabs)/journeys.tsx`): promoted from modal to a TAB; Active/Completed/Future;
+  **Dream name eyebrow** on each card; "Create journey" (→ `/journey/new`). The old
+  `app/src/app/journeys.tsx` modal was deleted (route collision).
+- **Coach** (`(tabs)/coach.tsx` + `components/coach/*`): **UI PROTOTYPE only — scripted,
+  NOT wired to the live LLM.** No persona name on-screen (moved to Settings idea). Off the
+  tab bar (`href:null`), opened from Home. Going live needs an API key + a founder COST
+  decision (~$10/mo Gemini) — DO NOT wire silently.
+- **Circle** (`(tabs)/friends.tsx`): single Support-Circle friends list + Invite/Add. The
+  editable identity/username **moved OUT to Settings**.
+- **Inbox** (`(tabs)/inbox.tsx`): Friends · Allies · Groups · Requested tabs + search +
+  "New message" compose + avatars.
+- **Settings** (`(tabs)/settings.tsx` + `components/settings/*`, NEW): **Profile** with an
+  **auto-generated editable `@username`** (`core/social/username.ts` — generate + uniqueness
+  validation; persists via `social.setHandle`, inert in guest/POC); **Account** with
+  "Sign in with Apple / Google" (**Coming soon**); Notifications/Appearance/About rows.
+
+### Archived (kept in code, off the bar) — `04_Product/UX/Archived_Screens.md`
+Buddy tab, Shop, the Explore **marketplace** rows (`SHOW_MARKETPLACE=false`), the Coach
+tab (now a Home entry), and — still reachable for now — the step-by-step **creation wizard**
+(to be replaced by coach-driven creation). Explore/Buddy/Coach routes are `href:null`.
+
+### Demo data
+`AppCore.seedDemoJourney` now seeds **2 Dreams** ("Get fit and strong", "Sleep and recover
+well") + **3 linked Journeys** so Dream grouping/eyebrows are visible. `src/dev/sampleSocial.ts`
+feeds sample friends/inbox when real social is empty. **Caveat:** the seed only runs on FIRST
+run — to see it on an existing device/browser you must clear storage / use Incognito.
+
+### Open / founder decisions (▶ NEXT)
+1. **Real sign-in (Apple/Google)** to supply a real display name (replaces the "there"
+   greeting placeholder). Needs the **~$99/yr Apple Developer Program** + a native dev build
+   (Expo Go can't do native Apple/Google). NOT built — awaiting founder go-ahead on the cost.
+2. **Wire the Coach to a live LLM** (API key + monthly cost decision).
+3. **Streak engine** (Home streak is a placeholder `4`); **real per-Step due-dates** (Today
+   vs This-week split + urgency reddening are hour-heuristics); **expert-driven Journey icons**
+   (currently a neutral glyph); **in-app light/dark toggle**; a real backend uniqueness check
+   for usernames; a dedicated "nudge" outreach (reuses `sendCheer` for now).
+4. Voice input: the in-app Claude mic doesn't support Hebrew (use macOS Dictation) — unrelated
+   to PushApp; no action.
+
+**▶ NEXT:** pick up item (1) or (2) with the founder (both are cost decisions), or continue
+polishing the redesigned screens per the next round of feedback. The old snapshots below are
+accurate ENGINEERING history but their UI/positioning framing predates this redesign.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-06 (session end — supersedes the 2026-08-05 snapshot below as "most current")
 
 **Status:** the AI-adaptive-coach pivot is deep in build. **DONE & GREEN** (449 jest tests across
 41 suites, `tsc` clean, ALL of it behind the `adaptiveCoach` feature flag

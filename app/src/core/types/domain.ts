@@ -495,4 +495,14 @@ export interface AppState {
    * {@link OutreachInsight} is ever server-eligible.
    */
   insightModel?: InsightModel;
+  /**
+   * Per-Journey epoch ms of the last adaptive week-review (report→replan loop). Powers the
+   * once-per-calendar-day cadence gate so a Journey is not re-planned repeatedly in a day.
+   * Optional so an older snapshot loads without it (backfilled to `{}` in AppCore.migrateState).
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. These timestamps are a local scheduling ledger; they
+   * are NEVER copied into a DomainEvent (WeekReplanned carries none), a ProgressSummary, or any
+   * sync path.
+   */
+  weekReviewAt?: Record<string, number>;
 }

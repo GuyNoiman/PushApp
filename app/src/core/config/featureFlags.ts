@@ -72,6 +72,17 @@ export const featureFlags = {
    */
   adaptiveCoach: false,
   /**
+   * DEV-ONLY sibling of {@link adaptiveCoach}, for the founder to exercise the adaptive
+   * report→replan loop on-device WITHOUT flipping the reviewed production `adaptiveCoach`
+   * flag. On only when `EXPO_PUBLIC_ADAPTIVE_COACH` is present — which lives solely in the
+   * founder's git-ignored `.env.local` and is never committed, so it does NOT ship to real
+   * users and CI/other builds keep the pivot fully dormant. AppCore treats it exactly like
+   * `adaptiveCoach` (they OR together into one `adaptiveEnabled`); the on-device behaviour
+   * log stays ON-DEVICE ONLY (G1). Literal `Boolean(process.env.EXPO_PUBLIC_ADAPTIVE_COACH)`
+   * so Metro statically inlines it at build time.
+   */
+  adaptiveCoachDev: Boolean(process.env.EXPO_PUBLIC_ADAPTIVE_COACH),
+  /**
    * LIVE conversational coach — routes the Coach tab through the REAL {@link CoachOrchestrator}
    * over live Gemini (behind the LlmClient seam) instead of the scripted UI prototype. OPT-IN and
    * FOUNDER-DEVICE-ONLY: on only when `EXPO_PUBLIC_GEMINI_API_KEY` is present, which lives solely in

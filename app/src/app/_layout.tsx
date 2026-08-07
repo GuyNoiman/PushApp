@@ -97,6 +97,9 @@ export default function RootLayout() {
                     options={{ presentation: 'transparentModal', animation: 'fade' }}
                   />
                   <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
+                  {/* DEV-only adaptive report→replan trigger — reachable from Settings when the
+                      founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
+                  <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />
                 </Stack>
               </ThemeProvider>
             </SocialProvider>

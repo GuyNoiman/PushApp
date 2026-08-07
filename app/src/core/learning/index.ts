@@ -9,5 +9,6 @@ export * from './experts';
 export * from './Planner';
 export * from './AdaptivePlanner';
 export * from './applyReplan';
+export * from './deriveConstraints';
 export * from './CoachNarrator';
 export * from './BehaviorModelEngine';

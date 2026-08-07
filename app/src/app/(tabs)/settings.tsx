@@ -18,6 +18,7 @@
  * TODO(auth): Apple/Google sign-in will supply a real display name/identity and
  * turn the Account rows into working actions.
  */
+import { useRouter, type Href } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,11 +28,13 @@ import { SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const router = useRouter();
 
   // A dev-simulated Google sign-in (core/profile/simulatedUser) marks the Google row
   // as connected when the founder's env vars are set; Apple stays "coming soon".
@@ -79,6 +82,18 @@ export default function SettingsScreen() {
             <SettingsRow icon="contrast-outline" label="Appearance" detail="Theme" value="System" />
             <SettingsRow icon="information-circle-outline" label="About" value="v0.1" />
           </SettingsSection>
+
+          {/* Developer — founder-device-only; shown only when the adaptive dev flag is on. */}
+          {featureFlags.adaptiveCoachDev ? (
+            <SettingsSection title="Developer">
+              <SettingsRow
+                icon="flask-outline"
+                label="Adaptive replan"
+                detail="Force a slip and re-plan a week"
+                onPress={() => router.push('/dev-adaptive' as Href)}
+              />
+            </SettingsSection>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

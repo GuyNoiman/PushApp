@@ -4,6 +4,9 @@
  * (Engineering Bible §7 event-driven). Pure TS — no React/UI/vendor imports.
  */
 import type { Buddy, BuddyStage, CheckIn, Journey, LeverId, ReasonId, ReminderRule, Step } from '../types/domain';
+// Type-only import (erased at compile) — reuses the re-planner's coarse adjustment enum without a
+// runtime dependency on the learning layer, so no import cycle is introduced.
+import type { ReplanAdjustment } from '../learning/types';
 
 export interface JourneyCreated {
   type: 'JourneyCreated';
@@ -218,6 +221,24 @@ export interface StepMissed {
   stepId: string;
 }
 
+/**
+ * The adaptive coach re-planned a Journey's week and enacted the change (adaptive report→replan
+ * loop). Emitted by AppCore.reviewWeek AFTER applyReplan, so a consumer knows the plan just moved.
+ *
+ * SECURITY-PRIVACY G1 — ENUMS/SCALARS ONLY: `adjustments` is the coarse {@link ReplanAdjustment}
+ * kind list and `atRisk` a boolean. It deliberately carries NO Journey/Step title, NO reason note,
+ * NO raw timestamp series, and NO narration text — the human copy is rendered on-device only. This
+ * event is safe to observe/persist; it never widens what may leave the device.
+ */
+export interface WeekReplanned {
+  type: 'WeekReplanned';
+  journeyId: string;
+  /** Coarse kinds of change the re-plan made (e.g. `['rescheduled','resized']`). Enum-only. */
+  adjustments: ReplanAdjustment[];
+  /** True when a deadline plan is still tight even after the re-plan (honest, never punishing). */
+  atRisk: boolean;
+}
+
 // ── RESERVED events ─────────────────────────────────────────────────────────
 // Declared-but-never-emitted contract members for deferred domains (profile /
 // interests / intervention). They keep the DomainEvent vocabulary stable so a
@@ -265,6 +286,7 @@ export type DomainEvent =
   | StepDropped
   | InsightUpdated
   | StepMissed
+  | WeekReplanned
   // RESERVED — not yet emitted (deferred domains)
   | ProfileUpdated
   | InterestsUpdated

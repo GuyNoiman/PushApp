@@ -33,7 +33,10 @@ import { planJourney } from './learning/Planner';
 import { GeneralExpert } from './learning/DomainExpert';
 import { replan } from './learning/AdaptivePlanner';
 import { applyReplan } from './learning/applyReplan';
-import type { GoalInput, PlanConstraints } from './learning/types';
+import { deriveConstraints } from './learning/deriveConstraints';
+import { DeterministicNarrator } from './learning/CoachNarrator';
+import { defaultAdaptivePolicy } from './config/adaptivePolicy';
+import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
 import { featureFlags } from './config/featureFlags';
 import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
@@ -79,6 +82,20 @@ export interface Snapshot {
   claimableRewards: number;
 }
 
+/**
+ * The result of an adaptive week-review ({@link AppCore.reviewWeek}). Calm and never a
+ * scoreboard: when the coach changed the plan it carries the on-device human `narration` to show,
+ * the coarse `adjustments` kinds, and the honest `atRisk` flag. When nothing changed (inert path,
+ * gated out, or a no-op re-plan) only `changed: false` is returned. The narration is rendered
+ * ON-DEVICE ONLY (G1).
+ */
+export interface WeekReviewOutcome {
+  changed: boolean;
+  narration?: string;
+  adjustments?: ReplanAdjustment[];
+  atRisk?: boolean;
+}
+
 function initialBuddy(): Buddy {
   return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
 }
@@ -113,6 +130,7 @@ function emptyState(): AppState {
     reminderRules: [],
     communicationPrefs: defaultCommunicationPrefs(),
     schedulingPrefs: defaultSchedulingPrefs(),
+    weekReviewAt: {},
   };
 }
 
@@ -150,6 +168,9 @@ function migrateState(state: AppState): AppState {
     // ONLY (G1); only populated when the adaptiveCoach flag is on.
     behaviorLog: state.behaviorLog ?? [],
     insightModel: state.insightModel,
+    // Adaptive report→replan cadence ledger — backfill to {} for a snapshot that predates it.
+    // ON-DEVICE ONLY (G1); only written when the adaptive loop is enabled.
+    weekReviewAt: state.weekReviewAt ?? {},
     // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses
     // emptyState directly). So any state reaching here belongs to an existing user
     // who predates onboarding — treat them as already onboarded (a nonzero
@@ -194,6 +215,18 @@ export class AppCore {
    * The raw behaviour log it holds is ON-DEVICE ONLY (G1).
    */
   private readonly behaviorModel?: BehaviorModelEngine;
+  /**
+   * The deterministic narrator that turns a {@link replan} result into calm on-device coaching
+   * copy. Built ONLY alongside the {@link behaviorModel} (adaptive loop on); undefined otherwise.
+   * Templated + pure — no LLM, no I/O; the S2 LLM narrator drops in behind the same seam.
+   */
+  private readonly narrator?: DeterministicNarrator;
+  /**
+   * Single gate for the whole adaptive-coach path: the reviewed production `adaptiveCoach` flag
+   * OR the founder-device-only `adaptiveCoachDev` flag. Both OFF ⇒ nothing adaptive is built,
+   * observed, or persisted, and production behaviour is unchanged.
+   */
+  private readonly adaptiveEnabled = featureFlags.adaptiveCoach || featureFlags.adaptiveCoachDev;
 
   /**
    * Reads the entitlement the EntitlementEngine should compute against. Defaults
@@ -260,8 +293,9 @@ export class AppCore {
     // Adaptive-coach pivot (S1.16): DORMANT in production. Only when the flag is on do we
     // construct the BehaviorModelEngine (shared bus + getState + default clock). Off ⇒ this
     // stays undefined and no behaviour is observed, recorded, or persisted.
-    if (featureFlags.adaptiveCoach) {
+    if (this.adaptiveEnabled) {
       this.behaviorModel = new BehaviorModelEngine(this.bus, getState);
+      this.narrator = new DeterministicNarrator();
     }
   }
 
@@ -358,6 +392,12 @@ export class AppCore {
     const dreamCalm: Dream = { id: 'dream_calm', title: 'Sleep and recover well', journeyIds: [] };
     this.state.dreams.push(dreamFit, dreamCalm);
 
+    // A couple of the seeded Steps carry a `plannedFor` THIS WEEK, so the adaptive loop's slip
+    // detector + `replan`'s reschedule have real scheduled occurrences to move for the demo (a
+    // manually-created Journey otherwise has none). Off-flag builds simply ignore these.
+    const DAY = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
     const run = this.journeyEngine.createJourney({
       title: 'Run 5km',
       dreamId: dreamFit.id,
@@ -376,8 +416,8 @@ export class AppCore {
           estimatedDuration: 20,
           constraints: [{ kind: 'location', place: 'home' }],
         },
-        { title: 'Jog for 15 minutes', cadence: 'weekly', estimatedDuration: 30 },
-        { title: 'Run a full 2km without stopping', cadence: 'weekly', estimatedDuration: 40 },
+        { title: 'Jog for 15 minutes', cadence: 'weekly', estimatedDuration: 30, plannedFor: now + 2 * DAY },
+        { title: 'Run a full 2km without stopping', cadence: 'weekly', estimatedDuration: 40, plannedFor: now + 4 * DAY },
       ],
     });
 
@@ -388,8 +428,8 @@ export class AppCore {
       durationDays: 42,
       rhythm: 'few-times-week',
       steps: [
-        { title: 'Do 10 push-ups', cadence: 'weekly', estimatedDuration: 10 },
-        { title: 'Hold a 60-second plank', cadence: 'weekly', estimatedDuration: 10 },
+        { title: 'Do 10 push-ups', cadence: 'weekly', estimatedDuration: 10, plannedFor: now + 1 * DAY },
+        { title: 'Hold a 60-second plank', cadence: 'weekly', estimatedDuration: 10, plannedFor: now + 3 * DAY },
       ],
     });
 
@@ -434,7 +474,7 @@ export class AppCore {
    * production behaviour is unchanged. The goal title/specifics stay ON DEVICE (G1).
    */
   generateJourney(goal: GoalInput, constraints: PlanConstraints): Journey | null {
-    if (!featureFlags.adaptiveCoach) return null;
+    if (!this.adaptiveEnabled) return null;
     const input = planJourney(goal, constraints, GeneralExpert);
     return this.journeyEngine.createJourney(input);
   }
@@ -446,12 +486,101 @@ export class AppCore {
    * or the id is unknown. All reasoning stays in the pure planner; nothing new leaves the device.
    */
   adaptJourney(journeyId: string, constraints: PlanConstraints): boolean {
-    if (!featureFlags.adaptiveCoach || !this.behaviorModel) return false;
+    if (!this.adaptiveEnabled || !this.behaviorModel) return false;
     const journey = this.state.journeys.find((j) => j.id === journeyId);
     if (!journey) return false;
     const result = replan(journey, this.behaviorModel.getInsights(), constraints, undefined, Date.now());
     applyReplan(this.journeyEngine, journey, result);
     return result.changed;
+  }
+
+  /**
+   * The adaptive report→replan ENTRY POINT the UI calls after a Step report (Done/Partial/
+   * Couldn't/Postpone/slip). It re-reads the on-device InsightModel, re-plans the Journey's
+   * remaining week (pure {@link replan}), enacts the per-Step changes ({@link applyReplan}), and
+   * returns a calm {@link WeekReviewOutcome} the UI surfaces. INERT (`{ changed: false }`) when the
+   * adaptive loop is off or the model is absent, so production behaviour is unchanged.
+   *
+   * CADENCE (founder decision): at most once per CALENDAR DAY per Journey — UNLESS the model newly
+   * reads slipping/at-risk, in which case a fresh miss re-plans immediately. `devReviewWeek`
+   * bypasses the gate for the dev trigger. This never enacts the re-plan's reminder NudgeHint —
+   * reminders stay owned by the RecoveryEngine/CommunicationScheduler.
+   */
+  reviewWeek(journeyId: string): WeekReviewOutcome {
+    return this.runReview(journeyId, false);
+  }
+
+  /**
+   * Shared implementation for {@link reviewWeek} (gated) and {@link devReviewWeek} (`force`). Emits
+   * the enum-only {@link WeekReplanned} event on a real change and persists the plan mutations +
+   * the cadence timestamp. The narration is built on-device only (G1).
+   */
+  private runReview(journeyId: string, force: boolean): WeekReviewOutcome {
+    if (!this.adaptiveEnabled || !this.behaviorModel) return { changed: false };
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.completedAt) return { changed: false };
+
+    const insight = this.behaviorModel.getInsights();
+    // Bypass the once/day gate when the model newly reads slipping/at-risk (mirrors the planner's
+    // own "slipping" verdict), so a fresh miss re-plans immediately rather than waiting a day.
+    const urgent = insight.atRisk || insight.slipRate >= defaultAdaptivePolicy.slip.high;
+    const now = Date.now();
+    if (!force && !urgent && !this.dueForReview(journeyId, now)) return { changed: false };
+
+    const constraints = deriveConstraints(journey, this.state.schedulingPrefs);
+    const result = replan(journey, insight, constraints, undefined, now);
+    applyReplan(this.journeyEngine, journey, result);
+
+    // Record the attempt so the calendar-day gate holds; applyReplan's mutations (reschedule/
+    // resize/drop) don't all emit a persisted event, so this save covers them too.
+    (this.state.weekReviewAt ??= {})[journeyId] = now;
+    if (!result.changed) {
+      this.onChanged();
+      return { changed: false };
+    }
+
+    const narration = this.narrator?.describeAdaptation(result, { journeyTitle: journey.title });
+    // ENUM/SCALAR-ONLY event (G1) — no title, no note, no narration text.
+    this.bus.emit({
+      type: 'WeekReplanned',
+      journeyId,
+      adjustments: result.adjustments,
+      atRisk: result.atRisk,
+    });
+    this.onChanged();
+    return { changed: true, narration, adjustments: result.adjustments, atRisk: result.atRisk };
+  }
+
+  /** Whether `journeyId` has not yet been week-reviewed on the local calendar day of `now`. */
+  private dueForReview(journeyId: string, now: number): boolean {
+    const last = this.state.weekReviewAt?.[journeyId];
+    if (last == null) return true;
+    const a = new Date(last);
+    const b = new Date(now);
+    return (
+      a.getFullYear() !== b.getFullYear() ||
+      a.getMonth() !== b.getMonth() ||
+      a.getDate() !== b.getDate()
+    );
+  }
+
+  /**
+   * DEV-ONLY (gated by the adaptive loop): back-date a Step's planned occurrence into the past and
+   * run the slip detector, so the founder can watch a miss flow into a re-plan. No-op when the
+   * adaptive loop is off. Not something a real user can trigger.
+   */
+  devForceSlip(journeyId: string, stepId: string): void {
+    if (!this.adaptiveEnabled || !this.behaviorModel) return;
+    const yesterday = Date.now() - 24 * 60 * 60 * 1000;
+    this.journeyEngine.rescheduleStep(journeyId, stepId, yesterday);
+    this.behaviorModel.tick(Date.now());
+    this.onChanged();
+  }
+
+  /** DEV-ONLY: force a week-review for `journeyId`, bypassing the once/day cadence gate. */
+  devReviewWeek(journeyId: string): WeekReviewOutcome {
+    if (!this.adaptiveEnabled) return { changed: false };
+    return this.runReview(journeyId, true);
   }
 
   checkInStep(journeyId: string, stepId: string): void {
@@ -536,6 +665,15 @@ export class AppCore {
     // Re-plan reminders on the same lifecycle beat as the Mission rollover, so a
     // day/week change (and any Journey that lapsed) is reflected in what's pending.
     void this.communicationScheduler.reconcile();
+    // Adaptive report→replan real path (loop on only): first `tick` the behaviour model so any
+    // Step whose planned occurrence elapsed is flagged as a slip, THEN week-review each active
+    // Journey (each respecting the once/day cadence gate). Off ⇒ neither runs.
+    if (this.adaptiveEnabled && this.behaviorModel) {
+      this.behaviorModel.tick(Date.now());
+      for (const journey of this.state.journeys) {
+        if (!journey.completedAt) this.reviewWeek(journey.id);
+      }
+    }
     this.onChanged();
   }
 

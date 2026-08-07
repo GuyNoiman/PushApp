@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RecoveryFlow } from '@/components/journey/RecoveryFlow';
 import { RescheduleModal } from '@/components/journey/RescheduleModal';
 import { StepReportSheet, type ReportChoice } from '@/components/home/StepReportSheet';
-import type { AppCore } from '@/core/AppCore';
+import type { AppCore, WeekReviewOutcome } from '@/core/AppCore';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 
 type Stage = 'menu' | 'recovery' | 'reschedule';
@@ -27,6 +27,7 @@ export function StepReportFlow({
   step,
   core,
   onDone,
+  onReviewed,
   onClose,
 }: {
   /** The Step being reported on, or null when the flow is closed. */
@@ -34,6 +35,11 @@ export function StepReportFlow({
   core: AppCore;
   /** Fired the moment a Step is marked done, so Home can celebrate (confetti). */
   onDone: () => void;
+  /**
+   * Fired after a report ran the adaptive week-review, so Home can surface the outcome (the
+   * "I adjusted your week" card). Inert `{ changed: false }` when the adaptive loop is off.
+   */
+  onReviewed?: (outcome: WeekReviewOutcome) => void;
   onClose: () => void;
 }) {
   const [stage, setStage] = useState<Stage>('menu');
@@ -53,6 +59,19 @@ export function StepReportFlow({
   if (!step) return null;
   const { journeyId, step: s } = step;
 
+  // Report the reason, THEN run the adaptive week-review and surface its outcome. Awaiting
+  // submitReason first ensures the on-device signal is recorded before the model re-reads it.
+  // reviewWeek is synchronous and inert when the adaptive loop is off, so this is a no-op there.
+  const reportAndReview = async (
+    action: 'postpone' | 'cancel',
+    reasonId: 'did_partially' | 'couldnt' | 'forgot',
+    chosenTime?: number,
+  ) => {
+    await core.submitReason({ journeyId, stepId: s.id, action, reasonId, chosenTime });
+    onReviewed?.(core.reviewWeek(journeyId));
+    onClose();
+  };
+
   const choose = (choice: ReportChoice) => {
     switch (choice) {
       case 'done':
@@ -62,13 +81,11 @@ export function StepReportFlow({
         break;
       case 'partial':
         // Keep the Step, record the partial progress (did_partially → reshape + partial).
-        void core.submitReason({ journeyId, stepId: s.id, action: 'postpone', reasonId: 'did_partially' });
-        onClose();
+        void reportAndReview('postpone', 'did_partially');
         break;
       case 'couldnt':
         // Let this occurrence go — free, no penalty (couldnt → grace lever).
-        void core.submitReason({ journeyId, stepId: s.id, action: 'cancel', reasonId: 'couldnt' });
-        onClose();
+        void reportAndReview('cancel', 'couldnt');
         break;
       case 'postpone':
         setStage('recovery');
@@ -97,14 +114,7 @@ export function StepReportFlow({
         stepTitle={s.title}
         candidates={candidates}
         onConfirm={(chosenAt) => {
-          void core.submitReason({
-            journeyId,
-            stepId: s.id,
-            action: 'postpone',
-            reasonId: 'forgot',
-            chosenTime: chosenAt,
-          });
-          onClose();
+          void reportAndReview('postpone', 'forgot', chosenAt);
         }}
         onCancel={onClose}
       />

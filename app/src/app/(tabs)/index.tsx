@@ -28,6 +28,7 @@ import { CoachButton } from '@/components/home/CoachButton';
 import { Confetti } from '@/components/home/Confetti';
 import { SectionHeader } from '@/components/home/SectionHeader';
 import { StepReportFlow } from '@/components/home/StepReportFlow';
+import { WeekAdjustedCard } from '@/components/home/WeekAdjustedCard';
 import { TopStatusBar } from '@/components/home/TopStatusBar';
 import { WeekDreamGroup, type WeekStepView } from '@/components/home/WeekDreamGroup';
 import { TodayFocusCard, type StepUrgency } from '@/components/home/TodayFocusCard';
@@ -36,6 +37,7 @@ import { ThemedView } from '@/components/themed-view';
 import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty } from '@/dev/sampleSocial';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
+import type { WeekReviewOutcome } from '@/core/AppCore';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import type { Dream, Journey, Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
@@ -126,6 +128,13 @@ export default function HomeScreen() {
   const [confettiKey, setConfettiKey] = useState(0);
   // The Step whose ⋯ report sheet is open, or null when closed.
   const [reportStep, setReportStep] = useState<TodayStep | null>(null);
+  // The last adaptive week-review that CHANGED the plan, shown as the calm "I adjusted your
+  // week" card until dismissed. Null when nothing changed (or the adaptive loop is off).
+  const [weekOutcome, setWeekOutcome] = useState<WeekReviewOutcome | null>(null);
+  // Surface a review outcome only when it actually changed the plan (never a "nothing changed" card).
+  const surfaceReview = useCallback((outcome: WeekReviewOutcome) => {
+    if (outcome.changed) setWeekOutcome(outcome);
+  }, []);
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
@@ -170,28 +179,35 @@ export default function HomeScreen() {
     },
     [core],
   );
+  // Swipe Postpone / Let-go report the reason, THEN run the adaptive week-review and surface any
+  // change — so a swipe-miss re-plans exactly like the ⋯ menu does. reviewWeek is inert when the
+  // adaptive loop is off, so this stays a plain report there.
   const reportPostpone = useCallback(
     (item: TodayStep) => {
-      void core.submitReason({
-        journeyId: item.journeyId,
-        stepId: item.step.id,
-        action: 'postpone',
-        reasonId: 'did_partially',
-      });
+      void core
+        .submitReason({
+          journeyId: item.journeyId,
+          stepId: item.step.id,
+          action: 'postpone',
+          reasonId: 'did_partially',
+        })
+        .then(() => surfaceReview(core.reviewWeek(item.journeyId)));
     },
-    [core],
+    [core, surfaceReview],
   );
   const reportLetGo = useCallback(
     (item: TodayStep) => {
       // A free, no-shame let-go of this occurrence (couldnt → grace lever).
-      void core.submitReason({
-        journeyId: item.journeyId,
-        stepId: item.step.id,
-        action: 'cancel',
-        reasonId: 'couldnt',
-      });
+      void core
+        .submitReason({
+          journeyId: item.journeyId,
+          stepId: item.step.id,
+          action: 'cancel',
+          reasonId: 'couldnt',
+        })
+        .then(() => surfaceReview(core.reviewWeek(item.journeyId)));
     },
-    [core],
+    [core, surfaceReview],
   );
 
   // TODAY'S FOCUS — the next pending Step of EACH active Journey (so with the current
@@ -371,6 +387,15 @@ export default function HomeScreen() {
             <CoachButton onPress={() => router.push('/coach' as Href)} />
           </View>
 
+          {/* ── "I adjusted your week" — the calm adaptive report→replan banner (dismissible) ── */}
+          {weekOutcome?.changed && weekOutcome.narration ? (
+            <WeekAdjustedCard
+              narration={weekOutcome.narration}
+              atRisk={weekOutcome.atRisk}
+              onDismiss={() => setWeekOutcome(null)}
+            />
+          ) : null}
+
           {/* ── Today's focus — a small stack, one card per active Journey ── */}
           <SectionHeader title="Today's focus" count={focusSteps.length} tone={headerTone} />
           {focusSteps.length > 0 ? (
@@ -440,6 +465,7 @@ export default function HomeScreen() {
           step={reportStep}
           core={core}
           onDone={() => setConfettiKey((k) => k + 1)}
+          onReviewed={surfaceReview}
           onClose={() => setReportStep(null)}
         />
 

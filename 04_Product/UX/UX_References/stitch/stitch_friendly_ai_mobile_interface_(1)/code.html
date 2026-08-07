@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PushApp - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "text-main": "#1F292E",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "urgent-amber": "#D68C45",
+                        "inverse-primary": "#95d4b3",
+                        "ai-bubble": "#F1F3F2",
+                        "primary-fixed-dim": "#95d4b3",
+                        "on-secondary-container": "#255f80",
+                        "surface-container-low": "#f5f3ee",
+                        "surface-bright": "#fbf9f4",
+                        "background": "#fbf9f4",
+                        "on-secondary-fixed-variant": "#064c6b",
+                        "on-primary": "#ffffff",
+                        "growth-green": "#2D6A4F",
+                        "inverse-surface": "#30312e",
+                        "user-chip": "#FFFFFF",
+                        "surface-container": "#f0eee9",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e4e2dd",
+                        "secondary-fixed": "#c7e7ff",
+                        "text-muted": "#63737B",
+                        "outline": "#707973",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#a3d8fe",
+                        "tertiary": "#713638",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#2d6a4f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#dbdad5",
+                        "primary-fixed": "#b1f0ce",
+                        "warm-surface": "#FDFCFB",
+                        "on-tertiary-container": "#ffcfce",
+                        "calm-blue": "#457B9D",
+                        "primary": "#0f5238",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#6f3537",
+                        "tertiary-fixed": "#ffdad9",
+                        "inverse-on-surface": "#f2f1ec",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#8d4d4e",
+                        "secondary": "#2b6485",
+                        "on-tertiary-fixed": "#390b0e",
+                        "on-secondary-fixed": "#001e2e",
+                        "on-background": "#1b1c19",
+                        "surface": "#fbf9f4",
+                        "on-surface": "#1b1c19",
+                        "secondary-fixed-dim": "#98cdf2",
+                        "on-surface-variant": "#404943",
+                        "on-primary-fixed-variant": "#0e5138",
+                        "on-primary-container": "#a8e7c5",
+                        "surface-container-high": "#eae8e3",
+                        "surface-variant": "#e4e2dd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#2c694e",
+                        "outline-variant": "#bfc9c1",
+                        "on-primary-fixed": "#002114"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "sm": "12px",
+                        "base": "8px",
+                        "md": "16px",
+                        "container-margin": "20px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "chip-label": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "display-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "chip-label": ["15px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-text-main pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-background dark:bg-background docked full-width top-0 flat no shadows hidden md:flex">
+<div class="flex justify-between items-center w-full px-container-margin py-base max-w-md mx-auto">
+<div class="flex items-center gap-2">
+<img alt="User profile photo" class="w-8 h-8 rounded-full object-cover" data-alt="A small, high-quality, professional circular avatar portrait of a confident person in a warm minimalist setting, soft natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPZIdrF24qw0LmF9a8vfsRd2PXy0NvVWx8cMAwngQf-LN9hRsxfbHSSt5qgWe0MQm91LS1Ws-a6J98EHqG9lNLb5O_-mBa5MbgfHGVKF0J9rzY_kDwcG3zFKqUKaMuFg_3EVumvsJlXVV-_KjJLtzedRnj5BnyxEJNi57rD_SY4XzA309FUgkeWbJ2cErsOFD4yMy6rYTQm2a6r84zRUcrzdRVr17F4-llJ-dHV9ePUEr9Q8D5d-l9Rg"/>
+</div>
+<div class="font-display-lg-mobile text-display-lg-mobile text-growth-green dark:text-primary-fixed-dim">
+                PushApp
+            </div>
+<div class="flex items-center gap-1 font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim">
+                7 <span class="material-symbols-outlined text-urgent-amber text-lg">local_fire_department</span>
+</div>
+</div>
+</header>
+<!-- Mobile Top AppBar (Mimicking JSON structure for mobile view) -->
+<header class="bg-background dark:bg-background docked full-width top-0 flat no shadows flex md:hidden sticky z-40 top-0 pt-4 pb-2">
+<div class="flex justify-between items-center w-full px-container-margin py-base w-full">
+<div class="flex items-center gap-2">
+<img alt="User profile photo" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A small, high-quality, professional circular avatar portrait of a confident person in a warm minimalist setting, soft natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUre4EtwzixI1nSyfvtnZp5k1cyeRJUMCahun8wrrddo7wfLaRiUQEmHy2DJJpnswbrQOHo-H9Aeo_ByYWy68B41Lk-jlCqg5kUwzpdrini2t2Ot79dYzOdyzZZQcDPcTLNYXwNQhBa9Y9ahrQ9FCoS8WuZ5z2vuNIW4ifc1Ee1Xh1WJQTPfr_CHXX1pMo8-wdR1ZcQgUja7LiiGZPdS5OJ5TEPXw3Z6yVLzaY0pw1Vxjv7581lu0-Mw"/>
+</div>
+<div class="font-display-lg-mobile text-display-lg-mobile text-growth-green dark:text-primary-fixed-dim tracking-tight">
+                PushApp
+            </div>
+<div class="flex items-center gap-1 font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim bg-surface-container-low px-3 py-1 rounded-full">
+                12 <span class="material-symbols-outlined text-urgent-amber">local_fire_department</span>
+</div>
+</div>
+</header>
+<main class="w-full max-w-md mx-auto px-container-margin pt-2 md:pt-8 flex flex-col gap-xl pb-32">
+<!-- Streak & XP Indicator -->
+<section class="flex flex-col gap-sm">
+<div class="flex justify-between items-end">
+<h2 class="font-headline-md text-headline-md text-text-main">התקדמות</h2>
+<span class="font-label-caps text-label-caps text-text-muted">רמה 4</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-l from-growth-green to-calm-blue w-2/3 rounded-full"></div>
+</div>
+</section>
+<!-- (a) Today's Focus (URGENT) -->
+<section class="bg-warm-surface rounded-xl p-lg shadow-[0_4px_15px_rgba(31,41,46,0.04)] border border-surface-container-high">
+<h3 class="font-headline-sm text-headline-sm text-text-main mb-md flex items-center gap-2">
+<span class="material-symbols-outlined text-urgent-amber" style="font-variation-settings: 'FILL' 1;">stars</span>
+                המיקוד להיום
+            </h3>
+<div class="flex flex-col gap-md">
+<div class="bg-surface-bright p-md rounded-lg flex justify-between items-center shadow-sm">
+<div>
+<p class="font-body-md text-body-md font-medium text-text-main">ריצת 5 ק"מ</p>
+<p class="font-label-caps text-label-caps text-text-muted mt-1">מסע: חצי מרתון</p>
+</div>
+<button class="bg-urgent-amber text-on-primary font-chip-label text-chip-label px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                        התחל
+                    </button>
+</div>
+</div>
+<h4 class="font-label-caps text-label-caps text-text-muted mt-lg mb-sm">בהמשך השבוע</h4>
+<div class="flex flex-col gap-2">
+<div class="bg-surface-container-low p-sm rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">check_circle</span>
+<span class="font-body-sm text-body-sm text-text-main">קריאת 30 עמודים</span>
+</div>
+<div class="bg-surface-container-low p-sm rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">check_circle</span>
+<span class="font-body-sm text-body-sm text-text-main">מדיטציה 10 דקות</span>
+</div>
+</div>
+</section>
+<!-- (b) Talk to your Coach CTA -->
+<section class="w-full relative rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(31,41,46,0.04)] bg-surface-bright group cursor-pointer border border-surface-container-high">
+<div class="p-lg flex items-center justify-between z-10 relative">
+<div class="flex flex-col gap-1 max-w-[70%]">
+<h3 class="font-headline-sm text-headline-sm text-primary">דבר עם המאמן</h3>
+<p class="font-body-sm text-body-sm text-text-muted">איך נוכל להתקדם היום?</p>
+</div>
+<div class="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center text-on-primary-container group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+</div>
+<div class="absolute inset-0 opacity-5 bg-gradient-to-r from-growth-green to-transparent pointer-events-none"></div>
+</section>
+<!-- (c) Friends / Social -->
+<section class="flex flex-col gap-md">
+<h3 class="font-headline-sm text-headline-sm text-text-main">מעגל תמיכה</h3>
+<div class="grid grid-cols-2 gap-md">
+<!-- Needs Help -->
+<div class="bg-warm-surface rounded-xl p-md shadow-[0_4px_15px_rgba(31,41,46,0.04)] border border-surface-container-high flex flex-col items-center text-center">
+<span class="font-label-caps text-label-caps text-text-muted mb-sm">צריכים דחיפה</span>
+<div class="flex -space-x-3 space-x-reverse mb-sm">
+<img class="w-10 h-10 rounded-full border-2 border-warm-surface object-cover z-30" data-alt="Small circular portrait of a young man, soft studio lighting, professional and calm aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXvhsG4fjZJsSQA021BiTkYvz4wzLdFyDVTqo6T13FMK5L-_9IvQwzlCyEHWyWSSwRJramyrCpw5Y9DSQDPylNOAjxgch7ME5yNalC3RxWyWDX9qUNyvOck2hKxcoUG_JFjpy4zZoII5g3IksjOlTFNJ-eE5NUMrfaD94sQsGn7gDNJ_PVyajowisNgVB9IiMdhpVGDggB94i2iCURGV63CgSUshNjCdsTti49fdzafw0b9dK_ttCvJw"/>
+<img class="w-10 h-10 rounded-full border-2 border-warm-surface object-cover z-20" data-alt="Small circular portrait of a woman looking thoughtful, warm minimalist lighting, elegant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8vJL3yR51bBPsCIkLxD6tUhB79YtUum1mhg1wOZJnXwwNe79YoXtE__CntLy6jP8tQfa3yzb8gGM9xP_L9hypNOg5ZghSz0gZG2X6mwTV0CmbNyJSrkJLIzLpGR5swNuYaFXTP421RQ1Q1zWVsjp3DhyeGF19Bn3DRwnhHmoZZMPzugEO0YB4g9XjMtUzo3Mg9UEOxOwyXoDxIAHWhCa2f7J1oou6_Ldv_k29e0Lz6Rp12kgAQW4tzg"/>
+<img class="w-10 h-10 rounded-full border-2 border-warm-surface object-cover z-10" data-alt="Small circular portrait of an older gentleman, soft cinematic lighting, mature growth concept." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx_2YEyokgonUC_ucdZPFxMS6NwTQeJkU9RM66aGcAsitHF3AfabaMKgSqPUPrysbR70mLmr2dhxWz27g4GPEfxB6Qc7NuHQRr2T3oueytxAGEtXyrmyP5g4sn2smm3vPaeq3JG3hKsn5wBY0RDnc6Fl103bwoFHHmLl3L4ukY4eAN0dEZY8-fvoP7wxhwvtiNKPrp5PbCmbRSd6AFB5gq8w2BuJWG-NgeAZodv3GXqSjosQ19ajjrbA"/>
+</div>
+<span class="font-body-sm text-body-sm font-medium text-text-main">3 חברים</span>
+<button class="mt-2 text-primary font-label-caps text-label-caps hover:underline">שלח עידוד</button>
+</div>
+<!-- Needs Praise -->
+<div class="bg-warm-surface rounded-xl p-md shadow-[0_4px_15px_rgba(31,41,46,0.04)] border border-surface-container-high flex flex-col items-center text-center">
+<span class="font-label-caps text-label-caps text-text-muted mb-sm">מגיעה להם מילה טובה</span>
+<div class="flex -space-x-3 space-x-reverse mb-sm">
+<img class="w-10 h-10 rounded-full border-2 border-warm-surface object-cover z-30" data-alt="Small circular portrait of a professional woman smiling, warm light background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0lto6XrUwGbtk6-E_fIW3S3AkFVyngUk20Fpk8z-amneP0ZDXQ1t5HyGv5s9C7lPS2VYZTdl2s2mgBrNDLufkWWwnWrvfolWBlKpE9kASWOh8UerbBztBRMPgu-FRBqezlTreUcjxW2sGeqrsYGh2_bU6CMsBQA936eu4ewJaKa6ZQNiku4cOJqSZ6dDpphKVSrf1sUAz9e0MWxIkJiWhqwpt3NuYweJ05Ht7Dt1nvtuUcwTnRF2VWA"/>
+<img class="w-10 h-10 rounded-full border-2 border-warm-surface object-cover z-20" data-alt="Small circular portrait of a young man in sportswear, bright soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkDMAejuQRRmcOIzBJp9Qx9mt9hG-7TfGsDoAv3LML7TH0hMoiVS96VcqtbLLqK4M-WNjHVhPLlzfjMnM-m_joXIbY1ymEIA9OEmct15tT0CgZQgOtAEhSWykbqFqNTtbozcwWSSc2bE0X2J9vn8BprZ2fogaJY2QMj6Gqh2yZTAuPRQM4T_4mXCQ2s7Arr7eERCSKLFbbPr36wWreTarCLcgzN1cNCRKi6wzArzXxFnb0UgTGkTJh_A"/>
+<div class="w-10 h-10 rounded-full border-2 border-warm-surface bg-surface-container-high flex items-center justify-center text-text-muted font-label-caps z-10">+1</div>
+</div>
+<span class="font-body-sm text-body-sm font-medium text-text-main">2 חברים</span>
+<button class="mt-2 text-primary font-label-caps text-label-caps hover:underline">פרגן עכשיו</button>
+</div>
+</div>
+</section>
+<!-- (d) My Journeys -->
+<section class="flex flex-col gap-md">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm text-text-main">המסעות שלי</h3>
+<a class="font-label-caps text-label-caps text-primary hover:underline" href="#">הצג הכל</a>
+</div>
+<div class="bg-warm-surface rounded-xl p-md shadow-[0_4px_15px_rgba(31,41,46,0.04)] border border-surface-container-high flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-calm-blue" style="font-variation-settings: 'FILL' 1;">directions_run</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body-md text-body-md font-semibold text-text-main">חצי מרתון</h4>
+<p class="font-body-sm text-body-sm text-text-muted">2 מתוך 3 השבוע</p>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-growth-green flex items-center justify-center">
+<span class="material-symbols-outlined text-growth-green text-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-xs pb-sm pt-xs bg-surface-container-lowest dark:bg-inverse-surface shadow-[0_-4px_15px_rgba(31,41,46,0.04)] rounded-t-xl md:hidden">
+<!-- Active: Home -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-on-primary-fixed-variant text-on-primary-container dark:text-primary-fixed rounded-xl px-4 py-1.5 hover:opacity-80 transition-opacity Active: scale-95 duration-200 ease-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-caps text-label-caps mt-1">Home</span>
+</a>
+<!-- Inactive -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-outline-variant px-4 py-1.5 hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-caps text-label-caps mt-1">Community</span>
+</a>
+<!-- Inactive -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-outline-variant px-4 py-1.5 hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-label-caps text-label-caps mt-1">Coach</span>
+</a>
+<!-- Inactive -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-outline-variant px-4 py-1.5 hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">auto_awesome_motion</span>
+<span class="font-label-caps text-label-caps mt-1">Journeys</span>
+</a>
+</nav>
+</body></html>

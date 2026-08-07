@@ -19,27 +19,21 @@
  * ShopEngine owns it. Rendered in PushApp's warm palette (cream / teal accents).
  */
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { ShopItem } from '@/core/config/shopItems';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
-// Shop is a reward surface: prices in GOLD, the Buy CTA in CORAL, equipped state
-// in TEAL, icon tiles cycle through the reward palette for variety (Design
-// System §2 — colour by meaning, glossy game-juice concentrated here).
-const TEAL = Colors.light.teal;
-const TEAL_TINT = Colors.light.tealTint;
-const GOLD = Colors.light.gold;
-const GOLD_TINT = Colors.light.goldTint;
-const GOLD_STRONG = Colors.light.goldStrong;
-const CORAL = Colors.light.coral;
-const INK = Colors.light.text;
+// Shop is a reward surface: prices in gold, the Buy CTA in coral, equipped state
+// in teal, icon tiles cycle through the reward palette for variety (Design
+// System §2 — colour by meaning, glossy game-juice concentrated here). All accent
+// values are read from the active theme so the shelf works in light and dark.
 
 type SubTab = 'featured' | 'cosmetics' | 'coins' | 'offers';
 
@@ -64,6 +58,7 @@ export default function ShopScreen() {
   const { core, snapshot } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [activeTab, setActiveTab] = useState<SubTab>('cosmetics');
 
   const items = core.getShopItems();
@@ -89,13 +84,13 @@ export default function ShopScreen() {
           <ThemedText type="subtitle" style={styles.title}>
             Shop
           </ThemedText>
-          <View style={[styles.coinPill, { backgroundColor: GOLD_TINT, borderColor: GOLD }]}>
-            <View style={[styles.coinStar, { backgroundColor: GOLD }]}>
+          <View style={[styles.coinPill, { backgroundColor: theme.goldTint, borderColor: theme.gold }]}>
+            <View style={[styles.coinStar, { backgroundColor: theme.gold }]}>
               <ThemedText style={styles.coinStarGlyph}>★</ThemedText>
             </View>
-            <ThemedText style={[styles.coinCount, { color: GOLD_STRONG }]}>{coins}</ThemedText>
+            <ThemedText style={[styles.coinCount, { color: theme.goldStrong }]}>{coins}</ThemedText>
             <View style={styles.coinPlus}>
-              <ThemedText style={[styles.coinPlusGlyph, { color: GOLD_STRONG }]}>+</ThemedText>
+              <ThemedText style={[styles.coinPlusGlyph, { color: theme.goldStrong }]}>+</ThemedText>
             </View>
           </View>
         </View>
@@ -118,12 +113,12 @@ export default function ShopScreen() {
                 style={[
                   styles.tab,
                   active
-                    ? { backgroundColor: GOLD_TINT }
+                    ? { backgroundColor: theme.goldTint }
                     : { backgroundColor: theme.backgroundSelected },
                 ]}>
                 <ThemedText
                   type="smallBold"
-                  style={[styles.tabText, active && { color: GOLD_STRONG }]}
+                  style={[styles.tabText, active && { color: theme.goldStrong }]}
                   themeColor={active ? undefined : 'textSecondary'}>
                   {tab.label}
                 </ThemedText>
@@ -207,10 +202,12 @@ function ShopCard({
   onEquip: () => void;
   onUnequip: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.card}>
       {equipped && (
-        <View style={[styles.cardBadge, { backgroundColor: TEAL }]}>
+        <View style={[styles.cardBadge, { backgroundColor: theme.teal }]}>
           <ThemedText style={styles.cardBadgeText}>Equipped</ThemedText>
         </View>
       )}
@@ -229,11 +226,11 @@ function ShopCard({
           accessibilityLabel={`Buy ${item.name} for ${item.price} Coins`}
           disabled={!affordable}
           onPress={onBuy}
-          style={[styles.priceChip, { backgroundColor: GOLD_TINT }, !affordable && styles.disabled]}>
-          <View style={[styles.coinStar, styles.coinStarSmall, { backgroundColor: GOLD }]}>
+          style={[styles.priceChip, { backgroundColor: theme.goldTint }, !affordable && styles.disabled]}>
+          <View style={[styles.coinStar, styles.coinStarSmall, { backgroundColor: theme.gold }]}>
             <ThemedText style={styles.coinStarGlyphSmall}>★</ThemedText>
           </View>
-          <ThemedText type="smallBold" style={{ color: GOLD_STRONG }}>
+          <ThemedText type="smallBold" style={{ color: theme.goldStrong }}>
             {item.price}
           </ThemedText>
         </Pressable>
@@ -242,8 +239,8 @@ function ShopCard({
           accessibilityRole="button"
           accessibilityLabel={`Unequip ${item.name}`}
           onPress={onUnequip}
-          style={[styles.actionButton, styles.equippedButton, { borderColor: TEAL }]}>
-          <ThemedText type="smallBold" style={{ color: TEAL }}>
+          style={[styles.actionButton, styles.equippedButton, { borderColor: theme.teal }]}>
+          <ThemedText type="smallBold" style={{ color: theme.teal }}>
             ✓ Equipped
           </ThemedText>
         </Pressable>
@@ -252,7 +249,7 @@ function ShopCard({
           accessibilityRole="button"
           accessibilityLabel={`Equip ${item.name}`}
           onPress={onEquip}
-          style={[styles.actionButton, { backgroundColor: CORAL }]}>
+          style={[styles.actionButton, { backgroundColor: theme.coral }]}>
           <ThemedText type="smallBold" style={styles.equipButtonText}>
             Equip
           </ThemedText>
@@ -264,13 +261,16 @@ function ShopCard({
 
 /** Presentational glyph for a cosmetic: the emoji for an accessory, a swatch dot for a tint. */
 function CosmeticGlyph({ item }: { item: ShopItem }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   if (item.kind === 'tint') {
     return <View style={[styles.swatch, { backgroundColor: item.value }]} />;
   }
   return <ThemedText style={styles.itemEmoji}>{item.value}</ThemedText>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.headingBold,
     fontSize: 20,
     lineHeight: 22,
-    color: INK,
+    color: c.text,
   },
   title: {
     flex: 1,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   coinStarGlyph: {
-    color: '#fff',
+    color: c.backgroundElement,
     fontSize: 12,
     lineHeight: 14,
   },
@@ -380,7 +380,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
   },
   sectionLabel: {
-    color: '#9A7B4A',
+    // Was a bespoke brown (#9A7B4A); routed to the neutral secondary so it reads on dark.
+    color: c.textSecondary,
     marginBottom: Spacing.two,
     marginTop: Spacing.one,
   },
@@ -394,10 +395,10 @@ const styles = StyleSheet.create({
   card: {
     width: 116,
     flexGrow: 1,
-    backgroundColor: '#fff',
+    backgroundColor: c.backgroundElement,
     borderRadius: Radius.card - 3,
     borderWidth: 1,
-    borderColor: Colors.light.hairline,
+    borderColor: c.hairline,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.two,
     paddingHorizontal: Spacing.two,
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   cardBadgeText: {
-    color: '#fff',
+    color: c.backgroundElement,
     fontFamily: FontFamily.headingBold,
     fontSize: 9,
     lineHeight: 11,
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   coinStarGlyphSmall: {
-    color: '#fff',
+    color: c.backgroundElement,
     fontSize: 9,
     lineHeight: 11,
   },
@@ -485,10 +486,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   equipButtonText: {
-    color: '#fff',
+    color: c.backgroundElement,
   },
   equippedButton: {
-    backgroundColor: TEAL_TINT,
+    backgroundColor: c.tealTint,
     borderWidth: 1,
   },
   disabled: {

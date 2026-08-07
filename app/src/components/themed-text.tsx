@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { FontFamily, Fonts, ThemeColor } from '@/constants/theme';
@@ -10,6 +11,7 @@ export type ThemedTextProps = TextProps & {
 
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
     <Text
@@ -35,45 +37,46 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 // role picks the right variant: HEADINGS/display use Baloo 2 (rounded, warm) and
 // BODY uses Inter. Baloo 2 runs slightly small at a given px, so headings keep
 // their generous line-heights for optical balance.
-const styles = StyleSheet.create({
-  small: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  smallBold: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  default: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  title: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 26,
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  link: {
-    fontFamily: FontFamily.bodyMedium,
-    lineHeight: 22,
-    fontSize: 15,
-  },
-  linkPrimary: {
-    fontFamily: FontFamily.bodySemiBold,
-    lineHeight: 22,
-    fontSize: 15,
-    color: '#4A80E0',
-  },
-  code: {
-    fontFamily: Fonts.mono,
-    fontSize: 12,
-  },
-});
+const makeStyles = (c: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    small: {
+      fontFamily: FontFamily.bodyMedium,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+    smallBold: {
+      fontFamily: FontFamily.bodySemiBold,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    default: {
+      fontFamily: FontFamily.bodyMedium,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    title: {
+      fontFamily: FontFamily.headingBold,
+      fontSize: 26,
+      lineHeight: 32,
+    },
+    subtitle: {
+      fontFamily: FontFamily.headingBold,
+      fontSize: 20,
+      lineHeight: 26,
+    },
+    link: {
+      fontFamily: FontFamily.bodyMedium,
+      lineHeight: 22,
+      fontSize: 15,
+    },
+    linkPrimary: {
+      fontFamily: FontFamily.bodySemiBold,
+      lineHeight: 22,
+      fontSize: 15,
+      color: c.blue,
+    },
+    code: {
+      fontFamily: Fonts.mono,
+      fontSize: 12,
+    },
+  });

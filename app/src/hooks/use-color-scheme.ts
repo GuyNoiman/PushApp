@@ -1,9 +1,12 @@
 /**
- * The design is warm-light only — there is no dark design yet (Design System §2,
- * §7). We ignore the system colour scheme and always report `light` so the whole
- * app renders in the on-brand warm palette. Dark mode is future work; restoring
- * `export { useColorScheme } from 'react-native'` is all it will take.
+ * The active colour scheme. The app now ships BOTH a warm-light and a warm-dark
+ * (turquoise-led) palette (Design System §2, theme.ts), and `app.json` sets
+ * `userInterfaceStyle: "automatic"`, so we follow the device: dark device → dark
+ * app, light device → light app. `react-native` can briefly report `null` before
+ * the scheme resolves; we default to `light` so a screen never flashes untyped.
  */
-export function useColorScheme(): 'light' {
-  return 'light';
+import { useColorScheme as useRNColorScheme } from 'react-native';
+
+export function useColorScheme(): 'light' | 'dark' {
+  return useRNColorScheme() ?? 'light';
 }

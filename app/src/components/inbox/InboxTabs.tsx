@@ -1,9 +1,10 @@
 /**
- * InboxTabs — the Friends · Allies · Groups sub-tabs above the Inbox list (v14
- * mockup screen-15). Friends is the default. The selected tab is a soft
- * purpleTint pill with purpleStrong text (social accent, Design System §2/§6 —
- * same "active chip" pattern as Achievements' filter row); the rest are calm
- * neutral pills. A danger dot rides a tab when it holds an unread item
+ * InboxTabs — the category tab row above the Inbox list: Friends · Allies ·
+ * Groups · Requested (founder feedback 2026-08-07, restoring the category tabs
+ * and adding Requested for incoming connection requests). Calm text tabs with an
+ * active turquoise underline (Design System §2 accent) — the mature styling kept
+ * from the previous round. "Requested" carries a muted count when it holds
+ * pending requests; a tab shows a danger dot when it has an unread item
  * underneath (Inbox_Screen.md).
  *
  * Presentational only — it takes the tabs + selection and reports taps (§19).
@@ -11,14 +12,16 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type InboxTabKey = 'friends' | 'allies' | 'groups';
+export type InboxTabKey = 'friends' | 'allies' | 'groups' | 'requested';
 
 export interface InboxTab {
   key: InboxTabKey;
   label: string;
+  /** Optional count shown after the label (e.g. pending requests). */
+  count?: number;
   /** Danger dot on the tab when it has an unread item underneath. */
   unread?: boolean;
 }
@@ -35,7 +38,7 @@ export function InboxTabs({
   const theme = useTheme();
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { borderBottomColor: theme.hairline }]}>
       {tabs.map((tab) => {
         const on = tab.key === selected;
         return (
@@ -45,17 +48,23 @@ export function InboxTabs({
             accessibilityState={{ selected: on }}
             accessibilityLabel={tab.label}
             onPress={() => onSelect(tab.key)}
-            style={({ pressed }) => [
-              styles.pill,
-              { backgroundColor: on ? theme.purpleTint : theme.backgroundSelected },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText
-              type="smallBold"
-              style={[styles.label, { color: on ? theme.purpleStrong : theme.textSecondary }]}>
-              {tab.label}
-            </ThemedText>
-            {tab.unread && !on && <View style={[styles.dot, { backgroundColor: theme.danger }]} />}
+            style={({ pressed }) => [styles.tab, pressed && styles.pressed]}>
+            <View style={styles.labelRow}>
+              <ThemedText
+                type="smallBold"
+                themeColor={on ? 'text' : 'textSecondary'}
+                style={styles.label}>
+                {tab.label}
+              </ThemedText>
+              {tab.count ? (
+                <ThemedText type="smallBold" themeColor="textMuted" style={styles.count}>
+                  {tab.count}
+                </ThemedText>
+              ) : tab.unread && !on ? (
+                <View style={[styles.dot, { backgroundColor: theme.danger }]} />
+              ) : null}
+            </View>
+            <View style={[styles.underline, { backgroundColor: on ? theme.tint : 'transparent' }]} />
           </Pressable>
         );
       })}
@@ -66,27 +75,37 @@ export function InboxTabs({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: Spacing.two,
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  pill: {
-    flexDirection: 'row',
+  tab: {
+    flex: 1,
     alignItems: 'center',
-    gap: Spacing.one,
-    borderRadius: Radius.pill,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+    gap: Spacing.two,
   },
   pressed: {
     opacity: 0.7,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
   label: {
     fontSize: 14,
+  },
+  count: {
+    fontVariant: ['tabular-nums'],
   },
   dot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
+  },
+  underline: {
+    height: 2,
+    alignSelf: 'stretch',
+    borderRadius: 1,
   },
 });

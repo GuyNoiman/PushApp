@@ -1,11 +1,12 @@
 /**
- * InboxRow — one IG-style conversation row in the Inbox (v14 mockup screen-15):
- * a rounded tinted avatar, a Baloo name, an Inter preview line with a muted
- * timestamp, and a danger unread dot on the right (Design System §status —
- * the same soft coral-red as other unread/urgent badges, kept distinct from the
- * coral CTA accent). Conversations are ROWS, not cards (Inbox_Screen.md —
- * "IG-style rows, not cards"). Optional inline actions (Accept / Decline) render
- * beneath the preview for actionable items like an incoming friend request.
+ * InboxRow — one Instagram-DM-style conversation row in the Inbox. A row is a
+ * clean line — a round monogram avatar (initials; restored per founder feedback
+ * 2026-08-07), a bold name, a right-aligned tabular timestamp, an Inter preview
+ * line, and a danger unread dot on the right (Design System §status — the same
+ * soft coral-red as other unread/urgent badges). Conversations are ROWS, not
+ * cards (Inbox_Screen.md — "IG-style rows, not cards"). Optional inline actions
+ * (Accept / Decline) render beneath the preview for actionable items like an
+ * incoming connection request.
  *
  * Presentational only — it takes data + callbacks; no social/business logic lives
  * here (Engineering Bible §19).
@@ -13,12 +14,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, FontFamily, Radius, Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const CORAL = Colors.light.coral;
-const INK = Colors.light.text;
-const DANGER = Colors.light.danger;
 
 export interface InboxRowAction {
   label: string;
@@ -29,25 +26,22 @@ export interface InboxRowAction {
 
 export interface InboxRowData {
   id: string;
-  /** Display name (Baloo). Falls back to handle. */
+  /** Display name. Falls back to handle. */
   name: string;
+  /** 1–2 letter monogram for the avatar. Derived from `name` when omitted. */
+  initials?: string;
   /** Preview / last-message line (Inter). */
   preview: string;
   /** Muted relative timestamp, e.g. "2h" · "1d". Optional. */
   timestamp?: string;
   /** Danger unread dot + bolder name/preview when true. */
   unread?: boolean;
-  /** A rounded tint for the initial-circle avatar. */
-  tint: string;
-  /** Ink colour for the initial glyph, paired with `tint`. */
-  tintInk: string;
-  /** Inline actions (e.g. Accept a friend request). Rendered under the preview. */
+  /** Inline actions (e.g. Accept a connection request). Rendered under the preview. */
   actions?: InboxRowAction[];
 }
 
 export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => void }) {
   const theme = useTheme();
-  const initial = firstGlyph(row.name);
 
   return (
     <Pressable
@@ -55,18 +49,23 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
       accessibilityLabel={`${row.name}. ${row.preview}`}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && onPress ? styles.pressed : null]}>
-      <View style={[styles.avatar, { backgroundColor: row.tint }]}>
-        <ThemedText style={[styles.avatarGlyph, { color: row.tintInk }]}>{initial}</ThemedText>
+      {/* TODO(avatar): replace initials with the friend's profile photo when profiles land */}
+      <View style={[styles.avatar, { backgroundColor: theme.tealTint }]}>
+        <ThemedText type="smallBold" style={[styles.avatarText, { color: theme.tint }]}>
+          {row.initials ?? initialsFromName(row.name)}
+        </ThemedText>
       </View>
 
       <View style={styles.main}>
         <View style={styles.nameRow}>
-          <ThemedText
-            themeColor={row.unread ? 'text' : 'textSecondary'}
-            style={styles.name}
-            numberOfLines={1}>
+          <ThemedText themeColor="text" style={styles.name} numberOfLines={1}>
             {row.name}
           </ThemedText>
+          {row.timestamp ? (
+            <ThemedText type="small" themeColor="textMuted" style={styles.timestamp}>
+              {row.timestamp}
+            </ThemedText>
+          ) : null}
         </View>
 
         <ThemedText
@@ -75,12 +74,6 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
           style={[styles.preview, row.unread && styles.previewUnread]}
           numberOfLines={2}>
           {row.preview}
-          {row.timestamp ? (
-            <ThemedText type="small" themeColor="textMuted">
-              {'  ·  '}
-              {row.timestamp}
-            </ThemedText>
-          ) : null}
         </ThemedText>
 
         {row.actions && row.actions.length > 0 && (
@@ -95,13 +88,13 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
                   styles.actionButton,
                   action.variant === 'ghost'
                     ? [styles.ghost, { borderColor: theme.hairline }]
-                    : { backgroundColor: CORAL },
+                    : { backgroundColor: theme.coral },
                   pressed && styles.pressed,
                 ]}>
                 <ThemedText
                   type="smallBold"
                   themeColor={action.variant === 'ghost' ? 'textSecondary' : undefined}
-                  style={action.variant === 'ghost' ? undefined : styles.primaryLabel}>
+                  style={action.variant === 'ghost' ? undefined : { color: theme.text }}>
                   {action.label}
                 </ThemedText>
               </Pressable>
@@ -110,18 +103,18 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
         )}
       </View>
 
-      {row.unread && <View style={[styles.dot, { backgroundColor: DANGER }]} />}
+      {row.unread && <View style={[styles.dot, { backgroundColor: theme.danger }]} />}
     </Pressable>
   );
 }
 
-/** First visible character for the initial-circle avatar (skips a leading @). */
-function firstGlyph(name: string): string {
-  const clean = name.replace(/^@/, '').trim();
-  return (clean[0] ?? '?').toUpperCase();
+/** Up-to-two-letter monogram from a display name, e.g. "Yael Bar" → "YB", "@maya" → "M". */
+function initialsFromName(name: string): string {
+  const words = name.replace(/^@/, '').trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].charAt(0).toUpperCase();
+  return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
 }
-
-const AVATAR = 52;
 
 const styles = StyleSheet.create({
   row: {
@@ -135,16 +128,14 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   avatar: {
-    width: AVATAR,
-    height: AVATAR,
-    borderRadius: AVATAR / 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarGlyph: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 22,
-    lineHeight: 28,
+  avatarText: {
+    fontSize: 15,
   },
   main: {
     flex: 1,
@@ -153,12 +144,17 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.two,
   },
   name: {
-    flexShrink: 1,
+    flex: 1,
     fontFamily: FontFamily.headingBold,
     fontSize: 17,
     lineHeight: 22,
+  },
+  timestamp: {
+    // Tabular figures so timestamps stay column-aligned down the list.
+    fontVariant: ['tabular-nums'],
   },
   preview: {
     fontSize: 14,
@@ -182,13 +178,10 @@ const styles = StyleSheet.create({
   ghost: {
     borderWidth: 1,
   },
-  primaryLabel: {
-    color: INK,
-  },
   dot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    marginTop: Spacing.three,
+    marginTop: Spacing.two,
   },
 });

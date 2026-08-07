@@ -1,254 +1,247 @@
 /**
- * Friends — the POC social / Allies pillar surface (05_Social), a first-class
- * bottom-nav TAB (v14 mockup screen-09, `Friends_Screen.md`). A help-first friend
- * list: "Needs your cheer" (Journeys you're an Ally of, prioritized) then "Your
- * friends" A–Z (the full Support Circle — cheer-needing friends also appear
- * here, per the finalized visual design). Each row opens a neutral 3-dot menu
- * (Cheer / Gift / Message); "Needs your cheer" rows show the coral Cheer pill
- * directly instead.
+ * Circle — the POC social / Allies pillar surface (05_Social), a first-class
+ * bottom-nav TAB labelled "Circle" (the Support Circle). Mature redesign
+ * 2026-08-07, reworked per founder feedback: neutrals + the single teal accent
+ * (amber reserved for urgency), no coral/gold chrome.
+ *
+ * Structure (founder feedback 2026-08-07, reverted from the two-tab split):
+ *   · A header row with the title and TWO buttons — "Invite" and "Add"
+ *     (add-by-username). Tapping "Add" reveals the username input instead of it
+ *     sitting inline by default.
+ *   · A SINGLE "Your friends" list — the Support Circle. Each person is a row
+ *     (monogram avatar, name, a human status line, and ONE Cheer action).
+ *     Populated from the real social lists when present, else from the dev
+ *     sample (`useSampleWhenEmpty`) so the surface always reads populated.
+ *
+ * The user's own identity (the editable @username) NO LONGER lives here — it
+ * moved to the Settings tab's Profile section (founder feedback 2026-08-07).
+ * Circle keeps only its title, the Invite / Add buttons, and the friends list.
+ *
+ * The earlier "Need help" / "Deserve praise" segmented split now lives on the
+ * Home page; Circle is one simple friends view again.
  *
  * Presentational only — it reads SocialProvider state and calls its actions; no
  * social/business logic lives here (Engineering Bible §19). Only a progress
  * SUMMARY is ever shared; reflections and the "why" never leave the device.
- * Allies are NOT shown here (they live in Inbox + a Journey's settings) — this
- * screen is the Support Circle / Friend list only (Friend ≠ Ally, see
- * Friends_Screen.md "Allies are not shown on this screen").
+ * Incoming requests and cheers now live in the Inbox tab (Friend ≠ Ally) — this
+ * screen is the Support Circle / help-first people list only.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FriendRow } from '@/components/friends/FriendRow';
-import type { FriendMenuItem } from '@/components/friends/FriendActionMenu';
-import { InboxEmpty } from '@/components/inbox/InboxEmpty';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import type { AllyProgress, Friend } from '@/core/social';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty, type SampleFriend } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import { useSocial } from '@/state/SocialProvider';
 
-const CORAL = Colors.light.coral;
-const INK = Colors.light.text;
-
-// A small warm palette for the avatar circles, cycled by id so every friend
-// gets a stable, distinct tint (Design System §2 role accents) — same scheme
-// as Inbox so a person reads consistently across screens.
-const AVATAR_TINTS: { bg: string; ink: string }[] = [
-  { bg: Colors.light.coralTint, ink: Colors.light.coralStrong },
-  { bg: Colors.light.goldTint, ink: Colors.light.goldStrong },
-  { bg: Colors.light.purpleTint, ink: Colors.light.purpleStrong },
-  { bg: Colors.light.tealTint, ink: Colors.light.tealStrong },
-  { bg: Colors.light.blueTint, ink: Colors.light.blueStrong },
-  { bg: Colors.light.pinkTint, ink: Colors.light.pink },
-];
-
-function tintFor(seed: string): { bg: string; ink: string } {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return AVATAR_TINTS[Math.abs(hash) % AVATAR_TINTS.length];
+// A small warm palette for the monogram avatars, cycled by id so every person
+// gets a stable, distinct tint (Design System §2 role accents) — same scheme as
+// Inbox so a person reads consistently across screens. Built from the ACTIVE
+// theme so the tints adapt in dark mode.
+function avatarTints(c: ReturnType<typeof useTheme>): { bg: string; ink: string }[] {
+  return [
+    { bg: c.coralTint, ink: c.coralStrong },
+    { bg: c.goldTint, ink: c.goldStrong },
+    { bg: c.purpleTint, ink: c.purpleStrong },
+    { bg: c.tealTint, ink: c.tealStrong },
+    { bg: c.blueTint, ink: c.blueStrong },
+    { bg: c.pinkTint, ink: c.pink },
+  ];
 }
 
-/** A friend's display name: their Buddy name if set, else their @handle. */
-function friendName(friend: Friend): string {
-  return friend.profile.buddySummary?.name?.trim() || `@${friend.profile.handle}`;
+function tintFor(c: ReturnType<typeof useTheme>, seed: string): { bg: string; ink: string } {
+  const tints = avatarTints(c);
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  return tints[Math.abs(hash) % tints.length];
+}
+
+/** 1–2 letter monogram from a display name (skips a leading @). */
+function initialsFor(name: string): string {
+  const clean = name.replace(/^@/, '').trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return clean.slice(0, 2).toUpperCase();
+}
+
+/** A person row in the Circle list. `onAction` is undefined for sample rows
+ *  (no real target to cheer yet) so their button is inert. */
+interface CircleRowModel {
+  id: string;
+  name: string;
+  initials: string;
+  status: string;
+  onAction?: () => void;
+}
+
+function sampleToRow(f: SampleFriend): CircleRowModel {
+  return { id: f.id, name: f.name, initials: f.initials, status: f.status };
 }
 
 export default function FriendsScreen() {
   const social = useSocial();
   const theme = useTheme();
 
-  const accepted = useMemo(() => social.friends.filter((f) => f.status === 'accepted'), [social.friends]);
-  const incoming = useMemo(
-    () => social.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming'),
-    [social.friends],
+  const [showAdd, setShowAdd] = useState(false);
+
+  const signedIn = social.enabled && !social.needsHandle && !!social.profile;
+
+  // ── Your friends ← real ally progress (each can get a Cheer via sendCheer),
+  // falling back to the dev sample when there's nothing real yet. The single
+  // list merges what used to be the two tabs so the Circle reads as one Support
+  // Circle (the Need-help / Deserve-praise split now lives on Home). ──
+  const friendsReal = useMemo<CircleRowModel[]>(
+    () =>
+      social.allyProgress.map((ap) => {
+        const name = ap.owner.buddySummary?.name?.trim() || `@${ap.owner.handle}`;
+        const pct = Math.round(Math.max(0, Math.min(1, ap.progress)) * 100);
+        const title = ap.visibility === 'anonymous' || !ap.title ? 'a Journey' : ap.title;
+        return {
+          id: `${ap.owner.id}:${ap.journeyId}`,
+          name,
+          initials: initialsFor(name),
+          status: `${pct}% on ${title}`,
+          onAction: () => void social.sendCheer(ap.owner.id, ap.journeyId),
+        };
+      }),
+    [social],
   );
 
-  // "Needs your cheer" — Journeys the user is an Ally of, not yet cheered on
-  // this update (best-effort: every ally-progress row the user can act on now;
-  // there is no per-cheer "already cheered" flag in the gateway yet).
-  const needsCheer = social.allyProgress;
-
-  // "Your friends" — full Support Circle, A–Z. Cheer-needing friends also
-  // appear here (Friends_Screen.md, finalized visual design 2026-07-06).
-  const friendsAZ = useMemo(
-    () => [...accepted].sort((a, b) => friendName(a).localeCompare(friendName(b))),
-    [accepted],
+  const sampleRows = useMemo<CircleRowModel[]>(
+    () => [...sampleNeedHelp, ...sampleDeservePraise].map(sampleToRow),
+    [],
   );
+  const rows = useSampleWhenEmpty(friendsReal, sampleRows);
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-          <ThemedText type="title">Friends</ThemedText>
-          <View style={[styles.invitePill, { backgroundColor: theme.purpleTint }]}>
-            <ThemedText type="smallBold" style={{ color: theme.purpleStrong }}>
-              + Invite
-            </ThemedText>
+          <ThemedText type="title">Circle</ThemedText>
+          <View style={styles.headerActions}>
+            <HeaderButton label="Invite" icon="share-outline" onPress={() => {}} />
+            <HeaderButton label="Add" icon="person-add-outline" onPress={() => setShowAdd((v) => !v)} active={showAdd} />
           </View>
         </View>
 
-        {!social.enabled ? (
-          <InboxEmpty
-            emoji="🤝"
-            title="Your Support Circle"
-            subtitle="Turn on the social pillar to add friends, see who needs a cheer, and grow your Support Circle here."
-          />
-        ) : (
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            {social.error && (
-              <ThemedView type="backgroundElement" style={[styles.errorBanner, { borderColor: theme.hairline }]}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {social.error}
-                </ThemedText>
-              </ThemedView>
-            )}
-
-            {social.incomingCheers.length > 0 && (
-              <ThemedView type="backgroundSelected" style={styles.cheerBanner}>
-                <ThemedText type="smallBold">You&apos;ve been cheered {social.incomingCheers.length}×</ThemedText>
-              </ThemedView>
-            )}
-
-            {social.needsHandle ? (
-              <HandleSetup onSave={social.setHandle} />
-            ) : (
-              <View style={styles.handleRow}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  @{social.profile?.handle}
-                </ThemedText>
-              </View>
-            )}
-
-            <AddFriend onAdd={social.addFriendByHandle} disabled={social.needsHandle} />
-
-            {incoming.length > 0 && (
-              <View style={styles.section}>
-                <ThemedText type="small" themeColor="textSecondary" style={styles.sectionTitle}>
-                  Requests
-                </ThemedText>
-                <View style={styles.list}>
-                  {incoming.map((f) => (
-                    <IncomingRow
-                      key={f.profile.id}
-                      friend={f}
-                      onAccept={() => social.respondToFriend(f.profile.id, true)}
-                      onDecline={() => social.respondToFriend(f.profile.id, false)}
-                    />
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {needsCheer.length > 0 && (
-              <View style={styles.section}>
-                <ThemedText type="smallBold" style={[styles.sec, { color: theme.goldStrong }]}>
-                  Needs your cheer <ThemedText type="small" themeColor="textMuted">({needsCheer.length})</ThemedText>
-                </ThemedText>
-                <View style={styles.list}>
-                  {needsCheer.map((ap) => (
-                    <NeedsCheerRow
-                      key={`${ap.owner.id}:${ap.journeyId}`}
-                      ally={ap}
-                      onCheer={() => social.sendCheer(ap.owner.id, ap.journeyId)}
-                    />
-                  ))}
-                </View>
-              </View>
-            )}
-
-            <View style={styles.section}>
-              <ThemedText type="smallBold" style={[styles.sec, { color: theme.goldStrong }]}>
-                Your friends <ThemedText type="small" themeColor="textMuted">({friendsAZ.length})</ThemedText>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Surface only GENUINE errors. The backend "Not signed in." is the
+              expected guest/POC state (no auth wired yet), not an error the user
+              should see — filter it out so it doesn't read as something broken. */}
+          {social.error && !/signed in/i.test(social.error) && (
+            <ThemedView type="backgroundElement" style={[styles.errorBanner, { borderColor: theme.hairline }]}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {social.error}
               </ThemedText>
-              {friendsAZ.length === 0 ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  No friends yet. Add someone by their handle above and grow your Support Circle.
-                </ThemedText>
-              ) : (
-                <View style={styles.list}>
-                  {friendsAZ.map((f) => {
-                    const tint = tintFor(f.profile.id);
-                    const level = f.profile.buddySummary?.level;
-                    return (
-                      <FriendRow
-                        key={f.profile.id}
-                        name={friendName(f)}
-                        subtitle={level ? `Lv ${level}` : undefined}
-                        tint={tint.bg}
-                        tintInk={tint.ink}
-                        menuItems={menuFor(friendName(f), () => {
-                          const journeyId = needsCheer.find((ap) => ap.owner.id === f.profile.id)?.journeyId;
-                          if (journeyId) void social.sendCheer(f.profile.id, journeyId);
-                        })}
-                      />
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-          </ScrollView>
-        )}
+            </ThemedView>
+          )}
+
+          {/* Add a FRIEND by their username — revealed by the header "Add" button. */}
+          {showAdd && (
+            <AddFriend
+              onAdd={(username) => {
+                social.addFriendByHandle(username);
+                setShowAdd(false);
+              }}
+              disabled={!signedIn}
+            />
+          )}
+
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            Your friends
+          </ThemedText>
+
+          <View style={styles.list}>
+            {rows.map((row) => {
+              const tint = tintFor(theme, row.id);
+              return <PersonRow key={row.id} row={row} tint={tint.bg} tintInk={tint.ink} />;
+            })}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
 }
 
-// ── Rows ────────────────────────────────────────────────────────────────────
+// ── Header buttons ───────────────────────────────────────────────────────────
 
-function NeedsCheerRow({ ally, onCheer }: { ally: AllyProgress; onCheer: () => void }) {
-  const tint = tintFor(ally.owner.id);
-  const pct = Math.round(Math.max(0, Math.min(1, ally.progress)) * 100);
-  const title = ally.visibility === 'anonymous' || !ally.title ? 'a Journey' : ally.title;
+function HeaderButton({
+  label,
+  icon,
+  onPress,
+  active,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  active?: boolean;
+}) {
+  const theme = useTheme();
+  // On-accent ink when active (filled teal), else the teal text tone — the icon
+  // tracks the label colour so it reads in both light and dark.
+  const ink = active ? theme.background : theme.tealStrong;
   return (
-    <FriendRow
-      name={ally.owner.buddySummary?.name?.trim() || `@${ally.owner.handle}`}
-      subtitle={`${pct}% on ${title}`}
-      tint={tint.bg}
-      tintInk={tint.ink}
-      needsCheer
-      onCheer={onCheer}
-      menuItems={[]}
-    />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.headerButton,
+        { backgroundColor: active ? theme.teal : theme.tealTint },
+        pressed && styles.pressed,
+      ]}>
+      <Ionicons name={icon} size={16} color={ink} />
+      <ThemedText type="smallBold" style={{ color: ink }}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
-/** The neutral 3-dot menu items (Cheer / Gift / Message). Gift and Message have
- * no gateway action yet (SocialGateway has no gift/DM methods) — they're inert
- * placeholders, not invented calls, until that surface exists. */
-function menuFor(name: string, onCheer: () => void): FriendMenuItem[] {
-  return [
-    { key: 'cheer', label: 'Cheer', icon: 'notifications-outline', onPress: onCheer },
-    { key: 'gift', label: 'Gift', icon: 'gift-outline', onPress: () => {}, disabled: true },
-    { key: 'message', label: 'Message', icon: 'mail-outline', onPress: () => {}, disabled: true },
-  ];
-}
+// ── Person row ───────────────────────────────────────────────────────────────
 
-function HandleSetup({ onSave }: { onSave: (handle: string) => void }) {
+function PersonRow({ row, tint, tintInk }: { row: CircleRowModel; tint: string; tintInk: string }) {
   const theme = useTheme();
-  const [value, setValue] = useState('');
+  // One simple, friendly action per person: Cheer (teal). Amber is reserved for
+  // urgency elsewhere; this is the general Support Circle list.
+  const accent = theme.teal;
+  const label = 'Cheer';
   return (
-    <View style={styles.section}>
-      <ThemedText type="small" themeColor="textSecondary">
-        Friends find you by this handle. No real name needed.
-      </ThemedText>
-      <View style={styles.inputRow}>
-        <TextInput
-          value={value}
-          onChangeText={setValue}
-          placeholder="yourhandle"
-          placeholderTextColor={theme.textSecondary}
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}
-        />
-        <PrimaryButton label="Save" disabled={value.trim().length === 0} onPress={() => onSave(value)} />
+    <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+      <View style={[styles.avatar, { backgroundColor: tint }]}>
+        <ThemedText type="smallBold" style={{ color: tintInk }}>
+          {row.initials}
+        </ThemedText>
       </View>
+
+      <View style={styles.main}>
+        <ThemedText type="smallBold" numberOfLines={1}>
+          {row.name}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+          {row.status}
+        </ThemedText>
+      </View>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label} ${row.name}`}
+        onPress={row.onAction}
+        style={({ pressed }) => [styles.actionPill, { backgroundColor: accent }, pressed && styles.pressed]}>
+        <ThemedText type="smallBold" style={{ color: theme.background }}>
+          {label}
+        </ThemedText>
+      </Pressable>
     </View>
   );
 }
 
-function AddFriend({ onAdd, disabled }: { onAdd: (handle: string) => void; disabled: boolean }) {
+function AddFriend({ onAdd, disabled }: { onAdd: (username: string) => void; disabled: boolean }) {
   const theme = useTheme();
   const [value, setValue] = useState('');
   const submit = () => {
@@ -261,11 +254,12 @@ function AddFriend({ onAdd, disabled }: { onAdd: (handle: string) => void; disab
       <TextInput
         value={value}
         onChangeText={setValue}
-        placeholder="Add a friend by handle"
+        placeholder="Add a friend by username"
         placeholderTextColor={theme.textSecondary}
         autoCapitalize="none"
         autoCorrect={false}
         editable={!disabled}
+        autoFocus
         style={[
           styles.input,
           { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
@@ -277,49 +271,25 @@ function AddFriend({ onAdd, disabled }: { onAdd: (handle: string) => void; disab
   );
 }
 
-function IncomingRow({
-  friend,
-  onAccept,
-  onDecline,
-}: {
-  friend: Friend;
-  onAccept: () => void;
-  onDecline: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <ThemedView type="backgroundElement" style={[styles.friendRow, { borderColor: theme.hairline }]}>
-      <ThemedText type="smallBold">{friendName(friend)}</ThemedText>
-      <View style={styles.rowActions}>
-        <PrimaryButton label="Accept" onPress={onAccept} />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Decline ${friend.profile.handle}`}
-          onPress={onDecline}
-          style={({ pressed }) => [styles.ghostButton, { borderColor: theme.hairline }, pressed && styles.pressed]}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            Decline
-          </ThemedText>
-        </Pressable>
-      </View>
-    </ThemedView>
-  );
-}
-
 function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  const theme = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.primaryButton, { backgroundColor: CORAL }, disabled && styles.disabled, pressed && styles.pressed]}>
-      <ThemedText type="smallBold" style={styles.primaryLabel}>
+      style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.teal }, disabled && styles.disabled, pressed && styles.pressed]}>
+      {/* `background` reads as the on-accent ink in both schemes (deep teal on
+          light → pale ink; bright teal on dark → near-black ink). */}
+      <ThemedText type="smallBold" style={{ color: theme.background }}>
         {label}
       </ThemedText>
     </Pressable>
   );
 }
+
+const AVATAR = 44;
 
 const styles = StyleSheet.create({
   container: {
@@ -341,7 +311,15 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.three,
     borderBottomWidth: 1,
   },
-  invitePill: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  headerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
     borderRadius: Radius.pill,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
@@ -350,33 +328,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
-    gap: Spacing.four,
+    gap: Spacing.three,
   },
   errorBanner: {
     borderRadius: Radius.card,
     borderWidth: 1,
     padding: Spacing.three,
-  },
-  cheerBanner: {
-    borderRadius: Spacing.three,
-    padding: Spacing.three,
-    alignItems: 'center',
-  },
-  handleRow: {
-    flexDirection: 'row',
-  },
-  section: {
-    gap: Spacing.two,
-  },
-  sec: {
-    textTransform: 'none',
-  },
-  sectionTitle: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  list: {
-    gap: Spacing.two,
   },
   inputRow: {
     flexDirection: 'row',
@@ -391,34 +348,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     fontSize: 15,
   },
-  friendRow: {
+  list: {
+    gap: Spacing.two,
+  },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Spacing.three,
     borderRadius: Radius.card,
     borderWidth: 1,
-    paddingVertical: Spacing.three,
+    paddingVertical: Spacing.two + 2,
     paddingHorizontal: Spacing.three,
-    gap: Spacing.two,
   },
-  rowActions: {
-    flexDirection: 'row',
+  avatar: {
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
     alignItems: 'center',
-    gap: Spacing.two,
+    justifyContent: 'center',
+    flexShrink: 0,
   },
-  primaryButton: {
-    borderRadius: Radius.button,
+  main: {
+    flex: 1,
+    gap: 1,
+  },
+  actionPill: {
+    borderRadius: Radius.pill,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryLabel: {
-    color: INK,
-  },
-  ghostButton: {
+  primaryButton: {
     borderRadius: Radius.button,
-    borderWidth: 1,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     alignItems: 'center',

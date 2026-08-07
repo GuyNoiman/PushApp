@@ -11,23 +11,18 @@
  * Bible §19); the MissionEngine owns it all. Warm palette (cream / gold accents).
  */
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import type { LoginDayView, MissionView } from '@/core/engines/MissionEngine';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
-// Missions is a reward surface: rewards read in GOLD, the Claim CTA is CORAL
-// (Design System §2 — gold = coins/rewards, coral = primary CTA).
-const GOLD = Colors.light.gold;
-const GOLD_STRONG = Colors.light.goldStrong;
-const GOLD_TINT = Colors.light.goldTint;
-const CORAL = Colors.light.coral;
-const CREAM = Colors.light.cream;
-const INK = Colors.light.text;
+// Missions is a reward surface: rewards read in gold, the Claim CTA is coral
+// (Design System §2 — gold = coins/rewards, coral = primary CTA). All accent
+// values are read from the active theme so the modal works in light and dark.
 
 type TopTab = 'missions' | 'login';
 type MissionTab = 'daily' | 'weekly';
@@ -36,6 +31,7 @@ export default function MissionsScreen() {
   const { core } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { height: windowHeight } = useWindowDimensions();
 
   const [topTab, setTopTab] = useState<TopTab>('missions');
@@ -55,7 +51,7 @@ export default function MissionsScreen() {
     <Pressable style={styles.scrim} accessibilityLabel="Close" onPress={dismiss}>
       {/* Inner press swallows taps so the card body doesn't dismiss. */}
       <Pressable style={styles.cardWrap} onPress={() => {}}>
-        <View style={[styles.card, { backgroundColor: CREAM, maxHeight: windowHeight * 0.82 }]}>
+        <View style={[styles.card, { backgroundColor: theme.cream, maxHeight: windowHeight * 0.82 }]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close"
@@ -105,7 +101,7 @@ export default function MissionsScreen() {
                   }
                   disabled={!login.claimableToday}
                   onPress={() => core.claimLoginReward()}
-                  style={[styles.loginClaim, { backgroundColor: CORAL }, !login.claimableToday && styles.disabled]}>
+                  style={[styles.loginClaim, { backgroundColor: theme.coral }, !login.claimableToday && styles.disabled]}>
                   <ThemedText type="smallBold" style={styles.claimInk}>
                     {login.claimableToday ? 'Claim' : 'Claimed ✓'}
                   </ThemedText>
@@ -120,18 +116,22 @@ export default function MissionsScreen() {
 }
 
 function TopTabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress} style={styles.topTab}>
       <ThemedText type="subtitle" style={[styles.topTabLabel, !active && styles.topTabInactive]}>
         {label}
       </ThemedText>
       {/* Gold underline marks the active top tab (reward domain). */}
-      {active && <View style={[styles.topTabUnderline, { backgroundColor: GOLD }]} />}
+      {active && <View style={[styles.topTabUnderline, { backgroundColor: theme.gold }]} />}
     </Pressable>
   );
 }
 
 function SubTabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable
       accessibilityRole="button"
@@ -147,6 +147,8 @@ function SubTabButton({ label, active, onPress }: { label: string; active: boole
 
 /** One Mission: title + progress bar & count on the left, reward + state in a fixed right column. */
 function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () => void }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const ratio = Math.max(0, Math.min(1, mission.progress / mission.target));
   const muted = mission.claimed;
 
@@ -161,16 +163,17 @@ function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () =>
             {mission.progress}/{mission.target}
           </ThemedText>
         </View>
-        <View style={[styles.progressTrack, { backgroundColor: muted ? '#EEEAE1' : GOLD_TINT }]}>
-          <View style={[styles.progressFill, { backgroundColor: muted ? '#C9C2B4' : GOLD, width: `${ratio * 100}%` }]} />
+        <View style={[styles.progressTrack, { backgroundColor: muted ? theme.backgroundSelected : theme.goldTint }]}>
+          {/* Muted (claimed) fill keeps its warm-grey wash — no matching token; reads on light and dark. */}
+          <View style={[styles.progressFill, { backgroundColor: muted ? '#C9C2B4' : theme.gold, width: `${ratio * 100}%` }]} />
         </View>
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.missionReward}>
-        <View style={[styles.rewardChip, { backgroundColor: muted ? '#EDEAE3' : GOLD_TINT }]}>
-          <ThemedText type="smallBold" style={{ color: muted ? '#9A9A93' : GOLD_STRONG }}>
+        <View style={[styles.rewardChip, { backgroundColor: muted ? theme.backgroundSelected : theme.goldTint }]}>
+          <ThemedText type="smallBold" style={{ color: muted ? theme.textMuted : theme.goldStrong }}>
             🪙 +{mission.rewardCoins}
           </ThemedText>
         </View>
@@ -185,7 +188,7 @@ function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () =>
             accessibilityRole="button"
             accessibilityLabel={`Claim ${mission.rewardCoins} Coins`}
             onPress={onClaim}
-            style={[styles.claimPill, { backgroundColor: CORAL }]}>
+            style={[styles.claimPill, { backgroundColor: theme.coral }]}>
             <ThemedText type="smallBold" style={styles.claimInk}>
               Claim
             </ThemedText>
@@ -196,15 +199,25 @@ function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () =>
   );
 }
 
-const LOGIN_TILE_STYLE: Record<LoginDayView['status'], { bg: string; text: string; border?: string }> = {
-  claimed: { bg: '#E9F3EC', text: '#6a8a72' },
-  today: { bg: '#FCE7B0', text: GOLD_STRONG, border: '#E9B23E' },
-  upcoming: { bg: '#F1EDE4', text: '#AEA697' },
-};
+// Login-rail tile look by status, keyed to the active theme so tints flip to dark
+// washes and text stays readable. (Was a bespoke light-only palette; the claimed
+// text shifted from a sage green to the `success` token and the muted tones to
+// neutral tokens so the rail carries on dark.)
+function loginTileLook(
+  c: ReturnType<typeof useTheme>,
+): Record<LoginDayView['status'], { bg: string; text: string; border?: string }> {
+  return {
+    claimed: { bg: c.successTint, text: c.success },
+    today: { bg: c.goldTint, text: c.goldStrong, border: c.gold },
+    upcoming: { bg: c.backgroundSelected, text: c.textMuted },
+  };
+}
 
 /** One tile of the Login reward rail: day label · divider · prize, shaded by status. */
 function LoginDayTile({ day }: { day: LoginDayView }) {
-  const look = LOGIN_TILE_STYLE[day.status];
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const look = loginTileLook(theme)[day.status];
   return (
     <View
       style={[
@@ -225,7 +238,8 @@ function LoginDayTile({ day }: { day: LoginDayView }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
   scrim: {
     flex: 1,
     backgroundColor: 'rgba(40,30,20,0.5)',
@@ -301,7 +315,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subTabActive: {
-    backgroundColor: '#fff',
+    backgroundColor: c.backgroundElement,
     shadowColor: 'rgba(70,50,25,0.3)',
     shadowOpacity: 1,
     shadowRadius: 7,
@@ -309,10 +323,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   subTabActiveText: {
-    color: GOLD_STRONG,
+    color: c.goldStrong,
   },
   subTabInactiveText: {
-    color: Colors.light.textSecondary,
+    color: c.textSecondary,
   },
   list: {
     gap: Spacing.two,
@@ -320,10 +334,10 @@ const styles = StyleSheet.create({
   missionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: c.backgroundElement,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#F1ECE3',
+    borderColor: c.hairline,
     padding: Spacing.two + 2,
     gap: Spacing.two,
   },
@@ -354,7 +368,7 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     alignSelf: 'stretch',
-    backgroundColor: '#EEE7D6',
+    backgroundColor: c.hairline,
   },
   missionReward: {
     width: 76,
@@ -373,7 +387,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: Spacing.one + 2,
     borderRadius: 10,
-    backgroundColor: '#EDEAE3',
+    backgroundColor: c.backgroundSelected,
   },
   claimPill: {
     alignSelf: 'stretch',
@@ -383,7 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   claimInk: {
-    color: INK,
+    color: c.text,
   },
   loginIntro: {
     textAlign: 'center',

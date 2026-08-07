@@ -42,7 +42,7 @@ export function ChoiceChips<T extends string | number>({
             ]}>
             <ThemedText
               type="smallBold"
-              style={selected ? styles.selectedLabel : undefined}
+              style={selected ? { color: theme.backgroundElement } : undefined}
               themeColor={selected ? undefined : 'textSecondary'}>
               {option.label}
             </ThemedText>
@@ -64,8 +64,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-  },
-  selectedLabel: {
-    color: '#ffffff',
   },
 });

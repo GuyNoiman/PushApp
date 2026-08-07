@@ -22,11 +22,8 @@ import {
   remaining,
   type SampleAchievement,
 } from '@/components/achievements/sampleAchievements';
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const GOLD = Colors.light.gold;
-const GOLD_STRONG = Colors.light.goldStrong;
 
 // Medal-face finishes (mockup v14 `.mgold` / `.msil` / `.mlock` radial gradients —
 // a local palette like GlossyTile's, since these are sphere gradients, not flat tokens).
@@ -129,6 +126,7 @@ function MedalCell({
   achievement: SampleAchievement;
   onPress: () => void;
 }) {
+  const theme = useTheme();
   const unlocked = isUnlocked(achievement);
 
   return (
@@ -137,7 +135,7 @@ function MedalCell({
       accessibilityLabel={`${achievement.name} — ${achievement.condition}`}
       onPress={onPress}
       style={({ pressed }) => [styles.cell, pressed && styles.pressed]}>
-      <ThemedView type="backgroundElement" style={[styles.cellCard, { borderColor: Colors.light.hairline }]}>
+      <ThemedView type="backgroundElement" style={[styles.cellCard, { borderColor: theme.hairline }]}>
         <Medal achievement={achievement} />
         <ThemedText
           type="smallBold"
@@ -253,8 +251,8 @@ function AchievementSheet({
               </View>
             )}
 
-            <View style={[styles.rewardPill, { backgroundColor: GOLD }]}>
-              <ThemedText type="smallBold" style={{ color: GOLD_STRONG }}>
+            <View style={[styles.rewardPill, { backgroundColor: theme.gold }]}>
+              <ThemedText type="smallBold" style={{ color: theme.goldStrong }}>
                 {unlocked ? 'Earned' : 'Reward'} · {achievement.reward}
               </ThemedText>
             </View>

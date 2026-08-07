@@ -134,7 +134,7 @@ export function BuddyInventory({
       {lockedHint && (
         <View pointerEvents="none" style={styles.tooltipRow}>
           <View style={[styles.tooltip, { backgroundColor: theme.text }]}>
-            <ThemedText type="small" style={styles.tooltipText}>
+            <ThemedText type="small" style={[styles.tooltipText, { color: theme.background }]}>
               🔒 Unlocks at level {CATEGORIES.find((c) => c.id === lockedHint)?.unlockLevel ?? '—'}
             </ThemedText>
             <View style={[styles.tooltipCaret, { backgroundColor: theme.text }]} />
@@ -392,7 +392,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   tooltipText: {
-    color: '#ffffff',
     textAlign: 'center',
   },
   tooltipCaret: {

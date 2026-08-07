@@ -7,25 +7,20 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, Text, View, StyleSheet } from 'react-native';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
-// The five nav tabs (v14 mockup screen-01 / screen-10): Home · Explore · Friends ·
-// Buddy · Inbox — icon-only, no labels, no active-pill background. Inactive icons
-// are muted gray; the active tab takes a per-tab meaning-based accent (mockup-
-// evidenced: Home = coral, Buddy = pink; Friends = purple / Inbox = coral per
-// Design_System.md §2's documented per-area accents; Explore = teal, the default
-// brand colour). Kept in sync with the native tab bar in `app-tabs.tsx`.
+// The five mature nav tabs (mature redesign 2026-08-07, `mature_proposal.html`):
+// Home · Journeys · Circle · Inbox · Settings — a calm icon+label bar. One accent
+// does the work: the active tab is turquoise (`theme.teal`), inactive tabs are
+// muted neutral (`theme.textMuted`) — no per-tab rainbow, no active-pill
+// background. Inbox was re-added and Settings brought back as the 5th tab (founder
+// feedback 2026-08-07); Coach, Explore and Buddy stay archived out of the bar
+// (routes still exist). Kept in sync with the native tab bar in `app-tabs.tsx`.
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
-const activeColors: Record<string, string> = {
-  home: Colors.light.coral,
-  explore: Colors.light.teal,
-  friends: Colors.light.purple,
-  buddy: Colors.light.pink,
-  inbox: Colors.light.coral,
-};
 
 export default function AppTabs() {
   return (
@@ -36,20 +31,24 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton name="home" icon="home-outline" />
+            <TabButton label="Home" icon="home-outline" iconActive="home" />
           </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton name="explore" icon="compass-outline" />
+          <TabTrigger name="journeys" href="/journeys" asChild>
+            <TabButton label="Journeys" icon="git-branch-outline" iconActive="git-branch" />
           </TabTrigger>
+          {/* The Support-Circle surface is labelled "Circle" in the mature nav. */}
           <TabTrigger name="friends" href="/friends" asChild>
-            <TabButton name="friends" icon="people-outline" />
-          </TabTrigger>
-          <TabTrigger name="buddy" href="/buddy" asChild>
-            <TabButton name="buddy" icon="happy-outline" />
+            <TabButton label="Circle" icon="people-outline" iconActive="people" />
           </TabTrigger>
           <TabTrigger name="inbox" href="/inbox" asChild>
-            <TabButton name="inbox" icon="mail-outline" hasUnread />
+            <TabButton label="Inbox" icon="mail-outline" iconActive="mail" />
           </TabTrigger>
+          <TabTrigger name="settings" href="/settings" asChild>
+            <TabButton label="Settings" icon="settings-outline" iconActive="settings" />
+          </TabTrigger>
+          {/* ARCHIVED (2026-08-07, mature redesign): Coach, Explore and Buddy stay
+              removed from the nav — their routes still exist but are no longer
+              tabbable. See 04_Product/UX/Archived_Screens.md. */}
         </CustomTabList>
       </TabList>
     </Tabs>
@@ -59,20 +58,26 @@ export default function AppTabs() {
 export function TabButton({
   isFocused,
   icon,
-  name,
-  hasUnread,
+  iconActive,
+  label,
   ...props
-}: TabTriggerSlotProps & { icon: IoniconName; name: string; hasUnread?: boolean }) {
-  const color = isFocused ? activeColors[name] : Colors.light.textMuted;
+}: TabTriggerSlotProps & { icon: IoniconName; iconActive: IoniconName; label: string }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  // One accent for the active tab; muted neutral for the rest (Design System —
+  // colour is meaning, used sparingly: teal = active/progress).
+  const color = isFocused ? theme.teal : theme.textMuted;
   return (
     <Pressable {...props} style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
-      <Ionicons name={icon} size={24} color={color} />
-      {hasUnread && <View style={styles.unreadDot} />}
+      <Ionicons name={isFocused ? iconActive : icon} size={22} color={color} />
+      <Text style={[styles.label, { color }]}>{label}</Text>
     </Pressable>
   );
 }
 
 export function CustomTabList(props: TabListProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View {...props} style={styles.tabListContainer}>
       {props.children}
@@ -80,10 +85,9 @@ export function CustomTabList(props: TabListProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   // Anchored to the BOTTOM of the viewport (a real bottom nav), not an absolute
-  // overlay sitting on top of page content — fixes the web-harness bug where the
-  // bar used to clip ~140px off the top of every screen.
+  // overlay sitting on top of page content.
   tabListContainer: {
     position: 'absolute',
     bottom: 0,
@@ -92,9 +96,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: Colors.light.backgroundElement,
+    backgroundColor: c.backgroundElement,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.hairline,
+    borderTopColor: c.hairline,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     maxWidth: MaxContentWidth,
@@ -102,18 +106,17 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   tabButton: {
-    padding: Spacing.two,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.half,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.light.coral,
   },
 });

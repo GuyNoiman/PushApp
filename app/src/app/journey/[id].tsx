@@ -204,7 +204,7 @@ function StepRow({ step, isNext }: { step: Step; isNext: boolean }) {
           status === 'upcoming' && { borderColor: theme.hairline },
         ]}>
         {status === 'done' && (
-          <ThemedText style={styles.check}>✓</ThemedText>
+          <ThemedText style={[styles.check, { color: theme.backgroundElement }]}>✓</ThemedText>
         )}
       </View>
       <View style={styles.stepText}>
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   check: {
-    color: '#FFFFFF',
+    // Colour is applied inline from the active theme (backgroundElement).
     fontSize: 13,
     lineHeight: 16,
   },

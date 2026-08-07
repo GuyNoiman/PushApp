@@ -1,4 +1,9 @@
-import { DefaultTheme, ThemeProvider, type Theme } from '@react-navigation/native';
+import {
+  DarkTheme as NavDarkDefault,
+  DefaultTheme,
+  ThemeProvider,
+  type Theme,
+} from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, FontAssets } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AppProvider } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
@@ -15,18 +21,31 @@ import { SocialProvider } from '@/state/SocialProvider';
 
 SplashScreen.preventAutoHideAsync();
 
-// The app is warm-light only (Design System §2). Force the navigation theme to
-// our palette so screen backgrounds, cards, and borders are on-brand rather than
-// the stock white/black defaults. Dark mode is future work.
-const NavTheme: Theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: Colors.light.tint,
-    background: Colors.light.background,
-    card: Colors.light.backgroundElement,
-    text: Colors.light.text,
-    border: Colors.light.hairline,
+// Force the navigation chrome onto OUR palette (both schemes) so screen
+// backgrounds, cards, and borders are on-brand rather than the stock white/black
+// react-navigation defaults. The light/dark pair mirrors `Colors` in theme.ts.
+const NavThemes: Record<'light' | 'dark', Theme> = {
+  light: {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: Colors.light.tint,
+      background: Colors.light.background,
+      card: Colors.light.backgroundElement,
+      text: Colors.light.text,
+      border: Colors.light.hairline,
+    },
+  },
+  dark: {
+    ...NavDarkDefault,
+    colors: {
+      ...NavDarkDefault.colors,
+      primary: Colors.dark.tint,
+      background: Colors.dark.background,
+      card: Colors.dark.backgroundElement,
+      text: Colors.dark.text,
+      border: Colors.dark.hairline,
+    },
   },
 };
 
@@ -37,6 +56,7 @@ export default function RootLayout() {
   // splash forever, so a missing font degrades to the system stack rather than a
   // blank screen.
   const [fontsLoaded, fontError] = useFonts(FontAssets);
+  const scheme = useColorScheme();
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -57,14 +77,15 @@ export default function RootLayout() {
         <AuthProvider>
           <EntitlementProvider>
             <SocialProvider>
-              <ThemeProvider value={NavTheme}>
-                <StatusBar style="dark" />
+              <ThemeProvider value={NavThemes[scheme]}>
+                <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
                 <AnimatedSplashOverlay />
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
                   <Stack.Screen name="journey/[id]" />
-                  <Stack.Screen name="journeys" options={{ presentation: 'modal' }} />
+                  {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),
+                      not a pushed modal (mature redesign 2026-08-07). */}
                   <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
                   <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
                   {/* Missions is a centered floating modal (screen-16): a transparent

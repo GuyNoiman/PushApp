@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PushApp - My Journeys</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "text-main": "#1F292E",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "urgent-amber": "#D68C45",
+                        "inverse-primary": "#95d4b3",
+                        "ai-bubble": "#F1F3F2",
+                        "primary-fixed-dim": "#95d4b3",
+                        "on-secondary-container": "#255f80",
+                        "surface-container-low": "#f5f3ee",
+                        "surface-bright": "#fbf9f4",
+                        "background": "#fbf9f4",
+                        "on-secondary-fixed-variant": "#064c6b",
+                        "on-primary": "#ffffff",
+                        "growth-green": "#2D6A4F",
+                        "inverse-surface": "#30312e",
+                        "user-chip": "#FFFFFF",
+                        "surface-container": "#f0eee9",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e4e2dd",
+                        "secondary-fixed": "#c7e7ff",
+                        "text-muted": "#63737B",
+                        "outline": "#707973",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#a3d8fe",
+                        "tertiary": "#713638",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#2d6a4f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#dbdad5",
+                        "primary-fixed": "#b1f0ce",
+                        "warm-surface": "#FDFCFB",
+                        "on-tertiary-container": "#ffcfce",
+                        "calm-blue": "#457B9D",
+                        "primary": "#0f5238",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#6f3537",
+                        "tertiary-fixed": "#ffdad9",
+                        "inverse-on-surface": "#f2f1ec",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#8d4d4e",
+                        "secondary": "#2b6485",
+                        "on-tertiary-fixed": "#390b0e",
+                        "on-secondary-fixed": "#001e2e",
+                        "on-background": "#1b1c19",
+                        "surface": "#fbf9f4",
+                        "on-surface": "#1b1c19",
+                        "secondary-fixed-dim": "#98cdf2",
+                        "on-surface-variant": "#404943",
+                        "on-primary-fixed-variant": "#0e5138",
+                        "on-primary-container": "#a8e7c5",
+                        "surface-container-high": "#eae8e3",
+                        "surface-variant": "#e4e2dd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#2c694e",
+                        "outline-variant": "#bfc9c1",
+                        "on-primary-fixed": "#002114"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "sm": "12px",
+                        "base": "8px",
+                        "md": "16px",
+                        "container-margin": "20px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "chip-label": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "display-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "chip-label": ["15px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-text-main font-body-sm min-h-screen relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-40 bg-background">
+<div class="flex justify-between items-center w-full px-container-margin py-base max-w-md mx-auto">
+<!-- Leading Avatar -->
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-surface-container-high bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A close-up, soft-lit photographic portrait of a smiling young professional in a minimalist setting. Warm light mode aesthetic, emphasizing calm and approachability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA94Sl88ibPGvplppL5zAayDkUnHZTxNa_d7ysR9pClgqK8QOGZHtMk8IMFdIuj-eVlFT4PlqsOWyddZ--08ybm9RFUWbIelpL2Kup3ldUbTCQWGI1j4nQjrbEz5SVfpIHG3RxeTSlPkT3q406EYaLBk-XwnkRoAT39JHn7Ieou8Vau7E_DHvY_6TN8S4bjZnZgRWKUnZ8hKM7-2oI6vQcgcAEYtYFmWpm-617vCZI2rmFjmZy6eK5SVg"/>
+</div>
+<!-- Headline Brand -->
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-growth-green font-bold tracking-tight">PushApp</h1>
+<!-- Trailing Action -->
+<div class="font-label-caps text-label-caps text-primary bg-surface-container-high/50 px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span>7</span>
+<span>🔥</span>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-24 pb-32 px-container-margin max-w-md mx-auto flex flex-col gap-xl">
+<!-- Screen Header & Filters -->
+<section class="flex flex-col gap-md">
+<div>
+<h2 class="font-headline-md text-headline-md text-text-main">המסעות שלי</h2>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">מבט כולל על ההתקדמות והיעדים שלך.</p>
+</div>
+<!-- Scrollable Filter Chips -->
+<div class="flex gap-sm overflow-x-auto snap-x hide-scrollbar pb-1">
+<button class="snap-start shrink-0 px-5 py-2 rounded-full bg-growth-green text-on-primary font-chip-label text-chip-label shadow-sm hover:opacity-90 transition-opacity">
+                    פעילים
+                </button>
+<button class="snap-start shrink-0 px-5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant text-text-muted font-chip-label text-chip-label hover:bg-surface-container-low transition-colors">
+                    מוקפאים
+                </button>
+<button class="snap-start shrink-0 px-5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant text-text-muted font-chip-label text-chip-label hover:bg-surface-container-low transition-colors">
+                    הסתיימו
+                </button>
+<button class="snap-start shrink-0 px-5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant text-text-muted font-chip-label text-chip-label hover:bg-surface-container-low transition-colors">
+                    עתידיים
+                </button>
+</div>
+</section>
+<!-- Dream Group 1 -->
+<section class="flex flex-col gap-4">
+<!-- Dream Header -->
+<div class="flex items-center gap-2 border-b border-surface-container-high pb-2">
+<span class="material-symbols-outlined text-growth-green" style="font-variation-settings: 'FILL' 1;">spa</span>
+<h3 class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">חלום: להיות בריא יותר</h3>
+</div>
+<!-- Journey Card 1: Active -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_15px_rgba(31,41,46,0.04)] border border-surface-container-lowest hover:border-growth-green/20 transition-colors relative overflow-hidden">
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-text-main mb-1">ריצת בוקר</h4>
+<div class="flex items-center gap-1.5 text-growth-green">
+<span class="w-1.5 h-1.5 rounded-full bg-growth-green animate-pulse"></span>
+<span class="font-label-caps text-label-caps">פעיל</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-text-muted hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm">more_horiz</span>
+</button>
+</div>
+<!-- Progress Visual -->
+<div class="relative z-10">
+<div class="flex justify-between font-label-caps text-label-caps text-text-muted mb-2">
+<span>התקדמות שבועית</span>
+<span class="font-semibold text-text-main">2 מתוך 3</span>
+</div>
+<!-- Discrete Progress Bar -->
+<div class="flex gap-1 h-2 w-full">
+<div class="flex-1 rounded-full bg-growth-green shadow-[0_0_8px_rgba(45,106,79,0.3)]"></div>
+<div class="flex-1 rounded-full bg-growth-green shadow-[0_0_8px_rgba(45,106,79,0.3)]"></div>
+<div class="flex-1 rounded-full bg-surface-container-highest"></div>
+</div>
+</div>
+</div>
+<!-- Journey Card 2: Active -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_15px_rgba(31,41,46,0.04)] border border-surface-container-lowest hover:border-growth-green/20 transition-colors relative overflow-hidden">
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-text-main mb-1">תזונה מאוזנת</h4>
+<div class="flex items-center gap-1.5 text-growth-green">
+<span class="w-1.5 h-1.5 rounded-full bg-growth-green animate-pulse"></span>
+<span class="font-label-caps text-label-caps">פעיל</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-text-muted hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm">more_horiz</span>
+</button>
+</div>
+<!-- Progress Visual -->
+<div class="relative z-10">
+<div class="flex justify-between font-label-caps text-label-caps text-text-muted mb-2">
+<span>התקדמות שבועית</span>
+<span class="font-semibold text-text-main">5 מתוך 7</span>
+</div>
+<!-- Continuous Gradient Bar -->
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-l from-growth-green to-calm-blue rounded-full" style="width: 71%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Dream Group 2 -->
+<section class="flex flex-col gap-4 mt-sm">
+<!-- Dream Header -->
+<div class="flex items-center gap-2 border-b border-surface-container-high pb-2">
+<span class="material-symbols-outlined text-calm-blue" style="font-variation-settings: 'FILL' 1;">language</span>
+<h3 class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">חלום: ללמוד שפה חדשה</h3>
+</div>
+<!-- Journey Card 3: Frozen (Subdued state) -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-outline-variant/30 opacity-80">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-text-main mb-1">ספרדית בסיסית</h4>
+<div class="flex items-center gap-1.5 text-text-muted">
+<span class="material-symbols-outlined text-[14px]">ac_unit</span>
+<span class="font-label-caps text-label-caps">מוקפא</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-text-muted">
+<span class="material-symbols-outlined text-sm">more_horiz</span>
+</button>
+</div>
+<!-- Progress Visual (Empty/Paused) -->
+<div>
+<div class="flex justify-between font-label-caps text-label-caps text-text-muted mb-2 opacity-50">
+<span>התקדמות שבועית</span>
+<span>0 מתוך 2</span>
+</div>
+<div class="flex gap-1 h-2 w-full opacity-50">
+<div class="flex-1 rounded-full bg-surface-container-high"></div>
+<div class="flex-1 rounded-full bg-surface-container-high"></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest shadow-[0_-4px_15px_rgba(31,41,46,0.04)] rounded-t-xl">
+<div class="flex justify-around items-center px-xs pb-sm pt-xs max-w-md mx-auto">
+<!-- Inactive: Home -->
+<button class="flex flex-col items-center justify-center text-text-muted px-4 py-1.5 hover:bg-surface-container-low transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-caps text-label-caps">Home</span>
+</button>
+<!-- Inactive: Community -->
+<button class="flex flex-col items-center justify-center text-text-muted px-4 py-1.5 hover:bg-surface-container-low transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1">group</span>
+<span class="font-label-caps text-label-caps">Community</span>
+</button>
+<!-- Inactive: Coach -->
+<button class="flex flex-col items-center justify-center text-text-muted px-4 py-1.5 hover:bg-surface-container-low transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1">smart_toy</span>
+<span class="font-label-caps text-label-caps">Coach</span>
+</button>
+<!-- Active: Journeys -->
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1.5 scale-95 duration-200 ease-out shadow-inner">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">auto_awesome_motion</span>
+<span class="font-label-caps text-label-caps font-bold">Journeys</span>
+</button>
+</div>
+</nav>
+</body></html>

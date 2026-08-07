@@ -260,7 +260,7 @@ export default function NewJourneyScreen() {
               {openTooltip !== null && (
                 <View style={styles.tooltipRow}>
                   <View style={[styles.tooltip, { backgroundColor: theme.text }]}>
-                    <ThemedText type="small" style={styles.tooltipText}>
+                    <ThemedText type="small" style={[styles.tooltipText, { color: theme.backgroundElement }]}>
                       {STAGE_TITLES[openTooltip]}
                     </ThemedText>
                   </View>
@@ -370,7 +370,7 @@ export default function NewJourneyScreen() {
                         accessibilityLabel="Add reminder"
                         onPress={addHardMoment}
                         style={[styles.addButton, { backgroundColor: theme.teal }]}>
-                        <ThemedText type="smallBold" style={styles.addButtonLabel}>
+                        <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
                           Add
                         </ThemedText>
                       </Pressable>
@@ -707,7 +707,7 @@ function EditRow({
 }) {
   const theme = useTheme();
   return (
-    <View style={styles.rowE}>
+    <View style={[styles.rowE, { backgroundColor: theme.backgroundElement }]}>
       <ThemedText type="smallBold">{label}</ThemedText>
       <ThemedText type="smallBold" style={[styles.rowValue, valueColor ? { color: valueColor } : undefined]}>
         {value}
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   tooltipText: {
-    color: '#ffffff',
+    // Colour is applied inline from the active theme (backgroundElement).
     fontWeight: '600',
   },
   stageTitle: {
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: '#fff',
+    // backgroundColor is applied inline from the active theme (backgroundElement).
     borderWidth: 1,
     borderRadius: Radius.card,
     paddingHorizontal: Spacing.three,
@@ -950,9 +950,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  addButtonLabel: {
-    color: '#ffffff',
   },
   savedChip: {
     flexDirection: 'row',

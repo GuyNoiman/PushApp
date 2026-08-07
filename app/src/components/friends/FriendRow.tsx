@@ -14,11 +14,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FriendActionMenu, type FriendMenuItem } from '@/components/friends/FriendActionMenu';
 import { ThemedText } from '@/components/themed-text';
-import { Colors, FontFamily, Radius, Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const CORAL = Colors.light.coral;
-const INK = Colors.light.text;
 
 export function FriendRow({
   name,
@@ -63,8 +60,8 @@ export function FriendRow({
           accessibilityRole="button"
           accessibilityLabel={`Cheer ${name}`}
           onPress={onCheer}
-          style={({ pressed }) => [styles.cheerPill, { backgroundColor: CORAL }, pressed && styles.pressed]}>
-          <ThemedText type="smallBold" style={styles.cheerLabel}>
+          style={({ pressed }) => [styles.cheerPill, { backgroundColor: theme.coral }, pressed && styles.pressed]}>
+          <ThemedText type="smallBold" style={[styles.cheerLabel, { color: theme.text }]}>
             Cheer
           </ThemedText>
         </Pressable>
@@ -112,7 +109,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cheerLabel: {
-    color: INK,
     fontFamily: FontFamily.headingBold,
   },
   pressed: {

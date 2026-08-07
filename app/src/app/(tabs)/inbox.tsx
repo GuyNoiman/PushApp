@@ -1,22 +1,29 @@
 /**
- * Inbox — the messages surface (v14 mockup screen-15). A header ("Inbox" + a mail
- * glyph), Friends · Allies · Groups sub-tabs (Friends default), and an IG-style
- * list of conversation rows: rounded tinted avatar, Baloo name, Inter preview +
- * muted timestamp, coral unread dot. Unread rows sort to the top and a tab that
- * holds an unread item wears a coral dot (Inbox_Screen.md).
+ * Inbox — the messages surface, an Instagram-DM layout with our category tabs
+ * restored (founder feedback 2026-08-07, reversing the previous Primary/Requested
+ * split). A header ("Inbox" + a clearly-labelled compose button), a rounded
+ * search field, and a four-tab switch:
+ *   · FRIENDS   — accepted friends + received cheers / nudges (the conversations).
+ *   · ALLIES    — Journeys the user is an Ally of (a friend's shared progress).
+ *   · GROUPS    — group threads (not a POC feature yet → calm empty state).
+ *   · REQUESTED — incoming connection requests, each an actionable row
+ *     (Accept / Decline), mirroring IG's message requests.
+ * Rows are clean IG-DM lines — a round monogram avatar, name, preview, tabular
+ * timestamp, unread dot. The search field filters the current list by name,
+ * client-side (no backend).
  *
  * Presentational only (Engineering Bible §19): it reads SocialProvider state and
- * derives the list from REAL social data —
- *   · incoming friend REQUESTS (friends, direction 'incoming', status 'pending')
- *     surface under Friends as an actionable row (Accept / Decline).
- *   · accepted friends surface under Friends.
- *   · received CHEERS surface under Allies with the cheer text.
- * When the social pillar is off (no Supabase env) it shows a friendly empty state.
- * Groups is a themed placeholder — not a POC feature.
+ * derives each list from REAL social data —
+ *   · incoming friend REQUESTS surface under Requested (Accept / Decline).
+ *   · accepted friends + received CHEERS / nudges surface under Friends.
+ *   · Journeys the user is an Ally of surface under Allies.
+ * When a list's real data is empty it falls back to the dev sample (`sampleInbox`
+ * / `sampleDeservePraise`, via `useSampleWhenEmpty`) so the surface always reads
+ * populated; Groups has no POC data and shows a calm empty state.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { InboxEmpty } from '@/components/inbox/InboxEmpty';
@@ -24,39 +31,35 @@ import { InboxRow, type InboxRowData } from '@/components/inbox/InboxRow';
 import { InboxTabs, type InboxTab, type InboxTabKey } from '@/components/inbox/InboxTabs';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import type { Cheer, Friend } from '@/core/social';
+import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import type { AllyProgress, Cheer, Friend, SocialProfile } from '@/core/social';
+import {
+  sampleDeservePraise,
+  sampleInbox,
+  useSampleWhenEmpty,
+  type SampleFriend,
+  type SampleInboxItem,
+} from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import { useSocial } from '@/state/SocialProvider';
 
-// A small warm palette for the initial-circle avatars, cycled by name so every
-// person gets a stable, distinct tint (Design System §2 role accents).
-const AVATAR_TINTS: { bg: string; ink: string }[] = [
-  { bg: Colors.light.purpleTint, ink: Colors.light.purpleStrong },
-  { bg: Colors.light.tealTint, ink: Colors.light.tealStrong },
-  { bg: Colors.light.coralTint, ink: Colors.light.coralStrong },
-  { bg: Colors.light.goldTint, ink: Colors.light.goldStrong },
-  { bg: Colors.light.blueTint, ink: Colors.light.blueStrong },
-  { bg: Colors.light.pinkTint, ink: Colors.light.pink },
-];
-
-function tintFor(seed: string): { bg: string; ink: string } {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return AVATAR_TINTS[Math.abs(hash) % AVATAR_TINTS.length];
-}
-
 /** A friend's display name: their Buddy name if set, else their @handle. */
 function friendName(friend: Friend): string {
-  return friend.profile.buddySummary?.name?.trim() || `@${friend.profile.handle}`;
+  return profileName(friend.profile);
+}
+
+/** A profile's display name: their Buddy name if set, else their @handle. */
+function profileName(profile: SocialProfile): string {
+  return profile.buddySummary?.name?.trim() || `@${profile.handle}`;
 }
 
 export default function InboxScreen() {
   const social = useSocial();
   const theme = useTheme();
   const [selected, setSelected] = useState<InboxTabKey>('friends');
+  const [query, setQuery] = useState('');
 
-  // ── Derive each tab's rows from real social state ──────────────────────────
+  // ── Derive each list's rows from real social state ─────────────────────────
   const incoming = useMemo(
     () => social.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming'),
     [social.friends],
@@ -66,16 +69,52 @@ export default function InboxScreen() {
     [social.friends],
   );
 
-  const friendRows = useMemo<InboxRowData[]>(() => {
-    const requests: InboxRowData[] = incoming.map((f) => {
-      const tint = tintFor(f.profile.id);
+  // FRIENDS — accepted friends + received cheers / nudges (the conversations).
+  const friendsRowsReal = useMemo<InboxRowData[]>(() => {
+    const cheers: InboxRowData[] = social.incomingCheers.map((cheer: Cheer) => {
+      const from = social.friends.find((f) => f.profile.id === cheer.fromId);
+      const name = from ? friendName(from) : 'A Buddy';
       return {
+        id: `cheer:${cheer.id}`,
+        name,
+        preview: cheer.kind === 'nudge' ? 'Sent you a nudge' : 'Cheered you on',
+        timestamp: relativeTime(cheer.createdAt),
+        unread: true,
+      };
+    });
+
+    const buddies: InboxRowData[] = accepted.map((f) => ({
+      id: `friend:${f.profile.id}`,
+      name: friendName(f),
+      preview: 'In your Support Circle',
+    }));
+
+    // Unread (cheers) sort to the top (Inbox_Screen.md).
+    return [...cheers, ...buddies];
+  }, [social.incomingCheers, social.friends, accepted]);
+
+  // ALLIES — Journeys the user is an Ally of: a friend's shared progress.
+  const alliesRowsReal = useMemo<InboxRowData[]>(
+    () =>
+      social.allyProgress.map((ap: AllyProgress) => ({
+        id: `ally:${ap.journeyId}`,
+        name: profileName(ap.owner),
+        preview: ap.title
+          ? `${ap.title} · ${Math.round(ap.progress * 100)}%`
+          : `Sharing a Journey · ${Math.round(ap.progress * 100)}%`,
+        timestamp: relativeTime(ap.updatedAt),
+      })),
+    [social.allyProgress],
+  );
+
+  // REQUESTED — incoming connection requests, each actionable.
+  const requestedRowsReal = useMemo<InboxRowData[]>(
+    () =>
+      incoming.map((f) => ({
         id: `req:${f.profile.id}`,
         name: friendName(f),
         preview: 'Wants to join your Support Circle',
         unread: true,
-        tint: tint.bg,
-        tintInk: tint.ink,
         actions: [
           { label: 'Accept', onPress: () => void social.respondToFriend(f.profile.id, true) },
           {
@@ -84,107 +123,185 @@ export default function InboxScreen() {
             onPress: () => void social.respondToFriend(f.profile.id, false),
           },
         ],
-      };
-    });
+      })),
+    [incoming, social],
+  );
 
-    const buddies: InboxRowData[] = accepted.map((f) => {
-      const tint = tintFor(f.profile.id);
-      return {
-        id: `friend:${f.profile.id}`,
-        name: friendName(f),
-        preview: 'In your Support Circle · say hi 👋',
-        tint: tint.bg,
-        tintInk: tint.ink,
-      };
-    });
+  // ── Fall back to the dev sample per-list so the tabs read populated (founder
+  // feedback). Sample rows carry no real target — their inline actions are inert
+  // placeholders, never persisted or sent. Groups has no POC data → empty state. ──
+  const sampleFriendsRows = useMemo<InboxRowData[]>(
+    () => sampleInbox.filter((s) => s.kind !== 'request').map((s) => sampleRow(s)),
+    [],
+  );
+  const sampleAlliesRows = useMemo<InboxRowData[]>(
+    () => sampleDeservePraise.map((f) => sampleAllyRow(f)),
+    [],
+  );
+  const sampleRequestedRows = useMemo<InboxRowData[]>(
+    () =>
+      sampleInbox
+        .filter((s) => s.kind === 'request')
+        .map((s) =>
+          sampleRow(s, [
+            { label: 'Accept', onPress: () => {} },
+            { label: 'Decline', variant: 'ghost', onPress: () => {} },
+          ]),
+        ),
+    [],
+  );
 
-    // Unread (requests) sort to the top (Inbox_Screen.md).
-    return [...requests, ...buddies];
-  }, [incoming, accepted, social]);
-
-  const allyRows = useMemo<InboxRowData[]>(() => {
-    return social.incomingCheers.map((cheer: Cheer) => {
-      const from = social.friends.find((f) => f.profile.id === cheer.fromId);
-      const name = from ? friendName(from) : 'A Buddy';
-      const tint = tintFor(cheer.fromId);
-      return {
-        id: `cheer:${cheer.id}`,
-        name,
-        preview: cheer.kind === 'nudge' ? 'Sent you a nudge 👊' : 'Cheered you on 🎉',
-        timestamp: relativeTime(cheer.createdAt),
-        unread: true,
-        tint: tint.bg,
-        tintInk: tint.ink,
-      };
-    });
-  }, [social.incomingCheers, social.friends]);
+  const friendsRows = useSampleWhenEmpty(friendsRowsReal, sampleFriendsRows);
+  const alliesRows = useSampleWhenEmpty(alliesRowsReal, sampleAlliesRows);
+  const requestedRows = useSampleWhenEmpty(requestedRowsReal, sampleRequestedRows);
 
   const tabs: InboxTab[] = [
-    { key: 'friends', label: 'Friends', unread: friendRows.some((r) => r.unread) },
-    { key: 'allies', label: 'Allies', unread: allyRows.some((r) => r.unread) },
+    { key: 'friends', label: 'Friends', unread: friendsRows.some((r) => r.unread) },
+    { key: 'allies', label: 'Allies' },
     { key: 'groups', label: 'Groups' },
+    { key: 'requested', label: 'Requested', count: requestedRows.length || undefined },
   ];
 
-  const rows = selected === 'friends' ? friendRows : selected === 'allies' ? allyRows : [];
+  const rows =
+    selected === 'friends'
+      ? friendsRows
+      : selected === 'allies'
+        ? alliesRows
+        : selected === 'requested'
+          ? requestedRows
+          : []; // groups — no POC data yet
+
+  // Client-side name filter (Instagram-style search — no backend).
+  const q = query.trim().toLowerCase();
+  const visibleRows = q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <ThemedText type="title">Inbox</ThemedText>
-          <View style={[styles.headerButton, { backgroundColor: theme.backgroundSelected }]}>
-            <Ionicons name="mail-outline" size={20} color={theme.textSecondary} />
+          <View style={styles.compose}>
+            <View style={[styles.composeButton, { backgroundColor: theme.tealTint }]}>
+              <Ionicons name="create-outline" size={20} color={theme.tint} />
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              New message
+            </ThemedText>
           </View>
         </View>
 
-        {!social.enabled ? (
-          <InboxEmpty
-            emoji="✉️"
-            title="Coming together"
-            subtitle="Turn on the social pillar to see messages from your Friends, Allies, and Groups here."
-          />
+        <View style={styles.searchWrap}>
+          <View style={[styles.searchField, { backgroundColor: theme.backgroundSelected }]}>
+            <Ionicons name="search" size={18} color={theme.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search"
+              placeholderTextColor={theme.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              accessibilityLabel="Search messages by name"
+              style={[styles.searchInput, { color: theme.text }]}
+            />
+            {q ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                hitSlop={8}
+                onPress={() => setQuery('')}>
+                <Ionicons name="close-circle" size={18} color={theme.textMuted} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        <InboxTabs tabs={tabs} selected={selected} onSelect={setSelected} />
+
+        {social.error && (
+          <ThemedView
+            type="backgroundElement"
+            style={[styles.errorBanner, { borderColor: theme.hairline }]}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {social.error}
+            </ThemedText>
+          </ThemedView>
+        )}
+
+        {visibleRows.length === 0 ? (
+          q ? (
+            <InboxEmpty
+              emoji=""
+              title="No matches"
+              subtitle={`No conversations match "${query.trim()}".`}
+            />
+          ) : (
+            <InboxEmpty emoji="" title={emptyTitle(selected)} subtitle={emptySubtitle(selected)} />
+          )
         ) : (
-          <>
-            <InboxTabs tabs={tabs} selected={selected} onSelect={setSelected} />
-
-            {social.error && (
-              <ThemedView type="backgroundElement" style={[styles.errorBanner, { borderColor: theme.hairline }]}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {social.error}
-                </ThemedText>
-              </ThemedView>
-            )}
-
-            {selected === 'groups' ? (
-              <InboxEmpty
-                emoji="👥"
-                title="Groups are on the way"
-                subtitle="Group chats will appear here once you're part of one. Nothing to see yet."
-              />
-            ) : rows.length === 0 ? (
-              <InboxEmpty
-                emoji={selected === 'allies' ? '🎉' : '💬'}
-                title={selected === 'allies' ? 'No cheers yet' : 'No messages yet'}
-                subtitle={
-                  selected === 'allies'
-                    ? 'When an Ally cheers your Journey, it lands right here.'
-                    : 'Add a friend from the Friends tab and start your Support Circle.'
-                }
-              />
-            ) : (
-              <ScrollView
-                contentContainerStyle={styles.list}
-                showsVerticalScrollIndicator={false}>
-                {rows.map((row) => (
-                  <InboxRow key={row.id} row={row} />
-                ))}
-              </ScrollView>
-            )}
-          </>
+          <ScrollView
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            {visibleRows.map((row) => (
+              <InboxRow key={row.id} row={row} />
+            ))}
+          </ScrollView>
         )}
       </SafeAreaView>
     </ThemedView>
   );
+}
+
+/** Map a dev-sample inbox item to a presentational row. */
+function sampleRow(item: SampleInboxItem, actions?: InboxRowData['actions']): InboxRowData {
+  return {
+    id: `sample:${item.id}`,
+    name: item.name,
+    initials: item.initials,
+    preview: item.text.charAt(0).toUpperCase() + item.text.slice(1),
+    timestamp: item.when,
+    unread: true,
+    actions,
+  };
+}
+
+/** Map a dev-sample friend to an Allies row (a friend whose Journey you support). */
+function sampleAllyRow(friend: SampleFriend): InboxRowData {
+  return {
+    id: `sample-ally:${friend.id}`,
+    name: friend.name,
+    initials: friend.initials,
+    preview: friend.status,
+  };
+}
+
+/** Baloo title for an empty tab. */
+function emptyTitle(tab: InboxTabKey): string {
+  switch (tab) {
+    case 'requested':
+      return 'No requests';
+    case 'allies':
+      return 'No Allies yet';
+    case 'groups':
+      return 'No groups yet';
+    default:
+      return 'No messages yet';
+  }
+}
+
+/** Muted sub-line for an empty tab. */
+function emptySubtitle(tab: InboxTabKey): string {
+  switch (tab) {
+    case 'requested':
+      return 'When someone asks to join your Support Circle, it lands here.';
+    case 'allies':
+      return 'When a friend makes you an Ally on a Journey, their progress shows here.';
+    case 'groups':
+      return "Group threads aren't here yet. This is where your Circle's shared spaces will live.";
+    default:
+      return 'Add a friend from your Circle and start your Support Circle.';
+  }
 }
 
 /** Compact relative time for a cheer's timestamp, e.g. "2h" · "1d" · "now". */
@@ -218,21 +335,45 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
   },
-  headerButton: {
+  compose: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  composeButton: {
     width: 44,
     height: 44,
     borderRadius: Radius.iconButton,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  searchWrap: {
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.three,
+  },
+  searchField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.three,
+    height: 40,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
   errorBanner: {
     marginHorizontal: Spacing.four,
-    marginBottom: Spacing.two,
+    marginTop: Spacing.three,
     borderRadius: Radius.card,
     borderWidth: 1,
     padding: Spacing.three,
   },
   list: {
+    paddingTop: Spacing.two,
     paddingBottom: BottomTabInset + Spacing.four,
   },
 });

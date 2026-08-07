@@ -1,77 +1,161 @@
 /**
  * PushApp palette — the Design System (04_Product/Design_System.md §2), encoded.
  *
- * The design is a WARM LIGHT world: a near-white base `#FAFAF8` with white cards,
- * ink text, and a small, role-mapped accent palette (each colour encodes meaning,
- * not decoration). There is no dark design yet, so both `light` and `dark` map to
- * the same warm-light tokens for now — dark mode is future work. The base token
- * KEYS (`text`, `background`, `backgroundElement`, `backgroundSelected`,
- * `textSecondary`, `tint`) are kept so existing screens keep compiling; the
- * meaningful accent roles (coral/teal/blue/purple/gold/pink) are added on top.
+ * TWO worlds now exist, sharing one set of token KEYS so every screen that reads
+ * a token works in both:
+ *  - `light` — a WARM LIGHT world: near-white base `#FAFAF8`, white cards, ink text.
+ *  - `dark`  — a WARM DARK, TURQUOISE-LED world: a deep teal-ink base, lifted
+ *    teal-tinted cards, near-white text, and the accents brightened so they read
+ *    on dark. Turquoise (`tint`/`teal`) is the leading brand tone in both.
+ *
+ * Each accent encodes MEANING, not decoration. The `*Tint` role is a soft *wash*
+ * (a fill behind chips/tracks/selected rows); the `*Strong` role is the deeper/
+ * emphasised variant used for text or pressed states. In dark, tints become dark
+ * washes and strongs become lighter so contrast survives the inversion.
  */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
-/** The single warm-light theme. Neutrals + role-mapped accents (each = a meaning). */
+/**
+ * The MATURE light theme (2026-08-07 redesign). A warm near-grey ground, white
+ * cards, near-black ink; ONE deep-turquoise accent for progress + action; amber
+ * reserved for real urgency (streak / most-urgent). The legacy role accents
+ * (coral/blue/purple/pink/gold) are KEPT as keys — screens still compiling on them
+ * are being matured screen-by-screen — but retuned to muted, grown-up tones so
+ * nothing reads candy. New screens use only teal + amber + neutrals.
+ */
 const light = {
   // ── Neutrals (surfaces & text) ────────────────────────────────────────────
-  /** Screen base — warm near-white, not stark white (§2). */
-  background: '#FAFAF8',
-  /** Cards / raised surfaces sit lighter/whiter than the base. */
+  /** Screen base — warm near-grey, paper-like, not stark white. */
+  background: '#F6F5F1',
+  /** Cards / raised surfaces — clean white, separated by a hairline + soft shadow. */
   backgroundElement: '#FFFFFF',
   /** A calm tinted fill for selected / grouped chips and tracks. */
-  backgroundSelected: '#F1F0EC',
+  backgroundSelected: '#EEEDE7',
   /** Hairline borders between surfaces. */
-  hairline: '#E7E6E1',
-  /** Primary text — warm ink, never pure black. */
-  text: '#2E2E2C',
+  hairline: '#E4E2DC',
+  /** Primary text — near-black warm ink. */
+  text: '#1B1D1B',
   /** Secondary / supporting text. */
-  textSecondary: '#6B6B66',
+  textSecondary: '#5B605B',
   /** Muted text (timestamps, disabled hints). */
-  textMuted: '#9A9A93',
+  textMuted: '#8A8F89',
 
-  // ── Role-mapped accents (§2 — colour encodes meaning) ─────────────────────
-  /** Brand + navigation + Journey/Step growth-progress. Also the default `tint`. */
-  tint: '#17A2A6',
-  teal: '#17A2A6',
-  tealTint: '#DCEFF1',
-  tealStrong: '#1F7C86',
-  /** Coral — primary / CTAs / energy. Labelled in dark ink (white is unreadable). */
-  coral: '#F2765E',
-  coralTint: '#FBEAE4',
-  coralStrong: '#D85A30',
-  /** Blue — XP / Buddy level (game XP, distinct from teal "real growth"). */
-  blue: '#4A80E0',
-  blueTint: '#E6F1FB',
-  blueStrong: '#185FA5',
-  /** Purple — social / friends / Cheer. */
-  purple: '#8B6FD6',
-  purpleTint: '#EEEDFE',
-  purpleStrong: '#534AB7',
-  /** Gold — coins / rewards / trophies. */
-  gold: '#E7A22E',
-  goldTint: '#FCEFC9',
-  goldStrong: '#C98A0E',
-  /** Pink — consistency / streak. */
-  pink: '#EC6F9C',
-  pinkTint: '#FBE4EE',
-  /** Cream — a warm reward wash (panels behind reward content). */
-  cream: '#FBF3E9',
+  // ── The one accent + amber (colour = meaning, used sparingly) ──────────────
+  /** Deep turquoise — the single accent: progress AND primary action. */
+  tint: '#0E6E74',
+  teal: '#0E6E74',
+  tealTint: '#E1EFEF',
+  tealStrong: '#0A565B',
+  /** Amber — urgency ONLY (streak flame, most-urgent). Mapped onto the `gold` role. */
+  gold: '#AD7A2C',
+  goldTint: '#F2EAD9',
+  goldStrong: '#8A5E1C',
+  /** Coral — legacy CTA accent, retuned to a muted terracotta. */
+  coral: '#B4674F',
+  coralTint: '#F0E6E1',
+  coralStrong: '#8E4A34',
+  /** Blue — legacy, retuned to a muted slate. */
+  blue: '#3E6C99',
+  blueTint: '#E7EDF3',
+  blueStrong: '#2C4E70',
+  /** Purple — legacy social accent, retuned muted. */
+  purple: '#6E5FA6',
+  purpleTint: '#ECEAF3',
+  purpleStrong: '#4E447C',
+  /** Pink — legacy, retuned to a muted rose. */
+  pink: '#B05C79',
+  pinkTint: '#F1E5EA',
+  /** Cream — a warm neutral wash. */
+  cream: '#F3EFE7',
+  /** Legacy Buddy/Home scene (archived) — kept as calm neutrals. */
+  sceneSky: '#E7ECEA',
+  sceneGround: '#D8E0DA',
 
   // ── Status (gentle, no-shame) ─────────────────────────────────────────────
-  success: '#17A2A6',
-  successTint: '#E4F3EC',
-  danger: '#E86A5A',
-  dangerTint: '#FBE8E4',
+  success: '#2E7D6B',
+  successTint: '#E2EFEB',
+  danger: '#B4514A',
+  dangerTint: '#F1E4E2',
 } as const;
 
+/**
+ * The shape shared by both palettes: every `light` key mapped to a plain string.
+ * `light` is `as const` (so each value is a *literal* type — needed for the
+ * `ThemeColor` key union), which would otherwise force `dark` to reuse the exact
+ * light hexes. Widening to `string` here lets `dark` supply its own values while
+ * still guaranteeing it defines every key `light` does.
+ */
+export type Palette = { [K in keyof typeof light]: string };
+
+/**
+ * The MATURE dark theme (2026-08-07 redesign). Same keys as `light`; retuned for a
+ * calm, technical dark surface: a near-black warm ground, softly-lifted cards, a
+ * bright-but-controlled turquoise accent, amber for urgency only. Legacy accents
+ * kept as keys, muted. Tints are dark washes; strongs are lighter tones.
+ */
+const dark: Palette = {
+  // ── Neutrals (surfaces & text) ────────────────────────────────────────────
+  // Lifted off pure-black (founder: dark mode read "too black / no colour"). A
+  // charcoal ground with a faint cool cast; cards + nav lift clearly above it.
+  /** Screen base — charcoal, not near-black. */
+  background: '#181D1E',
+  /** Cards / raised surfaces (and the nav bar) lift clearly above the base. */
+  backgroundElement: '#222829',
+  /** A calm tinted fill for selected / grouped chips and tracks. */
+  backgroundSelected: '#2B3232',
+  /** Hairline borders between surfaces. */
+  hairline: '#353D3B',
+  /** Primary text — warm near-white, never pure white. */
+  text: '#ECEFEC',
+  /** Secondary / supporting text. */
+  textSecondary: '#A4ABA5',
+  /** Muted text (timestamps, disabled hints). */
+  textMuted: '#767D77',
+
+  // ── The one accent + amber (colour = meaning, used sparingly) ──────────────
+  /** Turquoise — the single accent: progress AND primary action. */
+  tint: '#42C7C9',
+  teal: '#42C7C9',
+  tealTint: '#123230',
+  tealStrong: '#7FE3E4',
+  /** Amber — urgency ONLY (streak / most-urgent). Mapped onto the `gold` role. */
+  gold: '#DBA660',
+  goldTint: '#322810',
+  goldStrong: '#EFC98A',
+  /** Coral — legacy CTA accent, muted. */
+  coral: '#D08A72',
+  coralTint: '#33241E',
+  coralStrong: '#E7B09B',
+  /** Blue — legacy, muted slate. */
+  blue: '#6E9BC4',
+  blueTint: '#182634',
+  blueStrong: '#A7C6E0',
+  /** Purple — legacy social accent, muted. */
+  purple: '#9A88C6',
+  purpleTint: '#221E30',
+  purpleStrong: '#C4B8E0',
+  /** Pink — legacy, muted rose. */
+  pink: '#CE8AA0',
+  pinkTint: '#2E1F26',
+  /** Cream — a warm neutral wash. */
+  cream: '#221E17',
+  /** Legacy Buddy/Home scene (archived) — calm dark neutrals. */
+  sceneSky: '#16201E',
+  sceneGround: '#1A2A26',
+
+  // ── Status (gentle, no-shame) ─────────────────────────────────────────────
+  success: '#46C7B0',
+  successTint: '#123230',
+  danger: '#DD8378',
+  dangerTint: '#301E1B',
+};
+
 export const Colors = {
-  // Only a warm light theme exists (Design System defines no dark). Both map to
-  // it so a stray dark-mode read never produces an off-brand black screen.
   light,
-  dark: light,
+  dark,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
@@ -87,18 +171,18 @@ export const Radius = {
 } as const;
 
 /**
- * Real brand fonts (Design System §3, locked 2026-07-06):
- * **Baloo 2** for display / headings / Buddy / celebrations (friendly, rounded),
- * **Inter** for body / dense UI (clean, legible). These are the exact family
- * names `@expo-google-fonts/*` registers via `useFonts` in `_layout.tsx`; once
- * loaded they resolve by name on every platform (native + web), so we reference
- * them directly rather than routing through the old CSS-variable stacks.
+ * Brand fonts (2026-08-07 mature redesign): **Inter only** — one refined sans
+ * carries both display and body, differentiated by weight and letter-spacing, not
+ * by a separate rounded face. The rounded **Baloo 2** display was dropped as too
+ * playful for the mature direction. The `heading*` KEYS are kept (so every screen
+ * still compiles) but now resolve to Inter weights; the Baloo assets stay loaded
+ * only as a fallback for any stray hard-coded reference during the migration.
  */
 export const FontFamily = {
-  // Baloo 2 — headings / display / Buddy.
-  headingBold: 'Baloo2_700Bold',
-  headingSemiBold: 'Baloo2_600SemiBold',
-  headingMedium: 'Baloo2_500Medium',
+  // Headings / display — now Inter (was Baloo 2).
+  headingBold: 'Inter_700Bold',
+  headingSemiBold: 'Inter_600SemiBold',
+  headingMedium: 'Inter_500Medium',
   // Inter — body / dense UI.
   bodyRegular: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
@@ -108,15 +192,16 @@ export const FontFamily = {
 /**
  * The font families to load at boot (name → asset). Passed straight to
  * `useFonts` in the root layout; kept here so the token and the loader can never
- * drift apart.
+ * drift apart. Inter now covers headings too (700 added); Baloo kept as fallback.
  */
 export const FontAssets = {
-  Baloo2_500Medium: require('@expo-google-fonts/baloo-2/500Medium/Baloo2_500Medium.ttf'),
-  Baloo2_600SemiBold: require('@expo-google-fonts/baloo-2/600SemiBold/Baloo2_600SemiBold.ttf'),
-  Baloo2_700Bold: require('@expo-google-fonts/baloo-2/700Bold/Baloo2_700Bold.ttf'),
   Inter_400Regular: require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
   Inter_500Medium: require('@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf'),
   Inter_600SemiBold: require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
+  Inter_700Bold: require('@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf'),
+  Baloo2_500Medium: require('@expo-google-fonts/baloo-2/500Medium/Baloo2_500Medium.ttf'),
+  Baloo2_600SemiBold: require('@expo-google-fonts/baloo-2/600SemiBold/Baloo2_600SemiBold.ttf'),
+  Baloo2_700Bold: require('@expo-google-fonts/baloo-2/700Bold/Baloo2_700Bold.ttf'),
 } as const;
 
 export const Fonts = Platform.select({
@@ -154,5 +239,9 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// Clearance a screen must leave at the bottom so pinned content isn't hidden by the
+// tab bar. On WEB the tab bar is an absolute overlay (~58px + hairline), so content
+// needs real clearance there — without a `web` value this was 0 and pinned bars (the
+// Coach input bar) rendered *behind* the nav. iOS/Android keep their existing values.
+export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: 64 }) ?? 0;
 export const MaxContentWidth = 800;

@@ -18,14 +18,13 @@ import { GlossyTile } from '@/components/GlossyTile';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { SPECIES_REGISTRY } from '@/core/buddies/registry.generated';
+import { useTheme } from '@/hooks/use-theme';
 import type { BuddyView } from '@/core/AppCore';
 import { type ShopItem } from '@/core/config/shopItems';
 
-// The Buddy scene's "forest" backdrop — a soft sky-teal top fading into a green
-// ground band. Layered flat colours (no gradient dependency) keep the warm,
-// on-brand game-world feel per the mockup.
-const SCENE_SKY = '#D9EEE9';
-const SCENE_GROUND = '#8FCB8F';
+// The Buddy scene's "forest" backdrop — a soft sky top fading into a ground band.
+// The two colours live in the palette (theme.sceneSky/sceneGround) so the world
+// flips to a deep teal night in dark mode instead of staying a light patch.
 
 export function BuddyScene({
   buddy,
@@ -41,11 +40,12 @@ export function BuddyScene({
 }) {
   const tint = cosmetic?.kind === 'tint' ? cosmetic.value : undefined;
   const accessory = cosmetic?.kind === 'accessory' ? cosmetic.value : undefined;
+  const theme = useTheme();
 
   return (
-    <View style={[styles.scene, { backgroundColor: SCENE_SKY }]}>
-      {/* Green ground band anchoring the buddy in a little world. */}
-      <View style={[styles.ground, { backgroundColor: SCENE_GROUND }]} />
+    <View style={[styles.scene, { backgroundColor: theme.sceneSky }]}>
+      {/* Ground band anchoring the buddy in a little world. */}
+      <View style={[styles.ground, { backgroundColor: theme.sceneGround }]} />
 
       {/* Customize (purple, sparkle) + Shop (gold, bag) — stacked on the right edge. */}
       <View style={styles.sideButtons}>

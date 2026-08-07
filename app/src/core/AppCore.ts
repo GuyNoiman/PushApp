@@ -44,6 +44,7 @@ import type {
   Buddy,
   BuddyStage,
   CommunicationPrefs,
+  Dream,
   Journey,
   ReasonEntry,
   ReasonId,
@@ -65,6 +66,8 @@ export interface BuddyView extends Buddy {
 /** An immutable read-model the UI renders. Recomputed on every change. */
 export interface Snapshot {
   buddy: BuddyView;
+  /** Long-term Dreams — Home groups the week's Steps by the Dream their Journey serves. */
+  dreams: Dream[];
   journeys: Journey[];
   todaySteps: TodayStep[];
   /** Home's "Week's steps" list — todaySteps plus already-done Steps (kept visible, sunk to the bottom). */
@@ -342,10 +345,20 @@ export class AppCore {
     this.onChanged();
   };
 
-  /** Seed ONE demo Journey (Starter Step + 2 ordinary Steps) so Home isn't empty. */
+  /**
+   * Seed demo data so Home / Journeys aren't empty AND the Dream connection is
+   * visible: TWO Dreams, each grouping related Journeys. Home groups the week's
+   * Steps by the Dream their Journey serves; the Journeys tab shows the Dream as an
+   * eyebrow. (Dev seed only — real data replaces this once the coach creates plans.)
+   */
   private seedDemoJourney(): void {
-    this.journeyEngine.createJourney({
+    const dreamFit: Dream = { id: 'dream_fit', title: 'Get fit and strong', journeyIds: [] };
+    const dreamCalm: Dream = { id: 'dream_calm', title: 'Sleep and recover well', journeyIds: [] };
+    this.state.dreams.push(dreamFit, dreamCalm);
+
+    const run = this.journeyEngine.createJourney({
       title: 'Run 5km',
+      dreamId: dreamFit.id,
       why: ['Feel stronger and clear-headed', 'Prove to myself I follow through'],
       durationDays: 30,
       rhythm: 'few-times-week',
@@ -365,6 +378,33 @@ export class AppCore {
         { title: 'Run a full 2km without stopping', cadence: 'weekly', estimatedDuration: 40 },
       ],
     });
+
+    const strength = this.journeyEngine.createJourney({
+      title: 'Build core strength',
+      dreamId: dreamFit.id,
+      why: ['Feel capable in my body', 'Protect my back'],
+      durationDays: 42,
+      rhythm: 'few-times-week',
+      steps: [
+        { title: 'Do 10 push-ups', cadence: 'weekly', estimatedDuration: 10 },
+        { title: 'Hold a 60-second plank', cadence: 'weekly', estimatedDuration: 10 },
+      ],
+    });
+
+    const sleep = this.journeyEngine.createJourney({
+      title: 'Wind down by 11pm',
+      dreamId: dreamCalm.id,
+      why: ['Wake up clear-headed', 'More patience during the day'],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [
+        { title: 'No screens after 10:30', cadence: 'daily', estimatedDuration: 5 },
+        { title: 'Read for 15 minutes', cadence: 'daily', estimatedDuration: 15 },
+      ],
+    });
+
+    dreamFit.journeyIds = [run.id, strength.id];
+    dreamCalm.journeyIds = [sleep.id];
   }
 
   // ── Facade ────────────────────────────────────────────────────────────────
@@ -704,6 +744,7 @@ export class AppCore {
     };
     return {
       buddy,
+      dreams: this.state.dreams,
       journeys: this.state.journeys,
       todaySteps: this.journeyEngine.getTodaySteps(),
       weekSteps: this.journeyEngine.getWeekSteps(),

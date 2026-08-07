@@ -27,6 +27,12 @@ import type { ThemeColor } from '@/constants/theme';
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 const GUTTER = Spacing.four;
 
+// ARCHIVED (2026-08-07): the creator/brand MARKETPLACE is a future feature, hidden
+// for now per founder direction. The "Top creators" + "From brands" rows (and their
+// sample content + card components) are kept in the codebase, just not rendered.
+// Flip to `true` to bring the marketplace back. See 04_Product/UX/Archived_Screens.md.
+const SHOW_MARKETPLACE = false;
+
 export default function ExploreScreen() {
   const theme = useTheme();
   // A real focusable input so tapping the search bar raises the keyboard. There's
@@ -69,7 +75,9 @@ export default function ExploreScreen() {
   );
 
   const hasResults =
-    filteredForYou.length + filteredCreators.length + filteredBrands.length > 0;
+    filteredForYou.length +
+      (SHOW_MARKETPLACE ? filteredCreators.length + filteredBrands.length : 0) >
+    0;
   // While searching, hide a section whose row is empty; when idle, show them all.
   const showSection = (count: number) => !isSearching || count > 0;
 
@@ -132,7 +140,7 @@ export default function ExploreScreen() {
             </Section>
           )}
 
-          {showSection(filteredCreators.length) && (
+          {SHOW_MARKETPLACE && showSection(filteredCreators.length) && (
             <Section icon="heart" accent="pink" title="Top creators">
               <Carousel>
                 {filteredCreators.map((item) => (
@@ -142,7 +150,7 @@ export default function ExploreScreen() {
             </Section>
           )}
 
-          {showSection(filteredBrands.length) && (
+          {SHOW_MARKETPLACE && showSection(filteredBrands.length) && (
             <Section icon="bag-handle" accent="blue" title="From brands">
               <Carousel>
                 {filteredBrands.map((item) => (

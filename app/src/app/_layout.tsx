@@ -97,6 +97,10 @@ export default function RootLayout() {
                     options={{ presentation: 'transparentModal', animation: 'fade' }}
                   />
                   <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
+                  {/* Coach conversation — a root Stack route (NOT a tab), opened from the
+                      Home hero via router.push('/coach'). A card push with its own back
+                      button so it slides over the tabs. */}
+                  <Stack.Screen name="coach" />
                   {/* DEV-only adaptive report→replan trigger — reachable from Settings when the
                       founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
                   <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />

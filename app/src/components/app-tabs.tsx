@@ -96,10 +96,10 @@ export default function AppTabs() {
         }}
       />
       {/* ARCHIVED / off-bar. `href: null` keeps the routes reachable directly but
-          hides them from the tab bar. Coach is NO LONGER a tab (founder 2026-08-07):
-          it's opened from a prominent entry on Home instead. Explore + Buddy stay
-          archived. See 04_Product/UX/Archived_Screens.md. */}
-      <Tabs.Screen name="coach" options={{ href: null }} />
+          hides them from the tab bar. (Coach is NOT here: it's a root Stack route
+          `app/coach.tsx`, opened from the Home hero — a tab's `href:null` route is
+          not navigable via router.push, which is why it lives outside the group.)
+          Explore + Buddy stay archived. See 04_Product/UX/Archived_Screens.md. */}
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="buddy" options={{ href: null }} />
     </Tabs>

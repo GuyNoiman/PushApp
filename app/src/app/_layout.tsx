@@ -18,6 +18,7 @@ import { AppProvider } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { SocialProvider } from '@/state/SocialProvider';
+import { ThemePreferenceProvider } from '@/state/ThemePreference';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,7 +57,6 @@ export default function RootLayout() {
   // splash forever, so a missing font degrades to the system stack rather than a
   // blank screen.
   const [fontsLoaded, fontError] = useFonts(FontAssets);
-  const scheme = useColorScheme();
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -77,39 +77,58 @@ export default function RootLayout() {
         <AuthProvider>
           <EntitlementProvider>
             <SocialProvider>
-              <ThemeProvider value={NavThemes[scheme]}>
-                <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-                <AnimatedSplashOverlay />
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
-                  <Stack.Screen name="journey/[id]" />
-                  {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),
-                      not a pushed modal (mature redesign 2026-08-07). */}
-                  <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
-                  <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
-                  {/* Missions is a centered floating modal (screen-16): a transparent
-                      presentation keeps Home visible (dimmed by the screen's own scrim)
-                      behind it, and a fade reads as a modal appearing over Home rather
-                      than a card sliding up over an opaque page. */}
-                  <Stack.Screen
-                    name="missions"
-                    options={{ presentation: 'transparentModal', animation: 'fade' }}
-                  />
-                  <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
-                  {/* Coach conversation — a root Stack route (NOT a tab), opened from the
-                      Home hero via router.push('/coach'). A card push with its own back
-                      button so it slides over the tabs. */}
-                  <Stack.Screen name="coach" />
-                  {/* DEV-only adaptive report→replan trigger — reachable from Settings when the
-                      founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
-                  <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />
-                </Stack>
-              </ThemeProvider>
+              {/* Owns the user's Light/Dark/System override (Settings › Appearance).
+                  It must wrap ThemedChrome — which resolves useColorScheme() for the
+                  nav palette + StatusBar — so a preference change re-themes the app. */}
+              <ThemePreferenceProvider>
+                <ThemedChrome />
+              </ThemePreferenceProvider>
             </SocialProvider>
           </EntitlementProvider>
         </AuthProvider>
       </AppProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/**
+ * The scheme-dependent chrome. Rendered INSIDE ThemePreferenceProvider so its
+ * useColorScheme() call resolves through the user's Light/Dark/System override:
+ * changing the preference re-runs this component and re-themes the nav palette,
+ * StatusBar, and every screen below the Stack.
+ */
+function ThemedChrome() {
+  const scheme = useColorScheme();
+
+  return (
+    <ThemeProvider value={NavThemes[scheme]}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <AnimatedSplashOverlay />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="journey/[id]" />
+        {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),
+            not a pushed modal (mature redesign 2026-08-07). */}
+        <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
+        {/* Missions is a centered floating modal (screen-16): a transparent
+            presentation keeps Home visible (dimmed by the screen's own scrim)
+            behind it, and a fade reads as a modal appearing over Home rather
+            than a card sliding up over an opaque page. */}
+        <Stack.Screen
+          name="missions"
+          options={{ presentation: 'transparentModal', animation: 'fade' }}
+        />
+        <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
+        {/* Coach conversation — a root Stack route (NOT a tab), opened from the
+            Home hero via router.push('/coach'). A card push with its own back
+            button so it slides over the tabs. */}
+        <Stack.Screen name="coach" />
+        {/* DEV-only adaptive report→replan trigger — reachable from Settings when the
+            founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
+        <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }

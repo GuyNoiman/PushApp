@@ -31,10 +31,26 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { useTheme } from '@/hooks/use-theme';
+import { useThemePreference, type ThemePreference } from '@/state/ThemePreference';
+
+// Appearance cycles System → Light → Dark → System on tap; the row shows the
+// current choice as its value and applies it instantly (the whole app re-themes).
+const APPEARANCE_ORDER: readonly ThemePreference[] = ['system', 'light', 'dark'];
+const APPEARANCE_LABEL: Record<ThemePreference, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { preference, setPreference } = useThemePreference();
+
+  const cycleAppearance = () => {
+    const next = APPEARANCE_ORDER[(APPEARANCE_ORDER.indexOf(preference) + 1) % APPEARANCE_ORDER.length];
+    setPreference(next);
+  };
 
   // A dev-simulated Google sign-in (core/profile/simulatedUser) marks the Google row
   // as connected when the founder's env vars are set; Apple stays "coming soon".
@@ -79,7 +95,13 @@ export default function SettingsScreen() {
               detail="Reminders and cheers"
               value="On"
             />
-            <SettingsRow icon="contrast-outline" label="Appearance" detail="Theme" value="System" />
+            <SettingsRow
+              icon="contrast-outline"
+              label="Appearance"
+              detail="Theme"
+              value={APPEARANCE_LABEL[preference]}
+              onPress={cycleAppearance}
+            />
             <SettingsRow icon="information-circle-outline" label="About" value="v0.1" />
           </SettingsSection>
 

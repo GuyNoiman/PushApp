@@ -100,23 +100,50 @@ run — to see it on an existing device/browser you must clear storage / use Inc
    in `useLiveCoach`, not `CoachOrchestrator` — a future caller could bypass it; also add `body_image`);
    (d) **clinical review** gating Addiction/Relationships. `redactForCloud` currently strips only
    emails/phones (not names/health) — minimisation, not anonymisation.
-3. **Device notifications on the physical phone** (founder's stated next target): the `ReminderEngine`
-   + `expo-notifications` are BUILT (schedules local notifications) but need a permission-ask wired +
-   likely a **dev build** (Expo Go notification limits on SDK 54) → the **~$99 Apple Developer
-   Program**. Free first step: demo on the iOS Simulator, then decide the dev build.
-4. **Wire the adaptive report→replan loop to the UI** (founder's "mechanism that changes
-   dynamically"): the `AdaptivePlanner`/`BehaviorModelEngine` are built + sim-proven behind
-   `adaptiveCoach` but NOT surfaced — reporting a miss/postpone should visibly re-plan the week.
-5. **Real sign-in (Apple/Google)** to replace the simulated sign-in (needs the ~$99 Apple program +
-   native dev build). **Streak engine** (Home streak placeholder `4`); **real per-Step due-dates**
-   (Today/This-week + urgency reddening are hour-heuristics); **expert-driven Journey icons**;
-   **in-app light/dark toggle**; backend username-uniqueness; a dedicated "nudge" outreach.
+3. **Device notifications on the physical phone** (founder's next target): `ReminderEngine` +
+   `expo-notifications` are BUILT (local notifications) but need a permission-ask wired + a **dev
+   build** (Expo Go notification limits on SDK 54). **The founder PURCHASED the Apple Developer
+   Program on 2026-08-08** — account details pending (up to ~2026-08-10). NOTE clarified for him: an
+   App-Store *review* is NOT needed to test notifications — a dev build (EAS Build / the membership he
+   bought) installs on his device directly; store review is only for public release. **Prep offered
+   (do while waiting):** bundle id (e.g. `com.guynoiman.pushapp`), `app.json` notifications + iOS
+   permission strings, `eas.json`, the in-app permission ask, icon/splash. iOS Simulator can demo
+   notifications for free first.
 
-**▶ NEXT (founder's end-to-end target):** finish the loop at $0 in Expo Go / the iOS Simulator —
-talk to the coach → it builds a real Journey with weekly Steps → report/refuse/postpone → wire the
-adaptive replan so the plan visibly changes (item 4) → demo local notifications on the Simulator;
-THEN take the ~$99 Apple dev build for real on-device notifications (item 3). Old snapshots below are
-accurate ENGINEERING history but their UI/positioning framing predates this redesign.
+### Done this session (was open, now shipped — all committed + pushed to origin)
+- **Live coach → Gemini: VERIFIED WORKING on the founder's device.** `EXPO_PUBLIC_GEMINI_API_KEY` was
+  copied from the existing `GEMINI_API_KEY` into the git-ignored `.env.local` (value never exposed);
+  after a Metro restart `liveCoach` is on and the real interview runs (personalised opening + Gemini
+  classification + closed-option chips). The HARD prerequisites in item 2 above still gate any real
+  user. To DISABLE: remove that line + restart Metro.
+- **Adaptive report→replan loop wired to the UI** behind `adaptiveCoachDev` (`EXPO_PUBLIC_ADAPTIVE_COACH=1`
+  is in `.env.local`) — `AppCore.reviewWeek` + "I adjusted your week" card + `/dev-adaptive` demo panel.
+- **iPhone-Messages swipe** on Step rows (right = Done+confetti, left = Postpone / Let go).
+- **In-app Light/Dark/System toggle** (Settings › Appearance, persisted) — VERIFIED.
+- **Simulated Google sign-in** (name "Guy" + email in Settings, `EXPO_PUBLIC_SIM_USER_*`) — VERIFIED.
+- **Coach entry route fix** — moved `coach.tsx` out of `(tabs)` to a root Stack route (an `href:null`
+  tab route is not navigable via `router.push`).
+
+### New founder DIRECTIONS to log/design (his ideas, this session — not yet built)
+1. **Weekly-review model (APPROVED direction):** move the adaptive replan trigger OFF every user
+   report and ONTO a **week close/open "Week Review"**: analyse the past week → build next week's plan
+   → present it to the user → apply per last week's performance (automatic), while a user can still
+   proactively edit a Journey (effective immediately). Cleaner two-layer split: tactical per-occurrence
+   recovery + user edits (immediate) vs strategic weekly review. Small re-trigger change (replan already
+   "reshapes the week") + a new Week-Review screen. Log in `06_Decisions/Decision_Log.md`.
+2. **Peer-matching (Open Question — Future/Commercial, privacy-gated):** let a user connect with a
+   STRANGER on the same journey / similar struggle (e.g. two people both on "approach people at
+   parties"). Strong vision-fit (the people pillar / North Star) BUT privacy-heavy: opt-in per journey,
+   pseudonymous (username, no PII), match on the COARSE goal tag only (raw disclosures stay on-device,
+   G1), moderation/report/block, and EXTRA caution or exclusion for sensitive domains (addiction /
+   mental-health / loneliness) until safety + clinical review. Needs the social backend + security-
+   privacy + store-compliance before building. Log as a Future-Vision Open Question.
+
+**▶ NEXT:** (a) prep the Apple **dev-build** infra so we can build the moment the account is active,
+then wire the notification permission ask + demo on the iOS Simulator; (b) implement the **Week-Review**
+model (move the replan trigger to week boundaries + a review screen); (c) log both new directions in
+the Decision Log. The live-coach hard prerequisites (item 2) gate any non-founder use. Old snapshots
+below are accurate ENGINEERING history but predate the 2026-08-07 redesign.
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-08-06 (session end — supersedes the 2026-08-05 snapshot below as "most current")
 

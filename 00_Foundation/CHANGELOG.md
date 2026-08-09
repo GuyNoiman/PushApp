@@ -4,6 +4,135 @@ Status: Living Document
 
 ---
 
+# 2026-08-09 (SESSION 2) — Secondary-screen i18n finished, coach meta-agent voice fix (D30), Journey `status` field + Freeze/Resume (J3), Coins hidden (B1) (branch `feat/buddy-3d-and-reminders`, UNCOMMITTED)
+
+Continuation the same day. **Nothing committed** (autonomous execution per the founder). Verified:
+`tsc` clean, `eslint` 0 errors, **jest 533/533 across 56 suites** (from 515/55 at the start of this
+session). Full narrative + the ordered work plan: `Current_Context.md` → "⭐ HANDOFF SNAPSHOT —
+2026-08-09 (SESSION 2 / continuation)". Highlights:
+
+- **i18n screen translation finished for the secondary screens** — new namespaces `circle`, `inbox`,
+  `explore`, `buddy`, `shop`, `missions`, `achievements` (en+he, 14 total at parity); reason copy moved
+  into the `journey` ns behind framework-free helpers. Engine/config/dev-sample DATA strings stay English
+  by design (a later config-i18n / H1 pass).
+- **Coach: the meta-agent is now the sole user-facing voice** (`CoachOrchestrator.metaVoiced`, Decision
+  Log **D30**) — expert questions are re-voiced from the meta-agent's own `interview.<intent>` template,
+  deterministically (no added LLM call). The 4 domain experts need no user-facing translation (internal
+  tools).
+- **`Journey.status` field** (`active`/`frozen`/`completed`/`abandoned`) — the authoritative tab/lifecycle
+  source of truth, with backward-compat derivation; set explicitly by the engine.
+- **J3 — Freeze/Resume a Journey (DONE)** — engine methods + `JourneyFrozen`/`JourneyResumed` events +
+  AppCore reminder reconcile; the scheduler skips frozen Journeys; Pause/Resume button + "Paused"
+  banner/pill in the UI.
+- **B1 (partial) — Coins hidden in the initial version** (D29): `TopStatusBar` no longer shows Coins (the
+  engine keeps accruing them). The breadth-leveling reframe is still open (needs design).
+
+---
+
+# 2026-08-09 (SESSION 1) — Initial-version (MVP) scope defined + build begins: i18n infra, coach-led Journey editing, account deletion/export, real StreakEngine (branch `feat/buddy-3d-and-reminders`, UNCOMMITTED)
+
+Working session with the founder that (a) defined the concrete initial-version (MVP) scope as a
+granular checklist and (b) began building it. Cross-reference: `06_Decisions/Decision_Log.md`
+**D29** (the scope decisions) and `04_Product/MVP_Task_List.md` (the full checklist, created this
+session — 21 tracked items, IDs A–P). **Nothing in this entry has been committed** — the working
+tree is uncommitted; the founder authorized autonomous execution. Verified: `tsc` clean, `eslint` 0
+errors, **jest 499/499 passing across 52 suites** (grew from 468 at session start).
+
+> **⏩ SESSION-END ADDENDUM (the session continued past this entry's mid-session state; final
+> hand-off = `tsc` clean, `eslint` 0 errors, `jest` 515/515 across 55 suites, STILL UNCOMMITTED):**
+> - **J2 — delete/abandon a Journey: DONE** (verified in web preview). `JourneyEngine.deleteJourney`
+>   + `AppCore.deleteJourney` (new `JourneyDeleted` event → persist + reminder reconcile) + a
+>   destructive "Delete journey" button and confirm Modal on `journey/[id].tsx`.
+> - **i18n screen translation advanced from PARTIAL to the CORE surfaces** (Batches A/B/C-UI/C-Lang-1):
+>   Settings, Home + all home components (incl. `SwipeableStepRow` RTL), Journeys, `journey/[id]`,
+>   `journey/new` wizard, all `journey/*` components, the Coach UI chrome — all translated + RTL-safe.
+>   **The coach now converses in Hebrew** for the general path (interviewPlaybook + meta questions +
+>   GeneralExpert via a new `coachContent` namespace + a Gemini locale directive; domain/kind enums
+>   stay English). 7 namespaces at en/he parity (`parity.test.ts`).
+> - **Journey detail Steps → WEEKLY PAGER** (founder design change, verified): "Steps by week" with
+>   ‹ › arrows + "Week X of Y" + one week's Steps at a time; grouping via `stepsByWeek` in
+>   `journeyView.ts`.
+> - **STILL NOT DONE (next session):** i18n for Inbox/Circle/Explore + `reasons.ts` (Batch D failed
+>   twice on infra flakiness), Buddy/Shop/Missions/Achievements, the 4 domain experts' Hebrew content,
+>   and a device RTL sweep. Then J3/J4/L1/P1.
+> - **Infra note:** the background-subagent layer went flaky mid-session (4 failures: stream stalls +
+>   "connection closed mid-response") then recovered — transient API/streaming instability on long
+>   agent runs, worsened by a very long main-session context. Next session: fresh lean context, small
+>   batches.
+
+## Scope
+- `04_Product/MVP_Task_List.md` added — the single granular checklist for the post-pivot
+  initial-version build, with per-feature status (✅/🟡/⛔/🔒) and priority.
+- `06_Decisions/Decision_Log.md` **D29** — confirmed IN the base version: edit a Journey
+  (coach-led via a pencil button), delete/abandon a Journey, first-run onboarding +
+  notification-permission ask, multi-language i18n with Hebrew + RTL, account deletion/export.
+  Resolved: Coins hidden in MVP (kept in the engine, no Shop sink); the manual Journey wizard kept
+  as a coach-first fallback; a minimal friend profile page IN; messaging + Channels/Groups deferred
+  post-MVP; Journey Freeze/Resume IN; reminder management for existing Journeys IN; a
+  deferred-goals ("parked goals") surface IN, minimal.
+
+## Added — i18n infrastructure (task N1, PARTIAL)
+- `i18next` + `react-i18next` + `expo-localization` (all free, no cost gate).
+- `app/src/state/LanguagePreference.tsx` — persists `pushapp.languagePreference`; defaults to the
+  device locale, falls back to English.
+- A searchable, alphabetical language picker at `app/src/app/settings/language.tsx`.
+- `app/src/i18n/` — `index.ts` (namespaces `common`/`settings`/`home`/`journeys`/`journey`),
+  `rtl.ts` helpers, English + Hebrew resource files.
+- `RestartPrompt` component for RTL/LTR direction flips (Expo Go has no auto-reload on locale
+  change). The Settings screen is fully translated.
+- **Not yet done:** `journeys.tsx`, `journey/new.tsx`, most home/journey components, Coach, and the
+  secondary tabs are not migrated (English only, no crash). Full RTL layout is code-level only —
+  **not device-verified** (web preview cannot exercise `forceRTL`).
+
+## Added — J1: coach-led Journey editing
+- A pencil button on the Journey screen opens the coach in edit mode; it proposes a validated
+  structured diff; the user approves; `AppCore.updateJourney` applies it immediately, preserving
+  Step ids, check-in history, and XP. Gated on `featureFlags.liveCoach`; blocked on completed
+  Journeys. New `JourneyUpdated` event.
+- New files: `app/src/core/coach/journeyEdit.ts`, `app/src/core/coach/JourneyEditOrchestrator.ts`,
+  `app/src/components/coach/useJourneyEditCoach.ts`,
+  `app/src/components/coach/CoachEditProposalCard.tsx`, `app/src/components/coach/EditCoachScreen.tsx`.
+
+## Added — O1: account deletion + data export (built, not deployed)
+- Settings gained a "Your data" section: **Export** (`expo-sharing`, writes to cache then deletes
+  the temp file) and a destructive **Delete** (confirmation sheet; remote-first, refuses when
+  offline; post-delete the app returns to a clean first-run via a persisted `firstRunFlag`
+  seed-guard so demo data does not re-seed after deletion).
+- `AuthGateway.deleteAccount` + the Supabase implementation; `AppCore.exportStateJson` +
+  `AppCore.resetToFirstRun`; `app/src/components/settings/DeleteAccountSheet.tsx`;
+  `app/src/state/useAccountActions.ts`.
+- An Edge Function is **written but not deployed**: `app/supabase/functions/delete-account/index.ts`.
+  Deploying it, plus hosting a Google Play public account-deletion URL, remain founder pre-release
+  actions.
+
+## Added — B2: real StreakEngine
+- Replaces the hard-coded streak placeholder with a real day-count that increments once per new
+  check-in day and resets to 0 only on an **URGENT** missed Step (config-driven "no slack" urgency
+  logic in `app/src/core/util/urgency.ts` + `app/src/core/config/streak.ts`; engine at
+  `app/src/core/engines/StreakEngine.ts`).
+- **Known limitation:** the reset depends on the `StepMissed` event, currently only emitted when
+  `featureFlags.adaptiveCoach` is on — works correctly on the founder's device, but in general
+  production the streak would only increment (never reset) until the miss-producer runs un-gated.
+  Logged as an explicit follow-up, not a silent gap.
+
+## Changed — two founder-requested design fixes (verified in web preview)
+- The Home top-bar level/XP meter shrunk to ~¼ its former width.
+- The "This week" Dream rail now connects node-centres only (no overshoot past the end dots) and
+  is hidden entirely when a Dream group has only a single Step.
+- Fixed a spurious `RestartPrompt` that incorrectly appeared on the language screen at app boot —
+  it now only shows after a deliberate language change.
+
+## Status
+- **Not committed.** Working tree only, on branch `feat/buddy-3d-and-reminders`. `tsc` clean,
+  `eslint` 0 errors (101 pre-existing style warnings, unrelated), jest 499/499 across 52 suites.
+
+## Next
+- See `Current_Context.md` → "⭐ HANDOFF SNAPSHOT — 2026-08-09" → "Still open / next": finish the
+  i18n screen-migration in controlled batches, then continue down `04_Product/MVP_Task_List.md`
+  (J2 delete/abandon a Journey is already in progress).
+
+---
+
 # 2026-08-06 — Conversational coach built out: understanding-based multi-goal triage, SX realigned to 4 domains, communication-style + frequency-based scheduling infra, design brief + authoring guide (branch `feat/buddy-3d-and-reminders`, unmerged, behind off-by-default flag)
 
 Continues the 2026-08-05 sprint below on the same branch and flag. Test suite grew **177 → 449**

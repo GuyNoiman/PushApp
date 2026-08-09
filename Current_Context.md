@@ -1,14 +1,18 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-08-06 (AI-adaptive-coach pivot build, branch `feat/buddy-3d-and-reminders`:
-S0–S2 DONE & GREEN, SX realigned to 4 new domains, S3 auth in progress — see
-"⭐ HANDOFF SNAPSHOT — 2026-08-06 (session end)" just below). Prior top snapshot: 2026-08-05
-(S0–S2 done, SX in progress — kept below, superseded as "most current" by the 2026-08-06 snapshot
-but still accurate history). Prior to that: 2026-07-20 (Hopper wired into Buddy tab +
-backend-health probe + dev-URL/keep-alive tooling + competitive research v2 — merged to `main`;
-PLUS an in-progress strategy conversation captured in `04_Product/Strategy_WIP_2026-07/`, all Open
-Questions). Prior snapshot: 2026-07-14.
+Last updated: 2026-08-09 (initial-version (MVP) build sprint — MVP scope locked (D29), i18n infra +
+CORE-screen translation + coach converses in Hebrew, coach-led Journey editing (J1), delete a Journey
+(J2), account deletion/export (O1), real StreakEngine (B2), a Journey weekly-pager + design fixes —
+ALL UNCOMMITTED on branch `feat/buddy-3d-and-reminders`, jest 515/515. READ the "⏩ SESSION-END
+ADDENDUM" inside the 2026-08-09 snapshot FIRST — it is authoritative and supersedes the mid-session
+detail below it. This snapshot supersedes the 2026-08-07 snapshot as "most current"). Prior top snapshot: 2026-08-07
+(mature UI redesign — kept below, superseded as "most current" but still accurate history). Prior
+to that: 2026-08-06 (AI-adaptive-coach pivot build: S0–S2 done, SX realigned to 4 new domains, S3
+auth in progress). Prior to that: 2026-08-05 (S0–S2 done, SX in progress). Prior to that:
+2026-07-20 (Hopper wired into Buddy tab + backend-health probe + dev-URL/keep-alive tooling +
+competitive research v2 — merged to `main`; PLUS an in-progress strategy conversation captured in
+`04_Product/Strategy_WIP_2026-07/`, all Open Questions). Prior snapshot: 2026-07-14.
 **2026-08-03 docs-only addition:** the "🔀 PRODUCT PIVOT — 2026-08-01" notice further below was
 added to capture the AI-adaptive-coach repositioning (Decision Log D23) — no code changed,
 engineering snapshots below (2026-07-20 and earlier) are untouched.
@@ -16,7 +20,188 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-08-07 (MATURE UI REDESIGN — READ THIS FIRST, supersedes 2026-08-06)
+## ⭐ HANDOFF SNAPSHOT — 2026-08-09 (SESSION 2 / continuation — supersedes the session-1 snapshot just below as "most current")
+
+**Continued the same day on branch `feat/buddy-3d-and-reminders`; everything remains UNCOMMITTED (working
+tree only), as the founder authorized autonomous execution and has not asked for a commit.** Final state:
+`tsc` clean · `eslint` 0 errors · **`jest` 533/533 across 56 suites** (from 515/55 at the start of this
+session). The founder's directive this session: move faster toward a shippable MVP-with-value this week;
+execute everything doable WITHOUT his input, leave anything needing spec/design for a joint go-through, and
+he'll have the Apple account ~2026-08-10 to test on-device.
+
+### Built + verified this session (all green)
+1. **i18n screen translation — Batch D + Batch 2 (finishes the secondary screens).** New namespaces
+   `circle` · `inbox` · `explore` · `buddy` · `shop` · `missions` · `achievements` (en+he, all at parity →
+   **14 namespaces**). Reason copy moved out of `core/config/reasons.ts` into the `journey` ns
+   (`reason.prompt`/`reason.list.*`) behind framework-free helpers (`reasonLabel`/`reasonCaringCopy`/
+   `reasonPrompt`). Migrated screens: Inbox, Circle (`friends.tsx`), Explore, Buddy (+ `BuddyScene`/
+   `BuddyInventory`/`EvolveReveal`), Shop, Missions, Achievements. Web-verified Hebrew on the on-tab ones.
+   **Still English by design (engine/config/dev-sample DATA, not screen chrome):** MissionEngine mission
+   titles, `shopItems` cosmetic names, `sampleAchievements`/`sampleSocial` — a later config-i18n / H1 pass.
+2. **Coach hierarchy fix — the META-AGENT is the sole user-facing voice (Decision Log D30).** Was: an expert
+   question's prompt was surfaced VERBATIM to the user. Now `CoachOrchestrator.metaVoiced` re-voices every
+   expert question from the meta-agent's own `interview.<intent>` `coachContent` template (user's language,
+   **deterministic — no added LLM call**). Experts are pure internal tools now; only the prompt is
+   re-authored (options/answer-matching untouched). Founder direction: the 4 domain experts need NO
+   user-facing translation — they talk only to the meta-agent, which speaks the user's language. (Expert
+   Hebrew content = **not needed**, folded into the future expert spec.)
+3. **`Journey.status` field (founder-requested) — the authoritative tab/lifecycle source of truth.**
+   `JourneyStatus = active | frozen | completed | abandoned` (`core/types/domain.ts`). `resolveJourneyStatus`
+   + `bucketOf` (`journeyView.ts`) bucket the Journeys tabs by it, with backward-compat derivation for
+   pre-field Journeys. `JourneyEngine` sets it explicitly (create→active, finish→completed).
+4. **J3 — Freeze / Resume a Journey (DONE & web-verified).** `JourneyEngine.freezeJourney`/`resumeJourney` +
+   `JourneyFrozen`/`JourneyResumed` events + `AppCore` wiring (persist + reminder reconcile).
+   `CommunicationScheduler` skips frozen Journeys (no reminders while paused). UI: Pause/Resume button + a
+   "Paused" banner on `journey/[id]` (check-in CTA hidden while paused) + a "Paused" pill on the Journeys
+   card. Hebrew copy + engine/scheduler/journeyView tests.
+5. **B1 (partial) — Coins HIDDEN in the initial version (D29).** `TopStatusBar` no longer takes/renders
+   Coins (engine still accrues `buddy.coins`; Shop archived = no sink). Web-verified: Home top strip now
+   shows level + streak only. **Still open in B1: the breadth-based leveling reframe (needs design).**
+
+### ▶ NEXT — the ORDERLY WORK PLAN toward "MVP with value this week"
+The confident-without-founder-input well is now largely drained; the rest needs the founder's spec/design.
+Two tracks:
+
+**A. Still executable without the founder (do these next, autonomously):**
+- **H1 data-realness sweep** (mostly mechanical): About `v0.1` label, decide `sampleSocial`/`sampleContent`
+  fallbacks (keep vs empty-state), Journeys "Future" tab sample, Inbox Groups empty tab. Small, low-risk.
+- **E2 Settings finish (partial):** Notifications row should read REAL permission state (not static "On");
+  About row real version. (Apple sign-in stays "Coming soon" — blocked.)
+- (Note: the `RestartPrompt` showing English + Hebrew together is INTENTIONAL — a bilingual banner,
+  each block pinned to its own script direction, because mid-direction-flip the layout is half-applied.
+  Not a translation gap; leave as-is.)
+
+**B. Needs the founder (the joint go-through queue — spec/design/decide, roughly in MVP-value order):**
+1. **P1 friend profile page** (new screen — layout/design). D29 says minimal: name + active Journeys +
+   progress + cheer.
+2. **J4 reminder management** for an existing Journey (where it lives + what's editable).
+3. **L1 deferred-goals ("parked goals") surface** (where + how to activate).
+4. **I1 completion celebration** (Step-done vs Journey-complete moments — design).
+5. **F1 Dream creation** + coach-suggested Dream-linking approval (flow design).
+6. **D2 Ally propose/accept UX** on a Journey (screen design).
+7. **C1 Week-Review screen** (move the replan trigger to week boundaries + a review screen — design).
+8. **B1 breadth-leveling reframe** + **B3 achievements engine** + **B4 Missions "small change"** (all need
+   scope/spec).
+9. **K1 onboarding** + **E1 real Google sign-in** — gated on the Apple account (~08-10) + design.
+10. **G1 design sign-off** — founder review pass across every screen (light + dark), on-device once Apple lands.
+
+**Not doing (founder decision):** translating the 4 domain experts (internal tools; D30).
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-09 (session 1 end — superseded by the SESSION 2 snapshot above; kept as accurate history)
+
+**This session defined the concrete initial-version (MVP) scope with the founder (Decision Log
+D29, `04_Product/MVP_Task_List.md`) and began building it, on branch `feat/buddy-3d-and-reminders`.
+Everything below is UNCOMMITTED (working tree only) — nothing has been committed or pushed this
+session; the founder authorized autonomous execution.** Verified this session: `tsc` clean,
+`eslint` 0 errors (101 pre-existing style warnings, unrelated), **jest 499/499 passing across 52
+suites** (grew from 468 at session start).
+
+> **⏩ SESSION-END ADDENDUM (authoritative — the session continued well past the mid-session record
+> below). Final state at hand-off: `tsc` clean, `eslint` 0 errors, `jest` 515/515 across 55 suites.
+> ALL UNCOMMITTED. Work done AFTER the "Built this session" list below:**
+> - **J2 — delete/abandon a Journey: DONE & verified in the web preview** (was "in progress" below).
+>   `JourneyEngine.deleteJourney` + `AppCore.deleteJourney` (`JourneyDeleted` event → persist +
+>   reminder reconcile) + a destructive "Delete journey" button and confirm Modal on `journey/[id].tsx`.
+> - **i18n SCREEN TRANSLATION advanced from "partial" to the CORE surfaces, all green** (Batches A, B,
+>   C-UI, C-Lang-1). Now translated + RTL-hardened: Settings, Home + all home components (incl.
+>   `SwipeableStepRow` RTL gesture), Journeys tab, `journey/[id]`, the `journey/new` wizard, all
+>   `journey/*` components, `journeyView` helper, and the Coach UI chrome. **The coach now CONVERSES
+>   IN HEBREW for the general path** (interviewPlaybook + meta questions + GeneralExpert via a
+>   `coachContent` namespace + a Gemini locale directive; domain/kind enums stay English). **7
+>   namespaces at en/he parity** (`src/i18n/__tests__/parity.test.ts`). RTL is still code-level only —
+>   device-verify `SwipeableStepRow` swipe direction, chevrons, accent edges, coach bubble tails.
+> - **New founder design change — Journey detail Steps → WEEKLY PAGER (DONE, verified).** "Steps by
+>   week" with ‹ › arrows, "Week X of Y", one week's Steps at a time; empty weeks show a gentle note.
+>   Grouping via `stepsByWeek` in `journeyView.ts` (`plannedFor` when all Steps are scheduled, else an
+>   even spread by order; totalWeeks from `durationDays`). The "Phase X of Y" card above it was kept.
+> - **i18n STILL NOT DONE (next session, in small 5–6-file batches):** Inbox, Circle (`friends.tsx`),
+>   Explore + `core/config/reasons.ts` (Batch D — FAILED twice on infra flakiness, retry it first);
+>   then Buddy/Shop/Missions/Achievements; then the 4 domain experts' Hebrew content
+>   (Addiction/Relationships/BodyImage/Career, "C-Lang-2"); then a final device RTL sweep. Untranslated
+>   screens show English (no crash).
+> - **Infra note:** mid-session the background-subagent layer went flaky (4 consecutive failures —
+>   stream stalls + "connection closed mid-response"), then RECOVERED. Root cause: transient API/
+>   streaming instability on long (10–13 min) agent runs, aggravated by a very long main-session
+>   context. Mitigation for next session: a FRESH, lean context + keep each i18n batch small/short.
+> - **After i18n, the founder's plan is:** proceed with **J3 (Freeze/Resume) · J4 (reminder mgmt) ·
+>   L1 (deferred goals) · P1 (friend profile)** — all confirmed IN (D29) — up to the point where the
+>   founder reviews each screen; then go screen-by-screen with him to spec the remaining screens.
+
+### Scope decisions (see `06_Decisions/Decision_Log.md` D29 for full reasoning)
+`04_Product/MVP_Task_List.md` was created this session — the granular initial-version checklist (21
+tracked items, IDs A–P). Confirmed **IN** the base version: edit a Journey (coach-led via a pencil
+button), delete/abandon a Journey (J2), first-run onboarding + notification-permission ask (K1),
+multi-language i18n with Hebrew + RTL (N), account deletion/export (O1). Resolved open questions:
+Coins hidden in MVP (kept accruing in the engine, no Shop sink); the manual Journey wizard kept as
+a coach-first fallback; a minimal friend profile page IN (P1); messaging + Channels/Groups deferred
+post-MVP; Journey Freeze/Resume IN (J3); reminder management for existing Journeys IN (J4); a
+deferred-goals ("parked goals") surface IN, minimal (L1).
+
+### Built this session
+1. **i18n infrastructure (task N1, PARTIAL).** Added `i18next` + `react-i18next` +
+   `expo-localization` (all free, no cost gate). New: `app/src/state/LanguagePreference.tsx`
+   (persists `pushapp.languagePreference`; device-locale default, English fallback); a searchable,
+   alphabetical language picker at `app/src/app/settings/language.tsx`; `app/src/i18n/` (`index.ts`
+   with namespaces `common`/`settings`/`home`/`journeys`/`journey`, `rtl.ts` helpers, English + Hebrew
+   resource files under `resources/`); `RestartPrompt` component for direction flips (Expo Go has no
+   auto-reload). The Settings screen is fully translated.
+   **Remaining gap — screen migration is PARTIAL:** Home, `TopStatusBar`, `journey/[id].tsx`, and tab
+   labels are translated; `journeys.tsx`, `journey/new.tsx`, and most home/journey components + Coach
+   + secondary tabs are **NOT yet migrated** (they show English; nothing crashes). Full **RTL layout**
+   is code-level only — **NOT device-verified** (`forceRTL` is a no-op on web, so the web preview
+   cannot confirm it).
+2. **J1 — coach-led Journey editing (DONE).** A pencil button on the Journey screen opens the coach
+   in edit mode; it proposes a validated structured diff; the user approves; `AppCore.updateJourney`
+   applies it immediately (Step ids, check-in history, and XP are preserved). Gated on
+   `featureFlags.liveCoach`; blocked on completed Journeys. New `JourneyUpdated` event. New files:
+   `app/src/core/coach/journeyEdit.ts`, `app/src/core/coach/JourneyEditOrchestrator.ts`,
+   `app/src/components/coach/useJourneyEditCoach.ts`, `app/src/components/coach/CoachEditProposalCard.tsx`,
+   `app/src/components/coach/EditCoachScreen.tsx`.
+3. **O1 — account deletion + data export (built, not deployed).** Settings gained a "Your data"
+   section: **Export** (`expo-sharing`, writes to cache then deletes the temp file) and a destructive
+   **Delete** (confirmation sheet; remote-first, refuses when offline; post-delete the app returns to
+   a clean first-run via a persisted `firstRunFlag` seed-guard so the demo data does not re-seed after
+   deletion). New: `AuthGateway.deleteAccount` + the Supabase implementation, `AppCore.exportStateJson`
+   + `AppCore.resetToFirstRun`, `app/src/components/settings/DeleteAccountSheet.tsx`,
+   `app/src/state/useAccountActions.ts`. **An Edge Function is WRITTEN but NOT deployed**
+   (`app/supabase/functions/delete-account/index.ts`) — deploying it, plus hosting a Google Play
+   public account-deletion URL, are founder pre-release actions, not yet done.
+4. **B2 — real StreakEngine (DONE).** Replaces the hard-coded streak placeholder with a day-count
+   that increments once per new check-in day and resets to 0 only on an **URGENT** missed Step
+   (config-driven "no slack" urgency logic in `app/src/core/util/urgency.ts` +
+   `app/src/core/config/streak.ts`, engine at `app/src/core/engines/StreakEngine.ts`).
+   **Known limitation:** the reset depends on the `StepMissed` event, which today is only emitted
+   when the `adaptiveCoach` flag is on — the reset behavior works correctly on the founder's device,
+   but in general the streak would only increment (never reset) until the miss-producer runs
+   un-gated. Flagged as an explicit follow-up, not a silent gap.
+5. **Two founder-requested design fixes (verified in the web preview).** The Home top-bar
+   level/XP meter shrunk to ~¼ its former width; the "This week" Dream rail now connects
+   node-centres only (no visual overshoot past the end dots) and is hidden entirely when a Dream
+   group has only a single Step. Also fixed a spurious `RestartPrompt` that incorrectly showed on the
+   language screen at app boot — it now only appears after a deliberate language change.
+
+### Still open / next
+- **Finish the i18n screen-migration in controlled batches** — an earlier attempt to do it as one
+  large single pass stalled; do it in smaller chunks: `journeys.tsx`, `journey/new.tsx`, the
+  home/journey components, then Coach (and make the coach converse in the user's language), then the
+  secondary tabs, then a full RTL layout sweep (`SwipeableStepRow` is the highest-risk component), a
+  global `RestartPrompt` surface, and localizing the username-validation strings.
+- **Remaining MVP tasks** (see `04_Product/MVP_Task_List.md` for the full table): J2 delete Journey
+  (in progress), J3 freeze/resume, J4 reminder management, L1 deferred-goals surface, P1 friend
+  profile, B1 breadth-based leveling + Coins-hide, B3 achievements, B4 Missions small change, C1
+  Week-Review screen, D2 Ally UX, E1 real Google sign-in, E2 finish Settings, F1 Dream creation, K1
+  onboarding, G1 design sign-off, H1 frozen-data sweep (streak now done), I1 completion celebration.
+- **Apple dev-build track** stays blocked on the Apple Developer Program account (purchased
+  2026-08-08; account details expected ~2026-08-10) — gates real device notifications, a native dev
+  build, and real Apple/native-Google sign-in.
+
+**▶ NEXT:** continue the i18n screen-migration in small batches (see above), then pick up the next
+MVP task from `04_Product/MVP_Task_List.md` per the founder's priority — J2 (delete/abandon a
+Journey) is already in progress. Nothing this session has been committed; consider committing by
+completed topic (i18n infra, J1 coach-led editing, O1 account deletion/export, B2 StreakEngine, the
+two design fixes) once the founder wants a checkpoint.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-07 (MATURE UI REDESIGN — supersedes 2026-08-06, superseded above by the 2026-08-09 snapshot; kept as accurate history)
 
 **A full mature-redesign of the app UI shipped this session** on branch
 `feat/buddy-3d-and-reminders` (commit `138ad4a` + this docs commit). It is **NOT behind a

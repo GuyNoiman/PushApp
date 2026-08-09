@@ -10,6 +10,81 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-08 — Initial-version (MVP) task list + scope decisions
+
+> Working session with the founder to define the concrete initial-version scope, on branch
+> `feat/buddy-3d-and-reminders`. The granular checklist lives in
+> **`04_Product/MVP_Task_List.md`** (created this session); this log records the founder-level
+> decisions and their reasoning.
+
+### D29 — Initial-version scope: required base-version capabilities confirmed
+**Decision:** After a coverage audit of the flows the founder wants to perform, five capabilities
+were confirmed as **required in the initial (MVP) version**:
+1. **Edit an existing Journey** (rename / change Steps / change frequency) — currently absent. (How:
+   open question — coach-led editing, a simple edit screen, or both; D26.8 leans coach-led.)
+2. **Delete / abandon a Journey** — currently absent (only Step-level "let go" exists).
+3. **First-run onboarding** including the **notification-permission ask** — currently absent; the app
+   drops straight into Home, and permission is asked only inside the creation wizard.
+4. **Multi-language (i18n) support with Hebrew** — the app + coach are currently **English-only** with
+   no i18n layer. The founder uses Hebrew, so the initial version must support his language. This adds
+   an i18n layer, Hebrew translations, **RTL layout** across all screens (the mature redesign was
+   built LTR), and the coach conversing in Hebrew.
+5. **Account deletion / data export** — currently absent; a hard Apple/Google requirement for a public
+   release (not needed for founder-only device testing). Treated as a release gate.
+**Why:** items 1–3 are basic usability gaps (a Journey that can't be edited, deleted, or reached
+through any first-run is not a shippable product); item 4 is fundamental to who the initial version is
+for (the founder himself, a Hebrew speaker); item 5 is a non-negotiable store-compliance gate.
+**Categorization:** **Approved** — these five are IN the base version.
+
+**The remaining open questions were then resolved (founder, same session):**
+- **Coins** → **hidden in MVP** (kept accruing in the engine, not shown — the Shop is archived, no sink).
+- **Manual Journey creation** (the wizard) → **kept** as a coach-first fallback / escape hatch.
+- **Friend profile page** → **IN** (minimal: name + active Journeys + progress + cheer).
+- **Messaging / start a conversation** → **deferred post-MVP** (cheer/nudge already serve the loop).
+- **Channels / Groups** → **deferred post-MVP** (Communities = Commercial stage).
+- **Journey Freeze/Resume** → **IN**.
+- **Reminder management for an existing Journey** → **IN**.
+- **Deferred-goals ("parked goals") surface** → **IN** (minimal — persist + a list to activate later).
+- **J1 "how to edit a Journey"** → **coach-led**: a **pencil button on the Journey screen** opens the
+  coach conversation; the coach asks what the user wants to change, proposes the updated Journey
+  settings from the user's answer, and **the user must approve the change** before it applies.
+**Reflected in:** `04_Product/MVP_Task_List.md` (the full checklist + statuses + open questions);
+`Current_Context.md` (to be updated at sprint end); the harness task list for this build.
+
+## 2026-08-09 — i18n rollout + domain-expert language ownership
+
+### D30 — Domain experts are INTERNAL tools; the meta-agent owns the user's language
+**Decision:** During the Hebrew i18n rollout the question came up of whether the four domain experts
+(Addiction · Relationships & Loneliness · Body Image · Career) need their interview content
+translated. **Founder decision: no — not now, and by design not as per-expert user-facing copy.** The
+experts are **empty foundation scaffolding, not yet specced**, and are **internal tools**: they
+communicate with the **meta-agent ("Steady")**, and it is the meta-agent that talks to the user and
+speaks the user's language. So the experts themselves carry no user-language requirement. When the
+experts are actually specced, they will be built i18n-aware from the start, or — cleaner, and the
+founder's leaning — kept as pure internal tools with the meta-agent phrasing everything to the user
+in their language.
+**Why:** it matches the **framework-not-content** philosophy (D25) — the experts encode interview
+*structure and planning logic*, not user-facing prose — and avoids prematurely translating unspecced,
+gated (D24) scaffolding. It also keeps a single, clean language boundary: the meta-agent.
+**Implemented (2026-08-09, same session — the hierarchy fix the founder asked for):** the meta-agent
+is now the SOLE user-facing voice for the interview. `CoachOrchestrator.askCurrentQuestion` re-voices
+every expert question through the new `CoachOrchestrator.metaVoiced` helper, which resolves the
+user-facing prompt from the meta-agent's own `interview.<intent>` template in the `coachContent`
+namespace (user's active language, **deterministic — no added LLM call**, so the "one understanding
+call" budget is preserved). The expert now supplies only the STRUCTURE (question id/intent + closed
+`options` + planning logic) and never speaks to the user directly; only the `prompt` is re-authored,
+so the closed-option answer-matching is untouched. **Mechanism chosen: deterministic per-intent
+templates** (the founder picked this over per-question LLM phrasing, to avoid ~6 extra LLM calls per
+interview — cost/latency). A domain expert reached in Hebrew now renders the meta-agent's Hebrew
+question, not the expert's internal English prose. Covered by an updated `CoachOrchestrator.test.ts`
+assertion (`coachMessage === i18n.t('interview.foundation', { ns: 'coachContent' })`).
+**Categorization:** **Approved + Implemented** (the language-ownership direction + the meta-agent
+voicing) + **Open/Future** (the full expert spec + un-gating land later; when the experts are specced
+they inherit this — they stay pure internal tools, the meta-agent phrases everything).
+**Reflected in:** `app/src/core/coach/CoachOrchestrator.ts` (`metaVoiced` + header doc);
+`app/src/i18n/resources/{en,he}/coachContent.json` (`interview.*`); `04_Product/MVP_Task_List.md`
+(N1 Batch 3 note); `Current_Context.md`.
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

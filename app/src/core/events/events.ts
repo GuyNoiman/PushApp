@@ -25,6 +25,51 @@ export interface JourneyCompleted {
   journey: Journey;
 }
 
+/**
+ * A Journey was edited in place through the coach-led edit path (JourneyEngine.updateJourney) —
+ * scalars, added/edited/removed Steps applied while preserving Step ids + check-in history + XP.
+ * Carries the mutated {@link Journey} IN-PROCESS ONLY, exactly like {@link JourneyCreated}: AppCore
+ * persists + notifies (onChanged) and re-plans reminders (onReconcile) off it, and it never leaves
+ * the device.
+ */
+export interface JourneyUpdated {
+  type: 'JourneyUpdated';
+  journey: Journey;
+}
+
+/**
+ * A Journey was permanently deleted/abandoned by the user (task J2) — the Journey and its Steps are
+ * hard-removed from AppState. Carries only the `journeyId` scalar (enum/scalar-only, like
+ * {@link ReminderRuleRemoved}): AppCore persists off it (onChanged) and re-plans reminders
+ * (onReconcile) so the deleted Journey's on-device notifications are cancelled. IN-PROCESS ONLY —
+ * it never leaves the device and never widens what is exposed (G1).
+ */
+export interface JourneyDeleted {
+  type: 'JourneyDeleted';
+  journeyId: string;
+}
+
+/**
+ * A Journey was PAUSED (frozen) by the user without losing progress (task J3) — its `status` flips
+ * to `frozen`. Carries the mutated {@link Journey} IN-PROCESS ONLY, like {@link JourneyUpdated}:
+ * AppCore persists off it (onChanged) and re-plans reminders (onReconcile) so a paused Journey's
+ * on-device notifications stop until it is resumed. It never leaves the device (G1).
+ */
+export interface JourneyFrozen {
+  type: 'JourneyFrozen';
+  journey: Journey;
+}
+
+/**
+ * A frozen Journey was RESUMED by the user (task J3) — its `status` flips back to `active`. Carries
+ * the mutated {@link Journey} IN-PROCESS ONLY: AppCore persists (onChanged) and re-plans reminders
+ * (onReconcile) so its notifications resume. It never leaves the device (G1).
+ */
+export interface JourneyResumed {
+  type: 'JourneyResumed';
+  journey: Journey;
+}
+
 export interface RewardGranted {
   type: 'RewardGranted';
   xp: number;
@@ -42,6 +87,18 @@ export interface BuddyReacted {
   buddy: Buddy;
   gainedXp: number;
   gainedCoins: number;
+}
+
+/**
+ * The prominent day-count streak changed (StreakEngine). Emitted on a new-day increment
+ * (first check-in of a calendar day) and on a reset (an URGENT Step was missed). Carries
+ * only the new scalar count — AppCore persists off it. Enum/scalar-only, never any title
+ * or note; safe to observe/persist and never widens what leaves the device (G1).
+ */
+export interface StreakChanged {
+  type: 'StreakChanged';
+  /** The streak's new day-count (0 after an urgent-miss reset). */
+  streak: number;
 }
 
 export interface BuddyEvolved {
@@ -264,9 +321,14 @@ export type DomainEvent =
   | JourneyCreated
   | StepCheckedIn
   | JourneyCompleted
+  | JourneyUpdated
+  | JourneyDeleted
+  | JourneyFrozen
+  | JourneyResumed
   | RewardGranted
   | BuddyReacted
   | BuddyEvolved
+  | StreakChanged
   | ItemPurchased
   | ItemEquipped
   | MissionProgressed

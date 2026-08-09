@@ -9,6 +9,7 @@
  *
  * Presentational only — reports the choice upward; no business logic (Bible §19).
  */
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -31,13 +32,14 @@ export function PostponeSheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('journey');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable accessibilityLabel="Dismiss" style={styles.backdrop} onPress={onClose}>
+      <Pressable accessibilityLabel={t('dismiss', { ns: 'common' })} style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.title}>
-            No rush — what works better?
+            {t('postpone.title')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={2} style={styles.sub}>
             {stepTitle}
@@ -45,27 +47,27 @@ export function PostponeSheet({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Postpone — move it to a better time"
+            accessibilityLabel={t('postpone.keepA11y')}
             onPress={onPostpone}
             style={({ pressed }) => [styles.option, { borderColor: theme.hairline }, pressed && styles.pressed]}>
             <ThemedText type="smallBold" style={{ color: theme.text }}>
-              Postpone
+              {t('postpone.keep')}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Keep it — move it to a better time.
+              {t('postpone.keepHint')}
             </ThemedText>
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Not this time — let this one go"
+            accessibilityLabel={t('postpone.letGoA11y')}
             onPress={onLetGo}
             style={({ pressed }) => [styles.option, { borderColor: theme.hairline }, pressed && styles.pressed]}>
             <ThemedText type="smallBold" style={{ color: theme.text }}>
-              Not this time
+              {t('postpone.letGo')}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Let this one go — no penalty, we&apos;ll learn from it.
+              {t('postpone.letGoHint')}
             </ThemedText>
           </Pressable>
         </Pressable>

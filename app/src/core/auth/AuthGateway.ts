@@ -70,6 +70,16 @@ export interface AuthGateway {
   signOut(): Promise<void>;
 
   /**
+   * Permanently delete the account and ALL server-side data (O1). Runs a
+   * service-role Edge Function that removes `auth.users`, which cascades every
+   * `public.*` row (profiles, friendships, cheers, entitlements …) — client RLS
+   * alone cannot do this. THROWS on any failure so the caller can REFUSE the local
+   * wipe and keep the user's data intact until the remote delete is confirmed.
+   * A no-op on the Null gateway (nothing remote to delete).
+   */
+  deleteAccount(): Promise<void>;
+
+  /**
    * Observe session changes (sign-in, sign-out, token refresh, uid change).
    * Returns an unsubscribe fn. The callback receives the new user, or null on
    * sign-out. Downstream pillars (social) react to this rather than owning auth.
@@ -108,6 +118,8 @@ export const NullAuthGateway: AuthGateway = {
     return null;
   },
   async signOut() {},
+  // No backend ⇒ nothing remote to delete; resolve so the local wipe proceeds.
+  async deleteAccount() {},
   onAuthChange() {
     return () => {};
   },

@@ -17,6 +17,8 @@
  *   • the interview closes with a feasibility note + Support-Circle recommendation.
  *   • every outbound coach message runs through the optional safety guard.
  */
+import i18n from '@/i18n';
+
 import { MockLlmClient } from '../../llm/LlmClient';
 import { CoachOrchestrator, extractDomain, extractGoals } from '../CoachOrchestrator';
 import { SafetyLayer } from '../SafetyLayer';
@@ -113,8 +115,11 @@ describe('CoachOrchestrator — single goal', () => {
     expect(turn.state.spec.processType).toBe('process');
     // The chosen goal's understood title becomes the spec title.
     expect(turn.state.spec.title).toBe('run a 5K');
-    // The EXPERT owns the question — its first prompt is surfaced verbatim.
+    // The expert supplies the question's STRUCTURE (id/intent) but never speaks to the user: the
+    // META-AGENT re-voices it in its own words (the `interview.<intent>` coachContent template),
+    // so the surfaced prompt is the meta-agent's, not the expert's internal prose.
     expect(turn.question?.id).toBe('body_image.foundation');
+    expect(turn.coachMessage).toBe(i18n.t('interview.foundation', { ns: 'coachContent' }));
     expect(turn.coachMessage).toBe(turn.question?.prompt);
     expect(turn.state.spec.deferredGoals).toBeUndefined();
   });

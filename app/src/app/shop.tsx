@@ -20,6 +20,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -37,11 +38,12 @@ import { useApp } from '@/state/AppProvider';
 
 type SubTab = 'featured' | 'cosmetics' | 'coins' | 'offers';
 
-const SUB_TABS: { id: SubTab; label: string }[] = [
-  { id: 'featured', label: 'Featured' },
-  { id: 'cosmetics', label: 'Cosmetics' },
-  { id: 'coins', label: 'Coins' },
-  { id: 'offers', label: 'Offers' },
+// Structure only; each label resolves from the `shop` namespace (`tabs.<id>`).
+const SUB_TABS: { id: SubTab }[] = [
+  { id: 'featured' },
+  { id: 'cosmetics' },
+  { id: 'coins' },
+  { id: 'offers' },
 ];
 
 // Item icon tiles cycle through these gloss gradients purely for shelf variety
@@ -58,6 +60,7 @@ export default function ShopScreen() {
   const { core, snapshot } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation('shop');
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const [activeTab, setActiveTab] = useState<SubTab>('cosmetics');
 
@@ -75,14 +78,14 @@ export default function ShopScreen() {
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={t('close', { ns: 'common' })}
             onPress={dismiss}
             hitSlop={8}
             style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]}>
             <ThemedText style={styles.backGlyph}>‹</ThemedText>
           </Pressable>
           <ThemedText type="subtitle" style={styles.title}>
-            Shop
+            {t('title')}
           </ThemedText>
           <View style={[styles.coinPill, { backgroundColor: theme.goldTint, borderColor: theme.gold }]}>
             <View style={[styles.coinStar, { backgroundColor: theme.gold }]}>
@@ -107,7 +110,7 @@ export default function ShopScreen() {
               <Pressable
                 key={tab.id}
                 accessibilityRole="button"
-                accessibilityLabel={tab.label}
+                accessibilityLabel={t(`tabs.${tab.id}`)}
                 accessibilityState={{ selected: active }}
                 onPress={() => setActiveTab(tab.id)}
                 style={[
@@ -120,7 +123,7 @@ export default function ShopScreen() {
                   type="smallBold"
                   style={[styles.tabText, active && { color: theme.goldStrong }]}
                   themeColor={active ? undefined : 'textSecondary'}>
-                  {tab.label}
+                  {t(`tabs.${tab.id}`)}
                 </ThemedText>
               </Pressable>
             );
@@ -131,7 +134,7 @@ export default function ShopScreen() {
           {activeTab === 'cosmetics' ? (
             <>
               <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
-                Cosmetics
+                {t('cosmetics')}
               </ThemedText>
 
               <View style={styles.grid}>
@@ -158,7 +161,7 @@ export default function ShopScreen() {
               </View>
 
               <ThemedText type="small" themeColor="textSecondary" style={styles.footnote}>
-                Earn more Coins by checking in on your Steps and completing Journeys.
+                {t('footnote')}
               </ThemedText>
             </>
           ) : (
@@ -166,13 +169,13 @@ export default function ShopScreen() {
               <ThemedText style={styles.comingSoonGlyph}>✨</ThemedText>
               <ThemedText type="smallBold" style={styles.comingSoonTitle}>
                 {activeTab === 'featured'
-                  ? 'Featured packs are coming soon'
+                  ? t('comingSoon.featured')
                   : activeTab === 'coins'
-                    ? 'Coin packs are coming soon'
-                    : 'Offers are coming soon'}
+                    ? t('comingSoon.coins')
+                    : t('comingSoon.offers')}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.comingSoonBody}>
-                For now, spend Coins you&apos;ve earned on Cosmetics for your Buddy.
+                {t('comingSoon.body')}
               </ThemedText>
             </View>
           )}
@@ -203,12 +206,13 @@ function ShopCard({
   onUnequip: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('shop');
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.card}>
       {equipped && (
         <View style={[styles.cardBadge, { backgroundColor: theme.teal }]}>
-          <ThemedText style={styles.cardBadgeText}>Equipped</ThemedText>
+          <ThemedText style={styles.cardBadgeText}>{t('equipped')}</ThemedText>
         </View>
       )}
       <ThemedText type="smallBold" style={styles.itemName} numberOfLines={2}>
@@ -223,7 +227,7 @@ function ShopCard({
       {!owned ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Buy ${item.name} for ${item.price} Coins`}
+          accessibilityLabel={t('buyA11y', { name: item.name, price: item.price })}
           disabled={!affordable}
           onPress={onBuy}
           style={[styles.priceChip, { backgroundColor: theme.goldTint }, !affordable && styles.disabled]}>
@@ -237,21 +241,21 @@ function ShopCard({
       ) : equipped ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Unequip ${item.name}`}
+          accessibilityLabel={t('unequipA11y', { name: item.name })}
           onPress={onUnequip}
           style={[styles.actionButton, styles.equippedButton, { borderColor: theme.teal }]}>
           <ThemedText type="smallBold" style={{ color: theme.teal }}>
-            ✓ Equipped
+            {t('equippedCheck')}
           </ThemedText>
         </Pressable>
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Equip ${item.name}`}
+          accessibilityLabel={t('equipA11y', { name: item.name })}
           onPress={onEquip}
           style={[styles.actionButton, { backgroundColor: theme.coral }]}>
           <ThemedText type="smallBold" style={styles.equipButtonText}>
-            Equip
+            {t('equip')}
           </ThemedText>
         </Pressable>
       )}

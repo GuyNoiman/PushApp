@@ -14,13 +14,19 @@
  *      keeps the demoted closed process-type question. The active expert is exposed as
  *      `{ id, displayName }`. The meta-agent speaks in the STEADY {@link ./communicationStyles} voice.
  *
- *   2. EXPERT-DRIVEN INTERVIEW:  the selected expert OWNS its questions. The orchestrator iterates
- *      the expert's {@link DomainExpert.interviewQuestions} IN ORDER, surfacing each as
- *      `{ question, activeExpert }`. The question flow is shaped by the goal's TYPE: a `recurring`
- *      habit takes a LIGHTER path (the staging/milestones questions are skipped — it is a fixed
- *      weekly action, not a build-up), a `process` gets the full staged interview. A closed-option
- *      pick is recorded DIRECTLY (no LLM call); an "Other" answer stores the user's raw free text.
- *      This drastically cuts LLM usage — the model runs only for the one understanding call.
+ *   2. EXPERT-DRIVEN INTERVIEW:  the selected expert supplies the interview STRUCTURE — the ordered
+ *      questions' intent + closed `options` + planning logic — but is an INTERNAL TOOL that never
+ *      speaks to the user directly. The META-AGENT is the sole user-facing voice: it iterates the
+ *      expert's {@link DomainExpert.interviewQuestions} IN ORDER and re-voices each one in its own
+ *      words (the `interview.<intent>` `coachContent` template, in the user's language — see
+ *      {@link CoachOrchestrator.metaVoiced}) before surfacing `{ question, activeExpert }`. Only the
+ *      user-facing prompt is authored by the meta-agent; the expert's `options` remain the user's
+ *      answer choices and all answer-matching is unaffected. The question flow is shaped by the
+ *      goal's TYPE: a `recurring` habit takes a LIGHTER path (the staging/milestones questions are
+ *      skipped — it is a fixed weekly action, not a build-up), a `process` gets the full staged
+ *      interview. A closed-option pick is recorded DIRECTLY (no LLM call); an "Other" answer stores
+ *      the user's raw free text. Re-voicing is deterministic (a template lookup, no LLM), so LLM
+ *      usage stays minimal — the model still runs only for the one understanding call.
  *
  * After the questions the expert's {@link DomainExpert.assessFeasibility} produces an honest
  * reality-check note, and the closing recommends a Support Circle. The completed {@link GoalSpec}
@@ -34,8 +40,14 @@
  * signal — never logged, never copied into a DomainEvent/ProgressSummary, never synced. The
  * {@link ./SafetyLayer SafetyLayer} still guards every OUTBOUND coach message.
  *
- * Pure TypeScript — no React, no UI, no vendor imports.
+ * LANGUAGE (C-Lang-1): the deterministic meta-question copy below is resolved from the `coachContent`
+ * i18n namespace so the coach SPEAKS the user's language; the one LLM understanding call is told (via
+ * {@link buildLocaleDirective}) that the user may write in that language and to keep each goal `title`
+ * in it — while STILL classifying `domain`/`kind` into the fixed ENGLISH enum tokens.
+ *
+ * Pure TypeScript — no React hooks, no UI, no vendor SDKs (the i18next core instance is framework-free).
  */
+import i18n from '../../i18n';
 import type {
   DomainExpert,
   DomainQuestion,
@@ -45,7 +57,12 @@ import type {
 import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/experts/registry';
 import type { GoalInput } from '../learning/types';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
-import { COACH_SYSTEM_PROMPT, TRIAGE_SYSTEM_PROMPT, buildTriageDirective } from './coachPrompts';
+import {
+  COACH_SYSTEM_PROMPT,
+  TRIAGE_SYSTEM_PROMPT,
+  buildLocaleDirective,
+  buildTriageDirective,
+} from './coachPrompts';
 import { DEFAULT_STYLE_ID, getStyle } from './communicationStyles';
 import { deriveConstraints } from './goalSpecToJourney';
 import {
@@ -74,6 +91,18 @@ export * from './disclosureParser';
 //     no usable goal, so the coach can still capture the process shape before routing to `general`.
 //   • SCHEDULING (meta.scheduling) — the closing optional scheduling preference.
 
+/** Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React). */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent' });
+/**
+ * Resolve a `coachContent` OPTIONS array in the active language, as a FRESH copy so callers can't
+ * mutate the shared resource. The rendered option list AND the constant an answer is matched against
+ * both come from THIS single source, so translating the labels never desyncs the exact-string match
+ * in {@link processTypeFromAnswer} / {@link schedulingPreferenceFromAnswer}.
+ */
+const ccOptions = (key: string): string[] => [
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true }) as unknown as string[]),
+];
+
 /** The stable id of the fallback process-type meta question. */
 export const PROCESS_TYPE_QUESTION_ID = 'meta.processType';
 /** The stable id of the multi-goal focus meta question. */
@@ -90,8 +119,12 @@ export const SCHEDULING_QUESTION_ID = 'meta.scheduling';
 export const PROCESS_TYPE_QUESTION: DomainQuestion = {
   id: PROCESS_TYPE_QUESTION_ID,
   intent: 'foundation',
-  prompt: 'What would you like to work on?',
-  options: ['Add a recurring habit to my weekly routine', 'Build a new process or goal'],
+  get prompt() {
+    return cc('processType.prompt');
+  },
+  get options() {
+    return ccOptions('processType.options');
+  },
   allowOther: true,
   multiSelect: false,
 };
@@ -105,8 +138,12 @@ export const PROCESS_TYPE_QUESTION: DomainQuestion = {
 export const SCHEDULING_QUESTION: DomainQuestion = {
   id: SCHEDULING_QUESTION_ID,
   intent: 'time',
-  prompt: 'Any specific days or times you’d prefer?',
-  options: ['No — I’m flexible', 'Yes, specific days'],
+  get prompt() {
+    return cc('scheduling.prompt');
+  },
+  get options() {
+    return ccOptions('scheduling.options');
+  },
   allowOther: true,
   multiSelect: false,
 };
@@ -201,6 +238,12 @@ export interface CoachOrchestratorOptions {
   playbook?: InterviewPlaybook;
   /** Optional outbound safety guard applied to every coach message; defaults to identity. */
   guard?: CoachMessageGuard;
+  /**
+   * The user's ACTIVE language code (e.g. `he`), threaded into the one understanding call so the model
+   * reads a non-English opening in that language and keeps each goal `title` in it — while STILL
+   * classifying `domain`/`kind` into the fixed English enum tokens. Absent/`en` ⇒ default English.
+   */
+  locale?: string;
 }
 
 // ── The orchestrator ────────────────────────────────────────────────────────────
@@ -214,6 +257,8 @@ export class CoachOrchestrator {
   private readonly llm: LlmClient;
   private readonly playbook: InterviewPlaybook;
   private readonly guard?: CoachMessageGuard;
+  /** The user's active language code, threaded into the understanding call's locale directive. */
+  private readonly locale?: string;
   /** The steady meta-agent tone, composed onto the coach persona for triage. */
   private readonly styleFragment: string;
 
@@ -248,6 +293,7 @@ export class CoachOrchestrator {
     this.llm = options.llm;
     this.playbook = options.playbook ?? INTERVIEW_PLAYBOOK;
     this.guard = options.guard;
+    this.locale = options.locale;
     this.styleFragment = getStyle(DEFAULT_STYLE_ID).systemPromptFragment ?? '';
   }
 
@@ -354,7 +400,12 @@ export class CoachOrchestrator {
    */
   private async understand(goalText: string): Promise<UnderstoodGoal[]> {
     try {
-      const system = [this.styleFragment, COACH_SYSTEM_PROMPT, TRIAGE_SYSTEM_PROMPT]
+      const system = [
+        this.styleFragment,
+        COACH_SYSTEM_PROMPT,
+        TRIAGE_SYSTEM_PROMPT,
+        buildLocaleDirective(this.locale),
+      ]
         .filter((s) => s.length > 0)
         .join('\n\n');
       const result = await this.llm.complete({
@@ -523,9 +574,14 @@ export class CoachOrchestrator {
     };
   }
 
-  /** Surface the current expert question. The expert OWNS the prompt — no LLM phrasing. */
+  /**
+   * Surface the current expert question — VOICED BY THE META-AGENT. The expert is an INTERNAL
+   * tool: it supplies the structured intent (id/`intent`) and the closed `options`, but it never
+   * speaks to the user directly. The meta-agent authors the words the user reads, in the user's
+   * language and its own voice, via {@link metaVoiced}. No LLM phrasing (deterministic templates).
+   */
   private askCurrentQuestion(): CoachTurn {
-    const question = this.questions[this.questionIndex];
+    const question = this.metaVoiced(this.questions[this.questionIndex]);
     const coachMessage = this.applyGuard(question.prompt);
     this.history.push({ role: 'model', content: coachMessage });
     return {
@@ -535,6 +591,20 @@ export class CoachOrchestrator {
       question: cloneQuestion(question),
       activeExpert: this.activeExpert,
     };
+  }
+
+  /**
+   * Re-voice an expert question in the META-AGENT'S own words. The expert's `question.prompt` is an
+   * internal placeholder; the surfaced prompt is resolved from the meta-agent's `interview.<intent>`
+   * template in the `coachContent` namespace (the user's active language, no LLM call). Only the
+   * `prompt` is replaced — the `options` (the user's answer choices) and every logic field are
+   * untouched, so the exact-string answer matching is unaffected. Falls back to the expert's own
+   * prompt only if a template is somehow missing (defensive — every {@link QuestionIntent} has one).
+   */
+  private metaVoiced(question: DomainQuestion): DomainQuestion {
+    const key = `interview.${question.intent}`;
+    const voiced = cc(key);
+    return voiced && voiced !== key ? { ...question, prompt: voiced } : question;
   }
 
   /**

@@ -1,0 +1,30 @@
+{
+  "title": "Journeys",
+  "createJourney": "Create journey",
+  "createA11y": "Create a new Journey",
+  "tabs": {
+    "active": "Active",
+    "completed": "Completed",
+    "future": "Future"
+  },
+  "empty": {
+    "title": "No active Journeys yet",
+    "body": "Start your first Journey and it will appear here as you make progress."
+  },
+  "card": {
+    "milestone": "Milestone {{phase}} of {{phases}}",
+    "milestoneComplete": "Milestone {{phases}} of {{phases}} — complete",
+    "completed": "Completed",
+    "starts": "Starts {{date}}",
+    "done": "DONE",
+    "soon": "SOON",
+    "paused": "PAUSED",
+    "open": "Open {{title}}"
+  },
+  "ends": {
+    "ended": "ended",
+    "thisWeek": "ends this week",
+    "inWeeks_one": "ends in {{count}} wk",
+    "inWeeks_other": "ends in {{count}} wks"
+  }
+}

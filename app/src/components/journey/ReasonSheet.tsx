@@ -12,11 +12,12 @@
  * business logic and no lever computation here (Bible §19).
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
-import { REASON_PROMPT, REASONS } from '@/core/config/reasons';
+import { reasonCaringCopy, reasonLabel, reasonPrompt, REASONS } from '@/core/config/reasons';
 import type { ReasonId } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -31,11 +32,12 @@ export function ReasonSheet({
   onBack: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('journey');
   const [selected, setSelected] = useState<ReasonId | null>(null);
   const [note, setNote] = useState('');
 
   const capturesNote = REASONS.find((r) => r.id === selected)?.capturesNote ?? false;
-  const caring = REASONS.find((r) => r.id === selected)?.caringCopy;
+  const caring = selected ? reasonCaringCopy(selected) : undefined;
 
   const reset = () => {
     setSelected(null);
@@ -52,7 +54,7 @@ export function ReasonSheet({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onBack}>
       <Pressable
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={t('dismiss', { ns: 'common' })}
         style={styles.backdrop}
         onPress={() => {
           reset();
@@ -60,7 +62,7 @@ export function ReasonSheet({
         }}>
         <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.title}>
-            {REASON_PROMPT}
+            {reasonPrompt()}
           </ThemedText>
 
           <View style={styles.chips}>
@@ -78,7 +80,7 @@ export function ReasonSheet({
                     isSel && { backgroundColor: theme.tealTint },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: isSel ? theme.tealStrong : theme.textSecondary }}>
-                    {r.label}
+                    {reasonLabel(r.id)}
                   </ThemedText>
                 </Pressable>
               );
@@ -95,7 +97,7 @@ export function ReasonSheet({
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder="In your own words… (stays on your device)"
+              placeholder={t('reason.notePlaceholder')}
               placeholderTextColor={theme.textMuted}
               multiline
               style={[
@@ -108,19 +110,19 @@ export function ReasonSheet({
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Back"
+              accessibilityLabel={t('back', { ns: 'common' })}
               onPress={() => {
                 reset();
                 onBack();
               }}
               style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
-                Back
+                {t('back', { ns: 'common' })}
               </ThemedText>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Continue"
+              accessibilityLabel={t('continue', { ns: 'common' })}
               disabled={!selected}
               onPress={submit}
               style={({ pressed }) => [
@@ -129,7 +131,7 @@ export function ReasonSheet({
                 pressed && styles.pressed,
               ]}>
               <ThemedText type="smallBold" style={{ color: !selected ? theme.textMuted : theme.text }}>
-                Continue
+                {t('continue', { ns: 'common' })}
               </ThemedText>
             </Pressable>
           </View>

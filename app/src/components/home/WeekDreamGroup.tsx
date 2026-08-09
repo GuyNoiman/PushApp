@@ -14,7 +14,9 @@
  * caller resolves the Dream title, the per-Step meta, and the press handlers.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 
 import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
 import { ThemedText } from '@/components/themed-text';
@@ -51,7 +53,28 @@ export function WeekDreamGroup({
   steps: WeekStepView[];
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
   const onAccent = useColorScheme() === 'dark' ? '#0A1615' : '#F5FBFB';
+
+  // Measure each row so the rail can connect node CENTRES only — its ends are the
+  // first and last dots, not a line that overshoots them. A lone Step (no group) gets
+  // no rail and no node at all: there is nothing to connect, so the column stays empty.
+  const [rowFrames, setRowFrames] = useState<Record<number, { y: number; h: number }>>({});
+  const onRowLayout = (i: number) => (e: LayoutChangeEvent) => {
+    const { y, height } = e.nativeEvent.layout;
+    setRowFrames((prev) => {
+      const cur = prev[i];
+      if (cur && cur.y === y && cur.h === height) return prev;
+      return { ...prev, [i]: { y, h: height } };
+    });
+  };
+
+  const multi = steps.length > 1;
+  const first = rowFrames[0];
+  const last = rowFrames[steps.length - 1];
+  const railReady = multi && first != null && last != null;
+  const railTop = first ? first.y + first.h / 2 : 0;
+  const railHeight = railReady ? last.y + last.h / 2 - railTop : 0;
 
   return (
     <View style={styles.group}>
@@ -65,20 +88,29 @@ export function WeekDreamGroup({
         </ThemedText>
       </View>
 
-      {/* The Dream's Steps: separate cards strung along one continuous rail. */}
+      {/* The Dream's Steps: separate cards strung along one rail that connects the
+          dots (only when there is more than one Step to connect). */}
       <View style={styles.rows}>
-        {/* The rail line runs the full height behind the cards, connecting the dots. */}
-        <View style={[styles.rail, { backgroundColor: theme.tint }]} />
+        {railReady && (
+          <View
+            style={[styles.rail, { backgroundColor: theme.tint, top: railTop, height: railHeight }]}
+          />
+        )}
 
         {steps.map((row, i) => (
-          <View key={row.key} style={[styles.rowWrap, i < steps.length - 1 && styles.rowGap]}>
+          <View
+            key={row.key}
+            onLayout={onRowLayout(i)}
+            style={[styles.rowWrap, i < steps.length - 1 && styles.rowGap]}>
             <View style={styles.railCol}>
-              <View
-                style={[
-                  styles.node,
-                  { backgroundColor: theme.tint, borderColor: theme.background },
-                ]}
-              />
+              {multi && (
+                <View
+                  style={[
+                    styles.node,
+                    { backgroundColor: theme.tint, borderColor: theme.background },
+                  ]}
+                />
+              )}
             </View>
 
             {/* Each pending Step is individually swipeable (right → done, left →
@@ -91,7 +123,11 @@ export function WeekDreamGroup({
               containerStyle={styles.swipe}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={row.done ? `${row.title}, done` : `Report on ${row.title}`}
+                accessibilityLabel={
+                  row.done
+                    ? t('step.doneA11y', { title: row.title })
+                    : t('step.report', { title: row.title })
+                }
                 onPress={row.onPress}
                 style={({ pressed }) => [
                   styles.card,
@@ -153,7 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingBottom: Spacing.two,
-    paddingLeft: 3,
+    paddingStart: 3,
   },
   marker: {
     width: 22,
@@ -171,10 +207,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   rail: {
+    // top + height are set dynamically so the line spans node-centre to node-centre.
     position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: RAIL_W / 2 - 1,
+    start: RAIL_W / 2 - 1,
     width: 2,
     opacity: 0.3,
   },
@@ -206,8 +241,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingVertical: Spacing.two + 2,
-    paddingLeft: Spacing.three,
-    paddingRight: Spacing.two,
+    paddingStart: Spacing.three,
+    paddingEnd: Spacing.two,
     borderRadius: Radius.card,
     borderWidth: 1,
     overflow: 'hidden',

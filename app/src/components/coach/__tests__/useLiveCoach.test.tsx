@@ -13,6 +13,14 @@ import { createElement, type ReactElement } from 'react';
 import { CoachOrchestrator } from '@/core/coach/CoachOrchestrator';
 import { LlmError, MockLlmClient } from '@/core/llm/LlmClient';
 import { useLiveCoach, type UseLiveCoach } from '../useLiveCoach';
+// The hook localizes its injected lines (hand-off / retry / labels) via react-i18next, so the i18n
+// instance must be initialized here — imported for its side-effect init so `t` resolves real copy.
+import '@/i18n';
+
+// Give i18n a deterministic locale at boot (mirrors parity.test) so importing it never throws.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'en', languageTag: 'en-US', textDirection: 'ltr' }],
+}));
 
 // react-test-renderer ships no type declarations; type just the tiny surface we touch here.
 interface TestRendererModule {

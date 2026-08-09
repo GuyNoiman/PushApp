@@ -1,0 +1,14 @@
+{
+  "title": "Achievements",
+  "tabs": {
+    "all": "All",
+    "journeys": "Journeys",
+    "social": "Social"
+  },
+  "footnote": "Sample achievements — the real trophies arrive with the achievements engine.",
+  "cellA11y": "{{name}} — {{condition}}",
+  "more": "{{count}} more",
+  "moreToUnlock": "{{count}} more to unlock",
+  "earned": "Earned",
+  "reward": "Reward"
+}

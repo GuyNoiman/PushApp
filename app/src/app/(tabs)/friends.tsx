@@ -28,6 +28,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -36,6 +37,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty, type SampleFriend } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 // A small warm palette for the monogram avatars, cycled by id so every person
@@ -85,6 +87,7 @@ function sampleToRow(f: SampleFriend): CircleRowModel {
 export default function FriendsScreen() {
   const social = useSocial();
   const theme = useTheme();
+  const { t } = useTranslation('circle');
 
   const [showAdd, setShowAdd] = useState(false);
 
@@ -99,16 +102,16 @@ export default function FriendsScreen() {
       social.allyProgress.map((ap) => {
         const name = ap.owner.buddySummary?.name?.trim() || `@${ap.owner.handle}`;
         const pct = Math.round(Math.max(0, Math.min(1, ap.progress)) * 100);
-        const title = ap.visibility === 'anonymous' || !ap.title ? 'a Journey' : ap.title;
+        const title = ap.visibility === 'anonymous' || !ap.title ? t('aJourney') : ap.title;
         return {
           id: `${ap.owner.id}:${ap.journeyId}`,
           name,
           initials: initialsFor(name),
-          status: `${pct}% on ${title}`,
+          status: t('progressStatus', { pct, title }),
           onAction: () => void social.sendCheer(ap.owner.id, ap.journeyId),
         };
       }),
-    [social],
+    [social, t],
   );
 
   const sampleRows = useMemo<CircleRowModel[]>(
@@ -121,10 +124,10 @@ export default function FriendsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-          <ThemedText type="title">Circle</ThemedText>
+          <ThemedText type="title">{t('title')}</ThemedText>
           <View style={styles.headerActions}>
-            <HeaderButton label="Invite" icon="share-outline" onPress={() => {}} />
-            <HeaderButton label="Add" icon="person-add-outline" onPress={() => setShowAdd((v) => !v)} active={showAdd} />
+            <HeaderButton label={t('invite')} icon="share-outline" onPress={() => {}} />
+            <HeaderButton label={t('add')} icon="person-add-outline" onPress={() => setShowAdd((v) => !v)} active={showAdd} />
           </View>
         </View>
 
@@ -152,7 +155,7 @@ export default function FriendsScreen() {
           )}
 
           <ThemedText type="smallBold" themeColor="textSecondary">
-            Your friends
+            {t('yourFriends')}
           </ThemedText>
 
           <View style={styles.list}>
@@ -207,10 +210,11 @@ function HeaderButton({
 
 function PersonRow({ row, tint, tintInk }: { row: CircleRowModel; tint: string; tintInk: string }) {
   const theme = useTheme();
+  const { t } = useTranslation('circle');
   // One simple, friendly action per person: Cheer (teal). Amber is reserved for
   // urgency elsewhere; this is the general Support Circle list.
   const accent = theme.teal;
-  const label = 'Cheer';
+  const label = t('cheer');
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
       <View style={[styles.avatar, { backgroundColor: tint }]}>
@@ -230,7 +234,7 @@ function PersonRow({ row, tint, tintInk }: { row: CircleRowModel; tint: string; 
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label} ${row.name}`}
+        accessibilityLabel={t('cheerA11y', { name: row.name })}
         onPress={row.onAction}
         style={({ pressed }) => [styles.actionPill, { backgroundColor: accent }, pressed && styles.pressed]}>
         <ThemedText type="smallBold" style={{ color: theme.background }}>
@@ -243,6 +247,7 @@ function PersonRow({ row, tint, tintInk }: { row: CircleRowModel; tint: string; 
 
 function AddFriend({ onAdd, disabled }: { onAdd: (username: string) => void; disabled: boolean }) {
   const theme = useTheme();
+  const { t } = useTranslation('circle');
   const [value, setValue] = useState('');
   const submit = () => {
     if (value.trim().length === 0) return;
@@ -254,19 +259,20 @@ function AddFriend({ onAdd, disabled }: { onAdd: (username: string) => void; dis
       <TextInput
         value={value}
         onChangeText={setValue}
-        placeholder="Add a friend by username"
+        placeholder={t('addPlaceholder')}
         placeholderTextColor={theme.textSecondary}
         autoCapitalize="none"
         autoCorrect={false}
         editable={!disabled}
         autoFocus
+        textAlign={isRTL() ? 'right' : 'left'}
         style={[
           styles.input,
           { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
           disabled && styles.disabled,
         ]}
       />
-      <PrimaryButton label="Add" disabled={disabled || value.trim().length === 0} onPress={submit} />
+      <PrimaryButton label={t('add')} disabled={disabled || value.trim().length === 0} onPress={submit} />
     </View>
   );
 }

@@ -24,8 +24,10 @@ import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngin
 import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
+import { StreakEngine } from './engines/StreakEngine';
 import { createJourneyFromGoalSpec } from './coach/goalSpecToJourney';
 import type { GoalSpec } from './coach/interviewPlaybook';
+import type { JourneyEdit } from './coach/journeyEdit';
 import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
 import { setMockBusy, setMockLocation, type MockPlace } from './recovery/mockEnv';
 import { BehaviorModelEngine } from './learning/BehaviorModelEngine';
@@ -43,6 +45,7 @@ import { EventBus } from './events/EventBus';
 import { getLocationGateway } from './location';
 import { getCalendarGateway } from './calendar';
 import { EncryptedLocalRepository } from './persistence/EncryptedLocalRepository';
+import { asyncStorageFirstRunFlag, type FirstRunFlag } from './persistence/firstRunFlag';
 import type { Repository } from './persistence/Repository';
 import type {
   AppState,
@@ -60,6 +63,26 @@ import type {
 import type { Candidate } from './util/reschedule';
 import { createId } from './util/id';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
+
+/**
+ * Schema version stamped into a data export (O1). Bumped if the exported shape
+ * changes, so a future importer can tell which layout it is reading.
+ */
+export const EXPORT_SCHEMA_VERSION = 1;
+
+/**
+ * Caller-supplied metadata for a data export ({@link AppCore.exportStateJson}).
+ * The timestamp + app version are injected by the UI layer so the core method
+ * stays PURE (no `Date.now()` / no environment reads). `uid`/`handle` are only
+ * set when signed in; both are LOCAL to this on-device export and never uploaded.
+ */
+export interface ExportMeta {
+  appVersion: string;
+  /** Epoch ms the export was produced (injected by the caller — keeps core pure). */
+  exportedAt: number;
+  uid?: string | null;
+  handle?: string | null;
+}
 
 /** A Buddy enriched with derived progression for display. */
 export interface BuddyView extends Buddy {
@@ -80,6 +103,8 @@ export interface Snapshot {
   activeJourneyCount: number;
   /** Rewards ready to collect now (done-unclaimed Missions + today's Login) — drives the Home badge. */
   claimableRewards: number;
+  /** The prominent day-count streak (StreakEngine) — Home's TopStatusBar reads it. */
+  streak: number;
 }
 
 /**
@@ -131,6 +156,8 @@ function emptyState(): AppState {
     communicationPrefs: defaultCommunicationPrefs(),
     schedulingPrefs: defaultSchedulingPrefs(),
     weekReviewAt: {},
+    streak: 0,
+    lastActiveDay: null,
   };
 }
 
@@ -171,6 +198,10 @@ function migrateState(state: AppState): AppState {
     // Adaptive report→replan cadence ledger — backfill to {} for a snapshot that predates it.
     // ON-DEVICE ONLY (G1); only written when the adaptive loop is enabled.
     weekReviewAt: state.weekReviewAt ?? {},
+    // Streak (D26.4) — backfill for a snapshot that predates the StreakEngine: no counted
+    // history yet, so start at 0 with no active day. On-device only, no PII.
+    streak: state.streak ?? 0,
+    lastActiveDay: state.lastActiveDay ?? null,
     // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses
     // emptyState directly). So any state reaching here belongs to an existing user
     // who predates onboarding — treat them as already onboarded (a nonzero
@@ -199,10 +230,17 @@ export class AppCore {
 
   private state: AppState = emptyState();
   private readonly repo: Repository;
+  /**
+   * Guards the one-time first-run demo seed so it is NEVER re-seeded after an
+   * account deletion (O1). Survives {@link Repository.clear} because it is a
+   * separate persisted key; {@link resetToFirstRun} sets it.
+   */
+  private readonly firstRunFlag: FirstRunFlag;
 
   private readonly journeyEngine: JourneyEngine;
   private readonly rewardEngine: RewardEngine;
   private readonly buddyEngine: BuddyEngine;
+  private readonly streakEngine: StreakEngine;
   private readonly reminderEngine: ReminderEngine;
   private readonly communicationScheduler: CommunicationScheduler;
   private readonly shopEngine: ShopEngine;
@@ -240,12 +278,20 @@ export class AppCore {
   private readonly listeners = new Set<() => void>();
   private started = false;
 
-  constructor(repo: Repository = new EncryptedLocalRepository()) {
+  constructor(
+    repo: Repository = new EncryptedLocalRepository(),
+    firstRunFlag: FirstRunFlag = asyncStorageFirstRunFlag,
+  ) {
     this.repo = repo;
+    this.firstRunFlag = firstRunFlag;
     const getState = () => this.state;
     this.journeyEngine = new JourneyEngine(this.bus, getState);
     this.rewardEngine = new RewardEngine(this.bus, REWARDS);
     this.buddyEngine = new BuddyEngine(this.bus, getState);
+    // The prominent day-count streak (D26.4). Always on — the increment path (a check-in on a
+    // new calendar day) works in production; the reset path only fires when a StepMissed is
+    // emitted (adaptive-coach slip detector, flag-gated), so with the flag off it never resets.
+    this.streakEngine = new StreakEngine(this.bus, getState);
     // Pass the bus as the reserved intervention seam (deferred): the engine only
     // stores it today and subscribes to nothing — no behavior change. The
     // location/calendar gateways are the DORMANT trigger seams — both resolve to
@@ -323,6 +369,8 @@ export class AppCore {
 
     this.rewardEngine.start();
     this.buddyEngine.start();
+    // Started before the persistence hooks so a check-in updates the streak before the save runs.
+    this.streakEngine.start();
 
     // Persist + notify after any state-changing domain event. Subscribed BEFORE
     // the MissionEngine starts so that a rollover on start() (which can auto-claim
@@ -330,7 +378,14 @@ export class AppCore {
     this.bus.on('JourneyCreated', this.onChanged);
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
+    this.bus.on('JourneyUpdated', this.onChanged);
+    this.bus.on('JourneyDeleted', this.onChanged);
+    this.bus.on('JourneyFrozen', this.onChanged);
+    this.bus.on('JourneyResumed', this.onChanged);
     this.bus.on('BuddyReacted', this.onChanged);
+    // Persist a streak increment (new-day check-in) or reset (urgent miss). StepMissed itself is
+    // not a persistence hook, so this is what saves a reset.
+    this.bus.on('StreakChanged', this.onChanged);
     this.bus.on('ItemPurchased', this.onChanged);
     this.bus.on('ItemEquipped', this.onChanged);
     this.bus.on('MissionClaimed', this.onChanged);
@@ -350,11 +405,24 @@ export class AppCore {
     // Journey (its reminders must stop) and a scheduling-prefs change.
     this.bus.on('JourneyCompleted', this.onReconcile);
     this.bus.on('SchedulingPrefsChanged', this.onReconcile);
+    // A coach-led edit can change a Journey's rhythm / Steps, so re-plan its reminders. It persists
+    // through the JourneyUpdated → onChanged hook above; here we only add the reminder reconcile.
+    this.bus.on('JourneyUpdated', this.onReconcile);
+    // A deleted Journey's reminders must stop — persist off JourneyDeleted (above) and re-plan here.
+    this.bus.on('JourneyDeleted', this.onReconcile);
+    // Freeze/resume (J3): a paused Journey's reminders must stop; a resumed one's must come back.
+    // Both persist through onChanged (above); here we add the reminder reconcile.
+    this.bus.on('JourneyFrozen', this.onReconcile);
+    this.bus.on('JourneyResumed', this.onReconcile);
 
     // start() runs the authoritative day/week rollover once on launch.
     this.missionEngine.start();
 
-    if (!loaded) {
+    // Seed the demo data ONLY on a genuine first run — never after an account
+    // deletion. resetToFirstRun clears the repo (so load() returns null again) but
+    // marks the first-run flag consumed, so a post-deletion relaunch stays clean
+    // (O1 adopted decision). A brand-new install has no flag ⇒ seeds as before.
+    if (!loaded && !(await this.firstRunFlag.isConsumed())) {
       this.seedDemoJourney();
     }
   }
@@ -449,6 +517,55 @@ export class AppCore {
     dreamCalm.journeyIds = [sleep.id];
   }
 
+  // ── Account: data export + deletion (O1) ────────────────────────────────────
+
+  /**
+   * Serialize the FULL on-device AppState to pretty JSON for a LOCAL "export my
+   * data" (never uploaded). Pure — the caller injects the timestamp + app version
+   * ({@link ExportMeta}) so this stays deterministic and free of environment reads.
+   *
+   * The on-device-only logs ({@link AppState.reasonLog} / {@link AppState.behaviorLog})
+   * are always present (defaulted to `[]`) so the export is COMPLETE and predictable
+   * regardless of which flags populated them (privacy G6: the user's own copy of
+   * their data includes everything held about them on device).
+   */
+  exportStateJson(meta: ExportMeta): string {
+    const payload = {
+      schemaVersion: EXPORT_SCHEMA_VERSION,
+      appVersion: meta.appVersion,
+      exportedAt: meta.exportedAt,
+      uid: meta.uid ?? null,
+      handle: meta.handle ?? null,
+      state: {
+        ...this.state,
+        reasonLog: this.state.reasonLog ?? [],
+        behaviorLog: this.state.behaviorLog ?? [],
+      },
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  /**
+   * Wipe ALL local data and return to a clean first-run state (O1). Clears the
+   * Repository (which destroys the encryption key), marks the first-run seed
+   * consumed so the demo Journeys are NEVER re-seeded, resets in-memory state to
+   * empty, and notifies subscribers. Deliberately does NOT save (that would mint a
+   * fresh key + re-persist an empty snapshot); the next real change persists.
+   *
+   * The orchestrator (useAccountActions) owns the surrounding steps — remote delete
+   * first, cancel scheduled notifications, sign out, and remove the theme/language
+   * keys — so this method only owns the AppCore-managed state.
+   */
+  async resetToFirstRun(): Promise<void> {
+    await this.repo.clear();
+    await this.firstRunFlag.markConsumed();
+    this.state = emptyState();
+    // Keep the adaptive in-memory model consistent with the wiped state (no-op when
+    // the loop is off / the engine was never built).
+    this.behaviorModel?.hydrate([]);
+    this.notify();
+  }
+
   // ── Facade ────────────────────────────────────────────────────────────────
 
   createJourney(input: NewJourneyInput): Journey {
@@ -464,6 +581,48 @@ export class AppCore {
    */
   createJourneyFromGoalSpec(spec: GoalSpec): Journey {
     return createJourneyFromGoalSpec(this.journeyEngine, spec);
+  }
+
+  /**
+   * Enact a coach-led EDIT on an existing Journey (task J1). Delegates to the JourneyEngine, which
+   * applies the VALIDATED {@link JourneyEdit} in place (preserving Step ids, check-in history and XP)
+   * and emits {@link JourneyUpdated} — persisting through onChanged and re-planning reminders through
+   * onReconcile. Returns the mutated Journey, or null when the id is unknown or the Journey is already
+   * completed. This applies IMMEDIATELY (user layer); it deliberately does NOT trigger the weekly review.
+   */
+  updateJourney(journeyId: string, edit: JourneyEdit): Journey | null {
+    return this.journeyEngine.updateJourney(journeyId, edit);
+  }
+
+  /**
+   * Permanently delete/abandon a Journey and all its Steps (task J2) — distinct from a Freeze/pause.
+   * Delegates to the JourneyEngine, which hard-removes it and emits {@link JourneyDeleted}: AppCore
+   * persists off it (onChanged) and re-plans reminders (onReconcile) so its notifications are
+   * cancelled. Returns whether a Journey was actually removed. Irreversible.
+   */
+  deleteJourney(journeyId: string): boolean {
+    return this.journeyEngine.deleteJourney(journeyId);
+  }
+
+  /**
+   * PAUSE a Journey (task J3) — flip its status to `frozen` without losing progress. Delegates to the
+   * JourneyEngine, which emits {@link JourneyFrozen}: AppCore persists (onChanged) and re-plans
+   * reminders (onReconcile) so the paused Journey stops firing notifications. Returns the mutated
+   * Journey, or null for an unknown id, an already-frozen, or a completed Journey. Reversible via
+   * {@link resumeJourney}.
+   */
+  freezeJourney(journeyId: string): Journey | null {
+    return this.journeyEngine.freezeJourney(journeyId);
+  }
+
+  /**
+   * RESUME a frozen Journey (task J3) — flip its status back to `active` so it runs and schedules
+   * reminders again. Delegates to the JourneyEngine, which emits {@link JourneyResumed}: AppCore
+   * persists + re-plans reminders off it. Returns the mutated Journey, or null when the id is unknown
+   * or the Journey is not currently frozen.
+   */
+  resumeJourney(journeyId: string): Journey | null {
+    return this.journeyEngine.resumeJourney(journeyId);
   }
 
   /**
@@ -901,6 +1060,7 @@ export class AppCore {
       weekSteps: this.journeyEngine.getWeekSteps(),
       activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,
       claimableRewards: this.missionEngine.getClaimableCount(),
+      streak: this.state.streak ?? 0,
     };
   }
 

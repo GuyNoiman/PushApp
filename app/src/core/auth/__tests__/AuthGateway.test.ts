@@ -36,6 +36,10 @@ describe('NullAuthGateway', () => {
     expect(() => unsub()).not.toThrow();
   });
 
+  it('deleteAccount is an inert no-op (nothing remote to delete)', async () => {
+    await expect(NullAuthGateway.deleteAccount()).resolves.toBeUndefined();
+  });
+
   it('real sign-in throws a typed AuthNotAvailableError', async () => {
     await expect(NullAuthGateway.signInWithApple()).rejects.toBeInstanceOf(AuthNotAvailableError);
     await expect(NullAuthGateway.signInWithGoogle()).rejects.toBeInstanceOf(AuthNotAvailableError);

@@ -29,6 +29,12 @@ interface AuthContextValue {
   signInWithApple: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Permanently delete the account + all remote data (O1). UNLIKE the other
+   * actions this is NOT wrapped in {@link guard} — it re-throws so the account-
+   * deletion orchestrator can REFUSE the local wipe when the remote delete fails.
+   */
+  deleteAccount: () => Promise<void>;
 }
 
 const EMPTY: AuthContextValue = {
@@ -41,6 +47,7 @@ const EMPTY: AuthContextValue = {
   signInWithApple: async () => {},
   signInWithGoogle: async () => {},
   signOut: async () => {},
+  deleteAccount: async () => {},
 };
 
 const AuthContext = createContext<AuthContextValue>(EMPTY);
@@ -138,6 +145,12 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
     });
   }, [gateway, guard]);
 
+  // NOT guarded: re-throws so the deletion orchestrator can refuse the local wipe
+  // when the remote delete fails (offline / server error).
+  const deleteAccount = useCallback(async () => {
+    await gateway.deleteAccount();
+  }, [gateway]);
+
   const value: AuthContextValue = {
     enabled: true,
     user,
@@ -147,6 +160,7 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
     signInWithApple,
     signInWithGoogle,
     signOut,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -84,6 +84,16 @@ export interface Milestone {
   weight?: number;
 }
 
+/**
+ * The lifecycle state of a Journey — the SOURCE OF TRUTH for which tab it appears under on the
+ * Journeys screen and for freeze/resume (J3). `active` = in progress; `frozen` = paused by the
+ * user without losing progress (resumable — J3); `completed` = every Step done; `abandoned` = let
+ * go (reserved — deletion currently removes the Journey outright rather than soft-marking it).
+ * The `future` display bucket (a Journey scheduled to begin later) is derived from `createdAt`, not
+ * a stored status, so it transitions to `active` on its own when the start time passes.
+ */
+export type JourneyStatus = 'active' | 'frozen' | 'completed' | 'abandoned';
+
 /** A finite transformation — the core object of PushApp. */
 export interface Journey {
   id: string;
@@ -97,6 +107,13 @@ export interface Journey {
   steps: Step[];
   createdAt: number;
   completedAt?: number;
+  /**
+   * Lifecycle status — the authoritative field the Journeys tabs bucket by. Optional for
+   * backward-compat with Journeys persisted before this field existed: a missing status is
+   * resolved to `completed` when `completedAt` is set, else `active` (see `resolveJourneyStatus`
+   * in `components/journey/journeyView.ts`). New Journeys carry it explicitly.
+   */
+  status?: JourneyStatus;
   /** Optional link to the long-term Dream this Journey serves. */
   dreamId?: string;
   /**
@@ -451,6 +468,18 @@ export interface AppState {
   communicationPrefs: CommunicationPrefs;
   /** How the user wants reminders timed (window / day-part / weekdays). */
   schedulingPrefs: SchedulingPrefs;
+  /**
+   * The prominent day-count streak (StreakEngine, founder decision D26.4). Counts up on the
+   * first check-in of a new calendar day and resets to 0 when an URGENT Step is missed.
+   * Optional so an older snapshot loads without it (backfilled to 0 in AppCore.migrateState).
+   */
+  streak?: number;
+  /**
+   * Local date key (YYYY-MM-DD) of the day the streak last counted a check-in, or null when it
+   * has never counted / was just reset. Guards the once-per-day increment. Optional so an older
+   * snapshot loads without it (backfilled to null in AppCore.migrateState). No PII.
+   */
+  lastActiveDay?: string | null;
   /**
    * Epoch ms onboarding was completed, or undefined if the user has not yet
    * finished it. A pre-existing persisted snapshot (from before onboarding

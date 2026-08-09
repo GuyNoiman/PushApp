@@ -1,0 +1,17 @@
+{
+  "tabs": {
+    "missions": "משימות",
+    "login": "כניסה"
+  },
+  "cadence": {
+    "daily": "יומי",
+    "weekly": "שבועי"
+  },
+  "loginIntro": "הופיעו כל יום, והפרס גדל.",
+  "claim": "איסוף",
+  "claimed": "נאסף ✓",
+  "claimedCheck": "✓ נאסף",
+  "claimA11y": "איסוף {{count}} מטבעות",
+  "alreadyClaimedA11y": "פרס הכניסה כבר נאסף היום",
+  "day": "יום {{day}}"
+}

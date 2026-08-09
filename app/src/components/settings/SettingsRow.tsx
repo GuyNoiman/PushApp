@@ -7,6 +7,7 @@
  * Mature styling: hairlines, one teal accent, muted neutrals, no gloss/emoji.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -20,6 +21,7 @@ export function SettingsRow({
   value,
   badge,
   connected,
+  destructive,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
@@ -32,19 +34,23 @@ export function SettingsRow({
   badge?: string;
   /** When true, the row reads as linked: a success checkmark + "Connected". */
   connected?: boolean;
+  /** When true, the row reads as dangerous: a red icon + red label (e.g. Delete). */
+  destructive?: boolean;
   onPress?: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('settings');
   const inert = !onPress;
 
   const body = (
     <>
-      <View style={[styles.iconWrap, { backgroundColor: theme.tealTint }]}>
-        <Ionicons name={icon} size={18} color={theme.tealStrong} />
+      <View
+        style={[styles.iconWrap, { backgroundColor: destructive ? theme.dangerTint : theme.tealTint }]}>
+        <Ionicons name={icon} size={18} color={destructive ? theme.danger : theme.tealStrong} />
       </View>
 
       <View style={styles.main}>
-        <ThemedText type="default" numberOfLines={1}>
+        <ThemedText type="default" numberOfLines={1} style={destructive ? { color: theme.danger } : undefined}>
           {label}
         </ThemedText>
         {detail ? (
@@ -58,7 +64,7 @@ export function SettingsRow({
         <View style={styles.connected}>
           <Ionicons name="checkmark-circle" size={16} color={theme.success} />
           <ThemedText type="smallBold" style={{ color: theme.success }}>
-            Connected
+            {t('account.connected')}
           </ThemedText>
         </View>
       ) : badge ? (

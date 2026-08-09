@@ -13,6 +13,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +23,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import type { ThemeColor } from '@/constants/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
@@ -35,6 +37,7 @@ const SHOW_MARKETPLACE = false;
 
 export default function ExploreScreen() {
   const theme = useTheme();
+  const { t } = useTranslation('explore');
   // A real focusable input so tapping the search bar raises the keyboard. There's
   // no marketplace backend yet (design fidelity), so filtering is entirely
   // client-side over the sample content — nothing is submitted to any backend.
@@ -85,7 +88,7 @@ export default function ExploreScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <ThemedText type="title">Explore</ThemedText>
+          <ThemedText type="title">{t('title')}</ThemedText>
         </View>
 
         <ScrollView
@@ -96,7 +99,7 @@ export default function ExploreScreen() {
           <View style={styles.searchWrap}>
             <Pressable
               accessibilityRole="search"
-              accessibilityLabel="What do you want to achieve?"
+              accessibilityLabel={t('searchPlaceholder')}
               onPress={() => searchRef.current?.focus()}
               style={({ pressed }) => [
                 styles.search,
@@ -108,16 +111,17 @@ export default function ExploreScreen() {
                 ref={searchRef}
                 value={query}
                 onChangeText={setQuery}
-                placeholder="What do you want to achieve?"
+                placeholder={t('searchPlaceholder')}
                 placeholderTextColor={theme.textMuted}
                 returnKeyType="search"
+                textAlign={isRTL() ? 'right' : 'left'}
                 style={[styles.searchText, styles.searchInput, { color: theme.text }]}
               />
               {/* Clear (X) — appears only with text; clears the query, keeps focus. */}
               {query.length > 0 && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Clear search"
+                  accessibilityLabel={t('clearSearch', { ns: 'common' })}
                   onPress={() => {
                     setQuery('');
                     searchRef.current?.focus();
@@ -131,7 +135,7 @@ export default function ExploreScreen() {
           </View>
 
           {showSection(filteredForYou.length) && (
-            <Section icon="star" accent="coral" title="For you">
+            <Section icon="star" accent="coral" title={t('forYou')}>
               <Carousel>
                 {filteredForYou.map((item) => (
                   <JourneyCard key={item.id} item={item} />
@@ -141,7 +145,7 @@ export default function ExploreScreen() {
           )}
 
           {SHOW_MARKETPLACE && showSection(filteredCreators.length) && (
-            <Section icon="heart" accent="pink" title="Top creators">
+            <Section icon="heart" accent="pink" title={t('topCreators')}>
               <Carousel>
                 {filteredCreators.map((item) => (
                   <CreatorCard key={item.id} item={item} />
@@ -151,7 +155,7 @@ export default function ExploreScreen() {
           )}
 
           {SHOW_MARKETPLACE && showSection(filteredBrands.length) && (
-            <Section icon="bag-handle" accent="blue" title="From brands">
+            <Section icon="bag-handle" accent="blue" title={t('fromBrands')}>
               <Carousel>
                 {filteredBrands.map((item) => (
                   <BrandCard key={item.id} item={item} />
@@ -165,10 +169,10 @@ export default function ExploreScreen() {
             <View style={styles.emptyState}>
               <Ionicons name="search-outline" size={32} color={theme.textMuted} />
               <ThemedText type="subtitle" style={styles.emptyTitle}>
-                No matches
+                {t('noMatches.title')}
               </ThemedText>
               <ThemedText type="small" themeColor="textMuted" style={styles.emptyBody}>
-                Nothing here matches “{query.trim()}”. Try a different word.
+                {t('noMatches.body', { query: query.trim() })}
               </ThemedText>
             </View>
           )}

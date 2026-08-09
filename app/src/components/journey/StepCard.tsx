@@ -20,6 +20,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -92,6 +93,7 @@ export function StepCard({
   onOpenMenu?: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('journey');
   const { step } = item;
   const glyph = journeyGlyph(item.journeyTitle || step.title);
   const tile = tileColors(theme, glyph.color);
@@ -107,7 +109,7 @@ export function StepCard({
 
   const metaLine =
     phase !== undefined && phases !== undefined
-      ? `${item.journeyTitle} · Phase ${phase}/${phases}`
+      ? t('stepCard.phaseMeta', { title: item.journeyTitle, phase, phases })
       : item.journeyTitle;
 
   // ── Swipe-to-report ──────────────────────────────────────────────────────
@@ -210,7 +212,7 @@ export function StepCard({
             </ThemedText>
           </View>
           <ThemedText type="small" numberOfLines={1} style={{ color: subColor }}>
-            {missed ? `Missed · still time to catch it` : done ? `Completed · nice work` : metaLine}
+            {missed ? t('stepCard.missed') : done ? t('stepCard.completed') : metaLine}
           </ThemedText>
 
           {reportable && progress !== undefined && (
@@ -231,7 +233,7 @@ export function StepCard({
             on swipe-right + the menu's "Mark done"). */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`More actions for ${step.title}`}
+          accessibilityLabel={t('stepCard.moreActions', { title: step.title })}
           onPress={onOpenMenu}
           hitSlop={8}
           style={styles.dots}>
@@ -250,7 +252,7 @@ export function StepCard({
     <View style={endsToday && styles.urgentWrap}>
       {endsToday && (
         <View style={[styles.dueTag, { backgroundColor: theme.goldTint }]}>
-          <Text style={[styles.dueTagText, { color: theme.goldStrong }]}>⏱ Ends today</Text>
+          <Text style={[styles.dueTagText, { color: theme.goldStrong }]}>⏱ {t('stepCard.endsToday')}</Text>
         </View>
       )}
 
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
   dueTag: {
     position: 'absolute',
     top: -12,
-    right: 8,
+    end: 8,
     zIndex: 3,
     flexDirection: 'row',
     alignItems: 'center',

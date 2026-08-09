@@ -1,0 +1,14 @@
+{
+  "title": "הישגים",
+  "tabs": {
+    "all": "הכול",
+    "journeys": "מסעות",
+    "social": "חברתי"
+  },
+  "footnote": "הישגים לדוגמה, הגביעים האמיתיים יגיעו עם מנוע ההישגים.",
+  "cellA11y": "{{name}}, {{condition}}",
+  "more": "עוד {{count}}",
+  "moreToUnlock": "עוד {{count}} לפתיחה",
+  "earned": "הושג",
+  "reward": "פרס"
+}

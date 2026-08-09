@@ -101,11 +101,12 @@ export class CommunicationScheduler {
   ): PlannedNotification[] {
     const byId = new Map(journeys.map((j) => [j.id, j]));
 
-    // 1. Aggregate: enabled rules whose Journey exists and is not completed.
+    // 1. Aggregate: enabled rules whose Journey exists and is currently running — not completed
+    //    and not FROZEN (a paused Journey must fire no reminders until it is resumed, J3).
     const active = rules.filter((r) => {
       if (!r.enabled) return false;
       const journey = byId.get(r.journeyId);
-      return !!journey && !journey.completedAt;
+      return !!journey && !journey.completedAt && journey.status !== 'frozen';
     });
 
     // 2/3. Expand each active rule into candidate notifications.

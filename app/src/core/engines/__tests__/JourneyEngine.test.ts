@@ -68,6 +68,8 @@ describe('JourneyEngine.createJourney', () => {
     expect(journey.steps).toHaveLength(2);
     expect(journey.steps.every((s) => s.id.length > 0)).toBe(true);
     expect(journey.steps.every((s) => !s.done)).toBe(true);
+    // A new Journey starts explicitly `active` — the authoritative field the tabs bucket by.
+    expect(journey.status).toBe('active');
     expect(events.map((e) => e.type)).toEqual(['JourneyCreated']);
   });
 
@@ -143,6 +145,8 @@ describe('JourneyEngine.checkInStep', () => {
 
     engine.checkInStep(journey.id, journey.steps[2].id); // last Step
     expect(journey.completedAt).toBeDefined();
+    // Completion flips the authoritative status too, so the Journey moves to the Completed tab.
+    expect(journey.status).toBe('completed');
     expect(events.filter((e) => e.type === 'JourneyCompleted')).toHaveLength(1);
   });
 
@@ -244,5 +248,63 @@ describe('JourneyEngine.getWeekSteps', () => {
     engine.checkInStep(b.id, b.steps[0].id); // completes the whole Journey
 
     expect(engine.getWeekSteps()).toHaveLength(0);
+  });
+});
+
+describe('JourneyEngine.freezeJourney / resumeJourney (J3)', () => {
+  function frozenSetup() {
+    const { bus, engine } = setup();
+    const events: DomainEvent[] = [];
+    bus.on('JourneyFrozen', (e) => events.push(e));
+    bus.on('JourneyResumed', (e) => events.push(e));
+    const journey = engine.createJourney({
+      title: 'Meditate',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ title: 'Breathe' }, { title: 'Sit' }],
+    });
+    return { engine, journey, events };
+  }
+
+  it('freezes an active Journey: status → frozen, emits JourneyFrozen, keeps Steps', () => {
+    const { engine, journey, events } = frozenSetup();
+
+    const frozen = engine.freezeJourney(journey.id);
+
+    expect(frozen).not.toBeNull();
+    expect(journey.status).toBe('frozen');
+    expect(journey.steps).toHaveLength(2); // progress preserved, nothing removed
+    expect(events.map((e) => e.type)).toEqual(['JourneyFrozen']);
+  });
+
+  it('resumes a frozen Journey: status → active, emits JourneyResumed', () => {
+    const { engine, journey, events } = frozenSetup();
+    engine.freezeJourney(journey.id);
+
+    const resumed = engine.resumeJourney(journey.id);
+
+    expect(resumed).not.toBeNull();
+    expect(journey.status).toBe('active');
+    expect(events.map((e) => e.type)).toEqual(['JourneyFrozen', 'JourneyResumed']);
+  });
+
+  it('is a no-op (null, no event) for an already-frozen freeze or a non-frozen resume', () => {
+    const { engine, journey, events } = frozenSetup();
+
+    expect(engine.resumeJourney(journey.id)).toBeNull(); // not frozen yet
+    engine.freezeJourney(journey.id);
+    expect(engine.freezeJourney(journey.id)).toBeNull(); // already frozen
+    expect(events.map((e) => e.type)).toEqual(['JourneyFrozen']); // only the one real transition
+  });
+
+  it('refuses to freeze a completed Journey and an unknown id', () => {
+    const { engine, journey } = frozenSetup();
+    engine.checkInStep(journey.id, journey.steps[0].id);
+    engine.checkInStep(journey.id, journey.steps[1].id); // completes it
+    expect(journey.status).toBe('completed');
+
+    expect(engine.freezeJourney(journey.id)).toBeNull();
+    expect(engine.freezeJourney('nope')).toBeNull();
   });
 });

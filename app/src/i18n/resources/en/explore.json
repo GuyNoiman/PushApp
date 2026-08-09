@@ -1,0 +1,11 @@
+{
+  "title": "Explore",
+  "searchPlaceholder": "What do you want to achieve?",
+  "forYou": "For you",
+  "topCreators": "Top creators",
+  "fromBrands": "From brands",
+  "noMatches": {
+    "title": "No matches",
+    "body": "Nothing here matches “{{query}}”. Try a different word."
+  }
+}

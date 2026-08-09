@@ -11,6 +11,7 @@
  * blame-free (Design System — "never shame").
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -32,23 +33,24 @@ export function StepReportSheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
   const onAccent = useColorScheme() === 'dark' ? '#0A1615' : '#F5FBFB';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable accessibilityLabel="Dismiss" style={styles.backdrop} onPress={onClose}>
+      <Pressable accessibilityLabel={t('dismiss', { ns: 'common' })} style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
           <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
             {stepTitle}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.sub}>
-            How did it go?
+            {t('report.prompt')}
           </ThemedText>
 
           {/* Done — the celebrated, primary choice (turquoise). */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Mark done"
+            accessibilityLabel={t('report.doneA11y')}
             onPress={() => onChoose('done')}
             style={({ pressed }) => [
               styles.primary,
@@ -57,32 +59,32 @@ export function StepReportSheet({
             ]}>
             <Ionicons name="checkmark-circle" size={20} color={onAccent} />
             <ThemedText type="smallBold" style={[styles.primaryLabel, { color: onAccent }]}>
-              Done
+              {t('done', { ns: 'common' })}
             </ThemedText>
           </Pressable>
 
           <Option
             icon="contract-outline"
-            label="Partial"
-            hint="I did some of it — progress counts."
+            label={t('report.partial.label')}
+            hint={t('report.partial.hint')}
             onPress={() => onChoose('partial')}
           />
           <Option
             icon="heart-outline"
-            label="Couldn't"
-            hint="Life happened. No penalty."
+            label={t('report.couldnt.label')}
+            hint={t('report.couldnt.hint')}
             onPress={() => onChoose('couldnt')}
           />
           <Option
             icon="time-outline"
-            label="Postpone"
-            hint="Not now — tell me what got in the way."
+            label={t('report.postpone.label')}
+            hint={t('report.postpone.hint')}
             onPress={() => onChoose('postpone')}
           />
           <Option
             icon="calendar-outline"
-            label="Reschedule"
-            hint="Move it to a better time."
+            label={t('report.reschedule.label')}
+            hint={t('report.reschedule.hint')}
             onPress={() => onChoose('reschedule')}
           />
         </Pressable>

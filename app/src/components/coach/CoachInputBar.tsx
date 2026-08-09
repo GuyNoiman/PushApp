@@ -10,6 +10,7 @@
  */
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -29,6 +30,7 @@ export function CoachInputBar({
   onSend: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('coach');
   return (
     <View
       style={[
@@ -53,7 +55,7 @@ export function CoachInputBar({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Speak (coming soon)"
+        accessibilityLabel={t('speak')}
         style={({ pressed }) => [
           styles.round,
           { backgroundColor: theme.backgroundSelected, borderColor: theme.hairline, borderWidth: 1 },
@@ -65,7 +67,7 @@ export function CoachInputBar({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Send"
+        accessibilityLabel={t('send')}
         onPress={onSend}
         style={({ pressed }) => [styles.round, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
         <Ionicons name="send" size={17} color={theme.backgroundElement} />

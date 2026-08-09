@@ -9,18 +9,32 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { I18nManager } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, FontAssets } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+// Importing the i18n instance runs its init (side-effect) before any screen
+// renders, so `t(...)` is ready and the boot language is resolved.
+import '@/i18n';
 import { AppProvider } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
+import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
 import { SocialProvider } from '@/state/SocialProvider';
 import { ThemePreferenceProvider } from '@/state/ThemePreference';
 
 SplashScreen.preventAutoHideAsync();
+
+// Enable RTL support as early as possible (module scope, before the first
+// render). We deliberately do NOT force a direction here: React Native persists
+// the last forced direction natively across launches, so a returning RTL user
+// already opens right-to-left. Forcing from the *device* locale would fight a
+// user whose chosen app language differs in direction from their device and loop
+// the reopen prompt — so LanguagePreference resolves direction from the persisted
+// choice at its first async opportunity and prompts a reopen only on a real flip.
+I18nManager.allowRTL(true);
 
 // Force the navigation chrome onto OUR palette (both schemes) so screen
 // backgrounds, cards, and borders are on-brand rather than the stock white/black
@@ -81,7 +95,11 @@ export default function RootLayout() {
                   It must wrap ThemedChrome — which resolves useColorScheme() for the
                   nav palette + StatusBar — so a preference change re-themes the app. */}
               <ThemePreferenceProvider>
-                <ThemedChrome />
+                {/* Owns the user's language choice (Settings › Language) + the
+                    RTL/restart bookkeeping. A sibling concern to theme. */}
+                <LanguagePreferenceProvider>
+                  <ThemedChrome />
+                </LanguagePreferenceProvider>
               </ThemePreferenceProvider>
             </SocialProvider>
           </EntitlementProvider>
@@ -106,6 +124,8 @@ function ThemedChrome() {
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        {/* Settings › Language picker — a card push from the Settings tab. */}
+        <Stack.Screen name="settings/language" />
         <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey/[id]" />
         {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),

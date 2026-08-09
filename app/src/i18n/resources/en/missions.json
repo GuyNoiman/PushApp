@@ -1,0 +1,17 @@
+{
+  "tabs": {
+    "missions": "Missions",
+    "login": "Login"
+  },
+  "cadence": {
+    "daily": "Daily",
+    "weekly": "Weekly"
+  },
+  "loginIntro": "Show up each day — the reward grows.",
+  "claim": "Claim",
+  "claimed": "Claimed ✓",
+  "claimedCheck": "✓ Claimed",
+  "claimA11y": "Claim {{count}} Coins",
+  "alreadyClaimedA11y": "Login reward already claimed today",
+  "day": "Day {{day}}"
+}

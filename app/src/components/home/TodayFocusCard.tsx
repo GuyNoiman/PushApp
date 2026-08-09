@@ -14,6 +14,7 @@
  * progress, urgency, and the press handler.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
@@ -54,6 +55,7 @@ export function TodayFocusCard({
   onLetGo: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
 
   // The edge + icon-tile share the urgency accent and intensify with it.
   const accent =
@@ -79,7 +81,7 @@ export function TodayFocusCard({
       containerStyle={styles.swipe}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Report on ${title}`}
+        accessibilityLabel={t('step.report', { title })}
         onPress={onPress}
         style={({ pressed }) => [
           styles.card,
@@ -128,7 +130,7 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: Spacing.three,
-    paddingLeft: Spacing.three + Spacing.one,
+    paddingStart: Spacing.three + Spacing.one,
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
     overflow: 'hidden',
@@ -140,7 +142,7 @@ const styles = StyleSheet.create({
   },
   edge: {
     position: 'absolute',
-    left: 0,
+    start: 0,
     top: 0,
     bottom: 0,
   },

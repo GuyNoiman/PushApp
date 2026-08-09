@@ -6,18 +6,21 @@
  *
  * Copy is CARING, never accusatory (product-guardian, locked): the sheet asks "Want
  * to tell me what got in the way?" — never "Why didn't you do it?". Each reason's
- * `caringCopy` is a gentle, blame-free reassurance shown once it's chosen.
+ * caring copy is a gentle, blame-free reassurance shown once it's chosen.
  *
- * Pure TS — no React, no UI, no vendor imports.
+ * LANGUAGE (N1): the user-facing copy (each chip `label`, its `caringCopy`, and the
+ * header prompt) now lives in the `journey` i18n namespace under `reason.*`, resolved
+ * in the user's ACTIVE language via the framework-free i18next core instance
+ * (`i18n.t`, never a React hook). This config keeps only the STRUCTURE — the stable
+ * ids and which reason reveals a free-text field — so the id/lever logic is unchanged.
+ *
+ * Pure TS — no React, no UI, no vendor imports (the i18next core is framework-free).
  */
+import i18n from '../../i18n';
 import type { ReasonId } from '../types/domain';
 
 export interface Reason {
   id: ReasonId;
-  /** The short chip label shown in the reason list. */
-  label: string;
-  /** A gentle, non-accusatory line shown when this reason is chosen. */
-  caringCopy: string;
   /**
    * Whether choosing this reason reveals a free-text field. Only `other` does.
    * SECURITY-PRIVACY G1: that text is the on-device-only `ReasonEntry.note` — it
@@ -26,60 +29,32 @@ export interface Reason {
   capturesNote: boolean;
 }
 
-/** The closed reason list, in display order (PRD §3). */
+/** The closed reason list, in display order (PRD §3). Copy → `journey` ns `reason.list.*`. */
 export const REASONS: readonly Reason[] = [
-  {
-    id: 'forgot',
-    label: 'I forgot',
-    caringCopy: "No worries — let's make it easier to remember next time.",
-    capturesNote: false,
-  },
-  {
-    id: 'no_time',
-    label: 'No time',
-    caringCopy: "Busy day. Let's find a lighter way to fit it in.",
-    capturesNote: false,
-  },
-  {
-    id: 'lost_motivation',
-    label: 'Lost motivation',
-    caringCopy: "That happens. Let's reconnect with why this matters to you.",
-    capturesNote: false,
-  },
-  {
-    id: 'too_hard',
-    label: 'Too hard',
-    caringCopy: "Let's make this Step smaller so it feels doable.",
-    capturesNote: false,
-  },
-  {
-    id: 'did_partially',
-    label: 'Did it partially',
-    caringCopy: 'Progress counts — every bit moves you forward.',
-    capturesNote: false,
-  },
-  {
-    id: 'couldnt',
-    label: "Couldn't — life happened",
-    caringCopy: "Totally understandable. Nothing changes — rest easy.",
-    capturesNote: false,
-  },
-  {
-    id: 'not_relevant',
-    label: 'Not relevant anymore',
-    caringCopy: "That's okay — let's edit this so it fits where you are now.",
-    capturesNote: false,
-  },
-  {
-    id: 'other',
-    label: 'Something else',
-    caringCopy: 'Tell me in your own words — this stays on your device.',
-    capturesNote: true,
-  },
+  { id: 'forgot', capturesNote: false },
+  { id: 'no_time', capturesNote: false },
+  { id: 'lost_motivation', capturesNote: false },
+  { id: 'too_hard', capturesNote: false },
+  { id: 'did_partially', capturesNote: false },
+  { id: 'couldnt', capturesNote: false },
+  { id: 'not_relevant', capturesNote: false },
+  { id: 'other', capturesNote: true },
 ] as const;
 
+/** The short chip label for a reason, in the active language. */
+export function reasonLabel(id: ReasonId): string {
+  return i18n.t(`reason.list.${id}.label`, { ns: 'journey' });
+}
+
+/** The gentle, non-accusatory line shown when a reason is chosen, in the active language. */
+export function reasonCaringCopy(id: ReasonId): string {
+  return i18n.t(`reason.list.${id}.caring`, { ns: 'journey' });
+}
+
 /** The caring header for the "What happened?" screen (product-guardian, locked). */
-export const REASON_PROMPT = 'Want to tell me what got in the way?';
+export function reasonPrompt(): string {
+  return i18n.t('reason.prompt', { ns: 'journey' });
+}
 
 /** Look up a reason by id (or undefined if unknown). */
 export function resolveReason(id: ReasonId): Reason | undefined {

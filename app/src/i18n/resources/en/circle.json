@@ -1,0 +1,11 @@
+{
+  "title": "Circle",
+  "invite": "Invite",
+  "add": "Add",
+  "yourFriends": "Your friends",
+  "addPlaceholder": "Add a friend by username",
+  "cheer": "Cheer",
+  "cheerA11y": "Cheer {{name}}",
+  "aJourney": "a Journey",
+  "progressStatus": "{{pct}}% on {{title}}"
+}

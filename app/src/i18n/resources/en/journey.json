@@ -1,0 +1,218 @@
+{
+  "detail": {
+    "eyebrow": "JOURNEY",
+    "editLabel": "Edit this Journey",
+    "backA11y": "Back",
+    "notFoundTitle": "Not found",
+    "notFoundBody": "This Journey isn't available. It may have been removed.",
+    "phase": "Phase {{phase}} of {{phases}}",
+    "window": "Started {{start}} · ends {{end}}",
+    "stepsDone": "{{done}} of {{total}} Steps done",
+    "steps": "Steps",
+    "stepsByWeek": "Steps by week",
+    "weekOf": "Week {{week}} of {{total}}",
+    "emptyWeek": "Nothing scheduled for this week.",
+    "prevWeekA11y": "Previous week",
+    "nextWeekA11y": "Next week",
+    "noSteps": "No Steps yet — your rhythm guides this Journey.",
+    "yourWhy": "Your why",
+    "next": "Next",
+    "starter": "Starter",
+    "checkIn": "Check in",
+    "checkInA11y": "Check in on {{title}}",
+    "delete": "Delete journey",
+    "deleteConfirmTitle": "Delete this journey?",
+    "deleteConfirmBody": "This permanently removes the journey and all its steps. This can't be undone.",
+    "deleteA11y": "Delete this journey",
+    "freeze": "Pause journey",
+    "freezeA11y": "Pause this journey",
+    "resume": "Resume journey",
+    "resumeA11y": "Resume this journey",
+    "paused": "Paused",
+    "pausedBody": "This journey is paused. Reminders are off until you resume it."
+  },
+  "stepCard": {
+    "missed": "Missed · still time to catch it",
+    "completed": "Completed · nice work",
+    "phaseMeta": "{{title}} · Phase {{phase}}/{{phases}}",
+    "endsToday": "Ends today",
+    "moreActions": "More actions for {{title}}"
+  },
+  "postpone": {
+    "title": "No rush — what works better?",
+    "keep": "Postpone",
+    "keepHint": "Keep it — move it to a better time.",
+    "keepA11y": "Postpone — move it to a better time",
+    "letGo": "Not this time",
+    "letGoHint": "Let this one go — no penalty, we'll learn from it.",
+    "letGoA11y": "Not this time — let this one go"
+  },
+  "reason": {
+    "notePlaceholder": "In your own words… (stays on your device)",
+    "prompt": "Want to tell me what got in the way?",
+    "list": {
+      "forgot": {
+        "label": "I forgot",
+        "caring": "No worries — let's make it easier to remember next time."
+      },
+      "no_time": {
+        "label": "No time",
+        "caring": "Busy day. Let's find a lighter way to fit it in."
+      },
+      "lost_motivation": {
+        "label": "Lost motivation",
+        "caring": "That happens. Let's reconnect with why this matters to you."
+      },
+      "too_hard": {
+        "label": "Too hard",
+        "caring": "Let's make this Step smaller so it feels doable."
+      },
+      "did_partially": {
+        "label": "Did it partially",
+        "caring": "Progress counts — every bit moves you forward."
+      },
+      "couldnt": {
+        "label": "Couldn't — life happened",
+        "caring": "Totally understandable. Nothing changes — rest easy."
+      },
+      "not_relevant": {
+        "label": "Not relevant anymore",
+        "caring": "That's okay — let's edit this so it fits where you are now."
+      },
+      "other": {
+        "label": "Something else",
+        "caring": "Tell me in your own words — this stays on your device."
+      }
+    }
+  },
+  "reasonHistory": {
+    "title": "Looking back",
+    "empty": "Nothing here yet — this is where we'll gently notice what tends to get in the way.",
+    "lead": "A few times it didn't happen — no judgement, just what came up:",
+    "fallbackReason": "Something came up",
+    "ago": {
+      "today": "today",
+      "yesterday": "yesterday",
+      "days_one": "{{count}} day ago",
+      "days_other": "{{count}} days ago",
+      "weeks_one": "a week ago",
+      "weeks_other": "{{count}} weeks ago"
+    }
+  },
+  "reschedule": {
+    "title": "When would you like to do it?",
+    "noSlots": "No open slots came up — tap \"Other time\" to pick one that works.",
+    "otherTime": "Other time…",
+    "otherTimeA11y": "Other time",
+    "addToCalendar": "+ Add to my calendar",
+    "addToCalendarA11y": "Add to calendar",
+    "confirm": "Confirm",
+    "confirmA11y": "Confirm time",
+    "when": {
+      "today": "Today · {{time}}",
+      "tomorrow": "Tomorrow · {{time}}",
+      "weekday": "{{weekday}} · {{time}}"
+    }
+  },
+  "new": {
+    "header": "New Journey",
+    "closeA11y": "Close",
+    "progress": "{{current}} / {{total}}",
+    "stageA11y": "{{label}} — step {{index}} of {{total}}",
+    "stages": {
+      "name": "Name",
+      "why": "Your why",
+      "duration": "Duration & rhythm",
+      "steps": "Steps",
+      "reminders": "Reminders",
+      "summary": "Summary"
+    },
+    "stage0Title": "Name & goal",
+    "name": {
+      "label": "Name",
+      "untitled": "Untitled Journey",
+      "placeholder": "e.g. Run 5km, Learn to draw…",
+      "editA11y": "Edit {{label}}"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "What this Journey is about, in your words."
+    },
+    "why": {
+      "intro": "A few words now become your own encouragement later — in your voice.",
+      "start": "Why start this Journey?",
+      "succeed": "How will you feel if you succeed?",
+      "hard": "What to remember when it's hard?",
+      "hardHint": "Short lines we'll surface when you're drifting.",
+      "answerPlaceholder": "Type your answer…",
+      "hardPlaceholder": "A short reminder…",
+      "charHint": "{{count}}/50",
+      "addA11y": "Add reminder",
+      "removeA11y": "Remove {{line}}"
+    },
+    "duration": {
+      "label": "Duration",
+      "days": "{{count}} days",
+      "30": "1 month",
+      "60": "2 months",
+      "90": "3 months"
+    },
+    "rhythm": {
+      "label": "How often",
+      "typeLabel": "Type",
+      "typeValue": "Frequency",
+      "daily": "Daily",
+      "few-times-week": "A few times a week",
+      "weekly": "Weekly"
+    },
+    "cadence": {
+      "once": "Once",
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
+    "steps": {
+      "recommended": "Recommended",
+      "starterCopyPre": "Adding a small first Step you can finish in ",
+      "starterCopyBold": "up to 2 minutes",
+      "starterCopyPost": " raises your chance of completing the Journey.",
+      "starterExamples": "e.g. \"Put on workout clothes\", \"Open LinkedIn and save one job\"",
+      "starterLabel": "Starter Step",
+      "starterPlaceholder": "Your ≤2-minute first Step",
+      "starterDetailPlaceholder": "Optional: a little more detail",
+      "addStarter": "Add a Starter Step",
+      "removeStarterA11y": "Remove Starter Step",
+      "stepN": "Step {{index}}",
+      "removeStepA11y": "Remove Step {{index}}",
+      "stepTitlePlaceholder": "Step title",
+      "stepDetailPlaceholder": "Optional description",
+      "addStep": "Add a step"
+    },
+    "reminders": {
+      "toggle": "Remind me",
+      "toggleHint": "A gentle on-device nudge. We'll ask permission only if you turn this on.",
+      "when": "When?",
+      "morning": "Morning · 8:00",
+      "midday": "Midday · 12:00",
+      "evening": "Evening · 19:00",
+      "notificationTitle": "Time for {{title}}",
+      "notificationBody": "Take your next Step."
+    },
+    "summary": {
+      "journey": "Journey",
+      "duration": "Duration",
+      "rhythm": "Rhythm",
+      "steps": "Steps",
+      "why": "Your why",
+      "reminder": "Reminder",
+      "none": "—",
+      "off": "Off",
+      "noStepsYet": "None yet",
+      "stepsCount": "{{count}}",
+      "stepsWithStarter": "{{count}} (incl. Starter Step)",
+      "whySaved": "{{count}} saved",
+      "note": "Starts now. Your Steps will appear on Home right away."
+    },
+    "creating": "Creating…",
+    "createA11y": "Create the Journey"
+  }
+}

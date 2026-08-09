@@ -19,6 +19,8 @@
  * Business logic lives here, not in the screen (Engineering Bible §19).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 import type { CoachOption } from '@/components/coach/coachScript';
 import { CoachOrchestrator, type CoachTurn } from '@/core/coach/CoachOrchestrator';
@@ -31,15 +33,11 @@ import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
 /** The domains too sensitive for an app-shaped plan — the coach hands off instead of interviewing. */
 const SENSITIVE_DOMAINS = new Set<DomainId>(['addiction', 'relationships']);
 
-/** A calm, always-safe hand-off shown when the goal routes to a sensitive domain (never an LLM line). */
-const SENSITIVE_HANDOFF_MESSAGE =
-  'This is something that really deserves a person alongside you — not just an app. I don’t want to ' +
-  'shape a plan here that a good professional should walk with you on. If it helps, you can still set ' +
-  'up a Journey yourself, and I’ll be here to support you as you go.';
-
-/** A soft retry line shown if the one LLM call hiccups — the screen keeps the opening input open. */
-const RETRY_MESSAGE =
-  'I didn’t quite catch that — my connection may have hiccuped. Mind telling me once more?';
+/**
+ * The calm, always-safe hand-off shown when the goal routes to a sensitive domain, and the soft retry
+ * line if the one LLM call hiccups, both come from the `coach` namespace (`sensitiveHandoff` / `retry`)
+ * so they follow the active language — they are never model output.
+ */
 
 /** Where the coach is in the one LLM round-trip: idle, waiting on triage, or a soft error. */
 export type LiveCoachStatus = 'idle' | 'thinking' | 'error';
@@ -89,9 +87,9 @@ export interface UseLiveCoachOptions {
 }
 
 /** Map an expert {@link DomainQuestion} onto the option-card view (index → id). */
-function toQuestionView(question: DomainQuestion): LiveCoachQuestionView {
+function toQuestionView(question: DomainQuestion, t: TFunction<'coach'>): LiveCoachQuestionView {
   return {
-    label: question.multiSelect ? 'Choose any that apply' : 'Choose one',
+    label: question.multiSelect ? t('chooseAny') : t('chooseOne'),
     options: question.options.map((title, index) => ({ id: String(index), title })),
     multiSelect: Boolean(question.multiSelect),
     allowOther: question.allowOther,
@@ -99,25 +97,33 @@ function toQuestionView(question: DomainQuestion): LiveCoachQuestionView {
 }
 
 /** A NEW JOURNEY card summarising the completed goal (no build needed for the summary line). */
-function journeyCardItem(spec: GoalSpec): LiveCoachItem {
-  const shape = spec.isHabit ? 'Recurring habit' : 'Step-by-step plan';
-  const meta = spec.activeExpertDisplayName ? `${shape} · ${spec.activeExpertDisplayName}` : shape;
+function journeyCardItem(spec: GoalSpec, t: TFunction<'coach'>): LiveCoachItem {
+  const shape = spec.isHabit ? t('journeyCard.habit') : t('journeyCard.plan');
+  const meta = spec.activeExpertDisplayName
+    ? t('journeyCard.metaWithExpert', { shape, expert: spec.activeExpertDisplayName })
+    : shape;
   return {
     kind: 'journey',
-    eyebrow: 'NEW JOURNEY',
+    eyebrow: t('journeyCard.eyebrow'),
     title: spec.title,
-    description:
-      spec.description ?? 'A plan paced for your real week, built around what you just told me.',
+    description: spec.description ?? t('journeyCard.defaultDescription'),
     meta,
   };
 }
 
 export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
+  const { t, i18n } = useTranslation('coach');
   const orchestratorRef = useRef<CoachOrchestrator | null>(null);
   if (orchestratorRef.current === null) {
     orchestratorRef.current =
       options?.orchestrator ??
-      new CoachOrchestrator({ llm: makeCoachLlm(), guard: new SafetyLayer().messageGuard() });
+      // Thread the user's ACTIVE language into the one understanding call so the coach reads a
+      // non-English opening in it (the visible dialogue is already localized via i18n).
+      new CoachOrchestrator({
+        llm: makeCoachLlm(),
+        guard: new SafetyLayer().messageGuard(),
+        locale: i18n.language,
+      });
   }
 
   const [items, setItems] = useState<LiveCoachItem[]>([]);
@@ -131,10 +137,13 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   const rawQuestionRef = useRef<DomainQuestion | null>(null);
   const startedRef = useRef(false);
 
-  const applyQuestion = useCallback((question: DomainQuestion | null) => {
-    rawQuestionRef.current = question;
-    setQuestionView(question ? toQuestionView(question) : null);
-  }, []);
+  const applyQuestion = useCallback(
+    (question: DomainQuestion | null) => {
+      rawQuestionRef.current = question;
+      setQuestionView(question ? toQuestionView(question, t) : null);
+    },
+    [t],
+  );
 
   // Greet once, on mount — start() is a no-op-safe local call (no LLM).
   useEffect(() => {
@@ -152,14 +161,14 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         applyQuestion(null);
         setGoalSpec(null);
         setHandoff(true);
-        setItems((prev) => [...prev, { kind: 'coach', text: SENSITIVE_HANDOFF_MESSAGE }]);
+        setItems((prev) => [...prev, { kind: 'coach', text: t('sensitiveHandoff') }]);
         return;
       }
 
       const appended: LiveCoachItem[] = [{ kind: 'coach', text: turn.coachMessage }];
       if (turn.done) {
         const spec = turn.goalSpec ?? null;
-        if (spec) appended.push(journeyCardItem(spec));
+        if (spec) appended.push(journeyCardItem(spec, t));
         applyQuestion(null);
         setGoalSpec(spec);
         setItems((prev) => [...prev, ...appended]);
@@ -169,7 +178,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       applyQuestion(turn.question ?? null);
       setItems((prev) => [...prev, ...appended]);
     },
-    [applyQuestion],
+    [applyQuestion, t],
   );
 
   /**
@@ -190,11 +199,11 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         // triage already degrades internally; this guards anything that still throws (e.g. a
         // transport error surfaced as LlmError) so the surface stays alive and retryable.
         setStatus('error');
-        setItems((prev) => [...prev, { kind: 'coach', text: RETRY_MESSAGE }]);
+        setItems((prev) => [...prev, { kind: 'coach', text: t('retry') }]);
         if (thinking) setAwaitingOpening(true);
       }
     },
-    [applyTurn, applyQuestion],
+    [applyTurn, applyQuestion, t],
   );
 
   const sendOpening = useCallback(

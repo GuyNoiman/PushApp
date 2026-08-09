@@ -1,0 +1,11 @@
+{
+  "title": "גילוי",
+  "searchPlaceholder": "מה תרצה להשיג?",
+  "forYou": "בשבילך",
+  "topCreators": "יוצרים מובילים",
+  "fromBrands": "ממותגים",
+  "noMatches": {
+    "title": "אין תוצאות",
+    "body": "אין כאן משהו שתואם ל“{{query}}”. נסה מילה אחרת."
+  }
+}

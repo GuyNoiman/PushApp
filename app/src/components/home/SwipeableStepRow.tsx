@@ -24,6 +24,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import ReanimatedSwipeable, {
   SwipeDirection,
@@ -34,6 +35,7 @@ import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reani
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 
 // How far the row must be dragged before a release commits. Right (Done) asks for a
 // slightly longer pull so a completion is always deliberate; left (reveal) opens sooner.
@@ -55,6 +57,7 @@ function DoneReveal({
   borderRadius: number;
   background: string;
 }) {
+  const { t } = useTranslation('home');
   const iconStyle = useAnimatedStyle(() => {
     const p = Math.min(1, progress.value);
     return { opacity: Math.min(1, p * 1.5), transform: [{ scale: 0.7 + p * 0.3 }] };
@@ -64,7 +67,7 @@ function DoneReveal({
     <View style={[styles.doneReveal, { backgroundColor: background, borderRadius }]}>
       <Animated.View style={[styles.doneInner, iconStyle]}>
         <Ionicons name="checkmark-circle" size={26} color={ON_ACCENT} />
-        <ThemedText style={styles.doneLabel}>Done</ThemedText>
+        <ThemedText style={styles.doneLabel}>{t('done', { ns: 'common' })}</ThemedText>
       </Animated.View>
     </View>
   );
@@ -74,17 +77,24 @@ function DoneReveal({
 function RightActions({
   progress,
   theme,
+  rtl,
   onPostpone,
   onLetGo,
 }: {
   progress: SharedValue<number>;
   theme: ReturnType<typeof useTheme>;
+  /** Under RTL the buttons reveal from the opposite side, so the entrance slide flips. */
+  rtl: boolean;
   onPostpone: () => void;
   onLetGo: () => void;
 }) {
+  const { t } = useTranslation('home');
+  // The slide-in direction is a plain captured number so the worklet stays direction-aware
+  // without reading I18nManager off the UI thread.
+  const dir = rtl ? -1 : 1;
   const enter = useAnimatedStyle(() => {
     const p = Math.min(1, progress.value);
-    return { opacity: p, transform: [{ translateX: (1 - p) * 28 }] };
+    return { opacity: p, transform: [{ translateX: (1 - p) * 28 * dir }] };
   });
 
   return (
@@ -92,7 +102,7 @@ function RightActions({
       <View style={styles.action}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Postpone this step"
+          accessibilityLabel={t('swipe.postponeA11y')}
           onPress={onPostpone}
           style={({ pressed }) => [
             styles.roundBtn,
@@ -101,13 +111,15 @@ function RightActions({
           ]}>
           <Ionicons name="time-outline" size={22} color={ON_ACCENT} />
         </Pressable>
-        <ThemedText style={[styles.actionLabel, { color: theme.textSecondary }]}>Postpone</ThemedText>
+        <ThemedText style={[styles.actionLabel, { color: theme.textSecondary }]}>
+          {t('postpone', { ns: 'common' })}
+        </ThemedText>
       </View>
 
       <View style={styles.action}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Let this step go, no shame"
+          accessibilityLabel={t('swipe.letGoA11y')}
           onPress={onLetGo}
           style={({ pressed }) => [
             styles.roundBtn,
@@ -116,7 +128,9 @@ function RightActions({
           ]}>
           <Ionicons name="heart-dislike-outline" size={22} color={ON_ACCENT} />
         </Pressable>
-        <ThemedText style={[styles.actionLabel, { color: theme.textSecondary }]}>Let go</ThemedText>
+        <ThemedText style={[styles.actionLabel, { color: theme.textSecondary }]}>
+          {t('letGo', { ns: 'common' })}
+        </ThemedText>
       </View>
     </Animated.View>
   );
@@ -150,35 +164,60 @@ export function SwipeableStepRow({
 
   if (!enabled) return <>{children}</>;
 
+  // RTL-aware direction: the gesture encodes "swipe toward completion = Done". In LTR
+  // the Done wash sits on the START (left) side and is revealed by dragging the card
+  // toward the END (a swipe right, which opens the LEFT panel); the round Postpone /
+  // Let-go buttons sit on the END (right) side. Under RTL the whole axis mirrors, so we
+  // SWAP which physical side renders which panel (and the matching thresholds + the
+  // open-direction that commits Done) to keep "swipe toward the start edge = Done"
+  // consistent. NOTE: I18nManager.forceRTL is a no-op on web, so this mirroring is
+  // code-level and must be device-verified by the founder.
+  const rtl = isRTL();
+
+  const renderDone = (progress: SharedValue<number>) => (
+    <DoneReveal progress={progress} borderRadius={borderRadius} background={theme.success} />
+  );
+  const renderButtons = (
+    progress: SharedValue<number>,
+    _translation: SharedValue<number>,
+    methods: SwipeableMethods,
+  ) => (
+    <RightActions
+      progress={progress}
+      theme={theme}
+      rtl={rtl}
+      onPostpone={() => {
+        onPostpone();
+        methods.close();
+      }}
+      onLetGo={() => {
+        onLetGo();
+        methods.close();
+      }}
+    />
+  );
+
+  // The side that opening commits Done: the Done wash is on LEFT in LTR, RIGHT in RTL.
+  const doneOpenDirection = rtl ? SwipeDirection.RIGHT : SwipeDirection.LEFT;
+
   return (
     <ReanimatedSwipeable
       ref={ref}
       friction={2}
-      leftThreshold={DONE_THRESHOLD}
-      rightThreshold={ACTIONS_THRESHOLD}
-      overshootRight={false}
+      // Done keeps its longer, deliberate pull; the buttons open sooner — thresholds
+      // follow the Done wash to whichever side it lives on.
+      leftThreshold={rtl ? ACTIONS_THRESHOLD : DONE_THRESHOLD}
+      rightThreshold={rtl ? DONE_THRESHOLD : ACTIONS_THRESHOLD}
+      // No overshoot on the round-buttons side (their reveal is a fixed width).
+      overshootLeft={rtl ? false : undefined}
+      overshootRight={rtl ? undefined : false}
       containerStyle={containerStyle}
-      renderLeftActions={(progress) => (
-        <DoneReveal progress={progress} borderRadius={borderRadius} background={theme.success} />
-      )}
-      renderRightActions={(progress, _translation, methods) => (
-        <RightActions
-          progress={progress}
-          theme={theme}
-          onPostpone={() => {
-            onPostpone();
-            methods.close();
-          }}
-          onLetGo={() => {
-            onLetGo();
-            methods.close();
-          }}
-        />
-      )}
+      renderLeftActions={rtl ? renderButtons : renderDone}
+      renderRightActions={rtl ? renderDone : renderButtons}
       onSwipeableWillOpen={(direction) => {
-        // Left actions open on a swipe-RIGHT → that's the Done commit. Fire the shared
-        // Done path (confetti pops on Home) and settle the row back to rest.
-        if (direction === SwipeDirection.LEFT) {
+        // The Done wash opening is the Done commit: fire the shared Done path (confetti
+        // pops on Home) and settle the row back to rest.
+        if (direction === doneOpenDirection) {
           onDone();
           ref.current?.close();
         }
@@ -194,8 +233,10 @@ const styles = StyleSheet.create({
     width: DONE_ACTION_WIDTH,
     flexDirection: 'row',
     alignItems: 'center',
+    // flex-start + paddingStart keep the check flush to the card's revealed (leading)
+    // edge in both directions.
     justifyContent: 'flex-start',
-    paddingLeft: Spacing.four,
+    paddingStart: Spacing.four,
   },
   doneInner: {
     flexDirection: 'row',

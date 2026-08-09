@@ -1,0 +1,30 @@
+{
+  "title": "מסעות",
+  "createJourney": "מסע חדש",
+  "createA11y": "יצירת מסע חדש",
+  "tabs": {
+    "active": "פעילים",
+    "completed": "הושלמו",
+    "future": "עתידיים"
+  },
+  "empty": {
+    "title": "עדיין אין מסעות פעילים",
+    "body": "התחילו את המסע הראשון שלכם והוא יופיע כאן ככל שתתקדמו."
+  },
+  "card": {
+    "milestone": "אבן דרך {{phase}} מתוך {{phases}}",
+    "milestoneComplete": "אבן דרך {{phases}} מתוך {{phases}}, הושלם",
+    "completed": "הושלם",
+    "starts": "מתחיל ב-{{date}}",
+    "done": "בוצע",
+    "soon": "בקרוב",
+    "paused": "מושהה",
+    "open": "פתיחת {{title}}"
+  },
+  "ends": {
+    "ended": "הסתיים",
+    "thisWeek": "מסתיים השבוע",
+    "inWeeks_one": "מסתיים בעוד שבוע",
+    "inWeeks_other": "מסתיים בעוד {{count}} שבועות"
+  }
+}

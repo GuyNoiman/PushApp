@@ -1,0 +1,88 @@
+{
+  "greeting": {
+    "morning": "בוקר טוב",
+    "afternoon": "צהריים טובים",
+    "evening": "ערב טוב",
+    "line": "{{greeting}}, {{name}}",
+    "fallbackName": "חבר"
+  },
+  "coach": {
+    "title": "דברו עם המאמן שלכם",
+    "subtitle": "לתכנן יעד, לכוונן את השבוע, או פשוט לחשוב ביחד"
+  },
+  "weekAdjusted": {
+    "title": "כיווננתי לך את השבוע",
+    "atRisk": "קצת צפוף, אבל נצלח את זה יחד.",
+    "a11y": "השבוע שלך כווננן. {{narration}}"
+  },
+  "sections": {
+    "todayFocus": "המיקוד של היום",
+    "thisWeek": "השבוע",
+    "giveSupport": "לתת תמיכה",
+    "seeAll": "הכול"
+  },
+  "caughtUp": {
+    "title": "סיימת הכול להיום.",
+    "body": "אין כרגע שום דבר דחוף, רגע טוב להביט קדימה."
+  },
+  "week": {
+    "empty": "אין צעדים נוספים מתוכננים השבוע."
+  },
+  "milestone": "אבן דרך {{current}} מתוך {{total}}",
+  "step": {
+    "report": "דיווח על {{title}}",
+    "doneA11y": "{{title}}, הושלם"
+  },
+  "status": {
+    "level": "רמה {{level}}, {{into}} מתוך {{total}} נקודות ניסיון לרמה הבאה",
+    "coins": "מטבעות",
+    "streak": "ימי רצף",
+    "stat": "{{value}} {{label}}"
+  },
+  "swipe": {
+    "postponeA11y": "לדחות את הצעד הזה",
+    "letGoA11y": "לשחרר את הצעד הזה, בלי בושה"
+  },
+  "support": {
+    "tab": {
+      "nudge": "זקוקים לתמיכה",
+      "cheer": "ראויים לשבח"
+    },
+    "action": {
+      "nudge": "לתת דחיפה",
+      "cheer": "לעודד"
+    },
+    "empty": {
+      "nudge": "כל מי שבמעגל שלך על המסלול כרגע.",
+      "cheer": "עוד אין הישגים לחגוג."
+    },
+    "tabA11y": "{{label}}, {{count}} אנשים",
+    "actionA11y": "{{action}} {{name}}",
+    "quiet_one": "שקט כבר {{count}} יום{{on}}",
+    "quiet_other": "שקט כבר {{count}} ימים{{on}}",
+    "streak_one": "ברצף של {{count}} יום{{on}}",
+    "streak_other": "ברצף של {{count}} ימים{{on}}",
+    "madeProgress": "התקדמו{{on}}",
+    "on": " ב'{{title}}'"
+  },
+  "report": {
+    "prompt": "איך הלך?",
+    "doneA11y": "לסמן כבוצע",
+    "partial": {
+      "label": "חלקי",
+      "hint": "עשיתי חלק מזה, גם התקדמות נחשבת."
+    },
+    "couldnt": {
+      "label": "לא הצלחתי",
+      "hint": "החיים קרו. בלי עונש."
+    },
+    "postpone": {
+      "label": "דחייה",
+      "hint": "לא עכשיו, ספרו לי מה הפריע."
+    },
+    "reschedule": {
+      "label": "תזמון מחדש",
+      "hint": "להזיז לזמן שמתאים יותר."
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "closeConversation": "Close conversation",
+  "header": "New plan",
+  "thinking": "Thinking…",
+  "chooseOne": "Choose one",
+  "chooseAny": "Choose any that apply",
+  "continue": "Continue",
+  "build": "Build my Journey",
+  "handoff": "Set it up myself",
+  "inputPlaceholder": "Type or speak…",
+  "send": "Send",
+  "speak": "Speak (coming soon)",
+  "otherOption": "Other, type your own",
+  "otherPlaceholder": "Type your own…",
+  "savedForLater": "Saved for later",
+  "sensitiveHandoff": "This is something that really deserves a person alongside you — not just an app. I don’t want to shape a plan here that a good professional should walk with you on. If it helps, you can still set up a Journey yourself, and I’ll be here to support you as you go.",
+  "retry": "I didn’t quite catch that — my connection may have hiccuped. Mind telling me once more?",
+  "journeyCard": {
+    "eyebrow": "NEW JOURNEY",
+    "habit": "Recurring habit",
+    "plan": "Step-by-step plan",
+    "metaWithExpert": "{{shape}} · {{expert}}",
+    "defaultDescription": "A plan paced for your real week, built around what you just told me."
+  },
+  "edit": {
+    "header": "Edit Journey",
+    "greeting": "Let's tune \"{{title}}\". Tell me what you'd like to change, and I'll show you the exact update before anything happens.",
+    "placeholder": "What would you like to change?",
+    "thinking": "Working on it…",
+    "noChange": "I didn't catch a change there. Tell me what you'd like to adjust and I'll show you the update.",
+    "error": "Something hiccuped on my end. Mind telling me once more?",
+    "proposalTitle": "Here's the update",
+    "apply": "Apply changes",
+    "adjust": "Adjust",
+    "change": {
+      "rename": "Rename to \"{{title}}\"",
+      "why": "Update your why ({{count}})",
+      "rhythm": "Change the rhythm to {{rhythm}}",
+      "duration": "Change the length to {{days}} days",
+      "addStep": "Add Step: {{title}}",
+      "editStep": "Update Step: {{title}}",
+      "removeStep": "Remove Step: {{title}}"
+    },
+    "rhythm": {
+      "daily": "daily",
+      "few-times-week": "a few times a week",
+      "weekly": "weekly"
+    }
+  },
+  "script": {
+    "opening": {
+      "intro": "Hey, good to have you here. Tell me what's on your mind and we'll figure it out together. Nothing is too small to bring up.",
+      "question": "So, what do you want to work on?",
+      "placeholder": "Type or speak…"
+    },
+    "reflect": {
+      "userEcho": "I want to start drinking more protein every day, and I keep meaning to build up my push-ups but never actually start.",
+      "coach": "Okay, I hear two things. One is a daily habit, drinking more protein. The other is a real plan, building up your push-ups. Let's start with one, and I'll keep the other safe for later.",
+      "prompt": "Which one first?",
+      "pushupsTitle": "Build up my push-ups",
+      "pushupsMeta": "Step-by-step plan · Body Image",
+      "proteinTitle": "Drink more protein daily",
+      "proteinMeta": "Daily habit"
+    },
+    "focus": {
+      "coach": "Thanks. Here's my honest take.",
+      "insight": "Going from zero to a strong set in three weeks is a big ask. Give it six to eight weeks and you get a real change, not just a number.",
+      "journeyEyebrow": "NEW JOURNEY",
+      "journeyTitle": "Push-Up Progression",
+      "journeyDescription": "A steady build over six to eight weeks, from your first knee push-up to a confident set of 15. It's paced for a busy week, not a sprint.",
+      "journeyMeta": "3 Milestones · ~7 weeks · Body Image",
+      "primary": "Build my Journey",
+      "secondary": "Or adjust the pace first"
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "title": "Settings",
+  "sections": {
+    "profile": "Profile",
+    "account": "Account",
+    "app": "App",
+    "data": "Your data",
+    "developer": "Developer"
+  },
+  "profile": {
+    "namePlaceholder": "Your name (from sign-in)",
+    "usernamePlaceholder": "yourusername",
+    "editUsername": "Edit username",
+    "usernameHelp": "This is how friends find you."
+  },
+  "account": {
+    "apple": "Sign in with Apple",
+    "google": "Sign in with Google",
+    "comingSoon": "Coming soon",
+    "simulated": "Simulated",
+    "simulatedWithEmail": "{{email}} · Simulated",
+    "simulatedDev": "Simulated (dev testing)",
+    "connected": "Connected"
+  },
+  "app": {
+    "notifications": "Notifications",
+    "notificationsDetail": "Reminders and cheers",
+    "notificationsValue": "On",
+    "notificationsStatus": {
+      "granted": "On",
+      "denied": "Off",
+      "undetermined": "Not set"
+    },
+    "appearance": "Appearance",
+    "appearanceDetail": "Theme",
+    "about": "About",
+    "language": "Language"
+  },
+  "appearance": {
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "data": {
+    "export": {
+      "label": "Export my data",
+      "detail": "Save a copy of everything on this device",
+      "errorTitle": "Export didn't finish",
+      "errorBody": "Something went wrong preparing your data. Please try again."
+    },
+    "delete": {
+      "label": "Delete account",
+      "detail": "Permanently remove your account and data",
+      "title": "Delete your account?",
+      "body": "This permanently deletes your account and all of your data. This cannot be undone.",
+      "acknowledge": "I understand this permanently deletes my account and all my data.",
+      "confirm": "Delete everything",
+      "cancel": "Cancel",
+      "errorOffline": "We couldn't reach the server. Try again when you're back online.",
+      "errorGeneric": "Something went wrong. Your data was not deleted. Please try again."
+    }
+  },
+  "developer": {
+    "adaptiveReplan": "Adaptive replan",
+    "adaptiveReplanDetail": "Force a slip and re-plan a week"
+  },
+  "language": {
+    "title": "Language",
+    "search": "Search languages"
+  },
+  "restart": {
+    "title": "Reopen to finish",
+    "body": "PushApp needs to reopen to finish switching language and direction."
+  }
+}

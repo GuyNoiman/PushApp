@@ -8,20 +8,27 @@
  *   · Profile   — the auto-generated, editable @username (MOVED here from Circle)
  *     plus a display-name/avatar placeholder that sign-in will fill.
  *   · Account   — "Sign in with Apple / Google", marked "Coming soon".
- *   · App       — Notifications, Appearance/Theme, About: light presentational
- *     rows so the screen reads complete (no logic wired yet).
+ *   · App       — Notifications (reads the REAL OS permission status and taps to request / open OS
+ *     settings — E2), Appearance/Theme (wired), Language (wired), About (real app version from the
+ *     Expo config). No longer just placeholders.
+ *   · Your data — Export my data (local JSON share) + a destructive Delete account
+ *     (O1). These two ARE wired: they orchestrate through useAccountActions.
  *
- * Presentational only (Engineering Bible §19): the one piece of state — the
- * username — lives in ProfileIdentity, which calls SocialProvider. Everything
- * else is a static row. Hairlines, one teal accent, no gloss, no emoji-as-UI.
+ * Presentational only (Engineering Bible §19): local UI state (username via ProfileIdentity →
+ * SocialProvider; appearance/language prefs; the read-only notification permission status).
+ * Hairlines, one teal accent, no gloss, no emoji-as-UI.
  *
  * TODO(auth): Apple/Google sign-in will supply a real display name/identity and
  * turn the Account rows into working actions.
  */
+import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DeleteAccountSheet } from '@/components/settings/DeleteAccountSheet';
 import { ProfileIdentity } from '@/components/settings/ProfileIdentity';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -31,21 +38,52 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { useTheme } from '@/hooks/use-theme';
+import { findLanguage } from '@/i18n/languages';
+import { useLanguagePreference } from '@/state/LanguagePreference';
+import { useNotificationPermission } from '@/state/useNotificationPermission';
 import { useThemePreference, type ThemePreference } from '@/state/ThemePreference';
+import { useAccountActions } from '@/state/useAccountActions';
 
 // Appearance cycles System → Light → Dark → System on tap; the row shows the
 // current choice as its value and applies it instantly (the whole app re-themes).
 const APPEARANCE_ORDER: readonly ThemePreference[] = ['system', 'light', 'dark'];
-const APPEARANCE_LABEL: Record<ThemePreference, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-};
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation('settings');
   const { preference, setPreference } = useThemePreference();
+  const { language } = useLanguagePreference();
+  const { status: notifStatus, request: requestNotif } = useNotificationPermission();
+  const { exportData, deleteAccount } = useAccountActions();
+  const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
+
+  // Notifications row (E2): tapping requests permission the first time it's undetermined; once the OS
+  // has a decision, it deep-links to the app's OS settings so the user can flip it there.
+  const onNotificationsPress = () => {
+    if (notifStatus === 'undetermined') void requestNotif();
+    else void Linking.openSettings().catch(() => {});
+  };
+
+  // App version for the About row — read from the Expo config (app.json), never hard-coded.
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+
+  // Local JSON export via the OS share sheet; a failure surfaces a calm alert
+  // rather than crashing (the temp file is always cleaned up by the hook).
+  const onExport = async () => {
+    try {
+      await exportData();
+    } catch {
+      Alert.alert(t('data.export.errorTitle'), t('data.export.errorBody'));
+    }
+  };
+
+  // The current appearance choice, localised (System / Light / Dark).
+  const appearanceLabel: Record<ThemePreference, string> = {
+    system: t('appearance.system'),
+    light: t('appearance.light'),
+    dark: t('appearance.dark'),
+  };
 
   const cycleAppearance = () => {
     const next = APPEARANCE_ORDER[(APPEARANCE_ORDER.indexOf(preference) + 1) % APPEARANCE_ORDER.length];
@@ -61,7 +99,7 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-          <ThemedText type="title">Settings</ThemedText>
+          <ThemedText type="title">{t('title')}</ThemedText>
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -71,52 +109,90 @@ export default function SettingsScreen() {
           {/* Account — Apple is still "coming soon"; Google reads as connected via the
               dev-simulated sign-in when the founder's env vars are set. The email +
               "Simulated" note keep it honest that no real OAuth ran. TODO(auth). */}
-          <SettingsSection title="Account">
-            <SettingsRow icon="logo-apple" label="Sign in with Apple" badge="Coming soon" />
+          <SettingsSection title={t('sections.account')}>
+            <SettingsRow icon="logo-apple" label={t('account.apple')} badge={t('account.comingSoon')} />
             {simUser.signedIn ? (
               <SettingsRow
                 icon="logo-google"
-                label="Sign in with Google"
+                label={t('account.google')}
                 detail={
-                  simUser.email ? `${simUser.email} · Simulated` : 'Simulated (dev testing)'
+                  simUser.email
+                    ? t('account.simulatedWithEmail', { email: simUser.email })
+                    : t('account.simulatedDev')
                 }
                 connected
               />
             ) : (
-              <SettingsRow icon="logo-google" label="Sign in with Google" badge="Coming soon" />
+              <SettingsRow icon="logo-google" label={t('account.google')} badge={t('account.comingSoon')} />
             )}
           </SettingsSection>
 
           {/* App — light presentational placeholders (no logic wired yet). */}
-          <SettingsSection title="App">
+          <SettingsSection title={t('sections.app')}>
             <SettingsRow
               icon="notifications-outline"
-              label="Notifications"
-              detail="Reminders and cheers"
-              value="On"
+              label={t('app.notifications')}
+              detail={t('app.notificationsDetail')}
+              value={t(`app.notificationsStatus.${notifStatus}`)}
+              onPress={onNotificationsPress}
             />
             <SettingsRow
               icon="contrast-outline"
-              label="Appearance"
-              detail="Theme"
-              value={APPEARANCE_LABEL[preference]}
+              label={t('app.appearance')}
+              detail={t('app.appearanceDetail')}
+              value={appearanceLabel[preference]}
               onPress={cycleAppearance}
             />
-            <SettingsRow icon="information-circle-outline" label="About" value="v0.1" />
+            <SettingsRow
+              icon="language-outline"
+              label={t('app.language')}
+              value={findLanguage(language)?.endonym}
+              onPress={() => router.push('/settings/language' as Href)}
+            />
+            <SettingsRow icon="information-circle-outline" label={t('app.about')} value={`v${appVersion}`} />
+          </SettingsSection>
+
+          {/* Your data — the two wired account actions (O1). Export is local-only;
+              Delete is destructive and gated behind an explicit confirmation. */}
+          <SettingsSection title={t('sections.data')}>
+            <SettingsRow
+              icon="download-outline"
+              label={t('data.export.label')}
+              detail={t('data.export.detail')}
+              onPress={onExport}
+            />
+            <SettingsRow
+              icon="trash-outline"
+              label={t('data.delete.label')}
+              detail={t('data.delete.detail')}
+              destructive
+              onPress={() => setDeleteSheetVisible(true)}
+            />
           </SettingsSection>
 
           {/* Developer — founder-device-only; shown only when the adaptive dev flag is on. */}
           {featureFlags.adaptiveCoachDev ? (
-            <SettingsSection title="Developer">
+            <SettingsSection title={t('sections.developer')}>
               <SettingsRow
                 icon="flask-outline"
-                label="Adaptive replan"
-                detail="Force a slip and re-plan a week"
+                label={t('developer.adaptiveReplan')}
+                detail={t('developer.adaptiveReplanDetail')}
                 onPress={() => router.push('/dev-adaptive' as Href)}
               />
             </SettingsSection>
           ) : null}
         </ScrollView>
+
+        <DeleteAccountSheet
+          visible={deleteSheetVisible}
+          onCancel={() => setDeleteSheetVisible(false)}
+          onConfirm={deleteAccount}
+          onDeleted={() => {
+            setDeleteSheetVisible(false);
+            // Land on a clean first-run state (onboarding gate takes over).
+            router.replace('/' as Href);
+          }}
+        />
       </SafeAreaView>
     </ThemedView>
   );

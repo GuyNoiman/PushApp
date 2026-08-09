@@ -1,0 +1,27 @@
+{
+  "done": "Done",
+  "cancel": "Cancel",
+  "save": "Save",
+  "back": "Back",
+  "search": "Search",
+  "clearSearch": "Clear search",
+  "close": "Close",
+  "edit": "Edit",
+  "delete": "Delete",
+  "next": "Next",
+  "continue": "Continue",
+  "create": "Create",
+  "add": "Add",
+  "remove": "Remove",
+  "postpone": "Postpone",
+  "letGo": "Let go",
+  "loading": "Loading…",
+  "dismiss": "Dismiss",
+  "tabs": {
+    "home": "Home",
+    "journeys": "Journeys",
+    "circle": "Circle",
+    "inbox": "Inbox",
+    "settings": "Settings"
+  }
+}

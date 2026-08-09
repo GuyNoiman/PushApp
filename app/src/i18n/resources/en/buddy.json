@@ -1,0 +1,34 @@
+{
+  "reactions": [
+    "That counts. Well done.",
+    "You showed up, that is what matters.",
+    "Another Step forward. I felt that.",
+    "Steady progress. Keep going.",
+    "Proud of you for that one."
+  ],
+  "scene": {
+    "customizeA11y": "Customize your Buddy",
+    "openShopA11y": "Open the Shop"
+  },
+  "inventory": {
+    "categories": {
+      "character": "Character",
+      "clothing": "Clothing",
+      "items": "Items",
+      "location": "Location",
+      "furniture": "Furniture"
+    },
+    "lockedTabA11y": "{{label}} — locked",
+    "unlocksAtLevel": "🔒 Unlocks at level {{level}}",
+    "comingSoon": "{{label}} is coming soon",
+    "select": "Select",
+    "selectA11y": "Select this item",
+    "lockedSlotA11y": "Locked slot",
+    "currentlyWornA11y": "{{name}} — currently worn"
+  },
+  "evolve": {
+    "evolved": "{{name}} evolved",
+    "collect": "COLLECT",
+    "collectA11y": "Collect — {{stage}}"
+  }
+}

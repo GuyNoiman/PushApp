@@ -9,21 +9,24 @@
  * Presentational only; the caller supplies the navigation (→ '/coach').
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { chevronName } from '@/i18n/rtl';
 
 export function CoachButton({ onPress }: { onPress: () => void }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
   const onAccent = useColorScheme() === 'dark' ? '#0A1615' : '#F5FBFB';
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Talk to your coach"
+      accessibilityLabel={t('coach.title')}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
@@ -44,14 +47,14 @@ export function CoachButton({ onPress }: { onPress: () => void }) {
 
       <View style={styles.body}>
         <ThemedText style={[styles.title, { color: theme.tealStrong }]}>
-          Talk to your coach
+          {t('coach.title')}
         </ThemedText>
         <ThemedText type="small" numberOfLines={2} style={{ color: theme.textSecondary }}>
-          Plan a goal, adjust your week, or think it through
+          {t('coach.subtitle')}
         </ThemedText>
       </View>
 
-      <Ionicons name="chevron-forward" size={20} color={theme.tint} style={styles.arrow} />
+      <Ionicons name={chevronName()} size={20} color={theme.tint} style={styles.arrow} />
     </Pressable>
   );
 }
@@ -63,7 +66,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     marginHorizontal: Spacing.four,
     padding: Spacing.three,
-    paddingLeft: Spacing.four,
+    paddingStart: Spacing.four,
     borderRadius: Radius.card + 4,
     borderWidth: 1,
     overflow: 'hidden',
@@ -74,7 +77,7 @@ const styles = StyleSheet.create({
   },
   edge: {
     position: 'absolute',
-    left: 0,
+    start: 0,
     top: 0,
     bottom: 0,
     width: 5,

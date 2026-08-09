@@ -5,6 +5,7 @@
  * stage name, gold stars, and a COLLECT button. This is a reward/identity
  * surface that earns full game-juice; work surfaces stay calm.
  */
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { BuddyAvatar } from '@/components/buddy/BuddyAvatar';
@@ -27,6 +28,7 @@ export function EvolveReveal({
   toStageDisplayName: string;
   onCollect: () => void;
 }) {
+  const { t } = useTranslation('buddy');
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCollect}>
       <View style={styles.backdrop}>
@@ -35,18 +37,18 @@ export function EvolveReveal({
         </View>
 
         <ThemedText type="small" style={styles.eyebrow}>
-          {buddyName} evolved
+          {t('evolve.evolved', { name: buddyName })}
         </ThemedText>
         <ThemedText style={styles.stageName}>{toStageDisplayName}</ThemedText>
         <ThemedText style={styles.stars}>⭐ ⭐ ⭐</ThemedText>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Collect — ${toStageDisplayName}`}
+          accessibilityLabel={t('evolve.collectA11y', { stage: toStageDisplayName })}
           onPress={onCollect}
           style={({ pressed }) => [styles.collectButton, pressed && styles.pressed]}>
           <ThemedText type="smallBold" style={styles.collectLabel}>
-            COLLECT
+            {t('evolve.collect')}
           </ThemedText>
         </Pressable>
       </View>

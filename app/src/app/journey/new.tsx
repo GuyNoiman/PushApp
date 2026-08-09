@@ -16,6 +16,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
   LayoutAnimation,
@@ -38,6 +39,7 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { NewStepInput } from '@/core/engines/JourneyEngine';
 import type { Cadence, Rhythm } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -52,33 +54,20 @@ interface DraftStep {
   cadence: Cadence;
 }
 
-const STAGE_TITLES = ['Name', 'Your why', 'Duration & rhythm', 'Steps', 'Reminders', 'Summary'];
+// The six wizard stages, keyed for i18n (`new.stages.<key>`). Labels are resolved
+// through `t` in the component so the wizard reads in the active language.
+const STAGE_KEYS = ['name', 'why', 'duration', 'steps', 'reminders', 'summary'] as const;
 
-const RHYTHM_OPTIONS: { value: Rhythm; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'few-times-week', label: 'A few times a week' },
-  { value: 'weekly', label: 'Weekly' },
-];
-
-const DURATION_OPTIONS = [
-  { value: 30, label: '1 month' },
-  { value: 60, label: '2 months' },
-  { value: 90, label: '3 months' },
-];
-
-const CADENCE_OPTIONS: { value: Cadence; label: string }[] = [
-  { value: 'once', label: 'Once' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-];
-
-const REMINDER_TIMES = [
-  { hour: 8, minute: 0, label: 'Morning · 8:00' },
-  { hour: 12, minute: 0, label: 'Midday · 12:00' },
-  { hour: 19, minute: 0, label: 'Evening · 19:00' },
-];
-
-const STARTER_EXAMPLES = 'e.g. "Put on workout clothes", "Open LinkedIn and save one job"';
+// Option *values* live here (config-before-code); their labels resolve via `t`
+// inside the component so nothing user-facing is hard-coded in English.
+const RHYTHM_VALUES: Rhythm[] = ['daily', 'few-times-week', 'weekly'];
+const DURATION_VALUES = [30, 60, 90];
+const CADENCE_VALUES: Cadence[] = ['once', 'daily', 'weekly'];
+const REMINDER_SLOTS = [
+  { hour: 8, minute: 0, key: 'morning' },
+  { hour: 12, minute: 0, key: 'midday' },
+  { hour: 19, minute: 0, key: 'evening' },
+] as const;
 
 let draftCounter = 0;
 function newDraftStep(): DraftStep {
@@ -90,6 +79,7 @@ export default function NewJourneyScreen() {
   const { core } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation('journey');
 
   const [stage, setStage] = useState(0);
   const [openTooltip, setOpenTooltip] = useState<number | null>(null);
@@ -123,7 +113,25 @@ export default function NewJourneyScreen() {
   const [creating, setCreating] = useState(false);
 
   const canContinue = stage !== 0 || title.trim().length > 0;
-  const isLast = stage === STAGE_TITLES.length - 1;
+  const isLast = stage === STAGE_KEYS.length - 1;
+
+  // User-facing labels for the option chips, resolved in the active language.
+  const rhythmOptions = useMemo(
+    () => RHYTHM_VALUES.map((value) => ({ value, label: t(`new.rhythm.${value}`) })),
+    [t],
+  );
+  const durationOptions = useMemo(
+    () => DURATION_VALUES.map((value) => ({ value, label: t(`new.duration.${value}`) })),
+    [t],
+  );
+  const cadenceOptions = useMemo(
+    () => CADENCE_VALUES.map((value) => ({ value, label: t(`new.cadence.${value}`) })),
+    [t],
+  );
+  const reminderOptions = REMINDER_SLOTS.map((slot, index) => ({
+    value: index,
+    label: t(`new.reminders.${slot.key}`),
+  }));
 
   const why = useMemo(
     () => [whyStart.trim(), whyKeepGoing.trim(), ...hardMoments].filter(Boolean),
@@ -193,10 +201,10 @@ export default function NewJourneyScreen() {
         // Ask for notification permission only now, in context (never at launch).
         const granted = await core.initReminders();
         if (granted) {
-          const time = REMINDER_TIMES[remindTimeIndex];
+          const time = REMINDER_SLOTS[remindTimeIndex];
           await core.scheduleDailyReminder({
-            title: `Time for ${journey.title}`,
-            body: starterTitle.trim() || 'Take your next Step.',
+            title: t('new.reminders.notificationTitle', { title: journey.title }),
+            body: starterTitle.trim() || t('new.reminders.notificationBody'),
             hour: time.hour,
             minute: time.minute,
           });
@@ -210,9 +218,10 @@ export default function NewJourneyScreen() {
   };
 
   const inputStyle = [styles.input, { borderColor: theme.hairline, color: theme.text }];
-  const rhythmLabel = RHYTHM_OPTIONS.find((r) => r.value === rhythm)?.label ?? rhythm;
-  const durationLabel =
-    DURATION_OPTIONS.find((d) => d.value === durationDays)?.label ?? `${durationDays} days`;
+  const rhythmLabel = t(`new.rhythm.${rhythm}`);
+  const durationLabel = DURATION_VALUES.includes(durationDays)
+    ? t(`new.duration.${durationDays}`)
+    : t('new.duration.days', { count: durationDays });
 
   return (
     <ThemedView style={styles.container}>
@@ -224,27 +233,31 @@ export default function NewJourneyScreen() {
           <View style={[styles.top, { borderBottomColor: theme.hairline }]}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t('new.closeA11y')}
               onPress={dismiss}
               style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]}>
               <ChevronIcon color={theme.textSecondary} />
             </Pressable>
             <ThemedText type="subtitle" style={styles.topTitle}>
-              {stage === 1 ? 'Your why' : 'New Journey'}
+              {stage === 1 ? t('new.stages.why') : t('new.header')}
             </ThemedText>
             <ThemedText type="small" themeColor="textMuted">
-              {stage + 1} / {STAGE_TITLES.length}
+              {t('new.progress', { current: stage + 1, total: STAGE_KEYS.length })}
             </ThemedText>
           </View>
 
           <View style={styles.body}>
             <View style={styles.progressWrap}>
               <View style={styles.progressBars}>
-                {STAGE_TITLES.map((label, index) => (
+                {STAGE_KEYS.map((key, index) => (
                   <Pressable
-                    key={label}
+                    key={key}
                     accessibilityRole="button"
-                    accessibilityLabel={`${label} — step ${index + 1} of ${STAGE_TITLES.length}`}
+                    accessibilityLabel={t('new.stageA11y', {
+                      label: t(`new.stages.${key}`),
+                      index: index + 1,
+                      total: STAGE_KEYS.length,
+                    })}
                     onPress={() => setOpenTooltip((prev) => (prev === index ? null : index))}
                     hitSlop={{ top: 8, bottom: 8 }}
                     style={styles.progressBarHit}>
@@ -261,7 +274,7 @@ export default function NewJourneyScreen() {
                 <View style={styles.tooltipRow}>
                   <View style={[styles.tooltip, { backgroundColor: theme.text }]}>
                     <ThemedText type="small" style={[styles.tooltipText, { color: theme.backgroundElement }]}>
-                      {STAGE_TITLES[openTooltip]}
+                      {t(`new.stages.${STAGE_KEYS[openTooltip]}`)}
                     </ThemedText>
                   </View>
                 </View>
@@ -270,7 +283,7 @@ export default function NewJourneyScreen() {
 
             {stage !== 1 && (
               <ThemedText type="subtitle" style={styles.stageTitle}>
-                {stage === 0 ? 'Name & goal' : STAGE_TITLES[stage]}
+                {stage === 0 ? t('new.stage0Title') : t(`new.stages.${STAGE_KEYS[stage]}`)}
               </ThemedText>
             )}
 
@@ -282,8 +295,8 @@ export default function NewJourneyScreen() {
                 <View style={styles.stack}>
                   <View style={[styles.field, { borderColor: theme.hairline }]}>
                     <EditRow
-                      label="Name"
-                      value={title || 'Untitled Journey'}
+                      label={t('new.name.label')}
+                      value={title || t('new.name.untitled')}
                       valueColor={title ? theme.text : theme.textMuted}
                       editing={editingTitle}
                       onPress={() => setEditingTitle((v) => !v)}
@@ -293,7 +306,7 @@ export default function NewJourneyScreen() {
                         style={[...inputStyle, styles.rowEditInput]}
                         value={title}
                         onChangeText={setTitle}
-                        placeholder="e.g. Run 5km, Learn to draw…"
+                        placeholder={t('new.name.placeholder')}
                         placeholderTextColor={theme.textSecondary}
                         autoFocus
                         returnKeyType="done"
@@ -304,12 +317,12 @@ export default function NewJourneyScreen() {
                   </View>
 
                   <View style={styles.field}>
-                    <ThemedText type="smallBold">Description</ThemedText>
+                    <ThemedText type="smallBold">{t('new.description.label')}</ThemedText>
                     <TextInput
                       style={[...inputStyle, styles.abig]}
                       value={description}
                       onChangeText={setDescription}
-                      placeholder="What this Journey is about, in your words."
+                      placeholder={t('new.description.placeholder')}
                       placeholderTextColor={theme.textSecondary}
                       multiline
                     />
@@ -320,34 +333,34 @@ export default function NewJourneyScreen() {
               {stage === 1 && (
                 <View style={styles.stack}>
                   <ThemedText type="small" themeColor="textSecondary">
-                    A few words now become your own encouragement later — in your voice.
+                    {t('new.why.intro')}
                   </ThemedText>
                   <View style={styles.qBlock}>
-                    <ThemedText type="smallBold">Why start this Journey?</ThemedText>
+                    <ThemedText type="smallBold">{t('new.why.start')}</ThemedText>
                     <TextInput
                       style={[...inputStyle, styles.ansBox]}
                       value={whyStart}
                       onChangeText={setWhyStart}
-                      placeholder="Type your answer…"
+                      placeholder={t('new.why.answerPlaceholder')}
                       placeholderTextColor={theme.textMuted}
                       multiline
                     />
                   </View>
                   <View style={styles.qBlock}>
-                    <ThemedText type="smallBold">How will you feel if you succeed?</ThemedText>
+                    <ThemedText type="smallBold">{t('new.why.succeed')}</ThemedText>
                     <TextInput
                       style={[...inputStyle, styles.ansBox]}
                       value={whyKeepGoing}
                       onChangeText={setWhyKeepGoing}
-                      placeholder="Type your answer…"
+                      placeholder={t('new.why.answerPlaceholder')}
                       placeholderTextColor={theme.textMuted}
                       multiline
                     />
                   </View>
                   <View style={styles.qBlock}>
-                    <ThemedText type="smallBold">What to remember when it&apos;s hard?</ThemedText>
+                    <ThemedText type="smallBold">{t('new.why.hard')}</ThemedText>
                     <ThemedText type="small" themeColor="textMuted">
-                      Short lines we&apos;ll surface when you&apos;re drifting.
+                      {t('new.why.hardHint')}
                     </ThemedText>
                     <View style={styles.addRow}>
                       <View style={[styles.reminderInputWrap, { borderColor: theme.hairline }]}>
@@ -355,23 +368,23 @@ export default function NewJourneyScreen() {
                           style={[styles.reminderInput, { color: theme.text }]}
                           value={hardMomentDraft}
                           onChangeText={setHardMomentDraft}
-                          placeholder="A short reminder…"
+                          placeholder={t('new.why.hardPlaceholder')}
                           placeholderTextColor={theme.textMuted}
                           maxLength={50}
                           returnKeyType="done"
                           onSubmitEditing={addHardMoment}
                         />
                         <ThemedText type="small" themeColor="textMuted" style={styles.charHint}>
-                          {hardMomentDraft.length}/50
+                          {t('new.why.charHint', { count: hardMomentDraft.length })}
                         </ThemedText>
                       </View>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel="Add reminder"
+                        accessibilityLabel={t('new.why.addA11y')}
                         onPress={addHardMoment}
                         style={[styles.addButton, { backgroundColor: theme.teal }]}>
                         <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
-                          Add
+                          {t('add', { ns: 'common' })}
                         </ThemedText>
                       </Pressable>
                     </View>
@@ -384,7 +397,7 @@ export default function NewJourneyScreen() {
                         </ThemedText>
                         <Pressable
                           accessibilityRole="button"
-                          accessibilityLabel={`Remove ${line}`}
+                          accessibilityLabel={t('new.why.removeA11y', { line })}
                           onPress={() => removeHardMoment(index)}
                           hitSlop={6}>
                           <XIcon color={theme.textMuted} />
@@ -399,7 +412,7 @@ export default function NewJourneyScreen() {
                 <View style={styles.stack}>
                   <View style={[styles.field, { borderColor: theme.hairline }]}>
                     <EditRow
-                      label="Duration"
+                      label={t('new.duration.label')}
                       value={durationLabel}
                       valueColor={theme.tealStrong}
                       editing={editingField === 'duration'}
@@ -410,7 +423,7 @@ export default function NewJourneyScreen() {
                     {editingField === 'duration' && (
                       <View style={styles.rowEditInput}>
                         <ChoiceChips
-                          options={DURATION_OPTIONS}
+                          options={durationOptions}
                           value={durationDays}
                           onChange={(v) => {
                             setDurationDays(v);
@@ -421,11 +434,15 @@ export default function NewJourneyScreen() {
                     )}
                   </View>
                   <View style={[styles.field, { borderColor: theme.hairline }]}>
-                    <EditRow label="Type" value="Frequency" valueColor={theme.tealStrong} />
+                    <EditRow
+                      label={t('new.rhythm.typeLabel')}
+                      value={t('new.rhythm.typeValue')}
+                      valueColor={theme.tealStrong}
+                    />
                   </View>
                   <View style={[styles.field, { borderColor: theme.hairline }]}>
                     <EditRow
-                      label="How often"
+                      label={t('new.rhythm.label')}
                       value={rhythmLabel}
                       valueColor={theme.tealStrong}
                       editing={editingField === 'rhythm'}
@@ -434,7 +451,7 @@ export default function NewJourneyScreen() {
                     {editingField === 'rhythm' && (
                       <View style={styles.rowEditInput}>
                         <ChoiceChips
-                          options={RHYTHM_OPTIONS}
+                          options={rhythmOptions}
                           value={rhythm}
                           onChange={(v) => {
                             setRhythm(v);
@@ -457,15 +474,15 @@ export default function NewJourneyScreen() {
                     <View style={[styles.badge, { backgroundColor: theme.backgroundElement }]}>
                       <StarIcon color={theme.tealStrong} />
                       <ThemedText type="small" style={{ color: theme.tealStrong, fontWeight: '700' }}>
-                        Recommended
+                        {t('new.steps.recommended')}
                       </ThemedText>
                     </View>
                     <ThemedText type="small" themeColor="textSecondary" style={styles.starterCopy}>
-                      Adding a small first Step you can finish in{' '}
+                      {t('new.steps.starterCopyPre')}
                       <ThemedText type="smallBold" themeColor="textSecondary">
-                        up to 2 minutes
-                      </ThemedText>{' '}
-                      raises your chance of completing the Journey.
+                        {t('new.steps.starterCopyBold')}
+                      </ThemedText>
+                      {t('new.steps.starterCopyPost')}
                     </ThemedText>
                   </View>
 
@@ -475,37 +492,37 @@ export default function NewJourneyScreen() {
                         <View style={styles.starterHeader}>
                           <StarIcon color={theme.tealStrong} />
                           <ThemedText type="small" style={{ color: theme.tealStrong, fontWeight: '700' }}>
-                            Starter Step
+                            {t('new.steps.starterLabel')}
                           </ThemedText>
                         </View>
                         <Pressable
                           accessibilityRole="button"
-                          accessibilityLabel="Remove Starter Step"
+                          accessibilityLabel={t('new.steps.removeStarterA11y')}
                           onPress={() => {
                             setStarterOpen(false);
                             setStarterTitle('');
                             setStarterDescription('');
                           }}>
                           <ThemedText type="smallBold" themeColor="textSecondary">
-                            Remove
+                            {t('remove', { ns: 'common' })}
                           </ThemedText>
                         </Pressable>
                       </View>
                       <ThemedText type="small" themeColor="textSecondary">
-                        {STARTER_EXAMPLES}
+                        {t('new.steps.starterExamples')}
                       </ThemedText>
                       <TextInput
                         style={inputStyle}
                         value={starterTitle}
                         onChangeText={setStarterTitle}
-                        placeholder="Your ≤2-minute first Step"
+                        placeholder={t('new.steps.starterPlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                       />
                       <TextInput
                         style={[...inputStyle, styles.multiline]}
                         value={starterDescription}
                         onChangeText={setStarterDescription}
-                        placeholder="Optional: a little more detail"
+                        placeholder={t('new.steps.starterDetailPlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                         multiline
                       />
@@ -513,12 +530,12 @@ export default function NewJourneyScreen() {
                   ) : (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel="Add a Starter Step"
+                      accessibilityLabel={t('new.steps.addStarter')}
                       onPress={() => setStarterOpen(true)}
                       style={[styles.addStep, { borderColor: theme.success }]}>
                       <StarIcon color={theme.tealStrong} />
                       <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                        Add a Starter Step
+                        {t('new.steps.addStarter')}
                       </ThemedText>
                     </Pressable>
                   )}
@@ -527,14 +544,14 @@ export default function NewJourneyScreen() {
                     <ThemedView key={step.key} type="backgroundElement" style={styles.stepBox}>
                       <View style={styles.stepBoxHeader}>
                         <ThemedText type="small" themeColor="textSecondary">
-                          Step {index + 1}
+                          {t('new.steps.stepN', { index: index + 1 })}
                         </ThemedText>
                         <Pressable
                           accessibilityRole="button"
-                          accessibilityLabel={`Remove Step ${index + 1}`}
+                          accessibilityLabel={t('new.steps.removeStepA11y', { index: index + 1 })}
                           onPress={() => removeStep(step.key)}>
                           <ThemedText type="smallBold" themeColor="textSecondary">
-                            Remove
+                            {t('remove', { ns: 'common' })}
                           </ThemedText>
                         </Pressable>
                       </View>
@@ -542,19 +559,19 @@ export default function NewJourneyScreen() {
                         style={inputStyle}
                         value={step.title}
                         onChangeText={(text) => updateStep(step.key, { title: text })}
-                        placeholder="Step title"
+                        placeholder={t('new.steps.stepTitlePlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                       />
                       <TextInput
                         style={[...inputStyle, styles.multiline]}
                         value={step.description}
                         onChangeText={(text) => updateStep(step.key, { description: text })}
-                        placeholder="Optional description"
+                        placeholder={t('new.steps.stepDetailPlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                         multiline
                       />
                       <ChoiceChips
-                        options={CADENCE_OPTIONS}
+                        options={cadenceOptions}
                         value={step.cadence}
                         onChange={(value) => updateStep(step.key, { cadence: value })}
                       />
@@ -563,12 +580,12 @@ export default function NewJourneyScreen() {
 
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Add a step"
+                    accessibilityLabel={t('new.steps.addStep')}
                     onPress={() => setSteps((prev) => [...prev, newDraftStep()])}
                     style={[styles.addStep, { borderColor: theme.coral }]}>
                     <PlusIcon color={theme.coralStrong} />
                     <ThemedText type="smallBold" style={{ color: theme.coralStrong }}>
-                      Add a step
+                      {t('new.steps.addStep')}
                     </ThemedText>
                   </Pressable>
                 </View>
@@ -578,18 +595,18 @@ export default function NewJourneyScreen() {
                 <View style={styles.stack}>
                   <View style={styles.switchRow}>
                     <View style={styles.flex}>
-                      <ThemedText type="smallBold">Remind me</ThemedText>
+                      <ThemedText type="smallBold">{t('new.reminders.toggle')}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
-                        A gentle on-device nudge. We&apos;ll ask permission only if you turn this on.
+                        {t('new.reminders.toggleHint')}
                       </ThemedText>
                     </View>
                     <Switch value={remindEnabled} onValueChange={setRemindEnabled} />
                   </View>
                   {remindEnabled && (
                     <View style={styles.field}>
-                      <ThemedText type="smallBold">When?</ThemedText>
+                      <ThemedText type="smallBold">{t('new.reminders.when')}</ThemedText>
                       <ChoiceChips
-                        options={REMINDER_TIMES.map((t, i) => ({ value: i, label: t.label }))}
+                        options={reminderOptions}
                         value={remindTimeIndex}
                         onChange={setRemindTimeIndex}
                       />
@@ -600,24 +617,33 @@ export default function NewJourneyScreen() {
 
               {stage === 5 && (
                 <View style={styles.stack}>
-                  <SummaryRow label="Journey" value={title.trim() || '—'} />
-                  <SummaryRow label="Duration" value={durationLabel} />
-                  <SummaryRow label="Rhythm" value={rhythmLabel} />
+                  <SummaryRow label={t('new.summary.journey')} value={title.trim() || t('new.summary.none')} />
+                  <SummaryRow label={t('new.summary.duration')} value={durationLabel} />
+                  <SummaryRow label={t('new.summary.rhythm')} value={rhythmLabel} />
                   <SummaryRow
-                    label="Steps"
+                    label={t('new.summary.steps')}
                     value={
                       stepInputs.length === 0
-                        ? 'None yet'
-                        : `${stepInputs.length}${stepInputs.some((s) => s.isStarterStep) ? ' (incl. Starter Step)' : ''}`
+                        ? t('new.summary.noStepsYet')
+                        : stepInputs.some((s) => s.isStarterStep)
+                          ? t('new.summary.stepsWithStarter', { count: stepInputs.length })
+                          : t('new.summary.stepsCount', { count: stepInputs.length })
                     }
                   />
-                  <SummaryRow label="Your why" value={why.length === 0 ? '—' : `${why.length} saved`} />
                   <SummaryRow
-                    label="Reminder"
-                    value={remindEnabled ? REMINDER_TIMES[remindTimeIndex].label : 'Off'}
+                    label={t('new.summary.why')}
+                    value={why.length === 0 ? t('new.summary.none') : t('new.summary.whySaved', { count: why.length })}
+                  />
+                  <SummaryRow
+                    label={t('new.summary.reminder')}
+                    value={
+                      remindEnabled
+                        ? t(`new.reminders.${REMINDER_SLOTS[remindTimeIndex].key}`)
+                        : t('new.summary.off')
+                    }
                   />
                   <ThemedText type="small" themeColor="textSecondary" style={styles.summaryNote}>
-                    Starts now. Your Steps will appear on Home right away.
+                    {t('new.summary.note')}
                   </ThemedText>
                 </View>
               )}
@@ -626,16 +652,20 @@ export default function NewJourneyScreen() {
             <View style={styles.footer}>
               <View style={styles.navlbl}>
                 <ThemedText type="small" themeColor="textMuted">
-                  {stage > 0 ? `‹ ${STAGE_TITLES[stage - 1]}` : ''}
+                  {stage > 0
+                    ? `${isRTL() ? '›' : '‹'} ${t(`new.stages.${STAGE_KEYS[stage - 1]}`)}`
+                    : ''}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textMuted">
-                  {!isLast ? `${STAGE_TITLES[stage + 1]} ›` : ''}
+                  {!isLast
+                    ? `${t(`new.stages.${STAGE_KEYS[stage + 1]}`)} ${isRTL() ? '‹' : '›'}`
+                    : ''}
                 </ThemedText>
               </View>
               <View style={styles.footerRow}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Back"
+                  accessibilityLabel={t('back', { ns: 'common' })}
                   disabled={stage === 0}
                   onPress={() => goToStage(Math.max(0, stage - 1))}
                   style={[
@@ -645,14 +675,14 @@ export default function NewJourneyScreen() {
                     stage === 0 && styles.disabled,
                   ]}>
                   <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                    Back
+                    {t('back', { ns: 'common' })}
                   </ThemedText>
                 </Pressable>
 
                 {isLast ? (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Create the Journey"
+                    accessibilityLabel={t('new.createA11y')}
                     disabled={!title.trim() || creating}
                     onPress={handleCreate}
                     style={[
@@ -662,15 +692,15 @@ export default function NewJourneyScreen() {
                       (!title.trim() || creating) && styles.disabled,
                     ]}>
                     <ThemedText type="smallBold" style={{ color: theme.text }}>
-                      {creating ? 'Creating…' : 'Create'}
+                      {creating ? t('new.creating') : t('create', { ns: 'common' })}
                     </ThemedText>
                   </Pressable>
                 ) : (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Next"
+                    accessibilityLabel={t('next', { ns: 'common' })}
                     disabled={!canContinue}
-                    onPress={() => goToStage(Math.min(STAGE_TITLES.length - 1, stage + 1))}
+                    onPress={() => goToStage(Math.min(STAGE_KEYS.length - 1, stage + 1))}
                     style={[
                       styles.navButton,
                       styles.primary,
@@ -678,7 +708,7 @@ export default function NewJourneyScreen() {
                       !canContinue && styles.disabled,
                     ]}>
                     <ThemedText type="smallBold" style={{ color: theme.text }}>
-                      Next
+                      {t('next', { ns: 'common' })}
                     </ThemedText>
                   </Pressable>
                 )}
@@ -706,6 +736,7 @@ function EditRow({
   onPress?: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('journey');
   return (
     <View style={[styles.rowE, { backgroundColor: theme.backgroundElement }]}>
       <ThemedText type="smallBold">{label}</ThemedText>
@@ -715,7 +746,7 @@ function EditRow({
       {onPress && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Edit ${label}`}
+          accessibilityLabel={t('new.name.editA11y', { label })}
           accessibilityState={{ expanded: !!editing }}
           onPress={onPress}
           hitSlop={6}
@@ -909,7 +940,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   rowValue: {
-    marginLeft: 'auto',
+    marginStart: 'auto',
   },
   editPen: {
     width: 30,
@@ -942,7 +973,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   charHint: {
-    marginLeft: Spacing.two,
+    marginStart: Spacing.two,
   },
   addButton: {
     borderRadius: Radius.input,
@@ -961,7 +992,7 @@ const styles = StyleSheet.create({
   },
   savedChipText: {
     flex: 1,
-    marginRight: Spacing.two,
+    marginEnd: Spacing.two,
   },
 
   // ── Plan the steps ──
@@ -1025,7 +1056,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     flexShrink: 1,
-    textAlign: 'right',
+    textAlign: 'auto',
   },
   summaryNote: {
     marginTop: Spacing.two,

@@ -8,9 +8,22 @@
  * NO LLM: this seam is deliberately a plain interface backed by config/rules. An expert may
  * later be LLM-assisted, but the CONTRACT (deterministic in → deterministic out) stays.
  *
- * Pure TypeScript — no React, no UI, no vendor imports.
+ * LANGUAGE (C-Lang-1): the default {@link GeneralExpert}'s user-facing interview copy (its question
+ * prompts, closed-option labels and feasibility notes) is resolved from the `coachContent` i18n
+ * namespace so the coach SPEAKS the user's language. The option list an answer is later matched
+ * against comes from the SAME source, so the exact-string level/feasibility matching stays intact.
+ *
+ * Pure TypeScript — no React hooks, no UI, no vendor SDKs (the i18next core instance is framework-free).
  */
+import i18n from '../../i18n';
 import type { GoalInput, PlanConstraints } from './types';
+
+/** Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React). */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent' });
+/** Resolve a `coachContent` OPTIONS array in the active language, as a FRESH (mutation-safe) copy. */
+const ccOptions = (key: string): string[] => [
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true }) as unknown as string[]),
+];
 
 /** A Milestone the expert proposes, before the Planner materializes it (assigns id + order). */
 export interface ProposedMilestone {
@@ -213,75 +226,78 @@ function baseMinutes(cadence: GoalInput['cadence'], isHabit: boolean): number {
 const SINGLE_MILESTONE: ProposedMilestone = { title: 'Keep a steady practice', weight: 1 };
 
 /**
- * The generic fallback interview — domain-agnostic, general → specific. EDITABLE config: prompts
- * and options are tuned here without touching logic. `baseline` options are ORDERED novice →
+ * The generic fallback interview — domain-agnostic, general → specific. Prompts and options are
+ * EDITABLE config resolved from the `coachContent` i18n namespace (so the coach speaks the user's
+ * language) — built fresh per call in the ACTIVE language. `baseline` options are ORDERED novice →
  * experienced (index → starting level); `milestones` option [1] is the "keep it simple" choice.
  */
-const GENERAL_QUESTIONS: readonly DomainQuestion[] = [
-  {
-    id: 'general.foundation',
-    intent: 'foundation',
-    prompt: 'Why does this matter to you right now?',
-    options: [
-      'To feel better day to day',
-      'To reach a specific target',
-      'Someone is counting on me',
-      'I want to prove to myself I can',
-    ],
-    allowOther: true,
-    multiSelect: true,
-  },
-  {
-    id: 'general.baseline',
-    intent: 'baseline',
-    prompt: 'Where are you starting from with this?',
-    options: [
-      'Starting from scratch',
-      "I've dabbled but nothing consistent",
-      'I already do this fairly regularly',
-    ],
-    allowOther: true,
-  },
-  {
-    id: 'general.time',
-    intent: 'time',
-    prompt: 'How much time can you realistically give this each week?',
-    options: ['Under 1 hour', '1–3 hours', '3–5 hours', 'More than 5 hours'],
-    allowOther: true,
-  },
-  {
-    id: 'general.obstacles',
-    intent: 'obstacles',
-    prompt: 'What usually gets in the way?',
-    options: ['I run out of time', 'I lose motivation', 'I forget', 'Life gets unpredictable'],
-    allowOther: true,
-    multiSelect: true,
-  },
-  {
-    id: 'general.motivation',
-    intent: 'motivation',
-    prompt: 'What will keep you going when it gets hard?',
-    options: [
-      'Seeing progress add up',
-      'Not letting someone down',
-      'How it makes me feel',
-      'A reward I promised myself',
-    ],
-    allowOther: true,
-    multiSelect: true,
-  },
-  {
-    id: 'general.milestones',
-    intent: 'milestones',
-    prompt: 'How would you like to approach it?',
-    options: ['Break it into clear stages', 'Keep it one simple ongoing practice'],
-    allowOther: true,
-  },
-] as const;
+function generalQuestions(): DomainQuestion[] {
+  return [
+    {
+      id: 'general.foundation',
+      intent: 'foundation',
+      prompt: cc('general.foundation.prompt'),
+      options: ccOptions('general.foundation.options'),
+      allowOther: true,
+      multiSelect: true,
+    },
+    {
+      id: 'general.baseline',
+      intent: 'baseline',
+      prompt: cc('general.baseline.prompt'),
+      options: ccOptions('general.baseline.options'),
+      allowOther: true,
+    },
+    {
+      id: 'general.time',
+      intent: 'time',
+      prompt: cc('general.time.prompt'),
+      options: ccOptions('general.time.options'),
+      allowOther: true,
+    },
+    {
+      id: 'general.obstacles',
+      intent: 'obstacles',
+      prompt: cc('general.obstacles.prompt'),
+      options: ccOptions('general.obstacles.options'),
+      allowOther: true,
+      multiSelect: true,
+    },
+    {
+      id: 'general.motivation',
+      intent: 'motivation',
+      prompt: cc('general.motivation.prompt'),
+      options: ccOptions('general.motivation.options'),
+      allowOther: true,
+      multiSelect: true,
+    },
+    {
+      id: 'general.milestones',
+      intent: 'milestones',
+      prompt: cc('general.milestones.prompt'),
+      options: ccOptions('general.milestones.options'),
+      allowOther: true,
+    },
+  ];
+}
 
 /** The stable id of the general `baseline` question — shared by structure + feasibility. */
 const GENERAL_BASELINE_ID = 'general.baseline';
 const GENERAL_MILESTONES_ID = 'general.milestones';
+
+/**
+ * The ORDERED `baseline` option labels (novice → experienced), in the ACTIVE language. The rendered
+ * question and the level-matching in {@link GeneralExpert.assessFeasibility}/`buildStructure` both read
+ * THIS single source, so translating the labels never desyncs the exact-string match.
+ */
+function generalBaselineOptions(): string[] {
+  return ccOptions('general.baseline.options');
+}
+
+/** The `milestones` option labels in the active language; option [1] is the "keep it simple" choice. */
+function generalMilestonesOptions(): string[] {
+  return ccOptions('general.milestones.options');
+}
 
 /**
  * Map an ORDERED baseline answer to a starting level 0 (novice) .. 2 (experienced). A free-text
@@ -346,32 +362,28 @@ export const GeneralExpert: DomainExpert = {
   },
 
   interviewQuestions() {
-    // Fresh copies so callers can't mutate the shared config.
-    return GENERAL_QUESTIONS.map((q) => ({ ...q, options: [...q.options] }));
+    // Fresh copies in the active language so callers can't mutate the shared config.
+    return generalQuestions();
   },
 
   assessFeasibility(answers, constraints) {
-    const level = levelFromOrdered(answerText(answers[GENERAL_BASELINE_ID]), GENERAL_QUESTIONS[1].options);
+    const level = levelFromOrdered(answerText(answers[GENERAL_BASELINE_ID]), generalBaselineOptions());
     // A novice with little weekly time is the least likely to hit an ambitious goal.
     const time = constraints.weeklyAvailabilityMinutes;
     const score = (time <= 0 ? 2 : time < 60 ? 1 : 0) + (level === 0 ? 1 : 0) - (level === 2 ? 1 : 0);
     const verdict: FeasibilityVerdict = score <= 0 ? 'reasonable' : score <= 2 ? 'ambitious' : 'tooAmbitious';
-    const note = {
-      reasonable: 'This looks like a realistic fit for where you are and the time you have.',
-      ambitious: 'This is a real stretch — doable, but it will ask for steady effort.',
-      tooAmbitious: 'This is a big reach from your starting point; a gentler first target may serve you better.',
-    }[verdict];
+    const note = cc(`feasibility.${verdict}`);
     return { verdict, note };
   },
 
   usesMilestones(answers) {
     const a = answerText(answers[GENERAL_MILESTONES_ID]);
     if (!a) return true; // default: staged
-    return a !== GENERAL_QUESTIONS[5].options[1]; // the "keep it simple" choice
+    return a !== generalMilestonesOptions()[1]; // the "keep it simple" choice
   },
 
   buildStructure(goal, answers, _constraints) {
-    const level = levelFromOrdered(answerText(answers[GENERAL_BASELINE_ID]), GENERAL_QUESTIONS[1].options);
+    const level = levelFromOrdered(answerText(answers[GENERAL_BASELINE_ID]), generalBaselineOptions());
     const staged = GeneralExpert.usesMilestones!(answers);
     const source = staged ? (goal.isHabit ? HABIT_MILESTONES : GOAL_MILESTONES) : [SINGLE_MILESTONE];
     let arc = source.map((m) => ({ ...m }));

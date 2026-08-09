@@ -18,6 +18,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
+import { findLanguage } from '../../i18n/languages';
 import { DOMAIN_IDS } from '../learning/experts/registry';
 import type { ExtractionField } from './interviewPlaybook';
 
@@ -122,6 +123,95 @@ export const TRIAGE_SYSTEM_PROMPT = [
   '  general        — anything else, or when you are not sure.',
   'NEVER invent a domain outside this list.',
 ].join('\n');
+
+/**
+ * The EDIT understanding prompt (task J1). The coach-led edit path runs the LLM here for ONE
+ * structural job: read the user's free-text change request for an EXISTING Journey and turn it into a
+ * strict JSON DIFF — never conversational prose. The app validates every field against the real
+ * Journey ({@link ./journeyEdit extractJourneyEdit}) before anything mutates, so the model is trusted
+ * only to UNDERSTAND the request, never to act on it. Deliberately non-conversational. Editable config.
+ */
+export const EDIT_SYSTEM_PROMPT = [
+  "You are the PushApp coach's Journey-EDIT understanding step. The user is looking at ONE existing",
+  'Journey and has just told you, in their own words, what they want to change about it. Your ONLY job',
+  'is to translate that into a structured DIFF. Do NOT ask questions, coach, or reply conversationally.',
+  '',
+  'Return ONLY a JSON object with any of these OPTIONAL keys — include a key ONLY when the user clearly',
+  'asked to change it, and omit everything else. Never invent a change the user did not ask for.',
+  '  "title": string            — a new name for the Journey',
+  '  "why": string[]            — the user\'s reasons this Journey matters (replaces the list)',
+  '  "rhythm": "daily" | "few-times-week" | "weekly"   — how often overall',
+  '  "durationDays": number     — a new length in days',
+  '  "addSteps": [{ "title": string, "description"?: string, "cadence"?: "once" | "daily" | "weekly" }]',
+  '  "editSteps": [{ "stepId": string, "title"?: string, "description"?: string,',
+  '                  "cadence"?: "once" | "daily" | "weekly" }]',
+  '  "removeStepIds": string[]  — ids of Steps to remove',
+  '',
+  'For "editSteps" and "removeStepIds" you MUST use a Step id from the Journey given to you — never a',
+  'title, never an invented id. If the user is vague about which Step, prefer the closest match by',
+  'title. If the message asks for nothing that maps to these keys, return {}.',
+].join('\n');
+
+/** Prefix marking the hidden Journey-edit directive turn. */
+export const EDIT_DIRECTIVE_PREFIX = '[edit]';
+
+/**
+ * Build the hidden directive that hands the edit understanding step the CURRENT Journey (so it can
+ * address Steps by their real ids) plus the user's change request. The Journey snapshot carries only
+ * on-device titles/ids — no reason notes, no history. `changeText` is the user's verbatim request.
+ */
+export function buildEditDirective(
+  context: { title: string; rhythm: string; durationDays: number; steps: { id: string; title: string }[] },
+  changeText: string,
+): string {
+  const steps = context.steps.map((s) => `    - id "${s.id}": ${s.title}`).join('\n');
+  return [
+    `${EDIT_DIRECTIVE_PREFIX} The user is editing this Journey:`,
+    `  title: ${context.title}`,
+    `  rhythm: ${context.rhythm}`,
+    `  durationDays: ${context.durationDays}`,
+    `  steps:`,
+    steps.length > 0 ? steps : '    (none)',
+    '',
+    `The user asked: "${changeText}". Return the JSON diff per your instructions, addressing any Step`,
+    'by its id above.',
+  ].join('\n');
+}
+
+/**
+ * The coach's opening line when it enters EDIT mode for a Journey — scoped and calm, naming the
+ * Journey and inviting the change. EDITABLE copy (the i18n UI localizes its own greeting; this is the
+ * core/non-UI default and keeps the create-coach pattern where greetings live in config).
+ */
+export function editGreeting(journeyTitle: string): string {
+  return (
+    `Let's tune "${journeyTitle}". Tell me what you'd like to change and I'll show you the exact ` +
+    'update before anything happens.'
+  );
+}
+
+/**
+ * Build the LOCALE directive appended to the understanding step's system prompt (C-Lang-1). It tells
+ * the model the user may write in their selected language and to READ their message in it and keep each
+ * goal `title` in that language — but to STILL classify `domain` and `kind` into the FIXED ENGLISH enum
+ * tokens (addiction / relationships / body_image / career / general; recurring / process), never a
+ * translation. Returns '' for an absent/unknown/English locale, so the model simply defaults to English
+ * (tunable config — the wording is editable without touching the orchestrator).
+ */
+export function buildLocaleDirective(locale?: string): string {
+  const language = locale ? findLanguage(locale)?.englishName : undefined;
+  // English (or an unknown code) needs no directive — English is the default understanding language.
+  if (!language || language === 'English') return '';
+  return [
+    `The user may write to you in ${language}. Read and understand their message in ${language}, and`,
+    `keep each goal "title" you return in the user's own language (${language}) — do NOT translate the`,
+    'title into English.',
+    'CRITICAL: you MUST still classify each goal\'s "domain" and "kind" using the FIXED English enum',
+    'tokens exactly as specified (domain: addiction | relationships | body_image | career | general;',
+    'kind: recurring | process). Never translate or localize those enum tokens, and never invent new',
+    'ones — only the free-text "title" stays in the user\'s language.',
+  ].join('\n');
+}
 
 /** Prefix marking the hidden understanding directive turn. */
 export const TRIAGE_DIRECTIVE_PREFIX = '[triage]';

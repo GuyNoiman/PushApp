@@ -22,7 +22,9 @@
  * populated; Groups has no POC data and shows a calm empty state.
  */
 import { Ionicons } from '@expo/vector-icons';
+import type { TFunction } from 'i18next';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -41,6 +43,7 @@ import {
   type SampleInboxItem,
 } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 /** A friend's display name: their Buddy name if set, else their @handle. */
@@ -56,6 +59,7 @@ function profileName(profile: SocialProfile): string {
 export default function InboxScreen() {
   const social = useSocial();
   const theme = useTheme();
+  const { t } = useTranslation('inbox');
   const [selected, setSelected] = useState<InboxTabKey>('friends');
   const [query, setQuery] = useState('');
 
@@ -73,12 +77,12 @@ export default function InboxScreen() {
   const friendsRowsReal = useMemo<InboxRowData[]>(() => {
     const cheers: InboxRowData[] = social.incomingCheers.map((cheer: Cheer) => {
       const from = social.friends.find((f) => f.profile.id === cheer.fromId);
-      const name = from ? friendName(from) : 'A Buddy';
+      const name = from ? friendName(from) : t('aBuddy');
       return {
         id: `cheer:${cheer.id}`,
         name,
-        preview: cheer.kind === 'nudge' ? 'Sent you a nudge' : 'Cheered you on',
-        timestamp: relativeTime(cheer.createdAt),
+        preview: cheer.kind === 'nudge' ? t('preview.nudge') : t('preview.cheer'),
+        timestamp: relativeTime(cheer.createdAt, t),
         unread: true,
       };
     });
@@ -86,12 +90,12 @@ export default function InboxScreen() {
     const buddies: InboxRowData[] = accepted.map((f) => ({
       id: `friend:${f.profile.id}`,
       name: friendName(f),
-      preview: 'In your Support Circle',
+      preview: t('preview.inCircle'),
     }));
 
     // Unread (cheers) sort to the top (Inbox_Screen.md).
     return [...cheers, ...buddies];
-  }, [social.incomingCheers, social.friends, accepted]);
+  }, [social.incomingCheers, social.friends, accepted, t]);
 
   // ALLIES — Journeys the user is an Ally of: a friend's shared progress.
   const alliesRowsReal = useMemo<InboxRowData[]>(
@@ -100,11 +104,11 @@ export default function InboxScreen() {
         id: `ally:${ap.journeyId}`,
         name: profileName(ap.owner),
         preview: ap.title
-          ? `${ap.title} · ${Math.round(ap.progress * 100)}%`
-          : `Sharing a Journey · ${Math.round(ap.progress * 100)}%`,
-        timestamp: relativeTime(ap.updatedAt),
+          ? t('preview.journeyProgress', { title: ap.title, pct: Math.round(ap.progress * 100) })
+          : t('preview.sharingJourney', { pct: Math.round(ap.progress * 100) }),
+        timestamp: relativeTime(ap.updatedAt, t),
       })),
-    [social.allyProgress],
+    [social.allyProgress, t],
   );
 
   // REQUESTED — incoming connection requests, each actionable.
@@ -113,18 +117,18 @@ export default function InboxScreen() {
       incoming.map((f) => ({
         id: `req:${f.profile.id}`,
         name: friendName(f),
-        preview: 'Wants to join your Support Circle',
+        preview: t('preview.wantsToJoin'),
         unread: true,
         actions: [
-          { label: 'Accept', onPress: () => void social.respondToFriend(f.profile.id, true) },
+          { label: t('accept'), onPress: () => void social.respondToFriend(f.profile.id, true) },
           {
-            label: 'Decline',
+            label: t('decline'),
             variant: 'ghost',
             onPress: () => void social.respondToFriend(f.profile.id, false),
           },
         ],
       })),
-    [incoming, social],
+    [incoming, social, t],
   );
 
   // ── Fall back to the dev sample per-list so the tabs read populated (founder
@@ -144,11 +148,11 @@ export default function InboxScreen() {
         .filter((s) => s.kind === 'request')
         .map((s) =>
           sampleRow(s, [
-            { label: 'Accept', onPress: () => {} },
-            { label: 'Decline', variant: 'ghost', onPress: () => {} },
+            { label: t('accept'), onPress: () => {} },
+            { label: t('decline'), variant: 'ghost', onPress: () => {} },
           ]),
         ),
-    [],
+    [t],
   );
 
   const friendsRows = useSampleWhenEmpty(friendsRowsReal, sampleFriendsRows);
@@ -156,10 +160,10 @@ export default function InboxScreen() {
   const requestedRows = useSampleWhenEmpty(requestedRowsReal, sampleRequestedRows);
 
   const tabs: InboxTab[] = [
-    { key: 'friends', label: 'Friends', unread: friendsRows.some((r) => r.unread) },
-    { key: 'allies', label: 'Allies' },
-    { key: 'groups', label: 'Groups' },
-    { key: 'requested', label: 'Requested', count: requestedRows.length || undefined },
+    { key: 'friends', label: t('tabs.friends'), unread: friendsRows.some((r) => r.unread) },
+    { key: 'allies', label: t('tabs.allies') },
+    { key: 'groups', label: t('tabs.groups') },
+    { key: 'requested', label: t('tabs.requested'), count: requestedRows.length || undefined },
   ];
 
   const rows =
@@ -179,13 +183,13 @@ export default function InboxScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <ThemedText type="title">Inbox</ThemedText>
+          <ThemedText type="title">{t('title')}</ThemedText>
           <View style={styles.compose}>
             <View style={[styles.composeButton, { backgroundColor: theme.tealTint }]}>
               <Ionicons name="create-outline" size={20} color={theme.tint} />
             </View>
             <ThemedText type="small" themeColor="textSecondary">
-              New message
+              {t('newMessage')}
             </ThemedText>
           </View>
         </View>
@@ -196,18 +200,19 @@ export default function InboxScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search"
+              placeholder={t('search', { ns: 'common' })}
               placeholderTextColor={theme.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
-              accessibilityLabel="Search messages by name"
+              accessibilityLabel={t('searchA11y')}
+              textAlign={isRTL() ? 'right' : 'left'}
               style={[styles.searchInput, { color: theme.text }]}
             />
             {q ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Clear search"
+                accessibilityLabel={t('clearSearch', { ns: 'common' })}
                 hitSlop={8}
                 onPress={() => setQuery('')}>
                 <Ionicons name="close-circle" size={18} color={theme.textMuted} />
@@ -232,11 +237,15 @@ export default function InboxScreen() {
           q ? (
             <InboxEmpty
               emoji=""
-              title="No matches"
-              subtitle={`No conversations match "${query.trim()}".`}
+              title={t('noMatches.title')}
+              subtitle={t('noMatches.body', { query: query.trim() })}
             />
           ) : (
-            <InboxEmpty emoji="" title={emptyTitle(selected)} subtitle={emptySubtitle(selected)} />
+            <InboxEmpty
+              emoji=""
+              title={emptyTitle(selected, t)}
+              subtitle={emptySubtitle(selected, t)}
+            />
           )
         ) : (
           <ScrollView
@@ -276,38 +285,38 @@ function sampleAllyRow(friend: SampleFriend): InboxRowData {
   };
 }
 
-/** Baloo title for an empty tab. */
-function emptyTitle(tab: InboxTabKey): string {
+/** Translated title for an empty tab. */
+function emptyTitle(tab: InboxTabKey, t: TFunction<'inbox'>): string {
   switch (tab) {
     case 'requested':
-      return 'No requests';
+      return t('empty.requested.title');
     case 'allies':
-      return 'No Allies yet';
+      return t('empty.allies.title');
     case 'groups':
-      return 'No groups yet';
+      return t('empty.groups.title');
     default:
-      return 'No messages yet';
+      return t('empty.messages.title');
   }
 }
 
-/** Muted sub-line for an empty tab. */
-function emptySubtitle(tab: InboxTabKey): string {
+/** Translated sub-line for an empty tab. */
+function emptySubtitle(tab: InboxTabKey, t: TFunction<'inbox'>): string {
   switch (tab) {
     case 'requested':
-      return 'When someone asks to join your Support Circle, it lands here.';
+      return t('empty.requested.subtitle');
     case 'allies':
-      return 'When a friend makes you an Ally on a Journey, their progress shows here.';
+      return t('empty.allies.subtitle');
     case 'groups':
-      return "Group threads aren't here yet. This is where your Circle's shared spaces will live.";
+      return t('empty.groups.subtitle');
     default:
-      return 'Add a friend from your Circle and start your Support Circle.';
+      return t('empty.messages.subtitle');
   }
 }
 
 /** Compact relative time for a cheer's timestamp, e.g. "2h" · "1d" · "now". */
-function relativeTime(ms: number): string {
+function relativeTime(ms: number, t: TFunction<'inbox'>): string {
   const diff = Date.now() - ms;
-  if (diff < 60_000) return 'now';
+  if (diff < 60_000) return t('now');
   const mins = Math.floor(diff / 60_000);
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);

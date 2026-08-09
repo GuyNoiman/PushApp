@@ -1,0 +1,218 @@
+{
+  "detail": {
+    "eyebrow": "מסע",
+    "editLabel": "עריכת המסע הזה",
+    "backA11y": "חזרה",
+    "notFoundTitle": "לא נמצא",
+    "notFoundBody": "המסע הזה אינו זמין. ייתכן שהוסר.",
+    "phase": "שלב {{phase}} מתוך {{phases}}",
+    "window": "התחיל ב-{{start}} · מסתיים ב-{{end}}",
+    "stepsDone": "{{done}} מתוך {{total}} צעדים הושלמו",
+    "steps": "צעדים",
+    "stepsByWeek": "צעדים לפי שבוע",
+    "weekOf": "שבוע {{week}} מתוך {{total}}",
+    "emptyWeek": "אין צעדים מתוכננים לשבוע הזה.",
+    "prevWeekA11y": "השבוע הקודם",
+    "nextWeekA11y": "השבוע הבא",
+    "noSteps": "עדיין אין צעדים, הקצב שלך מוביל את המסע הזה.",
+    "yourWhy": "ה'למה' שלך",
+    "next": "הבא",
+    "starter": "פתיחה",
+    "checkIn": "דיווח",
+    "checkInA11y": "דיווח על {{title}}",
+    "delete": "מחיקת המסע",
+    "deleteConfirmTitle": "למחוק את המסע הזה?",
+    "deleteConfirmBody": "פעולה זו מוחקת לצמיתות את המסע וכל הצעדים שבו. אי אפשר לבטל.",
+    "deleteA11y": "מחיקת המסע הזה",
+    "freeze": "השהיית המסע",
+    "freezeA11y": "השהיית המסע הזה",
+    "resume": "חידוש המסע",
+    "resumeA11y": "חידוש המסע הזה",
+    "paused": "מושהה",
+    "pausedBody": "המסע מושהה. התזכורות כבויות עד שתחדש אותו."
+  },
+  "stepCard": {
+    "missed": "הוחמץ · עוד יש זמן להשלים",
+    "completed": "הושלם · עבודה יפה",
+    "phaseMeta": "{{title}} · שלב {{phase}}/{{phases}}",
+    "endsToday": "מסתיים היום",
+    "moreActions": "עוד פעולות עבור {{title}}"
+  },
+  "postpone": {
+    "title": "אין לחץ, מה מתאים יותר?",
+    "keep": "דחייה",
+    "keepHint": "להשאיר, ולהזיז לזמן שמתאים יותר.",
+    "keepA11y": "דחייה, להזיז לזמן שמתאים יותר",
+    "letGo": "לא הפעם",
+    "letGoHint": "לשחרר את זה הפעם, בלי עונש, נלמד מזה.",
+    "letGoA11y": "לא הפעם, לשחרר את זה"
+  },
+  "reason": {
+    "notePlaceholder": "במילים שלך… (נשאר על המכשיר שלך)",
+    "prompt": "רוצה לספר לי מה הפריע?",
+    "list": {
+      "forgot": {
+        "label": "שכחתי",
+        "caring": "לא נורא. בוא נמצא דרך שיהיה קל יותר לזכור בפעם הבאה."
+      },
+      "no_time": {
+        "label": "לא היה זמן",
+        "caring": "יום עמוס. בוא נמצא דרך קלה יותר להכניס את זה."
+      },
+      "lost_motivation": {
+        "label": "פג המרץ",
+        "caring": "זה קורה. בוא נתחבר מחדש לסיבה שזה חשוב לך."
+      },
+      "too_hard": {
+        "label": "קשה מדי",
+        "caring": "בוא נקטין את הצעד הזה כדי שירגיש אפשרי."
+      },
+      "did_partially": {
+        "label": "עשיתי חלקית",
+        "caring": "כל התקדמות נחשבת, כל קצת מקדם אותך."
+      },
+      "couldnt": {
+        "label": "לא יכולתי, ככה החיים",
+        "caring": "מובן לגמרי. כלום לא משתנה, קח את זה בקלות."
+      },
+      "not_relevant": {
+        "label": "כבר לא רלוונטי",
+        "caring": "זה בסדר, בוא נערוך את זה שיתאים למקום שבו אתה נמצא עכשיו."
+      },
+      "other": {
+        "label": "משהו אחר",
+        "caring": "ספר לי במילים שלך, זה נשאר על המכשיר שלך."
+      }
+    }
+  },
+  "reasonHistory": {
+    "title": "מבט לאחור",
+    "empty": "עדיין אין כאן כלום, כאן נשים לב בעדינות למה שנוטה להפריע.",
+    "lead": "כמה פעמים זה לא קרה, בלי שיפוט, פשוט מה שעלה:",
+    "fallbackReason": "משהו צץ",
+    "ago": {
+      "today": "היום",
+      "yesterday": "אתמול",
+      "days_one": "לפני יום",
+      "days_other": "לפני {{count}} ימים",
+      "weeks_one": "לפני שבוע",
+      "weeks_other": "לפני {{count}} שבועות"
+    }
+  },
+  "reschedule": {
+    "title": "מתי תרצו לעשות את זה?",
+    "noSlots": "לא נמצאו זמנים פנויים, הקישו על \"זמן אחר\" כדי לבחור מה שמתאים.",
+    "otherTime": "זמן אחר…",
+    "otherTimeA11y": "זמן אחר",
+    "addToCalendar": "+ הוספה ליומן שלי",
+    "addToCalendarA11y": "הוספה ליומן",
+    "confirm": "אישור",
+    "confirmA11y": "אישור הזמן",
+    "when": {
+      "today": "היום · {{time}}",
+      "tomorrow": "מחר · {{time}}",
+      "weekday": "{{weekday}} · {{time}}"
+    }
+  },
+  "new": {
+    "header": "מסע חדש",
+    "closeA11y": "סגירה",
+    "progress": "{{current}} / {{total}}",
+    "stageA11y": "{{label}}, שלב {{index}} מתוך {{total}}",
+    "stages": {
+      "name": "שם",
+      "why": "ה'למה' שלך",
+      "duration": "משך וקצב",
+      "steps": "צעדים",
+      "reminders": "תזכורות",
+      "summary": "סיכום"
+    },
+    "stage0Title": "שם ומטרה",
+    "name": {
+      "label": "שם",
+      "untitled": "מסע ללא שם",
+      "placeholder": "לדוגמה: לרוץ 5 ק\"מ, ללמוד לצייר…",
+      "editA11y": "עריכת {{label}}"
+    },
+    "description": {
+      "label": "תיאור",
+      "placeholder": "על מה המסע הזה, במילים שלך."
+    },
+    "why": {
+      "intro": "כמה מילים עכשיו הופכות לעידוד שלכם בהמשך, בקול שלכם.",
+      "start": "למה להתחיל את המסע הזה?",
+      "succeed": "איך תרגישו אם תצליחו?",
+      "hard": "מה כדאי לזכור כשקשה?",
+      "hardHint": "שורות קצרות שנציג כשתתחילו להיסחף.",
+      "answerPlaceholder": "כתבו את התשובה שלכם…",
+      "hardPlaceholder": "תזכורת קצרה…",
+      "charHint": "{{count}}/50",
+      "addA11y": "הוספת תזכורת",
+      "removeA11y": "הסרת {{line}}"
+    },
+    "duration": {
+      "label": "משך",
+      "days": "{{count}} ימים",
+      "30": "חודש",
+      "60": "חודשיים",
+      "90": "שלושה חודשים"
+    },
+    "rhythm": {
+      "label": "באיזו תדירות",
+      "typeLabel": "סוג",
+      "typeValue": "תדירות",
+      "daily": "כל יום",
+      "few-times-week": "כמה פעמים בשבוע",
+      "weekly": "כל שבוע"
+    },
+    "cadence": {
+      "once": "פעם אחת",
+      "daily": "כל יום",
+      "weekly": "כל שבוע"
+    },
+    "steps": {
+      "recommended": "מומלץ",
+      "starterCopyPre": "הוספת צעד ראשון קטן שאפשר לסיים ב",
+      "starterCopyBold": "עד שתי דקות",
+      "starterCopyPost": " מעלה את הסיכוי שלכם להשלים את המסע.",
+      "starterExamples": "לדוגמה: \"ללבוש בגדי אימון\", \"לפתוח את לינקדאין ולשמור משרה אחת\"",
+      "starterLabel": "צעד פתיחה",
+      "starterPlaceholder": "הצעד הראשון שלכם, עד שתי דקות",
+      "starterDetailPlaceholder": "רשות: עוד קצת פירוט",
+      "addStarter": "הוספת צעד פתיחה",
+      "removeStarterA11y": "הסרת צעד הפתיחה",
+      "stepN": "צעד {{index}}",
+      "removeStepA11y": "הסרת צעד {{index}}",
+      "stepTitlePlaceholder": "כותרת הצעד",
+      "stepDetailPlaceholder": "תיאור לא חובה",
+      "addStep": "הוספת צעד"
+    },
+    "reminders": {
+      "toggle": "הזכירו לי",
+      "toggleHint": "תזכורת עדינה במכשיר. נבקש הרשאה רק אם תפעילו את זה.",
+      "when": "מתי?",
+      "morning": "בוקר · 8:00",
+      "midday": "צהריים · 12:00",
+      "evening": "ערב · 19:00",
+      "notificationTitle": "הגיע הזמן ל{{title}}",
+      "notificationBody": "עשו את הצעד הבא שלכם."
+    },
+    "summary": {
+      "journey": "מסע",
+      "duration": "משך",
+      "rhythm": "קצב",
+      "steps": "צעדים",
+      "why": "ה'למה' שלך",
+      "reminder": "תזכורת",
+      "none": "—",
+      "off": "כבוי",
+      "noStepsYet": "עדיין אין",
+      "stepsCount": "{{count}}",
+      "stepsWithStarter": "{{count}} (כולל צעד פתיחה)",
+      "whySaved": "{{count}} נשמרו",
+      "note": "מתחיל עכשיו. הצעדים שלכם יופיעו בבית מיד."
+    },
+    "creating": "יוצר…",
+    "createA11y": "יצירת המסע"
+  }
+}

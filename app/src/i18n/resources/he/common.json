@@ -1,0 +1,27 @@
+{
+  "done": "סיום",
+  "cancel": "ביטול",
+  "save": "שמירה",
+  "back": "חזרה",
+  "search": "חיפוש",
+  "clearSearch": "ניקוי חיפוש",
+  "close": "סגירה",
+  "edit": "עריכה",
+  "delete": "מחיקה",
+  "next": "הבא",
+  "continue": "המשך",
+  "create": "יצירה",
+  "add": "הוספה",
+  "remove": "הסרה",
+  "postpone": "דחייה",
+  "letGo": "לשחרר",
+  "loading": "טוען…",
+  "dismiss": "סגירה",
+  "tabs": {
+    "home": "בית",
+    "journeys": "מסעות",
+    "circle": "מעגל",
+    "inbox": "דואר נכנס",
+    "settings": "הגדרות"
+  }
+}

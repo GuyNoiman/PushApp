@@ -34,12 +34,12 @@ export function CoachBubble({
         style={[
           styles.bubble,
           isCoach
-            ? { backgroundColor: theme.backgroundSelected, borderBottomLeftRadius: 6 }
+            ? { backgroundColor: theme.backgroundSelected, borderBottomStartRadius: 6 }
             : {
                 backgroundColor: theme.backgroundElement,
                 borderColor: theme.hairline,
                 borderWidth: 1,
-                borderBottomRightRadius: 6,
+                borderBottomEndRadius: 6,
                 ...softShadow,
               },
         ]}>

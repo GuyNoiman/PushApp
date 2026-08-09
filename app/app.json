@@ -18,7 +18,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["POST_NOTIFICATIONS"]
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "output": "single",
@@ -37,7 +39,8 @@
       "expo-font",
       "expo-secure-store",
       "expo-asset",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

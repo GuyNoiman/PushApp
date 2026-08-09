@@ -24,7 +24,9 @@
  * Presentational only — no business logic (Engineering Bible §19); equipping
  * calls straight into `core.equipItem` / `core.unequipItem`.
  */
+import type { TFunction } from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -36,7 +38,6 @@ type CategoryId = 'character' | 'clothing' | 'items' | 'location' | 'furniture';
 
 interface Category {
   id: CategoryId;
-  label: string;
   icon: string;
   /** Locked categories show a padlock on the tab itself and can't be selected. */
   locked?: boolean;
@@ -44,13 +45,20 @@ interface Category {
   unlockLevel?: number;
 }
 
+// Structure only; the label is resolved per-render from the `buddy` namespace
+// (`inventory.categories.<id>`) so the tabs follow the user's language.
 const CATEGORIES: Category[] = [
-  { id: 'character', label: 'Character', icon: '🙂' },
-  { id: 'clothing', label: 'Clothing', icon: '👕' },
-  { id: 'items', label: 'Items', icon: '⬡' },
-  { id: 'location', label: 'Location', icon: '📍' },
-  { id: 'furniture', label: 'Furniture', icon: '🛋️', locked: true, unlockLevel: 20 },
+  { id: 'character', icon: '🙂' },
+  { id: 'clothing', icon: '👕' },
+  { id: 'items', icon: '⬡' },
+  { id: 'location', icon: '📍' },
+  { id: 'furniture', icon: '🛋️', locked: true, unlockLevel: 20 },
 ];
+
+/** The translated label for a category tab. */
+function categoryLabel(id: CategoryId, t: TFunction<'buddy'>): string {
+  return t(`inventory.categories.${id}`);
+}
 
 /** How long the "Unlocks at level N" tooltip stays up after tapping a locked tab. */
 const LOCKED_TOOLTIP_MS = 2600;
@@ -83,6 +91,7 @@ export function BuddyInventory({
   onSelect: (itemId: string | null) => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('buddy');
   const [activeTab, setActiveTab] = useState<CategoryId>('character');
   const [highlighted, setHighlighted] = useState<string | null>(equippedCosmetic);
   // Which locked tab is currently showing its "Unlocks at level N" tooltip (v8
@@ -135,7 +144,9 @@ export function BuddyInventory({
         <View pointerEvents="none" style={styles.tooltipRow}>
           <View style={[styles.tooltip, { backgroundColor: theme.text }]}>
             <ThemedText type="small" style={[styles.tooltipText, { color: theme.background }]}>
-              🔒 Unlocks at level {CATEGORIES.find((c) => c.id === lockedHint)?.unlockLevel ?? '—'}
+              {t('inventory.unlocksAtLevel', {
+                level: CATEGORIES.find((c) => c.id === lockedHint)?.unlockLevel ?? '—',
+              })}
             </ThemedText>
             <View style={[styles.tooltipCaret, { backgroundColor: theme.text }]} />
           </View>
@@ -148,7 +159,11 @@ export function BuddyInventory({
             <Pressable
               key={cat.id}
               accessibilityRole="button"
-              accessibilityLabel={cat.locked ? `${cat.label} — locked` : cat.label}
+              accessibilityLabel={
+                cat.locked
+                  ? t('inventory.lockedTabA11y', { label: categoryLabel(cat.id, t) })
+                  : categoryLabel(cat.id, t)
+              }
               accessibilityState={{ selected: active, disabled: cat.locked }}
               onPress={() => selectTab(cat)}
               style={[
@@ -171,11 +186,11 @@ export function BuddyInventory({
       {/* Active-category label so it's always clear what the grid below is showing. */}
       <View style={styles.sectionLabelRow}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
-          {activeCategory.label}
+          {categoryLabel(activeCategory.id, t)}
         </ThemedText>
         {activeTab === 'furniture' && (
           <ThemedText type="small" themeColor="textMuted" style={styles.sectionHint}>
-            🔒 Unlocks at level 20
+            {t('inventory.unlocksAtLevel', { level: 20 })}
           </ThemedText>
         )}
       </View>
@@ -187,7 +202,7 @@ export function BuddyInventory({
           contentContainerStyle={styles.gridContent}
           showsVerticalScrollIndicator={false}>
           {items.length === 0 && !showPlaceholders ? (
-            <EmptyState label={activeCategory.label} />
+            <EmptyState label={categoryLabel(activeCategory.id, t)} />
           ) : (
             <View style={styles.tiles}>
               {items.map((item, index) => {
@@ -230,7 +245,7 @@ export function BuddyInventory({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Select this item"
+        accessibilityLabel={t('inventory.selectA11y')}
         disabled={!highlighted}
         onPress={() => onSelect(highlighted)}
         style={[
@@ -239,7 +254,7 @@ export function BuddyInventory({
           !highlighted && styles.selectDisabled,
         ]}>
         <ThemedText type="smallBold" style={styles.selectText}>
-          Select
+          {t('inventory.select')}
         </ThemedText>
       </Pressable>
     </View>
@@ -262,6 +277,7 @@ function ItemTile({
   onPress: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('buddy');
   if (!owned) return <LockedTile />;
 
   // Character tints show their own colour as the tile face (the tint IS the
@@ -273,7 +289,7 @@ function ItemTile({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${item.name}${equipped ? ' — currently worn' : ''}`}
+      accessibilityLabel={equipped ? t('inventory.currentlyWornA11y', { name: item.name }) : item.name}
       accessibilityState={{ selected }}
       onPress={onPress}
       style={[
@@ -303,9 +319,10 @@ function ItemTile({
 
 function LockedTile() {
   const theme = useTheme();
+  const { t } = useTranslation('buddy');
   return (
     <View
-      accessibilityLabel="Locked slot"
+      accessibilityLabel={t('inventory.lockedSlotA11y')}
       style={[styles.itemTile, styles.lockedTile, { backgroundColor: theme.backgroundSelected }]}>
       <ThemedText style={[styles.lockGlyphLarge, { color: theme.textMuted }]}>🔒</ThemedText>
     </View>
@@ -314,13 +331,14 @@ function LockedTile() {
 
 function EmptyState({ label }: { label: string }) {
   const theme = useTheme();
+  const { t } = useTranslation('buddy');
   return (
     <View style={styles.emptyState}>
       <View style={[styles.emptyGlyphWrap, { backgroundColor: theme.backgroundSelected }]}>
         <ThemedText style={styles.emptyGlyph}>✨</ThemedText>
       </View>
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.emptyTitle}>
-        {label} is coming soon
+        {t('inventory.comingSoon', { label })}
       </ThemedText>
     </View>
   );

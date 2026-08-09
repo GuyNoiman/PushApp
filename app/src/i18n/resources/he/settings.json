@@ -1,0 +1,75 @@
+{
+  "title": "הגדרות",
+  "sections": {
+    "profile": "פרופיל",
+    "account": "חשבון",
+    "app": "אפליקציה",
+    "data": "הנתונים שלך",
+    "developer": "פיתוח"
+  },
+  "profile": {
+    "namePlaceholder": "השם שלך (מהתחברות)",
+    "usernamePlaceholder": "שם המשתמש שלך",
+    "editUsername": "עריכת שם משתמש",
+    "usernameHelp": "כך חברים ימצאו אותך."
+  },
+  "account": {
+    "apple": "התחברות עם Apple",
+    "google": "התחברות עם Google",
+    "comingSoon": "בקרוב",
+    "simulated": "מדומה",
+    "simulatedWithEmail": "{{email}} · מדומה",
+    "simulatedDev": "מדומה (בדיקות פיתוח)",
+    "connected": "מחובר"
+  },
+  "app": {
+    "notifications": "התראות",
+    "notificationsDetail": "תזכורות ועידודים",
+    "notificationsValue": "פעיל",
+    "notificationsStatus": {
+      "granted": "פעיל",
+      "denied": "כבוי",
+      "undetermined": "לא הוגדר"
+    },
+    "appearance": "מראה",
+    "appearanceDetail": "ערכת נושא",
+    "about": "אודות",
+    "language": "שפה"
+  },
+  "appearance": {
+    "system": "מערכת",
+    "light": "בהיר",
+    "dark": "כהה"
+  },
+  "data": {
+    "export": {
+      "label": "ייצוא הנתונים שלי",
+      "detail": "שמירת עותק של כל מה שנמצא במכשיר הזה",
+      "errorTitle": "הייצוא לא הושלם",
+      "errorBody": "משהו השתבש בהכנת הנתונים. נסו שוב."
+    },
+    "delete": {
+      "label": "מחיקת החשבון",
+      "detail": "הסרה לצמיתות של החשבון והנתונים שלך",
+      "title": "למחוק את החשבון שלך?",
+      "body": "פעולה זו מוחקת לצמיתות את החשבון ואת כל הנתונים שלך. לא ניתן לבטל אותה.",
+      "acknowledge": "אני מבין שפעולה זו מוחקת לצמיתות את החשבון ואת כל הנתונים שלי.",
+      "confirm": "מחיקת הכול",
+      "cancel": "ביטול",
+      "errorOffline": "לא הצלחנו להתחבר לשרת. נסו שוב כשתחזרו לחיבור לאינטרנט.",
+      "errorGeneric": "משהו השתבש. הנתונים שלך לא נמחקו. נסו שוב."
+    }
+  },
+  "developer": {
+    "adaptiveReplan": "תכנון מחדש אדפטיבי",
+    "adaptiveReplanDetail": "אילוץ החמצה ותכנון שבוע מחדש"
+  },
+  "language": {
+    "title": "שפה",
+    "search": "חיפוש שפות"
+  },
+  "restart": {
+    "title": "פתחו מחדש לסיום",
+    "body": "יש לפתוח מחדש את PushApp כדי לסיים את החלפת השפה והכיוון."
+  }
+}

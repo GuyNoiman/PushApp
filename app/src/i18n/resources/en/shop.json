@@ -1,0 +1,23 @@
+{
+  "title": "Shop",
+  "tabs": {
+    "featured": "Featured",
+    "cosmetics": "Cosmetics",
+    "coins": "Coins",
+    "offers": "Offers"
+  },
+  "cosmetics": "Cosmetics",
+  "footnote": "Earn more Coins by checking in on your Steps and completing Journeys.",
+  "comingSoon": {
+    "featured": "Featured packs are coming soon",
+    "coins": "Coin packs are coming soon",
+    "offers": "Offers are coming soon",
+    "body": "For now, spend Coins you've earned on Cosmetics for your Buddy."
+  },
+  "equipped": "Equipped",
+  "equippedCheck": "✓ Equipped",
+  "equip": "Equip",
+  "buyA11y": "Buy {{name}} for {{price}} Coins",
+  "equipA11y": "Equip {{name}}",
+  "unequipA11y": "Unequip {{name}}"
+}

@@ -9,6 +9,7 @@
  * light + dark.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -27,33 +28,34 @@ export function WeekAdjustedCard({
   onDismiss: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
 
   return (
     <View
       style={[styles.card, { backgroundColor: theme.tealTint, borderColor: theme.tint }]}
       accessibilityRole="summary"
-      accessibilityLabel={`Your week was adjusted. ${narration}`}>
+      accessibilityLabel={t('weekAdjusted.a11y', { narration })}>
       <View style={[styles.orb, { backgroundColor: theme.tint }]}>
         <Ionicons name="sparkles" size={16} color={theme.backgroundElement} />
       </View>
 
       <View style={styles.body}>
         <ThemedText style={[styles.title, { color: theme.tealStrong }]}>
-          I adjusted your week
+          {t('weekAdjusted.title')}
         </ThemedText>
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
           {narration}
         </ThemedText>
         {atRisk ? (
           <ThemedText type="small" style={[styles.atRisk, { color: theme.goldStrong }]}>
-            It&apos;s a little tight, but we&apos;ve got this together.
+            {t('weekAdjusted.atRisk')}
           </ThemedText>
         ) : null}
       </View>
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={t('dismiss', { ns: 'common' })}
         onPress={onDismiss}
         hitSlop={8}
         style={({ pressed }) => [styles.close, pressed && styles.pressed]}>

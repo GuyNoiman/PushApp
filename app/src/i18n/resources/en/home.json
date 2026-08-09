@@ -1,0 +1,88 @@
+{
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "line": "{{greeting}}, {{name}}",
+    "fallbackName": "there"
+  },
+  "coach": {
+    "title": "Talk to your coach",
+    "subtitle": "Plan a goal, adjust your week, or think it through"
+  },
+  "weekAdjusted": {
+    "title": "I adjusted your week",
+    "atRisk": "It's a little tight, but we've got this together.",
+    "a11y": "Your week was adjusted. {{narration}}"
+  },
+  "sections": {
+    "todayFocus": "Today's focus",
+    "thisWeek": "This week",
+    "giveSupport": "Give support",
+    "seeAll": "See all"
+  },
+  "caughtUp": {
+    "title": "You're all caught up today.",
+    "body": "Nothing pressing right now — a good moment to look ahead."
+  },
+  "week": {
+    "empty": "No other Steps scheduled this week."
+  },
+  "milestone": "Milestone {{current}} of {{total}}",
+  "step": {
+    "report": "Report on {{title}}",
+    "doneA11y": "{{title}}, done"
+  },
+  "status": {
+    "level": "Level {{level}}, {{into}} of {{total}} XP to next level",
+    "coins": "coins",
+    "streak": "day streak",
+    "stat": "{{value}} {{label}}"
+  },
+  "swipe": {
+    "postponeA11y": "Postpone this step",
+    "letGoA11y": "Let this step go, no shame"
+  },
+  "support": {
+    "tab": {
+      "nudge": "Needs support",
+      "cheer": "Deserve praise"
+    },
+    "action": {
+      "nudge": "Nudge",
+      "cheer": "Cheer"
+    },
+    "empty": {
+      "nudge": "Everyone in your circle is on track right now.",
+      "cheer": "No wins to celebrate just yet."
+    },
+    "tabA11y": "{{label}}, {{count}} people",
+    "actionA11y": "{{action}} {{name}}",
+    "quiet_one": "Quiet for {{count}} day{{on}}",
+    "quiet_other": "Quiet for {{count}} days{{on}}",
+    "streak_one": "On a {{count}} day streak{{on}}",
+    "streak_other": "On a {{count}} day streak{{on}}",
+    "madeProgress": "Made progress{{on}}",
+    "on": " on '{{title}}'"
+  },
+  "report": {
+    "prompt": "How did it go?",
+    "doneA11y": "Mark done",
+    "partial": {
+      "label": "Partial",
+      "hint": "I did some of it — progress counts."
+    },
+    "couldnt": {
+      "label": "Couldn't",
+      "hint": "Life happened. No penalty."
+    },
+    "postpone": {
+      "label": "Postpone",
+      "hint": "Not now — tell me what got in the way."
+    },
+    "reschedule": {
+      "label": "Reschedule",
+      "hint": "Move it to a better time."
+    }
+  }
+}

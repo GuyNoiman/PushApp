@@ -1,0 +1,45 @@
+{
+  "title": "Inbox",
+  "newMessage": "New message",
+  "searchA11y": "Search messages by name",
+  "aBuddy": "A Buddy",
+  "accept": "Accept",
+  "decline": "Decline",
+  "now": "now",
+  "tabs": {
+    "friends": "Friends",
+    "allies": "Allies",
+    "groups": "Groups",
+    "requested": "Requested"
+  },
+  "preview": {
+    "nudge": "Sent you a nudge",
+    "cheer": "Cheered you on",
+    "inCircle": "In your Support Circle",
+    "wantsToJoin": "Wants to join your Support Circle",
+    "sharingJourney": "Sharing a Journey · {{pct}}%",
+    "journeyProgress": "{{title}} · {{pct}}%"
+  },
+  "empty": {
+    "requested": {
+      "title": "No requests",
+      "subtitle": "When someone asks to join your Support Circle, it lands here."
+    },
+    "allies": {
+      "title": "No Allies yet",
+      "subtitle": "When a friend makes you an Ally on a Journey, their progress shows here."
+    },
+    "groups": {
+      "title": "No groups yet",
+      "subtitle": "Group threads aren't here yet. This is where your Circle's shared spaces will live."
+    },
+    "messages": {
+      "title": "No messages yet",
+      "subtitle": "Add a friend from your Circle and start your Support Circle."
+    }
+  },
+  "noMatches": {
+    "title": "No matches",
+    "body": "No conversations match \"{{query}}\"."
+  }
+}

@@ -25,6 +25,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -46,6 +47,7 @@ function initialsFor(name: string): string {
 export function ProfileIdentity() {
   const theme = useTheme();
   const social = useSocial();
+  const { t } = useTranslation('settings');
 
   // A dev-simulated Google sign-in supplies a real display name + email when the
   // founder's env vars are set; otherwise we fall back to the placeholder below.
@@ -81,7 +83,7 @@ export function ProfileIdentity() {
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
-        Profile
+        {t('sections.profile')}
       </ThemedText>
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
@@ -110,7 +112,7 @@ export function ProfileIdentity() {
               </>
             ) : (
               <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
-                Your name (from sign-in)
+                {t('profile.namePlaceholder')}
               </ThemedText>
             )}
             <View style={styles.usernameRow}>
@@ -120,7 +122,7 @@ export function ProfileIdentity() {
               {!editing && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Edit username"
+                  accessibilityLabel={t('profile.editUsername')}
                   onPress={() => setEditing(true)}
                   hitSlop={8}
                   style={({ pressed }) => [
@@ -152,6 +154,7 @@ function UsernameEditor({
   onSave: (username: string) => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('settings');
   const [value, setValue] = useState(current);
   // Live validation: empty/too-short or a collision with the demo registry.
   const error = usernameError(value, taken);
@@ -161,7 +164,7 @@ function UsernameEditor({
         <TextInput
           value={value}
           onChangeText={setValue}
-          placeholder="yourusername"
+          placeholder={t('profile.usernamePlaceholder')}
           placeholderTextColor={theme.textSecondary}
           autoCapitalize="none"
           autoCorrect={false}
@@ -178,7 +181,7 @@ function UsernameEditor({
         {/* Only a unique, valid name can be saved. */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Save"
+          accessibilityLabel={t('save', { ns: 'common' })}
           disabled={error !== null}
           onPress={() => onSave(value)}
           style={({ pressed }) => [
@@ -188,7 +191,7 @@ function UsernameEditor({
             pressed && styles.pressed,
           ]}>
           <ThemedText type="smallBold" style={{ color: theme.background }}>
-            Save
+            {t('save', { ns: 'common' })}
           </ThemedText>
         </Pressable>
       </View>
@@ -198,7 +201,7 @@ function UsernameEditor({
         </ThemedText>
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
-          This is how friends find you.
+          {t('profile.usernameHelp')}
         </ThemedText>
       )}
     </View>

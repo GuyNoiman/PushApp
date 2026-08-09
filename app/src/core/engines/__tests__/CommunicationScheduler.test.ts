@@ -105,6 +105,20 @@ describe('planSchedule — aggregation', () => {
     const plan = scheduler.planSchedule(rules, journeys, permissivePrefs(), NOW);
     expect(plan.map((p) => p.ruleId)).toEqual(['r_ok']);
   });
+
+  it('excludes a FROZEN (paused) Journey — no reminders fire until it is resumed (J3)', () => {
+    const { scheduler } = planner();
+    const journeys = [
+      journey({ id: 'j_active', createdAt: 1, status: 'active' }),
+      journey({ id: 'j_frozen', createdAt: 2, status: 'frozen' }),
+    ];
+    const rules = [
+      rule({ id: 'r_active', journeyId: 'j_active' }),
+      rule({ id: 'r_frozen', journeyId: 'j_frozen' }),
+    ];
+    const plan = scheduler.planSchedule(rules, journeys, permissivePrefs(), NOW);
+    expect(plan.map((p) => p.ruleId)).toEqual(['r_active']);
+  });
 });
 
 describe('planSchedule — all-permissive default is a passthrough', () => {

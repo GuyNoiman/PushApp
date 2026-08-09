@@ -1,10 +1,14 @@
 /**
  * TopStatusBar — the header strip pinned to the very top of Home (revised 2026-08-07,
  * third founder round: "drop the text labels, keep icon + number, and bring the XP
- * progress bar back into the level"). The three at-a-glance stats now read as pure
- * ICON + NUMBER (no "LEVEL/COINS/STREAK" captions), spread across the row:
+ * progress bar back into the level"). The at-a-glance stats read as pure ICON + NUMBER
+ * (no captions), spread across the row:
  *
- *   [ribbon] Lvl · ▓▓▓▓░░ · xpIntoLevel / xpForNextLevel   │  [cash] coins  │  [flame] streak
+ *   [ribbon] Lvl · ▓▓▓▓░░ · xpIntoLevel / xpForNextLevel   │  [flame] streak
+ *
+ * COINS were dropped from this strip in the initial version (Decision Log D29) — the engine keeps
+ * accruing them, but with the Shop archived there is no sink to show. Re-add the coin Stat when
+ * Coins get a real role.
  *
  * The LEVEL cluster carries a thin TURQUOISE progress bar to the next level (the old
  * ResourceBar behaviour) plus a small tabular readout, so the eye reads "how far to
@@ -12,6 +16,7 @@
  * amber stays reserved for urgency (only the streak flame). Presentational only.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -32,8 +37,9 @@ function Stat({
   valueColor: string;
   label: string;
 }) {
+  const { t } = useTranslation('home');
   return (
-    <View style={styles.stat} accessibilityLabel={`${value} ${label}`}>
+    <View style={styles.stat} accessibilityLabel={t('status.stat', { value, label })}>
       <Ionicons name={icon} size={16} color={iconColor} />
       <ThemedText type="smallBold" style={[styles.value, { color: valueColor }]}>
         {value}
@@ -46,7 +52,6 @@ export function TopStatusBar({
   level,
   xpIntoLevel,
   xpForNextLevel,
-  coins,
   streak,
 }: {
   level: number;
@@ -54,10 +59,10 @@ export function TopStatusBar({
   xpIntoLevel: number;
   /** XP needed to reach the next level — the bar's full width. */
   xpForNextLevel: number;
-  coins: number;
   streak: number;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
   const pct =
     xpForNextLevel > 0 ? Math.max(0, Math.min(1, xpIntoLevel / xpForNextLevel)) : 0;
 
@@ -70,7 +75,7 @@ export function TopStatusBar({
       {/* LEVEL — number + progress-to-next-level bar + tabular readout. */}
       <View
         style={styles.level}
-        accessibilityLabel={`Level ${level}, ${xpIntoLevel} of ${xpForNextLevel} XP to next level`}>
+        accessibilityLabel={t('status.level', { level, into: xpIntoLevel, total: xpForNextLevel })}>
         <Ionicons name="ribbon-outline" size={16} color={theme.textSecondary} />
         <ThemedText type="smallBold" style={[styles.value, { color: theme.text }]}>
           {level}
@@ -87,22 +92,16 @@ export function TopStatusBar({
         </View>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
-      {/* COINS — role is still TBD, so it reads quietly in muted ink (never amber). */}
-      <Stat
-        icon="cash-outline"
-        value={coins}
-        iconColor={theme.textMuted}
-        valueColor={theme.textSecondary}
-        label="coins"
-      />
+      {/* COINS — HIDDEN in the initial version (Decision Log D29): the RewardEngine keeps accruing
+          Coins on `buddy.coins`, but with the Shop archived there is no sink, so we don't surface
+          them yet. Re-add the Stat here (+ its divider) when Coins get a real role. */}
       <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
       <Stat
         icon="flame"
         value={streak}
         iconColor={theme.gold}
         valueColor={theme.text}
-        label="day streak"
+        label={t('status.streak')}
       />
     </View>
   );
@@ -126,14 +125,15 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   xp: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
     minWidth: 0,
   },
+  // A compact meter (~a quarter of its old full-width self, per founder) — a fixed,
+  // short track rather than one that stretches across the level cluster's free space.
   track: {
-    flex: 1,
+    width: 40,
     height: 5,
     borderRadius: Radius.pill,
     overflow: 'hidden',

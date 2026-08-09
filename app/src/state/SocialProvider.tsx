@@ -173,7 +173,8 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     void guard(async () => {
       const sharedIds = await gateway.mySharedJourneyIds();
       if (sharedIds.length === 0) return;
-      const journeys = core.getSnapshot().journeys;
+      const snapshot = core.getSnapshot();
+      const journeys = snapshot.journeys;
       for (const journeyId of sharedIds) {
         const journey = journeys.find((j) => j.id === journeyId);
         if (!journey) continue;
@@ -181,7 +182,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
           journeyId,
           title: journey.title,
           progress: core.journeyProgress(journeyId), // engine owns the math (Bible §19)
-          streak: 0, // No local streak model yet — best-effort (Bible §19).
+          streak: snapshot.streak, // the real engine-computed day-count streak (Bible §19)
         });
       }
     });
@@ -237,13 +238,14 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       await guard(async () => {
         await gateway.setAllies(journeyId, allyIds, visibility);
         // Publish this Journey's summary immediately so a new Ally sees it at once.
-        const journey = core.getSnapshot().journeys.find((j) => j.id === journeyId);
+        const snapshot = core.getSnapshot();
+        const journey = snapshot.journeys.find((j) => j.id === journeyId);
         if (journey) {
           await gateway.publishProgress({
             journeyId,
             title: journey.title,
             progress: core.journeyProgress(journeyId), // engine owns the math (Bible §19)
-            streak: 0,
+            streak: snapshot.streak, // the real engine-computed day-count streak (Bible §19)
           });
         }
       });

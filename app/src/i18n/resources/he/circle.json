@@ -1,0 +1,11 @@
+{
+  "title": "מעגל",
+  "invite": "הזמנה",
+  "add": "הוספה",
+  "yourFriends": "החברים שלך",
+  "addPlaceholder": "הוספת חבר לפי שם משתמש",
+  "cheer": "עידוד",
+  "cheerA11y": "עידוד {{name}}",
+  "aJourney": "מסע",
+  "progressStatus": "{{pct}}% ב{{title}}"
+}

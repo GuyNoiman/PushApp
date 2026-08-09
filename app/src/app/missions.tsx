@@ -12,6 +12,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -31,6 +32,7 @@ export default function MissionsScreen() {
   const { core } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation('missions');
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { height: windowHeight } = useWindowDimensions();
 
@@ -48,13 +50,13 @@ export default function MissionsScreen() {
   const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   return (
-    <Pressable style={styles.scrim} accessibilityLabel="Close" onPress={dismiss}>
+    <Pressable style={styles.scrim} accessibilityLabel={t('close', { ns: 'common' })} onPress={dismiss}>
       {/* Inner press swallows taps so the card body doesn't dismiss. */}
       <Pressable style={styles.cardWrap} onPress={() => {}}>
         <View style={[styles.card, { backgroundColor: theme.cream, maxHeight: windowHeight * 0.82 }]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={t('close', { ns: 'common' })}
             onPress={dismiss}
             style={[styles.closeButton, { backgroundColor: theme.backgroundSelected }]}>
             <ThemedText type="smallBold" themeColor="textSecondary">
@@ -63,16 +65,16 @@ export default function MissionsScreen() {
           </Pressable>
 
           <View style={[styles.topTabs, { borderBottomColor: theme.hairline }]}>
-            <TopTabButton label="Missions" active={topTab === 'missions'} onPress={() => setTopTab('missions')} />
-            <TopTabButton label="Login" active={topTab === 'login'} onPress={() => setTopTab('login')} />
+            <TopTabButton label={t('tabs.missions')} active={topTab === 'missions'} onPress={() => setTopTab('missions')} />
+            <TopTabButton label={t('tabs.login')} active={topTab === 'login'} onPress={() => setTopTab('login')} />
           </View>
 
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             {topTab === 'missions' ? (
               <>
                 <View style={[styles.subTabs, { backgroundColor: theme.backgroundSelected }]}>
-                  <SubTabButton label="Daily" active={missionTab === 'daily'} onPress={() => setMissionTab('daily')} />
-                  <SubTabButton label="Weekly" active={missionTab === 'weekly'} onPress={() => setMissionTab('weekly')} />
+                  <SubTabButton label={t('cadence.daily')} active={missionTab === 'daily'} onPress={() => setMissionTab('daily')} />
+                  <SubTabButton label={t('cadence.weekly')} active={missionTab === 'weekly'} onPress={() => setMissionTab('weekly')} />
                 </View>
                 <View style={styles.list}>
                   {shown.map((mission) => (
@@ -87,7 +89,7 @@ export default function MissionsScreen() {
             ) : (
               <>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.loginIntro}>
-                  Show up each day — the reward grows.
+                  {t('loginIntro')}
                 </ThemedText>
                 <View style={styles.rail}>
                   {login.days.map((day) => (
@@ -97,13 +99,15 @@ export default function MissionsScreen() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={
-                    login.claimableToday ? `Claim ${login.todayCoins} Coins` : 'Login reward already claimed today'
+                    login.claimableToday
+                      ? t('claimA11y', { count: login.todayCoins })
+                      : t('alreadyClaimedA11y')
                   }
                   disabled={!login.claimableToday}
                   onPress={() => core.claimLoginReward()}
                   style={[styles.loginClaim, { backgroundColor: theme.coral }, !login.claimableToday && styles.disabled]}>
                   <ThemedText type="smallBold" style={styles.claimInk}>
-                    {login.claimableToday ? 'Claim' : 'Claimed ✓'}
+                    {login.claimableToday ? t('claim') : t('claimed')}
                   </ThemedText>
                 </Pressable>
               </>
@@ -148,6 +152,7 @@ function SubTabButton({ label, active, onPress }: { label: string; active: boole
 /** One Mission: title + progress bar & count on the left, reward + state in a fixed right column. */
 function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () => void }) {
   const theme = useTheme();
+  const { t } = useTranslation('missions');
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const ratio = Math.max(0, Math.min(1, mission.progress / mission.target));
   const muted = mission.claimed;
@@ -180,17 +185,17 @@ function MissionRow({ mission, onClaim }: { mission: MissionView; onClaim: () =>
         {mission.claimed ? (
           <View style={styles.claimedPill}>
             <ThemedText type="small" themeColor="textSecondary">
-              ✓ Claimed
+              {t('claimedCheck')}
             </ThemedText>
           </View>
         ) : mission.done ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Claim ${mission.rewardCoins} Coins`}
+            accessibilityLabel={t('claimA11y', { count: mission.rewardCoins })}
             onPress={onClaim}
             style={[styles.claimPill, { backgroundColor: theme.coral }]}>
             <ThemedText type="smallBold" style={styles.claimInk}>
-              Claim
+              {t('claim')}
             </ThemedText>
           </Pressable>
         ) : null}
@@ -216,6 +221,7 @@ function loginTileLook(
 /** One tile of the Login reward rail: day label · divider · prize, shaded by status. */
 function LoginDayTile({ day }: { day: LoginDayView }) {
   const theme = useTheme();
+  const { t } = useTranslation('missions');
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const look = loginTileLook(theme)[day.status];
   return (
@@ -226,7 +232,7 @@ function LoginDayTile({ day }: { day: LoginDayView }) {
         look.border ? { borderWidth: 2, borderColor: look.border } : null,
       ]}>
       <ThemedText type="small" style={[styles.rrDay, { color: look.text }]}>
-        Day {day.day}
+        {t('day', { day: day.day })}
       </ThemedText>
       <View style={styles.rrDivider} />
       <View style={styles.rrPrize}>

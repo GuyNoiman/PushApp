@@ -11,7 +11,9 @@
  *
  * Presentational only — reports the chosen time upward; no business logic (Bible §19).
  */
+import type { TFunction } from 'i18next';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -40,6 +42,7 @@ export function RescheduleModal({
   onAddToCalendar?: (chosenAt: number) => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('journey');
   const [chosen, setChosen] = useState<number | null>(null);
   const [showOther, setShowOther] = useState(false);
 
@@ -58,12 +61,12 @@ export function RescheduleModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => close(null)}>
-      <Pressable accessibilityLabel="Dismiss" style={styles.backdrop} onPress={() => close(null)}>
+      <Pressable accessibilityLabel={t('dismiss', { ns: 'common' })} style={styles.backdrop} onPress={() => close(null)}>
         <Pressable
           style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}
           onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.title}>
-            When would you like to do it?
+            {t('reschedule.title')}
           </ThemedText>
           {stepTitle ? (
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
@@ -74,7 +77,7 @@ export function RescheduleModal({
           <ScrollView style={styles.optionsBox} contentContainerStyle={styles.options}>
             {options.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
-                No open slots came up — tap “Other time” to pick one that works.
+                {t('reschedule.noSlots')}
               </ThemedText>
             ) : (
               options.map((c) => {
@@ -93,7 +96,7 @@ export function RescheduleModal({
                     <ThemedText
                       type="smallBold"
                       style={{ color: selected ? theme.tealStrong : theme.textSecondary }}>
-                      {formatWhen(c.at)}
+                      {formatWhen(c.at, t)}
                     </ThemedText>
                   </Pressable>
                 );
@@ -103,11 +106,11 @@ export function RescheduleModal({
             {!showOther && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Other time"
+                accessibilityLabel={t('reschedule.otherTimeA11y')}
                 onPress={() => setShowOther(true)}
                 style={[styles.timeChip, { borderColor: theme.hairline }]}>
                 <ThemedText type="smallBold" themeColor="textSecondary">
-                  Other time…
+                  {t('reschedule.otherTime')}
                 </ThemedText>
               </Pressable>
             )}
@@ -116,11 +119,11 @@ export function RescheduleModal({
           {onAddToCalendar && chosen !== null && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Add to calendar"
+              accessibilityLabel={t('reschedule.addToCalendarA11y')}
               onPress={() => onAddToCalendar(chosen)}
               style={({ pressed }) => [styles.calendarRow, pressed && styles.pressed]}>
               <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                + Add to my calendar
+                {t('reschedule.addToCalendar')}
               </ThemedText>
             </Pressable>
           )}
@@ -128,16 +131,16 @@ export function RescheduleModal({
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('cancel', { ns: 'common' })}
               onPress={() => close(null)}
               style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
-                Cancel
+                {t('cancel', { ns: 'common' })}
               </ThemedText>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Confirm time"
+              accessibilityLabel={t('reschedule.confirmA11y')}
               disabled={chosen === null}
               onPress={() => close(chosen)}
               style={({ pressed }) => [
@@ -146,7 +149,7 @@ export function RescheduleModal({
                 pressed && styles.pressed,
               ]}>
               <ThemedText type="smallBold" style={{ color: chosen === null ? theme.textMuted : theme.text }}>
-                Confirm
+                {t('reschedule.confirm')}
               </ThemedText>
             </Pressable>
           </View>
@@ -157,15 +160,18 @@ export function RescheduleModal({
 }
 
 /** Friendly local label for a proposed time (Today/Tomorrow/weekday + clock). */
-function formatWhen(at: number): string {
+function formatWhen(at: number, t: TFunction<'journey'>): string {
   const d = new Date(at);
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
   const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  if (d.toDateString() === now.toDateString()) return `Today · ${time}`;
-  if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow · ${time}`;
-  return `${d.toLocaleDateString([], { weekday: 'short' })} · ${time}`;
+  if (d.toDateString() === now.toDateString()) return t('reschedule.when.today', { time });
+  if (d.toDateString() === tomorrow.toDateString()) return t('reschedule.when.tomorrow', { time });
+  return t('reschedule.when.weekday', {
+    weekday: d.toLocaleDateString([], { weekday: 'short' }),
+    time,
+  });
 }
 
 /** Build the "Other time" presets (specific times), computed from the current clock. */

@@ -9,6 +9,7 @@
  * read as one visual language (Design System: reward surfaces get the game-juice).
  * No business logic here (Engineering Bible §19); the core computes every value.
  */
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 // Aliased: `BuddyView` is also the name of the view-model type imported from AppCore
@@ -41,6 +42,7 @@ export function BuddyScene({
   const tint = cosmetic?.kind === 'tint' ? cosmetic.value : undefined;
   const accessory = cosmetic?.kind === 'accessory' ? cosmetic.value : undefined;
   const theme = useTheme();
+  const { t } = useTranslation('buddy');
 
   return (
     <View style={[styles.scene, { backgroundColor: theme.sceneSky }]}>
@@ -49,10 +51,10 @@ export function BuddyScene({
 
       {/* Customize (purple, sparkle) + Shop (gold, bag) — stacked on the right edge. */}
       <View style={styles.sideButtons}>
-        <GlossyTile color="purple" accessibilityLabel="Customize your Buddy" onPress={onCustomize}>
+        <GlossyTile color="purple" accessibilityLabel={t('scene.customizeA11y')} onPress={onCustomize}>
           <ThemedText style={styles.tileIcon}>✨</ThemedText>
         </GlossyTile>
-        <GlossyTile color="gold" accessibilityLabel="Open the Shop" onPress={onOpenShop}>
+        <GlossyTile color="gold" accessibilityLabel={t('scene.openShopA11y')} onPress={onOpenShop}>
           <ThemedText style={styles.tileIcon}>🛍️</ThemedText>
         </GlossyTile>
       </View>

@@ -8,6 +8,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,31 +22,23 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatReactionReward, useBuddyMoments } from '@/hooks/use-buddy-moments';
 import { useApp } from '@/state/AppProvider';
 
-/** Warm, non-childish lines the Buddy can respond to a check-in with. */
-const REACTION_LINES = [
-  'That counts. Well done.',
-  'You showed up — that is what matters.',
-  'Another Step forward. I felt that.',
-  'Steady progress. Keep going.',
-  'Proud of you for that one.',
-];
-
-function pickReactionLine(): string {
-  return REACTION_LINES[Math.floor(Math.random() * REACTION_LINES.length)];
-}
-
 export default function BuddyScreen() {
   const { core, snapshot, ready } = useApp();
   const router = useRouter();
+  const { t } = useTranslation('buddy');
   const { reaction, reveal, dismissReveal } = useBuddyMoments(core);
 
   // Pair the warm line with the reward once per reaction, so it stays stable
-  // across re-renders instead of re-rolling on every frame.
+  // across re-renders instead of re-rolling on every frame. The warm lines come
+  // from the `buddy` i18n namespace so they follow the user's language.
   const reactionText = useMemo(() => {
     if (!reaction) return null;
     const reward = formatReactionReward(reaction);
-    return reward ? `${pickReactionLine()}  ${reward}` : null;
-  }, [reaction]);
+    if (!reward) return null;
+    const lines = t('reactions', { returnObjects: true }) as string[];
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    return `${line}  ${reward}`;
+  }, [reaction, t]);
 
   const buddy = snapshot?.buddy;
 
@@ -60,7 +53,7 @@ export default function BuddyScreen() {
         {!ready || !buddy ? (
           <View style={styles.loading}>
             <ThemedText type="small" themeColor="textSecondary">
-              Loading…
+              {t('loading', { ns: 'common' })}
             </ThemedText>
           </View>
         ) : (

@@ -7,4 +7,6 @@ export * from './interviewPlaybook';
 export * from './coachPrompts';
 export * from './communicationStyles';
 export * from './CoachOrchestrator';
+export * from './JourneyEditOrchestrator';
+export * from './journeyEdit';
 export * from './SafetyLayer';

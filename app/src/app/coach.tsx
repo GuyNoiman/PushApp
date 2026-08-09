@@ -8,7 +8,7 @@
  *   • LiveCoachScreen — the REAL {@link CoachOrchestrator} over live Gemini via
  *     {@link useLiveCoach}; the "Build my Journey" CTA creates a persisted Journey.
  *   • ScriptedCoachScreen — the offline UI PROTOTYPE below, driven ENTIRELY by a
- *     local scripted array ({@link COACH_SCRIPT}); NO LLM call, NO network. It is
+ *     local scripted array ({@link buildCoachScript}); NO LLM call, NO network. It is
  *     the default for every other build, so the flag-off path is zero-regression.
  *
  * Presentational + local state only — the live path keeps its business logic in
@@ -18,26 +18,33 @@ import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { CoachBubble } from '@/components/coach/CoachBubble';
+import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
 import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { CoachInsight, CoachJourneyCard } from '@/components/coach/CoachJourneyCard';
 import { CoachOptions } from '@/components/coach/CoachOptions';
-import { COACH_SCRIPT } from '@/components/coach/coachScript';
+import { buildCoachScript } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { featureFlags } from '@/core/config/featureFlags';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 
 /**
- * Route the Coach tab to the live orchestrator when the founder's key is present, else the offline
- * scripted prototype. The flag is a build-time constant, so hooks stay unconditional in each screen.
+ * Route the Coach surface: `mode=edit` opens the coach-led Journey EDIT flow ({@link EditCoachScreen},
+ * task J1) for the passed `journeyId`; otherwise the tab shows the CREATE coach — the live orchestrator
+ * when the founder's key is present, else the offline scripted prototype. The flag is a build-time
+ * constant, so hooks stay unconditional in each screen.
  */
 export default function CoachScreen() {
+  const { mode } = useLocalSearchParams<{ mode?: string; journeyId?: string }>();
+  if (mode === 'edit') return <EditCoachScreen />;
   return featureFlags.liveCoach ? <LiveCoachScreen /> : <ScriptedCoachScreen />;
 }
 
@@ -52,6 +59,7 @@ function LiveCoachScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const { core } = useApp();
   const coach = useLiveCoach();
+  const { t } = useTranslation('coach');
 
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);
 
@@ -117,13 +125,13 @@ function LiveCoachScreen() {
         <View style={[styles.header, headerBorder]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close conversation"
+            accessibilityLabel={t('closeConversation')}
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             hitSlop={8}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
+            <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
           </Pressable>
-          <ThemedText type="smallBold">New plan</ThemedText>
+          <ThemedText type="smallBold">{t('header')}</ThemedText>
         </View>
 
         <KeyboardAvoidingView
@@ -159,7 +167,7 @@ function LiveCoachScreen() {
               }
             })}
 
-            {coach.status === 'thinking' && <CoachBubble role="coach" text="Thinking…" />}
+            {coach.status === 'thinking' && <CoachBubble role="coach" text={t('thinking')} />}
 
             {coach.question && (
               <CoachOptions
@@ -167,7 +175,7 @@ function LiveCoachScreen() {
                 options={coach.question.options}
                 multiSelect={coach.question.multiSelect}
                 allowOther={coach.question.allowOther}
-                continueLabel="Continue"
+                continueLabel={t('continue')}
                 selectedIds={selectedIds}
                 disabled={false}
                 onSelect={handleSelect}
@@ -181,7 +189,7 @@ function LiveCoachScreen() {
           {coach.awaitingOpening && (
             <CoachInputBar
               value={draft}
-              placeholder="Type or speak…"
+              placeholder={t('inputPlaceholder')}
               bottomInset={barBottomInset}
               onChangeText={setDraft}
               onSend={handleSend}
@@ -196,12 +204,12 @@ function LiveCoachScreen() {
               ]}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Build my Journey"
+                accessibilityLabel={t('build')}
                 onPress={handleBuild}
                 style={({ pressed }) => [styles.ctaPrimary, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
                 <Ionicons name="checkmark" size={17} color={theme.backgroundElement} />
                 <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
-                  Build my Journey
+                  {t('build')}
                 </ThemedText>
               </Pressable>
             </View>
@@ -215,12 +223,12 @@ function LiveCoachScreen() {
               ]}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Set it up myself"
+                accessibilityLabel={t('handoff')}
                 onPress={() => router.push('/journey/new')}
                 style={({ pressed }) => [styles.ctaPrimary, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
                 <Ionicons name="create-outline" size={17} color={theme.backgroundElement} />
                 <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
-                  Set it up myself
+                  {t('handoff')}
                 </ThemedText>
               </Pressable>
             </View>
@@ -235,6 +243,10 @@ function ScriptedCoachScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const { t } = useTranslation('coach');
+
+  // The scripted (offline) conversation, resolved in the active language.
+  const script = useMemo(() => buildCoachScript(t), [t]);
 
   // The bottom tab bar floats over content (absolute on web), so the pinned
   // input / CTA bar must clear it. Use the tab-bar inset, or the device's
@@ -242,7 +254,7 @@ function ScriptedCoachScreen() {
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);
 
   // ── Conversation state (all local; no engine yet) ──────────────────────────
-  /** How far through COACH_SCRIPT we've revealed (0 = just the opening). */
+  /** How far through the script we've revealed (0 = just the opening). */
   const [stageIndex, setStageIndex] = useState(0);
   /** The bottom input-bar draft (free-text stages). */
   const [draft, setDraft] = useState('');
@@ -253,8 +265,8 @@ function ScriptedCoachScreen() {
   /** An extra user bubble shown after an options block when they answered "Other". */
   const [otherEcho, setOtherEcho] = useState<Record<string, string>>({});
 
-  const revealed = COACH_SCRIPT.slice(0, stageIndex + 1);
-  const current = COACH_SCRIPT[stageIndex];
+  const revealed = script.slice(0, stageIndex + 1);
+  const current = script[stageIndex];
 
   const scrollToEnd = useCallback(() => {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
@@ -263,7 +275,7 @@ function ScriptedCoachScreen() {
   /** Advance to the next scripted stage (no-op at the end). */
   const advance = useCallback(
     (echoIntoNext?: string) => {
-      const next = COACH_SCRIPT[stageIndex + 1];
+      const next = script[stageIndex + 1];
       if (!next) return;
       // If the next stage opens with the user's answer echoed back, override its
       // canned text with what the user really typed.
@@ -273,7 +285,7 @@ function ScriptedCoachScreen() {
       setStageIndex((i) => i + 1);
       scrollToEnd();
     },
-    [stageIndex, scrollToEnd],
+    [script, stageIndex, scrollToEnd],
   );
 
   const handleSendText = useCallback(() => {
@@ -318,13 +330,13 @@ function ScriptedCoachScreen() {
         <View style={[styles.header, headerBorder]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close conversation"
+            accessibilityLabel={t('closeConversation')}
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             hitSlop={8}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
+            <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
           </Pressable>
-          <ThemedText type="smallBold">New plan</ThemedText>
+          <ThemedText type="smallBold">{t('header')}</ThemedText>
         </View>
 
         <KeyboardAvoidingView

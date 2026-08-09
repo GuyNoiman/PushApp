@@ -11,6 +11,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -34,15 +35,13 @@ const MEDAL_FINISH = {
 } as const;
 
 type Tab = 'all' | 'journeys' | 'social';
-const TABS: { value: Tab; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'journeys', label: 'Journeys' },
-  { value: 'social', label: 'Social' },
-];
+// Structure only; each label resolves from the `achievements` namespace (`tabs.<value>`).
+const TABS: { value: Tab }[] = [{ value: 'all' }, { value: 'journeys' }, { value: 'social' }];
 
 export default function AchievementsScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation('achievements');
 
   const [tab, setTab] = useState<Tab>('all');
   const [selected, setSelected] = useState<SampleAchievement | null>(null);
@@ -64,7 +63,7 @@ export default function AchievementsScreen() {
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('back', { ns: 'common' })}
             onPress={dismiss}
             style={({ pressed }) => [
               styles.backChip,
@@ -75,18 +74,18 @@ export default function AchievementsScreen() {
               ›
             </ThemedText>
           </Pressable>
-          <ThemedText type="title">Achievements</ThemedText>
+          <ThemedText type="title">{t('title')}</ThemedText>
         </View>
 
         <View style={styles.tabs}>
-          {TABS.map((t) => {
-            const active = tab === t.value;
+          {TABS.map((entry) => {
+            const active = tab === entry.value;
             return (
               <Pressable
-                key={t.value}
+                key={entry.value}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
-                onPress={() => setTab(t.value)}
+                onPress={() => setTab(entry.value)}
                 style={[
                   styles.tab,
                   { backgroundColor: active ? theme.purpleTint : theme.backgroundSelected },
@@ -94,7 +93,7 @@ export default function AchievementsScreen() {
                 <ThemedText
                   type="smallBold"
                   style={{ color: active ? theme.purpleStrong : theme.textSecondary }}>
-                  {t.label}
+                  {t(`tabs.${entry.value}`)}
                 </ThemedText>
               </Pressable>
             );
@@ -108,7 +107,7 @@ export default function AchievementsScreen() {
             ))}
           </View>
           <ThemedText type="small" themeColor="textMuted" style={styles.footnote}>
-            Sample achievements — the real trophies arrive with the achievements engine.
+            {t('footnote')}
           </ThemedText>
         </ScrollView>
       </SafeAreaView>
@@ -127,12 +126,13 @@ function MedalCell({
   onPress: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('achievements');
   const unlocked = isUnlocked(achievement);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${achievement.name} — ${achievement.condition}`}
+      accessibilityLabel={t('cellA11y', { name: achievement.name, condition: achievement.condition })}
       onPress={onPress}
       style={({ pressed }) => [styles.cell, pressed && styles.pressed]}>
       <ThemedView type="backgroundElement" style={[styles.cellCard, { borderColor: theme.hairline }]}>
@@ -150,7 +150,7 @@ function MedalCell({
               {achievement.progress}/{achievement.target}
             </ThemedText>
             <ThemedText type="small" themeColor="textMuted" style={styles.moreCaption}>
-              {remaining(achievement)} more
+              {t('more', { count: remaining(achievement) })}
             </ThemedText>
           </View>
         ) : (
@@ -213,18 +213,19 @@ function AchievementSheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('achievements');
   if (!achievement) return null;
   const unlocked = isUnlocked(achievement);
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} accessibilityLabel="Close" onPress={onClose}>
+      <Pressable style={styles.scrim} accessibilityLabel={t('close', { ns: 'common' })} onPress={onClose}>
         {/* Inner press swallows taps so the sheet body doesn't dismiss. */}
         <Pressable style={styles.sheetWrap} onPress={() => {}}>
           <ThemedView type="backgroundElement" style={[styles.sheet, { backgroundColor: theme.cream }]}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t('close', { ns: 'common' })}
               onPress={onClose}
               style={[styles.closeButton, { backgroundColor: theme.backgroundSelected }]}>
               <Ionicons name="close" size={16} color={theme.textSecondary} />
@@ -246,14 +247,14 @@ function AchievementSheet({
                   {achievement.progress} / {achievement.target}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textMuted">
-                  {remaining(achievement)} more to unlock
+                  {t('moreToUnlock', { count: remaining(achievement) })}
                 </ThemedText>
               </View>
             )}
 
             <View style={[styles.rewardPill, { backgroundColor: theme.gold }]}>
               <ThemedText type="smallBold" style={{ color: theme.goldStrong }}>
-                {unlocked ? 'Earned' : 'Reward'} · {achievement.reward}
+                {unlocked ? t('earned') : t('reward')} · {achievement.reward}
               </ThemedText>
             </View>
           </ThemedView>

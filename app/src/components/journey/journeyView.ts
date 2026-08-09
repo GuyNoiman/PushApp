@@ -7,7 +7,8 @@
  * createdAt + durationDays. This is DISPLAY math only — no rewards/Buddy logic
  * (Engineering Bible §19). When real Phases land, replace these derivations.
  */
-import type { Journey } from '@/core/types/domain';
+import type { Journey, JourneyStatus, Step } from '@/core/types/domain';
+import i18n from '@/i18n';
 
 export type JourneyBucket = 'active' | 'future' | 'completed';
 
@@ -15,6 +16,8 @@ export interface JourneyView {
   id: string;
   title: string;
   bucket: JourneyBucket;
+  /** The authoritative lifecycle status (drives the frozen/paused badge — J3). */
+  status: JourneyStatus;
   /** 0..1 share of Steps done (whole-Journey progress). */
   progress: number;
   doneSteps: number;
@@ -28,15 +31,30 @@ export interface JourneyView {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
 
 /**
- * Bucket a Journey. Completed = has completedAt. Future = starts later than now
- * (createdAt in the future — the creation flow starts "now", but adopted/scheduled
- * Journeys may not). Everything else is Active.
+ * The authoritative lifecycle status of a Journey. Trusts the explicit `status` field when set;
+ * otherwise derives it for Journeys persisted before the field existed — `completed` when
+ * `completedAt` is set, else `active`. (Kept in sync with the JSDoc on `Journey.status`.)
+ */
+export function resolveJourneyStatus(journey: Journey): JourneyStatus {
+  if (journey.status) return journey.status;
+  return journey.completedAt ? 'completed' : 'active';
+}
+
+/**
+ * Bucket a Journey for the Journeys-screen tabs, from its {@link resolveJourneyStatus lifecycle
+ * status}. `completed` → Completed. A still-`active` Journey scheduled to BEGIN later (createdAt in
+ * the future — the creation flow starts "now", but adopted/scheduled Journeys may not) reads as
+ * Future. `active` and `frozen` (paused, resumable — J3) both live under the Active tab; a frozen
+ * Journey is distinguished there by its `status`, not by a separate bucket. `abandoned` Journeys are
+ * removed outright today, so they never reach this.
  */
 function bucketOf(journey: Journey, now: number): JourneyBucket {
-  if (journey.completedAt) return 'completed';
-  if (journey.createdAt > now) return 'future';
+  const status = resolveJourneyStatus(journey);
+  if (status === 'completed') return 'completed';
+  if (status === 'active' && journey.createdAt > now) return 'future';
   return 'active';
 }
 
@@ -56,6 +74,7 @@ export function toJourneyView(journey: Journey, now: number = Date.now()): Journ
     id: journey.id,
     title: journey.title,
     bucket: bucketOf(journey, now),
+    status: resolveJourneyStatus(journey),
     progress,
     doneSteps,
     totalSteps,
@@ -66,14 +85,56 @@ export function toJourneyView(journey: Journey, now: number = Date.now()): Journ
   };
 }
 
-/** "ends in 3 wks" / "ends this week" / "ended" — a soft relative window. */
+export interface JourneyWeeks {
+  /** Total weeks the Journey spans, derived from its duration (min 1). */
+  totalWeeks: number;
+  /** Non-dropped Steps grouped by 0-based week index; `weeks.length === totalWeeks`. */
+  weeks: Step[][];
+  /** The week the user is currently in (clamped) — a sensible default view. */
+  currentWeek: number;
+}
+
+/**
+ * Group a Journey's Steps into weeks for the detail screen's weekly pager. Total weeks
+ * come from `durationDays`. When every Step carries a Planner `plannedFor`, Steps land in
+ * their real scheduled week; otherwise (manual Journeys with no schedule) they are spread
+ * evenly across the span by order. DISPLAY math only (Engineering Bible §19) — dropped
+ * Steps are excluded, exactly like progress/actionable lists.
+ */
+export function stepsByWeek(journey: Journey, now: number = Date.now()): JourneyWeeks {
+  const totalWeeks = Math.max(1, Math.ceil(journey.durationDays / 7));
+  const active = journey.steps.filter((s) => !s.dropped);
+  const weeks: Step[][] = Array.from({ length: totalWeeks }, () => []);
+  const allPlanned = active.length > 0 && active.every((s) => s.plannedFor != null);
+
+  active.forEach((step, i) => {
+    const raw =
+      allPlanned && step.plannedFor != null
+        ? Math.floor((step.plannedFor - journey.createdAt) / WEEK_MS)
+        : Math.floor((i * totalWeeks) / Math.max(1, active.length));
+    weeks[Math.min(totalWeeks - 1, Math.max(0, raw))].push(step);
+  });
+
+  const currentWeek = Math.min(
+    totalWeeks - 1,
+    Math.max(0, Math.floor((now - journey.createdAt) / WEEK_MS)),
+  );
+  return { totalWeeks, weeks, currentWeek };
+}
+
+/**
+ * "ends in 3 wks" / "ends this week" / "ended" — a soft relative window, localized.
+ * Framework-free: this is a plain TS helper, so it resolves copy through the shared
+ * i18next instance (`i18n.t`) rather than a React hook. Uses the `journeys`
+ * namespace (`ends.*`) so the list and this helper read from one source of truth.
+ */
 export function endsInLabel(endsAt: number, now: number = Date.now()): string {
   const ms = endsAt - now;
-  if (ms <= 0) return 'ended';
+  if (ms <= 0) return i18n.t('ends.ended', { ns: 'journeys' });
   const days = Math.ceil(ms / DAY_MS);
-  if (days <= 7) return 'ends this week';
+  if (days <= 7) return i18n.t('ends.thisWeek', { ns: 'journeys' });
   const weeks = Math.round(days / 7);
-  return `ends in ${weeks} wk${weeks === 1 ? '' : 's'}`;
+  return i18n.t('ends.inWeeks', { ns: 'journeys', count: weeks });
 }
 
 /** "Jun 2" — a short absolute date for detail metadata. */

@@ -14,7 +14,12 @@
  * `CoachStage`. To go live, replace this constant with orchestrator output and
  * feed user replies back into it (see the seam comment in `coach.tsx`). Going
  * live needs a founder decision on the LLM API key + cost, so it stays scripted.
+ *
+ * i18n: the copy is not stored here as literals — {@link buildCoachScript} resolves every
+ * user-facing line from the `coach` namespace (`script.*`) through the passed `t`, so the
+ * prototype speaks the active language (canonical terms preserved).
  */
+import type { TFunction } from 'i18next';
 
 /** One selectable answer in an option block (rendered as a check-able card). */
 export interface CoachOption {
@@ -77,70 +82,54 @@ export interface CoachStage {
  * The sample fitness conversation (matches `coach_mvp_mockup.html` GROUP 1 and the
  * "Coach conversation" frames of `mature_proposal.html`): opening question →
  * reflect the detected goals back as cards → focus one → name + describe the
- * Journey the coach will build.
+ * Journey the coach will build. Every line is resolved from the `coach` namespace so
+ * the prototype follows the active language.
  */
-export const COACH_SCRIPT: CoachStage[] = [
-  {
-    id: 'opening',
-    utterances: [
-      {
-        kind: 'coach',
-        text:
-          "Hey, good to have you here. Tell me what's on your mind and we'll " +
-          'figure it out together. Nothing is too small to bring up.',
-      },
-      { kind: 'coach', strong: true, text: 'So, what do you want to work on?' },
-    ],
-    reply: { mode: 'text', placeholder: 'Type or speak…' },
-  },
-  {
-    id: 'reflect',
-    utterances: [
-      {
-        kind: 'user',
-        text:
-          'I want to start drinking more protein every day, and I keep meaning to ' +
-          'build up my push-ups but never actually start.',
-      },
-      {
-        kind: 'coach',
-        text:
-          'Okay, I hear two things. One is a daily habit, drinking more protein. The ' +
-          "other is a real plan, building up your push-ups. Let's start with one, and " +
-          "I'll keep the other safe for later.",
-      },
-    ],
-    reply: {
-      mode: 'options',
-      prompt: 'Which one first?',
-      multiSelect: false,
-      allowOther: true,
-      options: [
-        { id: 'pushups', title: 'Build up my push-ups', meta: 'Step-by-step plan · Body Image' },
-        { id: 'protein', title: 'Drink more protein daily', meta: 'Daily habit', canDefer: true },
+export function buildCoachScript(t: TFunction<'coach'>): CoachStage[] {
+  return [
+    {
+      id: 'opening',
+      utterances: [
+        { kind: 'coach', text: t('script.opening.intro') },
+        { kind: 'coach', strong: true, text: t('script.opening.question') },
       ],
+      reply: { mode: 'text', placeholder: t('script.opening.placeholder') },
     },
-  },
-  {
-    id: 'focus',
-    utterances: [
-      { kind: 'coach', text: "Thanks. Here's my honest take." },
-      {
-        kind: 'insight',
-        text:
-          'Going from zero to a strong set in three weeks is a big ask. Give it six to ' +
-          'eight weeks and you get a real change, not just a number.',
+    {
+      id: 'reflect',
+      utterances: [
+        { kind: 'user', text: t('script.reflect.userEcho') },
+        { kind: 'coach', text: t('script.reflect.coach') },
+      ],
+      reply: {
+        mode: 'options',
+        prompt: t('script.reflect.prompt'),
+        multiSelect: false,
+        allowOther: true,
+        options: [
+          { id: 'pushups', title: t('script.reflect.pushupsTitle'), meta: t('script.reflect.pushupsMeta') },
+          { id: 'protein', title: t('script.reflect.proteinTitle'), meta: t('script.reflect.proteinMeta'), canDefer: true },
+        ],
       },
-      {
-        kind: 'journey',
-        eyebrow: 'NEW JOURNEY',
-        title: 'Push-Up Progression',
-        description:
-          'A steady build over six to eight weeks, from your first knee push-up to a ' +
-          "confident set of 15. It's paced for a busy week, not a sprint.",
-        meta: '3 Milestones · ~7 weeks · Body Image',
+    },
+    {
+      id: 'focus',
+      utterances: [
+        { kind: 'coach', text: t('script.focus.coach') },
+        { kind: 'insight', text: t('script.focus.insight') },
+        {
+          kind: 'journey',
+          eyebrow: t('script.focus.journeyEyebrow'),
+          title: t('script.focus.journeyTitle'),
+          description: t('script.focus.journeyDescription'),
+          meta: t('script.focus.journeyMeta'),
+        },
+      ],
+      reply: {
+        mode: 'cta',
+        primaryLabel: t('script.focus.primary'),
+        secondaryLabel: t('script.focus.secondary'),
       },
-    ],
-    reply: { mode: 'cta', primaryLabel: 'Build my Journey', secondaryLabel: 'Or adjust the pace first' },
-  },
-];
+    },
+  ];
+}

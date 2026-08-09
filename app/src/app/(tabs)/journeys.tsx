@@ -19,6 +19,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -64,6 +65,7 @@ const SAMPLE_COMPLETED: JourneyCardData = {
     id: 'sample-completed',
     title: 'Morning Pages',
     bucket: 'completed',
+    status: 'completed',
     progress: 1,
     doneSteps: 12,
     totalSteps: 12,
@@ -79,6 +81,7 @@ const SAMPLE_FUTURE: JourneyCardData = {
     id: 'sample-future',
     title: 'Learn to swim',
     bucket: 'future',
+    status: 'active',
     progress: 0,
     doneSteps: 0,
     totalSteps: 8,
@@ -93,6 +96,7 @@ export default function JourneysScreen() {
   const { snapshot } = useApp();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation('journeys');
   const [activeTab, setActiveTab] = useState<JourneyTab>('active');
 
   // Resolve a Journey's Dream name from its dreamId. Dreams are NOT on the Snapshot
@@ -121,9 +125,9 @@ export default function JourneysScreen() {
 
   // Label-only segments — no counts (founder direction 2026-08-07).
   const journeyTabs: { id: JourneyTab; label: string }[] = [
-    { id: 'active', label: 'Active' },
-    { id: 'completed', label: 'Completed' },
-    { id: 'future', label: 'Future' },
+    { id: 'active', label: t('tabs.active') },
+    { id: 'completed', label: t('tabs.completed') },
+    { id: 'future', label: t('tabs.future') },
   ];
 
   // Dev fallback: show ONE sample when a real bucket is empty so those states are
@@ -135,10 +139,10 @@ export default function JourneysScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <ThemedText type="title">Journeys</ThemedText>
+          <ThemedText type="title">{t('title')}</ThemedText>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Create a new Journey"
+            accessibilityLabel={t('createA11y')}
             onPress={() => router.push('/journey/new')}
             style={({ pressed }) => [
               styles.newButton,
@@ -147,7 +151,7 @@ export default function JourneysScreen() {
             ]}>
             <Ionicons name="add" size={18} color={theme.teal} />
             <ThemedText type="smallBold" style={{ color: theme.teal }}>
-              Create journey
+              {t('createJourney')}
             </ThemedText>
           </Pressable>
         </View>
@@ -193,10 +197,7 @@ export default function JourneysScreen() {
               ))}
             </View>
           ) : buckets.active.length === 0 ? (
-            <EmptyState
-              title="No active Journeys yet"
-              body="Start your first Journey and it will appear here as you make progress."
-            />
+            <EmptyState title={t('empty.title')} body={t('empty.body')} />
           ) : (
             <View style={styles.list}>
               {buckets.active.map((card) => (
@@ -233,25 +234,34 @@ function JourneyCard({
 }) {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation('journeys');
 
   const completed = bucket === 'completed';
   const future = bucket === 'future';
+  // A paused (frozen) Journey lives under the Active tab; a pill marks it so it reads apart from the
+  // running ones (J3). `view.status` is the authoritative lifecycle field.
+  const paused = view.status === 'frozen';
   const pct = Math.round(Math.max(0, Math.min(1, view.progress)) * 100);
 
   const sub = completed
-    ? `Milestone ${view.phases} of ${view.phases} — complete`
-    : `Milestone ${view.phase} of ${view.phases}`;
+    ? t('card.milestoneComplete', { phases: view.phases })
+    : t('card.milestone', { phase: view.phase, phases: view.phases });
 
   const foot = completed
-    ? 'Completed'
+    ? t('card.completed')
     : future
-      ? `Starts ${new Date(view.startedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+      ? t('card.starts', {
+          date: new Date(view.startedAt).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+          }),
+        })
       : endsInLabel(view.endsAt);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${view.title}`}
+      accessibilityLabel={t('card.open', { title: view.title })}
       onPress={() => router.push(`/journey/${view.id}`)}
       style={({ pressed }) => [pressed && styles.pressed]}>
       <ThemedView
@@ -277,19 +287,31 @@ function JourneyCard({
               {view.title}
             </ThemedText>
           </View>
-          {/* State pill only where it adds info: DONE on Completed, SOON on Future.
-              The Active tab already says "Active", so a per-card "ACTIVE" pill is
-              redundant noise and is intentionally omitted (founder direction 2026-08-07). */}
-          {completed || future ? (
+          {/* State pill only where it adds info: DONE on Completed, SOON on Future, PAUSED on a
+              frozen Journey. A plain running Journey shows no pill (the Active tab already says so). */}
+          {completed || future || paused ? (
             <View
               style={[
                 styles.statePill,
-                { backgroundColor: completed ? theme.backgroundSelected : theme.tealTint },
+                {
+                  backgroundColor: completed
+                    ? theme.backgroundSelected
+                    : paused
+                      ? theme.goldTint
+                      : theme.tealTint,
+                },
               ]}>
               <ThemedText
                 type="smallBold"
-                style={{ color: completed ? theme.textMuted : theme.tealStrong, fontSize: 10 }}>
-                {completed ? 'DONE' : 'SOON'}
+                style={{
+                  color: completed
+                    ? theme.textMuted
+                    : paused
+                      ? theme.goldStrong
+                      : theme.tealStrong,
+                  fontSize: 10,
+                }}>
+                {completed ? t('card.done') : paused ? t('card.paused') : t('card.soon')}
               </ThemedText>
             </View>
           ) : null}

@@ -23,6 +23,7 @@ import type {
   Step,
 } from '../types/domain';
 import { createId } from '../util/id';
+import type { JourneyEdit } from '../coach/journeyEdit';
 
 /**
  * SECURITY-PRIVACY G5: cap the per-user reason log to a rolling window PER STEP so it
@@ -78,7 +79,36 @@ export class JourneyEngine {
 
   createJourney(input: NewJourneyInput): Journey {
     const now = Date.now();
-    const steps: Step[] = input.steps.map((s) => ({
+    const steps: Step[] = input.steps.map((s) => this.makeStep(s));
+
+    const journey: Journey = {
+      id: createId('journey'),
+      title: input.title,
+      description: input.description,
+      why: input.why,
+      durationDays: input.durationDays,
+      rhythm: input.rhythm,
+      steps,
+      createdAt: now,
+      // A new Journey starts in progress. `status` is authoritative for the Journeys-tab
+      // bucketing and for freeze/resume (J3); it is set explicitly from creation onward.
+      status: 'active',
+      dreamId: input.dreamId,
+      ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
+    };
+
+    this.getState().journeys.push(journey);
+    this.bus.emit({ type: 'JourneyCreated', journey });
+    return journey;
+  }
+
+  /**
+   * The SINGLE Step-construction path, shared by {@link createJourney} and {@link updateJourney}'s
+   * addSteps — so a Step added later is built exactly like one created up front (fresh id, defaults,
+   * optional metadata carried through). Pure builder: it does not touch state or emit.
+   */
+  private makeStep(s: NewStepInput): Step {
+    return {
       id: createId('step'),
       title: s.title,
       description: s.description,
@@ -90,24 +120,116 @@ export class JourneyEngine {
       ...(s.plannedFor !== undefined ? { plannedFor: s.plannedFor } : {}),
       ...(s.milestoneId !== undefined ? { milestoneId: s.milestoneId } : {}),
       ...(s.difficulty !== undefined ? { difficulty: s.difficulty } : {}),
-    }));
-
-    const journey: Journey = {
-      id: createId('journey'),
-      title: input.title,
-      description: input.description,
-      why: input.why,
-      durationDays: input.durationDays,
-      rhythm: input.rhythm,
-      steps,
-      createdAt: now,
-      dreamId: input.dreamId,
-      ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
     };
+  }
 
-    this.getState().journeys.push(journey);
-    this.bus.emit({ type: 'JourneyCreated', journey });
+  /**
+   * Coach-led EDIT of an existing Journey (task J1). Applies a VALIDATED {@link JourneyEdit} in place,
+   * preserving every Step's id, check-in history and the XP already earned. Returns the mutated Journey,
+   * or null when the id is unknown OR the Journey is already completed (a completed Journey is not
+   * editable — the UI hides the pencil, and this is the belt-and-braces guard).
+   *
+   * Order: scalars → edit Steps → remove Steps → add Steps. Step removal follows the founder's
+   * drop-vs-splice rule: a Step that is `done` or carries check-in/reason HISTORY is marked
+   * `dropped: true` (history is preserved, it simply leaves scope); a pristine, never-touched Step is
+   * spliced out entirely. Cross-Journey / unknown Step ids in editSteps are ignored (the parser already
+   * validates against this Journey, but the engine re-guards by only touching its own Steps).
+   *
+   * Emits {@link JourneyUpdated} carrying the Journey IN-PROCESS ONLY (like JourneyCreated); AppCore
+   * persists + re-plans reminders off it. This never triggers the weekly review.
+   */
+  updateJourney(journeyId: string, edit: JourneyEdit): Journey | null {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.completedAt) return null;
+
+    // Scalars — apply only the fields the validated edit carries.
+    if (edit.title !== undefined) journey.title = edit.title;
+    if (edit.why !== undefined) journey.why = edit.why;
+    if (edit.rhythm !== undefined) journey.rhythm = edit.rhythm;
+    if (edit.durationDays !== undefined) journey.durationDays = edit.durationDays;
+
+    // Edit existing Steps by id (guard: only Steps that belong to THIS Journey).
+    for (const change of edit.editSteps ?? []) {
+      const step = journey.steps.find((s) => s.id === change.stepId);
+      if (!step) continue;
+      if (change.title !== undefined) step.title = change.title;
+      if (change.description !== undefined) step.description = change.description;
+      if (change.cadence !== undefined) step.cadence = change.cadence;
+    }
+
+    // Remove Steps: drop-preserve when there is history, splice when pristine.
+    for (const stepId of edit.removeStepIds ?? []) {
+      const step = journey.steps.find((s) => s.id === stepId);
+      if (!step) continue;
+      if (this.stepHasHistory(step)) {
+        step.dropped = true; // keep the record; simply leave scope
+      } else {
+        journey.steps = journey.steps.filter((s) => s.id !== stepId);
+      }
+    }
+
+    // Add new Steps through the shared builder.
+    for (const add of edit.addSteps ?? []) {
+      journey.steps.push(this.makeStep(add));
+    }
+
+    this.bus.emit({ type: 'JourneyUpdated', journey });
     return journey;
+  }
+
+  /**
+   * Permanently delete/abandon a Journey and all its Steps (task J2) — a hard remove from AppState,
+   * distinct from a Freeze/pause. Emits {@link JourneyDeleted} (id only) IN-PROCESS ONLY; AppCore
+   * persists off it and re-plans reminders so the Journey's on-device notifications are cancelled.
+   * Any orphaned on-device behaviorLog/reasonLog rows referencing removed Step ids are harmless raw
+   * local logs. Returns whether a Journey was actually removed (false on an unknown id).
+   */
+  deleteJourney(journeyId: string): boolean {
+    const journeys = this.getState().journeys;
+    const index = journeys.findIndex((j) => j.id === journeyId);
+    if (index === -1) return false;
+    journeys.splice(index, 1);
+    this.bus.emit({ type: 'JourneyDeleted', journeyId });
+    return true;
+  }
+
+  /**
+   * PAUSE a Journey (task J3) — flip its {@link Journey.status} to `frozen` without losing any
+   * progress (Step ids / check-in history / XP all stay). A frozen Journey fires no reminders (the
+   * CommunicationScheduler skips it) and reads as paused in the UI. No-op (returns null) for an
+   * unknown id, an already-frozen Journey, or a completed one (nothing to pause). Emits
+   * {@link JourneyFrozen}; AppCore persists + re-plans reminders off it.
+   */
+  freezeJourney(journeyId: string): Journey | null {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.completedAt || journey.status === 'frozen') return null;
+    journey.status = 'frozen';
+    this.bus.emit({ type: 'JourneyFrozen', journey });
+    return journey;
+  }
+
+  /**
+   * RESUME a frozen Journey (task J3) — flip its {@link Journey.status} back to `active` so it runs
+   * and schedules reminders again. No-op (returns null) for an unknown id or a Journey that is not
+   * currently frozen. Emits {@link JourneyResumed}; AppCore persists + re-plans reminders off it.
+   */
+  resumeJourney(journeyId: string): Journey | null {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.status !== 'frozen') return null;
+    journey.status = 'active';
+    this.bus.emit({ type: 'JourneyResumed', journey });
+    return journey;
+  }
+
+  /**
+   * Whether a Step carries HISTORY worth preserving on removal: it was completed, it was ever touched
+   * (a check-in / partial set `lastCheckInAt`), or it has entries in the reason log. Such a Step is
+   * dropped rather than spliced so its record survives.
+   */
+  private stepHasHistory(step: Step): boolean {
+    if (step.done || step.lastCheckInAt !== undefined) return true;
+    const log = this.getState().reasonLog ?? [];
+    return log.some((e) => e.stepId === step.id);
   }
 
   /**
@@ -135,6 +257,7 @@ export class JourneyEngine {
     // by the adaptive coach is out of scope and never blocks completion).
     if (!journey.completedAt && journey.steps.every((s) => s.done || s.dropped)) {
       journey.completedAt = now;
+      journey.status = 'completed';
       this.bus.emit({ type: 'JourneyCompleted', journey });
     }
   }

@@ -15,6 +15,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -27,6 +28,7 @@ const TAB_BAR_CONTENT_HEIGHT = 58;
 export default function AppTabs() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const { t } = useTranslation('common');
 
   return (
     <Tabs
@@ -52,7 +54,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
@@ -61,7 +63,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="journeys"
         options={{
-          title: 'Journeys',
+          title: t('tabs.journeys'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'git-branch' : 'git-branch-outline'} size={size} color={color} />
           ),
@@ -71,7 +73,7 @@ export default function AppTabs() {
         name="friends"
         options={{
           // The Support-Circle surface is labelled "Circle" in the mature nav.
-          title: 'Circle',
+          title: t('tabs.circle'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'people' : 'people-outline'} size={size} color={color} />
           ),
@@ -80,7 +82,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="inbox"
         options={{
-          title: 'Inbox',
+          title: t('tabs.inbox'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'mail' : 'mail-outline'} size={size} color={color} />
           ),
@@ -89,7 +91,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('tabs.settings'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />
           ),

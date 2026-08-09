@@ -116,6 +116,24 @@ export class SupabaseAuthGateway implements AuthGateway {
     await this.client().auth.signOut();
   }
 
+  /**
+   * Permanently delete the account + all server-side data (O1). Invokes the
+   * `delete-account` Edge Function, which runs as service_role and calls
+   * `auth.admin.deleteUser(auth.uid())` — cascading every `public.*` row. The
+   * function verifies the caller's JWT server-side, so the client only needs the
+   * current session (attached automatically). THROWS on any error so the caller
+   * REFUSES the local wipe until the remote delete is confirmed gone.
+   *
+   * NOTE: the Edge Function must be DEPLOYED (`supabase functions deploy
+   * delete-account`) before this works against real data — see
+   * `supabase/functions/delete-account/index.ts`. Not yet deployed (deferred to
+   * pre-release, a founder action).
+   */
+  async deleteAccount(): Promise<void> {
+    const { error } = await this.client().functions.invoke('delete-account');
+    if (error) throw error;
+  }
+
   onAuthChange(cb: (user: AuthUser | null) => void): () => void {
     if (!supabase) return () => {};
     const { data } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {

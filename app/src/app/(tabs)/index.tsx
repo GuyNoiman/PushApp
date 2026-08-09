@@ -2,7 +2,7 @@
  * Home — the mature redesign (revised 2026-08-07, second founder round). The three
  * areas now have THREE DISTINCT visual forms so the page never reads as one flat list:
  *
- *   TOP STATUS STRIP (level + XP-to-next-level bar · coins · streak — icons + numbers)
+ *   TOP STATUS STRIP (level + XP-to-next-level bar · streak — icons + numbers; Coins hidden, D29)
  *   → greeting-with-name → "Talk to your coach" (the primary HERO card, near the top)
  *   → TODAY'S FOCUS  — the next pending Step of EACH active Journey, a small STACK of
  *                      urgency-coloured cards (calm → amber → red as the day runs out)
@@ -20,6 +20,7 @@
  */
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -44,11 +45,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 import { Ionicons } from '@expo/vector-icons';
-
-// TODO(data): no streak model exists in the engine yet (no StreakEngine / no
-// consecutive-day count in the snapshot). Placeholder so the strip reads right — wire
-// it to the real streak once one lands.
-const STREAK_PLACEHOLDER = 4;
 
 // A friend is "quiet" (→ Nudge) once their last shared progress is at least this many
 // days old; otherwise they've recently moved (→ Cheer).
@@ -75,11 +71,11 @@ function iconForJourney(journeyId: string): keyof typeof Ionicons.glyphMap {
   return STEP_ICONS[sum % STEP_ICONS.length];
 }
 
-/** Time-of-day greeting — presentational, from the device clock. */
-function greetingForHour(hour: number): string {
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+/** Time-of-day greeting bucket — presentational, from the device clock. */
+function greetingKeyForHour(hour: number): 'morning' | 'afternoon' | 'evening' {
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
 }
 
 /**
@@ -93,13 +89,16 @@ function urgencyForHour(hour: number): StepUrgency {
   return 'calm';
 }
 
-/** "Milestone N of M" when the Journey has Milestones and the Step belongs to one. */
-function milestoneLabel(journey: Journey | undefined, step: Step): string | null {
+/** The "current of total" Milestone position when the Step belongs to one, else null. */
+function milestonePosition(
+  journey: Journey | undefined,
+  step: Step,
+): { current: number; total: number } | null {
   const milestones = journey?.milestones;
   if (!milestones?.length || !step.milestoneId) return null;
   const m = milestones.find((x) => x.id === step.milestoneId);
   if (!m) return null;
-  return `Milestone ${m.order + 1} of ${milestones.length}`;
+  return { current: m.order + 1, total: milestones.length };
 }
 
 /** Up to two initials from a handle/name, for a monogram avatar. */
@@ -123,6 +122,7 @@ export default function HomeScreen() {
   const social = useSocial();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation('home');
 
   // Confetti fires on the pending→done moment (bumped by the report flow's Done).
   const [confettiKey, setConfettiKey] = useState(0);
@@ -137,7 +137,7 @@ export default function HomeScreen() {
   }, []);
 
   const hour = new Date().getHours();
-  const greeting = greetingForHour(hour);
+  const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
   // The greeting prefers the (simulated) signed-in user's first name, then a public
   // handle, then a warm fallback. TODO(auth): the sim is a dev stand-in for a real
   // Google/Apple sign-in (see core/profile/simulatedUser).
@@ -145,7 +145,7 @@ export default function HomeScreen() {
   const name =
     (simUser.signedIn ? firstName(simUser.name) : '') ||
     social.profile?.handle?.trim() ||
-    'there';
+    t('greeting.fallbackName');
 
   const journeyById = useMemo(() => {
     const map = new Map<string, Journey>();
@@ -163,10 +163,11 @@ export default function HomeScreen() {
   const metaFor = useMemo(
     () => (item: TodayStep): string => {
       const journey = journeyById.get(item.journeyId);
-      const ms = milestoneLabel(journey, item.step);
+      const pos = milestonePosition(journey, item.step);
+      const ms = pos ? t('milestone', { current: pos.current, total: pos.total }) : null;
       return [item.journeyTitle, ms].filter(Boolean).join(' · ');
     },
-    [journeyById],
+    [journeyById, t],
   );
 
   // ── Quick-swipe report paths — the SAME facade calls the ⋯ menu uses, so swipe and
@@ -285,18 +286,18 @@ export default function HomeScreen() {
       .slice(0, 8)
       .map((ap) => {
         const days = Math.floor((now - ap.updatedAt) / DAY_MS);
-        const on = ap.title ? ` on '${ap.title}'` : '';
+        const on = ap.title ? t('support.on', { title: ap.title }) : '';
         return {
           key: `${ap.owner.id}:${ap.journeyId}`,
           initials: initialsOf(ap.owner.handle),
           name: ap.owner.handle,
-          status: `Quiet for ${days} days${on}`,
+          status: t('support.quiet', { count: days, on }),
           // TODO(data): only `sendCheer` exists today — a dedicated "nudge" outreach for
           // a quiet friend is a later slice. Both reach out for now.
           onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId),
         };
       });
-  }, [social]);
+  }, [social, t]);
 
   const realCheer: SupportPerson[] = useMemo(() => {
     const now = Date.now();
@@ -304,9 +305,11 @@ export default function HomeScreen() {
       .filter((ap) => Math.floor((now - ap.updatedAt) / DAY_MS) < QUIET_AFTER_DAYS)
       .slice(0, 8)
       .map((ap) => {
-        const on = ap.title ? ` on '${ap.title}'` : '';
+        const on = ap.title ? t('support.on', { title: ap.title }) : '';
         const status =
-          ap.streak > 0 ? `On a ${ap.streak} day streak${on}` : `Made progress${on}`;
+          ap.streak > 0
+            ? t('support.streak', { count: ap.streak, on })
+            : t('support.madeProgress', { on });
         return {
           key: `${ap.owner.id}:${ap.journeyId}`,
           initials: initialsOf(ap.owner.handle),
@@ -315,7 +318,7 @@ export default function HomeScreen() {
           onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId),
         };
       });
-  }, [social]);
+  }, [social, t]);
 
   // Until the social backend fills, each tab falls back to the shared DEV sample so
   // BOTH tabs show real-looking people — with their WHY/status line intact.
@@ -350,7 +353,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.loading} edges={['top', 'left', 'right']}>
           <ThemedText type="small" themeColor="textSecondary">
-            Loading…
+            {t('loading', { ns: 'common' })}
           </ThemedText>
         </SafeAreaView>
       </ThemedView>
@@ -364,19 +367,19 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {/* ── Status strip — icons + numbers, with the XP-to-next-level bar in Level ── */}
+        {/* Coins are hidden in the initial version (D29) — TopStatusBar no longer takes/render them. */}
         <TopStatusBar
           level={snapshot.buddy.level}
           xpIntoLevel={snapshot.buddy.xpIntoLevel}
           xpForNextLevel={snapshot.buddy.xpForNextLevel}
-          coins={snapshot.buddy.coins}
-          streak={STREAK_PLACEHOLDER}
+          streak={snapshot.streak}
         />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* ── Greeting ── */}
           <View style={styles.header}>
             <ThemedText style={[styles.hi, { color: theme.text }]}>
-              {greeting}, {name}
+              {t('greeting.line', { greeting, name })}
             </ThemedText>
           </View>
 
@@ -397,7 +400,7 @@ export default function HomeScreen() {
           ) : null}
 
           {/* ── Today's focus — a small stack, one card per active Journey ── */}
-          <SectionHeader title="Today's focus" count={focusSteps.length} tone={headerTone} />
+          <SectionHeader title={t('sections.todayFocus')} count={focusSteps.length} tone={headerTone} />
           {focusSteps.length > 0 ? (
             <View style={styles.focusStack}>
               {focusSteps.map((item) => (
@@ -418,20 +421,20 @@ export default function HomeScreen() {
           ) : (
             <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
               <ThemedText type="smallBold" style={{ color: theme.text }}>
-                You&apos;re all caught up today.
+                {t('caughtUp.title')}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Nothing pressing right now — a good moment to look ahead.
+                {t('caughtUp.body')}
               </ThemedText>
             </View>
           )}
 
           {/* ── This week — grouped by Dream, strung along a turquoise rail ── */}
-          <SectionHeader title="This week" count={weekCount} />
+          <SectionHeader title={t('sections.thisWeek')} count={weekCount} />
           {weekGroups.length === 0 ? (
             <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                No other Steps scheduled this week.
+                {t('week.empty')}
               </ThemedText>
             </View>
           ) : (
@@ -447,13 +450,13 @@ export default function HomeScreen() {
 
           {/* ── Give support — two switchable tabs, each row shows the person + WHY ── */}
           <SectionHeader
-            title="Give support"
+            title={t('sections.giveSupport')}
             right={
               <ThemedText
                 type="smallBold"
                 onPress={() => router.push('/friends')}
                 style={{ color: theme.tint }}>
-                See all
+                {t('sections.seeAll')}
               </ThemedText>
             }
           />

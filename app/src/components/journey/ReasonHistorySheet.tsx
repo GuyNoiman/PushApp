@@ -11,11 +11,13 @@
  * when). It renders the free-text `note` only for the user's own device — that data
  * never leaves it (G1). Presentational only (Bible §19).
  */
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
-import { REASONS } from '@/core/config/reasons';
+import { reasonLabel as reasonLabelForId, resolveReason } from '@/core/config/reasons';
 import type { ReasonEntry, ReasonId } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -31,13 +33,14 @@ export function ReasonHistorySheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('journey');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable accessibilityLabel="Dismiss" style={styles.backdrop} onPress={onClose}>
+      <Pressable accessibilityLabel={t('dismiss', { ns: 'common' })} style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.title}>
-            Looking back
+            {t('reasonHistory.title')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
             {stepTitle}
@@ -46,22 +49,21 @@ export function ReasonHistorySheet({
           {entries.length === 0 ? (
             <View style={styles.empty}>
               <ThemedText type="small" themeColor="textSecondary">
-                Nothing here yet — this is where we&apos;ll gently notice what tends to
-                get in the way.
+                {t('reasonHistory.empty')}
               </ThemedText>
             </View>
           ) : (
             <ScrollView style={styles.listBox} contentContainerStyle={styles.list}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.lead}>
-                A few times it didn&apos;t happen — no judgement, just what came up:
+                {t('reasonHistory.lead')}
               </ThemedText>
               {entries.map((e) => (
                 <View key={e.id} style={[styles.row, { borderColor: theme.hairline }]}>
                   <ThemedText type="smallBold" style={{ color: theme.text }}>
-                    {reasonLabel(e.reasonId)}
+                    {reasonLabel(e.reasonId, t)}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textMuted">
-                    {formatAgo(e.at)}
+                    {formatAgo(e.at, t)}
                   </ThemedText>
                   {e.note ? (
                     <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
@@ -75,11 +77,11 @@ export function ReasonHistorySheet({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={t('close', { ns: 'common' })}
             onPress={onClose}
             style={({ pressed }) => [styles.button, { backgroundColor: theme.coral }, pressed && styles.pressed]}>
             <ThemedText type="smallBold" style={{ color: theme.text }}>
-              Close
+              {t('close', { ns: 'common' })}
             </ThemedText>
           </Pressable>
         </Pressable>
@@ -88,19 +90,19 @@ export function ReasonHistorySheet({
   );
 }
 
-/** Map a reason id to its human label (config source of truth). */
-function reasonLabel(id: ReasonId): string {
-  return REASONS.find((r) => r.id === id)?.label ?? 'Something came up';
+/** Map a reason id to its human label (translated), with a translated fallback for unknown ids. */
+function reasonLabel(id: ReasonId, t: TFunction<'journey'>): string {
+  return resolveReason(id) ? reasonLabelForId(id) : t('reasonHistory.fallbackReason');
 }
 
 /** A soft "how long ago" label — never an exact timestamp (this is reflection, not a log). */
-function formatAgo(at: number): string {
+function formatAgo(at: number, t: TFunction<'journey'>): string {
   const days = Math.floor((Date.now() - at) / (24 * 60 * 60 * 1000));
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days} days ago`;
+  if (days <= 0) return t('reasonHistory.ago.today');
+  if (days === 1) return t('reasonHistory.ago.yesterday');
+  if (days < 7) return t('reasonHistory.ago.days', { count: days });
   const weeks = Math.floor(days / 7);
-  return weeks === 1 ? 'a week ago' : `${weeks} weeks ago`;
+  return t('reasonHistory.ago.weeks', { count: weeks });
 }
 
 const styles = StyleSheet.create({

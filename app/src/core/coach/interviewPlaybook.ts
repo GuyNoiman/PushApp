@@ -14,11 +14,21 @@
  * ON-DEVICE-ONLY raw signal in the resulting {@link GoalSpec} — the same invariant as
  * learning/GoalInput. This config file itself holds only static, non-PII copy.
  *
- * Pure TypeScript — no React, no UI, no vendor imports.
+ * LANGUAGE (C-Lang-1): the user-facing copy (opening, focus, choice labels, the front-load template
+ * and the closing Support-Circle line) is resolved from the `coachContent` i18n namespace so the
+ * coach SPEAKS the user's selected language. Each field is a getter that reads the ACTIVE language
+ * off the shared framework-free i18next instance (`i18n.t`, never a React hook), so a language change
+ * is reflected on the next access. Everything else here stays plain config.
+ *
+ * Pure TypeScript — no React hooks, no UI, no vendor SDKs (the i18next core instance is framework-free).
  */
+import i18n from '../../i18n';
 import type { FeasibilityAssessment, InterviewAnswers } from '../learning/DomainExpert';
 import type { DomainId } from '../learning/experts/registry';
 import type { Cadence, DayPart } from '../types/domain';
+
+/** Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React). */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent' });
 
 /**
  * The process SHAPE the user is signing up for.
@@ -171,32 +181,44 @@ const OTHER_ORDER: ExtractionField[] = [
  * (S2.3) consumes this object and never hardcodes any of it.
  */
 export const INTERVIEW_PLAYBOOK: InterviewPlaybook = {
-  opening: 'Hi Guy, how can I help you today?',
+  get opening() {
+    return cc('opening');
+  },
   focus: {
-    intro:
-      'You mentioned a few different things — nice. Let’s start with one and build it properly, ' +
-      'then we’ll set up the next. Which would you like to build first?',
+    get intro() {
+      return cc('focus.intro');
+    },
     kindLabels: {
-      recurring: 'a simple habit for your weekly routine',
-      process: 'a step-by-step plan that builds over time',
+      get recurring() {
+        return cc('focus.kindLabels.recurring');
+      },
+      get process() {
+        return cc('focus.kindLabels.process');
+      },
     },
   },
   choices: [
     {
       id: 'A',
-      label: 'A habit to add to my weekly routine',
+      get label() {
+        return cc('choices.habit');
+      },
       processType: 'fixed',
       usesMilestones: false,
     },
     {
       id: 'B',
-      label: 'A new process to build together',
+      get label() {
+        return cc('choices.process');
+      },
       processType: 'progressive',
       usesMilestones: true,
     },
     {
       id: 'C',
-      label: 'Other',
+      get label() {
+        return cc('choices.other');
+      },
       processType: 'unknown',
       usesMilestones: false,
     },
@@ -206,15 +228,13 @@ export const INTERVIEW_PLAYBOOK: InterviewPlaybook = {
     B: { id: 'B', extractionOrder: PROGRESSIVE_ORDER },
     C: { id: 'C', extractionOrder: OTHER_ORDER },
   },
-  exampleMessageTemplate:
-    'If it’s easier, tell me everything at once — for example: ' +
-    '“I want to {goal}. It matters to me because {motivation}. ' +
-    'I can give it about {sessionMinutes} minutes, {timesPerWeek} times a week, ' +
-    'usually in the {daypart}. What usually trips me up is {failureRisk}.”',
-  supportCircleRecommendation:
-    'One last thing — people who invite a Buddy or a small Support Circle stick with it far more. ' +
-    'Want me to suggest who could back you on this?',
-} as const;
+  get exampleMessageTemplate() {
+    return cc('exampleMessageTemplate');
+  },
+  get supportCircleRecommendation() {
+    return cc('supportCircleRecommendation');
+  },
+};
 
 // ── GoalSpec: the extraction schema the orchestrator fills ──────────────────────
 // GoalSpec is what the interview PRODUCES. It is aligned field-for-field with learning/GoalInput

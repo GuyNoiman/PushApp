@@ -1,0 +1,34 @@
+{
+  "reactions": [
+    "זה נחשב. כל הכבוד.",
+    "הופעת, וזה מה שחשוב.",
+    "עוד צעד קדימה. הרגשתי את זה.",
+    "התקדמות יציבה. תמשיך ככה.",
+    "גאה בך על זה."
+  ],
+  "scene": {
+    "customizeA11y": "התאמת החבר שלך",
+    "openShopA11y": "פתיחת החנות"
+  },
+  "inventory": {
+    "categories": {
+      "character": "דמות",
+      "clothing": "לבוש",
+      "items": "פריטים",
+      "location": "מיקום",
+      "furniture": "ריהוט"
+    },
+    "lockedTabA11y": "{{label}}, נעול",
+    "unlocksAtLevel": "🔒 נפתח ברמה {{level}}",
+    "comingSoon": "{{label}} בקרוב",
+    "select": "בחירה",
+    "selectA11y": "בחירת הפריט הזה",
+    "lockedSlotA11y": "משבצת נעולה",
+    "currentlyWornA11y": "{{name}}, לבוש כרגע"
+  },
+  "evolve": {
+    "evolved": "{{name}} התפתח",
+    "collect": "איסוף",
+    "collectA11y": "איסוף, {{stage}}"
+  }
+}

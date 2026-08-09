@@ -15,6 +15,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -33,16 +34,6 @@ export interface SupportPerson {
   onPress: () => void;
 }
 
-const TAB_LABEL: Record<SupportTone, string> = {
-  nudge: 'Needs support',
-  cheer: 'Deserve praise',
-};
-
-const ACTION_LABEL: Record<SupportTone, string> = {
-  nudge: 'Nudge',
-  cheer: 'Cheer',
-};
-
 const ACTION_ICON: Record<SupportTone, keyof typeof Ionicons.glyphMap> = {
   nudge: 'hand-left',
   cheer: 'heart',
@@ -56,7 +47,12 @@ export function SupportBoard({
   deservePraise: SupportPerson[];
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
   const [tab, setTab] = useState<SupportTone>('nudge');
+
+  // Localized labels for the two tones (kept inside so they follow language changes).
+  const tabLabel = (tone: SupportTone) => t(`support.tab.${tone}`);
+  const actionLabel = (tone: SupportTone) => t(`support.action.${tone}`);
 
   const people = tab === 'nudge' ? needSupport : deservePraise;
   // Amber = a quiet friend who needs reaching; turquoise = someone to celebrate.
@@ -67,21 +63,21 @@ export function SupportBoard({
     <View style={styles.board}>
       {/* ── Segmented control: two switchable tabs, turquoise underline on active ── */}
       <View style={[styles.tabs, { borderBottomColor: theme.hairline }]}>
-        {(['nudge', 'cheer'] as const).map((t) => {
-          const active = t === tab;
-          const count = t === 'nudge' ? needSupport.length : deservePraise.length;
+        {(['nudge', 'cheer'] as const).map((tone) => {
+          const active = tone === tab;
+          const count = tone === 'nudge' ? needSupport.length : deservePraise.length;
           return (
             <Pressable
-              key={t}
+              key={tone}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
-              accessibilityLabel={`${TAB_LABEL[t]}, ${count} people`}
-              onPress={() => setTab(t)}
+              accessibilityLabel={t('support.tabA11y', { label: tabLabel(tone), count })}
+              onPress={() => setTab(tone)}
               style={styles.tab}>
               <ThemedText
                 type="smallBold"
                 style={[styles.tabLabel, { color: active ? theme.text : theme.textSecondary }]}>
-                {TAB_LABEL[t]}
+                {tabLabel(tone)}
               </ThemedText>
               <View
                 style={[
@@ -103,9 +99,7 @@ export function SupportBoard({
       {people.length === 0 ? (
         <View style={styles.empty}>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {tab === 'nudge'
-              ? 'Everyone in your circle is on track right now.'
-              : 'No wins to celebrate just yet.'}
+            {tab === 'nudge' ? t('support.empty.nudge') : t('support.empty.cheer')}
           </ThemedText>
         </View>
       ) : (
@@ -132,7 +126,7 @@ export function SupportBoard({
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${ACTION_LABEL[tab]} ${p.name}`}
+                accessibilityLabel={t('support.actionA11y', { action: actionLabel(tab), name: p.name })}
                 onPress={p.onPress}
                 style={({ pressed }) => [
                   styles.action,
@@ -141,7 +135,7 @@ export function SupportBoard({
                 ]}>
                 <Ionicons name={ACTION_ICON[tab]} size={13} color={accent} />
                 <ThemedText type="smallBold" style={[styles.actionText, { color: accent }]}>
-                  {ACTION_LABEL[tab]}
+                  {actionLabel(tab)}
                 </ThemedText>
               </Pressable>
             </View>
@@ -167,7 +161,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingVertical: Spacing.two,
-    marginRight: Spacing.four,
+    marginEnd: Spacing.four,
   },
   tabLabel: {
     fontSize: 14,
@@ -186,8 +180,8 @@ const styles = StyleSheet.create({
   },
   underline: {
     position: 'absolute',
-    left: 0,
-    right: Spacing.four,
+    start: 0,
+    end: Spacing.four,
     bottom: -1,
     height: 2,
     borderRadius: Radius.pill,

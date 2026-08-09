@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import type { CoachOption } from '@/components/coach/coachScript';
@@ -44,6 +45,7 @@ export function CoachOptions({
   onSubmitOther: (text: string) => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('coach');
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherText, setOtherText] = useState('');
   const hasSelection = selectedIds.length > 0;
@@ -103,7 +105,7 @@ export function CoachOptions({
                 <View style={[styles.deferTag, { backgroundColor: theme.background }]}>
                   <Ionicons name="time-outline" size={11} color={theme.textMuted} />
                   <ThemedText type="small" themeColor="textMuted" style={styles.deferText}>
-                    Saved for later
+                    {t('savedForLater')}
                   </ThemedText>
                 </View>
               )}
@@ -120,7 +122,7 @@ export function CoachOptions({
               onChangeText={setOtherText}
               editable={!disabled}
               autoFocus
-              placeholder="Type your own…"
+              placeholder={t('otherPlaceholder')}
               placeholderTextColor={theme.textMuted}
               returnKeyType="send"
               onSubmitEditing={submitOther}
@@ -128,7 +130,7 @@ export function CoachOptions({
             />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Send"
+              accessibilityLabel={t('send')}
               disabled={disabled || otherText.trim().length === 0}
               onPress={submitOther}
               style={({ pressed }) => [
@@ -143,7 +145,7 @@ export function CoachOptions({
         ) : (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Other, type your own"
+            accessibilityLabel={t('otherOption')}
             disabled={disabled}
             onPress={() => setOtherOpen(true)}
             style={({ pressed }) => [
@@ -153,7 +155,7 @@ export function CoachOptions({
             ]}>
             <Ionicons name="add" size={15} color={theme.textMuted} />
             <ThemedText type="small" themeColor="textMuted">
-              Other, type your own
+              {t('otherOption')}
             </ThemedText>
           </Pressable>
         ))}
@@ -161,7 +163,7 @@ export function CoachOptions({
       {multiSelect && !disabled && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={continueLabel ?? 'Continue'}
+          accessibilityLabel={continueLabel ?? t('continue')}
           disabled={!hasSelection}
           onPress={onAdvance}
           style={({ pressed }) => [
@@ -171,7 +173,7 @@ export function CoachOptions({
             pressed && styles.pressed,
           ]}>
           <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
-            {continueLabel ?? 'Continue'}
+            {continueLabel ?? t('continue')}
           </ThemedText>
         </Pressable>
       )}
@@ -241,8 +243,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     borderWidth: 1.4,
     paddingVertical: Spacing.one,
-    paddingLeft: Spacing.three - 2,
-    paddingRight: Spacing.one,
+    paddingStart: Spacing.three - 2,
+    paddingEnd: Spacing.one,
   },
   otherInput: {
     flex: 1,

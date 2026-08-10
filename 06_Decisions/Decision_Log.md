@@ -149,6 +149,35 @@ an interim "My week starts" Settings row (will move into the P1 profile redesign
 + boundary stamping, gated on the backend + `Own_Profile`'s country field).
 **Reflected in:** the PRD (§9 current-implementation, §10 resolution & MVP scope); the files above.
 
+### D34 — Unified Profile model + own-vs-friend boundary (Own Profile)
+**Decision (founder, `Own_Profile_PRD.md`):** ONE source-of-truth `Profile` object holds every identity/
+adaptation field (option A). Two distinct uses of "profile": **Own Profile** is the PRIVATE self-view —
+the user sees/edits ALL fields; **Friend Profile** (P1) is a filtered projection showing only a public
+SUBSET (photo, display name, `@username`, Level, authorized progress) and NEVER the private fields
+(country, birth date, form of address, email, provider info). Form-of-address default = **neutral**
+(reconciles the PRD's earlier "masculine" with D31). Country covers **all countries** (full ISO list;
+week start = Sun/Mon/Sat only, encoded as a Sunday-set + Saturday-set + Monday-default) and supplies the
+week-start default (a manual override still wins, D33). **Phased build:** Phase 1 = fields + the Own
+Profile screen; Phase 2 = the profile photo (its own slice with the §4 binding safety requirements +
+`expo-image-picker`); auth-provider seeding wires in with real OAuth (E1, Apple-gated).
+**Implemented — Phase 1a (2026-08-10, green: tsc clean, eslint 0 errors, jest 548/548):**
+`state/ProfileProvider.tsx` (the unified store — persists one JSON object; mirrors `addressForm` +
+`weekStartDay` into their framework-free modules; migrates the two legacy preference keys) FOLDS IN and
+REPLACES the former standalone `AddressPreference` (D31) + `WeekStartPreference` (D33) providers;
+`core/profile/countries.ts` (all-countries list + country→week-start mapping + device-region default +
+`Intl.DisplayNames` localized names); consumers migrated (`_layout`, `useAddressedTranslation`,
+`settings.tsx`); `core/profile/__tests__/countries.test.ts`.
+**Implemented — Phase 1b (2026-08-10, green: tsc clean, eslint 0 errors, jest 548/548, web-verified in
+Hebrew):** the dedicated **My Profile** screen `app/settings/profile.tsx` (avatar initials + a
+private-scope note, editable display name, `@username` reusing the shared username logic, country row,
+birth-date row with an inline `YYYY-MM-DD` editor, form-of-address) + a searchable **country picker**
+`app/settings/country.tsx` (all countries, `Intl.DisplayNames` localized names, alphabetical) + the
+entry point (the Settings `ProfileIdentity` card now navigates to it). Phase 1 (fields + screen) is
+DONE; the **profile photo is Phase 2** (its own slice with the §4 safety requirements +
+`expo-image-picker`), and auth-provider seeding wires in with real OAuth (E1, Apple-gated).
+**Categorization:** **Approved + Phase-1 Implemented** + **Open** (Phase 2 photo, auth seeding).
+**Reflected in:** `Own_Profile_PRD.md` (status + §10/§11); the files above.
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

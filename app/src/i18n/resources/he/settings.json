@@ -41,7 +41,9 @@
       "neutral": "ניטרלי",
       "feminine": "נקבה",
       "masculine": "זכר"
-    }
+    },
+    "weekStart": "השבוע שלי מתחיל ב",
+    "weekStartDetail": "יום ראשון בשבוע"
   },
   "appearance": {
     "system": "מערכת",

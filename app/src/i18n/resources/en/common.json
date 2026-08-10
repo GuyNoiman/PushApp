@@ -17,6 +17,7 @@
   "letGo": "Let go",
   "loading": "Loading…",
   "dismiss": "Dismiss",
+  "weekdays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
   "tabs": {
     "home": "Home",
     "journeys": "Journeys",

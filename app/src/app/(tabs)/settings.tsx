@@ -41,8 +41,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { findLanguage } from '@/i18n/languages';
 import { useAddressPreference } from '@/state/AddressPreference';
 import type { AddressForm } from '@/i18n/addressForm';
+import type { Weekday } from '@/core/util/week';
 import { useLanguagePreference } from '@/state/LanguagePreference';
 import { useNotificationPermission } from '@/state/useNotificationPermission';
+import { useWeekStartPreference } from '@/state/WeekStartPreference';
 import { useThemePreference, type ThemePreference } from '@/state/ThemePreference';
 import { useAccountActions } from '@/state/useAccountActions';
 
@@ -61,7 +63,13 @@ export default function SettingsScreen() {
   const { preference, setPreference } = useThemePreference();
   const { language } = useLanguagePreference();
   const { form: addressForm, setForm: setAddressForm } = useAddressPreference();
+  const { weekStartDay, setWeekStartDay } = useWeekStartPreference();
   const { status: notifStatus, request: requestNotif } = useNotificationPermission();
+
+  // Localized weekday names (Sun..Sat) for the week-start row's value.
+  const weekdayNames = t('weekdays', { ns: 'common', returnObjects: true }) as string[];
+  // Interim: cycle Sun → Mon → … → Sat on tap. Moves into a proper picker in the P1 profile redesign.
+  const cycleWeekStart = () => setWeekStartDay((((weekStartDay + 1) % 7) as Weekday));
   const { exportData, deleteAccount } = useAccountActions();
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
 
@@ -168,6 +176,13 @@ export default function SettingsScreen() {
               detail={t('app.addressFormDetail')}
               value={t(`app.addressFormValue.${addressForm}`)}
               onPress={cycleAddressForm}
+            />
+            <SettingsRow
+              icon="calendar-outline"
+              label={t('app.weekStart')}
+              detail={t('app.weekStartDetail')}
+              value={weekdayNames[weekStartDay]}
+              onPress={cycleWeekStart}
             />
             <SettingsRow icon="information-circle-outline" label={t('app.about')} value={`v${appVersion}`} />
           </SettingsSection>

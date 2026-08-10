@@ -25,6 +25,7 @@ import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
 import { SocialProvider } from '@/state/SocialProvider';
 import { ThemePreferenceProvider } from '@/state/ThemePreference';
+import { WeekStartPreferenceProvider } from '@/state/WeekStartPreference';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -102,7 +103,11 @@ export default function RootLayout() {
                   {/* Owns the user's form of address (לשון פנייה) — drives gender-aware i18n
                       context (D31). A sibling concern to language. */}
                   <AddressPreferenceProvider>
-                    <ThemedChrome />
+                    {/* Owns the single authoritative week-start day (D33) — every weekly engine +
+                        surface reads its boundary from here. */}
+                    <WeekStartPreferenceProvider>
+                      <ThemedChrome />
+                    </WeekStartPreferenceProvider>
                   </AddressPreferenceProvider>
                 </LanguagePreferenceProvider>
               </ThemePreferenceProvider>

@@ -8,6 +8,7 @@
  * (Engineering Bible §19). When real Phases land, replace these derivations.
  */
 import type { Journey, JourneyStatus, Step } from '@/core/types/domain';
+import { weeksBetween } from '@/core/util/week';
 import i18n from '@/i18n';
 
 export type JourneyBucket = 'active' | 'future' | 'completed';
@@ -31,7 +32,6 @@ export interface JourneyView {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEK_MS = 7 * DAY_MS;
 
 /**
  * The authoritative lifecycle status of a Journey. Trusts the explicit `status` field when set;
@@ -95,14 +95,24 @@ export interface JourneyWeeks {
 }
 
 /**
- * Group a Journey's Steps into weeks for the detail screen's weekly pager. Total weeks
- * come from `durationDays`. When every Step carries a Planner `plannedFor`, Steps land in
- * their real scheduled week; otherwise (manual Journeys with no schedule) they are spread
- * evenly across the span by order. DISPLAY math only (Engineering Bible §19) — dropped
- * Steps are excluded, exactly like progress/actionable lists.
+ * Group a Journey's Steps into weeks for the detail screen's weekly pager. Weeks are CALENDAR weeks
+ * aligned to the user's configured week-start day — the ONE authoritative week definition (D33) — not
+ * a fixed number of milliseconds from `createdAt`, so the pager agrees with Missions/Streak/Week
+ * Review. `totalWeeks` spans the calendar weeks from the Journey's first week (the one it started in)
+ * through its last (by `durationDays`); a Journey's first or last week may therefore be partial. When
+ * every Step carries a Planner `plannedFor`, Steps land in their real scheduled calendar week;
+ * otherwise (manual Journeys with no schedule) they are spread evenly across the span by order.
+ * DISPLAY math only (Engineering Bible §19) — dropped Steps are excluded, like progress/actionable lists.
  */
 export function stepsByWeek(journey: Journey, now: number = Date.now()): JourneyWeeks {
-  const totalWeeks = Math.max(1, Math.ceil(journey.durationDays / 7));
+  const start = new Date(journey.createdAt);
+  // Calendar-correct span end (add days, not milliseconds — DST-safe).
+  const endMs = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate() + journey.durationDays,
+  ).getTime();
+  const totalWeeks = Math.max(1, weeksBetween(journey.createdAt, endMs) + 1);
   const active = journey.steps.filter((s) => !s.dropped);
   const weeks: Step[][] = Array.from({ length: totalWeeks }, () => []);
   const allPlanned = active.length > 0 && active.every((s) => s.plannedFor != null);
@@ -110,15 +120,12 @@ export function stepsByWeek(journey: Journey, now: number = Date.now()): Journey
   active.forEach((step, i) => {
     const raw =
       allPlanned && step.plannedFor != null
-        ? Math.floor((step.plannedFor - journey.createdAt) / WEEK_MS)
+        ? weeksBetween(journey.createdAt, step.plannedFor)
         : Math.floor((i * totalWeeks) / Math.max(1, active.length));
     weeks[Math.min(totalWeeks - 1, Math.max(0, raw))].push(step);
   });
 
-  const currentWeek = Math.min(
-    totalWeeks - 1,
-    Math.max(0, Math.floor((now - journey.createdAt) / WEEK_MS)),
-  );
+  const currentWeek = Math.min(totalWeeks - 1, Math.max(0, weeksBetween(journey.createdAt, now)));
   return { totalWeeks, weeks, currentWeek };
 }
 

@@ -13,13 +13,9 @@ export function dateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Week key = the date of that week's Monday, so a new week rolls weekly work. */
-export function weekKey(d: Date): string {
-  const copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const mondayOffset = (copy.getDay() + 6) % 7; // Mon=0 … Sun=6
-  copy.setDate(copy.getDate() - mondayOffset);
-  return dateKey(copy);
-}
+// `weekKey` moved to `util/week.ts` — the single authoritative week-boundary service (D33), so the
+// week start is the configurable profile preference (was a hardcoded Monday) and every weekly consumer
+// reads ONE definition. `util/date` keeps only the day-level + minute-of-day helpers.
 
 /** Epoch ms of the start (00:00 local) of the local day `epochMs` falls in. */
 export function startOfLocalDay(epochMs: number): number {

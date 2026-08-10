@@ -23,7 +23,8 @@ import type { MissionCadence, MissionDef, MissionTrigger } from '../config/missi
 import type { EventBus } from '../events/EventBus';
 import type { EventOf } from '../events/events';
 import type { AppState, MissionProgress } from '../types/domain';
-import { dateKey, weekKey } from '../util/date';
+import { dateKey } from '../util/date';
+import { weekKey } from '../util/week';
 
 /** A Mission enriched with its live progress/claim state for the UI to render. */
 export interface MissionView {
@@ -124,7 +125,7 @@ export class MissionEngine {
   /** The daily/weekly reset keys for the current clock (pure). */
   private currentKeys(): { today: string; week: string } {
     const now = this.now();
-    return { today: dateKey(now), week: weekKey(now) };
+    return { today: dateKey(now), week: weekKey(now.getTime()) };
   }
 
   /** Whether a cadence's stored reset key is stale vs the current clock (pure). */

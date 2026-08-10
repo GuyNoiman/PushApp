@@ -5,29 +5,23 @@
  * must carry a session — one miss and the weekly target can no longer be hit.
  *
  * No helper for this existed in the engine (the adaptive coach's own "at risk" reads the
- * derived InsightModel, a different signal), so this is a small new pure helper. It reads
- * time through the app's local-calendar convention (util/date's Monday-based week) so there
- * is exactly ONE clock convention. Pure TS — no React/vendor imports; the caller injects `now`.
+ * derived InsightModel, a different signal), so this is a small new pure helper. It reads the week
+ * boundary from the ONE authoritative week service (`util/week`), so "this week" here is exactly the
+ * user's configured week (D33), not a hardcoded Monday. Pure TS — no React/vendor imports; the caller
+ * injects `now`.
  */
 import type { StreakConfig } from '../config/streak';
 import type { Journey } from '../types/domain';
+import { remainingDaysInWeek as weekRemainingDays, startOfWeek } from './week';
 
-/** Days still left in the local week, including today (Mon = 7 … Sun = 1). Monday-based, matching util/date. */
+/** Days still left in the user's week, including today (7 on the start day … 1 on its last day). */
 export function remainingDaysInWeek(now: number): number {
-  const dayIndex = (new Date(now).getDay() + 6) % 7; // Mon=0 … Sun=6
-  return 7 - dayIndex;
+  return weekRemainingDays(now);
 }
 
-/** Epoch ms of the start (00:00 local) of the local week (its Monday) `now` falls in. */
-function startOfLocalWeek(now: number): number {
-  const d = new Date(now);
-  const dayIndex = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - dayIndex).getTime();
-}
-
-/** How many of the Journey's Steps were completed within the current local week. */
+/** How many of the Journey's Steps were completed within the current (user-configured) week. */
 export function sessionsCompletedThisWeek(journey: Journey, now: number): number {
-  const weekStart = startOfLocalWeek(now);
+  const weekStart = startOfWeek(now);
   return journey.steps.filter(
     (s) => s.done && s.lastCheckInAt !== undefined && s.lastCheckInAt >= weekStart && s.lastCheckInAt <= now,
   ).length;

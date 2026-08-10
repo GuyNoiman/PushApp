@@ -41,7 +41,9 @@
       "neutral": "Neutral",
       "feminine": "Feminine",
       "masculine": "Masculine"
-    }
+    },
+    "weekStart": "My week starts",
+    "weekStartDetail": "First day of the week"
   },
   "appearance": {
     "system": "System",

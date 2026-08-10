@@ -7,8 +7,8 @@
  * The start DAY is a profile-level preference (0=Sun … 6=Sat, JS `Date.getDay()` convention),
  * defaulted from the user's country/region and editable. It is held here as a plain module value so
  * the framework-free engines (which call these helpers directly, never a React hook) read the same
- * value the UI shows; the {@link ../../state/WeekStartPreference} provider is the source of truth and
- * mirrors its state in via {@link setWeekStartDay}.
+ * value the UI shows; the unified {@link ../../state/ProfileProvider} (Own_Profile) is the source of
+ * truth and mirrors `profile.weekStartDay` in via {@link setWeekStartDay}.
  *
  * All arithmetic is CALENDAR arithmetic in device-local time (build the target Y/M/D and let `Date`
  * normalize), never a fixed number of milliseconds — so DST transitions and month/year boundaries are
@@ -39,7 +39,7 @@ export function getWeekStartDay(): Weekday {
   return currentWeekStart;
 }
 
-/** Set the applied week-start day. Called ONLY by the WeekStartPreference provider to mirror its state. */
+/** Set the applied week-start day. Called ONLY by the ProfileProvider to mirror `profile.weekStartDay`. */
 export function setWeekStartDay(day: Weekday): void {
   currentWeekStart = day;
 }

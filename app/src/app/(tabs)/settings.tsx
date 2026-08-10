@@ -39,12 +39,11 @@ import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { useTheme } from '@/hooks/use-theme';
 import { findLanguage } from '@/i18n/languages';
-import { useAddressPreference } from '@/state/AddressPreference';
 import type { AddressForm } from '@/i18n/addressForm';
 import type { Weekday } from '@/core/util/week';
 import { useLanguagePreference } from '@/state/LanguagePreference';
 import { useNotificationPermission } from '@/state/useNotificationPermission';
-import { useWeekStartPreference } from '@/state/WeekStartPreference';
+import { useProfile } from '@/state/ProfileProvider';
 import { useThemePreference, type ThemePreference } from '@/state/ThemePreference';
 import { useAccountActions } from '@/state/useAccountActions';
 
@@ -62,8 +61,9 @@ export default function SettingsScreen() {
   const { t } = useTranslation('settings');
   const { preference, setPreference } = useThemePreference();
   const { language } = useLanguagePreference();
-  const { form: addressForm, setForm: setAddressForm } = useAddressPreference();
-  const { weekStartDay, setWeekStartDay } = useWeekStartPreference();
+  const { profile, setAddressForm, setWeekStartDay } = useProfile();
+  const addressForm = profile.addressForm;
+  const weekStartDay = profile.weekStartDay;
   const { status: notifStatus, request: requestNotif } = useNotificationPermission();
 
   // Localized weekday names (Sun..Sat) for the week-start row's value.

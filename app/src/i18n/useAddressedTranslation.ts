@@ -10,7 +10,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useAddressPreference } from '@/state/AddressPreference';
+import { useProfile } from '@/state/ProfileProvider';
 import { addressContext } from './addressForm';
 
 /** A translate function that already applies the active form of address as context. */
@@ -18,8 +18,8 @@ export type AddressedT = (key: string, options?: Record<string, unknown>) => str
 
 export function useAddressedTranslation(ns?: string): { t: AddressedT } {
   const { t: baseT } = useTranslation(ns);
-  const { form } = useAddressPreference();
-  const context = addressContext(form);
+  const { profile } = useProfile();
+  const context = addressContext(profile.addressForm);
 
   const t = useCallback<AddressedT>(
     (key, options) => baseT(key, { context, ...options }) as unknown as string,

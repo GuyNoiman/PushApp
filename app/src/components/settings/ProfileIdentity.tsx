@@ -24,6 +24,7 @@
  * social backend is wired.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -34,6 +35,7 @@ import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } fr
 import { Radius, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 /** 1–2 letter monogram from a username (skips a leading @). */
@@ -47,6 +49,7 @@ function initialsFor(name: string): string {
 export function ProfileIdentity() {
   const theme = useTheme();
   const social = useSocial();
+  const router = useRouter();
   const { t } = useTranslation('settings');
 
   // A dev-simulated Google sign-in supplies a real display name + email when the
@@ -87,7 +90,11 @@ export function ProfileIdentity() {
       </ThemedText>
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
-        <View style={styles.headerRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.openProfile')}
+          onPress={() => router.push('/settings/profile')}
+          style={({ pressed }) => [styles.headerRow, pressed && styles.pressed]}>
           <View style={[styles.avatar, { backgroundColor: theme.tealTint }]}>
             {/* Avatar keeps initials — from the display name when signed in, else the
                 username. TODO(auth): a real sign-in supplies a profile photo later. */}
@@ -135,7 +142,9 @@ export function ProfileIdentity() {
               )}
             </View>
           </View>
-        </View>
+          {/* Chevron — the card opens the full My Profile screen (Own_Profile). */}
+          <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.textMuted} />
+        </Pressable>
 
         {editing && <UsernameEditor current={username} taken={takenUsernames} onSave={save} />}
       </View>

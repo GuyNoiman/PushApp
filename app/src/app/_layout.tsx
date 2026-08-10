@@ -18,14 +18,13 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 // Importing the i18n instance runs its init (side-effect) before any screen
 // renders, so `t(...)` is ready and the boot language is resolved.
 import '@/i18n';
-import { AddressPreferenceProvider } from '@/state/AddressPreference';
 import { AppProvider } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
+import { ProfileProvider } from '@/state/ProfileProvider';
 import { SocialProvider } from '@/state/SocialProvider';
 import { ThemePreferenceProvider } from '@/state/ThemePreference';
-import { WeekStartPreferenceProvider } from '@/state/WeekStartPreference';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -100,15 +99,12 @@ export default function RootLayout() {
                 {/* Owns the user's language choice (Settings › Language) + the
                     RTL/restart bookkeeping. A sibling concern to theme. */}
                 <LanguagePreferenceProvider>
-                  {/* Owns the user's form of address (לשון פנייה) — drives gender-aware i18n
-                      context (D31). A sibling concern to language. */}
-                  <AddressPreferenceProvider>
-                    {/* Owns the single authoritative week-start day (D33) — every weekly engine +
-                        surface reads its boundary from here. */}
-                    <WeekStartPreferenceProvider>
-                      <ThemedChrome />
-                    </WeekStartPreferenceProvider>
-                  </AddressPreferenceProvider>
+                  {/* The ONE profile store (Own_Profile) — the private source of truth for identity +
+                      adaptation fields. It mirrors form-of-address (D31) + week-start day (D33) into
+                      the framework-free modules the engines read, so there is a single home. */}
+                  <ProfileProvider>
+                    <ThemedChrome />
+                  </ProfileProvider>
                 </LanguagePreferenceProvider>
               </ThemePreferenceProvider>
             </SocialProvider>
@@ -136,6 +132,10 @@ function ThemedChrome() {
         <Stack.Screen name="(tabs)" />
         {/* Settings › Language picker — a card push from the Settings tab. */}
         <Stack.Screen name="settings/language" />
+        {/* My Profile (Own_Profile) — the private self-view/edit, opened from the Settings
+            profile header; and its searchable country picker. */}
+        <Stack.Screen name="settings/profile" />
+        <Stack.Screen name="settings/country" />
         <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey/[id]" />
         {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),

@@ -11,7 +11,20 @@
     "namePlaceholder": "Your name (from sign-in)",
     "usernamePlaceholder": "yourusername",
     "editUsername": "Edit username",
-    "usernameHelp": "This is how friends find you."
+    "usernameHelp": "This is how friends find you.",
+    "title": "My Profile",
+    "privateNote": "Only you can see and edit this. Friends see only your public profile.",
+    "name": "Name",
+    "nameEditPlaceholder": "Add your name",
+    "username": "Username",
+    "country": "Country",
+    "countrySearch": "Search countries",
+    "birthDate": "Birth date",
+    "birthDateNotSpecified": "Not specified",
+    "birthDatePlaceholder": "YYYY-MM-DD",
+    "birthDateInvalid": "Use the format YYYY-MM-DD",
+    "addressForm": "How we address you",
+    "openProfile": "Open my profile"
   },
   "account": {
     "apple": "Sign in with Apple",

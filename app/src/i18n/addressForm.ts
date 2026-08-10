@@ -9,8 +9,8 @@
  *
  * This module holds the CURRENTLY-APPLIED form as a plain module value so the framework-free layer
  * (the coach + engines, which call `i18n.t` directly, never a React hook) can apply it too. The
- * {@link ../state/AddressPreference} provider is the source of truth and keeps this in sync via
- * {@link setAddressForm}; nothing else should mutate it.
+ * unified {@link ../state/ProfileProvider} (Own_Profile) is the source of truth and keeps this in sync
+ * via {@link setAddressForm}; nothing else should mutate it.
  *
  * Pure TS — no React, no vendor SDKs.
  */
@@ -31,7 +31,7 @@ export function getAddressForm(): AddressForm {
   return current;
 }
 
-/** Set the applied form. Called ONLY by the AddressPreference provider to mirror its state here. */
+/** Set the applied form. Called ONLY by the ProfileProvider to mirror `profile.addressForm` here. */
 export function setAddressForm(form: AddressForm): void {
   current = form;
 }

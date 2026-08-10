@@ -11,7 +11,20 @@
     "namePlaceholder": "השם שלך (מהתחברות)",
     "usernamePlaceholder": "שם המשתמש שלך",
     "editUsername": "עריכת שם משתמש",
-    "usernameHelp": "כך חברים ימצאו אותך."
+    "usernameHelp": "כך חברים ימצאו אותך.",
+    "title": "הפרופיל שלי",
+    "privateNote": "רק אתה רואה ועורך את זה. חברים רואים רק את הפרופיל הציבורי שלך.",
+    "name": "שם",
+    "nameEditPlaceholder": "הוסף את שמך",
+    "username": "שם משתמש",
+    "country": "מדינה",
+    "countrySearch": "חיפוש מדינות",
+    "birthDate": "תאריך לידה",
+    "birthDateNotSpecified": "לא צוין",
+    "birthDatePlaceholder": "YYYY-MM-DD",
+    "birthDateInvalid": "השתמש בפורמט YYYY-MM-DD",
+    "addressForm": "כיצד לפנות אליך",
+    "openProfile": "פתיחת הפרופיל שלי"
   },
   "account": {
     "apple": "התחברות עם Apple",

@@ -202,6 +202,7 @@ almost immutable** — these are missing and likely required for a usable initia
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
 | **K1** | **First-run onboarding** | ⛔ | No onboarding exists — the app drops straight into Home (`_layout.tsx` registers `(tabs)` first, no gate). Needs a real first-run: welcome → (sign-in) → notification-permission ask → guide to the first goal/coach. The notification permission ask currently lives only inside the creation wizard. |
+| **K2** | **Initial onboarding questionnaire** (founder, 2026-08-10) | 📝 | A first-run questionnaire inside K1 that mixes a few structured questions (incl. form-of-address, Q1/D31) with **OPEN questions answered by TYPING or VOICE RECORDING**. From the answers we seed the user's first **Dreams** (F1) + a **basis for the first Coach conversation**. Draft PRD: `PRD/Onboarding_Questionnaire_PRD.md` (Open Questions — voice→STT and answers→Dreams both carry cost + privacy flags; needs cost-guardian + security-privacy before build). |
 
 ## L. Deferred goals (NEWLY FOUND GAP)
 

@@ -178,6 +178,76 @@ DONE; the **profile photo is Phase 2** (its own slice with the §4 safety requir
 **Categorization:** **Approved + Phase-1 Implemented** + **Open** (Phase 2 photo, auth seeding).
 **Reflected in:** `Own_Profile_PRD.md` (status + §10/§11); the files above.
 
+### D35 — Daily Step Reporting: blocking questions closed (PRD ready)
+**Decision (founder, `04_Product/PRD/Daily_Step_Reporting_PRD.md` §12):** all seven §12 blocking questions
+were resolved against the current codebase, moving the PRD from Open Questions to **Ready for
+implementation**. Key calls:
+1. **Flexible weekly targets = multiple pre-created Steps** (the existing one-shot `Step` model, grouped by
+   `stepsByWeek`), each reported independently → separate rows on Home, which the founder accepted. **No**
+   occurrence entity and **no** "x/y this week" counter in MVP (both deferred post-MVP). Rationale: finite
+   `durationDays` bounds pre-creation; per-instance evidence already lives in `checkIns`/`reasonLog`.
+2. **All report transitions allowed within the open week** (including reversing a `completed`); history is
+   **retained** via the append-only `reasonLog`/`behaviorLog` (never overwritten); **no XP clawback** on
+   reversal (kept forgiving). An "un-report" path is a small addition (`checkInStep` is one-way today).
+3. **No hard closed-week immutability in MVP** — past weeks just aren't surfaced for editing (product
+   convention, not a storage lock; no "closed week" state exists in code).
+4. **Partial `0.75` = research hypothesis only**; progress stays binary (partial counts as 0). Partial
+   remains a distinct non-failure status/signal with no numeric weight.
+5. **Weekly Review may use the Partial note, on-device only** (feeds local `reviewWeek`/`AdaptivePlanner`);
+   never to cloud/DomainEvent/social/analytics without a fresh security-privacy decision (G1).
+6. **Partial explanation is OPTIONAL, not mandatory** — a short on-device-only note; mandatory text would
+   contradict the "reporting in seconds" principle (§2).
+7. **Retention/deletion already covered** by the single encrypted `AppState` blob +
+   `resetToFirstRun()`/account deletion + `exportStateJson()`. The elaborate §8 cascade is **N/A until a
+   backend sync exists** (revisit with security-privacy then).
+**Method note:** first feature closed under the PRD-per-feature flow using a code-grounding pass (the
+explorer mapped the real `Step`/reporting/reasons/week/persistence model before answering), which is why
+most "open" questions collapsed against what already exists.
+**Categorization:** **Approved** (PRD Ready; implementation not yet started).
+**Reflected in:** `Daily_Step_Reporting_PRD.md` (status + §4/§5/§6/§7/§10/§12).
+
+### D36 — Daily Step Reporting: implementation approach (status derived, not stored; reversal via a marker)
+**Decision (architect plan, ratified at implementation start 2026-08-10):** implement D35 without a new
+report ledger and without a `Step.status` enum. Specifically:
+- **Status is DERIVED** by a pure helper `deriveStepStatus(step, reasonLog)` from `done`/`dropped` + the
+  append-only `reasonLog` + a new optional `Step.lastReportClearedAt`. Progress stays binary.
+- **Reversal** = a new `JourneyEngine.reverseReport` + `StepReportReversed` event: clears `done`/`lastCheckInAt`,
+  stamps `lastReportClearedAt`, un-completes + reactivates an auto-completed Journey, KEEPS prior CheckIn /
+  reason rows (history retained). **No XP clawback.**
+- **Idempotent rewards**: `StepCheckedIn`/`JourneyCompleted` gain `firstCompletion`; `RewardEngine` grants
+  only when true (`Journey.completionRewarded` set once). Re-completing after a reversal grants nothing.
+- **Optional Partial note** reuses the existing on-device `ReasonEntry.note` path (`did_partially` via
+  `submitReason`); `ReasonEntry` gains an optional `action` for precise derivation. The note NEVER enters an
+  emitted event (G1). **security-privacy** to confirm; **ux-designer** owns the non-failure Partial color
+  token; **content-writer** owns he/en copy.
+**Categorization:** **Approved** (implementation approach; build in progress).
+**Reflected in:** `Daily_Step_Reporting_PRD.md`; the engine/UI/i18n files in the plan.
+
+### D37 — Step Postponement: blocking questions closed (PRD ready; requires a Miss_Recovery update)
+**Decision (founder, `04_Product/PRD/Step_Postponement_PRD.md` §11):** the five §11 blocking questions were
+resolved against the current codebase, moving the PRD to **Ready for implementation**. This feature is
+mostly conflict-resolution between the founder's mobile draft and the existing Miss-Recovery POC. Calls:
+1. **"Postponed" is an ACTION, not a status** — the Step stays `unreported` (matches the code; `postponeStep`
+   changes no field) and the four Daily-Reporting statuses (D35.5). UI shows a "postponed to <time>"
+   affordance when `postponedUntil` exists.
+2. **Reason on Postpone → OPTIONAL, with a fast one-tap reason-free path** ("remind me in 2h" / pick a time).
+   Matches the "common action must be fast" principle + the Partial-note decision (D35.6). **Supersedes
+   Miss_Recovery's "reason required on Postpone."**
+3. **Repeated-postponement Coach intervention → DEFERRED post-MVP** (depends on the off `intervention` engine
+   + the Coach). MVP persists `postponeCount` **per occurrence** only; no threshold fires. Removes the
+   POC-threshold conflict.
+4. **Per-occurrence retiming → YES for MVP** — postpone schedules a **one-shot reminder** for the Step at
+   `postponedUntil`, independent of the Journey's recurring reminder. Correct semantics for "remind me about
+   THIS step later"; **supersedes the current Journey-level retiming** for the postpone path. Heaviest part of
+   the build (reminder scheduler; relates to J4) but adds a one-shot rather than rewriting the reminder model.
+5. **Retention/deletion → already covered** by the single encrypted `AppState` blob (count/timestamps
+   on-device; events ids-only; `note` on-device for `other`); cascade-deleted + exported. Intervention
+   telemetry N/A until that engine ships.
+**Required follow-up:** `../Miss_Recovery_PRD.md` must be updated for #2 and #4 before/with build. That file
+is currently in a locally-modified (Codex) state — the founder aligns/commits it first; we never overwrite it.
+**Categorization:** **Approved** (PRD Ready; implementation not yet started; Miss_Recovery update pending).
+**Reflected in:** `Step_Postponement_PRD.md` (status + §3/§5/§7/§11).
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

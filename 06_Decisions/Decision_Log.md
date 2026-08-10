@@ -123,6 +123,32 @@ Step-report UI doesn't support it; needs a design pass (attach point, on-device-
 **Categorization:** **Approved** (the two-tier celebration model) + **Open/Future** (the feed + the
 photo-in-report). **Reflected in:** `04_Product/MVP_Task_List.md` (I1 + Open questions + Post-MVP).
 
+### D33 — One authoritative week boundary (Week Boundary Preference)
+**Decision (founder, PRD `04_Product/PRD/Week_Boundary_Preference_PRD.md`):** there is exactly ONE
+definition of when the user's week begins, and **every** week-referencing area aligns to it — weekly
+Missions, the Streak "no-slack" rule, Week Review, AND the Journey "Week X of Y" pager. A single
+profile-level **`weekStartDay`** (0=Sun … 6=Sat) is defaulted from the profile's single **`country`**
+field (until `Own_Profile` lands, from the device region) and is user-editable; from the moment it is
+set the whole app follows it.
+**Why:** the code audit found THREE conflicting "week" notions — a Monday-hardcoded calendar week
+(Missions + Streak), per-Journey rolling weeks from `createdAt` (the pager), and fixed-millisecond
+arithmetic (DST-unsafe, forbidden by the PRD). They must be consolidated so nothing drifts.
+**MVP scope (approved):** local midnight start only (no advanced start-time); device-local CALENDAR
+arithmetic (no fixed ms — DST-safe); the IANA-zone/device-travel/multi-device cases are **deferred**
+until a backend + synced preference exist (and depend on the `country` field from `Own_Profile`);
+changes apply GOING FORWARD (the Streak is computed live for MVP — stamping a boundary/version on
+weekly records is the next step once a backend exists; Missions already stamp via `weeklyResetKey`).
+**Implemented (2026-08-10):** `app/src/core/util/week.ts` (the single service — configurable start,
+calendar arithmetic, `startOfWeek`/`startOfNextWeek`/`remainingDaysInWeek`/`weekKey`/`weeksBetween` +
+a framework-free `get/setWeekStartDay` module value); `app/src/state/WeekStartPreference.tsx` (persist
++ device-region default + mirror into the module); consumers migrated — `MissionEngine` + `urgency.ts`
+(Streak) + `journeyView.stepsByWeek` (pager now calendar-aligned; `weekKey` removed from `util/date`);
+an interim "My week starts" Settings row (will move into the P1 profile redesign); tests in
+`util/__tests__/week.test.ts`. Green: tsc clean, eslint 0 errors, jest 543/543.
+**Categorization:** **Approved + Implemented (MVP slice)** + **Open/Future** (IANA/travel/multi-device
++ boundary stamping, gated on the backend + `Own_Profile`'s country field).
+**Reflected in:** the PRD (§9 current-implementation, §10 resolution & MVP scope); the files above.
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

@@ -34,7 +34,14 @@
     "appearance": "Appearance",
     "appearanceDetail": "Theme",
     "about": "About",
-    "language": "Language"
+    "language": "Language",
+    "addressForm": "How we address you",
+    "addressFormDetail": "Grammatical form (matters in Hebrew)",
+    "addressFormValue": {
+      "neutral": "Neutral",
+      "feminine": "Feminine",
+      "masculine": "Masculine"
+    }
   },
   "appearance": {
     "system": "System",

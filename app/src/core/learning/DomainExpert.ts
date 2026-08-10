@@ -16,13 +16,14 @@
  * Pure TypeScript — no React hooks, no UI, no vendor SDKs (the i18next core instance is framework-free).
  */
 import i18n from '../../i18n';
+import { addressContext } from '../../i18n/addressForm';
 import type { GoalInput, PlanConstraints } from './types';
 
-/** Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React). */
-const cc = (key: string): string => i18n.t(key, { ns: 'coachContent' });
-/** Resolve a `coachContent` OPTIONS array in the active language, as a FRESH (mutation-safe) copy. */
+/** Resolve a `coachContent` string in the user's ACTIVE language + form of address (i18next core — no React, D31). */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+/** Resolve a `coachContent` OPTIONS array in the active language + form of address, as a FRESH (mutation-safe) copy. */
 const ccOptions = (key: string): string[] => [
-  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true }) as unknown as string[]),
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true, context: addressContext() }) as unknown as string[]),
 ];
 
 /** A Milestone the expert proposes, before the Planner materializes it (assigns id + order). */

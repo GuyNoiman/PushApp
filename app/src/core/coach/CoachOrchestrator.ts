@@ -48,6 +48,7 @@
  * Pure TypeScript — no React hooks, no UI, no vendor SDKs (the i18next core instance is framework-free).
  */
 import i18n from '../../i18n';
+import { addressContext } from '../../i18n/addressForm';
 import type {
   DomainExpert,
   DomainQuestion,
@@ -91,8 +92,12 @@ export * from './disclosureParser';
 //     no usable goal, so the coach can still capture the process shape before routing to `general`.
 //   • SCHEDULING (meta.scheduling) — the closing optional scheduling preference.
 
-/** Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React). */
-const cc = (key: string): string => i18n.t(key, { ns: 'coachContent' });
+/**
+ * Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React), carrying
+ * the user's FORM OF ADDRESS as context so gendered `_feminine`/`_masculine` variants resolve (base
+ * key is the fallback — D31).
+ */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
 /**
  * Resolve a `coachContent` OPTIONS array in the active language, as a FRESH copy so callers can't
  * mutate the shared resource. The rendered option list AND the constant an answer is matched against

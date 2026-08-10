@@ -18,6 +18,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 // Importing the i18n instance runs its init (side-effect) before any screen
 // renders, so `t(...)` is ready and the boot language is resolved.
 import '@/i18n';
+import { AddressPreferenceProvider } from '@/state/AddressPreference';
 import { AppProvider } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
@@ -98,7 +99,11 @@ export default function RootLayout() {
                 {/* Owns the user's language choice (Settings › Language) + the
                     RTL/restart bookkeeping. A sibling concern to theme. */}
                 <LanguagePreferenceProvider>
-                  <ThemedChrome />
+                  {/* Owns the user's form of address (לשון פנייה) — drives gender-aware i18n
+                      context (D31). A sibling concern to language. */}
+                  <AddressPreferenceProvider>
+                    <ThemedChrome />
+                  </AddressPreferenceProvider>
                 </LanguagePreferenceProvider>
               </ThemePreferenceProvider>
             </SocialProvider>

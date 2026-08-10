@@ -34,7 +34,14 @@
     "appearance": "מראה",
     "appearanceDetail": "ערכת נושא",
     "about": "אודות",
-    "language": "שפה"
+    "language": "שפה",
+    "addressForm": "כיצד לפנות אליך",
+    "addressFormDetail": "לשון פנייה (רלוונטי בעברית)",
+    "addressFormValue": {
+      "neutral": "ניטרלי",
+      "feminine": "נקבה",
+      "masculine": "זכר"
+    }
   },
   "appearance": {
     "system": "מערכת",

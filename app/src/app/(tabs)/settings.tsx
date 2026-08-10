@@ -39,6 +39,8 @@ import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { useTheme } from '@/hooks/use-theme';
 import { findLanguage } from '@/i18n/languages';
+import { useAddressPreference } from '@/state/AddressPreference';
+import type { AddressForm } from '@/i18n/addressForm';
 import { useLanguagePreference } from '@/state/LanguagePreference';
 import { useNotificationPermission } from '@/state/useNotificationPermission';
 import { useThemePreference, type ThemePreference } from '@/state/ThemePreference';
@@ -48,12 +50,17 @@ import { useAccountActions } from '@/state/useAccountActions';
 // current choice as its value and applies it instantly (the whole app re-themes).
 const APPEARANCE_ORDER: readonly ThemePreference[] = ['system', 'light', 'dark'];
 
+// Form of address cycles Neutral → Feminine → Masculine on tap (D31). This interim Settings row
+// lets the founder test gendered copy now; it will move into onboarding + the P1 profile redesign.
+const ADDRESS_FORM_ORDER: readonly AddressForm[] = ['neutral', 'feminine', 'masculine'];
+
 export default function SettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation('settings');
   const { preference, setPreference } = useThemePreference();
   const { language } = useLanguagePreference();
+  const { form: addressForm, setForm: setAddressForm } = useAddressPreference();
   const { status: notifStatus, request: requestNotif } = useNotificationPermission();
   const { exportData, deleteAccount } = useAccountActions();
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
@@ -88,6 +95,12 @@ export default function SettingsScreen() {
   const cycleAppearance = () => {
     const next = APPEARANCE_ORDER[(APPEARANCE_ORDER.indexOf(preference) + 1) % APPEARANCE_ORDER.length];
     setPreference(next);
+  };
+
+  const cycleAddressForm = () => {
+    const next =
+      ADDRESS_FORM_ORDER[(ADDRESS_FORM_ORDER.indexOf(addressForm) + 1) % ADDRESS_FORM_ORDER.length];
+    setAddressForm(next);
   };
 
   // A dev-simulated Google sign-in (core/profile/simulatedUser) marks the Google row
@@ -148,6 +161,13 @@ export default function SettingsScreen() {
               label={t('app.language')}
               value={findLanguage(language)?.endonym}
               onPress={() => router.push('/settings/language' as Href)}
+            />
+            <SettingsRow
+              icon="chatbubble-ellipses-outline"
+              label={t('app.addressForm')}
+              detail={t('app.addressFormDetail')}
+              value={t(`app.addressFormValue.${addressForm}`)}
+              onPress={cycleAddressForm}
             />
             <SettingsRow icon="information-circle-outline" label={t('app.about')} value={`v${appVersion}`} />
           </SettingsSection>

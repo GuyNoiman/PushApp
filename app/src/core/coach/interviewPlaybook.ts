@@ -23,12 +23,13 @@
  * Pure TypeScript — no React hooks, no UI, no vendor SDKs (the i18next core instance is framework-free).
  */
 import i18n from '../../i18n';
+import { addressContext } from '../../i18n/addressForm';
 import type { FeasibilityAssessment, InterviewAnswers } from '../learning/DomainExpert';
 import type { DomainId } from '../learning/experts/registry';
 import type { Cadence, DayPart } from '../types/domain';
 
-/** Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React). */
-const cc = (key: string): string => i18n.t(key, { ns: 'coachContent' });
+/** Resolve a `coachContent` string in the user's ACTIVE language + form of address (i18next core — no React, D31). */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
 
 /**
  * The process SHAPE the user is signing up for.

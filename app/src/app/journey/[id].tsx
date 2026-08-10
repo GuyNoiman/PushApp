@@ -22,8 +22,10 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { StepStatusChip } from '@/components/home/StepStatusChip';
 import { shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
 import { featureFlags } from '@/core/config/featureFlags';
+import type { StepStatus } from '@/core/status/stepStatus';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
@@ -204,6 +206,7 @@ export default function JourneyDetailScreen() {
                     key={step.id}
                     step={step}
                     isNext={!journey.completedAt && step.id === nextStep?.id}
+                    reportStatus={core.getStepStatus(step)}
                   />
                 ))}
               </View>
@@ -412,7 +415,16 @@ function Header({
   );
 }
 
-function StepRow({ step, isNext }: { step: Step; isNext: boolean }) {
+function StepRow({
+  step,
+  isNext,
+  reportStatus,
+}: {
+  step: Step;
+  isNext: boolean;
+  /** The derived Daily-Reporting status (D36) — shows a calm Partial / Not-completed chip. */
+  reportStatus: StepStatus;
+}) {
   const theme = useTheme();
   const { t } = useTranslation('journey');
   const status = step.done ? 'done' : isNext ? 'current' : 'upcoming';
@@ -453,6 +465,8 @@ function StepRow({ step, isNext }: { step: Step; isNext: boolean }) {
               </ThemedText>
             </ThemedView>
           )}
+          {/* Calm, non-failure Partial / Not-completed chip (D36) — nothing for done/unreported. */}
+          {!step.done && <StepStatusChip status={reportStatus} />}
         </View>
         {step.description ? (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>

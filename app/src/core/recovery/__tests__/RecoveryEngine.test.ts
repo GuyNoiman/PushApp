@@ -12,6 +12,7 @@ import type { DomainEvent } from '../../events/events';
 import { NullLocationGateway } from '../../location/LocationGateway';
 import type { AppState, Buddy, Journey, ReminderRule } from '../../types/domain';
 import { createId } from '../../util/id';
+import { deriveStepStatus } from '../../status/stepStatus';
 import { RecoveryEngine, type ReminderMutations } from '../RecoveryEngine';
 
 function initialBuddy(): Buddy {
@@ -256,5 +257,72 @@ describe('RecoveryEngine.submitReason — logging, privacy, and free Cancel', ()
     });
     expect(events.some((e) => e.type === 'StepPostponed')).toBe(true);
     expect(events.some((e) => e.type === 'StepCancelled')).toBe(false);
+  });
+
+  it('records the Screen-1 action on the entry, and it never leaks into an event (D36/G1)', async () => {
+    const { engine, journey, state, events } = setup();
+    const cancel = await engine.submitReason({
+      journeyId: journey.id,
+      stepId: stepId(journey),
+      action: 'cancel',
+      reasonId: 'couldnt',
+    });
+    const postpone = await engine.submitReason({
+      journeyId: journey.id,
+      stepId: stepId(journey),
+      action: 'postpone',
+      reasonId: 'did_partially',
+    });
+    expect(cancel.action).toBe('cancel');
+    expect(postpone.action).toBe('postpone');
+    // Persisted on the on-device entries.
+    expect(state.reasonLog?.map((e) => e.action)).toEqual(['cancel', 'postpone']);
+    // The emitted events (ids/enums only) never carry the `action` key.
+    for (const e of events) expect(Object.keys(e)).not.toContain('action');
+  });
+
+  it('keeps an optional Partial (did_partially) note on the entry ONLY — never emitted (D36/G1)', async () => {
+    const { engine, journey, state, events } = setup();
+    const entry = await engine.submitReason({
+      journeyId: journey.id,
+      stepId: stepId(journey),
+      action: 'postpone',
+      reasonId: 'did_partially',
+      note: 'got through the warm-up only',
+    });
+    expect(entry.note).toBe('got through the warm-up only');
+    expect(state.reasonLog?.[0].note).toBe('got through the warm-up only');
+    // The Partial note rides the SAME on-device-only path as the `other` note — no event carries it.
+    expect(JSON.stringify(events)).not.toContain('got through the warm-up only');
+  });
+
+  it('a pure postpone (forgot, no time) leaves the Step unreported and emits NO StepPartial (D37)', async () => {
+    // Mirrors Home's swipe-Postpone path: a plain postpone is an ACTION, not a Partial report.
+    const { bus, engine, journey, state } = setup();
+    const partials: DomainEvent[] = [];
+    bus.on('StepPartial', (e) => partials.push(e));
+
+    await engine.submitReason({
+      journeyId: journey.id,
+      stepId: stepId(journey),
+      action: 'postpone',
+      reasonId: 'forgot',
+    });
+
+    expect(partials).toHaveLength(0);
+    expect(state.journeys[0].steps[0].done).toBe(false);
+    expect(deriveStepStatus(state.journeys[0].steps[0], state.reasonLog ?? [])).toBe('unreported');
+  });
+
+  it('an empty Partial note is simply omitted (optional, never blocks the report)', async () => {
+    const { engine, journey, state } = setup();
+    const entry = await engine.submitReason({
+      journeyId: journey.id,
+      stepId: stepId(journey),
+      action: 'postpone',
+      reasonId: 'did_partially',
+    });
+    expect(entry.note).toBeUndefined();
+    expect(state.reasonLog?.[0].outcome).toBe('partial');
   });
 });

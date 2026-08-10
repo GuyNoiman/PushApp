@@ -83,6 +83,22 @@
     "reschedule": {
       "label": "Reschedule",
       "hint": "Move it to a better time."
+    },
+    "partialNote": {
+      "title": "Add a note?",
+      "placeholder": "What you did, or what got in the way. Optional, and it stays on your device.",
+      "optional": "Optional",
+      "save": "Save partial"
+    },
+    "change": "Change report",
+    "notReportedYet": "Mark not reported yet",
+    "locked": "Past weeks are read-only.",
+    "status": {
+      "unreported": "Not reported yet",
+      "completed": "Completed",
+      "partiallyCompleted": "Partly done",
+      "notCompleted": "Not completed",
+      "a11y": "Status: {{status}}"
     }
   }
 }

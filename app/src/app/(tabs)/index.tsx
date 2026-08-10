@@ -39,6 +39,7 @@ import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty } from '@/dev/sampleSocial';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
+import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import type { Dream, Journey, Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
@@ -175,22 +176,25 @@ export default function HomeScreen() {
   // routes through the shared confetti trigger so the burst pops on the screen.
   const reportDone = useCallback(
     (item: TodayStep) => {
+      // A closed (past) week is read-only (D35.3): swipe is inert, matching the ⋯ sheet's lock.
+      if (isInClosedWeek(item.step.plannedFor)) return;
       core.checkInStep(item.journeyId, item.step.id);
       setConfettiKey((k) => k + 1);
     },
     [core],
   );
-  // Swipe Postpone / Let-go report the reason, THEN run the adaptive week-review and surface any
-  // change — so a swipe-miss re-plans exactly like the ⋯ menu does. reviewWeek is inert when the
-  // adaptive loop is off, so this stays a plain report there.
+  // Swipe Postpone reports a PURE postpone (kept, not moved yet) — it must leave the Step
+  // `unreported` (D37: postpone is an action, not a status) and never fire StepPartial. It then runs
+  // the adaptive week-review like the ⋯ menu does; reviewWeek is inert when the adaptive loop is off.
   const reportPostpone = useCallback(
     (item: TodayStep) => {
+      if (isInClosedWeek(item.step.plannedFor)) return;
       void core
         .submitReason({
           journeyId: item.journeyId,
           stepId: item.step.id,
           action: 'postpone',
-          reasonId: 'did_partially',
+          reasonId: 'forgot',
         })
         .then(() => surfaceReview(core.reviewWeek(item.journeyId)));
     },
@@ -199,6 +203,7 @@ export default function HomeScreen() {
   const reportLetGo = useCallback(
     (item: TodayStep) => {
       // A free, no-shame let-go of this occurrence (couldnt → grace lever).
+      if (isInClosedWeek(item.step.plannedFor)) return;
       void core
         .submitReason({
           journeyId: item.journeyId,
@@ -250,6 +255,8 @@ export default function HomeScreen() {
         title: item.step.title,
         meta: metaFor(item),
         done: item.step.done,
+        status: item.status,
+        locked: isInClosedWeek(item.step.plannedFor),
         onPress: () => setReportStep(item),
         onDone: () => reportDone(item),
         onPostpone: () => reportPostpone(item),
@@ -411,6 +418,8 @@ export default function HomeScreen() {
                   meta={metaFor(item)}
                   progress={core.journeyProgress(item.journeyId)}
                   urgency={focusUrgency}
+                  status={item.status}
+                  locked={isInClosedWeek(item.step.plannedFor)}
                   onPress={() => setReportStep(item)}
                   onDone={() => reportDone(item)}
                   onPostpone={() => reportPostpone(item)}

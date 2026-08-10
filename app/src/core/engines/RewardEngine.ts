@@ -25,6 +25,8 @@ export class RewardEngine {
   }
 
   private readonly onStepCheckedIn = (event: StepCheckedIn): void => {
+    // Idempotent (D36): a re-completion after a reversal grants nothing — no XP/Coins twice.
+    if (!event.firstCompletion) return;
     let xp = this.rewards.checkInStepXp;
     let coins = this.rewards.checkInStepCoins;
     if (event.step.isStarterStep) {
@@ -42,6 +44,8 @@ export class RewardEngine {
   };
 
   private readonly onJourneyCompleted = (event: JourneyCompleted): void => {
+    // Idempotent (D36): only the first completion pays the Journey reward.
+    if (!event.firstCompletion) return;
     this.bus.emit({
       type: 'RewardGranted',
       xp: this.rewards.completeJourneyXp,

@@ -17,11 +17,13 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { RecoveryFlow } from '@/components/journey/RecoveryFlow';
 import { RescheduleModal } from '@/components/journey/RescheduleModal';
+import { PartialNoteSheet } from '@/components/home/PartialNoteSheet';
 import { StepReportSheet, type ReportChoice } from '@/components/home/StepReportSheet';
 import type { AppCore, WeekReviewOutcome } from '@/core/AppCore';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
+import { isInClosedWeek } from '@/core/util/week';
 
-type Stage = 'menu' | 'recovery' | 'reschedule';
+type Stage = 'menu' | 'partialNote' | 'recovery' | 'reschedule';
 
 export function StepReportFlow({
   step,
@@ -57,7 +59,17 @@ export function StepReportFlow({
   );
 
   if (!step) return null;
-  const { journeyId, step: s } = step;
+  const { journeyId, step: s, status } = step;
+
+  // Past (closed) weeks are read-only on Home (D35.3) — the sheet disables its report actions.
+  const locked = isInClosedWeek(s.plannedFor);
+
+  // Moving OUT of `completed` first clears the completion via reverseReport (D36), so the target
+  // report (partial / couldn't / postpone / reschedule) can actually take — checkInStep/markPartial
+  // are one-way and no-op on a done Step. No XP is clawed back (the engine keeps the reward latched).
+  const reverseIfCompleted = () => {
+    if (status === 'completed') core.reverseReport(journeyId, s.id);
+  };
 
   // Report the reason, THEN run the adaptive week-review and surface its outcome. Awaiting
   // submitReason first ensures the on-device signal is recorded before the model re-reads it.
@@ -66,8 +78,9 @@ export function StepReportFlow({
     action: 'postpone' | 'cancel',
     reasonId: 'did_partially' | 'couldnt' | 'forgot',
     chosenTime?: number,
+    note?: string,
   ) => {
-    await core.submitReason({ journeyId, stepId: s.id, action, reasonId, chosenTime });
+    await core.submitReason({ journeyId, stepId: s.id, action, reasonId, chosenTime, note });
     onReviewed?.(core.reviewWeek(journeyId));
     onClose();
   };
@@ -75,23 +88,32 @@ export function StepReportFlow({
   const choose = (choice: ReportChoice) => {
     switch (choice) {
       case 'done':
+        // Done wins regardless of the prior status (checkInStep is a no-op if already done).
         core.checkInStep(journeyId, s.id);
         onDone();
         onClose();
         break;
       case 'partial':
-        // Keep the Step, record the partial progress (did_partially → reshape + partial).
-        void reportAndReview('postpone', 'did_partially');
+        // Reveal the OPTIONAL on-device note first; the actual report fires on save (D36).
+        setStage('partialNote');
         break;
       case 'couldnt':
         // Let this occurrence go — free, no penalty (couldnt → grace lever).
+        reverseIfCompleted();
         void reportAndReview('cancel', 'couldnt');
         break;
       case 'postpone':
+        reverseIfCompleted();
         setStage('recovery');
         break;
       case 'reschedule':
+        reverseIfCompleted();
         setStage('reschedule');
+        break;
+      case 'notReportedYet':
+        // Reverse only — clear the report back to unreported, keeping history (D36).
+        core.reverseReport(journeyId, s.id);
+        onClose();
         break;
     }
   };
@@ -101,8 +123,21 @@ export function StepReportFlow({
       <StepReportSheet
         visible={stage === 'menu'}
         stepTitle={s.title}
+        status={status}
+        locked={locked}
         onChoose={choose}
         onClose={onClose}
+      />
+
+      {/* Partial — an OPTIONAL, non-blocking on-device note, then record the partial progress. */}
+      <PartialNoteSheet
+        visible={stage === 'partialNote'}
+        stepTitle={s.title}
+        onSave={(note) => {
+          reverseIfCompleted();
+          void reportAndReview('postpone', 'did_partially', undefined, note);
+        }}
+        onBack={onClose}
       />
 
       {/* Reused Miss-Recovery loop (postpone → what happened → propose times). */}

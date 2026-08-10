@@ -7,6 +7,7 @@ import {
   DEFAULT_WEEK_START,
   dayIndexInWeek,
   getWeekStartDay,
+  isInClosedWeek,
   remainingDaysInWeek,
   setWeekStartDay,
   startOfNextWeek,
@@ -52,6 +53,45 @@ describe('startOfNextWeek — calendar-correct across a month boundary', () => {
   it('steps a full calendar week (not 7 fixed ms)', () => {
     // Week of Mon 2026-01-26 → next start Mon 2026-02-02 (crosses into February).
     expect(startOfNextWeek(at(2026, 0, 28), 1)).toBe(at(2026, 1, 2));
+  });
+});
+
+describe('isInClosedWeek — past-week reporting guard (D36)', () => {
+  const now = at(2026, 0, 14); // Wed of the week of Mon 2026-01-12
+
+  it('locks a Step planned in an earlier week', () => {
+    expect(isInClosedWeek(at(2026, 0, 7), now, 1)).toBe(true); // prior week
+  });
+
+  it('does NOT lock a Step planned in the current week', () => {
+    expect(isInClosedWeek(at(2026, 0, 12), now, 1)).toBe(false); // this week's Monday
+    expect(isInClosedWeek(now, now, 1)).toBe(false); // today
+  });
+
+  it('does NOT lock a Step planned in a future week', () => {
+    expect(isInClosedWeek(at(2026, 0, 20), now, 1)).toBe(false); // next week
+  });
+
+  it('never locks a legacy Step with no plannedFor', () => {
+    expect(isInClosedWeek(undefined, now, 1)).toBe(false);
+    expect(isInClosedWeek(null, now, 1)).toBe(false);
+  });
+
+  it('uses the real clock by default — the shape Home\'s swipe/report guard calls it with', () => {
+    // Home calls isInClosedWeek(step.plannedFor) with the default `now`, so gate on that path too.
+    const lastWeek = startOfWeek(Date.now(), 1) - 1; // one ms before this week's start = prior week
+    const thisWeek = Date.now();
+    expect(isInClosedWeek(lastWeek)).toBe(true);
+    expect(isInClosedWeek(thisWeek)).toBe(false);
+    expect(isInClosedWeek(undefined)).toBe(false); // legacy Step stays reportable
+  });
+
+  it('is not closed at the exact week-start boundary of the current week', () => {
+    // A Step planned at the current week's start instant is in THIS week, not a closed one.
+    const monday = at(2026, 0, 12);
+    expect(isInClosedWeek(monday, monday, 1)).toBe(false);
+    // One ms before the current week's start falls in the prior (closed) week.
+    expect(isInClosedWeek(monday - 1, monday, 1)).toBe(true);
   });
 });
 

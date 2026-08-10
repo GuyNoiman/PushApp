@@ -67,6 +67,24 @@ export function remainingDaysInWeek(epochMs: number, weekStart: Weekday = curren
   return 7 - dayIndexInWeek(epochMs, weekStart);
 }
 
+/**
+ * Whether a Step's occurrence falls in a CLOSED (past) week relative to `now` (Daily Step Reporting,
+ * D35 §7 / D36) — i.e. its `plannedFor` sits in an earlier week than the current one. Home surfaces
+ * past weeks as read-only, so the reporting UI disables its report actions when this is true. This is
+ * a product-history convention, NOT a storage lock (D35.3) — the engines never block a write on it.
+ *
+ * A legacy Step with no `plannedFor` (`null`/`undefined`) is NEVER locked: it has no scheduled week
+ * to have closed, so it stays reportable.
+ */
+export function isInClosedWeek(
+  plannedFor: number | null | undefined,
+  now: number = Date.now(),
+  weekStart: Weekday = currentWeekStart,
+): boolean {
+  if (plannedFor == null) return false;
+  return startOfWeek(plannedFor, weekStart) < startOfWeek(now, weekStart);
+}
+
 /** Week key = the date (YYYY-MM-DD) of this week's start day — the unit of the weekly rollover. */
 export function weekKey(epochMs: number, weekStart: Weekday = currentWeekStart): string {
   return dateKey(new Date(startOfWeek(epochMs, weekStart)));

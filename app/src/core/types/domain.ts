@@ -67,6 +67,15 @@ export interface Step {
    * week lists, progress, and slip detection. Optional — an unshed Step simply has none.
    */
   dropped?: boolean;
+  /**
+   * Epoch ms the Step's report was last CLEARED (Daily Step Reporting reversal, D36). Stamped by
+   * {@link JourneyEngine.reverseReport} when the user moves a Step back out of a terminal report
+   * (e.g. un-completes it or marks it "not reported yet"). A clear SUPERSEDES any earlier terminal
+   * `reasonLog`/CheckIn row for status derivation ({@link deriveStepStatus}): rows older than this
+   * mark no longer determine the current status, but they are KEPT as append-only history (no XP
+   * clawback, no data lost). Optional — a Step that was never reversed simply has none.
+   */
+  lastReportClearedAt?: number;
 }
 
 /**
@@ -121,6 +130,14 @@ export interface Journey {
    * Optional — absent on manually-created or pre-Planner Journeys.
    */
   milestones?: Milestone[];
+  /**
+   * True once the Journey's COMPLETION reward has been granted (Daily Step Reporting, D36). Set the
+   * first time every Step is done (in {@link JourneyEngine.checkInStep}) and never cleared — so a
+   * reversal + re-completion cannot mint the completion XP/Coins twice (idempotent rewards; no
+   * clawback either). Optional — a Journey completed before this field existed simply has none, and
+   * a fresh completion sets it. Carries no PII.
+   */
+  completionRewarded?: boolean;
 }
 
 /** A long-term aspiration — the person the user wants to become. Never "completed". */
@@ -331,7 +348,17 @@ export interface ReasonEntry {
   /** Epoch ms the reason was captured. */
   at: number;
   /**
-   * The free-text captured only for the `other` reason.
+   * The Screen-1 action this entry was recorded under (Daily Step Reporting, D36) — keep-and-move
+   * (`postpone`) or let-this-occurrence-go (`cancel`). Optional so an older entry (written before
+   * this field existed) still loads. Recorded by the RecoveryEngine so status derivation
+   * ({@link deriveStepStatus}) can tell a `not_completed` report (a `couldnt`/cancel) from a
+   * `did_partially` note precisely, without re-deriving from the reason id alone. Enum only, no PII.
+   */
+  action?: PostponeAction;
+  /**
+   * The free-text captured for a report that reveals a note — the `other` reason AND the optional
+   * `did_partially` (Partial) note (Daily Step Reporting, D36). Both are on the SAME on-device-only
+   * footing.
    *
    * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, FOREVER. This string must NEVER be copied
    * into a DomainEvent, a ProgressSummary, an OutreachInsight, a log line, or any

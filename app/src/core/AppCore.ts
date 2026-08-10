@@ -42,6 +42,7 @@ import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/ty
 import { featureFlags } from './config/featureFlags';
 import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
+import type { StepReportReversed } from './events/events';
 import { getLocationGateway } from './location';
 import { getCalendarGateway } from './calendar';
 import { EncryptedLocalRepository } from './persistence/EncryptedLocalRepository';
@@ -59,7 +60,9 @@ import type {
   ReminderRule,
   ReminderTrigger,
   SchedulingPrefs,
+  Step,
 } from './types/domain';
+import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import type { Candidate } from './util/reschedule';
 import { createId } from './util/id';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
@@ -174,7 +177,12 @@ function migrateState(state: AppState): AppState {
     ...base,
     ...state,
     dreams: state.dreams ?? base.dreams,
-    journeys: state.journeys ?? base.journeys,
+    // Daily Step Reporting (D36): an already-completed Journey persisted before `completionRewarded`
+    // existed had its reward granted historically — latch the flag true so a later reversal +
+    // re-completion never re-grants it (idempotent rewards; no double-pay).
+    journeys: (state.journeys ?? base.journeys).map((j) =>
+      j.completedAt && j.completionRewarded === undefined ? { ...j, completionRewarded: true } : j,
+    ),
     checkIns: state.checkIns ?? base.checkIns,
     buddy: { ...base.buddy, ...state.buddy },
     missions: {
@@ -378,6 +386,10 @@ export class AppCore {
     this.bus.on('JourneyCreated', this.onChanged);
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
+    // Daily Step Reporting reversal (D36): persist the cleared report; a reopened Journey also
+    // needs its reminders re-planned (handled in onReportReversed).
+    this.bus.on('StepReportReversed', this.onChanged);
+    this.bus.on('StepReportReversed', this.onReportReversed);
     this.bus.on('JourneyUpdated', this.onChanged);
     this.bus.on('JourneyDeleted', this.onChanged);
     this.bus.on('JourneyFrozen', this.onChanged);
@@ -435,6 +447,15 @@ export class AppCore {
   /** Re-plan + re-apply the scheduler-owned notification set (fire-and-forget). */
   private readonly onReconcile = (): void => {
     void this.communicationScheduler.reconcile();
+  };
+
+  /**
+   * Daily Step Reporting reversal (D36): when an un-report REOPENED an auto-completed Journey, its
+   * reminders must resume — re-plan the whole set. A plain report change (the Journey stayed active)
+   * needs no reminder change, so we reconcile only on `reopenedJourney`.
+   */
+  private readonly onReportReversed = (event: StepReportReversed): void => {
+    if (event.reopenedJourney) void this.communicationScheduler.reconcile();
   };
 
   /**
@@ -747,12 +768,34 @@ export class AppCore {
   }
 
   /**
+   * Reverse a Step's report — the open-week "un-report" path (Daily Step Reporting, D36). Delegates
+   * to the JourneyEngine, which clears the completion + stamps {@link Step.lastReportClearedAt}
+   * (superseding earlier terminal reason rows) while KEEPING history and clawing back NO XP, and
+   * reopens an auto-completed Journey when it is no longer all-done. Emits {@link StepReportReversed}:
+   * AppCore persists off it and re-plans a reopened Journey's reminders. Returns whether a Step was
+   * reversed (false on an unknown Journey/Step).
+   */
+  reverseReport(journeyId: string, stepId: string): boolean {
+    return this.journeyEngine.reverseReport(journeyId, stepId);
+  }
+
+  /**
    * A Journey's completion ratio in [0,1] (done Steps / total). Facade over the
    * JourneyEngine selector so callers (e.g. SocialProvider's progress publish)
    * don't recompute Step math inline (Engineering Bible §19).
    */
   journeyProgress(journeyId: string): number {
     return this.journeyEngine.journeyProgress(journeyId);
+  }
+
+  /**
+   * The DERIVED Daily-Reporting status of a Step (D36). The SINGLE status entry point for surfaces
+   * that hold a Step but not the snapshot's TodayStep (e.g. Journey detail) — it derives from the
+   * SAME raw `reasonLog` in append order as {@link Snapshot.weekSteps}/`todaySteps`, so Home and the
+   * Journey detail can never disagree on equal-`at` rows ("last-appended wins").
+   */
+  getStepStatus(step: Step): StepStatus {
+    return deriveStepStatus(step, this.state.reasonLog ?? []);
   }
 
   /** The Shop cosmetic catalog (read-only config) for the Shop screen to render. */

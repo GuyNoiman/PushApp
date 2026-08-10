@@ -18,8 +18,10 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
+import { StepStatusChip } from '@/components/home/StepStatusChip';
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
+import type { StepStatus } from '@/core/status/stepStatus';
 import { useTheme } from '@/hooks/use-theme';
 
 /** How much time-pressure a pending Step carries — drives its accent. */
@@ -34,6 +36,8 @@ export function TodayFocusCard({
   meta,
   progress,
   urgency,
+  status,
+  locked = false,
   onPress,
   onDone,
   onPostpone,
@@ -45,6 +49,10 @@ export function TodayFocusCard({
   /** Parent Journey completion in [0,1] — drives the turquoise progress bar. */
   progress: number;
   urgency: StepUrgency;
+  /** The Step's derived reporting status (D36) — shows a calm Partial / Not-completed chip. */
+  status: StepStatus;
+  /** True when the Step sits in a closed (past) week — swipe report actions are disabled (D36). */
+  locked?: boolean;
   /** Opens the report sheet (Done · Partial · Couldn't · Postpone · Reschedule). */
   onPress: () => void;
   /** Swipe-right → report done (fires Home's confetti). */
@@ -74,6 +82,7 @@ export function TodayFocusCard({
 
   return (
     <SwipeableStepRow
+      enabled={!locked}
       onDone={onDone}
       onPostpone={onPostpone}
       onLetGo={onLetGo}
@@ -104,6 +113,7 @@ export function TodayFocusCard({
               </ThemedText>
             )}
           </View>
+          <StepStatusChip status={status} />
           <View style={styles.dots} accessibilityElementsHidden>
             <Ionicons name="ellipsis-horizontal" size={20} color={theme.textMuted} />
           </View>

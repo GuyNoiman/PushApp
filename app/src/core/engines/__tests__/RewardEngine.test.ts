@@ -53,6 +53,7 @@ describe('RewardEngine', () => {
       journeyId: 'journey_1',
       step: makeStep(),
       checkIn: makeCheckIn(),
+      firstCompletion: true,
     });
 
     expect(rewards).toHaveLength(1);
@@ -69,6 +70,7 @@ describe('RewardEngine', () => {
       journeyId: 'journey_1',
       step: makeStep({ isStarterStep: true }),
       checkIn: makeCheckIn(),
+      firstCompletion: true,
     });
 
     expect(rewards[0].xp).toBe(REWARDS.checkInStepXp + REWARDS.starterStepBonus.xp);
@@ -78,11 +80,33 @@ describe('RewardEngine', () => {
   it('grants completion XP/Coins when a Journey is completed', () => {
     const { bus, rewards } = setup();
 
-    bus.emit({ type: 'JourneyCompleted', journey: makeJourney() });
+    bus.emit({ type: 'JourneyCompleted', journey: makeJourney(), firstCompletion: true });
 
     expect(rewards).toHaveLength(1);
     expect(rewards[0].xp).toBe(REWARDS.completeJourneyXp);
     expect(rewards[0].coins).toBe(REWARDS.completeJourneyCoins);
     expect(rewards[0].reason).toBe('JourneyCompleted');
+  });
+
+  it('grants NOTHING for a repeat Step check-in (firstCompletion false — idempotent, D36)', () => {
+    const { bus, rewards } = setup();
+
+    bus.emit({
+      type: 'StepCheckedIn',
+      journeyId: 'journey_1',
+      step: makeStep(),
+      checkIn: makeCheckIn(),
+      firstCompletion: false,
+    });
+
+    expect(rewards).toHaveLength(0);
+  });
+
+  it('grants NOTHING for a repeat Journey completion (firstCompletion false — idempotent, D36)', () => {
+    const { bus, rewards } = setup();
+
+    bus.emit({ type: 'JourneyCompleted', journey: makeJourney(), firstCompletion: false });
+
+    expect(rewards).toHaveLength(0);
   });
 });

@@ -18,11 +18,23 @@ export interface StepCheckedIn {
   journeyId: string;
   step: Step;
   checkIn: CheckIn;
+  /**
+   * True the FIRST time this Step is checked in (no prior CheckIn for its id), false on a
+   * re-completion after a reversal (Daily Step Reporting, D36). The RewardEngine grants XP/Coins
+   * only when true, so re-completing a reversed Step mints nothing twice. Boolean only.
+   */
+  firstCompletion: boolean;
 }
 
 export interface JourneyCompleted {
   type: 'JourneyCompleted';
   journey: Journey;
+  /**
+   * True the FIRST time the Journey completes ({@link Journey.completionRewarded} was unset), false
+   * on any later re-completion after a reversal (Daily Step Reporting, D36). The RewardEngine grants
+   * the completion reward only when true. Boolean only.
+   */
+  firstCompletion: boolean;
 }
 
 /**
@@ -68,6 +80,22 @@ export interface JourneyFrozen {
 export interface JourneyResumed {
   type: 'JourneyResumed';
   journey: Journey;
+}
+
+/**
+ * A Step's report was REVERSED — the open-week "un-report" path (Daily Step Reporting, D36). The
+ * Step's completion was cleared (`done=false`, `lastCheckInAt` dropped) and {@link Step.lastReportClearedAt}
+ * stamped so status derivation supersedes any earlier terminal reason row; prior CheckIn / reason rows
+ * are KEPT as history and no XP is clawed back. `reopenedJourney` is true when the reversal un-completed
+ * an auto-completed Journey (its reminders must resume). Carries ids/booleans ONLY — no free text (G1);
+ * AppCore persists off it and re-plans a reopened Journey's reminders. IN-PROCESS ONLY.
+ */
+export interface StepReportReversed {
+  type: 'StepReportReversed';
+  journeyId: string;
+  stepId: string;
+  /** True when the reversal moved an auto-completed Journey back to `active`. */
+  reopenedJourney: boolean;
 }
 
 export interface RewardGranted {
@@ -321,6 +349,7 @@ export type DomainEvent =
   | JourneyCreated
   | StepCheckedIn
   | JourneyCompleted
+  | StepReportReversed
   | JourneyUpdated
   | JourneyDeleted
   | JourneyFrozen

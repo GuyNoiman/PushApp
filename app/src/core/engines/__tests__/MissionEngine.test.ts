@@ -88,7 +88,7 @@ function makeCheckIn(): CheckIn {
   return { id: 'checkin_1', journeyId: 'journey_1', stepId: 'step_1', at: 0 };
 }
 function emitCheckIn(bus: EventBus) {
-  bus.emit({ type: 'StepCheckedIn', journeyId: 'journey_1', step: makeStep(), checkIn: makeCheckIn() });
+  bus.emit({ type: 'StepCheckedIn', journeyId: 'journey_1', step: makeStep(), checkIn: makeCheckIn(), firstCompletion: true });
 }
 
 describe('MissionEngine — progress', () => {
@@ -117,6 +117,28 @@ describe('MissionEngine — progress', () => {
   it('does not advance Missions whose trigger did not fire', () => {
     const { bus, engine } = setup();
     emitCheckIn(bus);
+    expect(engine.getMissions().find((m) => m.id === 'weekly_complete')!.progress).toBe(0);
+  });
+
+  it('advances by 0 on a repeat check-in / completion (firstCompletion false — idempotent, D36)', () => {
+    const { bus, engine } = setup();
+
+    // A re-completion after a reversal carries firstCompletion=false and must not farm Missions.
+    bus.emit({
+      type: 'StepCheckedIn',
+      journeyId: 'journey_1',
+      step: makeStep(),
+      checkIn: makeCheckIn(),
+      firstCompletion: false,
+    });
+    bus.emit({
+      type: 'JourneyCompleted',
+      journey: { id: 'j', title: 'x', why: [], durationDays: 1, rhythm: 'daily', steps: [], createdAt: 0 },
+      firstCompletion: false,
+    });
+
+    expect(engine.getMissions().find((m) => m.id === 'daily_checkin_1')!.progress).toBe(0);
+    expect(engine.getMissions().find((m) => m.id === 'daily_checkin_3')!.progress).toBe(0);
     expect(engine.getMissions().find((m) => m.id === 'weekly_complete')!.progress).toBe(0);
   });
 
@@ -206,7 +228,7 @@ describe('MissionEngine — rollover', () => {
     const { bus, engine, time } = setup(new Date(2026, 6, 8)); // Wed
 
     emitCheckIn(bus); // daily +1
-    bus.emit({ type: 'JourneyCompleted', journey: { id: 'j', title: 'x', why: [], durationDays: 1, rhythm: 'daily', steps: [], createdAt: 0 } }); // weekly +1
+    bus.emit({ type: 'JourneyCompleted', journey: { id: 'j', title: 'x', why: [], durationDays: 1, rhythm: 'daily', steps: [], createdAt: 0 }, firstCompletion: true }); // weekly +1
     expect(engine.getMissions().find((m) => m.id === 'daily_checkin_1')!.progress).toBe(1);
     expect(engine.getMissions().find((m) => m.id === 'weekly_complete')!.progress).toBe(1);
 
@@ -219,7 +241,7 @@ describe('MissionEngine — rollover', () => {
 
   it('resets weekly Missions on a new week', () => {
     const { bus, engine, time } = setup(new Date(2026, 6, 8)); // Wed
-    bus.emit({ type: 'JourneyCompleted', journey: { id: 'j', title: 'x', why: [], durationDays: 1, rhythm: 'daily', steps: [], createdAt: 0 } });
+    bus.emit({ type: 'JourneyCompleted', journey: { id: 'j', title: 'x', why: [], durationDays: 1, rhythm: 'daily', steps: [], createdAt: 0 }, firstCompletion: true });
     expect(engine.getMissions().find((m) => m.id === 'weekly_complete')!.progress).toBe(1);
 
     // Following Monday — a new week.

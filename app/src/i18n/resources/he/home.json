@@ -83,6 +83,22 @@
     "reschedule": {
       "label": "תזמון מחדש",
       "hint": "להזיז לזמן שמתאים יותר."
+    },
+    "partialNote": {
+      "title": "להוסיף הערה?",
+      "placeholder": "מה עשית, או מה הפריע. לא חובה, וזה נשאר אצלך במכשיר.",
+      "optional": "לא חובה",
+      "save": "לשמור חלקי"
+    },
+    "change": "לשנות דיווח",
+    "notReportedYet": "לסמן שעדיין לא דווח",
+    "locked": "שבועות שעברו הם לקריאה בלבד.",
+    "status": {
+      "unreported": "עדיין לא דווח",
+      "completed": "הושלם",
+      "partiallyCompleted": "בוצע חלקית",
+      "notCompleted": "לא בוצע",
+      "a11y": "סטטוס: {{status}}"
     }
   }
 }

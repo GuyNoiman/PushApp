@@ -18,23 +18,55 @@ import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import type { StepStatus } from '@/core/status/stepStatus';
 
-export type ReportChoice = 'done' | 'partial' | 'couldnt' | 'postpone' | 'reschedule';
+export type ReportChoice =
+  | 'done'
+  | 'partial'
+  | 'couldnt'
+  | 'postpone'
+  | 'reschedule'
+  /** Reverse the report and leave the Step unreported (D36 — "Mark not reported yet"). */
+  | 'notReportedYet';
+
+/** The human label for a derived {@link StepStatus} (home ns). */
+function statusLabel(status: StepStatus): string {
+  switch (status) {
+    case 'completed':
+      return 'report.status.completed';
+    case 'partially_completed':
+      return 'report.status.partiallyCompleted';
+    case 'not_completed':
+      return 'report.status.notCompleted';
+    default:
+      return 'report.status.unreported';
+  }
+}
 
 export function StepReportSheet({
   visible,
   stepTitle,
+  status,
+  locked,
   onChoose,
   onClose,
 }: {
   visible: boolean;
   stepTitle: string;
+  /** The Step's current derived status — drives the "change report" framing + the reverse option. */
+  status: StepStatus;
+  /** True when the Step sits in a closed (past) week — report actions are disabled (D36). */
+  locked: boolean;
   onChoose: (choice: ReportChoice) => void;
   onClose: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('home');
   const onAccent = useColorScheme() === 'dark' ? '#0A1615' : '#F5FBFB';
+
+  // A Step that already carries a report reframes the sheet as "change report" and offers the
+  // reverse ("not reported yet") path (D36). An unreported Step shows the plain "how did it go?".
+  const isReported = status !== 'unreported';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -44,49 +76,75 @@ export function StepReportSheet({
             {stepTitle}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.sub}>
-            {t('report.prompt')}
+            {isReported
+              ? `${t(statusLabel(status))} · ${t('report.change')}`
+              : t('report.prompt')}
           </ThemedText>
 
-          {/* Done — the celebrated, primary choice (turquoise). */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('report.doneA11y')}
-            onPress={() => onChoose('done')}
-            style={({ pressed }) => [
-              styles.primary,
-              { backgroundColor: theme.tint },
-              pressed && styles.pressed,
-            ]}>
-            <Ionicons name="checkmark-circle" size={20} color={onAccent} />
-            <ThemedText type="smallBold" style={[styles.primaryLabel, { color: onAccent }]}>
-              {t('done', { ns: 'common' })}
+          {locked ? (
+            // Past weeks are read-only (product-history convention, D35.3): show the status but no
+            // report actions.
+            <ThemedText type="small" themeColor="textMuted" style={styles.locked}>
+              {t('report.locked')}
             </ThemedText>
-          </Pressable>
+          ) : (
+            <>
+              {/* Done — the celebrated, primary choice (turquoise). */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('report.doneA11y')}
+                onPress={() => onChoose('done')}
+                style={({ pressed }) => [
+                  styles.primary,
+                  { backgroundColor: theme.tint },
+                  pressed && styles.pressed,
+                ]}>
+                <Ionicons name="checkmark-circle" size={20} color={onAccent} />
+                <ThemedText type="smallBold" style={[styles.primaryLabel, { color: onAccent }]}>
+                  {t('done', { ns: 'common' })}
+                </ThemedText>
+              </Pressable>
 
-          <Option
-            icon="contract-outline"
-            label={t('report.partial.label')}
-            hint={t('report.partial.hint')}
-            onPress={() => onChoose('partial')}
-          />
-          <Option
-            icon="heart-outline"
-            label={t('report.couldnt.label')}
-            hint={t('report.couldnt.hint')}
-            onPress={() => onChoose('couldnt')}
-          />
-          <Option
-            icon="time-outline"
-            label={t('report.postpone.label')}
-            hint={t('report.postpone.hint')}
-            onPress={() => onChoose('postpone')}
-          />
-          <Option
-            icon="calendar-outline"
-            label={t('report.reschedule.label')}
-            hint={t('report.reschedule.hint')}
-            onPress={() => onChoose('reschedule')}
-          />
+              <Option
+                icon="contract-outline"
+                label={t('report.partial.label')}
+                hint={t('report.partial.hint')}
+                onPress={() => onChoose('partial')}
+              />
+              <Option
+                icon="heart-outline"
+                label={t('report.couldnt.label')}
+                hint={t('report.couldnt.hint')}
+                onPress={() => onChoose('couldnt')}
+              />
+              <Option
+                icon="time-outline"
+                label={t('report.postpone.label')}
+                hint={t('report.postpone.hint')}
+                onPress={() => onChoose('postpone')}
+              />
+              <Option
+                icon="calendar-outline"
+                label={t('report.reschedule.label')}
+                hint={t('report.reschedule.hint')}
+                onPress={() => onChoose('reschedule')}
+              />
+
+              {/* Only offered once a report exists — clears it back to unreported (reverse only). */}
+              {isReported && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('report.notReportedYet')}
+                  onPress={() => onChoose('notReportedYet')}
+                  style={({ pressed }) => [styles.reverse, pressed && styles.pressed]}>
+                  <Ionicons name="arrow-undo-outline" size={16} color={theme.textSecondary} />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('report.notReportedYet')}
+                  </ThemedText>
+                </Pressable>
+              )}
+            </>
+          )}
         </Pressable>
       </Pressable>
     </Modal>
@@ -167,6 +225,18 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 1,
+  },
+  reverse: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  locked: {
+    paddingVertical: Spacing.three,
+    textAlign: 'center',
   },
   pressed: {
     opacity: 0.6,

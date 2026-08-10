@@ -169,7 +169,10 @@ export class RecoveryEngine {
       leverIds,
       outcome,
       at: Date.now(),
-      // G1: `note` lives ONLY on the on-device entry — never in an emitted event.
+      // The Screen-1 action, so status derivation can read it back precisely (D36). Enum only.
+      action,
+      // G1: `note` lives ONLY on the on-device entry — never in an emitted event. The optional
+      // `did_partially` (Partial) note rides the SAME on-device-only path as the `other` note.
       ...(note ? { note } : {}),
     };
     this.journeys.recordReason(entry);

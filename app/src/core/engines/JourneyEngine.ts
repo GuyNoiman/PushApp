@@ -24,6 +24,7 @@ import type {
 } from '../types/domain';
 import { createId } from '../util/id';
 import type { JourneyEdit } from '../coach/journeyEdit';
+import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/stepStatus';
 
 /**
  * SECURITY-PRIVACY G5: cap the per-user reason log to a rolling window PER STEP so it
@@ -69,6 +70,8 @@ export interface TodayStep {
   journeyId: string;
   journeyTitle: string;
   step: Step;
+  /** The DERIVED Daily-Reporting status (D36) — from `done`/`dropped` + the reasonLog + any clear. */
+  status: StepStatus;
 }
 
 export class JourneyEngine {
@@ -245,21 +248,62 @@ export class JourneyEngine {
     const step = journey.steps.find((s) => s.id === stepId);
     if (!step || step.done) return;
 
+    // Idempotent rewards (D36): the FIRST check-in of this Step is the only one the RewardEngine
+    // pays out. A re-completion after a reverseReport keeps its prior CheckIn rows, so a matching
+    // stepId already in the log marks this as a repeat (no XP twice, no clawback).
+    const firstCompletion = !state.checkIns.some((c) => c.stepId === stepId);
+
     const now = Date.now();
     step.done = true;
     step.lastCheckInAt = now;
 
     const checkIn = { id: createId('checkin'), journeyId, stepId, at: now };
     state.checkIns.push(checkIn);
-    this.bus.emit({ type: 'StepCheckedIn', journeyId, step, checkIn });
+    this.bus.emit({ type: 'StepCheckedIn', journeyId, step, checkIn, firstCompletion });
 
     // Finite Steps: the Journey completes when every non-dropped Step is done (a Step shed
     // by the adaptive coach is out of scope and never blocks completion).
     if (!journey.completedAt && journey.steps.every((s) => s.done || s.dropped)) {
+      // The completion reward is paid ONCE (D36): completionRewarded latches true on first
+      // completion and is never cleared, so a reversal + re-completion pays nothing again.
+      const firstJourneyCompletion = !journey.completionRewarded;
+      journey.completionRewarded = true;
       journey.completedAt = now;
       journey.status = 'completed';
-      this.bus.emit({ type: 'JourneyCompleted', journey });
+      this.bus.emit({ type: 'JourneyCompleted', journey, firstCompletion: firstJourneyCompletion });
     }
+  }
+
+  /**
+   * Reverse a Step's report — the open-week "un-report" path (Daily Step Reporting, D36). Moves the
+   * Step back out of a terminal status: clears the completion (`done=false`, drops `lastCheckInAt`)
+   * and stamps {@link Step.lastReportClearedAt} = now so {@link deriveStepStatus} supersedes any
+   * earlier terminal `reasonLog` row. History is PRESERVED — prior CheckIn and reason rows are kept,
+   * and there is NO XP clawback ({@link Journey.completionRewarded} stays latched, so a later
+   * re-completion pays nothing again). If the reversal un-completes an auto-completed Journey (it is
+   * no longer all-done), the Journey is REOPENED (`completedAt` cleared, `status` back to `active`)
+   * so it runs and schedules reminders again. Emits {@link StepReportReversed} (ids/booleans only).
+   * No-op (returns false) if the Journey/Step is missing.
+   */
+  reverseReport(journeyId: string, stepId: string): boolean {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey) return false;
+    const step = journey.steps.find((s) => s.id === stepId);
+    if (!step) return false;
+
+    step.done = false;
+    step.lastCheckInAt = undefined;
+    step.lastReportClearedAt = Date.now();
+
+    let reopenedJourney = false;
+    if (journey.completedAt && !journey.steps.every((s) => s.done || s.dropped)) {
+      journey.completedAt = undefined;
+      journey.status = 'active';
+      reopenedJourney = true;
+    }
+
+    this.bus.emit({ type: 'StepReportReversed', journeyId, stepId, reopenedJourney });
+    return true;
   }
 
   /**
@@ -399,21 +443,32 @@ export class JourneyEngine {
     if (!log) return;
     const forStep = log.filter((e) => e.stepId === stepId);
     if (forStep.length <= MAX_REASONS_PER_STEP) return;
-    // Keep only the newest N for this Step; other Steps' entries are untouched.
-    const keep = new Set(
-      [...forStep].sort((a, b) => b.at - a.at).slice(0, MAX_REASONS_PER_STEP).map((e) => e.id),
-    );
+    // Keep the newest N for this Step; other Steps' entries are untouched.
+    const byRecency = [...forStep].sort((a, b) => b.at - a.at);
+    const keep = new Set(byRecency.slice(0, MAX_REASONS_PER_STEP).map((e) => e.id));
+    // ALWAYS retain the newest TERMINAL report (Partial / let-go), even if a burst of later
+    // postpones pushed it past the window — otherwise capping would silently revert the derived
+    // status to `unreported` (D36). This may keep one row beyond the cap, which is intended.
+    const terminal = byRecency.find(isTerminalReport);
+    if (terminal) keep.add(terminal.id);
     state.reasonLog = log.filter((e) => e.stepId !== stepId || keep.has(e.id));
   }
 
   /** Steps the user can act on now: the not-yet-done Steps of active (incomplete) Journeys. */
   getTodaySteps(): TodayStep[] {
+    const state = this.getState();
+    const reasonLog = state.reasonLog ?? [];
     const today: TodayStep[] = [];
-    for (const journey of this.getState().journeys) {
+    for (const journey of state.journeys) {
       if (journey.completedAt) continue;
       for (const step of journey.steps) {
         if (!step.done && !step.dropped) {
-          today.push({ journeyId: journey.id, journeyTitle: journey.title, step });
+          today.push({
+            journeyId: journey.id,
+            journeyTitle: journey.title,
+            step,
+            status: deriveStepStatus(step, reasonLog),
+          });
         }
       }
     }
@@ -430,12 +485,19 @@ export class JourneyEngine {
    * scheduled window (TODO: data model), so "week" mirrors getTodaySteps' scope.
    */
   getWeekSteps(): TodayStep[] {
+    const state = this.getState();
+    const reasonLog = state.reasonLog ?? [];
     const week: TodayStep[] = [];
-    for (const journey of this.getState().journeys) {
+    for (const journey of state.journeys) {
       if (journey.completedAt) continue;
       for (const step of journey.steps) {
         if (step.dropped) continue; // shed from scope — not shown in the week's steps.
-        week.push({ journeyId: journey.id, journeyTitle: journey.title, step });
+        week.push({
+          journeyId: journey.id,
+          journeyTitle: journey.title,
+          step,
+          status: deriveStepStatus(step, reasonLog),
+        });
       }
     }
     return week;

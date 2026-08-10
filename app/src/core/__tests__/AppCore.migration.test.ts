@@ -100,6 +100,25 @@ describe('AppCore migration — old snapshot', () => {
     expect(core.getSnapshot().journeys.map((j) => j.id)).toEqual(['journey_old']);
   });
 
+  it('latches completionRewarded on an already-completed Journey (no re-grant after reversal, D36)', async () => {
+    const snap = oldSnapshot();
+    (snap.journeys as Record<string, unknown>[])[0] = {
+      id: 'journey_done',
+      title: 'Finished Journey',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ id: 'step_done', title: 'Do it', isStarterStep: false, cadence: 'once', done: true }],
+      createdAt: 1,
+      completedAt: 2, // completed before completionRewarded existed
+    };
+    const core = new AppCore(repoWith(snap));
+    await core.start();
+
+    const journey = core.getSnapshot().journeys.find((j) => j.id === 'journey_done');
+    expect(journey?.completionRewarded).toBe(true);
+  });
+
   it('a corrupt/partial snapshot (missing collections) is healed, not dereferenced', async () => {
     // Missing journeys/checkIns/buddy — migrateState must not throw.
     const core = new AppCore(repoWith({ dreams: [] }));

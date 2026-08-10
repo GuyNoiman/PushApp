@@ -81,8 +81,16 @@ export class MissionEngine {
     this.bus.off('ItemEquipped', this.onItemEquipped);
   }
 
-  private readonly onStepCheckedIn = (): void => this.advance('StepCheckedIn');
-  private readonly onJourneyCompleted = (): void => this.advance('JourneyCompleted');
+  // Idempotent (D36): only the FIRST completion advances Missions — a reverse→re-complete must
+  // not farm Mission progress (mirrors the RewardEngine gate).
+  private readonly onStepCheckedIn = (e: EventOf<'StepCheckedIn'>): void => {
+    if (!e.firstCompletion) return;
+    this.advance('StepCheckedIn');
+  };
+  private readonly onJourneyCompleted = (e: EventOf<'JourneyCompleted'>): void => {
+    if (!e.firstCompletion) return;
+    this.advance('JourneyCompleted');
+  };
   private readonly onItemPurchased = (): void => this.advance('ItemPurchased');
   private readonly onItemEquipped = (e: EventOf<'ItemEquipped'>): void => {
     // Only an actual equip counts toward "Dress up your Buddy" — not unequip.

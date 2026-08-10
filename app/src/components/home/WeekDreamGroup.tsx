@@ -19,8 +19,10 @@ import { useTranslation } from 'react-i18next';
 import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 
 import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
+import { StepStatusChip } from '@/components/home/StepStatusChip';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import type { StepStatus } from '@/core/status/stepStatus';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -33,6 +35,10 @@ export interface WeekStepView {
   title: string;
   meta: string;
   done: boolean;
+  /** The Step's derived reporting status (D36) — shows a calm Partial / Not-completed chip. */
+  status: StepStatus;
+  /** True when the Step sits in a closed (past) week — swipe report actions are disabled (D36). */
+  locked: boolean;
   onPress: () => void;
   /** Swipe-right → report done (fires Home's confetti). */
   onDone: () => void;
@@ -114,9 +120,9 @@ export function WeekDreamGroup({
             </View>
 
             {/* Each pending Step is individually swipeable (right → done, left →
-                Postpone / Let go); a done Step renders plain, no swipe. */}
+                Postpone / Let go); a done OR closed-week (locked) Step renders plain, no swipe. */}
             <SwipeableStepRow
-              enabled={!row.done}
+              enabled={!row.done && !row.locked}
               onDone={row.onDone}
               onPostpone={row.onPostpone}
               onLetGo={row.onLetGo}
@@ -157,6 +163,8 @@ export function WeekDreamGroup({
                     </ThemedText>
                   )}
                 </View>
+
+                {!row.done && <StepStatusChip status={row.status} />}
 
                 {row.done ? (
                   <View style={[styles.check, { backgroundColor: theme.tint }]}>

@@ -6,10 +6,12 @@
  * Model (confirmed with founder 2026-07-14): a Journey holds a finite set of Steps,
  * each completed once; the Journey completes when EVERY Step is done. No Step recurrence.
  */
+import { REWARDS } from '../../config/rewards';
 import { EventBus } from '../../events/EventBus';
-import type { DomainEvent } from '../../events/events';
-import type { AppState, Buddy } from '../../types/domain';
+import type { DomainEvent, RewardGranted, StepCheckedIn, StepReportReversed } from '../../events/events';
+import type { AppState, Buddy, ReasonEntry } from '../../types/domain';
 import { JourneyEngine } from '../JourneyEngine';
+import { RewardEngine } from '../RewardEngine';
 
 function initialBuddy(): Buddy {
   return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
@@ -248,6 +250,150 @@ describe('JourneyEngine.getWeekSteps', () => {
     engine.checkInStep(b.id, b.steps[0].id); // completes the whole Journey
 
     expect(engine.getWeekSteps()).toHaveLength(0);
+  });
+});
+
+describe('JourneyEngine.checkInStep — idempotent rewards (D36)', () => {
+  it('flags firstCompletion true on the first check-in of a Step', () => {
+    const { bus, engine } = setup();
+    const checkedIn: StepCheckedIn[] = [];
+    bus.on('StepCheckedIn', (e) => checkedIn.push(e));
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }, { title: 'Jog' }],
+    });
+
+    engine.checkInStep(journey.id, journey.steps[0].id);
+
+    expect(checkedIn).toHaveLength(1);
+    expect(checkedIn[0].firstCompletion).toBe(true);
+  });
+
+  it('latches Journey.completionRewarded and flags the completion firstCompletion once', () => {
+    const { bus, engine } = setup();
+    const completed: DomainEvent[] = [];
+    bus.on('JourneyCompleted', (e) => completed.push(e));
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }],
+    });
+
+    engine.checkInStep(journey.id, journey.steps[0].id);
+
+    expect(journey.completionRewarded).toBe(true);
+    expect(completed).toHaveLength(1);
+    expect((completed[0] as { firstCompletion: boolean }).firstCompletion).toBe(true);
+  });
+});
+
+describe('JourneyEngine.reverseReport (D36)', () => {
+  function reverseSetup() {
+    const { bus, state, engine } = setup();
+    const reversed: StepReportReversed[] = [];
+    bus.on('StepReportReversed', (e) => reversed.push(e));
+    return { bus, state, engine, reversed };
+  }
+
+  it('clears done + lastCheckInAt, stamps lastReportClearedAt, and KEEPS the CheckIn history', () => {
+    const { state, engine, reversed } = reverseSetup();
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }, { title: 'Jog' }],
+    });
+    engine.checkInStep(journey.id, journey.steps[0].id);
+    expect(state.checkIns).toHaveLength(1);
+
+    const ok = engine.reverseReport(journey.id, journey.steps[0].id);
+
+    expect(ok).toBe(true);
+    expect(journey.steps[0].done).toBe(false);
+    expect(journey.steps[0].lastCheckInAt).toBeUndefined();
+    expect(journey.steps[0].lastReportClearedAt).toBeDefined();
+    // History retained — the CheckIn row survives (no clawback of evidence).
+    expect(state.checkIns).toHaveLength(1);
+    expect(reversed.map((e) => e.reopenedJourney)).toEqual([false]);
+  });
+
+  it('reopens an auto-completed Journey when it is no longer all-done', () => {
+    const { engine, reversed } = reverseSetup();
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }],
+    });
+    engine.checkInStep(journey.id, journey.steps[0].id); // completes it
+    expect(journey.completedAt).toBeDefined();
+
+    engine.reverseReport(journey.id, journey.steps[0].id);
+
+    expect(journey.completedAt).toBeUndefined();
+    expect(journey.status).toBe('active');
+    expect(reversed[0].reopenedJourney).toBe(true);
+  });
+
+  it('re-completing after a reversal grants NO XP (idempotent — completionRewarded latched)', () => {
+    const { bus, engine } = reverseSetup();
+    const rewardEngine = new RewardEngine(bus, REWARDS);
+    rewardEngine.start();
+    const rewards: RewardGranted[] = [];
+    bus.on('RewardGranted', (e) => rewards.push(e));
+
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }],
+    });
+    engine.checkInStep(journey.id, journey.steps[0].id); // first completion → Step + Journey reward
+    const grantedFirst = rewards.length;
+    expect(grantedFirst).toBeGreaterThan(0);
+
+    engine.reverseReport(journey.id, journey.steps[0].id);
+    engine.checkInStep(journey.id, journey.steps[0].id); // re-completion → nothing
+
+    expect(rewards).toHaveLength(grantedFirst); // no new RewardGranted
+    expect(journey.completionRewarded).toBe(true);
+  });
+
+  it('is a no-op (false) for a missing Journey/Step', () => {
+    const { engine, reversed } = reverseSetup();
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }],
+    });
+    expect(engine.reverseReport('missing', journey.steps[0].id)).toBe(false);
+    expect(engine.reverseReport(journey.id, 'missing')).toBe(false);
+    expect(reversed).toHaveLength(0);
+  });
+});
+
+describe('JourneyEngine snapshot status (D36)', () => {
+  it('derives completed vs unreported on getWeekSteps / getTodaySteps', () => {
+    const { engine } = setup();
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }, { title: 'Jog' }],
+    });
+    engine.checkInStep(journey.id, journey.steps[0].id);
+
+    const week = engine.getWeekSteps();
+    expect(week.find((w) => w.step.title === 'Walk')?.status).toBe('completed');
+    expect(week.find((w) => w.step.title === 'Jog')?.status).toBe('unreported');
+
+    // getTodaySteps carries the status too (Walk is done, so only Jog is actionable).
+    const today = engine.getTodaySteps();
+    expect(today.every((s) => s.status === 'unreported')).toBe(true);
+  });
+
+  it('keeps the newest terminal report when the reason-log cap evicts (status survives, D36)', () => {
+    const { engine, state } = setup();
+    const journey = engine.createJourney({
+      title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }],
+    });
+    const stepId = journey.steps[0].id;
+
+    // A terminal Partial report, then a long burst of later postpones (> MAX_REASONS_PER_STEP=20).
+    const entry = (i: number, over: Partial<ReasonEntry>): ReasonEntry => ({
+      id: `r_${i}`, stepId, journeyId: journey.id, reasonId: 'forgot', leverIds: [],
+      outcome: 'logged', at: i, action: 'postpone', ...over,
+    });
+    engine.recordReason(entry(1, { reasonId: 'did_partially', outcome: 'partial' }));
+    for (let i = 2; i <= 30; i += 1) engine.recordReason(entry(i, {}));
+
+    // The Partial row is well outside the newest-20 window but must be retained.
+    expect(state.reasonLog?.some((e) => e.reasonId === 'did_partially')).toBe(true);
+    const week = engine.getWeekSteps();
+    expect(week.find((w) => w.step.id === stepId)?.status).toBe('partially_completed');
   });
 });
 

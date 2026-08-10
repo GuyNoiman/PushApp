@@ -75,6 +75,7 @@ function checkIn(bus: EventBus, journeyId = 'journey_1', stepId = 'step_1') {
     journeyId,
     step: step({ id: stepId, done: true, lastCheckInAt: clock }),
     checkIn: { id: 'c1', journeyId, stepId, at: clock },
+    firstCompletion: true,
   });
 }
 

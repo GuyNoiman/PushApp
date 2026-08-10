@@ -124,7 +124,7 @@ Step-report UI doesn't support it; needs a design pass (attach point, on-device-
 photo-in-report). **Reflected in:** `04_Product/MVP_Task_List.md` (I1 + Open questions + Post-MVP).
 
 ### D33 — One authoritative week boundary (Week Boundary Preference)
-**Decision (founder, PRD `04_Product/PRD/Week_Boundary_Preference_PRD.md`):** there is exactly ONE
+**Decision (founder, PRD `04_Product/PRD/Done/Week_Boundary_Preference_PRD.md`):** there is exactly ONE
 definition of when the user's week begins, and **every** week-referencing area aligns to it — weekly
 Missions, the Streak "no-slack" rule, Week Review, AND the Journey "Week X of Y" pager. A single
 profile-level **`weekStartDay`** (0=Sun … 6=Sat) is defaulted from the profile's single **`country`**

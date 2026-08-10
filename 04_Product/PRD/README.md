@@ -16,6 +16,11 @@ change in the system gets an orderly PRD, and all PRD files live in this folder.
 5. Product decisions that come out of a PRD are also logged in `06_Decisions/Decision_Log.md`
    (the PRD links to the relevant D-entry), and the PRD is gated against vision/terminology by
    product-guardian.
+6. **Done tracking (founder, 2026-08-10):** once a PRD's approved/current scope is IMPLEMENTED and
+   green, its file MOVES to `Done/`. The file keeps its status header showing exactly what shipped and
+   what is deferred (a later phase or a dependency), so the root folder stays a live picture of what is
+   still open vs. what is done. If a deferred phase later becomes active work, note it (or spin a new
+   PRD) rather than un-doing the move.
 
 ## Standard edge-case checklist (run against every PRD)
 
@@ -31,9 +36,14 @@ error states.
   **Stage: MVP · Status: Approved.**
 - `Journey_Support_Circle_PRD.md` — Journey-specific Ally invitations, consent, viewing permissions,
   management, and lifecycle notifications. **Stage: MVP · Status: Approved.**
-- `Week_Boundary_Preference_PRD.md` — Country-derived, user-editable start of week shared by every
-  weekly engine and screen. **Stage: MVP · Status: Approved.**
 - Existing PRD (pre-dating this folder): `../Miss_Recovery_PRD.md` — Miss-Recovery & Adaptive Reminders.
+
+### Done (implemented — see each file's status header for what shipped vs. deferred)
+
+- `Done/Week_Boundary_Preference_PRD.md` — one authoritative, country-derived, editable week start
+  (D33). MVP slice shipped; IANA/travel/multi-device + boundary stamping deferred (backend-gated).
+- `Done/Own_Profile_PRD.md` — the unified private profile + the My Profile screen (D34). Phase 1
+  (fields + screen) shipped; the profile photo is Phase 2, auth-provider seeding wires in with E1.
 
 ### Future
 

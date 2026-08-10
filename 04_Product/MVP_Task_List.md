@@ -149,7 +149,7 @@ Priority: **P1** = core initial-version, **P2** = important but can follow, **P3
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
 | **E1** | **Google account connection (real)** | ⛔ 🔒 | Today only a **dev-simulated** Google user. Real OAuth needs a native dev build (or a web OAuth flow). 🔒 native path blocked on the **Apple dev build** (account purchased 2026-08-08, details ~08-10). |
-| **E2** | **Settings area — first version** | 🟡 | ✅ Appearance toggle + editable `@username` are real. ⛔ Notifications row is a static "On" (not reading real permission state); Apple sign-in is "Coming soon"; About is a static label. Finish these for a coherent first Settings. |
+| **E2** | **Settings area — first version** | 🟡 | ✅ Appearance toggle + editable `@username` real; **Notifications row now reads the REAL OS permission status** (`useNotificationPermission`, taps to request / open OS settings) and **About shows the real app version** (from the Expo config) — done 2026-08-09. ⛔ still: Apple sign-in "Coming soon" (blocked); once the profile grows (P1) the Settings/Profile section needs the richer fields (photo/age/country/form-of-address). |
 
 ---
 
@@ -181,7 +181,7 @@ Priority: **P1** = core initial-version, **P2** = important but can follow, **P3
 
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
-| **I1** | **Celebration on task completion** | 🟡 | Confetti fires on Step check-in today. Founder wants a proper celebration on **completing a task/Journey** — design + build the Step-done and Journey-complete celebration moments (distinct, more rewarding for a full Journey). |
+| **I1** | **Celebration on task completion** | 🟡 | **Spec (founder, 2026-08-09):** two tiers. **(a) SMALL — on a Step check-in:** on-screen **confetti** (colored ribbons) scattered when the user marks a Step done. Build **several distinct confetti/celebration variants** — either let the founder pick, or pick one at RANDOM each time for variety. (Confetti already fires on check-in today; extend to variants.) **(b) BIG — on completing a Journey or a Milestone:** a full **achievement card** the user can **edit / share to social (Facebook/Instagram) / save as an image / close**. Reference: Finch's "goal completed / Micropet egg" achievement screen (founder attached a screenshot) — build **something similar but more elegant**. Needs: an achievement-card screen/component + a share/save-image path (`expo-sharing` / view-shot). Design together (joint session). **Related open question (Future):** an achievements **FEED** where users share achievements + write a few words on them (post-style) — see Post-MVP list. |
 
 ---
 
@@ -269,10 +269,26 @@ These come **after** the initial version, in this order per the founder:
 5. **Calendar + device-location interaction** — wire the reserved `NullCalendarGateway` /
    `NullLocationGateway` seams into real, opt-in *interaction based on calendar and device location*.
    Background geofencing stays deferred (privacy red-line R3); this is the on-device, opt-in version.
+6. **Achievements FEED (Open Question → Future)** — a social feed where users share their achievements
+   and write a few words on each (post-style). Founder raised it 2026-08-09 as a maybe-future idea;
+   privacy/moderation-heavy (like the social pillar). Log fully before building.
 
 ---
 
-## Known external dependency
+## Open questions / new topics to spec (added 2026-08-09, founder)
+
+- **Photo upload as part of a Step-completion report.** The founder wants users to attach a photo when
+  reporting a Step done (proof/journal). The **current Step-report UI does not support this** — needs a
+  design pass (where the photo attaches, storage/privacy — likely on-device first per G1, upload path
+  later). Add to the joint spec queue; touches `StepReportSheet` + the report data model.
+- **Form-of-address (gender) sourcing from sign-in** — see Section Q below: on Google/Apple sign-in,
+  if the provider returns gender, auto-set the address form (still shown + editable in onboarding).
+
+## Q. Form-of-address / gender-aware i18n (CONFIRMED IN — founder 2026-08-09)
+
+| ID | Item | Status | What's left |
+|----|------|--------|-------------|
+| **Q1** | **Gender-aware "form of address" across all languages** | 🟡 | **Decision (Decision Log D31):** the app must address the user in the right grammatical form (Hebrew is gendered). Mechanism = i18next **context** (`key_feminine`/`key_masculine`, base = fallback; English just uses base, so it generalizes to every language). A persisted **`addressForm`** preference (`neutral`/`feminine`/`masculine`) drives it via a React hook (components) + a module-level accessor (framework-free engines/coach). **Sourcing:** asked at **onboarding**; if Google/Apple sign-in returns the user's gender, **auto-set** it — but still surface it in the onboarding questionnaire and let the user edit it (and edit it later in the profile). **Building now:** the mechanism + preference + a Settings/onboarding control + converting the most user-facing strings (coach + Home greeting) as a proof. **Remaining after the foundation:** convert the rest of the gendered strings incrementally (base stays the fallback); wire the sign-in auto-detect once real OAuth lands (E1, Apple-gated); move the picker into the P1 profile redesign. |
 
 **Apple Developer Program** (purchased 2026-08-08, account details expected ~08-10) gates: real
 device notifications, a native dev build, real Apple **and** native-Google sign-in, and full

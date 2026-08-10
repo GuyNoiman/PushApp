@@ -85,6 +85,44 @@ they inherit this — they stay pure internal tools, the meta-agent phrases ever
 `app/src/i18n/resources/{en,he}/coachContent.json` (`interview.*`); `04_Product/MVP_Task_List.md`
 (N1 Batch 3 note); `Current_Context.md`.
 
+### D31 — Gender-aware "form of address" (לשון פנייה) across all languages
+**Decision:** the app must address the user in the correct grammatical form. Hebrew (and many
+languages) inflect address by gender; English does not — so the mechanism has to generalize.
+- **Mechanism:** i18next **context**. A string that needs it provides `key_feminine` / `key_masculine`
+  variants and the base `key` as the fallback; languages with no gendered address just use the base.
+- **State:** a persisted **`addressForm`** preference — `neutral` | `feminine` | `masculine` — mirroring
+  the language/theme preferences. It drives translation via a React hook (components) and a module-level
+  accessor (the framework-free engines/coach read it the same way they read `i18n`).
+- **Sourcing (founder):** the user is **asked at onboarding** for their form of address. If a
+  **Google/Apple sign-in returns the user's gender**, the field is **auto-set** from it — but it is
+  **still shown in the onboarding questionnaire and remains user-editable** (and editable later from the
+  profile). The address form follows the gender automatically, but the user can override it.
+**Why:** addressing a user in the wrong gender reads as broken/impersonal in Hebrew; this is
+foundational for a real (non-founder) Hebrew launch. Building the mechanism early avoids retrofitting
+gendered variants across a large string base later.
+**Categorization:** **Approved.** Build the mechanism + preference + a control now; convert strings
+incrementally (coach + Home first); wire the sign-in auto-detect when real OAuth lands (E1, Apple-gated);
+fold the picker into the P1 profile redesign.
+**Reflected in:** `04_Product/MVP_Task_List.md` (Section Q); `Current_Context.md`; (implementation to
+follow this decision).
+
+### D32 — Completion-celebration model: small confetti (Step) + a shareable achievement card (Journey/Milestone)
+**Decision (founder, I1):** two tiers of celebration.
+- **Small — on a Step check-in:** on-screen **confetti** (colored ribbons). Provide **several distinct
+  variants**, chosen by the founder or picked at **random each time** for variety.
+- **Big — on completing a Journey or a Milestone:** a full **achievement card** the user can **edit,
+  share to social (Facebook/Instagram), save as an image, or close.** Reference point: **Finch's**
+  goal-completed / Micropet-egg achievement screen (founder attached a screenshot) — PushApp's version
+  should be **similar in intent but more elegant** and on-brand (mature, calm, one accent).
+**Why:** a full transformation deserves a bigger, shareable moment than a per-Step check-in; sharing is
+also organic growth (the people pillar) without being a punishment/streak mechanic.
+**Related Open Question (Future Vision):** an achievements **FEED** — users share achievements and write
+a few words on each (post-style). Privacy/moderation-heavy; log fully before building.
+**Also flagged (Open Question):** **photo upload as part of a Step-completion report** — the current
+Step-report UI doesn't support it; needs a design pass (attach point, on-device-first storage/privacy).
+**Categorization:** **Approved** (the two-tier celebration model) + **Open/Future** (the feed + the
+photo-in-report). **Reflected in:** `04_Product/MVP_Task_List.md` (I1 + Open questions + Post-MVP).
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

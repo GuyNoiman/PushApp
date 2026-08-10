@@ -1,12 +1,12 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-08-09 (initial-version (MVP) build sprint — MVP scope locked (D29), i18n infra +
-CORE-screen translation + coach converses in Hebrew, coach-led Journey editing (J1), delete a Journey
-(J2), account deletion/export (O1), real StreakEngine (B2), a Journey weekly-pager + design fixes —
-ALL UNCOMMITTED on branch `feat/buddy-3d-and-reminders`, jest 515/515. READ the "⏩ SESSION-END
-ADDENDUM" inside the 2026-08-09 snapshot FIRST — it is authoritative and supersedes the mid-session
-detail below it. This snapshot supersedes the 2026-08-07 snapshot as "most current"). Prior top snapshot: 2026-08-07
+Last updated: 2026-08-10 — read the "⭐ HANDOFF SNAPSHOT — 2026-08-10" just below (it is the most
+current and authoritative). This session finished the i18n rollout, D30 (coach voice), J3
+(Freeze/Resume + Journey.status), D31 (form of address), D33 (one week boundary), D34 (unified Own
+Profile), and introduced the PRD-per-feature working method. Everything is **COMMITTED** (9 topic
+commits) but NOT pushed, on branch `feat/buddy-3d-and-reminders`, **jest 548/548**. The 2026-08-09 and
+older snapshots below are kept as accurate history. Prior top snapshot: 2026-08-09.
 (mature UI redesign — kept below, superseded as "most current" but still accurate history). Prior
 to that: 2026-08-06 (AI-adaptive-coach pivot build: S0–S2 done, SX realigned to 4 new domains, S3
 auth in progress). Prior to that: 2026-08-05 (S0–S2 done, SX in progress). Prior to that:
@@ -19,6 +19,43 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-10 (most current — supersedes the 2026-08-09 snapshots below)
+
+**Branch `feat/buddy-3d-and-reminders`. Everything this session is COMMITTED (9 topic commits) but NOT
+pushed** (the founder never asked to push). The tree is clean except files that are NOT ours (the
+founder's Codex setup): `.codex/`, a root `AGENTS.md`, a Codex-modified `04_Product/Miss_Recovery_PRD.md`,
+and the founder-authored PRD drafts still untracked in `04_Product/PRD/` (Friend_Profile,
+Journey_Support_Circle, Daily_Step_Reporting, Step_Postponement, Weekly_Review, + `Future/`). Green
+throughout: **tsc clean · eslint 0 errors · jest 548/548 across 59 suites**.
+
+### Built + committed this session (on top of the 2026-08-09 work below)
+- **i18n finished** for the secondary screens (14 namespaces at parity); **Coins hidden** (B1); Settings
+  **Notifications reads real permission state** + **About shows the real version** (E2).
+- **D30 — the coach meta-agent is the SOLE user-facing voice** (`CoachOrchestrator.metaVoiced`); the 4
+  domain experts are internal tools needing no user-facing translation.
+- **J3 — Freeze/Resume a Journey** + the authoritative **`Journey.status`** field (drives the tabs).
+- **D31 — gender-aware "form of address" (לשון פנייה)** i18n mechanism (i18next context; default neutral).
+- **D33 — ONE authoritative week boundary** (`core/util/week.ts`) — a configurable, country-derived
+  week-start day consumed by Missions/Streak/Week-pager; consolidated the old 3 conflicting week models.
+- **D34 — unified Own Profile** (`state/ProfileProvider.tsx` — folds in form-of-address + week-start +
+  country + display name + birth date) + a **My Profile screen** (`app/settings/profile.tsx`) + an
+  all-countries picker. Own-vs-friend privacy boundary: private fields never enter a friend payload.
+
+### NEW working method — PRD-per-feature (founder, 2026-08-10)
+Every feature/change gets an orderly PRD in **`04_Product/PRD/`** (`README.md` documents the method).
+Flow: the founder points to a file → the AI reads it → asks questions → surfaces problems + edge cases
+FROM THE CODE → edits the PRD if we decide → then develops. **Implemented PRDs move to
+`04_Product/PRD/Done/`** (currently: Week_Boundary_Preference, Own_Profile). Decisions are logged in
+`06_Decisions/Decision_Log.md` (D29–D34). Open PRDs remaining in the folder: Weekly_Review (blocked — 11
+`§13` questions; many answerable from the existing `reviewWeek`/`AdaptivePlanner` engine),
+Friend_Profile (P1), Journey_Support_Circle (D2), Daily_Step_Reporting, Step_Postponement.
+
+**▶ NEXT:** continue the PRD queue — the founder points to the next `04_Product/PRD/` file (a good pick:
+Friend_Profile P1, or close Weekly_Review's blocking questions). Apple Developer account expected
+~2026-08-10 → then device-test everything built (real RTL, notifications, Freeze/Resume, form-of-address,
+Own Profile). Deferred phases to pick up: Own Profile **photo** (Phase 2) + auth-provider seeding (E1);
+week-boundary IANA/multi-device (backend-gated). Nothing is pushed — offer a push when the founder wants.
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-08-09 (SESSION 2 / continuation — supersedes the session-1 snapshot just below as "most current")
 

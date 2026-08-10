@@ -4,6 +4,29 @@ Status: Living Document
 
 ---
 
+# 2026-08-10 — Form of address (D31), one week boundary (D33), unified Own Profile (D34) + the PRD-per-feature working method (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
+
+Continuation. Unlike prior entries this work is **committed** (topic commits). Green throughout:
+`tsc` clean, `eslint` 0 errors, **jest 548/548 across 59 suites**. Full narrative + resume: see
+`Current_Context.md` → "⭐ HANDOFF SNAPSHOT — 2026-08-10". Highlights:
+
+- **D31 — gender-aware "form of address" (לשון פנייה)** — an i18next-context mechanism (`i18n/addressForm`
+  + a hook), driven by a persisted preference (default neutral); the coach copy inflects. Now folded
+  into the unified profile (D34).
+- **D33 — ONE authoritative week boundary** (`core/util/week.ts`) — a configurable, country-derived,
+  editable week-start day; consolidated the app's three conflicting week notions (Monday-hardcoded
+  Missions/Streak, createdAt-relative Journey pager, DST-unsafe fixed-ms) and migrated every consumer.
+- **D34 — unified Own Profile** — `state/ProfileProvider.tsx` (one source of truth; folds in
+  form-of-address + week-start + country + display name + birth date; replaces the two standalone
+  preference providers) + the **My Profile** screen + an all-countries picker; the own-vs-friend privacy
+  boundary keeps private fields out of friend payloads.
+- **PRD-per-feature working method** — every feature now gets a PRD in `04_Product/PRD/` (read → question
+  → surface edge cases from the code → edit → develop); implemented PRDs move to `PRD/Done/`. Decisions
+  D29–D34 in the Decision Log. Also this session (earlier, committed the same day): i18n secondary
+  screens, D30 coach voice, J3 Freeze/Resume + `Journey.status`, B1 Coins hidden, E2 Settings.
+
+---
+
 # 2026-08-09 (SESSION 2) — Secondary-screen i18n finished, coach meta-agent voice fix (D30), Journey `status` field + Freeze/Resume (J3), Coins hidden (B1) (branch `feat/buddy-3d-and-reminders`, UNCOMMITTED)
 
 Continuation the same day. **Nothing committed** (autonomous execution per the founder). Verified:

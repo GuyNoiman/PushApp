@@ -75,6 +75,31 @@ export class ReminderEngine {
     }
   }
 
+  /**
+   * Whether OS notification permission was granted at the last {@link init}/{@link refreshPermission}
+   * check (cached). Journey Reminder Management (D40) reads this to show the "disabled by permission"
+   * state. Starts false until a check runs, so a surface that needs an accurate reading should call
+   * {@link refreshPermission} first.
+   */
+  hasPermission(): boolean {
+    return this.permissionGranted;
+  }
+
+  /**
+   * Re-read the current OS notification permission WITHOUT prompting, update the cache, and return
+   * it. Distinct from {@link init}, which may show the permission request. Never throws — on failure
+   * the previously-cached value is returned unchanged.
+   */
+  async refreshPermission(): Promise<boolean> {
+    try {
+      const settings = await Notifications.getPermissionsAsync();
+      this.permissionGranted = settings.granted;
+      return settings.granted;
+    } catch {
+      return this.permissionGranted;
+    }
+  }
+
   /** Schedule a simple repeating daily reminder. Returns the id, or null if unavailable. */
   async scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
     if (!this.permissionGranted) return null;

@@ -29,7 +29,24 @@
     "resume": "Resume journey",
     "resumeA11y": "Resume this journey",
     "paused": "Paused",
-    "pausedBody": "This journey is paused. Reminders are off until you resume it."
+    "pausedBody": "This journey is paused. Reminders are off until you resume it.",
+    "reminders": {
+      "section": "Reminders",
+      "off": "Off",
+      "fixed": "Fixed",
+      "everyDay": "Every day",
+      "edit": "Edit reminder",
+      "editorTitle": "Reminder",
+      "modeOff": "Off",
+      "modeFixed": "Fixed",
+      "modeSmart": "Smart",
+      "comingSoon": "Coming soon",
+      "time": "Time",
+      "days": "Days",
+      "permissionOff": "Reminders are off",
+      "permissionOffBody": "Turn on notifications in Settings to get your reminders.",
+      "openSettings": "Open Settings"
+    }
   },
   "stepCard": {
     "missed": "Missed · still time to catch it",

@@ -199,16 +199,20 @@ export default function NewJourneyScreen() {
 
       if (remindEnabled) {
         // Ask for notification permission only now, in context (never at launch).
-        const granted = await core.initReminders();
-        if (granted) {
-          const time = REMINDER_SLOTS[remindTimeIndex];
-          await core.scheduleDailyReminder({
+        await core.initReminders();
+        const time = REMINDER_SLOTS[remindTimeIndex];
+        // Create a MANAGED Fixed ReminderRule (D40) rather than a raw one-off notification, so it
+        // is viewable/editable afterward on the Journey screen. It schedules through the
+        // Communication Scheduler when permission is granted, and is (re)scheduled once granted
+        // otherwise — so we save it regardless of the permission result.
+        await core.setJourneyReminderFixed(
+          journey.id,
+          { hour: time.hour, minute: time.minute, weekdays: [] },
+          {
             title: t('new.reminders.notificationTitle', { title: journey.title }),
             body: starterTitle.trim() || t('new.reminders.notificationBody'),
-            hour: time.hour,
-            minute: time.minute,
-          });
-        }
+          },
+        );
       }
 
       dismiss();

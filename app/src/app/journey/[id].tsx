@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { StepStatusChip } from '@/components/home/StepStatusChip';
+import { JourneyReminderCard } from '@/components/journey/JourneyReminderCard';
 import { shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
 import { featureFlags } from '@/core/config/featureFlags';
 import type { StepStatus } from '@/core/status/stepStatus';
@@ -212,6 +213,9 @@ export default function JourneyDetailScreen() {
               </View>
             )}
           </View>
+
+          {/* Managed Off/Fixed reminder (D40) — view, edit, or disable; Smart is deferred. */}
+          <JourneyReminderCard journey={journey} />
 
           {/* The user's "why" */}
           {journey.why.length > 0 && (

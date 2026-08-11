@@ -71,6 +71,7 @@ import type {
   Step,
 } from './types/domain';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
+import { resolveReminderRule, type JourneyReminder } from './util/reminderView';
 import type { Candidate } from './util/reschedule';
 import {
   isPostponeError,
@@ -1004,6 +1005,7 @@ export class AppCore {
     title: string;
     body: string;
     enabled?: boolean;
+    mode?: ReminderRule['mode'];
   }): Promise<ReminderRule> {
     const rule: ReminderRule = {
       id: createId('reminder'),
@@ -1012,6 +1014,7 @@ export class AppCore {
       title: input.title,
       body: input.body,
       enabled: input.enabled ?? true,
+      ...(input.mode ? { mode: input.mode } : {}),
       scheduledNotificationIds: [],
     };
     this.state.reminderRules.push(rule);
@@ -1027,7 +1030,7 @@ export class AppCore {
    */
   async updateReminderRule(
     id: string,
-    changes: Partial<Pick<ReminderRule, 'trigger' | 'title' | 'body' | 'enabled'>>,
+    changes: Partial<Pick<ReminderRule, 'trigger' | 'title' | 'body' | 'enabled' | 'mode'>>,
   ): Promise<ReminderRule | null> {
     const idx = this.state.reminderRules.findIndex((r) => r.id === id);
     if (idx < 0) return null;
@@ -1056,6 +1059,92 @@ export class AppCore {
   listReminderRules(journeyId?: string): ReminderRule[] {
     const rules = this.state.reminderRules;
     return journeyId ? rules.filter((r) => r.journeyId === journeyId) : [...rules];
+  }
+
+  // ── Journey Reminder Management (D40) — the managed Off/Fixed per-Journey view ────────
+  // The Smart mode is DEFERRED (needs Weekly Review): the `'smart'` enum value exists but is
+  // never produced or selectable here. Account Active Hours CLAMP a Fixed time into the allowed
+  // window (D40), so there is no conflict state to manage — only the disabled-by-permission one.
+
+  /**
+   * The current managed reminder view for a Journey — mode (Off/Fixed/Smart) + Fixed time +
+   * weekdays. Resolves the single managed `fixedTime` rule for the Journey through
+   * {@link resolveReminderRule} (backward-compat: an old rule with no `mode` reads as Fixed when
+   * enabled, Off when not). Off + a default time when the Journey has no reminder yet.
+   */
+  getJourneyReminder(journeyId: string): JourneyReminder {
+    const rule = this.state.reminderRules.find(
+      (r) => r.journeyId === journeyId && r.trigger.kind === 'fixedTime',
+    );
+    return resolveReminderRule(rule);
+  }
+
+  /**
+   * Whether OS notification permission is currently granted (cached from the last check/init).
+   * The reminder UI reads this to show the "disabled by permission" state; call
+   * {@link refreshReminderPermission} first for an accurate value.
+   */
+  isReminderPermissionGranted(): boolean {
+    return this.reminderEngine.hasPermission();
+  }
+
+  /** Re-read OS notification permission WITHOUT prompting (updates the cache). UI calls on mount. */
+  refreshReminderPermission(): Promise<boolean> {
+    return this.reminderEngine.refreshPermission();
+  }
+
+  /**
+   * Set a Journey's reminder to **Fixed** — an exact local time on the chosen weekdays (empty =
+   * every day) — through the managed reminder path (add or update the single `fixedTime` rule).
+   * Scheduling flows through the Communication Scheduler (idempotent reconcile); a Fixed time
+   * outside account Active Hours is CLAMPED into the window, never dropped (D40). Best-effort: no
+   * permission ⇒ nothing pending, but the rule is saved so it (re)schedules once permission is
+   * granted. Returns the created/updated rule.
+   */
+  async setJourneyReminderFixed(
+    journeyId: string,
+    time: { hour: number; minute: number; weekdays: number[] },
+    copy: { title: string; body: string },
+  ): Promise<ReminderRule> {
+    const trigger: ReminderTrigger = {
+      kind: 'fixedTime',
+      hour: time.hour,
+      minute: time.minute,
+      weekdays: time.weekdays.length > 0 ? [...time.weekdays].sort((a, b) => a - b) : undefined,
+    };
+    const existing = this.state.reminderRules.find(
+      (r) => r.journeyId === journeyId && r.trigger.kind === 'fixedTime',
+    );
+    if (existing) {
+      const updated = await this.updateReminderRule(existing.id, {
+        trigger,
+        title: copy.title,
+        body: copy.body,
+        enabled: true,
+        mode: 'fixed',
+      });
+      return updated!;
+    }
+    return this.addReminderRule({
+      journeyId,
+      trigger,
+      title: copy.title,
+      body: copy.body,
+      enabled: true,
+      mode: 'fixed',
+    });
+  }
+
+  /**
+   * Turn a Journey's reminder **Off** — disable the managed rule (mode `'off'`, `enabled: false`)
+   * so the scheduler stops firing it, while PRESERVING its time/weekdays for a later switch back to
+   * Fixed. Reconciles through the same path. No-op when the Journey has no reminder rule yet.
+   */
+  async setJourneyReminderOff(journeyId: string): Promise<void> {
+    const existing = this.state.reminderRules.find(
+      (r) => r.journeyId === journeyId && r.trigger.kind === 'fixedTime',
+    );
+    if (existing) await this.updateReminderRule(existing.id, { enabled: false, mode: 'off' });
   }
 
   /** Set a single communication preference and persist. */

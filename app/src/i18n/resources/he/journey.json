@@ -29,7 +29,24 @@
     "resume": "חידוש המסע",
     "resumeA11y": "חידוש המסע הזה",
     "paused": "מושהה",
-    "pausedBody": "המסע מושהה. התזכורות כבויות עד שתחדש אותו."
+    "pausedBody": "המסע מושהה. התזכורות כבויות עד שתחדש אותו.",
+    "reminders": {
+      "section": "תזכורות",
+      "off": "כבוי",
+      "fixed": "קבוע",
+      "everyDay": "כל יום",
+      "edit": "עריכת תזכורת",
+      "editorTitle": "תזכורת",
+      "modeOff": "כבוי",
+      "modeFixed": "קבוע",
+      "modeSmart": "חכם",
+      "comingSoon": "בקרוב",
+      "time": "שעה",
+      "days": "ימים",
+      "permissionOff": "התזכורות כבויות",
+      "permissionOffBody": "כדי לקבל תזכורות, הפעילו התראות בהגדרות.",
+      "openSettings": "פתיחת ההגדרות"
+    }
   },
   "stepCard": {
     "missed": "הוחמץ · עוד יש זמן להשלים",

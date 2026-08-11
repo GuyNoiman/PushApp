@@ -269,6 +269,16 @@ export interface ReminderRule {
   title: string;
   body: string;
   enabled: boolean;
+  /**
+   * The user-chosen reminder MODE for this Journey (Journey Reminder Management, D40).
+   * Optional and additive: a rule persisted before this field existed has none, so it is
+   * resolved for backward-compat as `'fixed'` when {@link enabled} and `'off'` when not
+   * ({@link resolveReminderRule}). `'smart'` is a reserved value — kept so a future
+   * Smart-timing slice (gated on Weekly Review) can select it — but it is NOT selectable in
+   * the current UI. `enabled` stays the single source of truth the scheduler reads; `'off'`
+   * always pairs with `enabled: false`, so a mode-unaware scheduler behaves identically.
+   */
+  mode?: 'off' | 'fixed' | 'smart';
   /** OS notification ids scheduled for this rule (may be several, one per weekday). */
   scheduledNotificationIds: string[];
 }

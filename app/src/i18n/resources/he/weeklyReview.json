@@ -1,0 +1,42 @@
+{
+  "screen": {
+    "title": "מבט על השבוע שלך",
+    "summaryHeading": "השבוע שעבר",
+    "stepsDone_one": "צעד אחד הושלם",
+    "stepsDone_other": "{{count}} צעדים הושלמו",
+    "breakdown": "{{partial}} חלקי · {{notCompleted}} שוחררו · {{unreported}} לא דווחו",
+    "frozenNote_one": "{{titles}} הושהה השבוע, אז הוא יושב בצד בתוכנית לשבוע הבא.",
+    "frozenNote_other": "{{titles}} הושהו השבוע, אז הם יושבים בצד בתוכנית לשבוע הבא.",
+    "completedNote": "סיימת את {{titles}} השבוע. עבודה יפה.",
+    "nextWeekHeading": "השבוע הבא",
+    "nextSteps_one": "יש לך צעד אחד מוכן. ממשיכים.",
+    "nextSteps_other": "יש לך {{count}} צעדים מוכנים. ממשיכים.",
+    "nextCoach": "עדיין אין תוכנית. דבר עם המאמן שלך ותבנו יחד את השבוע הבא.",
+    "nextDreamAddressed": "אפשר לחזור אל “{{dream}}” ולהתחיל מסע חדש לקראתו.",
+    "nextDreamNew": "מוכן למשהו חדש? “{{dream}}” מחכה למסע הראשון שלו.",
+    "changesHeading": "שינוי מוצע",
+    "changesLead": "אחרי מבט על השבוע שעבר, הנה מה שאולי יעבוד טוב יותר:",
+    "noChanges": "התוכנית שלך עדיין מתאימה. אין מה לשנות בינתיים.",
+    "changeRescheduled": "להעביר כמה צעדים לימים שנוחים לך יותר",
+    "changeResized": "להקטין כמה צעדים כדי שיישארו ברי ביצוע",
+    "changeRemoved": "לשים צעד בצד כדי לשמור על שבוע ריאלי",
+    "atRisk": "התוכנית עדיין צפופה. תהיה עדין עם עצמך.",
+    "openCoach": "דבר עם המאמן שלך",
+    "approve": "אשר את השבוע הבא",
+    "keepOut": "השאר את התוכנית כמו שהיא",
+    "acknowledge": "נשמע טוב",
+    "minimize": "לא עכשיו"
+  },
+  "card": {
+    "title": "השבוע שלך מוכן לסקירה",
+    "titleChanges": "מוצע שינוי לשבוע הבא",
+    "summary_one": "צעד אחד הושלם בשבוע שעבר",
+    "summary_other": "{{count}} צעדים הושלמו בשבוע שעבר",
+    "continue": "המשך",
+    "timeLeft_one": "נותרה שעה אחת להחליט",
+    "timeLeft_other": "נותרו {{count}} שעות להחליט"
+  },
+  "a11y": {
+    "card": "סקירת השבוע מוכנה. {{summary}}"
+  }
+}

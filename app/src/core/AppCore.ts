@@ -37,6 +37,10 @@ import { replan } from './learning/AdaptivePlanner';
 import { applyReplan } from './learning/applyReplan';
 import { deriveConstraints } from './learning/deriveConstraints';
 import { DeterministicNarrator } from './learning/CoachNarrator';
+import { buildWeeklyReview, computeJourneyProposals } from './review/weeklyReview';
+import { evaluateWeekGate } from './review/weekGate';
+import { resolveJourneyStatus } from './util/journeyStatus';
+import { startOfWeek, weekKey } from './util/week';
 import { defaultAdaptivePolicy } from './config/adaptivePolicy';
 import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
 import { featureFlags } from './config/featureFlags';
@@ -69,6 +73,7 @@ import type {
   ReminderTrigger,
   SchedulingPrefs,
   Step,
+  WeeklyReview,
 } from './types/domain';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { resolveReminderRule, type JourneyReminder } from './util/reminderView';
@@ -88,6 +93,13 @@ import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/en
  * changes, so a future importer can tell which layout it is reading.
  */
 export const EXPORT_SCHEMA_VERSION = 1;
+
+/**
+ * Weekly Review retention window (Weekly_Review_PRD §9, D40): a pending proposal is valid for at
+ * most 48 hours from generation. After it, the draft expires and the previous valid plan (already
+ * the active baseline) simply continues — nothing is force-applied and nothing reported is lost.
+ */
+export const WEEKLY_REVIEW_TTL_MS = 48 * 60 * 60 * 1000;
 
 /**
  * Caller-supplied metadata for a data export ({@link AppCore.exportStateJson}).
@@ -800,6 +812,9 @@ export class AppCore {
     if (!this.adaptiveEnabled || !this.behaviorModel) return { changed: false };
     const journey = this.state.journeys.find((j) => j.id === journeyId);
     if (!journey || journey.completedAt) return { changed: false };
+    // A FROZEN Journey is paused — never re-plan it (Weekly Review §7: frozen Journeys are excluded
+    // from next-week changes, and their days are never read as non-completion). Resume re-includes it.
+    if (resolveJourneyStatus(journey) !== 'active') return { changed: false };
 
     const insight = this.behaviorModel.getInsights();
     // Bypass the once/day gate when the model newly reads slipping/at-risk (mirrors the planner's
@@ -862,6 +877,163 @@ export class AppCore {
   devReviewWeek(journeyId: string): WeekReviewOutcome {
     if (!this.adaptiveEnabled) return { changed: false };
     return this.runReview(journeyId, true);
+  }
+
+  // ── Weekly Review (Weekly_Review_PRD, D40/D41) ──────────────────────────────
+  // ONE user-level review per closed week (the per-week gate keyed by weekKey — distinct from the
+  // per-Journey daily weekReviewAt). Generation is deterministic (reuses the AdaptivePlanner); the
+  // proposal is a forward-only diff the user must approve. Whole path is gated behind the adaptive
+  // loop, so production (flag off) generates nothing and behaves exactly as before.
+
+  /**
+   * Generate a Weekly Review for the just-closed week IFF the authoritative week rolled over since
+   * the last check (pure {@link evaluateWeekGate}). Records the current week key either way (so the
+   * first-ever observation only records, never reviews). Returns whether a review was generated —
+   * on a rollover tick {@link syncTime} skips the daily auto-apply in favour of this proposal.
+   */
+  private maybeGenerateWeeklyReview(now: number): boolean {
+    const gate = evaluateWeekGate(this.state.lastWeeklyReviewKey, now);
+    this.state.lastWeeklyReviewKey = gate.nextKey;
+    if (!gate.shouldGenerate) return false;
+    this.generateWeeklyReview(gate.windowStart!, gate.windowEnd!, now);
+    return true;
+  }
+
+  /**
+   * Build + store ONE Weekly Review for the closed week `[windowStart, windowEnd)`. Never stacks
+   * two: an existing PENDING review is marked `superseded` first (PRD §9). Requires the behaviour
+   * model (adaptive loop on); a no-op otherwise.
+   */
+  private generateWeeklyReview(windowStart: number, windowEnd: number, now: number): void {
+    if (!this.behaviorModel) return;
+    const prev = this.state.weeklyReview;
+    if (prev && prev.status === 'pending') prev.status = 'superseded';
+    this.state.weeklyReview = buildWeeklyReview(
+      {
+        journeys: this.state.journeys,
+        dreams: this.state.dreams,
+        reasonLog: this.state.reasonLog ?? [],
+        insight: this.behaviorModel.getInsights(),
+        constraintsFor: (journey) => deriveConstraints(journey, this.state.schedulingPrefs),
+        id: createId('review'),
+        windowStart,
+        windowEnd,
+      },
+      now,
+    );
+  }
+
+  /**
+   * The current PENDING Weekly Review the UI should surface (the screen + Home card), or null when
+   * none is pending / it has passed the 48-hour retention window / the loop is off. PURE READ — safe
+   * to call during render: a proposal past the window reads as null but is only flipped to `expired`
+   * by {@link expireStaleWeeklyReview} on the next lifecycle beat (never a state write mid-render).
+   */
+  getPendingWeeklyReview(): WeeklyReview | null {
+    const review = this.state.weeklyReview;
+    if (!review || review.status !== 'pending') return null;
+    if (Date.now() - review.generatedAt > WEEKLY_REVIEW_TTL_MS) return null;
+    return review;
+  }
+
+  /**
+   * Flip a pending review that has passed the 48-hour window to `expired` (PRD §9): the previous
+   * valid plan simply continues — nothing is force-applied, nothing reported is lost. Runs on the
+   * lifecycle beat ({@link syncTime}), not during render. Returns whether it changed anything.
+   */
+  private expireStaleWeeklyReview(now: number): boolean {
+    const review = this.state.weeklyReview;
+    if (!review || review.status !== 'pending') return false;
+    if (now - review.generatedAt <= WEEKLY_REVIEW_TTL_MS) return false;
+    review.status = 'expired';
+    review.resolvedAt = now;
+    return true;
+  }
+
+  /**
+   * Stamp the pending review as OPENED so the screen auto-opens only on the FIRST app entry after
+   * week close (PRD §9); afterwards the Home card is the persistent entry point. Idempotent.
+   */
+  markWeeklyReviewOpened(): void {
+    const review = this.getPendingWeeklyReview();
+    if (review && review.openedAt == null) {
+      review.openedAt = Date.now();
+      this.onChanged();
+    }
+  }
+
+  /** Whether the pending review has not yet been auto-opened (drives the one-shot auto-open). */
+  weeklyReviewNeedsAutoOpen(): boolean {
+    const review = this.getPendingWeeklyReview();
+    return review != null && review.openedAt == null;
+  }
+
+  /**
+   * APPROVE the pending Weekly Review — apply the proposed plan change (PRD §8 "Approve the complete
+   * upcoming plan"). REBASED against current reality and FORWARD-ONLY (D40/D41): the proposal is
+   * recomputed from the live state at approval time, so it never creates occurrences on past days
+   * and never rewrites an already-reported occurrence; the AdaptivePlanner only ever touches
+   * not-done Steps. Application is ATOMIC — every diff is computed first, then all are enacted.
+   * Returns whether a pending review was approved.
+   */
+  approveWeeklyReview(): boolean {
+    const review = this.getPendingWeeklyReview();
+    if (!review || !this.behaviorModel) return false;
+    const now = Date.now();
+    // Rebase: recompute the proposal from the CURRENT active Journeys + insights (frozen/completed
+    // excluded), then enact — so a late approval applies to today's reality, forward-only.
+    const insight = this.behaviorModel.getInsights();
+    const rebased = computeJourneyProposals(
+      this.state.journeys,
+      insight,
+      (journey) => deriveConstraints(journey, this.state.schedulingPrefs),
+      now,
+    );
+    for (const proposal of rebased) {
+      const journey = this.state.journeys.find((j) => j.id === proposal.journeyId);
+      if (!journey) continue;
+      applyReplan(this.journeyEngine, journey, {
+        changed: true,
+        adjustments: proposal.adjustments,
+        stepAdjustments: proposal.stepAdjustments,
+        atRisk: proposal.atRisk,
+        nudge: { daypart: 'either', days: [], leadMinutes: 0, extra: false },
+      });
+    }
+    review.status = 'approved';
+    review.resolvedAt = now;
+    this.onChanged();
+    return true;
+  }
+
+  /**
+   * DISMISS the pending Weekly Review — keep the proposed changes OUT of the plan (PRD §8 "keep
+   * selected proposed changes out of the draft"). The previous valid plan simply continues; nothing
+   * is applied and nothing reported is lost. Returns whether a pending review was dismissed.
+   */
+  dismissWeeklyReview(): boolean {
+    const review = this.getPendingWeeklyReview();
+    if (!review) return false;
+    review.status = 'dismissed';
+    review.resolvedAt = Date.now();
+    this.onChanged();
+    return true;
+  }
+
+  /**
+   * DEV-ONLY (gated by the adaptive loop): force-generate a Weekly Review for the most-recently
+   * closed week, bypassing the week-rollover gate, so the founder can exercise the screen/card
+   * on-device. Advances the week key so the next real rollover doesn't immediately re-generate.
+   * Returns the generated review, or null when the loop is off.
+   */
+  devGenerateWeeklyReview(): WeeklyReview | null {
+    if (!this.adaptiveEnabled || !this.behaviorModel) return null;
+    const now = Date.now();
+    const currentStart = startOfWeek(now);
+    this.generateWeeklyReview(startOfWeek(currentStart - 1), currentStart, now);
+    this.state.lastWeeklyReviewKey = weekKey(now);
+    this.onChanged();
+    return this.state.weeklyReview ?? null;
   }
 
   checkInStep(journeyId: string, stepId: string): void {
@@ -969,12 +1141,24 @@ export class AppCore {
     // day/week change (and any Journey that lapsed) is reflected in what's pending.
     void this.communicationScheduler.reconcile();
     // Adaptive report→replan real path (loop on only): first `tick` the behaviour model so any
-    // Step whose planned occurrence elapsed is flagged as a slip, THEN week-review each active
-    // Journey (each respecting the once/day cadence gate). Off ⇒ neither runs.
+    // Step whose planned occurrence elapsed is flagged as a slip, THEN either generate the WEEKLY
+    // Review (strategic, at the week boundary — PRD §2/§5) or, on a normal tick, run the DAILY
+    // tactical auto-apply per active Journey (once/day cadence gate). On a week-rollover tick the
+    // weekly PROPOSAL supersedes the daily auto-apply, so the change is proposed for approval rather
+    // than silently applied. Off ⇒ none of it runs.
     if (this.adaptiveEnabled && this.behaviorModel) {
-      this.behaviorModel.tick(Date.now());
-      for (const journey of this.state.journeys) {
-        if (!journey.completedAt) this.reviewWeek(journey.id);
+      const now = Date.now();
+      this.behaviorModel.tick(now);
+      // Expire a stale (>48h) pending proposal before deciding whether to generate a new one, so a
+      // week-rollover tick always supersedes cleanly rather than stacking on an unresolved draft.
+      this.expireStaleWeeklyReview(now);
+      this.maybeGenerateWeeklyReview(now);
+      // The DAILY tactical auto-apply runs ONLY while there is no pending weekly proposal: a
+      // strategic proposal OWNS the plan for its whole 48h window, so the change the user was asked
+      // to approve is never silently applied (incl. via runReview's atRisk bypass) before they
+      // decide. Once the review is resolved/expired the daily loop resumes on the next tick.
+      if (!this.getPendingWeeklyReview()) {
+        for (const journey of this.state.journeys) this.reviewWeek(journey.id);
       }
     }
     this.onChanged();

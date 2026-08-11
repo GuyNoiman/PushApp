@@ -25,6 +25,7 @@
 import type { EventBus } from '../events/EventBus';
 import type { AppState, InsightModel, RawBehaviorRecord, Step } from '../types/domain';
 import { createId } from '../util/id';
+import { resolveJourneyStatus } from '../util/journeyStatus';
 import { deriveInsights } from '../insights/deriveInsights';
 
 /**
@@ -63,6 +64,9 @@ export class BehaviorModelEngine {
   tick(now: number): void {
     for (const journey of this.getState().journeys) {
       if (journey.completedAt) continue;
+      // A FROZEN Journey is paused — its elapsed occurrences are NEVER slips (Weekly Review §7:
+      // frozen days are never interpreted as non-completion). It resumes analysis when resumed.
+      if (resolveJourneyStatus(journey) === 'frozen') continue;
       for (const step of journey.steps) {
         if (step.done || step.dropped) continue; // a shed Step is out of scope — never slips.
         const plannedFor = step.plannedFor;

@@ -8,6 +8,7 @@
  * (Engineering Bible §19). When real Phases land, replace these derivations.
  */
 import type { Journey, JourneyStatus, Step } from '@/core/types/domain';
+import { resolveJourneyStatus } from '@/core/util/journeyStatus';
 import { weeksBetween } from '@/core/util/week';
 import i18n from '@/i18n';
 
@@ -34,14 +35,11 @@ export interface JourneyView {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * The authoritative lifecycle status of a Journey. Trusts the explicit `status` field when set;
- * otherwise derives it for Journeys persisted before the field existed — `completed` when
- * `completedAt` is set, else `active`. (Kept in sync with the JSDoc on `Journey.status`.)
+ * The authoritative lifecycle status of a Journey. Re-exported from the framework-free
+ * {@link ../../core/util/journeyStatus} so the engines (Weekly Review, adaptive replan) and the
+ * UI share ONE resolution and can never drift.
  */
-export function resolveJourneyStatus(journey: Journey): JourneyStatus {
-  if (journey.status) return journey.status;
-  return journey.completedAt ? 'completed' : 'active';
-}
+export { resolveJourneyStatus };
 
 /**
  * Bucket a Journey for the Journeys-screen tabs, from its {@link resolveJourneyStatus lifecycle

@@ -151,6 +151,10 @@ function ThemedChrome() {
           options={{ presentation: 'transparentModal', animation: 'fade' }}
         />
         <Stack.Screen name="weekly-planning" options={{ presentation: 'modal' }} />
+        {/* Weekly Review — the one user-level review after a week closes (D40). A modal so it
+            opens over the tabs on the first app entry after week close, minimizable but not
+            dismissible without choosing an outcome. */}
+        <Stack.Screen name="weekly-review" options={{ presentation: 'modal' }} />
         {/* Coach conversation — a root Stack route (NOT a tab), opened from the
             Home hero via router.push('/coach'). A card push with its own back
             button so it slides over the tabs. */}

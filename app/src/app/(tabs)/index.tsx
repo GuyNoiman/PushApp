@@ -19,7 +19,7 @@
  * the support board falls back to DEV sample people until the social backend fills.
  */
 import { useRouter, type Href } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +30,7 @@ import { Confetti } from '@/components/home/Confetti';
 import { SectionHeader } from '@/components/home/SectionHeader';
 import { StepReportFlow } from '@/components/home/StepReportFlow';
 import { WeekAdjustedCard } from '@/components/home/WeekAdjustedCard';
+import { WeeklyReviewCard } from '@/components/home/WeeklyReviewCard';
 import { TopStatusBar } from '@/components/home/TopStatusBar';
 import { WeekDreamGroup, type WeekStepView } from '@/components/home/WeekDreamGroup';
 import { TodayFocusCard, type StepUrgency } from '@/components/home/TodayFocusCard';
@@ -136,6 +137,26 @@ export default function HomeScreen() {
   const surfaceReview = useCallback((outcome: WeekReviewOutcome) => {
     if (outcome.changed) setWeekOutcome(outcome);
   }, []);
+
+  // Weekly Review (D40): the pending proposal drives the Home card; a fresh one auto-opens the
+  // full screen ONCE on the first app entry after week close (§9). Null when none is pending or the
+  // adaptive loop is off, so production Home is unchanged. Reading is a PURE getter (no state write).
+  const pendingReview = ready && snapshot ? core.getPendingWeeklyReview() : null;
+  // Auto-open is keyed to the REVIEW id, not the Home mount: a review generated while Home is
+  // already open (app left running across the week boundary) still opens once. The persisted
+  // `openedAt` (weeklyReviewNeedsAutoOpen) is the source of truth; the ref just dedupes within the
+  // navigation round-trip so we don't push twice before the screen stamps it opened.
+  const autoOpenedIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      pendingReview &&
+      pendingReview.id !== autoOpenedIdRef.current &&
+      core.weeklyReviewNeedsAutoOpen()
+    ) {
+      autoOpenedIdRef.current = pendingReview.id;
+      router.push('/weekly-review' as Href);
+    }
+  }, [pendingReview, core, router]);
 
   const hour = new Date().getHours();
   const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
@@ -396,6 +417,14 @@ export default function HomeScreen() {
                 cast until that screen lands. */}
             <CoachButton onPress={() => router.push('/coach' as Href)} />
           </View>
+
+          {/* ── Weekly Review — the pending-proposal card after a week closes (D40) ── */}
+          {pendingReview ? (
+            <WeeklyReviewCard
+              review={pendingReview}
+              onContinue={() => router.push('/weekly-review' as Href)}
+            />
+          ) : null}
 
           {/* ── "I adjusted your week" — the calm adaptive report→replan banner (dismissible) ── */}
           {weekOutcome?.changed && weekOutcome.narration ? (

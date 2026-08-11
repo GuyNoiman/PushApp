@@ -1,0 +1,42 @@
+{
+  "screen": {
+    "title": "Your week in review",
+    "summaryHeading": "Last week",
+    "stepsDone_one": "{{count}} Step done",
+    "stepsDone_other": "{{count}} Steps done",
+    "breakdown": "{{partial}} partial · {{notCompleted}} let go · {{unreported}} not reported",
+    "frozenNote_one": "{{titles}} was paused this week, so it sits out of next week's plan.",
+    "frozenNote_other": "{{titles}} were paused this week, so they sit out of next week's plan.",
+    "completedNote": "You finished {{titles}} this week. Nice work.",
+    "nextWeekHeading": "Next week",
+    "nextSteps_one": "You have {{count}} Step lined up. Keep going.",
+    "nextSteps_other": "You have {{count}} Steps lined up. Keep going.",
+    "nextCoach": "Nothing is planned yet. Talk to your coach and build next week together.",
+    "nextDreamAddressed": "Pick “{{dream}}” back up and start a fresh Journey toward it.",
+    "nextDreamNew": "Ready for something new? “{{dream}}” is waiting for its first Journey.",
+    "changesHeading": "A suggested change",
+    "changesLead": "Looking at last week, here is what might work better:",
+    "noChanges": "Your plan still fits well. Nothing to change for now.",
+    "changeRescheduled": "Move a few Steps to days that suit you better",
+    "changeResized": "Make a few Steps a little smaller so they stay doable",
+    "changeRemoved": "Set a Step aside to keep the week realistic",
+    "atRisk": "This plan is still tight. Go gently with yourself.",
+    "openCoach": "Talk to your coach",
+    "approve": "Approve next week",
+    "keepOut": "Keep my plan as is",
+    "acknowledge": "Sounds good",
+    "minimize": "Not now"
+  },
+  "card": {
+    "title": "Your week is ready to review",
+    "titleChanges": "A change is suggested for next week",
+    "summary_one": "{{count}} Step done last week",
+    "summary_other": "{{count}} Steps done last week",
+    "continue": "Continue",
+    "timeLeft_one": "{{count}} hour left to decide",
+    "timeLeft_other": "{{count}} hours left to decide"
+  },
+  "a11y": {
+    "card": "Weekly review ready. {{summary}}"
+  }
+}

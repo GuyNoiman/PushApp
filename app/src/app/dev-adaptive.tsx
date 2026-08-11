@@ -9,7 +9,7 @@
  * cadence gate) and shows the coach's on-device narration inline. Purely presentational: it calls
  * the DEV facade methods; no business logic here (Engineering Bible §19).
  */
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,6 +54,23 @@ export default function DevAdaptiveScreen() {
                 Force a Step to slip, then re-plan its week. The coach&apos;s reply appears below each
                 Journey.
               </ThemedText>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Generate a weekly review"
+                onPress={() => {
+                  core.devGenerateWeeklyReview();
+                  router.push('/weekly-review' as Href);
+                }}
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: theme.purpleTint, borderColor: theme.purpleStrong },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold" style={{ color: theme.purpleStrong }}>
+                  Generate a weekly review
+                </ThemedText>
+              </Pressable>
 
               {active.length === 0 ? (
                 <ThemedText type="small" themeColor="textMuted">

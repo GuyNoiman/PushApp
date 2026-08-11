@@ -6,6 +6,9 @@
  * This file is pure TypeScript. No React, no UI, no vendor imports.
  */
 import type { Entitlement } from './entitlement';
+// Type-only cross-import (erased at runtime — no cycle): a Weekly Review proposal carries the
+// SAME coarse adjustment kinds + per-Step diff the AdaptivePlanner already speaks.
+import type { ReplanAdjustment, StepAdjustment } from '../learning/types';
 
 /** How often a Step is meant to recur. A Step may be one-time or repeating. */
 export type Cadence = 'once' | 'daily' | 'weekly';
@@ -556,6 +559,100 @@ export interface OutreachInsight {
   updatedAt: number;
 }
 
+// ── Weekly Review (Weekly_Review_PRD, D40/D41) ──────────────────────────────
+// One user-level experience generated at the WEEK BOUNDARY (week.ts). Deterministic — the
+// analysis reuses the on-device AdaptivePlanner; the optional LLM narration seam is future
+// (rides the live-coach gate). Persisted in the single encrypted AppState blob (PRD §13.7):
+// cascade-deleted via resetToFirstRun() and included in exportStateJson().
+
+/**
+ * The past-week SUMMARY of a {@link WeeklyReview} (PRD §8 "Screen open: past-week summary").
+ * Counts are the DERIVED Daily-Reporting statuses ({@link deriveStepStatus}) of the reviewed
+ * week's Steps across ACTIVE Journeys only — a frozen Journey's days are NEVER counted as
+ * non-completion (PRD §7); it is merely named in {@link frozenJourneyTitles}.
+ */
+export interface WeeklyReviewSummary {
+  /** "X Steps done" — Steps checked in during the reviewed week. */
+  completed: number;
+  /** Steps reported Partial (a non-failure state) during the reviewed week. */
+  partial: number;
+  /** Steps let go ("couldn't") during the reviewed week. */
+  notCompleted: number;
+  /** Scheduled Steps in the reviewed week that received no terminal report. */
+  unreported: number;
+  /** Titles of Journeys frozen at week close — mentioned, excluded from next-week changes (§7). */
+  frozenJourneyTitles: string[];
+  /** Titles of Journeys that COMPLETED during the reviewed week — a celebratory mention (§8). */
+  completedJourneyTitles: string[];
+}
+
+/**
+ * The fallback branch chosen for the "Never an empty next week" guarantee (PRD §8):
+ * `steps` — remaining Steps exist across active Journeys; `coachCta` — active Journeys but no
+ * remaining Steps, hand off to the Coach to build a plan; `dreamSuggestion` — no active Journeys
+ * at all, surface a Dream-based suggestion (an existing/unaddressed Dream). Every branch either
+ * surfaces already-real data or hands off to the Coach — it NEVER fabricates a Journey or Step.
+ */
+export type WeeklyReviewNextWeekKind = 'steps' | 'coachCta' | 'dreamSuggestion';
+
+/** The "next week" section of a {@link WeeklyReview}, resolved by the never-empty fallback chain. */
+export interface WeeklyReviewNextWeek {
+  kind: WeeklyReviewNextWeekKind;
+  /** For `steps`: how many remaining Steps are already planned across active Journeys. */
+  stepCount?: number;
+  /** For `dreamSuggestion`: the Dream to suggest building a Journey from. */
+  dreamTitle?: string;
+  /** For `dreamSuggestion`: whether that Dream is already addressed by an (active) Journey. */
+  dreamAddressed?: boolean;
+}
+
+/**
+ * One Journey's proposed change inside a {@link WeeklyReview} — the coarse {@link ReplanAdjustment}
+ * kinds plus the concrete forward-only {@link StepAdjustment} diff (the AdaptivePlanner output).
+ * Only ACTIVE Journeys appear here; frozen / completed / abandoned Journeys are excluded from
+ * next-week changes (PRD §7).
+ */
+export interface WeeklyReviewJourneyProposal {
+  journeyId: string;
+  journeyTitle: string;
+  adjustments: ReplanAdjustment[];
+  stepAdjustments: StepAdjustment[];
+  atRisk: boolean;
+}
+
+/**
+ * Resolution state of a {@link WeeklyReview}. `pending` awaits the user's outcome; `approved`
+ * applied the diff (forward-only); `dismissed` kept the changes out (previous plan continues);
+ * `expired` passed the 48-hour retention window unresolved (PRD §9); `superseded` was replaced
+ * because another week closed first (PRD §9 "Never stack two competing actionable proposals").
+ */
+export type WeeklyReviewStatus = 'pending' | 'approved' | 'dismissed' | 'expired' | 'superseded';
+
+/**
+ * A generated Weekly Review for ONE closed week (PRD §11). Immutable review-period identity
+ * (`id` + `weekKey`); the analysis result ({@link summary}, {@link nextWeek}, {@link proposals})
+ * is separate from user-facing copy (rendered i18n-side). ON-DEVICE ONLY — carries Journey titles
+ * for local display, so it is WHITELIST-EXCLUDED from any future sync/social payload (same footing
+ * as the reason/behaviour logs); in scope for account deletion/export.
+ */
+export interface WeeklyReview {
+  /** Immutable review-period id. */
+  id: string;
+  /** The {@link weekKey} of the CLOSED week this review covers. */
+  weekKey: string;
+  /** Epoch ms the review was generated — the 48-hour retention window is measured from here. */
+  generatedAt: number;
+  /** Epoch ms the screen was first opened (auto-open fires once, then the Home card persists). */
+  openedAt?: number;
+  summary: WeeklyReviewSummary;
+  nextWeek: WeeklyReviewNextWeek;
+  /** Per-Journey change proposals; EMPTY ⇒ a "no change" review (still shown — PRD §8). */
+  proposals: WeeklyReviewJourneyProposal[];
+  status: WeeklyReviewStatus;
+  /** Epoch ms the review was resolved (approved / dismissed / expired), if it has been. */
+  resolvedAt?: number;
+}
+
 /** The full persisted application state (offline-first). */
 export interface AppState {
   dreams: Dream[];
@@ -636,4 +733,20 @@ export interface AppState {
    * sync path.
    */
   weekReviewAt?: Record<string, number>;
+  /**
+   * The {@link weekKey} of the current week as of the last week-boundary check (Weekly Review,
+   * D40). This is the per-WEEK gate — distinct from the per-Journey daily {@link weekReviewAt} — so
+   * ONE Weekly Review is generated per closed week and re-opening the app never regenerates it.
+   * Undefined on a fresh install; the first `syncTime` records the current key WITHOUT generating
+   * (there is no closed week to review yet). Optional so an older snapshot loads without it.
+   */
+  lastWeeklyReviewKey?: string;
+  /**
+   * The single current {@link WeeklyReview} — the pending proposal awaiting an outcome, or the last
+   * resolved/expired/superseded one (Weekly Review, D40). At most ONE is ever held: when another
+   * week closes first, the older pending review is marked `superseded` and replaced (PRD §9). Only
+   * populated when the adaptive loop is enabled. ON-DEVICE ONLY — WHITELIST-EXCLUDED from any sync
+   * path; in scope for account deletion/export.
+   */
+  weeklyReview?: WeeklyReview;
 }

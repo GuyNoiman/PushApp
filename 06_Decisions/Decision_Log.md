@@ -245,8 +245,60 @@ mostly conflict-resolution between the founder's mobile draft and the existing M
    telemetry N/A until that engine ships.
 **Required follow-up:** `../Miss_Recovery_PRD.md` must be updated for #2 and #4 before/with build. That file
 is currently in a locally-modified (Codex) state — the founder aligns/commits it first; we never overwrite it.
+**Refinement (founder 2026-08-10):** (a) **Partial CANCELS** the pending one-shot (a Partial is a final
+report of execution — overrides the earlier "keep on Partial"); (b) the **2h default is fixed**, but the user
+may **pick the exact reminder time**; (c) **day-crossing shorten rule** — if the 2h default would cross
+midnight, shorten to keep the reminder today down to a **30-minute floor**, and if even 30 minutes crosses
+the day, tell the user no further reminder can be made today; (d) **helper + AppCore**, not a dedicated
+engine. See `Step_Postponement_PRD.md` §4 + §11.6.
 **Categorization:** **Approved** (PRD Ready; implementation not yet started; Miss_Recovery update pending).
-**Reflected in:** `Step_Postponement_PRD.md` (status + §3/§5/§7/§11).
+**Reflected in:** `Step_Postponement_PRD.md` (status + §3/§4/§5/§7/§11 incl. §11.6).
+
+### D38 — Adaptive timing learns per recurring-activity (a Step `seriesId`), not per Journey
+**Decision (founder, 2026-08-10):** the grain for reminder-timing (and postpone-pattern) learning is the
+**recurring ACTIVITY**, linked by a stable **`seriesId`** stamped on the Steps that are instances of the same
+repeated task, at creation. Learning accumulates per `seriesId` so timing improves from one occurrence to the
+next.
+**Reasoning / path (the founder reasoned through both alternatives):**
+- **Rejected — per-Journey timing** (his own first idea, then withdrawn): too coarse. A single Journey — e.g.
+  a "weekly routine" — can bundle **multiple distinct recurring task types**, each with its own ideal time;
+  one Journey-level time can't serve them.
+- **Rejected — full occurrence/recurrence entity** (D35.1, deferred): `seriesId` is a lightweight grouping
+  KEY, not a materialized-occurrence model or a recurrence engine.
+- **UX unchanged** (D35.1): still separate rows; `seriesId` is invisible, used only for aggregation.
+**Scope:** the field + stamping-at-creation land **now** (folded into the Step Postponement build); the
+learning itself belongs to **`Smart_Notification_Timing_PRD.md`**. Postpone one-shots stay per-occurrence
+(D37); `postponeCount` stays per-occurrence for now, with `seriesId` enabling future per-series aggregation.
+**Open implication (architect to map):** reminders are per-Journey today; acting on per-activity timing may
+require per-series reminder timing — coexisting with the per-occurrence one-shot from D37.
+**Categorization:** **Approved** (foundational model addition; architect + product-guardian pass in flight).
+**Reflected in:** to be reflected in `Step_Postponement_PRD.md` (seriesId field) + `Smart_Notification_Timing_PRD.md`
+(learning) once the architect/guardian pass returns.
+**Refinement (founder 2026-08-10):** (i) **granularity = ONE series per action** — drop `milestoneId` from the
+key (the same action across phases must keep one timing insight, not split). (ii) **Grain-split (see D39):**
+per-activity (`seriesId`) learning applies to the new **routine** object; a regular **Journey** learns
+**per-Journey** (schedule-level). `seriesId` is therefore primarily for routines — its implementation now
+**folds into the routine definition (D39)**, not shipped standalone.
+
+### D39 — A fast-path recurring "routine" object, distinct from Journey
+**Decision (founder, 2026-08-10):** PushApp will support a **fast path** for small recurring tasks (e.g.
+"drink water", "change the sheets", "wash the floor") that are **not tied to a Dream** and are **not
+Journeys**. A Journey stays a **finite** transformation ("Every Journey Must End"); recurring-maintenance
+tasks get their own home — a distinct object (**working name "weekly routine"; final name TBD** by
+product-manager + product-guardian).
+**Philosophy reconciliation (founder):** a routine **is itself a transformation** — a person who builds a
+routine becomes more organized, responsible, and in control, which *is* "becoming who you choose to be." So
+it is within the mission, **not** a bare habit-tracker. The founder acknowledges the perception risk (it can
+*look* like a habit-tracker) and chose to include it, framed this way.
+**GUARDRAIL (product-guardian, binding):** it must ladder to a **chosen identity**, never become a
+streak/chore tracker; per-activity timing learning must **not multiply notifications** (feeds the per-day
+send cap — D38 / `Smart_Notification_Timing`).
+**Scope:** reuses `Step` + **Daily Step Reporting (D35)** + **Step Postponement (D37)**. Learning grain is
+per-activity (`seriesId`, D38) for routines; a regular Journey stays per-Journey.
+**Categorization:** **Approved — Vision (IN the app).** To be **defined by a product-manager PRD** +
+**product-guardian gate**; `Product_Philosophy` / `Information_Architecture` must be updated so this is a
+deliberate broadening, **not a silent redefinition** of Journey.
+**Reflected in:** (pending) a new routine PRD in `04_Product/PRD/`, a Philosophy/IA note, and D38.
 
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 

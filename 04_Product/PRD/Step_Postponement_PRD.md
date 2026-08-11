@@ -36,6 +36,9 @@ pattern capture, and a supportive path to Journey adaptation.
 - Postponement count, timestamps, and the current postponed-until value are stored per occurrence
   (on-device). **“Postponed” is an action, not a terminal status** — the Step stays Unreported (§11.1).
 - The user later submits a final report or postpones again.
+- **Any final report clears the pending one-shot.** Done, **Partial**, and Couldn't are all final reports
+  (founder 2026-08-10: a Partial is a final report of execution), so each cancels the pending postpone
+  reminder. Only re-postponing reschedules it. (§11.6a)
 - If no final report exists at week close, the occurrence remains raw Unreported and is interpreted by
   Weekly Review according to that PRD.
 
@@ -46,6 +49,14 @@ pattern capture, and a supportive path to Journey adaptation.
 Postponement normally stays within the valid day. Crossing its boundary requires a clear warning that the
 original day's commitment will not count as completed on schedule. The app never silently moves it to a
 different day while preserving the original commitment as met.
+
+**Default-2h day-crossing rule (founder 2026-08-10, §11.6c):** if the fixed 2-hour default would land on the
+next day, **shorten** the interval so the reminder still fires **today**, shortening **down to a 30-minute
+minimum, never less**. If even 30 minutes from now already crosses into the next day (i.e. less than 30
+minutes remain in the day), tell the user that **no further reminder can be created today** (and offer
+let-go or pick-a-time). This keeps a day-specific commitment's nudge on its own day. Concretely, with
+`maxToday = endOfLocalDay − now`: `≥ 2h → 2h`; `30min ≤ maxToday < 2h → maxToday` (shortened); `< 30min →
+block with the "no reminder today" message`.
 
 ### Flexible weekly occurrence
 
@@ -152,3 +163,13 @@ on-device; `ReasonEntry` on-device with `note` only for `other`; events carry id
 `resetToFirstRun()`/account deletion and included in `exportStateJson()`. Excluded from social payloads and
 third-party analytics (no such pipeline exists). Intervention-response telemetry is **N/A until the
 intervention engine ships** — revisit granularity/retention with security-privacy then.
+
+**11.6 — Implementation decisions (founder 2026-08-10).**
+- **(a) Partial CANCELS the pending reminder** — a Partial is a *final* report of execution, so it clears the
+  one-shot exactly like Done/Couldn't. (Overrides the earlier "keep on Partial" suggestion.)
+- **(b)** The **2-hour default is fixed**; the user may instead **pick the exact time** the reminder fires.
+- **(c) Day-crossing shorten rule** — see §4: if the 2h default would cross into the next day, shorten to keep
+  the reminder today, down to a **30-minute floor**; if even 30 minutes crosses the day, tell the user no
+  further reminder can be created today.
+- **(d) Architecture** — a pure helper (`core/util/postpone.ts`) + orchestration in `AppCore`, **not** a
+  dedicated engine (minimal surface, consistent with the existing Miss-Recovery slice).

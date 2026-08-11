@@ -114,7 +114,11 @@ Until the authoritative week boundary closes, the user may freely change a Step'
 between `unreported` / `completed` / `partially_completed` / `not_completed`, including reversing a
 `completed` — §12.2). Every change **appends** to the `reasonLog`/`behaviorLog` (already append-only), so
 earlier reasons/explanations are retained as history rather than overwritten; the current status is the
-latest entry. Reversing a `completed` does **not** claw back XP in MVP (§12.2). Past (closed) weeks are
+latest entry. Reversing a `completed` does **not** claw back XP in MVP (§12.2). **Exception — completion is
+final (I1/D32, resolved 2026-08-12):** once a *Journey* is completed, its reports are **locked** — a report
+reversal can never un-complete a Journey (`reverseReport` refuses when `journey.status === 'completed'`).
+In-week correction therefore applies to **active** Journeys only; a completed Journey may be deleted (J2) but
+never reopened, which keeps the shareable completion achievement (D32/I1) valid. Past (closed) weeks are
 simply not surfaced for editing on Home — a product-history convention, not a hard storage lock (§12.3).
 
 ## 8. Data requirements
@@ -187,7 +191,10 @@ and a true recurrence/occurrence entity are both **deferred to post-MVP**.
 Every change **appends** to the append-only `reasonLog`/`behaviorLog`, so earlier reasons/explanations are
 **retained as history**, never overwritten; the current status is the latest entry. Reversing a `completed`
 does **not** claw back XP in MVP (kept forgiving/positive). _Note:_ `checkInStep` is one-way today, so an
-"un-report" path is a small addition to build.
+"un-report" path is a small addition to build. **Refinement (2026-08-12, I1/D32):** "all transitions" applies
+to **active** Journeys only — once a Journey is **completed**, its reports are **locked** and reversal is
+refused (completion is final; see §7). This resolves the contradiction with the completion-celebration model
+(D32/I1): a completed, shareable Journey is never silently reopened.
 
 **12.3 — Is closed-week immutability absolute?**
 **Decision:** **No hard immutability in MVP.** Past weeks are simply not surfaced for editing on Home — a

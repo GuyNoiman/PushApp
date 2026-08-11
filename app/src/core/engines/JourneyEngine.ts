@@ -291,18 +291,16 @@ export class JourneyEngine {
     const step = journey.steps.find((s) => s.id === stepId);
     if (!step) return false;
 
+    // Completion is FINAL (I1 / D32): once a Journey is completed its reports are locked — a
+    // report reversal can never un-complete it. In-week corrections apply to ACTIVE Journeys
+    // only; a completed Journey may be deleted (J2) but never reopened.
+    if (journey.status === 'completed' || journey.completedAt !== undefined) return false;
+
     step.done = false;
     step.lastCheckInAt = undefined;
     step.lastReportClearedAt = Date.now();
 
-    let reopenedJourney = false;
-    if (journey.completedAt && !journey.steps.every((s) => s.done || s.dropped)) {
-      journey.completedAt = undefined;
-      journey.status = 'active';
-      reopenedJourney = true;
-    }
-
-    this.bus.emit({ type: 'StepReportReversed', journeyId, stepId, reopenedJourney });
+    this.bus.emit({ type: 'StepReportReversed', journeyId, stepId, reopenedJourney: false });
     return true;
   }
 

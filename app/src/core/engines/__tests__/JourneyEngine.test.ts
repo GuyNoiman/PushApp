@@ -311,19 +311,23 @@ describe('JourneyEngine.reverseReport (D36)', () => {
     expect(reversed.map((e) => e.reopenedJourney)).toEqual([false]);
   });
 
-  it('reopens an auto-completed Journey when it is no longer all-done', () => {
+  it('REFUSES to reverse a report on a completed Journey — completion is final (I1/D32)', () => {
     const { engine, reversed } = reverseSetup();
     const journey = engine.createJourney({
       title: 'Run', why: [], durationDays: 30, rhythm: 'daily', steps: [{ title: 'Walk' }],
     });
     engine.checkInStep(journey.id, journey.steps[0].id); // completes it
     expect(journey.completedAt).toBeDefined();
+    expect(journey.status).toBe('completed');
 
-    engine.reverseReport(journey.id, journey.steps[0].id);
+    const ok = engine.reverseReport(journey.id, journey.steps[0].id);
 
-    expect(journey.completedAt).toBeUndefined();
-    expect(journey.status).toBe('active');
-    expect(reversed[0].reopenedJourney).toBe(true);
+    // Locked: the completion cannot be undone. Step stays done, Journey stays completed, no event.
+    expect(ok).toBe(false);
+    expect(journey.completedAt).toBeDefined();
+    expect(journey.status).toBe('completed');
+    expect(journey.steps[0].done).toBe(true);
+    expect(reversed).toHaveLength(0);
   });
 
   it('re-completing after a reversal grants NO XP (idempotent — completionRewarded latched)', () => {

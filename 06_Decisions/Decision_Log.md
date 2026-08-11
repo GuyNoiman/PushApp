@@ -351,6 +351,21 @@ Resolved with the founder 2026-08-11 across the PRD queue (each PRD to be update
 `User_Active_Hours`, `Journey_Reminder_Management`, `Journey_Support_Circle`, `Communication_Style_Profile`,
 `Friend_Profile` PRDs + a new Sync-Manifest doc.
 
+### D41 — Journey completion is FINAL (a report reversal can never un-complete a Journey)
+**Decision (founder, 2026-08-12):** resolves a real contradiction found between **Daily Step Reporting**
+(D35/D36 — `reverseReport` reopened an auto-completed Journey, un-completing it) and the
+**completion-celebration model** (D32/I1 — a Journey completion is a celebrated, **shareable, final**
+moment). **Resolution: completion is FINAL.** Once a Journey is `completed`, its reports are **locked** —
+`reverseReport` refuses when `journey.status === 'completed'` (or `completedAt` is set), so a report reversal
+can never un-complete a Journey. In-week report correction applies to **active** Journeys only; a completed
+Journey may be **deleted** (J2) but never **reopened**, which keeps the shareable achievement (D32) valid.
+**Implemented 2026-08-12** (`JourneyEngine.reverseReport` guard; the D36 "reopens" test flipped to "REFUSES";
+jest 661/661, tsc clean, eslint 0). **Design note for I1:** the completing check-in should be a
+deliberate/celebrated moment (a gentle confirm, or the celebration itself) so an accidental final-Step
+check-in doesn't permanently complete a Journey.
+**Categorization:** **Approved + Implemented.** **Reflected in:** `Daily_Step_Reporting_PRD.md` (§7 + §12.2);
+`app/src/core/engines/JourneyEngine.ts` (`reverseReport`).
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

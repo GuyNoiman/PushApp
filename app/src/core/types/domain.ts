@@ -68,6 +68,31 @@ export interface Step {
    */
   dropped?: boolean;
   /**
+   * Epoch ms this occurrence is postponed UNTIL — the per-occurrence "remind me later" target
+   * (Step Postponement, D37). Set by {@link JourneyEngine.postponeStep}; drives the lightweight
+   * "postponed to <time>" affordance. "Postponed" is an ACTION, not a status (D37.1) — the Step
+   * stays `unreported`. Cleared by any FINAL report (Done/Partial/Couldn't) or a Journey
+   * freeze/complete/delete. ON-DEVICE ONLY — never emitted or synced; covered by export/deletion.
+   */
+  postponedUntil?: number;
+  /**
+   * How many times THIS occurrence has been postponed without a final report yet (Step
+   * Postponement, D37 §5 — per occurrence, not per day/week). Persisted so a later Weekly-Review /
+   * intervention can read the signal; no threshold fires in MVP. Reset when the occurrence gets a
+   * final report. ON-DEVICE ONLY — covered by export/deletion. No PII.
+   */
+  postponeCount?: number;
+  /** Epoch ms the most recent postpone was recorded (Step Postponement, D37). ON-DEVICE ONLY. */
+  postponedAt?: number;
+  /**
+   * The OS notification id of the per-occurrence one-shot postpone reminder (Step Postponement,
+   * D37). Held on the Step so the reminder can be cancelled on re-postpone or on any final report.
+   * Empty/undefined when none is pending (or permission was off, so nothing was scheduled).
+   * ON-DEVICE ONLY — an opaque local scheduler id, never emitted or synced; covered by
+   * export/deletion.
+   */
+  postponeNotificationId?: string;
+  /**
    * Epoch ms the Step's report was last CLEARED (Daily Step Reporting reversal, D36). Stamped by
    * {@link JourneyEngine.reverseReport} when the user moves a Step back out of a terminal report
    * (e.g. un-completes it or marks it "not reported yet"). A clear SUPERSEDES any earlier terminal

@@ -112,6 +112,16 @@ export function StepCard({
       ? t('stepCard.phaseMeta', { title: item.journeyTitle, phase, phases })
       : item.journeyTitle;
 
+  // "Postponed to <time>" affordance (Step Postponement, D37.1): a lightweight cue that a pending
+  // one-shot exists — the Step itself stays `unreported` (postpone is an ACTION, not a status).
+  const postponedUntil = step.postponedUntil;
+  const showPostponed = reportable && postponedUntil !== undefined && postponedUntil > Date.now();
+  const postponedLabel = showPostponed
+    ? t('postpone.postponedTo', {
+        time: new Date(postponedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+      })
+    : '';
+
   // ── Swipe-to-report ──────────────────────────────────────────────────────
   const translateX = useSharedValue(0);
 
@@ -214,6 +224,15 @@ export function StepCard({
           <ThemedText type="small" numberOfLines={1} style={{ color: subColor }}>
             {missed ? t('stepCard.missed') : done ? t('stepCard.completed') : metaLine}
           </ThemedText>
+
+          {showPostponed && (
+            <View style={[styles.postponedChip, { backgroundColor: theme.goldTint }]}>
+              <Ionicons name="time-outline" size={12} color={theme.goldStrong} />
+              <Text style={[styles.postponedText, { color: theme.goldStrong }]} numberOfLines={1}>
+                {postponedLabel}
+              </Text>
+            </View>
+          )}
 
           {reportable && progress !== undefined && (
             <View style={[styles.bar, { backgroundColor: theme.backgroundSelected }]}>
@@ -346,6 +365,20 @@ const styles = StyleSheet.create({
   },
   title: {
     flexShrink: 1,
+  },
+  postponedChip: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Radius.chip,
+    marginTop: 2,
+  },
+  postponedText: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 10.5,
   },
   bar: {
     height: 6,

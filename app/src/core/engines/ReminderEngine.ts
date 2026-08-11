@@ -93,6 +93,30 @@ export class ReminderEngine {
   }
 
   /**
+   * Schedule a ONE-SHOT reminder that fires once at a specific instant — the per-occurrence
+   * postpone reminder (Step Postponement, D37). Uses the DATE trigger of the installed
+   * expo-notifications (Expo 54 / expo-notifications ~0.32.17):
+   * ({@link Notifications.SchedulableTriggerInputTypes.DATE}). Returns the OS id to store on the
+   * Step, or `null` when it can't be scheduled: permission not granted, or the target is already
+   * in the past (a postpone still succeeds — it just fires no notification). Never throws.
+   */
+  async scheduleOneShot(input: { title: string; body: string; at: number }): Promise<string | null> {
+    if (!this.permissionGranted) return null;
+    if (input.at <= Date.now()) return null;
+    try {
+      return await Notifications.scheduleNotificationAsync({
+        content: { title: input.title, body: input.body },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: input.at,
+        },
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Schedule every OS notification a rule needs, returning the ids to store on the
    * rule (`ReminderRule.scheduledNotificationIds`). Behavior by trigger kind:
    *  - `fixedTime` with no weekdays → one DAILY notification (reuses

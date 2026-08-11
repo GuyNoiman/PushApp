@@ -20,7 +20,7 @@ const mockSetNotificationHandler = jest.fn();
 
 jest.mock('expo-notifications', () => ({
   __esModule: true,
-  SchedulableTriggerInputTypes: { DAILY: 'daily', WEEKLY: 'weekly' },
+  SchedulableTriggerInputTypes: { DAILY: 'daily', WEEKLY: 'weekly', DATE: 'date' },
   setNotificationHandler: (arg: unknown) => mockSetNotificationHandler(arg),
   getPermissionsAsync: () => mockGetPermissionsAsync(),
   requestPermissionsAsync: () => mockRequestPermissionsAsync(),
@@ -122,6 +122,46 @@ describe('ReminderEngine.scheduleRule — fixedTime', () => {
         makeRule({ trigger: { kind: 'fixedTime', hour: 7, minute: 0, weekdays: [1] } }),
       ),
     ).toEqual([]);
+    expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+});
+
+describe('ReminderEngine.scheduleOneShot — DATE trigger (Step Postponement, D37)', () => {
+  it('schedules ONE date-triggered notification at the target instant', async () => {
+    const engine = await grantedEngine();
+    const at = Date.now() + 2 * 60 * 60 * 1000;
+    const id = await engine.scheduleOneShot({ title: 'Ready when you are', body: 'Run 5km', at });
+
+    expect(id).not.toBeNull();
+    expect(mockScheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    const arg = mockScheduleNotificationAsync.mock.calls[0][0] as any;
+    expect(arg.trigger).toMatchObject({ type: 'date', date: at });
+    expect(arg.content).toMatchObject({ title: 'Ready when you are', body: 'Run 5km' });
+  });
+
+  it('returns null (schedules nothing) when the target is in the past', async () => {
+    const engine = await grantedEngine();
+    const id = await engine.scheduleOneShot({
+      title: 't',
+      body: 'b',
+      at: Date.now() - 60 * 1000,
+    });
+    expect(id).toBeNull();
+    expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it('returns null (schedules nothing) when permission was never granted', async () => {
+    mockGetPermissionsAsync.mockResolvedValueOnce({ granted: false });
+    mockRequestPermissionsAsync.mockResolvedValueOnce({ granted: false });
+    const engine = new ReminderEngine();
+    await engine.init();
+
+    const id = await engine.scheduleOneShot({
+      title: 't',
+      body: 'b',
+      at: Date.now() + 60 * 60 * 1000,
+    });
+    expect(id).toBeNull();
     expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
   });
 });

@@ -454,3 +454,81 @@ describe('JourneyEngine.freezeJourney / resumeJourney (J3)', () => {
     expect(engine.freezeJourney('nope')).toBeNull();
   });
 });
+
+describe('JourneyEngine — postpone field-writers (Step Postponement, D37)', () => {
+  function postponeSetup() {
+    const bus = new EventBus();
+    const state = emptyState();
+    const engine = new JourneyEngine(bus, () => state);
+    const events: DomainEvent[] = [];
+    bus.on('StepPostponed', (e) => events.push(e));
+    const journey = engine.createJourney({
+      title: 'Run 5km',
+      why: ['Feel stronger'],
+      durationDays: 30,
+      rhythm: 'few-times-week',
+      steps: [{ title: 'Jog 15 minutes' }],
+    });
+    return { engine, state, journey, step: journey.steps[0], events };
+  }
+
+  it('postponeStep stamps postponedUntil/postponedAt, increments the count, and emits scalars', () => {
+    const { engine, journey, step, events } = postponeSetup();
+    const until = Date.now() + 2 * 60 * 60 * 1000;
+
+    engine.postponeStep(journey.id, step.id, { postponedUntil: until });
+
+    expect(step.postponedUntil).toBe(until);
+    expect(step.postponedAt).toBeGreaterThan(0);
+    expect(step.postponeCount).toBe(1);
+    expect(step.done).toBe(false); // an ACTION, not a status (D37.1)
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      type: 'StepPostponed',
+      journeyId: journey.id,
+      stepId: step.id,
+      postponedUntil: until,
+      postponeCount: 1,
+    });
+  });
+
+  it('increments the per-occurrence count on repeated postpones', () => {
+    const { engine, journey, step } = postponeSetup();
+    engine.postponeStep(journey.id, step.id);
+    engine.postponeStep(journey.id, step.id);
+    engine.postponeStep(journey.id, step.id);
+    expect(step.postponeCount).toBe(3);
+  });
+
+  it('is a no-op on an already-done Step', () => {
+    const { engine, journey, step, events } = postponeSetup();
+    engine.checkInStep(journey.id, step.id);
+    engine.postponeStep(journey.id, step.id, { postponedUntil: Date.now() + 1000 });
+    expect(step.postponeCount).toBeUndefined();
+    expect(events).toHaveLength(0);
+  });
+
+  it('setStepPostponeNotificationId stores and clears the OS id without an event', () => {
+    const { engine, journey, step, events } = postponeSetup();
+    engine.setStepPostponeNotificationId(journey.id, step.id, 'notif_abc');
+    expect(step.postponeNotificationId).toBe('notif_abc');
+    engine.setStepPostponeNotificationId(journey.id, step.id, undefined);
+    expect(step.postponeNotificationId).toBeUndefined();
+    expect(events).toHaveLength(0); // field-writer only
+  });
+
+  it('clearStepPostpone wipes all four fields and reports whether it changed anything', () => {
+    const { engine, journey, step } = postponeSetup();
+    engine.postponeStep(journey.id, step.id, { postponedUntil: Date.now() + 1000 });
+    engine.setStepPostponeNotificationId(journey.id, step.id, 'notif_abc');
+
+    expect(engine.clearStepPostpone(journey.id, step.id)).toBe(true);
+    expect(step.postponedUntil).toBeUndefined();
+    expect(step.postponeCount).toBeUndefined();
+    expect(step.postponedAt).toBeUndefined();
+    expect(step.postponeNotificationId).toBeUndefined();
+
+    // Idempotent: a second clear reports no change.
+    expect(engine.clearStepPostpone(journey.id, step.id)).toBe(false);
+  });
+});

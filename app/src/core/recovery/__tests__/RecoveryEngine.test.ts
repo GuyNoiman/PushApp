@@ -104,7 +104,7 @@ function stepId(journey: Journey): string {
 }
 
 describe('RecoveryEngine.submitReason — reminder levers', () => {
-  it('Forgot + a chosen time reschedules and adds a pre-reminder (retime + refrequency)', async () => {
+  it('Forgot + a chosen time on POSTPONE adds only the pre-reminder — retime is superseded (D37)', async () => {
     const { engine, journey, events, added } = setup();
     const chosenTime = new Date(2026, 6, 15, 9, 0, 0).getTime();
 
@@ -116,16 +116,19 @@ describe('RecoveryEngine.submitReason — reminder levers', () => {
       chosenTime,
     });
 
-    // retime (no existing rule → add) + refrequency (pre-reminder → add) = 2 adds.
-    expect(added).toHaveLength(2);
+    // Step Postponement (D37 §11.4): on the POSTPONE path, per-occurrence retiming is now a
+    // one-shot scheduled by AppCore.postponeStepReminder — submitReason no longer moves the
+    // Journey-level reminder. So retime adds nothing here; only refrequency's pre-reminder does.
+    expect(added).toHaveLength(1);
+    // The resolved lever ids are still recorded for history fidelity.
     expect(entry.leverIds).toEqual(['retime', 'refrequency']);
     expect(entry.outcome).toBe('rescheduled');
-    // A schedule change emits ReminderRescheduled carrying lever ids only.
+    // A schedule change (the pre-reminder) still emits ReminderRescheduled carrying lever ids only.
     const resched = events.find((e) => e.type === 'ReminderRescheduled');
     expect(resched).toMatchObject({ journeyId: journey.id, leverIds: ['retime', 'refrequency'] });
   });
 
-  it('reuses the Journey rule on retime when one already exists (update, not add)', async () => {
+  it('a POSTPONE does NOT retime an existing Journey rule (superseded — one-shot instead, D37)', async () => {
     const { engine, journey, state, added, updated } = setup();
     state.reminderRules.push({
       id: 'reminder_existing',
@@ -145,8 +148,9 @@ describe('RecoveryEngine.submitReason — reminder levers', () => {
       chosenTime: new Date(2026, 6, 15, 9, 0, 0).getTime(),
     });
 
-    expect(updated.map((u) => u.id)).toContain('reminder_existing');
-    // refrequency still adds one pre-reminder; retime updated the existing rule.
+    // The existing Journey rule is left untouched on the postpone path (D37 §11.4).
+    expect(updated.map((u) => u.id)).not.toContain('reminder_existing');
+    // refrequency still adds one pre-reminder.
     expect(added).toHaveLength(1);
   });
 });

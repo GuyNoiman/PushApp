@@ -40,12 +40,21 @@
   },
   "postpone": {
     "title": "No rush — what works better?",
-    "keep": "Postpone",
-    "keepHint": "Keep it — move it to a better time.",
-    "keepA11y": "Postpone — move it to a better time",
     "letGo": "Not this time",
     "letGoHint": "Let this one go — no penalty, we'll learn from it.",
-    "letGoA11y": "Not this time — let this one go"
+    "letGoA11y": "Not this time — let this one go",
+    "remindIn2h": "Remind me in 2 hours",
+    "remindIn2hA11y": "Remind me again in two hours",
+    "pickTime": "Pick a time",
+    "pickTimeA11y": "Pick a specific reminder time",
+    "addReason": "Add a reason",
+    "addReasonA11y": "Add a reason, optional",
+    "postponedTo": "Postponed to {{time}}",
+    "noSlotToday": "There's not enough of today left for another reminder. You can pick a time or let this one go.",
+    "warnCrossesDay": "This lands on another day, so today's plan won't count as done on time.",
+    "warnCrossesWeek": "This moves into next week.",
+    "warnCrossesJourneyEnd": "This lands after your Journey ends.",
+    "permissionOff": "Reminders are off, so we saved the time but won't send a notification. You can turn reminders on in Settings."
   },
   "reason": {
     "notePlaceholder": "In your own words… (stays on your device)",

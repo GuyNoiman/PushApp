@@ -93,6 +93,35 @@ export class RecoveryEngine {
   }
 
   /**
+   * Record the OPTIONAL reason attached to a fast POSTPONE (Step Postponement, D37 §11.2). The
+   * reason never forces or changes the schedule here — the per-occurrence one-shot is already
+   * scheduled by AppCore.postponeStepReminder — so this only appends the on-device {@link ReasonEntry}
+   * (with the reason's resolved lever ids for history fidelity, `action: 'postpone'`, outcome
+   * `rescheduled`). The free-text `note` stays ON-DEVICE ONLY (G1) — never copied into any event.
+   * Returns the recorded entry.
+   */
+  recordPostponeReason(
+    journeyId: string,
+    stepId: string,
+    reasonId: ReasonId,
+    note?: string,
+  ): ReasonEntry {
+    const entry: ReasonEntry = {
+      id: createId('reason'),
+      stepId,
+      journeyId,
+      reasonId,
+      leverIds: resolveLevers(reasonId),
+      outcome: 'rescheduled',
+      at: Date.now(),
+      action: 'postpone',
+      ...(note ? { note } : {}),
+    };
+    this.journeys.recordReason(entry);
+    return entry;
+  }
+
+  /**
    * Whether a reason should route through the propose-times step (the Retime lever) —
    * lets the UI branch to the reschedule sheet without knowing the lever rules
    * (config-before-code stays in core, not the screen).
@@ -130,8 +159,18 @@ export class RecoveryEngine {
       switch (leverId) {
         case 'retime':
           if (chosenTime !== undefined) {
-            scheduleChanged = (await this.applyRetime(journeyId, stepId, chosenTime)) || scheduleChanged;
-            outcome = 'rescheduled';
+            if (action === 'postpone') {
+              // SUPERSEDED for the postpone path (Step Postponement, D37 §11.4): per-occurrence
+              // retiming is now a ONE-SHOT reminder for THIS occurrence, scheduled by
+              // AppCore.postponeStepReminder — NOT a Journey-level reminder retime. So a postpone
+              // no longer moves the whole Journey's recurring reminder here. `applyRetime` is
+              // deliberately KEPT (not deleted — preserve the reasoning) for any NON-postpone
+              // caller that still retimes the Journey reminder (below).
+              outcome = 'rescheduled';
+            } else {
+              scheduleChanged = (await this.applyRetime(journeyId, stepId, chosenTime)) || scheduleChanged;
+              outcome = 'rescheduled';
+            }
           }
           break;
         case 'refrequency':

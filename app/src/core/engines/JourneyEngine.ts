@@ -329,13 +329,63 @@ export class JourneyEngine {
   // emit the reserved StepMissed keystone.
 
   /**
-   * Postpone a Step: the user kept it and will move it. Emits StepPostponed; makes NO
-   * `done` change. No-op if the Journey/Step is missing or already done.
+   * Postpone a Step: the user kept it and will move it (Step Postponement, D37). Stamps the
+   * per-occurrence postpone fields — `postponedAt = now`, an incremented `postponeCount`, and the
+   * resolved `postponedUntil` when `opts.postponedUntil` is given (the OS one-shot is scheduled by
+   * AppCore and its id set via {@link setStepPostponeNotificationId}). "Postponed" is an ACTION,
+   * not a status (D37.1) — `done` is untouched and the Step stays `unreported`. Emits StepPostponed
+   * with SCALARS ONLY (never a reason `note`, G1). Returns whether it acted — `false` (a no-op) if
+   * the Journey/Step is missing or already done, so a caller (AppCore) can bail before scheduling a
+   * one-shot for a Step that was never actually postponed.
    */
-  postponeStep(journeyId: string, stepId: string): void {
+  postponeStep(journeyId: string, stepId: string, opts?: { postponedUntil?: number }): boolean {
     const step = this.findStep(journeyId, stepId);
-    if (!step || step.done) return;
-    this.bus.emit({ type: 'StepPostponed', journeyId, stepId });
+    if (!step || step.done) return false;
+    if (opts?.postponedUntil !== undefined) step.postponedUntil = opts.postponedUntil;
+    step.postponedAt = Date.now();
+    step.postponeCount = (step.postponeCount ?? 0) + 1;
+    this.bus.emit({
+      type: 'StepPostponed',
+      journeyId,
+      stepId,
+      ...(step.postponedUntil !== undefined ? { postponedUntil: step.postponedUntil } : {}),
+      postponeCount: step.postponeCount,
+    });
+    return true;
+  }
+
+  /**
+   * Record the OS notification id of a Step's pending postpone one-shot (Step Postponement, D37),
+   * so AppCore can cancel it on re-postpone or on any final report. Pass `undefined` to clear it
+   * (e.g. permission was off, so nothing was scheduled). Pure field-writer — emits NO event;
+   * AppCore persists off the surrounding StepPostponed. No-op if the Journey/Step is missing.
+   */
+  setStepPostponeNotificationId(journeyId: string, stepId: string, notificationId?: string): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step) return;
+    step.postponeNotificationId = notificationId;
+  }
+
+  /**
+   * Clear ALL four per-occurrence postpone fields (Step Postponement, D37) — called when the
+   * occurrence gets a FINAL report (Done/Partial/Couldn't) or its Journey is frozen/completed/
+   * deleted, so no stale "postponed to <time>" affordance or count lingers. Pure field-writer —
+   * emits NO event; AppCore persists off the surrounding event. Returns whether anything actually
+   * changed (so a caller can skip a redundant save). No-op (returns false) if the Step is missing.
+   */
+  clearStepPostpone(journeyId: string, stepId: string): boolean {
+    const step = this.findStep(journeyId, stepId);
+    if (!step) return false;
+    const had =
+      step.postponedUntil !== undefined ||
+      step.postponeCount !== undefined ||
+      step.postponedAt !== undefined ||
+      step.postponeNotificationId !== undefined;
+    step.postponedUntil = undefined;
+    step.postponeCount = undefined;
+    step.postponedAt = undefined;
+    step.postponeNotificationId = undefined;
+    return had;
   }
 
   /**

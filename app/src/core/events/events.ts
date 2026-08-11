@@ -203,11 +203,21 @@ export interface SchedulingPrefsChanged {
 // These are NOT the reserved auto-miss keystone: StepMissed stays reserved (below)
 // and is never emitted here, and `featureFlags.intervention` stays off.
 
-/** The user postponed a Step (kept it, will move it). Drives persistence. No `done` change. */
+/**
+ * The user postponed a Step (kept it, will move it). Drives persistence. No `done` change.
+ *
+ * Carries ENUM/SCALAR-ONLY optional fields (Step Postponement, D37): the resolved
+ * {@link StepPostponed.postponedUntil} target and the running {@link StepPostponed.postponeCount}.
+ * Never any free text / reason `note` (G1) — the on-device {@link ReasonEntry} owns the optional note.
+ */
 export interface StepPostponed {
   type: 'StepPostponed';
   journeyId: string;
   stepId: string;
+  /** Epoch ms this occurrence is postponed until, when a target was resolved. Scalar only. */
+  postponedUntil?: number;
+  /** How many times this occurrence has been postponed without a final report. Scalar only. */
+  postponeCount?: number;
 }
 
 /**

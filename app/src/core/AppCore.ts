@@ -42,7 +42,14 @@ import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/ty
 import { featureFlags } from './config/featureFlags';
 import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
-import type { StepReportReversed } from './events/events';
+import type {
+  JourneyCompleted,
+  JourneyFrozen,
+  StepCancelled,
+  StepCheckedIn,
+  StepPartial,
+  StepReportReversed,
+} from './events/events';
 import { getLocationGateway } from './location';
 import { getCalendarGateway } from './calendar';
 import { EncryptedLocalRepository } from './persistence/EncryptedLocalRepository';
@@ -64,6 +71,13 @@ import type {
 } from './types/domain';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import type { Candidate } from './util/reschedule';
+import {
+  isPostponeError,
+  postponeWarnings,
+  resolvePostponeUntil,
+  type PostponeError,
+  type PostponeWarning,
+} from './util/postpone';
 import { createId } from './util/id';
 import { FREE_ENTITLEMENT, type AccountTier, type Entitlement } from './types/entitlement';
 
@@ -122,6 +136,21 @@ export interface WeekReviewOutcome {
   narration?: string;
   adjustments?: ReplanAdjustment[];
   atRisk?: boolean;
+}
+
+/**
+ * The outcome of {@link AppCore.postponeStepReminder} (Step Postponement, D37). A calm result the
+ * UI renders — never thrown. On success it carries the resolved `at`, any calendar-crossing
+ * `warnings` to surface honestly (§4), and whether an OS notification was actually `scheduled`
+ * (false when reminder permission is off — the postpone still succeeds). On failure it carries the
+ * `error` (`no_slot_today` / `in_past`) so the UI can message it.
+ */
+export interface PostponeReminderResult {
+  ok: boolean;
+  at?: number;
+  warnings?: PostponeWarning[];
+  scheduled?: boolean;
+  error?: PostponeError;
 }
 
 function initialBuddy(): Buddy {
@@ -411,6 +440,20 @@ export class AppCore {
     this.bus.on('StepCancelled', this.onChanged);
     this.bus.on('ReminderRescheduled', this.onChanged);
 
+    // Step Postponement (D37): a FINAL report of an occurrence clears its pending one-shot. Done,
+    // Couldn't (let-go), AND Partial are all final reports (§11.6a — a Partial is a final report of
+    // execution), so each cancels the OS notification + wipes the postpone fields. Handlers run in
+    // REGISTRATION order, so an earlier onChanged (for StepCheckedIn/StepCancelled) saves first with
+    // the fields still present; these clear handlers then wipe them and persist via their OWN
+    // onChanged — which is also the only save on the StepPartial path (it has no onChanged hook).
+    this.bus.on('StepCheckedIn', this.onCheckInClearsPostpone);
+    this.bus.on('StepCancelled', this.onStepReportClearsPostpone);
+    this.bus.on('StepPartial', this.onStepReportClearsPostpone);
+    // A frozen/completed Journey stops nudging: cancel every pending one-shot on its Steps. A
+    // DELETED Journey is handled in the deleteJourney facade (the Journey is gone by the event).
+    this.bus.on('JourneyFrozen', this.onJourneyClearsPostpone);
+    this.bus.on('JourneyCompleted', this.onJourneyClearsPostpone);
+
     // The Communication Scheduler re-plans the whole notification set whenever the
     // inputs change. The reminder facade methods reconcile directly (right after
     // persisting), so here we only wire the events they DON'T emit: a completed
@@ -457,6 +500,49 @@ export class AppCore {
   private readonly onReportReversed = (event: StepReportReversed): void => {
     if (event.reopenedJourney) void this.communicationScheduler.reconcile();
   };
+
+  /**
+   * Step Postponement (D37): a Done check-in clears the occurrence's pending one-shot. The
+   * StepCheckedIn event carries the Step object, so read its id from there.
+   */
+  private readonly onCheckInClearsPostpone = (event: StepCheckedIn): void => {
+    this.clearOneShotForStep(event.journeyId, event.step.id);
+  };
+
+  /** Step Postponement (D37): a Couldn't (let-go) or Partial report clears the pending one-shot. */
+  private readonly onStepReportClearsPostpone = (event: StepCancelled | StepPartial): void => {
+    this.clearOneShotForStep(event.journeyId, event.stepId);
+  };
+
+  /** Step Postponement (D37): a frozen/completed Journey clears every Step's pending one-shot. */
+  private readonly onJourneyClearsPostpone = (event: JourneyFrozen | JourneyCompleted): void => {
+    let changed = false;
+    for (const step of event.journey.steps) {
+      if (step.postponeNotificationId) void this.reminderEngine.cancel(step.postponeNotificationId);
+      if (this.journeyEngine.clearStepPostpone(event.journey.id, step.id)) changed = true;
+    }
+    if (changed) this.onChanged();
+  };
+
+  /**
+   * Cancel a single occurrence's pending postpone one-shot (if any) and wipe its four postpone
+   * fields. Reads the OS id BEFORE clearing, fires the cancel best-effort (fire-and-forget), and
+   * only persists when a field actually changed — so a normal report of a never-postponed Step
+   * costs nothing.
+   */
+  private clearOneShotForStep(journeyId: string, stepId: string): void {
+    const step = this.findStep(journeyId, stepId);
+    if (!step) return;
+    const notifId = step.postponeNotificationId;
+    const changed = this.journeyEngine.clearStepPostpone(journeyId, stepId);
+    if (notifId) void this.reminderEngine.cancel(notifId);
+    if (changed) this.onChanged();
+  }
+
+  /** Find a Step within a Journey, or undefined if either is missing. */
+  private findStep(journeyId: string, stepId: string): Step | undefined {
+    return this.state.journeys.find((j) => j.id === journeyId)?.steps.find((s) => s.id === stepId);
+  }
 
   /**
    * Adaptive coach (flag on only): mirror the engine's on-device raw log + derived insights
@@ -578,6 +664,9 @@ export class AppCore {
    * keys — so this method only owns the AppCore-managed state.
    */
   async resetToFirstRun(): Promise<void> {
+    // Step Postponement (D37): drop every pending one-shot too, so an account wipe leaves no
+    // orphaned OS notification scheduled. cancelAll is a safe superset of the per-Step ids.
+    await this.reminderEngine.cancelAll();
     await this.repo.clear();
     await this.firstRunFlag.markConsumed();
     this.state = emptyState();
@@ -622,6 +711,14 @@ export class AppCore {
    * cancelled. Returns whether a Journey was actually removed. Irreversible.
    */
   deleteJourney(journeyId: string): boolean {
+    // Step Postponement (D37): cancel any pending one-shots BEFORE the Journey (and its Steps'
+    // stored ids) are hard-removed — JourneyDeleted carries only the id, so the ids must be read here.
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (journey) {
+      for (const step of journey.steps) {
+        if (step.postponeNotificationId) void this.reminderEngine.cancel(step.postponeNotificationId);
+      }
+    }
     return this.journeyEngine.deleteJourney(journeyId);
   }
 
@@ -997,6 +1094,94 @@ export class AppCore {
   /** Propose a few good reschedule times for a Step (Retime), gated by the env. */
   proposeStepTimes(journeyId: string, stepId: string): Candidate[] {
     return this.recoveryEngine.proposeStepTimes(journeyId, stepId);
+  }
+
+  /**
+   * Step Postponement (D37) — the ONE orchestration point for a per-occurrence "remind me later".
+   * The fast, reason-free default (no `opts`) is one tap: it resolves the fixed 2-hour target with
+   * the day-crossing shorten rule (pure {@link resolvePostponeUntil}). The user may instead pass a
+   * `chosenTime` (a specific pick) and/or an OPTIONAL `reasonId`/`note` — a reason is NEVER required
+   * (D37 §11.2).
+   *
+   * Steps: resolve the target (returning `no_slot_today`/`in_past` for the UI to message, never
+   * throwing) → evaluate calendar-crossing warnings → CANCEL any prior one-shot (so a re-postpone
+   * or a duplicate tap never stacks OS notifications) → stamp the Step fields + emit StepPostponed →
+   * schedule the OS one-shot (best-effort — permission off ⇒ no notification, but the postpone still
+   * succeeds) → store its id → record the optional on-device reason. The reminder is OS-scheduled,
+   * so it still fires while the app is offline.
+   */
+  async postponeStepReminder(
+    journeyId: string,
+    stepId: string,
+    opts?: { chosenTime?: number; reasonId?: ReasonId; note?: string },
+  ): Promise<PostponeReminderResult> {
+    const now = Date.now();
+    const resolution = resolvePostponeUntil(now, opts?.chosenTime);
+    if (isPostponeError(resolution)) return { ok: false, error: resolution.error };
+    const at = resolution.at;
+
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    const step = journey?.steps.find((s) => s.id === stepId);
+    if (!journey || !step) return { ok: false };
+    // A done Step has no live occurrence to postpone — bail before touching any notification.
+    if (step.done) return { ok: false };
+
+    const warnings = postponeWarnings({
+      now,
+      at,
+      plannedFor: step.plannedFor,
+      // FLEXIBLE-WEEKLY when the Journey's rhythm allows moving across days in the week, or the Step
+      // itself recurs weekly (D37 §4) — so a same-week move warns nothing and only a next-week move
+      // flags `crosses_week`. A DAY-SPECIFIC occurrence stays on its own day (warns `crosses_day`).
+      flexibleWeekly:
+        journey.rhythm === 'few-times-week' ||
+        journey.rhythm === 'weekly' ||
+        step.cadence === 'weekly',
+      journeyEndsAt: this.journeyEndsAt(journeyId),
+    });
+
+    // Cancel any prior one-shot BEFORE scheduling the new one (re-postpone / duplicate-tap safe).
+    if (step.postponeNotificationId) await this.reminderEngine.cancel(step.postponeNotificationId);
+
+    // Stamp the per-occurrence fields + emit StepPostponed (persists via onChanged). Bail if it was
+    // a no-op (e.g. the Step just became done in a race), so no orphan one-shot is scheduled (#3).
+    if (!this.journeyEngine.postponeStep(journeyId, stepId, { postponedUntil: at })) {
+      return { ok: false };
+    }
+
+    const { title, body } = this.postponeReminderCopy(journeyId, stepId);
+    const notifId = await this.reminderEngine.scheduleOneShot({ title, body, at });
+    this.journeyEngine.setStepPostponeNotificationId(journeyId, stepId, notifId ?? undefined);
+
+    // OPTIONAL reason — skipped entirely on the fast path (D37 §11.2). The `note` stays on-device (G1).
+    if (opts?.reasonId) {
+      this.recoveryEngine.recordPostponeReason(journeyId, stepId, opts.reasonId, opts.note);
+    }
+
+    // Persist the notification id (+ any reason) written AFTER the StepPostponed save.
+    this.onChanged();
+    return { ok: true, at, warnings, scheduled: notifId !== null };
+  }
+
+  /** Epoch ms a Journey is scheduled to end (createdAt + duration), or undefined if unknown. */
+  private journeyEndsAt(journeyId: string): number | undefined {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey) return undefined;
+    return journey.createdAt + journey.durationDays * 24 * 60 * 60 * 1000;
+  }
+
+  /**
+   * On-device copy for a postpone one-shot. Uses the user's OWN Journey/Step text (no synthetic
+   * English body to translate), so the notification reads naturally in any language. On-device only
+   * — the string is captured at schedule time and never leaves the device (G1).
+   */
+  private postponeReminderCopy(journeyId: string, stepId: string): { title: string; body: string } {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    const step = journey?.steps.find((s) => s.id === stepId);
+    return {
+      title: journey?.title ?? 'PushApp',
+      body: step?.title ?? '',
+    };
   }
 
   /** A Step's reason history, newest first — the "see past reasons" view. */

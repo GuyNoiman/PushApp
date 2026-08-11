@@ -8,6 +8,41 @@ Related: `04_Product/Strategy_WIP_2026-07/README.md` §5 (miss-recovery funnel),
 trilogy in that folder, `11_Engineering_Bible/Module_Architecture.md` (reserved Location/Calendar/
 Intervention seams).
 
+## 2026-08-10 MVP specification handoff — preserve this POC history
+
+This document remains the authoritative historical specification for the approved mock-first POC slice
+and its privacy/product guardrails. The broader MVP behavior is now being separated into one-feature PRDs:
+
+- `04_Product/PRD/Daily_Step_Reporting_PRD.md` — occurrence reporting and report correction;
+- `04_Product/PRD/Step_Postponement_PRD.md` — fast postponement, scheduling constraints, and repeated
+  postponement intervention;
+- `04_Product/PRD/Weekly_Review_PRD.md` — week close, analysis, proposal, and approval;
+- `04_Product/PRD/Future/User_Learning_PRD.md` — cross-Journey hypotheses and long-term learning.
+
+The three MVP PRDs are currently **Open Questions** and do not yet supersede this document. In particular,
+the following POC decisions remain binding until the founder explicitly resolves the conflict and the new
+PRD is marked Approved:
+
+1. the reason sheet appears on both Postpone and the let-go/Not Completed path;
+   **[Superseded for MVP by D37 (Step Postponement §11.2): a reason is now OPTIONAL on Postpone.
+   The common path is a fast one-tap, reason-free "remind me in 2 hours" (or pick a time); the
+   reason sheet is still offered on Postpone and remains on the let-go path — it is simply no longer
+   forced. The POC "reason required on Postpone" rationale is preserved above, not deleted.]**
+2. `Other` free text is on-device-only and must not enter DomainEvents, ProgressSummary, cloud AI,
+   analytics logs, or User Learning;
+3. repeated-pattern escalation has no approved fixed threshold yet;
+4. the current POC reminder adjustment is Journey-level because per-occurrence retiming was deferred;
+   **[Superseded for MVP by D37 (Step Postponement §11.4): the Postpone path now schedules a
+   PER-OCCURRENCE one-shot reminder for the Step at its `postponedUntil` (pure `util/postpone.ts` +
+   `AppCore.postponeStepReminder`), independent of and layered on top of the Journey's recurring
+   reminder. The Journey-level Retime (`RecoveryEngine.applyRetime`) is KEPT for any NON-postpone
+   caller — the POC rationale is preserved above, not deleted.]**
+5. derived aggregates — never raw reason history/free text — are the only future Profiling input currently
+   permitted.
+
+When the new blocking questions are closed, update this section incrementally with an explicit
+“superseded for MVP by” mapping. Do not delete the POC rationale or its security/privacy review outcomes.
+
 ---
 
 ## 0. Why — the hypothesis we're testing
@@ -205,6 +240,11 @@ Retime adjusts the **Journey's** reminder (per-Step retiming is a later data-mod
 relevant" → **edit** the Step (true retire/archive is a follow-up) · `Re-tone` lever stays in the
 catalog but **inert** this slice · Grace Tokens enter app state in a later slice (moot here — Cancel is free).
 
+> **Superseded for MVP by D37 (Step Postponement §11.4):** "per-Step retiming is a later data-model
+> change" no longer holds for the Postpone path — it now schedules a per-occurrence one-shot reminder
+> (no reminder-model rewrite; a one-shot layered alongside the existing rules). Journey-level Retime
+> stays for non-postpone callers. Original note preserved above.
+
 ---
 
 ## 10. Flow-walkthrough refinements (founder, 2026-07-21) — binding
@@ -218,6 +258,10 @@ catalog but **inert** this slice · Grace Tokens enter app state in a later slic
    reasons" live on **Home**, not the Journey-detail screen.
 3. **The reason list pops on BOTH Postpone and Cancel** (capture a reason on either path — we learn
    from postpones too).
+   **[Superseded for MVP by D37 §11.2: the reason is OPTIONAL on Postpone — offered, not forced —
+   so the common postpone is a fast, reason-free tap. It stays required-by-flow on the let-go/Cancel
+   path. Original intent (we still want to learn from postpones) is honored by the optional reason +
+   the on-device postpone signal; preserved above.]**
 4. **⭐ Escalate on a pattern, not on the first miss (supersedes "fire the lever immediately").**
    A **single** postpone triggers **no sweeping change** — we just help reschedule *this* occurrence
    and log the reason. Only when a **repeated** pattern is detected (e.g. the same Step postponed

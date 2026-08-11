@@ -14,9 +14,12 @@
  * facade. Rendered once by Home; `step` being null keeps everything closed.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert } from 'react-native';
 
 import { RecoveryFlow } from '@/components/journey/RecoveryFlow';
 import { RescheduleModal } from '@/components/journey/RescheduleModal';
+import { interpretPostponeResult } from '@/components/journey/postponeResult';
 import { PartialNoteSheet } from '@/components/home/PartialNoteSheet';
 import { StepReportSheet, type ReportChoice } from '@/components/home/StepReportSheet';
 import type { AppCore, WeekReviewOutcome } from '@/core/AppCore';
@@ -45,6 +48,7 @@ export function StepReportFlow({
   onClose: () => void;
 }) {
   const [stage, setStage] = useState<Stage>('menu');
+  const { t } = useTranslation('journey');
 
   // Every time a new Step opens the flow, start at the compact menu.
   useEffect(() => {
@@ -143,13 +147,22 @@ export function StepReportFlow({
       {/* Reused Miss-Recovery loop (postpone → what happened → propose times). */}
       {stage === 'recovery' && <RecoveryFlow step={step} core={core} onClose={onClose} />}
 
-      {/* Reused reschedule sheet — confirm a proposed time (retime lever). */}
+      {/* Reused reschedule sheet — confirm a proposed time as a PER-OCCURRENCE one-shot postpone
+          (Step Postponement, D37 §11.4), NOT a Journey-level retime. The adaptive week-review still
+          runs off the recorded signal. */}
       <RescheduleModal
         visible={stage === 'reschedule'}
         stepTitle={s.title}
         candidates={candidates}
         onConfirm={(chosenAt) => {
-          void reportAndReview('postpone', 'forgot', chosenAt);
+          void (async () => {
+            const result = await core.postponeStepReminder(journeyId, s.id, { chosenTime: chosenAt });
+            // Same shared reading as RecoveryFlow — never silently swallow a failure / false success.
+            const { close, notice } = interpretPostponeResult(result, t);
+            if (result.ok) onReviewed?.(core.reviewWeek(journeyId));
+            if (notice) Alert.alert(notice);
+            if (close) onClose();
+          })();
         }}
         onCancel={onClose}
       />

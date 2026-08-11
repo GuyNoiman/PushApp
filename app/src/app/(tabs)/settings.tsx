@@ -23,7 +23,7 @@
  */
 import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +37,8 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
+import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
+import { useApp } from '@/state/AppProvider';
 import { useTheme } from '@/hooks/use-theme';
 import { findLanguage } from '@/i18n/languages';
 import type { AddressForm } from '@/i18n/addressForm';
@@ -72,6 +74,25 @@ export default function SettingsScreen() {
   const cycleWeekStart = () => setWeekStartDay((((weekStartDay + 1) % 7) as Weekday));
   const { exportData, deleteAccount } = useAccountActions();
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
+
+  // Active Hours summary (D40) — recomputed when the scheduling prefs change (a
+  // SchedulingPrefsChanged event refreshes the snapshot, re-rendering this tab).
+  const { core, snapshot } = useApp();
+  const activeHoursValue = useMemo(() => {
+    void snapshot; // re-run when a SchedulingPrefsChanged event refreshes the snapshot
+    const prefs = core.getSchedulingPrefs();
+    const shape = activeHoursShape(prefs);
+    if (shape === 'allDay') return t('activeHours.summaryAllDay');
+    if (shape === 'off') return t('activeHours.summaryOff');
+    if (shape === 'perDay') return t('activeHours.summaryPerDay');
+    const w = resolveActiveHours(prefs).days[0].window;
+    const pad2 = (n: number) => String(n).padStart(2, '0');
+    return t('activeHours.range', {
+      start: `${pad2(w.start.hour)}:${pad2(w.start.minute)}`,
+      end: `${pad2(w.end.hour)}:${pad2(w.end.minute)}`,
+    });
+    // `snapshot` is intentionally a dependency: it changes on SchedulingPrefsChanged.
+  }, [core, snapshot, t]);
 
   // Notifications row (E2): tapping requests permission the first time it's undetermined; once the OS
   // has a decision, it deep-links to the app's OS settings so the user can flip it there.
@@ -183,6 +204,13 @@ export default function SettingsScreen() {
               detail={t('app.weekStartDetail')}
               value={weekdayNames[weekStartDay]}
               onPress={cycleWeekStart}
+            />
+            <SettingsRow
+              icon="time-outline"
+              label={t('activeHours.title')}
+              detail={t('activeHours.rowDetail')}
+              value={activeHoursValue}
+              onPress={() => router.push('/settings/active-hours' as Href)}
             />
             <SettingsRow icon="information-circle-outline" label={t('app.about')} value={`v${appVersion}`} />
           </SettingsSection>

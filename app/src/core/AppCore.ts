@@ -56,6 +56,7 @@ import { EncryptedLocalRepository } from './persistence/EncryptedLocalRepository
 import { asyncStorageFirstRunFlag, type FirstRunFlag } from './persistence/firstRunFlag';
 import type { Repository } from './persistence/Repository';
 import type {
+  ActiveHours,
   AppState,
   Buddy,
   BuddyStage,
@@ -170,10 +171,12 @@ function defaultCommunicationPrefs(): CommunicationPrefs {
 
 /**
  * Default scheduling prefs: all-permissive so nothing changes until the user sets
- * one — no window, no day-part constraint, all weekdays allowed.
+ * one — no window, no Active Hours (⇒ all-day, all-days-enabled), no day-part
+ * constraint, all weekdays allowed. `activeHours` stays undefined so older snapshots
+ * merge unchanged (offline-first migration keeps existing behaviour, D40).
  */
 function defaultSchedulingPrefs(): SchedulingPrefs {
-  return { window: undefined, dayPart: 'either', preferredDays: [] };
+  return { window: undefined, activeHours: undefined, dayPart: 'either', preferredDays: [] };
 }
 
 function emptyState(): AppState {
@@ -1071,7 +1074,17 @@ export class AppCore {
     this.bus.emit({ type: 'SchedulingPrefsChanged' });
   }
 
-  /** The user's current scheduling preferences (window / day-part / weekdays). */
+  /**
+   * Set the account-level Active Hours (D40) — the authoritative per-day boundary the
+   * scheduler clamps into. Thin facade over {@link setSchedulingPref} so the same
+   * SchedulingPrefsChanged → reconcile() path re-plans the notification set. Passing
+   * `undefined` clears the preference back to the all-day (legacy/all-permissive) view.
+   */
+  setActiveHours(activeHours: ActiveHours | undefined): void {
+    this.setSchedulingPref('activeHours', activeHours);
+  }
+
+  /** The user's current scheduling preferences (window / Active Hours / day-part / weekdays). */
   getSchedulingPrefs(): SchedulingPrefs {
     return this.state.schedulingPrefs;
   }

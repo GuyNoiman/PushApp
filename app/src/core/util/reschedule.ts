@@ -13,6 +13,7 @@
  * Pure TS — no clock read of its own (the caller injects `now`), no vendor imports.
  */
 import type { SchedulingPrefs, Step } from '../types/domain';
+import { dayAvailability } from './availability';
 import { clampMinuteToWindow, dayPartBand } from './date';
 
 /** A proposed reschedule time. `at` is epoch ms; hour/minute are its local wall-clock. */
@@ -83,15 +84,41 @@ function rawCandidates(now: number): Candidate[] {
   ];
 }
 
-/** Clamp a candidate's time into the day-part band, then the user's window (window wins). */
+/**
+ * Clamp a candidate's time into the day-part band, then that day's Active-Hours window
+ * (D40, window wins) — resolved through the shared availability service so a Retime
+ * suggestion honours the same account window the scheduler does.
+ *
+ * A user-initiated Retime must never be fully suppressed by Active Hours: when the
+ * candidate lands on a DISABLED day we SKIP IT FORWARD to the next enabled day (up to a
+ * week) and clamp into that day's window. If every day within a week is disabled
+ * (all-quiet account), we fall back to the candidate's own day with band-only clamping
+ * so at least one suggestion always survives. (The D37 postpone one-shot bypasses this
+ * path entirely — it computes its own time — so it is unaffected.)
+ */
 function clampCandidate(c: Candidate, prefs: SchedulingPrefs): Candidate {
+  const d = new Date(c.at);
+  // Find the nearest enabled day at or after the candidate's own day.
+  let offset = 0;
+  let av = dayAvailability(d.getDay(), prefs);
+  while (av.kind === 'none' && offset < 6) {
+    offset += 1;
+    av = dayAvailability((d.getDay() + offset) % 7, prefs);
+  }
+  if (av.kind === 'none') {
+    // Every day is disabled — keep the original day and skip the window clamp, so a
+    // Retime is never left with zero options purely because of Active Hours.
+    offset = 0;
+    av = { kind: 'allDay' };
+  }
+  if (offset > 0) d.setDate(d.getDate() + offset);
+
   let m = c.hour * 60 + c.minute;
   const band = dayPartBand(prefs.dayPart);
   if (band) m = clampMinuteToWindow(m, band);
-  if (prefs.window) m = clampMinuteToWindow(m, prefs.window);
+  if (av.kind === 'window') m = clampMinuteToWindow(m, av.window);
   const hour = Math.floor(m / 60);
   const minute = m % 60;
-  const d = new Date(c.at);
   d.setHours(hour, minute, 0, 0);
   return { ...c, at: d.getTime(), hour, minute };
 }

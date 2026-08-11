@@ -35,7 +35,16 @@ import { MAX_PENDING } from '../../config/schedulerLimits';
 import { EventBus } from '../../events/EventBus';
 import type { EventOf } from '../../events/events';
 import { NullLocationGateway } from '../../location/LocationGateway';
-import type { AppState, Journey, ReminderRule, ReminderTrigger, SchedulingPrefs, Step } from '../../types/domain';
+import type {
+  ActiveHours,
+  AllowedWindow,
+  AppState,
+  Journey,
+  ReminderRule,
+  ReminderTrigger,
+  SchedulingPrefs,
+  Step,
+} from '../../types/domain';
 import { CommunicationScheduler } from '../CommunicationScheduler';
 import { ReminderEngine } from '../ReminderEngine';
 
@@ -194,6 +203,125 @@ describe('planSchedule — window / day-part clamp (D-B, never drop)', () => {
     const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
     // 12:00 is nearer the last-allowed edge (05:59) than the start (22:00).
     expect(plan[0]).toMatchObject({ hour: 5, minute: 59 });
+  });
+});
+
+describe('planSchedule — per-day Active Hours (D40, clamp not disable)', () => {
+  const win = (sh: number, sm: number, eh: number, em: number): AllowedWindow => ({
+    start: { hour: sh, minute: sm },
+    end: { hour: eh, minute: em },
+  });
+  const shared = (w: AllowedWindow): ActiveHours => ({
+    mode: 'shared',
+    days: Array.from({ length: 7 }, () => ({ enabled: true, window: w })),
+  });
+
+  it('a shared window keeps a plain daily as ONE daily, clamped into the window', () => {
+    const { scheduler } = planner();
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: shared(win(9, 0, 17, 0)) };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 23, minute: 0 };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    expect(plan).toHaveLength(1);
+    expect(plan[0]).toMatchObject({ hour: 16, minute: 59, weekday: undefined });
+  });
+
+  it('a per-day setting fans a daily out to seven weekdays, each clamped into ITS window', () => {
+    const { scheduler } = planner();
+    const hours = shared(win(9, 0, 17, 0));
+    hours.mode = 'perDay';
+    hours.days[3] = { enabled: true, window: win(6, 0, 8, 0) }; // Wednesday: early window
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 12, minute: 0 };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    expect(plan).toHaveLength(7);
+    const wed = plan.find((p) => p.weekday === 3)!;
+    expect(wed).toMatchObject({ hour: 7, minute: 59 }); // clamped down to Wed's 06:00–08:00
+    const mon = plan.find((p) => p.weekday === 1)!;
+    expect(mon).toMatchObject({ hour: 12, minute: 0 }); // inside Mon's 09:00–17:00, unchanged
+  });
+
+  it('drops a disabled day from a daily fan-out (no candidate that weekday)', () => {
+    const { scheduler } = planner();
+    const hours = shared(win(9, 0, 17, 0));
+    hours.mode = 'perDay';
+    hours.days[0] = { enabled: false, window: win(9, 0, 17, 0) }; // Sunday off
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    const plan = scheduler.planSchedule([rule()], [journey()], prefs, NOW);
+    expect(plan.map((p) => p.weekday).sort()).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('clamps into a per-day cross-midnight window by nearest edge', () => {
+    const { scheduler } = planner();
+    const hours = shared(win(22, 0, 6, 0));
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 12, minute: 0 };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    // Shared + uniform ⇒ stays a single daily; 12:00 is nearer 05:59 than 22:00.
+    expect(plan).toHaveLength(1);
+    expect(plan[0]).toMatchObject({ hour: 5, minute: 59, weekday: undefined });
+  });
+
+  it('produces nothing when every day is disabled (all-quiet)', () => {
+    const { scheduler } = planner();
+    const hours = shared(win(9, 0, 17, 0));
+    hours.mode = 'perDay';
+    for (let d = 0; d < 7; d++) hours.days[d] = { enabled: false, window: win(9, 0, 17, 0) };
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    expect(scheduler.planSchedule([rule()], [journey()], prefs, NOW)).toEqual([]);
+  });
+
+  it('a weekday rule keeps only its enabled days under per-day Active Hours', () => {
+    const { scheduler } = planner();
+    const hours = shared(win(9, 0, 17, 0));
+    hours.mode = 'perDay';
+    hours.days[3] = { enabled: false, window: win(9, 0, 17, 0) }; // Wednesday off
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 10, minute: 0, weekdays: [1, 3, 5] };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    expect(plan.map((p) => p.weekday).sort()).toEqual([1, 5]);
+  });
+
+  it('coalesces a daily to ONE daily when per-day windows all contain the requested time', () => {
+    const { scheduler } = planner();
+    // Per-day windows DIFFER (so isDayUniform is false ⇒ the fan-out path runs), but
+    // every one contains 12:00, so all seven weekdays clamp to the same time.
+    const hours: ActiveHours = {
+      mode: 'perDay',
+      days: Array.from({ length: 7 }, (_, d) => ({
+        enabled: true,
+        window: d % 2 === 0 ? win(8, 0, 18, 0) : win(9, 0, 17, 0),
+      })),
+    };
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 12, minute: 0 };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    expect(plan).toHaveLength(1);
+    expect(plan[0]).toMatchObject({ hour: 12, minute: 0, weekday: undefined });
+  });
+
+  it('does NOT collapse to a daily when one day is disabled (stays weekly on the rest)', () => {
+    const { scheduler } = planner();
+    const hours = shared(win(8, 0, 18, 0));
+    hours.mode = 'perDay';
+    hours.days[6] = { enabled: false, window: win(8, 0, 18, 0) }; // Saturday off
+    const prefs: SchedulingPrefs = { ...permissivePrefs(), activeHours: hours };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 12, minute: 0 };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    expect(plan).toHaveLength(6);
+    expect(plan.every((p) => p.weekday !== undefined)).toBe(true);
+    expect(plan.map((p) => p.weekday).sort()).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it('activeHours is authoritative over a stale legacy window', () => {
+    const { scheduler } = planner();
+    const prefs: SchedulingPrefs = {
+      ...permissivePrefs(),
+      window: win(0, 0, 1, 0), // stale narrow legacy window …
+      activeHours: shared({ start: { hour: 0, minute: 0 }, end: { hour: 0, minute: 0 } }), // all-day
+    };
+    const t: ReminderTrigger = { kind: 'fixedTime', hour: 14, minute: 0 };
+    const plan = scheduler.planSchedule([rule({ trigger: t })], [journey()], prefs, NOW);
+    expect(plan[0]).toMatchObject({ hour: 14, minute: 0 }); // not clamped to the legacy window
   });
 });
 

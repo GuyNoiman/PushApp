@@ -25,6 +25,7 @@ import type { EventBus } from '../events/EventBus';
 import type { CalendarGateway } from '../calendar/CalendarGateway';
 import type { LocationGateway } from '../location/LocationGateway';
 import type { AppState, Journey, ReminderRule, SchedulingPrefs } from '../types/domain';
+import { dayAvailability, isDayUniform } from '../util/availability';
 import { clampMinuteToWindow, dayPartBand, minuteOfDay } from '../util/date';
 import type { ReminderEngine } from './ReminderEngine';
 
@@ -255,15 +256,42 @@ export class CommunicationScheduler {
     // Empty intersection ⇒ the rule fires on no allowed day: produce nothing.
     if (days !== null && days.length === 0) return [];
 
-    // Clamp the requested time into the allowed window + day-part band (D-B).
-    const clamped = this.clampTime(t.hour, t.minute, prefs);
-
-    if (days === null) {
+    // Active Hours are per-day (D40). When every day resolves identically — the legacy
+    // no-Active-Hours case, or a shared window — a plain daily can stay a SINGLE daily
+    // notification (one clamp), keeping the old behaviour a pure passthrough. Only when
+    // days genuinely differ do we fan a daily out to explicit weekdays so each can clamp
+    // into ITS window. Enforcement is CLAMP, not disable (D40): an out-of-window time is
+    // moved to the nearest allowed minute; a disabled day yields no candidate.
+    if (days === null && isDayUniform(prefs)) {
+      if (dayAvailability(0, prefs).kind === 'none') return []; // every day quiet ⇒ nothing
+      const clamped = this.clampTime(t.hour, t.minute, prefs, 0);
       return [this.candidate(rule, journey, clamped.hour, clamped.minute, undefined, now)];
     }
-    return days.map((weekday) =>
-      this.candidate(rule, journey, clamped.hour, clamped.minute, weekday, now),
-    );
+
+    // Per-weekday path: an explicit weekday list, or all seven when a daily meets a
+    // non-uniform Active-Hours setting. Each weekday clamps into its own window; a
+    // disabled/quiet day contributes no candidate.
+    const weekdays = days === null ? [0, 1, 2, 3, 4, 5, 6] : days;
+    const clampedDays: { weekday: number; hour: number; minute: number }[] = [];
+    for (const weekday of weekdays) {
+      if (dayAvailability(weekday, prefs).kind === 'none') continue;
+      const clamped = this.clampTime(t.hour, t.minute, prefs, weekday);
+      clampedDays.push({ weekday, hour: clamped.hour, minute: clamped.minute });
+    }
+    if (clampedDays.length === 0) return [];
+
+    // Collapse a fanned-out DAILY back into a single daily when every weekday survived
+    // and they all resolved to the SAME time (e.g. each day's window still contains the
+    // requested time). This avoids emitting ~7× the pending notifications for what is
+    // one daily reminder — which would inflate the count and risk SchedulerCapped
+    // dropping other Journeys' reminders. Only a full-week set can become a daily; a
+    // subset stays weekly so it never fires on a disabled day.
+    const first = clampedDays[0];
+    const allSameTime = clampedDays.every((p) => p.hour === first.hour && p.minute === first.minute);
+    if (days === null && allSameTime && clampedDays.length === 7) {
+      return [this.candidate(rule, journey, first.hour, first.minute, undefined, now)];
+    }
+    return clampedDays.map((p) => this.candidate(rule, journey, p.hour, p.minute, p.weekday, now));
   }
 
   /**
@@ -306,15 +334,23 @@ export class CommunicationScheduler {
   }
 
   /**
-   * Clamp `hour:minute` into the day-part band first, then the user's window, so the
-   * user's explicit window is the FINAL (winning) constraint. Returns the clamped
-   * hour/minute. When neither is set, the time is returned unchanged.
+   * Clamp `hour:minute` into the day-part band first, then that WEEKDAY's Active-Hours
+   * window (D40), so the user's account window is the FINAL (winning) constraint. The
+   * window is resolved through the shared availability service, so the scheduler and the
+   * Miss-Recovery reschedule helper honour one definition. A day with no window (all-day)
+   * leaves the time unchanged; a disabled day is filtered out before this is reached.
    */
-  private clampTime(hour: number, minute: number, prefs: SchedulingPrefs): { hour: number; minute: number } {
+  private clampTime(
+    hour: number,
+    minute: number,
+    prefs: SchedulingPrefs,
+    weekday: number,
+  ): { hour: number; minute: number } {
     let m = hour * 60 + minute;
     const band = dayPartBand(prefs.dayPart);
     if (band) m = clampMinuteToWindow(m, band);
-    if (prefs.window) m = clampMinuteToWindow(m, prefs.window);
+    const av = dayAvailability(weekday, prefs);
+    if (av.kind === 'window') m = clampMinuteToWindow(m, av.window);
     return { hour: Math.floor(m / 60), minute: m % 60 };
   }
 

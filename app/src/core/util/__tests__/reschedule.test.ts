@@ -89,3 +89,36 @@ describe('proposeCandidateTimes — gate (permissive by default)', () => {
     expect(proposeCandidateTimes(NOW, shortStep, permissivePrefs(), env)).toHaveLength(3);
   });
 });
+
+describe('proposeCandidateTimes — Active Hours never fully suppress a Retime (D40)', () => {
+  const allDay = { start: { hour: 0, minute: 0 }, end: { hour: 0, minute: 0 } };
+  /** 7 days all-day-enabled, then a mutator to disable specific weekdays. */
+  const hoursWithDisabled = (disabled: number[]): SchedulingPrefs => ({
+    ...permissivePrefs(),
+    activeHours: {
+      mode: 'perDay',
+      days: Array.from({ length: 7 }, (_, d) => ({ enabled: !disabled.includes(d), window: allDay })),
+    },
+  });
+
+  // A Saturday so all three heuristics (plus2h/evening today, tomorrow=Sun) land on the weekend.
+  const SAT = new Date(2026, 6, 18, 10, 0, 0).getTime();
+
+  it('with the weekend disabled, a Saturday Retime still yields suggestions on the next enabled day', () => {
+    const prefs = hoursWithDisabled([6, 0]); // Sat + Sun off
+    const out = proposeCandidateTimes(SAT, step(), prefs, permissiveEnv());
+    expect(out.length).toBeGreaterThanOrEqual(1);
+    // Every surviving suggestion lands on an enabled weekday (Mon..Fri), never Sat/Sun.
+    for (const c of out) {
+      const wd = new Date(c.at).getDay();
+      expect(wd).not.toBe(6);
+      expect(wd).not.toBe(0);
+    }
+  });
+
+  it('falls back to a same-day band-only slot when EVERY day is disabled (still non-empty)', () => {
+    const prefs = hoursWithDisabled([0, 1, 2, 3, 4, 5, 6]);
+    const out = proposeCandidateTimes(SAT, step(), prefs, permissiveEnv());
+    expect(out.length).toBeGreaterThanOrEqual(1);
+  });
+});

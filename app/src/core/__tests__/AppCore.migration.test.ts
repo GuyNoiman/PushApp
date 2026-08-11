@@ -91,6 +91,49 @@ describe('AppCore migration — old snapshot', () => {
     });
   });
 
+  it('leaves Active Hours unset on an old snapshot (all-day default, no behavior change, D40)', async () => {
+    const core = new AppCore(repoWith(oldSnapshot()));
+    await core.start();
+    expect(core.getSchedulingPrefs().activeHours).toBeUndefined();
+  });
+
+  it('preserves per-day Active Hours already present in a snapshot', async () => {
+    const snap = oldSnapshot();
+    (snap as Record<string, unknown>).schedulingPrefs = {
+      dayPart: 'either',
+      preferredDays: [],
+      activeHours: {
+        mode: 'perDay',
+        days: Array.from({ length: 7 }, (_, d) => ({
+          enabled: d !== 0, // Sunday off
+          window: { start: { hour: 9, minute: 0 }, end: { hour: 17, minute: 0 } },
+        })),
+      },
+    };
+    const core = new AppCore(repoWith(snap));
+    await core.start();
+    const ah = core.getSchedulingPrefs().activeHours;
+    expect(ah?.mode).toBe('perDay');
+    expect(ah?.days[0].enabled).toBe(false);
+    expect(ah?.days[3].window.end).toEqual({ hour: 17, minute: 0 });
+  });
+
+  it('setActiveHours updates the pref and clearing it returns to all-day', async () => {
+    const core = new AppCore(repoWith(null));
+    await core.start();
+    const hours = {
+      mode: 'shared' as const,
+      days: Array.from({ length: 7 }, () => ({
+        enabled: true,
+        window: { start: { hour: 8, minute: 0 }, end: { hour: 22, minute: 0 } },
+      })),
+    };
+    core.setActiveHours(hours);
+    expect(core.getSchedulingPrefs().activeHours).toEqual(hours);
+    core.setActiveHours(undefined);
+    expect(core.getSchedulingPrefs().activeHours).toBeUndefined();
+  });
+
   it('treats a pre-existing user as already onboarded (never shows onboarding)', async () => {
     const core = new AppCore(repoWith(oldSnapshot()));
     await core.start();

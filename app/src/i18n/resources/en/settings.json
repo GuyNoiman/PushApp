@@ -58,6 +58,22 @@
     "weekStart": "My week starts",
     "weekStartDetail": "First day of the week"
   },
+  "activeHours": {
+    "title": "Active Hours",
+    "rowDetail": "When reminders may reach you",
+    "intro": "Reminders only arrive during your Active Hours. A Journey can pick a narrower time, but never one outside these hours. Anything scheduled outside is moved earlier to fit.",
+    "everyDay": "Every day",
+    "start": "Start",
+    "end": "End",
+    "allDayHint": "Set the same start and end time to allow reminders all day.",
+    "perDayToggle": "Set each day separately",
+    "perDayToggleDetail": "Give each day its own hours, or turn a day off",
+    "dayOff": "No reminders this day",
+    "range": "{{start}} to {{end}}",
+    "summaryAllDay": "All day",
+    "summaryPerDay": "Set per day",
+    "summaryOff": "No reminder hours"
+  },
   "appearance": {
     "system": "System",
     "light": "Light",

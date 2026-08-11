@@ -87,6 +87,25 @@ describe('AppCore.exportStateJson', () => {
     expect(parsed.state.schedulingPrefs).toBeDefined();
   });
 
+  it('includes account-level Active Hours once set (D40)', async () => {
+    const { repo } = capturingRepo();
+    const core = new AppCore(repo, memFlag());
+    await core.start();
+
+    core.setActiveHours({
+      mode: 'perDay',
+      days: Array.from({ length: 7 }, (_, d) => ({
+        enabled: d !== 6, // Saturday off
+        window: { start: { hour: 7, minute: 30 }, end: { hour: 21, minute: 0 } },
+      })),
+    });
+
+    const parsed = JSON.parse(core.exportStateJson({ appVersion: '1.0.0', exportedAt: 0 }));
+    expect(parsed.state.schedulingPrefs.activeHours.mode).toBe('perDay');
+    expect(parsed.state.schedulingPrefs.activeHours.days[6].enabled).toBe(false);
+    expect(parsed.state.schedulingPrefs.activeHours.days[0].window.start).toEqual({ hour: 7, minute: 30 });
+  });
+
   it('is empty-state safe and defaults uid/handle to null', async () => {
     const { repo } = capturingRepo();
     // Flag already consumed ⇒ no demo seed ⇒ genuinely empty state.

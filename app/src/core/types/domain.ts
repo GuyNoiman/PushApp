@@ -303,14 +303,54 @@ export interface AllowedWindow {
 }
 
 /**
+ * One weekday's Active-Hours entry: whether the app may contact the user that day
+ * at all, and (when enabled) the allowed wall-clock window. An `enabled: false` day
+ * allows NOTHING (no reminder is scheduled for it). A window whose start equals its
+ * end means "all day" (no constraint), the canonical default (00:00 → 00:00). Cross-
+ * midnight windows are honored via {@link AllowedWindow}.
+ */
+export interface DayActiveHours {
+  enabled: boolean;
+  window: AllowedWindow;
+}
+
+/**
+ * Account-level **Active Hours** (D40) — the outer per-day boundary within which the
+ * app may send optional Journey communications, set/edited from the Profile screen.
+ * The single source of truth for the account window: when present it is authoritative
+ * and the legacy {@link SchedulingPrefs.window} is not consulted; when absent the
+ * legacy window (or all-day) applies. `mode` records the editor's view; the
+ * availability helpers read `days` directly and are mode-agnostic.
+ *
+ *  - `days` is length 7, indexed by JS weekday (0=Sun … 6=Sat).
+ *  - `mode: 'shared'` = every day carries the same enabled window (the editor shows
+ *    one range); `mode: 'perDay'` = each day is independently enabled with its window.
+ */
+export interface ActiveHours {
+  mode: 'shared' | 'perDay';
+  days: DayActiveHours[];
+}
+
+/**
  * How the user wants their reminders TIMED (distinct from CommunicationPrefs, which
  * is per-channel opt-in). All-permissive by default so nothing changes until the
  * user sets a preference. Consumed by the CommunicationScheduler when it plans the
  * on-device notification set. No PII.
  */
 export interface SchedulingPrefs {
-  /** Optional allowed firing window; undefined means any time of day. */
+  /**
+   * Legacy account-level allowed firing window; undefined means any time of day.
+   * SUPERSEDED by {@link activeHours} when that is present (single source of truth) —
+   * kept so older snapshots load and behave unchanged.
+   */
   window?: AllowedWindow;
+  /**
+   * Per-day account-level Active Hours (D40). Optional/additive: when undefined the
+   * account behaves as all-day, all-days-enabled (falling back to the legacy
+   * `window`), so pre-existing snapshots are unaffected. When present it is the
+   * authoritative account window.
+   */
+  activeHours?: ActiveHours;
   /** Preferred part of day; 'either' applies no day-part constraint. */
   dayPart: DayPart;
   /** Preferred weekdays in JS `Date.getDay()` convention (0=Sun … 6=Sat); empty = all days. */

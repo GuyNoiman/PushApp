@@ -1,6 +1,7 @@
 # PRD — Initial Onboarding Questionnaire
 
-Status: **Open Questions** — founder vision captured 2026-08-10; not ready for implementation. The two
+Status: **Open Questions** — founder vision captured 2026-08-10; not ready for implementation. **PARKED per D40 (2026-08-11): not ready to spec at this stage; when it lands it
+will also drive the unified communication-style selection (D40).** The two
 cost/privacy flags (voice input + generation gating) were **resolved by the founder 2026-08-10** (§10.1,
 §10.2), which removes the cloud-STT cost and audio-upload risk; the remaining spec questions (§10.3–§10.7)
 still need a close-the-questions pass before build.

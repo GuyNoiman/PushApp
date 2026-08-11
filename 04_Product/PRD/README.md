@@ -16,7 +16,21 @@ change in the system gets an orderly PRD, and all PRD files live in this folder.
 5. Product decisions that come out of a PRD are also logged in `06_Decisions/Decision_Log.md`
    (the PRD links to the relevant D-entry), and the PRD is gated against vision/terminology by
    product-guardian.
-6. **Done tracking (founder, 2026-08-10):** once a PRD's approved/current scope is IMPLEMENTED and
+
+## Done-file protection rule (founder decision, 2026-08-10)
+
+1. Before creating or editing any PRD, search the complete `04_Product/PRD/` tree — including `Done/`
+   and `Future/` — for an existing file for that feature.
+2. A file inside `Done/` is immutable. Never edit, move, rename, or overwrite it.
+3. If completed work needs a continuation, create a new file outside `Done/` with the same base feature
+   name and the next two-digit serial suffix: `_02`, then `_03`, and so on.
+4. Determine the next serial by checking every active, Future, and Done version first. Never assume `_02`
+   is available.
+5. A continuation must link to the Done predecessor and state what it extends or supersedes. It must not
+   silently rewrite the completed decision history.
+6. Files outside `Done/` may be edited while their feature is still under specification, subject to the
+   repository's normal preserve-history rules.
+7. **Done tracking (founder, 2026-08-10):** once a PRD's approved/current scope is IMPLEMENTED and
    green, its file MOVES to `Done/`. The file keeps its status header showing exactly what shipped and
    what is deferred (a later phase or a dependency), so the root folder stays a live picture of what is
    still open vs. what is done. If a deferred phase later becomes active work, note it (or spin a new
@@ -35,7 +49,24 @@ error states.
 - `Own_Profile_PRD.md` — Editing the authenticated user's identity/adaptation fields and profile photo.
   **Stage: MVP · Status: Approved.**
 - `Journey_Support_Circle_PRD.md` — Journey-specific Ally invitations, consent, viewing permissions,
-  management, and lifecycle notifications. **Stage: MVP · Status: Approved.**
+  management, and lifecycle notifications. **Stage: MVP · Status: Ready (D40) — consent gate + Companion (system-generated Step progress only, no images/UGC); light security-privacy pass pending.**
+- `User_Active_Hours_PRD.md` — account-level communication hours with shared or per-day configuration.
+  **Stage: MVP · Status: Implemented (account slice, commit 969cd43; clamp-not-disable, D40).**
+- `Journey_Reminder_Management_PRD.md` — view/edit/disable Fixed or Smart reminders for an existing Journey.
+  **Stage: MVP · Status: Ready — Off/Fixed built (commit b2d4008); Smart deferred (D40).**
+- `Smart_Notification_Timing_PRD.md` — low-frequency Journey-specific timing learning and Weekly Review
+  proposals. **Stage: MVP · Status: Approved.**
+- `Communication_Style_Profile_PRD.md` — one unified style driving coach + notifications, selected via onboarding.
+  **Stage: MVP · Status: Open — selection gated on onboarding (D40).**
+- `Dream_Management_PRD.md` — Coach-led Dream creation, My Dreams, and approved many-to-many Journey
+  relationships. **Stage: MVP · Status: Ready (slice 1) — coach-owned Dreams, primary + secondary (D40).**
+- `Future_Journey_Management_PRD.md` — scheduled/manual Future Journeys, editing, activation, and
+  overload guardrails. **Stage: MVP · Status: Approved.**
+- `Coach_Context_Summaries_PRD.md` — optional, minimal, end-to-end encrypted Dream/Journey context for
+  the Coach. **Stage: MVP · Status: Approved; security/privacy release gate.**
+- `Future/Recurring_Routine_PRD.md` — **Practice** object: **PARKED (D39, 2026-08-11).** We are not building a
+  distinct recurring object now; small recurring tasks + small goals use the existing Dream/Journey/Step model,
+  revisited after real usage. The analysis + product-guardian conditions are preserved in the file. **Stage: Future.**
 - Existing PRD (pre-dating this folder): `../Miss_Recovery_PRD.md` — Miss-Recovery & Adaptive Reminders.
 
 ### Done (implemented — see each file's status header for what shipped vs. deferred)
@@ -55,3 +86,5 @@ and update its Stage, Status, open questions, and Decision Log reference before 
   **Stage: Future · Status: Future Vision; not approved for implementation.**
 - `Future/Support_Score_PRD.md` — Future support-quality signal within the Points/Leveling system.
   **Stage: Future · Status: Future Vision; not approved for implementation.**
+- `Future/Adaptive_Communication_Engine_PRD.md` — future selection among approved communication channels
+  and context signals. **Stage: Future / Commercial · Status: Future Vision; not approved for implementation.**

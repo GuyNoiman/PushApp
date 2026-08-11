@@ -1,9 +1,10 @@
 # PRD — Practice (recurring, non-finite, identity-anchored maintenance)
 
-Status: **Open Questions** — product direction drafted; blocking questions in §13 are the founder's to resolve.
-Stage: **MVP (recommended)** — foundational object, cheap because it reuses already-approved machinery
-(Daily Step Reporting D35, Step Postponement D37, per-activity timing D38). Could be a fast-follow if MVP
-scope is tight.
+Status: **PARKED (founder, 2026-08-11)** — we are NOT building a distinct "weekly routine"/Practice object
+at this stage. Small recurring tasks AND small goals are handled with the existing `Dream → Journey → Step`
+model like everything else; after real usage we revisit whether a distinct object is needed. This file (and
+its product-guardian conditions C1–C8) is preserved intact for that revisit. See Decision Log **D39 (Parked)**.
+Stage: **Future** — revisit after real-world usage of the existing model.
 Owner: founder + AI product team (product-manager PRD + product-guardian gate, per D39).
 Related: **D39** (the approving decision), **D35** (`Done`-adjacent `Daily_Step_Reporting_PRD.md`), **D37**
 (`Step_Postponement_PRD.md`), **D38** (`Smart_Notification_Timing_PRD.md` + `seriesId`), **D26.4/D26.6**

@@ -298,7 +298,58 @@ per-activity (`seriesId`, D38) for routines; a regular Journey stays per-Journey
 **Categorization:** **Approved — Vision (IN the app).** To be **defined by a product-manager PRD** +
 **product-guardian gate**; `Product_Philosophy` / `Information_Architecture` must be updated so this is a
 deliberate broadening, **not a silent redefinition** of Journey.
-**Reflected in:** (pending) a new routine PRD in `04_Product/PRD/`, a Philosophy/IA note, and D38.
+**Reflected in:** `Future/Recurring_Routine_PRD.md` (now Parked) + D38.
+**PARKED (founder, 2026-08-11):** the founder decided **not to build a distinct "weekly routine"/Practice
+object at this stage.** Small recurring tasks AND small goals go through the EXISTING `Dream → Journey → Step`
+model like everything else; after real-world usage we revisit whether a distinct object is warranted.
+Consequences (all MOOT for now, preserved for the revisit): the name (Practice vs routine), container-vs-
+standalone, placement, the streak-includes-routine question, the Practice↔Dream anchoring, and the
+product-guardian conditions C1–C8. `Recurring_Routine_PRD.md` moved to `Future/` with a Parked status. This
+reverses only the "build it now," not the analysis.
+
+### D40 — Daily-loop batch resolutions: Weekly Review, Dreams, reminders, support circle, notifications (2026-08-11)
+Resolved with the founder 2026-08-11 across the PRD queue (each PRD to be updated to match):
+- **Weekly Review:** **never show an empty next week** — always surface remaining Steps from other active
+  Journeys, else a coach CTA to build a plan, else a Dream-based suggestion (a fitting existing Dream or one
+  not yet addressed). Keep the user in motion. The screen opens with a past-week summary ("X Steps done",
+  note frozen Journeys). A proposed plan-change is retained **≤48h**. Changes apply **forward-only**; already-
+  reported/past data stays saved (immutable). Analysis stays on-device deterministic (Q1 hybrid: optional LLM
+  narration behind the live-coach gate); free text not analyzed; retention rides the encrypted blob.
+- **Dreams (Dream Management):** each Journey has **one PRIMARY Dream + optional secondary Dreams**
+  (many-to-many with a primary; first UI slice exposes single-primary). The **coach OWNS the Dream layer** —
+  it infers/formulates Dreams from the conversation, the **user does NOT approve**, and the coach may
+  create/edit/delete Dreams freely. Sync invariants deferred to a backend.
+- **Reminders:** account-level **Active Hours** (set at onboarding, editable in the Profile screen) are
+  DISTINCT from **per-Journey reminder times**. An out-of-hours reminder is **moved earlier to fit (clamp),
+  NOT disabled** — reusing the shipped clamp behavior + the postpone shorten-rule logic (so NO behavior
+  reversal; this overrides the earlier "disable" recommendation and the PRDs' "never clamp" wording). **Smart
+  mode deferred** (needs Weekly Review) — tracked as a follow-up so it isn't lost. Build order: account Active
+  Hours → per-Journey Off/Fixed management (also migrate the creation-wizard reminder into the managed
+  ReminderRule system) → Weekly Review → Smart. Per-series (`seriesId`) timing rides in with Smart, not now.
+- **Support Circle (D2):** add a **consent/acceptance gate** before any sharing (and fix, in the same slice,
+  the current bug where a removed friend keeps seeing shared snapshots). **The Companion bundle IS IN**
+  (founder: consensual sharing with a chosen person is legitimate). **Scope refinement (founder 2026-08-11):**
+  Companion for MVP shares **only system-generated Step progress (names + statuses)** — this is content the
+  app created, not the user, so it is low-sensitivity and is NOT user-generated content. **No images and no
+  cloud image storage in MVP** — proof images belong to `Accountability_Ally` (Future) only, which removes the
+  storage cost. Owner-attached free text is **deferred to Accountability Ally too** (recommended, pending
+  final founder confirm) so Companion MVP carries no UGC. Access is **revocable at any time**. Net: the only
+  live requirement is a **light security-privacy pass** (row-level access + immediate revocation + fixing the
+  removed-friend bug); **store-compliance (UGC/Apple 1.2) and cost-guardian are N/A for this slice**. Build
+  against the real schema; validate with a seeded second account until general sign-up lands. Bundle names
+  (Encourager/Companion) → product-guardian to ratify.
+- **Notifications:** build a unified **notification service** as infrastructure now, with per-type templated
+  phrasing that will later be **tone-driven** (ties to the unified communication style). Add **all nine**
+  Support-Circle notification types now even if not all fire yet; more types are coming.
+- **Friend messaging:** deferred post-MVP (honors D29) but **planned into the architecture now** (keep a seam).
+- **Communication style:** ONE unified preference driving **both** the coach tone and notification copy,
+  SELECTED via the (future) onboarding questionnaire.
+- **Onboarding questionnaire (K2):** parked — not ready to spec.
+- **Sync manifest:** produce a doc listing every area/field needing cross-device sync / server persistence so
+  a future backend migration is turnkey; the app should behave identically across devices (not prioritized now).
+**Categorization:** **Approved.** **Reflected in:** to be applied to `Weekly_Review`, `Dream_Management`,
+`User_Active_Hours`, `Journey_Reminder_Management`, `Journey_Support_Circle`, `Communication_Style_Profile`,
+`Friend_Profile` PRDs + a new Sync-Manifest doc.
 
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 

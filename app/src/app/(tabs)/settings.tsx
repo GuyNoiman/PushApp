@@ -148,6 +148,17 @@ export default function SettingsScreen() {
           {/* Profile — the username lives here now (moved out of Circle). */}
           <ProfileIdentity />
 
+          {/* My Dreams (Dream Management, D40) — a view-only window into the coach-owned Dreams
+              behind the user's Journeys. Sits in the profile area (PRD §4.1). */}
+          <SettingsSection title={t('sections.dreams')}>
+            <SettingsRow
+              icon="sparkles-outline"
+              label={t('title', { ns: 'dreams' })}
+              detail={t('dreams.rowDetail')}
+              onPress={() => router.push('/my-dreams' as Href)}
+            />
+          </SettingsSection>
+
           {/* Account — Apple is still "coming soon"; Google reads as connected via the
               dev-simulated sign-in when the founder's env vars are set. The email +
               "Simulated" note keep it honest that no real OAuth ran. TODO(auth). */}

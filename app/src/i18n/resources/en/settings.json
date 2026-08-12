@@ -2,10 +2,14 @@
   "title": "Settings",
   "sections": {
     "profile": "Profile",
+    "dreams": "Dreams",
     "account": "Account",
     "app": "App",
     "data": "Your data",
     "developer": "Developer"
+  },
+  "dreams": {
+    "rowDetail": "The Dreams behind your Journeys, shaped by your coach."
   },
   "profile": {
     "namePlaceholder": "Your name (from sign-in)",

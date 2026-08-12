@@ -138,6 +138,10 @@ function ThemedChrome() {
         <Stack.Screen name="settings/country" />
         <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey/[id]" />
+        {/* My Dreams (Dream Management, D40) — the private, view-only Dream list opened from the
+            Settings profile area, and each Dream's detail. Coach-owned; no CRUD controls. */}
+        <Stack.Screen name="my-dreams" />
+        <Stack.Screen name="dream/[id]" />
         {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),
             not a pushed modal (mature redesign 2026-08-07). */}
         <Stack.Screen name="achievements" options={{ presentation: 'modal' }} />

@@ -155,6 +155,10 @@ function ThemedChrome() {
         {/* Account-level Active Hours editor — reused by Settings and by the onboarding
             Personal Information page. */}
         <Stack.Screen name="settings/active-hours" />
+        {/* Communication Style (D40) — the view/retake settings page and the six-message
+            questionnaire, reachable from Settings and from the onboarding completion seam. */}
+        <Stack.Screen name="settings/communication-style" />
+        <Stack.Screen name="settings/communication-style-quiz" />
         <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey/[id]" />
         {/* My Dreams (Dream Management, D40) — the private, view-only Dream list opened from the

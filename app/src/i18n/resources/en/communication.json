@@ -1,0 +1,91 @@
+{
+  "quiz": {
+    "title": "Communication Style",
+    "intro": {
+      "title": "How should PushApp speak to you?",
+      "p1": "You'll see 6 short messages, each written in a few different ways. Choose the version you would most like to receive. There are no right or wrong answers.",
+      "start": "Start",
+      "later": "Maybe later"
+    },
+    "questionTitle": "Which version would you most like to receive?",
+    "exampleNote": "These are example messages. Names and numbers are made up.",
+    "events": {
+      "friendRequest": {
+        "direct": { "title": "New friend request", "body": "Alex sent you a friend request. Review it now." },
+        "explanatory": { "title": "A new friend request", "body": "Alex would like to connect with you. Open the request to accept or decline." },
+        "warm": { "title": "Someone would like to join you", "body": "Alex sent you a friend request. Take a look and see if you'd like to connect." },
+        "energizing": { "title": "Your circle may be growing", "body": "Alex wants to connect. Open the request and choose what feels right." }
+      },
+      "friendSupport": {
+        "direct": { "title": "A friend may need support", "body": "Alex may need support. Send a message." },
+        "explanatory": { "title": "A friend may need support", "body": "Alex may benefit from a check-in. You can open their profile and send a message." },
+        "warm": { "title": "You could make Alex's day a little easier", "body": "Alex may need support. A personal message could mean a lot." },
+        "energizing": { "title": "Your support can make a difference", "body": "Alex may need you today. Send a quick message." }
+      },
+      "stepsRemain": {
+        "direct": { "title": "2 Steps remain today", "body": "Open today's plan and choose your next Step." },
+        "explanatory": { "title": "2 Steps remain in today's plan", "body": "Completing them will finish the plan you set for today. Choose your next Step." },
+        "warm": { "title": "You're still moving forward", "body": "Two Steps are waiting today. We're here when you're ready for the next one." },
+        "energizing": { "title": "Two Steps between you and today's plan", "body": "Pick the next one and keep your momentum going." }
+      },
+      "streakRisk": {
+        "direct": { "title": "Your Streak needs one more Step", "body": "Complete today's remaining Step to keep your Streak." },
+        "explanatory": { "title": "One Step remains to keep your Streak", "body": "Your Streak continues when today's full plan is completed. One Step is still open." },
+        "warm": { "title": "Your progress is still yours", "body": "One Step remains to keep your Streak today. Whatever happens, you can keep moving forward." },
+        "energizing": { "title": "Your Streak is within reach", "body": "One more Step today. You've still got time to keep it going." }
+      },
+      "positiveProgress": {
+        "direct": { "title": "Good progress this week", "body": "You completed 4 of your planned Steps. Keep going." },
+        "explanatory": { "title": "You've completed 4 planned Steps", "body": "That is 4 completed Steps toward this week's plan. Review your progress or continue." },
+        "warm": { "title": "Look at what you've already done", "body": "Four planned Steps completed this week. Your effort is showing." },
+        "energizing": { "title": "You're building real momentum", "body": "Four planned Steps are done this week. Keep it moving." }
+      },
+      "stepReminder": {
+        "direct": { "title": "Time for your next Step", "body": "Your planned Step is ready. Open it now." },
+        "explanatory": { "title": "It's time for your planned Step", "body": "This reminder is arriving at the time you chose for this Step. Open it when you're ready." },
+        "warm": { "title": "A little reminder for something that matters to you", "body": "It's time for the Step you planned. We're here when you're ready." },
+        "energizing": { "title": "Ready for your next move?", "body": "The Step you planned is here. Let's get started." }
+      },
+      "tieBreak": {
+        "direct": { "title": "A quick reminder", "body": "Your next Step is scheduled for now. Open it." },
+        "explanatory": { "title": "A scheduled reminder", "body": "You set a reminder for this Step at this time. Open it when it suits you." },
+        "warm": { "title": "A gentle nudge", "body": "The Step you planned is here. No rush, we're with you." },
+        "energizing": { "title": "Time to move", "body": "Your scheduled Step is ready. Let's go." }
+      }
+    },
+    "tieBreak": {
+      "title": "One more, to help us choose",
+      "body": "A couple of styles were close. Pick the version you like best."
+    },
+    "result": {
+      "title": "Your Communication Style is set to {{style}}",
+      "hint": "You can change this anytime in Settings.",
+      "save": "Save",
+      "retry": "Try again"
+    }
+  },
+  "styleNames": {
+    "direct": "Direct",
+    "explanatory": "Explanatory",
+    "warm": "Warm",
+    "energizing": "Energizing"
+  },
+  "styleDescriptions": {
+    "direct": "PushApp will keep messages short and clear, telling you what matters and what to do next.",
+    "explanatory": "PushApp will add a little context, so you know why a message matters and what it means.",
+    "warm": "PushApp will use a caring, human tone while still telling you clearly what matters.",
+    "energizing": "PushApp will keep an upbeat, encouraging tone that points you to your next move."
+  },
+  "settings": {
+    "rowLabel": "Communication Style",
+    "rowDetail": "How PushApp speaks to you",
+    "title": "Communication Style",
+    "intro": "Choose how PushApp speaks to you. This changes the tone of messages, never what they mean or what you can do.",
+    "currentLabel": "Your current style",
+    "retake": "Retake the questionnaire",
+    "useDefault": "Use the default (Warm)"
+  },
+  "onboardingEntry": {
+    "cta": "Choose how PushApp speaks to you"
+  }
+}

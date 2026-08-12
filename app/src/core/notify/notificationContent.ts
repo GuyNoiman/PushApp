@@ -6,8 +6,9 @@
  *
  * It is PURE and framework-free (CLAUDE.md §6): deterministic, no I/O, no React. It reads copy through
  * the framework-free i18next core (`i18n.t`, never a hook) in the caller's language, applies the user's
- * FORM OF ADDRESS as i18next context (D31), and threads a TONE SEAM for the future unified communication
- * style (D40) — accepted now, a no-op today.
+ * FORM OF ADDRESS as i18next context (D31), and applies the user's unified COMMUNICATION STYLE
+ * (D40, Communication_Style_Profile_PRD) as a toned copy variant, falling back to the base copy when a
+ * given type has no toned variant yet.
  *
  * PRIVACY (SECURITY-PRIVACY G1, {@link ./notificationTypes} header): social-type bodies interpolate ONLY
  * a person's display name into a fixed template; they can never carry the owner's private free text,
@@ -17,7 +18,7 @@
  */
 import i18n from '../../i18n';
 import { addressContext, type AddressForm } from '../../i18n/addressForm';
-import type { CommunicationStyleId } from '../coach/communicationStyles';
+import type { CommunicationProfileId } from '../communication/communicationProfile';
 import { NOTIFICATION_TYPES, type NotificationParamsByType, type NotificationType } from './notificationTypes';
 
 /** The i18n namespace all notification copy lives in. */
@@ -31,25 +32,32 @@ export interface NotificationContent {
 
 /**
  * The resolution context for building copy. `addressForm` is the user's grammatical form of address
- * (D31); `styleId` is the future communication tone (D40) — accepted now, not yet applied.
+ * (D31); `styleId` is the user's unified COMMUNICATION STYLE (D40) — when set, its toned copy variant
+ * is preferred, with the base copy as the safe fallback.
  */
 export interface NotificationBuildContext {
   addressForm: AddressForm;
-  styleId?: CommunicationStyleId;
+  styleId?: CommunicationProfileId;
 }
 
 /**
- * TONE SEAM (D40). The unified communication style will one day select toned phrasing; this maps a
- * style to an i18n key suffix. No toned variants exist yet, so EVERY style resolves to the base copy.
- * When the tone layer lands, add cases here (e.g. `case 'spark': return '_spark'`) and the matching
- * variant keys to the `notify` namespace. Keeping the seam here means the future slice touches copy,
- * not control flow.
+ * TONE SUFFIX (D40, Communication_Style_Profile_PRD §10). Maps the user's communication style to the
+ * i18n key suffix that selects its toned variant (e.g. `warm` → `reminder.body_warm`). Adding a style
+ * here is a config edit; a type that has no toned variant for the chosen style falls back to its base
+ * copy (see {@link tonedKeys}), so a missing variant is always safe — never a raw key.
  */
-function toneKeySuffix(styleId: CommunicationStyleId | undefined): string {
-  switch (styleId) {
-    default:
-      return '';
-  }
+function toneKeySuffix(styleId: CommunicationProfileId | undefined): string {
+  return styleId ? `_${styleId}` : '';
+}
+
+/**
+ * The ordered key list for one copy slot: the toned variant first, then the base as fallback. i18next
+ * uses the first key that resolves, so a type without a toned variant safely degrades to its base copy
+ * (PRD §10: every event has all four variants or falls back to the neutral approved variant). When no
+ * style is set the two collapse to the same base key — a harmless no-op.
+ */
+function tonedKeys(baseKey: string, tone: string): [string, string] {
+  return [`${baseKey}${tone}`, baseKey];
 }
 
 /**
@@ -72,8 +80,8 @@ export function buildNotificationContent<T extends NotificationType>(
   if (type === 'reminder') {
     const p = params as NotificationParamsByType['reminder'];
     return {
-      title: p.journeyTitle?.trim() || i18n.t(`reminder.title${tone}`, { ns: NS, context }),
-      body: p.stepTitle?.trim() || i18n.t(`reminder.body${tone}`, { ns: NS, context }),
+      title: p.journeyTitle?.trim() || i18n.t(tonedKeys('reminder.title', tone), { ns: NS, context }),
+      body: p.stepTitle?.trim() || i18n.t(tonedKeys('reminder.body', tone), { ns: NS, context }),
     };
   }
 
@@ -81,7 +89,7 @@ export function buildNotificationContent<T extends NotificationType>(
   const name = (params as { name?: string }).name?.trim() || i18n.t('someone', { ns: NS });
   const options = { ns: NS, context, name };
   return {
-    title: i18n.t(`${spec.keyGroup}.title${tone}`, options),
-    body: i18n.t(`${spec.keyGroup}.body${tone}`, options),
+    title: i18n.t(tonedKeys(`${spec.keyGroup}.title`, tone), options),
+    body: i18n.t(tonedKeys(`${spec.keyGroup}.body`, tone), options),
   };
 }

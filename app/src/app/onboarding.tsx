@@ -10,7 +10,7 @@
  * presentational (Engineering Bible §19). Answers stay ON DEVICE as the Coach's opening context (PRD
  * §9/§10) — nothing is sent to the cloud here; generation→Dreams remains the coach's gated job (D40).
  */
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -372,11 +372,23 @@ function IntroStep({
   );
 }
 
-/** §7 — completion: one primary action opens the first Coach conversation. */
+/** §7 — completion: opens the first Coach conversation, with an optional Communication Style seam.
+ *  Communication Style (D40) is offered here as a NON-BLOCKING secondary action — the onboarding shell
+ *  owns final placement; it can also be set later in Settings. */
 function CompletionStep({ skippedAll, onStart }: { skippedAll: boolean; onStart: () => void }) {
   const { t } = useTranslation('onboarding');
+  const { t: tc } = useTranslation('communication');
   return (
-    <OnboardingScaffold footer={<OnboardingPrimaryButton label={t('completion.start')} onPress={onStart} />}>
+    <OnboardingScaffold
+      footer={
+        <>
+          <OnboardingPrimaryButton label={t('completion.start')} onPress={onStart} />
+          <OnboardingSecondaryButton
+            label={tc('onboardingEntry.cta')}
+            onPress={() => router.push('/settings/communication-style-quiz' as Href)}
+          />
+        </>
+      }>
       <ThemedText type="title">
         {skippedAll ? t('completion.titleSkipped') : t('completion.title')}
       </ThemedText>

@@ -22,11 +22,11 @@ import { useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { checkBackendHealth } from '@/core/social/backendHealth';
+import { ACCOUNT_STORAGE_KEYS, mergeProfileIntoExport } from '@/state/accountExport';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 import { useSocial } from '@/state/SocialProvider';
-import { LANGUAGE_PREFERENCE_KEY } from '@/state/LanguagePreference';
-import { THEME_PREFERENCE_KEY } from '@/state/ThemePreference';
+import { PROFILE_KEY } from '@/state/ProfileProvider';
 
 /** The temp filename the export is shared under (deleted right after). */
 const EXPORT_FILENAME = 'pushapp-export.json';
@@ -54,13 +54,17 @@ export function useAccountActions() {
    * unavailable); throws only on an unexpected I/O failure.
    */
   const exportData = useCallback(async (): Promise<boolean> => {
-    const json = core.exportStateJson({
+    const coreJson = core.exportStateJson({
       appVersion: Constants.expoConfig?.version ?? '0.0.0',
       exportedAt: Date.now(),
       // Only meaningful once a real (non-anonymous) identity exists.
       uid: user && !user.isAnonymous ? user.id : null,
       handle: profile?.handle ?? null,
     });
+    // Carry the private profile blob (form of address, country, birth date, week start, communication
+    // style) alongside the repo state — the user's own copy must include everything on device (PRD §12).
+    const profileRaw = await AsyncStorage.getItem(PROFILE_KEY);
+    const json = mergeProfileIntoExport(coreJson, profileRaw);
 
     const file = new File(Paths.cache, EXPORT_FILENAME);
     try {
@@ -104,7 +108,7 @@ export function useAccountActions() {
     await Notifications.cancelAllScheduledNotificationsAsync();
     await signOut();
     await core.resetToFirstRun();
-    await AsyncStorage.multiRemove([THEME_PREFERENCE_KEY, LANGUAGE_PREFERENCE_KEY]);
+    await AsyncStorage.multiRemove([...ACCOUNT_STORAGE_KEYS]);
   }, [enabled, deleteRemote, signOut, core]);
 
   return { exportData, deleteAccount };

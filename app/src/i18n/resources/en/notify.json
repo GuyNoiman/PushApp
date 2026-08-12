@@ -2,7 +2,15 @@
   "someone": "Someone",
   "reminder": {
     "title": "Time for your Journey",
-    "body": "Ready for your next Step?"
+    "body": "Ready for your next Step?",
+    "title_direct": "Time for your next Step",
+    "body_direct": "Your planned Step is ready. Open it now.",
+    "title_explanatory": "It's time for your planned Step",
+    "body_explanatory": "This reminder arrived at the time you chose. Open it when you're ready.",
+    "title_warm": "A little reminder for what matters to you",
+    "body_warm": "It's time for the Step you planned. We're here when you're ready.",
+    "title_energizing": "Ready for your next move?",
+    "body_energizing": "The Step you planned is here. Let's get started."
   },
   "allyRequest": {
     "title": "New Support Circle request",

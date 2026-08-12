@@ -100,14 +100,34 @@ describe('buildNotificationContent', () => {
     });
   });
 
-  describe('tone seam (D40)', () => {
-    it('accepts a styleId and returns identical copy (no-op passthrough today)', () => {
-      const withStyle = buildNotificationContent('ally_request', { name: 'Dana' }, {
-        addressForm: 'neutral',
-        styleId: 'spark',
-      });
-      const without = buildNotificationContent('ally_request', { name: 'Dana' }, { addressForm: 'neutral' });
-      expect(withStyle).toEqual(without);
+  describe('communication style / tone (D40)', () => {
+    it('resolves the reminder toned variant for the chosen style (fallback nudge)', () => {
+      const base = buildNotificationContent('reminder', {}, { addressForm: 'neutral' });
+      const warm = buildNotificationContent('reminder', {}, { addressForm: 'neutral', styleId: 'warm' });
+      const direct = buildNotificationContent('reminder', {}, { addressForm: 'neutral', styleId: 'direct' });
+
+      // Each style yields its own toned copy, distinct from the base and from each other.
+      expect(warm.body).not.toBe(base.body);
+      expect(direct.body).not.toBe(base.body);
+      expect(warm.body).not.toBe(direct.body);
+      expect(warm.title.length).toBeGreaterThan(0);
+      expect(warm.body).not.toContain('{{');
+    });
+
+    it('falls back to base copy for a type that has no toned variant yet', () => {
+      // The social types have no toned variants authored yet — every style resolves the base copy.
+      const base = buildNotificationContent('ally_request', { name: 'Dana' }, { addressForm: 'neutral' });
+      for (const styleId of ['direct', 'explanatory', 'warm', 'energizing'] as const) {
+        const toned = buildNotificationContent('ally_request', { name: 'Dana' }, { addressForm: 'neutral', styleId });
+        expect(toned).toEqual(base);
+      }
+    });
+
+    it('still applies form of address on top of a toned variant (D31 × D40)', async () => {
+      await changeLanguage('he');
+      const feminine = buildNotificationContent('reminder', {}, { addressForm: 'feminine', styleId: 'warm' }).body;
+      const masculine = buildNotificationContent('reminder', {}, { addressForm: 'masculine', styleId: 'warm' }).body;
+      expect(feminine).not.toBe(masculine);
     });
   });
 

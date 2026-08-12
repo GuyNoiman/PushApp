@@ -17,6 +17,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import {
+  DEFAULT_COMMUNICATION_PROFILE,
+  isCommunicationProfileId,
+  type CommunicationProfileId,
+} from '@/core/communication/communicationProfile';
 import { deviceCountry, weekStartForCountry, type CountryCode } from '@/core/profile/countries';
 import {
   DEFAULT_ADDRESS_FORM,
@@ -43,6 +48,8 @@ export interface Profile {
   birthDate: string | null;
   /** Gender-aware form of address (D31) — private. */
   addressForm: AddressForm;
+  /** Unified communication style — how PushApp speaks to the user (D40, Communication_Style_Profile_PRD). */
+  communicationProfile: CommunicationProfileId;
   /** Effective week-start day (D33). */
   weekStartDay: Weekday;
   /** True once the user set the week start MANUALLY — a country change then won't replace it. */
@@ -56,6 +63,7 @@ function defaultProfile(): Profile {
     country,
     birthDate: null,
     addressForm: DEFAULT_ADDRESS_FORM,
+    communicationProfile: DEFAULT_COMMUNICATION_PROFILE,
     weekStartDay: weekStartForCountry(country),
     weekStartOverridden: false,
   };
@@ -71,6 +79,9 @@ function normalize(raw: unknown): Profile {
     country: typeof p.country === 'string' && p.country.length === 2 ? p.country.toUpperCase() : base.country,
     birthDate: typeof p.birthDate === 'string' ? p.birthDate : base.birthDate,
     addressForm: isAddressForm(p.addressForm) ? p.addressForm : base.addressForm,
+    communicationProfile: isCommunicationProfileId(p.communicationProfile)
+      ? p.communicationProfile
+      : base.communicationProfile,
     weekStartDay: isWeekday(p.weekStartDay) ? p.weekStartDay : base.weekStartDay,
     weekStartOverridden: typeof p.weekStartOverridden === 'boolean' ? p.weekStartOverridden : base.weekStartOverridden,
   };
@@ -87,6 +98,8 @@ interface ProfileValue {
   setDisplayName: (name: string | null) => void;
   setBirthDate: (iso: string | null) => void;
   setAddressForm: (form: AddressForm) => void;
+  /** Set the unified communication style (D40) — applies to future notification/Coach copy. */
+  setCommunicationProfile: (id: CommunicationProfileId) => void;
   /** Change country; recomputes the week-start default UNLESS the user has overridden it. */
   setCountry: (code: CountryCode) => void;
   /** Manually set the week start — becomes an override that country changes won't replace. */
@@ -98,6 +111,7 @@ const ProfileContext = createContext<ProfileValue>({
   setDisplayName: () => {},
   setBirthDate: () => {},
   setAddressForm: () => {},
+  setCommunicationProfile: () => {},
   setCountry: () => {},
   setWeekStartDay: () => {},
 });
@@ -174,6 +188,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     });
   }, [commit]);
 
+  const setCommunicationProfile = useCallback((id: CommunicationProfileId) => {
+    setProfile((prev) => {
+      const next = { ...prev, communicationProfile: id };
+      commit(next);
+      return next;
+    });
+  }, [commit]);
+
   const setCountry = useCallback((code: CountryCode) => {
     setProfile((prev) => {
       const country = code.toUpperCase();
@@ -195,7 +217,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   return (
     <ProfileContext.Provider
-      value={{ profile, setDisplayName, setBirthDate, setAddressForm, setCountry, setWeekStartDay }}>
+      value={{
+        profile,
+        setDisplayName,
+        setBirthDate,
+        setAddressForm,
+        setCommunicationProfile,
+        setCountry,
+        setWeekStartDay,
+      }}>
       {children}
     </ProfileContext.Provider>
   );

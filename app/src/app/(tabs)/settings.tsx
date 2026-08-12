@@ -66,6 +66,7 @@ export default function SettingsScreen() {
   const { profile, setAddressForm, setWeekStartDay } = useProfile();
   const addressForm = profile.addressForm;
   const weekStartDay = profile.weekStartDay;
+  const communicationProfile = profile.communicationProfile;
   const { status: notifStatus, request: requestNotif } = useNotificationPermission();
 
   // Localized weekday names (Sun..Sat) for the week-start row's value.
@@ -208,6 +209,13 @@ export default function SettingsScreen() {
               detail={t('app.addressFormDetail')}
               value={t(`app.addressFormValue.${addressForm}`)}
               onPress={cycleAddressForm}
+            />
+            <SettingsRow
+              icon="chatbubbles-outline"
+              label={t('settings.rowLabel', { ns: 'communication' })}
+              detail={t('settings.rowDetail', { ns: 'communication' })}
+              value={t(`styleNames.${communicationProfile}`, { ns: 'communication' })}
+              onPress={() => router.push('/settings/communication-style' as Href)}
             />
             <SettingsRow
               icon="calendar-outline"

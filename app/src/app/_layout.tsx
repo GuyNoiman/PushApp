@@ -9,7 +9,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { I18nManager } from 'react-native';
+import { I18nManager, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -18,7 +18,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 // Importing the i18n instance runs its init (side-effect) before any screen
 // renders, so `t(...)` is ready and the boot language is resolved.
 import '@/i18n';
-import { AppProvider } from '@/state/AppProvider';
+import { AppProvider, useApp } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
@@ -123,19 +123,38 @@ export default function RootLayout() {
  */
 function ThemedChrome() {
   const scheme = useColorScheme();
+  const { snapshot, ready } = useApp();
+
+  // First-run gate (K2, Onboarding_Questionnaire_PRD): until onboarding is complete, only the
+  // onboarding stack is reachable; once complete it is removed for good and the tabs take over.
+  // While the core is still loading we keep the tabs available (today's behaviour — Home tolerates a
+  // null snapshot and the splash covers), so an EXISTING user never flashes onboarding; a genuine
+  // first run redirects to onboarding the moment the loaded state resolves. The Stack.Protected
+  // guards are mutually exclusive, so expo-router redirects to the available anchor when they flip.
+  const gateReady = ready && snapshot != null;
+  const onboardingCompleted = snapshot?.onboardingCompleted === true;
 
   return (
     <ThemeProvider value={NavThemes[scheme]}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
+        {/* The first-run onboarding flow — the only reachable surface until it completes. */}
+        <Stack.Protected guard={gateReady && !onboardingCompleted}>
+          <Stack.Screen name="onboarding" />
+        </Stack.Protected>
+        <Stack.Protected guard={onboardingCompleted || !gateReady}>
+          <Stack.Screen name="(tabs)" />
+        </Stack.Protected>
         {/* Settings › Language picker — a card push from the Settings tab. */}
         <Stack.Screen name="settings/language" />
         {/* My Profile (Own_Profile) — the private self-view/edit, opened from the Settings
             profile header; and its searchable country picker. */}
         <Stack.Screen name="settings/profile" />
         <Stack.Screen name="settings/country" />
+        {/* Account-level Active Hours editor — reused by Settings and by the onboarding
+            Personal Information page. */}
+        <Stack.Screen name="settings/active-hours" />
         <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey/[id]" />
         {/* My Dreams (Dream Management, D40) — the private, view-only Dream list opened from the
@@ -167,6 +186,20 @@ function ThemedChrome() {
             founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
         <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />
       </Stack>
+      {/* First-run gate cover: until the persisted state resolves (`gateReady`), keep a neutral,
+          on-brand fill over everything so a genuine first run never briefly shows the tabs (with
+          seeded demo data) before redirecting into onboarding. The animated splash may finish before
+          the async load does, so this is the reliable no-flash cover. */}
+      {!gateReady && (
+        <View
+          pointerEvents="none"
+          style={[styles.gateCover, { backgroundColor: NavThemes[scheme].colors.background }]}
+        />
+      )}
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  gateCover: { ...StyleSheet.absoluteFillObject },
+});

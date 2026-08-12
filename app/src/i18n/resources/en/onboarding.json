@@ -1,0 +1,136 @@
+{
+  "skip": "Skip",
+  "language": {
+    "title": "Choose your language",
+    "subtitle": "This sets the language for everything, including your Coach. You can change it later in Settings.",
+    "continue": "Continue"
+  },
+  "personalInfo": {
+    "title": "A little about you",
+    "body": "We filled in what we could. Please check that everything looks right.",
+    "confirm": "Everything looks right, continue",
+    "edit": "Edit details",
+    "done": "Done editing",
+    "fields": {
+      "name": "Name",
+      "username": "Username",
+      "birthDate": "Birth date",
+      "birthDateOptional": "Optional",
+      "country": "Country",
+      "addressForm": "How we address you",
+      "language": "App language",
+      "activeHours": "Active hours",
+      "weekStart": "Week starts on"
+    }
+  },
+  "intro": {
+    "title": "Let's get to know you a little better",
+    "p1": "The next 6 short questions will help us understand what matters to you, what may hold you back, and what kind of approach could suit you.",
+    "p2": "The more accurately you answer, the better we can tailor your guidance and plan to your life.",
+    "p3": "There are no right or wrong answers, and you can skip any question.",
+    "time": "Estimated time: about two minutes.",
+    "start": "Start",
+    "later": "Maybe later"
+  },
+  "sections": {
+    "help": "How can we help you?",
+    "friction": "What holds you back?"
+  },
+  "progress": "Question {{current}} of {{total}}",
+  "other": "Something else",
+  "questions": {
+    "q1": {
+      "title": "Where would you most like to see change?",
+      "hint": "Select up to two.",
+      "otherReveal": "You can write what matters to you.",
+      "options": {
+        "health": "Health, fitness, and energy.",
+        "calm": "Calm and mental well-being.",
+        "work": "Work, career, or studies.",
+        "money": "Money and financial life.",
+        "relationships": "Relationships, partnership, and family.",
+        "habits": "Habits, time, and daily routine.",
+        "learning": "Learning, creativity, or a hobby.",
+        "other": "Something else."
+      }
+    },
+    "q2": {
+      "title": "If one thing improved in your life, what would you want to look different?",
+      "helper": "One or two sentences are enough. You do not need to know how to get there yet.",
+      "placeholder": "Write in your own words",
+      "secondary": "It isn't clear to me yet",
+      "examples": [
+        "feeling more energetic",
+        "progressing at work",
+        "being more present with family",
+        "feeling more in control of time"
+      ]
+    },
+    "q3": {
+      "title": "Where do things stand today?",
+      "hint": "Select one.",
+      "otherReveal": "You can describe it in your own words.",
+      "options": {
+        "takingAction": "I am already taking action and want to progress better.",
+        "notStarted": "I know what I want, but I have not started yet.",
+        "noHowToBegin": "I have a direction, but I do not know how to begin.",
+        "tooManyDirections": "I have several directions and do not know which to choose.",
+        "triedInconsistent": "I tried before, but struggled to stay consistent.",
+        "noneFits": "None of these fits me."
+      }
+    },
+    "q4": {
+      "title": "What kind of help could suit you?",
+      "hint": "Select up to two.",
+      "otherReveal": "What might help you?",
+      "options": {
+        "clearPlan": "A clear plan I know how to follow.",
+        "smallSteps": "Small Steps that are easy to begin.",
+        "flexibility": "Flexibility when life changes.",
+        "seeProgress": "A clear view of my progress.",
+        "remindersEncouragement": "Reminders and encouragement at the right time.",
+        "supportClose": "Support from someone close to me.",
+        "dontKnow": "I do not know yet.",
+        "other": "Something else."
+      }
+    },
+    "q5": {
+      "title": "What usually makes it harder for you to progress?",
+      "hint": "Select up to two.",
+      "otherReveal": "You can tell us what usually happens.",
+      "options": {
+        "lifeBusy": "Life gets busy and other things take priority.",
+        "excitementFades": "The initial excitement fades.",
+        "noClearPlan": "I do not have a clear enough plan.",
+        "tooMuchAtOnce": "I try to change too much at once.",
+        "hardToSeeProgress": "It is hard to feel or see progress.",
+        "hardToRestart": "After a miss, it is hard to get back on track.",
+        "lackSupport": "I lack support from other people.",
+        "dontKnow": "I do not know yet.",
+        "other": "Something else."
+      }
+    },
+    "q6": {
+      "title": "How much room do you realistically have for this right now?",
+      "hint": "Select one.",
+      "freeTextTitle": "Is there anything important the Coach should take into account?",
+      "freeTextHelper": "For example: work, family, studies, health, or a changing schedule.",
+      "freeTextPlaceholder": "Optional",
+      "options": {
+        "fewMinutes": "A few minutes on most days.",
+        "shortFewTimes": "A short amount of time a few times a week.",
+        "halfHour": "About half an hour on most days.",
+        "moreWhenNeeded": "I can invest more when needed.",
+        "changesWeekly": "It changes a lot from week to week.",
+        "dontKnow": "I do not know yet."
+      }
+    }
+  },
+  "completion": {
+    "title": "Great, we have a starting point",
+    "body": "The Coach already knows a little more about what matters to you, what may get in the way, and how it may be best to begin. You can change or add information later.",
+    "titleSkipped": "That's completely fine, we can start here",
+    "bodySkipped": "The Coach will get to know you through the conversation, and together you can decide where to focus.",
+    "start": "Let's get started"
+  }
+}

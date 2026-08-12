@@ -6,6 +6,9 @@
  * This file is pure TypeScript. No React, no UI, no vendor imports.
  */
 import type { Entitlement } from './entitlement';
+// Type-only cross-import (erased at runtime — no cycle): the on-device onboarding record (K2). The
+// answer/step shapes + logic live under core/onboarding; AppState only stores them.
+import type { OnboardingAnswers, OnboardingStep } from '../onboarding/model';
 // Type-only cross-import (erased at runtime — no cycle): a Weekly Review proposal carries the
 // SAME coarse adjustment kinds + per-Step diff the AdaptivePlanner already speaks.
 import type { ReplanAdjustment, StepAdjustment } from '../learning/types';
@@ -722,6 +725,18 @@ export interface AppState {
    * existed) is backfilled to a nonzero timestamp so existing users never see it.
    */
   onboardingCompletedAt?: number;
+  /**
+   * The page the first-run flow should RESUME at if interrupted (Onboarding_Questionnaire_PRD §8:
+   * "closing and reopening resumes at the same position"). Undefined ⇒ start at the beginning.
+   * ON-DEVICE only; irrelevant once `onboardingCompletedAt` is set.
+   */
+  onboardingStep?: OnboardingStep;
+  /**
+   * The user's onboarding questionnaire answers (K2) — the Coach's opening context (PRD §9). Private
+   * on-device adaptation preferences + optional free text (PRD §10): never social, never analytics,
+   * cascade-deleted/exported with the account. Undefined until the user answers anything.
+   */
+  onboardingAnswers?: OnboardingAnswers;
   /**
    * Local account-tier state (types/entitlement.ts). Optional so an older
    * persisted snapshot loads without it and resolves to the `free` default

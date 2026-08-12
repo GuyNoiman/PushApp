@@ -79,6 +79,8 @@ import type {
   WeeklyReview,
 } from './types/domain';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
+import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
+import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
 import { resolveReminderRule, type JourneyReminder } from './util/reminderView';
 import type { Candidate } from './util/reschedule';
 import {
@@ -139,6 +141,11 @@ export interface Snapshot {
   claimableRewards: number;
   /** The prominent day-count streak (StreakEngine) — Home's TopStatusBar reads it. */
   streak: number;
+  /**
+   * Whether first-run onboarding is complete (K2). The root layout's first-run gate reads this to
+   * route into the onboarding stack until it is true, then never again.
+   */
+  onboardingCompleted: boolean;
 }
 
 /**
@@ -209,6 +216,13 @@ function emptyState(): AppState {
     weekReviewAt: {},
     streak: 0,
     lastActiveDay: null,
+    // First-run gate marker (K2): a genuine fresh run stamps the resume step BEFORE any state is
+    // persisted (the demo seed in start() saves immediately). This makes a first-run snapshot
+    // distinguishable from a legacy pre-onboarding snapshot — so a user who opens the app and leaves
+    // during onboarding (e.g. sits on the language screen) is RESUMED, not silently marked onboarded
+    // by migrateState. `getOnboardingStep` already defaults to 'language', so behaviour is unchanged;
+    // this only makes the marker explicit on disk.
+    onboardingStep: 'language',
   };
 }
 
@@ -264,12 +278,17 @@ function migrateState(state: AppState): AppState {
     // history yet, so start at 0 with no active day. On-device only, no PII.
     streak: state.streak ?? 0,
     lastActiveDay: state.lastActiveDay ?? null,
-    // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses
-    // emptyState directly). So any state reaching here belongs to an existing user
-    // who predates onboarding — treat them as already onboarded (a nonzero
-    // timestamp) so they never see it. A snapshot that already recorded a value
-    // keeps it.
-    onboardingCompletedAt: state.onboardingCompletedAt ?? 1,
+    // migrateState only runs on a PRE-EXISTING persisted snapshot (first run uses emptyState
+    // directly). A snapshot that recorded a completion keeps it. A snapshot MID-FLOW (the
+    // onboarding gate saved a resume step/answers but hasn't completed — K2) must stay INCOMPLETE
+    // so it resumes rather than being force-completed. Only a genuine PRE-onboarding snapshot (no
+    // completion, no in-progress onboarding markers) is a legacy user — treat them as already
+    // onboarded (a nonzero timestamp) so they never see the flow.
+    onboardingStep: state.onboardingStep,
+    onboardingAnswers: state.onboardingAnswers,
+    onboardingCompletedAt:
+      state.onboardingCompletedAt ??
+      (state.onboardingStep != null || state.onboardingAnswers != null ? undefined : 1),
   };
 }
 
@@ -1654,7 +1673,55 @@ export class AppCore {
       activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,
       claimableRewards: this.missionEngine.getClaimableCount(),
       streak: this.state.streak ?? 0,
+      onboardingCompleted: this.state.onboardingCompletedAt != null,
     };
+  }
+
+  // ── Onboarding (Initial Onboarding Questionnaire, K2) ───────────────────────
+  // First-run only: the gate routes into the flow until `onboardingCompletedAt` is set, then never
+  // again. Answers + resume position live ON DEVICE (PRD §10) — nothing here is sent to the cloud;
+  // generation→Dreams stays the coach's gated job (D40).
+
+  /** The page the flow should resume at (PRD §8), defaulting to the start. */
+  getOnboardingStep(): OnboardingStep {
+    return this.state.onboardingStep ?? 'language';
+  }
+
+  /** The user's on-device onboarding answers (the Coach's opening context), or a fresh empty set. */
+  getOnboardingAnswers(): OnboardingAnswers {
+    return this.state.onboardingAnswers ?? emptyOnboardingAnswers();
+  }
+
+  /**
+   * The minimal, named Coach-handoff summary derived from the answers (PRD §9) — the seam the first
+   * Coach conversation reads to ask a grounded opening question. Pure/derived; rebuilt on every call
+   * so it always reflects the current answers (PRD §10). Returns null when the user never answered.
+   */
+  getOnboardingCoachSummary(): CoachOnboardingSummary | null {
+    return this.state.onboardingAnswers ? toCoachSummary(this.state.onboardingAnswers) : null;
+  }
+
+  /**
+   * Persist mid-flow progress (PRD §8 "save after every page"): the resume position + the answers so
+   * far. Keeps onboarding INCOMPLETE — completion is a separate, explicit step ({@link completeOnboarding}).
+   */
+  saveOnboardingProgress(step: OnboardingStep, answers: OnboardingAnswers): void {
+    this.state.onboardingStep = step;
+    this.state.onboardingAnswers = answers;
+    this.onChanged();
+  }
+
+  /**
+   * Mark first-run onboarding COMPLETE (PRD §7). Stamps `onboardingCompletedAt` so the gate never
+   * shows the flow again, and stores the final answers as the Coach's opening context. Idempotent —
+   * a re-call keeps the original completion timestamp. The caller then opens the first Coach
+   * conversation.
+   */
+  completeOnboarding(answers: OnboardingAnswers): void {
+    this.state.onboardingAnswers = answers;
+    this.state.onboardingStep = 'completion';
+    this.state.onboardingCompletedAt ??= Date.now();
+    this.onChanged();
   }
 
   /** Subscribe to state changes. Returns an unsubscribe function. */

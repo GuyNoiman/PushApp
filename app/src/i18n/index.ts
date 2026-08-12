@@ -30,6 +30,7 @@ import enJourney from './resources/en/journey.json';
 import enJourneys from './resources/en/journeys.json';
 import enMissions from './resources/en/missions.json';
 import enNotify from './resources/en/notify.json';
+import enOnboarding from './resources/en/onboarding.json';
 import enSettings from './resources/en/settings.json';
 import enShop from './resources/en/shop.json';
 import enWeeklyReview from './resources/en/weeklyReview.json';
@@ -50,14 +51,15 @@ import heSettings from './resources/he/settings.json';
 import heShop from './resources/he/shop.json';
 import heWeeklyReview from './resources/he/weeklyReview.json';
 import heDreams from './resources/he/dreams.json';
+import heOnboarding from './resources/he/onboarding.json';
 
 /** Every namespace we split copy into. `common` is the default. */
-export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'explore', 'buddy', 'shop', 'missions', 'achievements', 'weeklyReview', 'dreams', 'notify'] as const;
+export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'explore', 'buddy', 'shop', 'missions', 'achievements', 'weeklyReview', 'dreams', 'notify', 'onboarding'] as const;
 export const DEFAULT_NAMESPACE = 'common';
 
 export const resources = {
-  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, explore: enExplore, buddy: enBuddy, shop: enShop, missions: enMissions, achievements: enAchievements, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify },
-  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, explore: heExplore, buddy: heBuddy, shop: heShop, missions: heMissions, achievements: heAchievements, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify },
+  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, explore: enExplore, buddy: enBuddy, shop: enShop, missions: enMissions, achievements: enAchievements, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, onboarding: enOnboarding },
+  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, explore: heExplore, buddy: heBuddy, shop: heShop, missions: heMissions, achievements: heAchievements, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, onboarding: heOnboarding },
 } as const;
 
 /**

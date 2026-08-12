@@ -1,8 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: 2026-08-10 — read the "⭐ HANDOFF SNAPSHOT — 2026-08-10" just below (it is the most
-current and authoritative). This session finished the i18n rollout, D30 (coach voice), J3
+Last updated: **2026-08-12** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-12" just below (most current and
+authoritative). Prior top snapshot: 2026-08-10 (kept below as accurate history) — which itself noted: this
+[08-10] session finished the i18n rollout, D30 (coach voice), J3
 (Freeze/Resume + Journey.status), D31 (form of address), D33 (one week boundary), D34 (unified Own
 Profile), and introduced the PRD-per-feature working method. Everything is **COMMITTED** (9 topic
 commits) but NOT pushed, on branch `feat/buddy-3d-and-reminders`, **jest 548/548**. The 2026-08-09 and
@@ -20,7 +21,59 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-08-10 (most current — supersedes the 2026-08-09 snapshots below)
+## ⭐ HANDOFF SNAPSHOT — 2026-08-12 (most current — supersedes the 2026-08-10 snapshot below)
+
+**Branch `feat/buddy-3d-and-reminders`. A large feature-build session: the entire "Ready" PRD queue was
+implemented — each feature adversarially reviewed (code-reviewer, + security-privacy where it touched
+data/social) and its findings fixed. Everything is COMMITTED (topic commits) but NOT pushed. Green
+throughout: `tsc` clean · `eslint` 0 errors · `jest` 806/806.**
+
+### Built + committed this session (each: implemented → reviewed → fixed → green)
+Commits, newest first: `8313fc7` Communication Style · `d67c9a6` Onboarding · `b38a917` Dream screens ·
+`b3a9ff5` Support Circle · `30ea92f` notification service · `b1dd07b` Dream fixes · `9a3b213` Dream
+foundation · `f64975d` Weekly Review · `f198097` completion-final (D41) · `abaa209` PRD→Ready (D40) ·
+`67209ea` docs D35–D40 + Sync Manifest · `b2d4008` Reminder Off/Fixed · `969cd43` Active Hours. (Earlier
+on the branch: Daily Step Reporting, Step Postponement.)
+- **Daily Step Reporting** (D35/D36) · **Step Postponement** (D37) · **Journey completion is FINAL** (D41 —
+  `reverseReport` refuses on a completed Journey; resolves the contradiction with the celebration model).
+- **Account Active Hours** (per-day windows, **clamp-not-disable**) · **Journey Reminder Off/Fixed**.
+- **Weekly Review** (D40 — week-close proposal, never-empty next week, forward-only apply, 48h; deterministic,
+  `adaptiveEnabled`-gated so production is dormant).
+- **Dream Management** (D40 — coach-owned primary + secondary Dreams; engine foundation + My Dreams / Dream
+  detail **view-only** screens).
+- **Notification content service** (D40 — 9 Support-Circle types + reminder; tone-ready seam; lock-safe).
+- **Support Circle / D2** (D40 — consent gate, Companion = **coach-Journeys-only** system-generated Step
+  progress, removed-friend security fix; **needs the Supabase migration applied — see ▶ NEXT**).
+- **Onboarding questionnaire** (K2 — first-run gate, language-first, Personal Info, 6 questions, coach-summary seam).
+- **Communication Style profile** (D40 — 4 styles, 6-comparison quiz, notification tone seam) + fixed a
+  **pre-existing O1/GDPR gap**: `pushapp.profile` is now in the data export AND erased on account deletion.
+- **Docs:** Decision Log **D35–D41**; the whole PRD queue moved to Ready; `11_Engineering_Bible/Sync_Manifest.md`;
+  `04_Product/PRD/Personal_Growth_Style_Assessment_Form.md` (reference — the extracted Tally research form).
+
+### Git / working-tree discipline (IMPORTANT next session)
+- Commits are local on the branch; **NOT pushed** (founder's call).
+- **Codex works this repo in parallel** — it only ADDS new untracked PRD drafts and edits its own docs
+  (`.codex/`, root `AGENTS.md`, `04_Product/PRD/README.md`, `Miss_Recovery_PRD.md`, new PRDs). **Never
+  `git add -A`** — stage explicit paths (`git add app/src` for code; named doc files for docs). **Only this
+  side develops code and moves PRDs to `Done/`.** Flow: Codex writes an initial PRD → we ground-in-code,
+  close questions, edit, build, commit (PRD-per-feature; see `04_Product/PRD/README.md`).
+
+### ▶ NEXT
+1. **Completion_Celebration** (`04_Product/PRD/Completion_Celebration_PRD.md` — **Ready, not started**): I1 —
+   small confetti on a Step check-in + a shareable achievement card on Journey/Milestone completion (D32).
+   Top ready task.
+2. **Founder actions:** apply `app/supabase/migrations/0001_journey_support_circle.sql` in Supabase → SQL
+   Editor (⚠ backfills existing shares to `requested` = least-access) to make Support Circle live; then a
+   live-DB QA pass on the RLS/trigger authorization matrix. On-device QA (RTL, real notifications,
+   freeze/resume) waits for the Apple Developer account.
+3. **Approved-but-not-Ready PRDs** (need a close-the-questions pass before build): `Coach_Context_Summaries`,
+   `Friend_Profile`, `Future_Journey_Management`, `Smart_Notification_Timing`.
+4. **Deferred wiring slices:** route `CommunicationScheduler` → `buildNotificationContent` (resolve-at-reconcile)
+   so style + form-of-address reach real notifications; wire `getOnboardingCoachSummary()` +
+   `profileToCoachStyle()` into the live coach (liveCoach-gated); content-writer copy pass (notification
+   variants + all new placeholder copy) + ux-designer visual pass.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-10 (supersedes the 2026-08-09 snapshots below; kept as accurate history)
 
 **Branch `feat/buddy-3d-and-reminders`. Everything this session is COMMITTED (9 topic commits) but NOT
 pushed** (the founder never asked to push). The tree is clean except files that are NOT ours (the

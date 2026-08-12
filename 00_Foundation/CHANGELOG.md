@@ -4,6 +4,37 @@ Status: Living Document
 
 ---
 
+# 2026-08-12 — The "Ready" PRD queue, implemented (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
+
+A large feature-build session: the whole Ready PRD queue was built, each feature adversarially reviewed
+(code-reviewer, + security-privacy for data/social) and fixed. Green throughout: `tsc` clean, `eslint` 0
+errors, **jest 806/806** (up from 548). Full narrative + resume: `Current_Context.md` → "⭐ HANDOFF SNAPSHOT
+— 2026-08-12". Highlights (with lead commits):
+
+- **Daily Step Reporting** (D35/D36) + **Step Postponement** (D37) + **D41 — Journey completion is FINAL**
+  (`f198097`): `reverseReport` refuses on a completed Journey, resolving the contradiction with the
+  completion-celebration model.
+- **Account Active Hours** (`969cd43`, per-day windows, clamp-not-disable) + **Journey Reminder Off/Fixed**
+  (`b2d4008`).
+- **Weekly Review** (`f64975d`, D40) — week-close proposal, never-empty next week, forward-only atomic apply,
+  48h retention; deterministic + `adaptiveEnabled`-gated.
+- **Dream Management** (`9a3b213` + `b1dd07b` + `b38a917`, D40) — coach-owned primary + secondary Dreams;
+  engine + My Dreams / Dream-detail view screens.
+- **Notification content service** (`30ea92f`, D40) — nine Support-Circle types + reminder; tone-ready seam.
+- **Support Circle / D2** (`b3a9ff5`, D40) — consent gate + Companion (coach-Journeys-only, system-generated
+  Step progress) + removed-friend security fix; ships a Supabase migration the founder must apply.
+- **Onboarding questionnaire** (`d67c9a6`, K2) — first-run gate, language-first, Personal Info, six questions.
+- **Communication Style profile** (`8313fc7`, D40) — four styles + 6-comparison quiz + notification tone seam;
+  also fixed a pre-existing O1/GDPR gap (the profile blob is now exported and erased on account deletion).
+- **Docs:** Decision Log **D35–D41**; the PRD queue moved to Ready; `11_Engineering_Bible/Sync_Manifest.md`;
+  `04_Product/PRD/Personal_Growth_Style_Assessment_Form.md` (extracted Tally research reference).
+
+▶ NEXT: Completion_Celebration (Ready, not started); apply the Support-Circle Supabase migration; a
+close-the-questions pass on the Approved-not-Ready PRDs; and the deferred wiring slices (scheduler→toned copy,
+coach-voice, content/ux passes). On-device + live-DB QA wait for the Apple Developer account.
+
+---
+
 # 2026-08-10 — Form of address (D31), one week boundary (D33), unified Own Profile (D34) + the PRD-per-feature working method (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
 
 Continuation. Unlike prior entries this work is **committed** (topic commits). Green throughout:

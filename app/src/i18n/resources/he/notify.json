@@ -1,0 +1,45 @@
+{
+  "someone": "מישהו",
+  "reminder": {
+    "title": "הגיע הזמן למסע שלך",
+    "body": "רגע קטן בשביל הצעד הבא.",
+    "body_masculine": "מוכן לצעד הבא?",
+    "body_feminine": "מוכנה לצעד הבא?"
+  },
+  "allyRequest": {
+    "title": "בקשה חדשה למעגל התמיכה",
+    "body": "התקבלה בקשת תמיכה מ{{name}}."
+  },
+  "allyAccepted": {
+    "title": "יש לך בעל ברית חדש",
+    "body": "{{name}} עכשיו במעגל התמיכה שלך."
+  },
+  "allyDeclined": {
+    "title": "עדכון ממעגל התמיכה",
+    "body": "הבקשה שלך ל{{name}} לא התקבלה כרגע."
+  },
+  "allyPermissionChanged": {
+    "title": "עדכון שיתוף",
+    "body": "השיתוף של {{name}} עודכן."
+  },
+  "allyRemoved": {
+    "title": "עדכון ממעגל התמיכה",
+    "body": "{{name}} כבר לא מלווה מסע."
+  },
+  "journeyFrozen": {
+    "title": "מסע בהשהיה",
+    "body": "המסע של {{name}} בהשהיה כרגע."
+  },
+  "journeyResumed": {
+    "title": "מסע חוזר לתנועה",
+    "body": "המסע של {{name}} חזר לתנועה."
+  },
+  "journeyCompleted": {
+    "title": "מסע הושלם",
+    "body": "המסע של {{name}} הושלם."
+  },
+  "journeyClosed": {
+    "title": "מסע הסתיים",
+    "body": "המסע של {{name}} הגיע לסיומו."
+  }
+}

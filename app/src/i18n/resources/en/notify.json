@@ -1,0 +1,43 @@
+{
+  "someone": "Someone",
+  "reminder": {
+    "title": "Time for your Journey",
+    "body": "Ready for your next Step?"
+  },
+  "allyRequest": {
+    "title": "New Support Circle request",
+    "body": "{{name}} would like to support you."
+  },
+  "allyAccepted": {
+    "title": "You have a new Ally",
+    "body": "{{name}} accepted your request."
+  },
+  "allyDeclined": {
+    "title": "Support Circle update",
+    "body": "{{name}} isn't able to join right now."
+  },
+  "allyPermissionChanged": {
+    "title": "Sharing updated",
+    "body": "{{name}} changed what they share with you."
+  },
+  "allyRemoved": {
+    "title": "Support Circle update",
+    "body": "{{name}} stepped back from a Journey."
+  },
+  "journeyFrozen": {
+    "title": "A Journey is on pause",
+    "body": "{{name}} paused a Journey for now."
+  },
+  "journeyResumed": {
+    "title": "A Journey is moving again",
+    "body": "{{name}} picked a Journey back up."
+  },
+  "journeyCompleted": {
+    "title": "A Journey is complete",
+    "body": "{{name}} reached the end of a Journey."
+  },
+  "journeyClosed": {
+    "title": "A Journey has wrapped up",
+    "body": "{{name}}'s Journey came to an end."
+  }
+}

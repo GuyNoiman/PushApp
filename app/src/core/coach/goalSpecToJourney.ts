@@ -23,6 +23,7 @@
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
 import type { Journey } from '../types/domain';
+import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
 import { getExpert } from '../learning/experts/registry';
 import { planJourney, planJourneyFromStructure, type PlanOptions } from '../learning/Planner';
@@ -117,6 +118,19 @@ export function createJourneyFromGoalSpec(
   options?: PlanOptions,
 ): Journey {
   return engine.createJourney(buildJourneyInput(spec, expert, options));
+}
+
+/**
+ * The Dream signal the coach formulated for this Journey, or null when the conversation carried none
+ * (Dream Management, D40). Validated by framework-free domain logic — a Dream with an empty/whitespace
+ * title is treated as NO signal, so the Journey is created UNLINKED rather than tied to a junk Dream.
+ * The caller (AppCore) turns a returned signal into a created-or-reused primary Dream link; raw model
+ * text is never persisted directly.
+ */
+export function dreamSignalFromSpec(spec: GoalSpec): NewDreamInput | null {
+  const dream = spec.dream;
+  if (!dream || !isValidDreamTitle(dream.title)) return null;
+  return { title: dream.title, ...(dream.why ? { why: dream.why } : {}) };
 }
 
 /** True when the spec carries at least one recorded interview answer. */

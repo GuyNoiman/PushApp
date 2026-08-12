@@ -25,7 +25,8 @@ import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
 import { StreakEngine } from './engines/StreakEngine';
-import { createJourneyFromGoalSpec } from './coach/goalSpecToJourney';
+import { createJourneyFromGoalSpec, dreamSignalFromSpec } from './coach/goalSpecToJourney';
+import { journeysForDream, type NewDreamInput } from './dreams/dreams';
 import type { GoalSpec } from './coach/interviewPlaybook';
 import type { JourneyEdit } from './coach/journeyEdit';
 import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
@@ -439,6 +440,11 @@ export class AppCore {
     this.bus.on('JourneyDeleted', this.onChanged);
     this.bus.on('JourneyFrozen', this.onChanged);
     this.bus.on('JourneyResumed', this.onChanged);
+    // Dreams (D40): persist a coach-created Dream + any Journey↔Dream link/unlink. These carry
+    // id/boolean-only payloads; the Dream title stays private on-device (G1/G2).
+    this.bus.on('DreamCreated', this.onChanged);
+    this.bus.on('JourneyDreamLinked', this.onChanged);
+    this.bus.on('JourneyDreamUnlinked', this.onChanged);
     this.bus.on('BuddyReacted', this.onChanged);
     // Persist a streak increment (new-day check-in) or reset (urgent miss). StepMissed itself is
     // not a persistence hook, so this is what saves a reset.
@@ -579,8 +585,11 @@ export class AppCore {
    * eyebrow. (Dev seed only — real data replaces this once the coach creates plans.)
    */
   private seedDemoJourney(): void {
-    const dreamFit: Dream = { id: 'dream_fit', title: 'Get fit and strong', journeyIds: [] };
-    const dreamCalm: Dream = { id: 'dream_calm', title: 'Sleep and recover well', journeyIds: [] };
+    // A Dream holds no back-reference to its Journeys (Dream Management, D40): the link is
+    // authoritative on the Journey side (dreamId = primary), and a Dream's Journeys are derived
+    // on read (core/dreams). So the seed simply sets each Journey's dreamId below.
+    const dreamFit: Dream = { id: 'dream_fit', title: 'Get fit and strong' };
+    const dreamCalm: Dream = { id: 'dream_calm', title: 'Sleep and recover well' };
     this.state.dreams.push(dreamFit, dreamCalm);
 
     // A couple of the seeded Steps carry a `plannedFor` THIS WEEK, so the adaptive loop's slip
@@ -589,7 +598,7 @@ export class AppCore {
     const DAY = 24 * 60 * 60 * 1000;
     const now = Date.now();
 
-    const run = this.journeyEngine.createJourney({
+    this.journeyEngine.createJourney({
       title: 'Run 5km',
       dreamId: dreamFit.id,
       why: ['Feel stronger and clear-headed', 'Prove to myself I follow through'],
@@ -612,7 +621,7 @@ export class AppCore {
       ],
     });
 
-    const strength = this.journeyEngine.createJourney({
+    this.journeyEngine.createJourney({
       title: 'Build core strength',
       dreamId: dreamFit.id,
       why: ['Feel capable in my body', 'Protect my back'],
@@ -624,7 +633,7 @@ export class AppCore {
       ],
     });
 
-    const sleep = this.journeyEngine.createJourney({
+    this.journeyEngine.createJourney({
       title: 'Wind down by 11pm',
       dreamId: dreamCalm.id,
       why: ['Wake up clear-headed', 'More patience during the day'],
@@ -636,8 +645,8 @@ export class AppCore {
       ],
     });
 
-    dreamFit.journeyIds = [run.id, strength.id];
-    dreamCalm.journeyIds = [sleep.id];
+    // Nothing to write back onto the Dreams: each Journey's `dreamId` above IS the relationship, and
+    // a Dream's Journeys are derived on read (core/dreams) — the single source of truth (D40).
   }
 
   // ── Account: data export + deletion (O1) ────────────────────────────────────
@@ -706,7 +715,17 @@ export class AppCore {
    * gated behind `adaptiveCoach`; the goal specifics stay ON DEVICE (G1). No planning logic here.
    */
   createJourneyFromGoalSpec(spec: GoalSpec): Journey {
-    return createJourneyFromGoalSpec(this.journeyEngine, spec);
+    const journey = createJourneyFromGoalSpec(this.journeyEngine, spec);
+    // Dream Management (D40): the coach OWNS the Dream layer. When the conversation produced a Dream
+    // signal, create-or-reuse that Dream and set it as the new Journey's PRIMARY — no user-approval
+    // gate. No signal ⇒ the Journey stays UNLINKED (linking is not a hard gate). The Dream text is
+    // validated by framework-free domain logic (dreamSignalFromSpec); raw model text never persists.
+    const signal = dreamSignalFromSpec(spec);
+    if (signal) {
+      const dream = this.journeyEngine.createOrReuseDream(signal);
+      if (dream) this.journeyEngine.linkJourneyToDream(journey.id, dream.id, { primary: true });
+    }
+    return journey;
   }
 
   /**
@@ -757,6 +776,46 @@ export class AppCore {
    */
   resumeJourney(journeyId: string): Journey | null {
     return this.journeyEngine.resumeJourney(journeyId);
+  }
+
+  // ── Dreams (Dream Management, D40 — coach-owned) ────────────────────────────
+  // Thin facades over the JourneyEngine (which owns the Journey-side relationship). There is NO
+  // user-approval gate (D40); the coach drives creation/linking. Dreams are private on-device data
+  // — never added to any social/ProgressSummary/analytics payload (PRD §8, G2).
+
+  /** The user's Dreams (private, on-device). Also surfaced on {@link Snapshot.dreams} for the UI. */
+  getDreams(): Dream[] {
+    return this.state.dreams;
+  }
+
+  /** Every Journey linked to a Dream (primary OR secondary), across all lifecycle states. */
+  journeysForDream(dreamId: string): Journey[] {
+    return journeysForDream(dreamId, this.state.journeys);
+  }
+
+  /**
+   * Create a Dream from validated coach output (D40). Returns the Dream, or null when the title is
+   * empty after normalization. Persists off {@link DreamCreated}. No user-approval gate.
+   */
+  createDream(input: NewDreamInput): Dream | null {
+    return this.journeyEngine.createDream(input);
+  }
+
+  /**
+   * Link a Journey to a Dream (D40) — `primary` sets the deterministic primary relationship (demoting
+   * any current primary to a secondary), else adds a secondary. Never edits the Journey's Steps or
+   * schedule. Returns whether a link was made. Persists off {@link JourneyDreamLinked}.
+   */
+  linkJourneyToDream(journeyId: string, dreamId: string, opts: { primary: boolean }): boolean {
+    return this.journeyEngine.linkJourneyToDream(journeyId, dreamId, opts);
+  }
+
+  /**
+   * Remove a Journey↔Dream relationship (D40) — never deletes or edits the Journey. Returns whether
+   * anything changed. Persists off {@link JourneyDreamUnlinked}.
+   */
+  unlinkJourneyFromDream(journeyId: string, dreamId: string): boolean {
+    return this.journeyEngine.unlinkJourneyFromDream(journeyId, dreamId);
   }
 
   /**

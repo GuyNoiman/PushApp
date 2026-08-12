@@ -98,6 +98,39 @@ export interface StepReportReversed {
   reopenedJourney: boolean;
 }
 
+/**
+ * A Dream was created by the coach (Dream Management, D40 — the coach owns the Dream layer, no user
+ * approval gate). Carries the `dreamId` SCALAR ONLY: the Dream title/why is private on-device data
+ * (PRD §8) and must never ride an event, so AppCore persists off this id (onChanged) and re-derives
+ * everything from state. IN-PROCESS ONLY — never leaves the device (G1/G2).
+ */
+export interface DreamCreated {
+  type: 'DreamCreated';
+  dreamId: string;
+}
+
+/**
+ * A Journey↔Dream relationship was created/changed (Dream Management, D40). `primary` distinguishes
+ * the deterministic PRIMARY link from an additional secondary one. Ids + a boolean ONLY — no Dream
+ * or Journey text (G1). AppCore persists off it; linking never edits the Journey's Steps/schedule.
+ */
+export interface JourneyDreamLinked {
+  type: 'JourneyDreamLinked';
+  journeyId: string;
+  dreamId: string;
+  primary: boolean;
+}
+
+/**
+ * A Journey↔Dream relationship was removed (Dream Management, D40) — the link is severed but the
+ * Journey is NEVER cascade-deleted or edited (PRD §9). Ids ONLY. AppCore persists off it.
+ */
+export interface JourneyDreamUnlinked {
+  type: 'JourneyDreamUnlinked';
+  journeyId: string;
+  dreamId: string;
+}
+
 export interface RewardGranted {
   type: 'RewardGranted';
   xp: number;
@@ -364,6 +397,9 @@ export type DomainEvent =
   | JourneyDeleted
   | JourneyFrozen
   | JourneyResumed
+  | DreamCreated
+  | JourneyDreamLinked
+  | JourneyDreamUnlinked
   | RewardGranted
   | BuddyReacted
   | BuddyEvolved

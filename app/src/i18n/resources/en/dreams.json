@@ -1,0 +1,28 @@
+{
+  "title": "My Dreams",
+  "backA11y": "Back",
+  "intro": "Dreams are who you're becoming. Your Journeys are the finite work that moves you toward them.",
+  "empty": {
+    "title": "No Dreams yet",
+    "body": "As you talk with your coach, it shapes the Dreams behind your Journeys. They'll appear here."
+  },
+  "journeysCount_one": "{{count}} Journey",
+  "journeysCount_other": "{{count}} Journeys",
+  "open": "Open {{title}}",
+  "detail": {
+    "eyebrow": "DREAM",
+    "why": "Why this matters",
+    "journeys": "Journeys",
+    "emptyJourneys": "No Journeys are linked to this Dream yet.",
+    "openJourney": "Open {{title}}",
+    "discuss": "Talk about this Dream with your coach",
+    "notFoundTitle": "Dream not found",
+    "notFoundBody": "This Dream isn't available. It may have been removed."
+  },
+  "status": {
+    "active": "Active",
+    "frozen": "Paused",
+    "completed": "Completed",
+    "future": "Upcoming"
+  }
+}

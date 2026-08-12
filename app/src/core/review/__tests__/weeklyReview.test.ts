@@ -134,7 +134,7 @@ describe('planNextWeek (never empty — §8)', () => {
   });
 
   it('3. offers a Dream-based suggestion when there are no active Journeys at all', () => {
-    const dream: Dream = { id: 'd1', title: 'Run a marathon', journeyIds: [] };
+    const dream: Dream = { id: 'd1', title: 'Run a marathon' };
     const next = planNextWeek(
       [journey({ status: 'completed', completedAt: IN_WINDOW, steps: [step({ done: true })] })],
       [dream],
@@ -150,7 +150,7 @@ describe('planNextWeek (never empty — §8)', () => {
   });
 
   it('3c. marks a Dream addressed when only a finished/paused Journey links it', () => {
-    const dream: Dream = { id: 'd1', title: 'Run a marathon', journeyIds: ['j1'] };
+    const dream: Dream = { id: 'd1', title: 'Run a marathon' };
     const finished = journey({
       id: 'j1',
       dreamId: 'd1',
@@ -166,8 +166,8 @@ describe('planNextWeek (never empty — §8)', () => {
   });
 
   it('3d. prefers a NOT-yet-addressed Dream over an addressed one', () => {
-    const addressed: Dream = { id: 'd1', title: 'Addressed', journeyIds: ['j1'] };
-    const fresh: Dream = { id: 'd2', title: 'Fresh', journeyIds: [] };
+    const addressed: Dream = { id: 'd1', title: 'Addressed' };
+    const fresh: Dream = { id: 'd2', title: 'Fresh' };
     const finished = journey({
       id: 'j1',
       dreamId: 'd1',

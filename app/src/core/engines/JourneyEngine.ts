@@ -15,6 +15,7 @@ import type {
   AppState,
   Cadence,
   Constraint,
+  Dream,
   Journey,
   Milestone,
   ReasonEntry,
@@ -24,6 +25,12 @@ import type {
 } from '../types/domain';
 import { createId } from '../util/id';
 import type { JourneyEdit } from '../coach/journeyEdit';
+import {
+  findDreamByTitle,
+  normalizeDreamTitle,
+  normalizeDreamWhy,
+  type NewDreamInput,
+} from '../dreams/dreams';
 import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/stepStatus';
 
 /**
@@ -33,6 +40,15 @@ import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/s
  * records, and never the `note`.
  */
 const MAX_REASONS_PER_STEP = 20;
+
+/**
+ * Remove `id` from a Dream-links list, returning undefined when the result is empty so a Journey's
+ * {@link Journey.secondaryDreamIds} never lingers as an empty array (Dream Management, D40).
+ */
+function dropId(ids: string[] | undefined, id: string): string[] | undefined {
+  const next = (ids ?? []).filter((existing) => existing !== id);
+  return next.length > 0 ? next : undefined;
+}
 
 export interface NewStepInput {
   title: string;
@@ -222,6 +238,103 @@ export class JourneyEngine {
     journey.status = 'active';
     this.bus.emit({ type: 'JourneyResumed', journey });
     return journey;
+  }
+
+  // ── Dreams (Dream Management, D40 — coach-owned Dream layer) ────────────────
+  // The Journey↔Dream relationship is authoritative on the JOURNEY side (dreamId = primary +
+  // secondaryDreamIds). A Dream holds no back-reference; its Journeys are derived on read
+  // (core/dreams/dreams). These methods apply atomically on-device and emit id/boolean-only events
+  // (the Dream title/why is private on-device data — G1/G2). Linking/unlinking NEVER edits a
+  // Journey's Steps, schedule, or status (PRD §6/§9). There is NO user-approval gate (D40).
+
+  /**
+   * Create a Dream from validated coach output (Dream Management, D40). The title is normalized +
+   * length-capped and must be non-empty; an optional `why` is stored as {@link Dream.description}.
+   * Emits {@link DreamCreated} (id only). Returns the Dream, or null when the title is empty after
+   * normalization (fail-safe — the UI never persists free-form model text).
+   */
+  createDream(input: NewDreamInput): Dream | null {
+    const title = normalizeDreamTitle(input.title);
+    if (!title) return null;
+    const why = input.why ? normalizeDreamWhy(input.why) : '';
+    const dream: Dream = { id: createId('dream'), title, ...(why ? { description: why } : {}) };
+    this.getState().dreams.push(dream);
+    this.bus.emit({ type: 'DreamCreated', dreamId: dream.id });
+    return dream;
+  }
+
+  /**
+   * Create a Dream, or REUSE an existing one whose normalized title matches (case-insensitive), so
+   * the coach never mints a duplicate Dream for the same aspiration. Returns the new/existing Dream,
+   * or null when the title is empty after normalization.
+   */
+  createOrReuseDream(input: NewDreamInput): Dream | null {
+    const title = normalizeDreamTitle(input.title);
+    if (!title) return null;
+    const existing = findDreamByTitle(this.getState().dreams, title);
+    return existing ?? this.createDream(input);
+  }
+
+  /**
+   * Link a Journey to a Dream (Dream Management, D40). `primary: true` sets the deterministic PRIMARY
+   * relationship — any current primary is DEMOTED to a secondary (the link is preserved, never lost);
+   * `primary: false` adds a secondary relationship. Duplicate links are impossible (a Dream is never
+   * both primary and secondary for the same Journey, and never listed twice as a secondary). Fails
+   * safely (returns false, no event) on an unknown Journey/Dream or a no-op re-link, so a corrupt id
+   * can't create a dangling relationship. Emits {@link JourneyDreamLinked}. NEVER edits Steps/schedule.
+   */
+  linkJourneyToDream(journeyId: string, dreamId: string, opts: { primary: boolean }): boolean {
+    const state = this.getState();
+    const journey = state.journeys.find((j) => j.id === journeyId);
+    if (!journey) return false;
+    // Unknown Dream id fails safe (§9: unknown/missing linked IDs must not create a bad link).
+    if (!state.dreams.some((d) => d.id === dreamId)) return false;
+
+    if (opts.primary) {
+      if (journey.dreamId === dreamId) return false; // already the primary — no-op
+      // Demote the outgoing primary to a secondary so its relationship survives (many-to-many target).
+      if (journey.dreamId) {
+        const secondary = journey.secondaryDreamIds ?? [];
+        if (!secondary.includes(journey.dreamId)) secondary.push(journey.dreamId);
+        journey.secondaryDreamIds = secondary;
+      }
+      // The new primary can never also be a secondary (no duplicate link).
+      journey.secondaryDreamIds = dropId(journey.secondaryDreamIds, dreamId);
+      journey.dreamId = dreamId;
+    } else {
+      if (journey.dreamId === dreamId) return false; // already the primary — never dup as secondary
+      if (journey.secondaryDreamIds?.includes(dreamId)) return false; // already a secondary — no dup
+      journey.secondaryDreamIds = [...(journey.secondaryDreamIds ?? []), dreamId];
+    }
+
+    this.bus.emit({ type: 'JourneyDreamLinked', journeyId, dreamId, primary: opts.primary });
+    return true;
+  }
+
+  /**
+   * Remove a Journey↔Dream relationship (Dream Management, D40). Unlinking the PRIMARY promotes the
+   * first secondary to primary when one exists (keeping the Journey linked deterministically), else
+   * clears the primary so the Journey becomes unlinked (allowed — linking is not a hard gate). The
+   * Journey itself is NEVER deleted or edited (PRD §9). No-op (returns false) when the Journey is
+   * unknown or not linked to that Dream. Emits {@link JourneyDreamUnlinked}.
+   */
+  unlinkJourneyFromDream(journeyId: string, dreamId: string): boolean {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey) return false;
+
+    let changed = false;
+    if (journey.dreamId === dreamId) {
+      const secondary = journey.secondaryDreamIds ?? [];
+      journey.dreamId = secondary[0]; // promote the first secondary, or undefined when there is none
+      journey.secondaryDreamIds = secondary.length > 1 ? secondary.slice(1) : undefined;
+      changed = true;
+    } else if (journey.secondaryDreamIds?.includes(dreamId)) {
+      journey.secondaryDreamIds = dropId(journey.secondaryDreamIds, dreamId);
+      changed = true;
+    }
+
+    if (changed) this.bus.emit({ type: 'JourneyDreamUnlinked', journeyId, dreamId });
+    return changed;
   }
 
   /**

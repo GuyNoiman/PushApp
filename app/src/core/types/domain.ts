@@ -151,8 +151,22 @@ export interface Journey {
    * in `components/journey/journeyView.ts`). New Journeys carry it explicitly.
    */
   status?: JourneyStatus;
-  /** Optional link to the long-term Dream this Journey serves. */
+  /**
+   * The PRIMARY {@link Dream} this Journey serves — the authoritative, deterministic link used for
+   * grouping (Home / Journeys eyebrow) and back-compat (Dream Management, D40). Optional: a Journey
+   * may be unlinked until the coach links it (D40 — linking is NOT a hard gate). Old single-Dream
+   * data keeps its Dream here as primary, so migration is lossless.
+   */
   dreamId?: string;
+  /**
+   * Additional (SECONDARY) Dreams this Journey also serves (Dream Management, D40 — many-to-many with
+   * one primary). Optional/additive: absent on the common single-Dream Journey. The relationship is
+   * authoritative on the Journey side; {@link Dream} never stores a back-reference (derived on read
+   * via `core/dreams/dreams.ts`). The FIRST UI slice exposes single-primary only, so this stays empty
+   * in practice today, but the model + engine already honour it. No duplicates, and a Dream is never
+   * both primary and secondary for the same Journey. ON-DEVICE ONLY — never emitted or synced.
+   */
+  secondaryDreamIds?: string[];
   /**
    * The ordered {@link Milestone}s grouping this Journey's Steps (Planner output, S1).
    * Optional — absent on manually-created or pre-Planner Journeys.
@@ -168,12 +182,26 @@ export interface Journey {
   completionRewarded?: boolean;
 }
 
-/** A long-term aspiration — the person the user wants to become. Never "completed". */
+/**
+ * A long-term aspiration — the person the user wants to become. Never "completed" (no progress,
+ * percentage, deadline, or reward — Dream Management PRD). The COACH owns this layer (D40): it
+ * infers/formulates Dreams from the conversation and may create/edit/remove them without a user
+ * approval gate.
+ *
+ * The Journey↔Dream relationship is authoritative on the JOURNEY side ({@link Journey.dreamId} +
+ * {@link Journey.secondaryDreamIds}); a Dream deliberately holds NO `journeyIds` back-reference —
+ * its Journeys are DERIVED on read (`core/dreams/dreams.ts` → `journeysForDream`) so there is a
+ * single source of truth that can never drift. `description` carries the optional "why this matters".
+ *
+ * PRIVACY: Dreams are private account data. A Dream title must never enter a ProgressSummary,
+ * OutreachInsight, social/Support-Circle payload, notification, or analytics signal (PRD §8, G2).
+ * ON-DEVICE ONLY; covered by export/deletion.
+ */
 export interface Dream {
   id: string;
   title: string;
+  /** Optional "why this matters" — the meaning behind the aspiration. */
   description?: string;
-  journeyIds: string[];
 }
 
 /** The user's companion. Not the user, not merely an avatar. Grows with XP; holds Coins. */

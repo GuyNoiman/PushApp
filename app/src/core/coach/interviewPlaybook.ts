@@ -343,4 +343,19 @@ export interface GoalSpec {
    * offer to build these next (their kind + domain are already understood). ON-DEVICE-ONLY (G1).
    */
   deferredGoals?: DeferredGoal[];
+
+  /**
+   * The Dream this Journey serves, as the coach FORMULATED it from the conversation (Dream
+   * Management, D40 — the coach OWNS the Dream layer, no user approval gate). When present, the
+   * new Journey is linked to a created-or-reused Dream as its PRIMARY relationship; when absent
+   * (no Dream signal in the conversation), the Journey is created UNLINKED — linking is not a hard
+   * gate. Structured + validated by framework-free domain logic (core/dreams) before it persists;
+   * raw model text is never stored. ON-DEVICE-ONLY raw signal (G1).
+   */
+  dream?: {
+    /** The coach-formulated Dream title (the timeless "who I want to become"). ON-DEVICE-ONLY. */
+    title: string;
+    /** Optional "why this matters" behind the Dream. ON-DEVICE-ONLY. */
+    why?: string;
+  };
 }

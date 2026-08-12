@@ -18,7 +18,9 @@
     "inCircle": "In your Support Circle",
     "wantsToJoin": "Wants to join your Support Circle",
     "sharingJourney": "Sharing a Journey · {{pct}}%",
-    "journeyProgress": "{{title}} · {{pct}}%"
+    "journeyProgress": "{{title}} · {{pct}}%",
+    "allyEncourager": "Wants you to cheer their Journey as an Encourager. You'll see overall progress, not the step names.",
+    "allyCompanion": "Wants you to follow their Journey as a Companion. You'll see the step names and their status."
   },
   "empty": {
     "requested": {

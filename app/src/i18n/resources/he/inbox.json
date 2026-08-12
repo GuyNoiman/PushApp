@@ -18,7 +18,9 @@
     "inCircle": "במעגל התמיכה שלך",
     "wantsToJoin": "רוצה להצטרף למעגל התמיכה שלך",
     "sharingJourney": "משתף מסע · {{pct}}%",
-    "journeyProgress": "{{title}} · {{pct}}%"
+    "journeyProgress": "{{title}} · {{pct}}%",
+    "allyEncourager": "רוצה שתעודד את המסע שלו בתור מעודד. תראה את ההתקדמות הכללית, בלי שמות הצעדים.",
+    "allyCompanion": "רוצה שתלווה את המסע שלו בתור מלווה. תראה את שמות הצעדים ואת הסטטוס שלהם."
   },
   "empty": {
     "requested": {

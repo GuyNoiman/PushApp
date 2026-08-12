@@ -79,6 +79,12 @@ export interface NewJourneyInput {
   milestones?: Milestone[];
   /** Weekly session target for a FREQUENCY-BASED plan (no fixed dates); undefined when Steps are dated. */
   sessionsPerWeek?: number;
+  /**
+   * How this Journey was created (Journey Support Circle, D2) — see {@link Journey.createdVia}. Set by
+   * the caller: the coach path passes `'coach'`, the manual wizard `'manual'`. Absent ⇒ the created
+   * Journey carries no marker and is treated as `'manual'` (Companion-ineligible).
+   */
+  createdVia?: 'coach' | 'manual';
 }
 
 /** A Step surfaced for action, paired with its Journey for display/context. */
@@ -114,6 +120,7 @@ export class JourneyEngine {
       status: 'active',
       dreamId: input.dreamId,
       ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
+      ...(input.createdVia !== undefined ? { createdVia: input.createdVia } : {}),
     };
 
     this.getState().journeys.push(journey);

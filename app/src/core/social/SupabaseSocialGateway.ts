@@ -8,15 +8,24 @@
  * so friends can find them. (Upgradable to email/password later, Commercial-stage.)
  */
 import { supabase } from './supabaseClient';
-import type {
-  AllyProgress,
-  Cheer,
-  CheerKind,
-  Friend,
-  SocialGateway,
-  SocialProfile,
-  Visibility,
+import {
+  bundleFromVisibility,
+  bundleToVisibility,
+  type AllyBundle,
+  type AllyInvite,
+  type AllyInviteStatus,
+  type AllyMember,
+  type AllyProgress,
+  type Cheer,
+  type CheerKind,
+  type CompanionStep,
+  type CompanionStepInput,
+  type Friend,
+  type SocialGateway,
+  type SocialProfile,
+  type Visibility,
 } from './SocialGateway';
+import type { StepStatus } from '../status/stepStatus';
 
 type ProfileRow = { id: string; handle: string; buddy_summary: SocialProfile['buddySummary'] };
 
@@ -119,6 +128,159 @@ export class SupabaseSocialGateway implements SocialGateway {
     });
   }
 
+  // ── Support Circle: per-Journey Ally invites (consent-gated, D2) ──
+  async inviteAlly(journeyId: string, allyId: string, bundle: AllyBundle): Promise<void> {
+    const id = await this.requireUid();
+    // Upsert so re-inviting after a Declined/Cancelled invite re-opens the SAME row (no duplicate
+    // active invitation — D2 §4). The recipient must accept again; reset the decision timestamps.
+    const { error } = await this.client().from('journey_allies').upsert(
+      {
+        journey_id: journeyId,
+        owner_id: id,
+        ally_id: allyId,
+        visibility: bundleToVisibility(bundle),
+        status: 'requested',
+        decided_at: null,
+        closed_at: null,
+      },
+      { onConflict: 'journey_id,owner_id,ally_id' },
+    );
+    if (error) throw error;
+  }
+
+  async respondToAllyInvite(journeyId: string, ownerId: string, accept: boolean): Promise<void> {
+    const id = await this.requireUid();
+    const { error } = await this.client()
+      .from('journey_allies')
+      .update({ status: accept ? 'accepted' : 'declined' })
+      .eq('journey_id', journeyId)
+      .eq('owner_id', ownerId)
+      .eq('ally_id', id)
+      .eq('status', 'requested'); // guard the stale-request race (D2 §8)
+    if (error) throw error;
+  }
+
+  async cancelInvite(journeyId: string, allyId: string): Promise<void> {
+    const id = await this.requireUid();
+    const { error } = await this.client()
+      .from('journey_allies')
+      .update({ status: 'cancelled' })
+      .eq('journey_id', journeyId)
+      .eq('owner_id', id)
+      .eq('ally_id', allyId)
+      .eq('status', 'requested');
+    if (error) throw error;
+  }
+
+  async removeAlly(journeyId: string, allyId: string): Promise<void> {
+    const id = await this.requireUid();
+    // Close (not delete) to retain relationship history (D2 §6); the read-gate on status='accepted'
+    // cuts access immediately. A later re-invite re-opens the same row.
+    const { error } = await this.client()
+      .from('journey_allies')
+      .update({ status: 'closed' })
+      .eq('journey_id', journeyId)
+      .eq('owner_id', id)
+      .eq('ally_id', allyId);
+    if (error) throw error;
+  }
+
+  async changeAllyBundle(journeyId: string, allyId: string, bundle: AllyBundle): Promise<void> {
+    const id = await this.requireUid();
+    const { error } = await this.client()
+      .from('journey_allies')
+      .update({ visibility: bundleToVisibility(bundle) })
+      .eq('journey_id', journeyId)
+      .eq('owner_id', id)
+      .eq('ally_id', allyId);
+    if (error) throw error;
+  }
+
+  async listJourneyAllies(journeyId: string): Promise<AllyMember[]> {
+    const id = await this.requireUid();
+    const { data, error } = await this.client()
+      .from('journey_allies')
+      .select('visibility, status, ally:profiles!ally_id(id,handle,buddy_summary)')
+      .eq('journey_id', journeyId)
+      .eq('owner_id', id)
+      .in('status', ['requested', 'accepted', 'declined']); // hide cancelled/closed rows
+    if (error) throw error;
+    return (data ?? []).map((row: any): AllyMember => ({
+      profile: toProfile(row.ally as ProfileRow),
+      bundle: bundleFromVisibility(row.visibility as Visibility),
+      status: row.status as AllyInviteStatus,
+    }));
+  }
+
+  async incomingAllyInvites(): Promise<AllyInvite[]> {
+    const id = await this.requireUid();
+    const { data, error } = await this.client()
+      .from('journey_allies')
+      .select('journey_id, visibility, status, owner:profiles!owner_id(id,handle,buddy_summary)')
+      .eq('ally_id', id)
+      .eq('status', 'requested');
+    if (error) throw error;
+    return (data ?? []).map((row: any): AllyInvite => ({
+      owner: toProfile(row.owner as ProfileRow),
+      journeyId: row.journey_id,
+      bundle: bundleFromVisibility(row.visibility as Visibility),
+      status: row.status as AllyInviteStatus,
+    }));
+  }
+
+  async closeJourneyInvites(journeyId: string): Promise<void> {
+    const id = await this.requireUid();
+    const { error } = await this.client()
+      .from('journey_allies')
+      .update({ status: 'closed' })
+      .eq('journey_id', journeyId)
+      .eq('owner_id', id)
+      .in('status', ['requested', 'accepted']);
+    if (error) throw error;
+  }
+
+  async publishCompanionSteps(journeyId: string, steps: CompanionStepInput[]): Promise<void> {
+    const id = await this.requireUid();
+    const c = this.client();
+    // Replace the Journey's Companion rows so a removed/renamed Step never lingers server-side.
+    const { error: delErr } = await c
+      .from('companion_steps')
+      .delete()
+      .eq('owner_id', id)
+      .eq('journey_id', journeyId);
+    if (delErr) throw delErr;
+    if (steps.length === 0) return;
+    const rows = steps.map((s) => ({
+      owner_id: id,
+      journey_id: journeyId,
+      step_id: s.stepId,
+      title: s.title,
+      status: s.status,
+      reported_at: s.reportedAt != null ? new Date(s.reportedAt).toISOString() : null,
+    }));
+    const { error } = await c.from('companion_steps').insert(rows);
+    if (error) throw error;
+  }
+
+  async companionSteps(ownerId: string, journeyId: string): Promise<CompanionStep[]> {
+    const { data, error } = await this.client().rpc('ally_journey_steps', {
+      p_owner: ownerId,
+      p_journey: journeyId,
+    });
+    if (error) throw error;
+    const rows = (data ?? []) as {
+      step_id: string; title: string; status: StepStatus;
+      reported_at: string | null; updated_at: string;
+    }[];
+    return rows.map((r) => ({
+      stepId: r.step_id,
+      title: r.title,
+      status: r.status,
+      reportedAt: r.reported_at ? new Date(r.reported_at).getTime() : null,
+      updatedAt: new Date(r.updated_at).getTime(),
+    }));
+  }
+
   // ── Allies (per-Journey sharing) ──
   async setAllies(journeyId: string, allyIds: string[], visibility: Visibility): Promise<void> {
     const id = await this.requireUid();
@@ -176,6 +338,18 @@ export class SupabaseSocialGateway implements SocialGateway {
       .eq('owner_id', id);
     if (error) throw error;
     // Distinct: a Journey may have several Allies (one row each).
+    return Array.from(new Set((data ?? []).map((r: any) => r.journey_id as string)));
+  }
+
+  async myCompanionJourneyIds(): Promise<string[]> {
+    const id = await this.requireUid();
+    const { data, error } = await this.client()
+      .from('journey_allies')
+      .select('journey_id')
+      .eq('owner_id', id)
+      .eq('visibility', 'full') // Companion bundle
+      .in('status', ['requested', 'accepted']);
+    if (error) throw error;
     return Array.from(new Set((data ?? []).map((r: any) => r.journey_id as string)));
   }
 

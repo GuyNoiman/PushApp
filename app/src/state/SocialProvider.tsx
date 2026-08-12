@@ -12,8 +12,11 @@
 import * as Notifications from 'expo-notifications';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { getSocialGateway } from '@/core/social';
+import { assertCompanionAllowed, getSocialGateway } from '@/core/social';
 import type {
+  AllyBundle,
+  AllyInvite,
+  AllyMember,
   AllyProgress,
   Cheer,
   Friend,
@@ -23,12 +26,14 @@ import type {
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 
-interface SocialContextValue {
+export interface SocialContextValue {
   enabled: boolean;
   profile: SocialProfile | null;
   friends: Friend[];
   allyProgress: AllyProgress[];
   incomingCheers: Cheer[];
+  /** Incoming Support-Circle invites awaiting this user's decision (Inbox → Requested, D2). */
+  incomingAllyInvites: AllyInvite[];
   /** True once signed in but no public handle has been chosen yet. */
   needsHandle: boolean;
   /** Last gateway error, for the UI to surface. Null when healthy. */
@@ -38,6 +43,15 @@ interface SocialContextValue {
   respondToFriend: (requesterId: string, accept: boolean) => Promise<void>;
   setAllies: (journeyId: string, allyIds: string[], visibility: Visibility) => Promise<void>;
   sendCheer: (toId: string, journeyId: string) => Promise<void>;
+  // ── Support Circle (per-Journey Ally invites, D2) ──
+  inviteAlly: (journeyId: string, allyId: string, bundle: AllyBundle) => Promise<void>;
+  respondToAllyInvite: (journeyId: string, ownerId: string, accept: boolean) => Promise<void>;
+  cancelInvite: (journeyId: string, allyId: string) => Promise<void>;
+  removeAlly: (journeyId: string, allyId: string) => Promise<void>;
+  changeAllyBundle: (journeyId: string, allyId: string, bundle: AllyBundle) => Promise<void>;
+  /** Load the owner's Support Circle for one Journey (the screen manages its own list). */
+  listJourneyAllies: (journeyId: string) => Promise<AllyMember[]>;
+  closeJourneyInvites: (journeyId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -47,6 +61,7 @@ const EMPTY: SocialContextValue = {
   friends: [],
   allyProgress: [],
   incomingCheers: [],
+  incomingAllyInvites: [],
   needsHandle: false,
   error: null,
   setHandle: async () => {},
@@ -54,6 +69,13 @@ const EMPTY: SocialContextValue = {
   respondToFriend: async () => {},
   setAllies: async () => {},
   sendCheer: async () => {},
+  inviteAlly: async () => {},
+  respondToAllyInvite: async () => {},
+  cancelInvite: async () => {},
+  removeAlly: async () => {},
+  changeAllyBundle: async () => {},
+  listJourneyAllies: async () => [],
+  closeJourneyInvites: async () => {},
   refresh: async () => {},
 };
 
@@ -82,6 +104,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [allyProgress, setAllyProgress] = useState<AllyProgress[]>([]);
   const [incomingCheers, setIncomingCheers] = useState<Cheer[]>([]);
+  const [incomingAllyInvites, setIncomingAllyInvites] = useState<AllyInvite[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const profileRef = useRef<SocialProfile | null>(null);
@@ -99,14 +122,16 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     await guard(async () => {
-      const [p, f, ap] = await Promise.all([
+      const [p, f, ap, invites] = await Promise.all([
         gateway.currentProfile(),
         gateway.listFriends(),
         gateway.allyProgress(),
+        gateway.incomingAllyInvites(),
       ]);
       setProfile(p);
       setFriends(f);
       setAllyProgress(ap);
+      setIncomingAllyInvites(invites);
     });
   }, [gateway, guard]);
 
@@ -122,6 +147,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       setFriends([]);
       setAllyProgress([]);
       setIncomingCheers([]);
+      setIncomingAllyInvites([]);
       return;
     }
     void (async () => {
@@ -171,7 +197,10 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const publishTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const publishAll = useCallback(() => {
     void guard(async () => {
-      const sharedIds = await gateway.mySharedJourneyIds();
+      const [sharedIds, companionIds] = await Promise.all([
+        gateway.mySharedJourneyIds(),
+        gateway.myCompanionJourneyIds(),
+      ]);
       if (sharedIds.length === 0) return;
       const snapshot = core.getSnapshot();
       const journeys = snapshot.journeys;
@@ -184,6 +213,12 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
           progress: core.journeyProgress(journeyId), // engine owns the math (Bible §19)
           streak: snapshot.streak, // the real engine-computed day-count streak (Bible §19)
         });
+        // Companion Step progress — only for COACH Journeys that have a Companion Ally.
+        // core.getCompanionSteps returns [] for a manual/legacy Journey, so a user-typed
+        // Step title can never be published (D2 defense-in-depth; the whitelist bars free text).
+        if (companionIds.includes(journeyId)) {
+          await gateway.publishCompanionSteps(journeyId, core.getCompanionSteps(journeyId));
+        }
       }
     });
   }, [core, gateway, guard]);
@@ -262,12 +297,108 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     [gateway, guard],
   );
 
+  // ── Support Circle actions (per-Journey Ally invites, D2) ──
+  // Publish the shared surface immediately on invite so it's ready the moment the invite is
+  // accepted. `core.getCompanionSteps` returns [] for a non-coach Journey — so a manual Journey's
+  // user-typed Step titles can never be published to a Companion (defense in depth).
+  const inviteAlly = useCallback(
+    async (journeyId: string, allyId: string, bundle: AllyBundle) => {
+      await guard(async () => {
+        const snapshot = core.getSnapshot();
+        const journey = snapshot.journeys.find((j) => j.id === journeyId);
+        // Security #3: refuse Companion on a non-coach Journey BEFORE any write, so a manual
+        // Journey's user-typed title can never be unmasked (never sets visibility='full').
+        assertCompanionAllowed(journey, bundle);
+        await gateway.inviteAlly(journeyId, allyId, bundle);
+        if (journey) {
+          await gateway.publishProgress({
+            journeyId,
+            title: journey.title,
+            progress: core.journeyProgress(journeyId),
+            streak: snapshot.streak,
+          });
+          if (bundle === 'companion') {
+            await gateway.publishCompanionSteps(journeyId, core.getCompanionSteps(journeyId));
+          }
+        }
+      });
+    },
+    [core, gateway, guard],
+  );
+
+  const respondToAllyInvite = useCallback(
+    async (journeyId: string, ownerId: string, accept: boolean) => {
+      await guard(async () => {
+        await gateway.respondToAllyInvite(journeyId, ownerId, accept);
+      });
+      await refresh();
+    },
+    [gateway, guard, refresh],
+  );
+
+  const cancelInvite = useCallback(
+    async (journeyId: string, allyId: string) => {
+      await guard(async () => {
+        await gateway.cancelInvite(journeyId, allyId);
+      });
+    },
+    [gateway, guard],
+  );
+
+  const removeAlly = useCallback(
+    async (journeyId: string, allyId: string) => {
+      await guard(async () => {
+        await gateway.removeAlly(journeyId, allyId);
+      });
+    },
+    [gateway, guard],
+  );
+
+  const changeAllyBundle = useCallback(
+    async (journeyId: string, allyId: string, bundle: AllyBundle) => {
+      await guard(async () => {
+        // Security #3: same coach-only gate on a bundle switch — refuse before writing 'full'.
+        const journey = core.getSnapshot().journeys.find((j) => j.id === journeyId);
+        assertCompanionAllowed(journey, bundle);
+        await gateway.changeAllyBundle(journeyId, allyId, bundle);
+        if (bundle === 'companion') {
+          await gateway.publishCompanionSteps(journeyId, core.getCompanionSteps(journeyId));
+        }
+      });
+    },
+    [core, gateway, guard],
+  );
+
+  const listJourneyAllies = useCallback(
+    async (journeyId: string): Promise<AllyMember[]> => {
+      try {
+        const members = await gateway.listJourneyAllies(journeyId);
+        setError(null);
+        return members;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+        return [];
+      }
+    },
+    [gateway],
+  );
+
+  const closeJourneyInvites = useCallback(
+    async (journeyId: string) => {
+      await guard(async () => {
+        await gateway.closeJourneyInvites(journeyId);
+      });
+    },
+    [gateway, guard],
+  );
+
   const value: SocialContextValue = {
     enabled: true,
     profile,
     friends,
     allyProgress,
     incomingCheers,
+    incomingAllyInvites,
     needsHandle: profile === null,
     error,
     setHandle,
@@ -275,6 +406,13 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     respondToFriend,
     setAllies,
     sendCheer,
+    inviteAlly,
+    respondToAllyInvite,
+    cancelInvite,
+    removeAlly,
+    changeAllyBundle,
+    listJourneyAllies,
+    closeJourneyInvites,
     refresh,
   };
 

@@ -72,12 +72,23 @@ revoke all on function public.are_friends(uuid, uuid) from public, anon;   -- F8
 grant execute on function public.are_friends(uuid, uuid) to authenticated;
 
 -- ── 3. JOURNEY ALLIES ──────────────────────────────────────────────────────
+-- Journey Support Circle (D2): sharing is now CONSENT-GATED. A row starts life
+-- `requested`; NO Journey data is visible until the recipient moves it to
+-- `accepted`. `visibility` doubles as the permission BUNDLE — 'progress' =
+-- Encourager (masked title summary), 'full' = Companion (title + Step progress).
 create table if not exists public.journey_allies (
   journey_id text not null,
   owner_id   uuid not null references public.profiles(id) on delete cascade,
   ally_id    uuid not null references public.profiles(id) on delete cascade,
   visibility text not null default 'progress' check (visibility in ('full','progress','anonymous')),
-  created_at timestamptz not null default now(),
+  -- Consent/acceptance gate (D2). 'requested' → recipient accepts/declines; owner may
+  -- 'cancelled' a pending one, or 'closed' it when the Journey ends. Reads require 'accepted'.
+  status     text not null default 'requested'
+             check (status in ('requested','accepted','declined','cancelled','closed')),
+  created_at   timestamptz not null default now(),
+  requested_at timestamptz not null default now(),
+  decided_at   timestamptz,   -- stamped when the recipient accepts/declines
+  closed_at    timestamptz,   -- stamped when the owner cancels/closes
   primary key (journey_id, owner_id, ally_id),
   check (owner_id <> ally_id)
 );
@@ -86,28 +97,170 @@ alter table public.journey_allies enable row level security;
 drop policy if exists "allies_read"         on public.journey_allies;
 drop policy if exists "allies_owner_insert"  on public.journey_allies;
 drop policy if exists "allies_owner_update"  on public.journey_allies;
+drop policy if exists "allies_respond"       on public.journey_allies;
 drop policy if exists "allies_owner_delete"  on public.journey_allies;
 create policy "allies_read" on public.journey_allies for select to authenticated
   using (owner_id = auth.uid() or ally_id = auth.uid());
 create policy "allies_owner_insert" on public.journey_allies for insert to authenticated
   with check (owner_id = auth.uid() and public.are_friends(owner_id, ally_id));
 -- F4: update must ALSO re-check friendship (insert-parity), so ally_id can't be
--- re-pointed at a non-friend.
+-- re-pointed at a non-friend. Owner may change the bundle, cancel, or close.
 create policy "allies_owner_update" on public.journey_allies for update to authenticated
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid() and public.are_friends(owner_id, ally_id));
+-- D2: the RECIPIENT may move THEIR OWN row 'requested' → 'accepted'/'declined' only
+-- (mirrors friendships_respond). They can never flip anyone else's row or self-accept
+-- a non-requested/closed row.
+create policy "allies_respond" on public.journey_allies for update to authenticated
+  using (ally_id = auth.uid() and status = 'requested')
+  with check (ally_id = auth.uid() and status in ('accepted','declined'));
 create policy "allies_owner_delete" on public.journey_allies for delete to authenticated
   using (owner_id = auth.uid());
 
+-- D2: server-stamp the decision/close timestamps so lifecycle audit fields can't be
+-- forged client-side (matches the snapshots updated_at pattern).
+create or replace function public.stamp_ally_decision()
+returns trigger language plpgsql as $$
+begin
+  if new.status is distinct from old.status then
+    if new.status in ('accepted','declined') then new.decided_at = now();
+    elsif new.status in ('cancelled','closed') then new.closed_at = now();
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_allies_decision on public.journey_allies;
+create trigger trg_allies_decision before update on public.journey_allies
+  for each row execute function public.stamp_ally_decision();
+
+-- D2 (security-privacy #1/#2): RLS WITH CHECK cannot reference OLD, so it can pin the ALLOWED
+-- columns but not FORBID rewriting the others. This BEFORE-UPDATE trigger closes both holes even
+-- against a raw PostgREST/JWT call:
+--   • RECIPIENT (auth.uid = ally): may move ONLY `status` requested → accepted/declined. Every
+--     other column (owner_id/journey_id/ally_id/visibility) is forced back to its OLD value — so a
+--     recipient can NOT self-escalate Encourager→Companion nor forge an `accepted` row on another
+--     owner's Journey.
+--   • OWNER (auth.uid = owner): may set `status` ONLY to requested/cancelled/closed — never
+--     `accepted`/`declined` (those belong to the recipient), so the owner can't self-accept, revive
+--     a decline, or resurrect a closed row (defeating the consent gate + least-access default).
+-- A null auth.uid() (service role / SQL editor / migration backfill) bypasses — it is not a client.
+create or replace function public.enforce_ally_update()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;   -- service role / migration: not a client request
+
+  if auth.uid() = old.ally_id then                 -- recipient responding to their own invite
+    new.owner_id   := old.owner_id;
+    new.journey_id := old.journey_id;
+    new.ally_id    := old.ally_id;
+    new.visibility := old.visibility;              -- no self-escalation Encourager → Companion
+    if not (old.status = 'requested' and new.status in ('accepted','declined')) then
+      raise exception 'ally recipient may only accept or decline a requested invite';
+    end if;
+    return new;
+  end if;
+
+  if auth.uid() = old.owner_id then                -- owner managing their own invite
+    if new.status is distinct from old.status
+       and new.status not in ('requested','cancelled','closed') then
+      raise exception 'ally owner may not set status to %', new.status;  -- accept/decline is the recipient's
+    end if;
+    return new;
+  end if;
+
+  raise exception 'not authorized to update this ally row';  -- neither owner nor recipient (RLS also blocks)
+end $$;
+drop trigger if exists trg_allies_enforce on public.journey_allies;
+create trigger trg_allies_enforce before update on public.journey_allies
+  for each row execute function public.enforce_ally_update();
+
+-- D2: is_ally now requires an ACCEPTED invite AND a still-standing friendship — so a
+-- pending/declined/closed invite grants nothing, and an unfriend instantly cuts access.
 create or replace function public.is_ally(p_journey text, p_owner uuid, p_viewer uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.journey_allies ja
     where ja.journey_id = p_journey and ja.owner_id = p_owner and ja.ally_id = p_viewer
+      and ja.status = 'accepted'
+      and public.are_friends(ja.owner_id, ja.ally_id)
   );
 $$;
 revoke all on function public.is_ally(text, uuid, uuid) from public, anon;   -- F8
 grant execute on function public.is_ally(text, uuid, uuid) to authenticated;
+
+-- D2 (removed-friend fix, part 2): when a friendship row is deleted (unfriend/decline-
+-- removal), CASCADE-delete every Journey-Ally relationship between the two users in BOTH
+-- directions. Belt-and-braces alongside the are_friends() read-gate above: the read is
+-- already blocked the instant the friendship goes, and this also purges the now-orphaned
+-- invite rows so nothing lingers. SECURITY DEFINER so it runs regardless of the deleter's
+-- RLS (either side of the friendship may unfriend).
+create or replace function public.cascade_unfriend()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.journey_allies ja
+   where (ja.owner_id = old.requester_id and ja.ally_id = old.addressee_id)
+      or (ja.owner_id = old.addressee_id and ja.ally_id = old.requester_id);
+  return old;
+end $$;
+drop trigger if exists trg_friendships_unfriend on public.friendships;
+create trigger trg_friendships_unfriend after delete on public.friendships
+  for each row execute function public.cascade_unfriend();
+
+-- ── 3b. COMPANION STEPS (D2) ────────────────────────────────────────────────
+-- The Companion bundle's MVP payload: SYSTEM-GENERATED Step progress only — stepId,
+-- Step title, derived StepStatus, report date. Coach-Journeys ONLY (the app publishes
+-- here only for `createdVia = 'coach'` Journeys), so a title is safe to share and carries
+-- NO user free text. There is DELIBERATELY no column for a reason, note, description,
+-- "why", postpone field, or any D34 private-profile field — those never leave the device.
+create table if not exists public.companion_steps (
+  owner_id    uuid not null references public.profiles(id) on delete cascade,
+  journey_id  text not null,
+  step_id     text not null,
+  title       text not null,
+  status      text not null
+              check (status in ('unreported','completed','partially_completed','not_completed')),
+  reported_at timestamptz,
+  updated_at  timestamptz not null default now(),
+  primary key (owner_id, journey_id, step_id)
+);
+alter table public.companion_steps enable row level security;
+
+-- Owner manages their own rows. Allies do NOT read this base table directly and it is
+-- NOT on realtime — they read the definer RPC below, which enforces consent + friendship
+-- + the Companion bundle. (Same shape as progress_snapshots / F1+F2.)
+drop policy if exists "companion_owner_all" on public.companion_steps;
+create policy "companion_owner_all" on public.companion_steps for all to authenticated
+  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+-- Server-stamp updated_at so the "last active" signal can't be forged client-side. The
+-- shared helper is defined here (create-or-replace, idempotent) so this trigger can be
+-- created before §4 re-declares the same function; §4's copy is identical and harmless.
+create or replace function public.stamp_updated_at()
+returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
+drop trigger if exists trg_companion_stamp on public.companion_steps;
+create trigger trg_companion_stamp before insert or update
+  on public.companion_steps for each row execute function public.stamp_updated_at();
+
+-- The ONLY way an Ally reads Companion Step progress. SECURITY DEFINER + explicit WHERE:
+-- returns rows ONLY for an ACCEPTED, Companion-bundle ('full') invite on THIS owner+journey
+-- from a still-standing friend. Non-accepted / non-friend / non-Companion / wrong-journey
+-- ⇒ zero rows. No reason/note/description ever exists here to leak.
+create or replace function public.ally_journey_steps(p_owner uuid, p_journey text)
+returns table (step_id text, title text, status text, reported_at timestamptz, updated_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select cs.step_id, cs.title, cs.status, cs.reported_at, cs.updated_at
+  from public.companion_steps cs
+  join public.journey_allies ja
+    on ja.journey_id = cs.journey_id and ja.owner_id = cs.owner_id
+  where cs.owner_id = p_owner
+    and cs.journey_id = p_journey
+    and ja.ally_id = auth.uid()
+    and ja.status = 'accepted'
+    and ja.visibility = 'full'
+    and public.are_friends(ja.owner_id, ja.ally_id);
+$$;
+revoke all on function public.ally_journey_steps(uuid, text) from public, anon;
+grant execute on function public.ally_journey_steps(uuid, text) to authenticated;
 
 -- ── 4. PROGRESS SNAPSHOTS ──────────────────────────────────────────────────
 -- The minimal shared summary. NO reflections, NO "why", NO step detail.
@@ -139,6 +292,8 @@ create trigger trg_snapshots_stamp before insert or update
 
 -- F1: the ONLY way an Ally reads snapshots. SECURITY DEFINER + own WHERE enforces
 -- access; title is masked unless visibility = 'full'.
+-- D2: gated on an ACCEPTED invite (consent) AND a still-standing friendship — a pending
+-- invite reveals nothing, and an unfriend (or removed/closed invite) instantly cuts the read.
 create or replace function public.ally_snapshots()
 returns table (owner_id uuid, journey_id text, title text, progress numeric,
                streak int, updated_at timestamptz, visibility text)
@@ -149,7 +304,9 @@ language sql stable security definer set search_path = public as $$
   from public.progress_snapshots s
   join public.journey_allies ja
     on ja.journey_id = s.journey_id and ja.owner_id = s.owner_id
-  where ja.ally_id = auth.uid();
+  where ja.ally_id = auth.uid()
+    and ja.status = 'accepted'
+    and public.are_friends(ja.owner_id, ja.ally_id);
 $$;
 revoke all on function public.ally_snapshots() from public, anon;   -- F8
 grant execute on function public.ally_snapshots() to authenticated;
@@ -219,6 +376,8 @@ alter publication supabase_realtime add table public.cheers;
 -- ── 7. INDEXES ─────────────────────────────────────────────────────────────
 create index if not exists idx_cheers_to       on public.cheers (to_id, created_at desc);
 create index if not exists idx_allies_ally      on public.journey_allies (ally_id);
+create index if not exists idx_allies_incoming   on public.journey_allies (ally_id, status);
+create index if not exists idx_companion_owner_journey on public.companion_steps (owner_id, journey_id);
 create index if not exists idx_snapshots_owner   on public.progress_snapshots (owner_id);
 create index if not exists idx_friendships_addr  on public.friendships (addressee_id);
 

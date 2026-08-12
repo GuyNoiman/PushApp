@@ -173,6 +173,15 @@ export interface Journey {
    */
   milestones?: Milestone[];
   /**
+   * How this Journey was created (Journey Support Circle, D2). `'coach'` = built by the conversational
+   * coach / Planner from a {@link GoalSpec} (Step titles are coach-generated template text, carrying no
+   * user free text); `'manual'` = built by the "Build your own" wizard (Step titles are user-typed).
+   * Optional/additive: absent on legacy Journeys, which are treated as `'manual'` — i.e. Companion-
+   * INELIGIBLE. Only a `'coach'` Journey may offer the Companion bundle (system-generated Step progress
+   * is safe to share; a manual Journey's user-typed titles must never reach Companion). ON-DEVICE marker.
+   */
+  createdVia?: 'coach' | 'manual';
+  /**
    * True once the Journey's COMPLETION reward has been granted (Daily Step Reporting, D36). Set the
    * first time every Step is done (in {@link JourneyEngine.checkInStep}) and never cleared — so a
    * reversal + re-completion cannot mint the completion XP/Coins twice (idempotent rewards; no

@@ -1,4 +1,32 @@
 {
+  "supportCircle": {
+    "title": "Support Circle",
+    "subtitle": "Invite a friend to support this Journey. They see only what you share, and you can remove them anytime.",
+    "invite": "Invite a friend",
+    "inviteA11y": "Invite a friend to this Journey's Support Circle",
+    "empty": "No one is supporting this Journey yet.",
+    "noFriends": "Add a friend first, then you can invite them here.",
+    "pickFriend": "Choose a friend",
+    "send": "Send invite",
+    "cancel": "Cancel invite",
+    "remove": "Remove",
+    "resend": "Invite again",
+    "switchToEncourager": "Switch to Encourager",
+    "switchToCompanion": "Switch to Companion",
+    "closeA11y": "Close",
+    "memberA11y": "{{name}}, {{status}}",
+    "bundleLabel": "What they can see",
+    "encourager": "Encourager",
+    "encouragerBlurb": "Your overall progress: Journey status, steps done, and percentage. No step names.",
+    "companion": "Companion",
+    "companionBlurb": "Everything an Encourager sees, plus your step names and their status.",
+    "companionCoachOnly": "Companion is available on coach-built Journeys only.",
+    "status": {
+      "requested": "Invited",
+      "accepted": "Supporting",
+      "declined": "Declined"
+    }
+  },
   "detail": {
     "eyebrow": "JOURNEY",
     "editLabel": "Edit this Journey",

@@ -17,3 +17,4 @@ export function getSocialGateway(): SocialGateway {
 }
 
 export * from './SocialGateway';
+export * from './companion';

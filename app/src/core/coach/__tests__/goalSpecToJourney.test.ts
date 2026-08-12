@@ -161,6 +161,24 @@ describe('createJourneyFromGoalSpec', () => {
     expect(journey.steps.length).toBeGreaterThan(0);
     expect(journey.milestones?.map((m) => m.title)).toEqual(HABIT_ARC);
   });
+
+  it('marks the Journey createdVia "coach" so it may offer the Companion bundle (D2)', () => {
+    const spec: GoalSpec = {
+      title: 'Read before bed',
+      domain: 'general',
+      processType: 'fixed',
+      isHabit: true,
+      milestones: [],
+      failureRisks: [],
+      timing: { daypart: 'evening', sessionMinutes: 20, sessionsPerWeek: 7 },
+    };
+    const state = freshState();
+    const engine = new JourneyEngine(new EventBus(), () => state);
+
+    const journey = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW });
+
+    expect(journey.createdVia).toBe('coach');
+  });
 });
 
 describe('domain routing (SX.2)', () => {

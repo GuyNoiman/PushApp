@@ -195,6 +195,9 @@ export default function NewJourneyScreen() {
         durationDays,
         rhythm,
         steps: stepInputs,
+        // Journey Support Circle (D2): a wizard-built Journey has user-typed Step titles, so it is
+        // Companion-INELIGIBLE — it may only ever offer the Encourager bundle.
+        createdVia: 'manual',
       });
 
       if (remindEnabled) {

@@ -12,9 +12,70 @@
  * reflections, the "why", or step detail (data minimization, Bible §8).
  */
 
+import type { StepStatus } from '../status/stepStatus';
+
 export type Visibility = 'full' | 'progress' | 'anonymous';
 export type FriendStatus = 'pending' | 'accepted';
 export type CheerKind = 'cheer' | 'nudge';
+
+/**
+ * A Support-Circle permission BUNDLE (Journey Support Circle, D2). Maps 1:1 onto the DB
+ * `journey_allies.visibility` column, kept as the wire storage:
+ * - `encourager` → 'progress': the masked title/progress/streak summary (no Step list);
+ * - `companion`  → 'full': everything an Encourager sees, PLUS system-generated Step
+ *   progress (names + derived statuses). Companion is offered ONLY for coach-created
+ *   Journeys (a manual Journey's user-typed titles must never reach it).
+ */
+export type AllyBundle = 'encourager' | 'companion';
+
+/** Consent lifecycle of one Journey↔Ally invite (D2). No data is visible before `accepted`. */
+export type AllyInviteStatus = 'requested' | 'accepted' | 'declined' | 'cancelled' | 'closed';
+
+/** Map a bundle to the DB `visibility` value it is stored as, and back. */
+export function bundleToVisibility(bundle: AllyBundle): Visibility {
+  return bundle === 'companion' ? 'full' : 'progress';
+}
+export function bundleFromVisibility(visibility: Visibility): AllyBundle {
+  return visibility === 'full' ? 'companion' : 'encourager';
+}
+
+/** The owner's view of one member of a Journey's Support Circle. */
+export interface AllyMember {
+  profile: SocialProfile;
+  bundle: AllyBundle;
+  status: AllyInviteStatus;
+}
+
+/** The recipient's view of an incoming Support-Circle invite (Inbox → Requested). */
+export interface AllyInvite {
+  owner: SocialProfile;
+  journeyId: string;
+  bundle: AllyBundle;
+  status: AllyInviteStatus;
+}
+
+/**
+ * One Companion Step row the OWNER publishes for a coach Journey (D2). SYSTEM-GENERATED
+ * data ONLY — `stepId`, the coach-generated `title`, a derived {@link StepStatus}, and the
+ * report date. NEVER a reason, note, description, "why", or any user free text (that data is
+ * whitelist-barred from all sync — see {@link ProgressSummary}).
+ */
+export interface CompanionStepInput {
+  stepId: string;
+  title: string;
+  status: StepStatus;
+  /** Epoch ms of the last report/check-in, or null when unreported. */
+  reportedAt: number | null;
+}
+
+/** What a Companion Ally reads back for one Step of a Journey they support. */
+export interface CompanionStep {
+  stepId: string;
+  title: string;
+  status: StepStatus;
+  reportedAt: number | null;
+  updatedAt: number;
+}
 
 /** Public, cosmetic identity other users can see. No personal data. */
 export interface SocialProfile {
@@ -95,6 +156,33 @@ export interface SocialGateway {
   respondToFriend(requesterId: string, accept: boolean): Promise<void>;
   listFriends(): Promise<Friend[]>;
 
+  // ── Support Circle: per-Journey Ally invites (consent-gated, D2) ──
+  /**
+   * Invite a friend to a Journey's Support Circle with a permission bundle. Creates (or re-opens a
+   * prior declined/cancelled) invite in the `requested` state — NO Journey data is visible until the
+   * recipient accepts. `companion` is valid ONLY for coach-created Journeys; the caller (provider)
+   * enforces that before calling.
+   */
+  inviteAlly(journeyId: string, allyId: string, bundle: AllyBundle): Promise<void>;
+  /** Recipient responds to an incoming invite: accept (activate) or decline (neutral, reversible). */
+  respondToAllyInvite(journeyId: string, ownerId: string, accept: boolean): Promise<void>;
+  /** Owner cancels a still-`requested` invite. */
+  cancelInvite(journeyId: string, allyId: string): Promise<void>;
+  /** Owner removes an accepted Ally (or closes any live invite) — access is cut immediately. */
+  removeAlly(journeyId: string, allyId: string): Promise<void>;
+  /** Owner changes an existing member's bundle between the two MVP presets (no re-acceptance, D2 §3.2). */
+  changeAllyBundle(journeyId: string, allyId: string, bundle: AllyBundle): Promise<void>;
+  /** The owner's Support Circle for one Journey — every non-terminal member/invite. */
+  listJourneyAllies(journeyId: string): Promise<AllyMember[]>;
+  /** Incoming Support-Circle invites still awaiting THIS user's decision (Inbox → Requested). */
+  incomingAllyInvites(): Promise<AllyInvite[]>;
+  /** Close every live invite for a Journey (lifecycle: complete/abandon/delete). */
+  closeJourneyInvites(journeyId: string): Promise<void>;
+  /** Publish the Companion Step payload for a coach Journey (replaces the prior set for that Journey). */
+  publishCompanionSteps(journeyId: string, steps: CompanionStepInput[]): Promise<void>;
+  /** Companion Step progress for a Journey the current user is an accepted Companion of. */
+  companionSteps(ownerId: string, journeyId: string): Promise<CompanionStep[]>;
+
   // ── Allies (per-Journey sharing) ──
   setAllies(journeyId: string, allyIds: string[], visibility: Visibility): Promise<void>;
   publishProgress(summary: ProgressSummary): Promise<void>;
@@ -102,6 +190,8 @@ export interface SocialGateway {
   allyProgress(): Promise<AllyProgress[]>;
   /** Distinct ids of the current user's own Journeys that have at least one Ally. */
   mySharedJourneyIds(): Promise<string[]>;
+  /** Distinct ids of the current user's own Journeys that have at least one COMPANION (full) Ally. */
+  myCompanionJourneyIds(): Promise<string[]>;
 
   // ── Cheers ──
   sendCheer(toId: string, journeyId: string, kind: CheerKind): Promise<void>;
@@ -130,10 +220,21 @@ export const NullSocialGateway: SocialGateway = {
   async requestFriend() {},
   async respondToFriend() {},
   async listFriends() { return []; },
+  async inviteAlly() {},
+  async respondToAllyInvite() {},
+  async cancelInvite() {},
+  async removeAlly() {},
+  async changeAllyBundle() {},
+  async listJourneyAllies() { return []; },
+  async incomingAllyInvites() { return []; },
+  async closeJourneyInvites() {},
+  async publishCompanionSteps() {},
+  async companionSteps() { return []; },
   async setAllies() {},
   async publishProgress() {},
   async allyProgress() { return []; },
   async mySharedJourneyIds() { return []; },
+  async myCompanionJourneyIds() { return []; },
   async sendCheer() {},
   subscribeToCheers() { return () => {}; },
   subscribeToAllyUpdates() { return () => {}; },

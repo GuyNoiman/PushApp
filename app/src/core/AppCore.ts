@@ -26,6 +26,8 @@ import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
 import { StreakEngine } from './engines/StreakEngine';
 import { createJourneyFromGoalSpec, dreamSignalFromSpec } from './coach/goalSpecToJourney';
+import { companionStepsFor, isCompanionEligible } from './social/companion';
+import type { CompanionStepInput } from './social/SocialGateway';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
 import type { GoalSpec } from './coach/interviewPlaybook';
 import type { JourneyEdit } from './coach/journeyEdit';
@@ -1134,6 +1136,18 @@ export class AppCore {
    */
   getStepStatus(step: Step): StepStatus {
     return deriveStepStatus(step, this.state.reasonLog ?? []);
+  }
+
+  /**
+   * The Companion Step payload for a Journey (Journey Support Circle, D2) — SYSTEM-GENERATED data
+   * only (Step id/title, derived status, report date), used by the social publish path. Returns `[]`
+   * for a manual/legacy Journey (Companion-INELIGIBLE), so the sync layer can never publish a
+   * user-typed Step title to a Companion Ally — defense in depth alongside the UI + gateway guards.
+   */
+  getCompanionSteps(journeyId: string): CompanionStepInput[] {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey || !isCompanionEligible(journey)) return [];
+    return companionStepsFor(journey, this.state.reasonLog ?? []);
   }
 
   /** The Shop cosmetic catalog (read-only config) for the Shop screen to render. */

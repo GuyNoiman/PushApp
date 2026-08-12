@@ -131,6 +131,30 @@ export default function InboxScreen() {
     [incoming, social, t],
   );
 
+  // REQUESTED — incoming Support-Circle (Ally) invites, each actionable (D2). The preview states
+  // exactly what accepting will expose (Encourager vs Companion), so the recipient consents knowingly.
+  const allyInviteRowsReal = useMemo<InboxRowData[]>(
+    () =>
+      social.incomingAllyInvites.map((inv) => ({
+        id: `allyreq:${inv.owner.id}:${inv.journeyId}`,
+        name: profileName(inv.owner),
+        preview: inv.bundle === 'companion' ? t('preview.allyCompanion') : t('preview.allyEncourager'),
+        unread: true,
+        actions: [
+          {
+            label: t('accept'),
+            onPress: () => void social.respondToAllyInvite(inv.journeyId, inv.owner.id, true),
+          },
+          {
+            label: t('decline'),
+            variant: 'ghost',
+            onPress: () => void social.respondToAllyInvite(inv.journeyId, inv.owner.id, false),
+          },
+        ],
+      })),
+    [social, t],
+  );
+
   // ── Fall back to the dev sample per-list so the tabs read populated (founder
   // feedback). Sample rows carry no real target — their inline actions are inert
   // placeholders, never persisted or sent. Groups has no POC data → empty state. ──
@@ -157,7 +181,12 @@ export default function InboxScreen() {
 
   const friendsRows = useSampleWhenEmpty(friendsRowsReal, sampleFriendsRows);
   const alliesRows = useSampleWhenEmpty(alliesRowsReal, sampleAlliesRows);
-  const requestedRows = useSampleWhenEmpty(requestedRowsReal, sampleRequestedRows);
+  // Friend requests + Ally invites share the Requested tab; both are real, actionable rows.
+  const requestedRowsCombined = useMemo(
+    () => [...requestedRowsReal, ...allyInviteRowsReal],
+    [requestedRowsReal, allyInviteRowsReal],
+  );
+  const requestedRows = useSampleWhenEmpty(requestedRowsCombined, sampleRequestedRows);
 
   const tabs: InboxTab[] = [
     { key: 'friends', label: t('tabs.friends'), unread: friendsRows.some((r) => r.unread) },

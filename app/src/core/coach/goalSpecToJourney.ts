@@ -117,7 +117,10 @@ export function createJourneyFromGoalSpec(
   expert: DomainExpert = getExpert(spec.domain),
   options?: PlanOptions,
 ): Journey {
-  return engine.createJourney(buildJourneyInput(spec, expert, options));
+  // Journey Support Circle (D2): the coach path marks the Journey `createdVia: 'coach'`, so it may
+  // later offer the Companion bundle — its Step titles are coach-generated template text, never user
+  // free text. A manually-created Journey (the wizard) carries `'manual'` and stays Companion-ineligible.
+  return engine.createJourney({ ...buildJourneyInput(spec, expert, options), createdVia: 'coach' });
 }
 
 /**

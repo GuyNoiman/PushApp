@@ -24,6 +24,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { StepStatusChip } from '@/components/home/StepStatusChip';
 import { JourneyReminderCard } from '@/components/journey/JourneyReminderCard';
+import { JourneySupportCircle } from '@/components/journey/JourneySupportCircle';
 import { shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
 import { featureFlags } from '@/core/config/featureFlags';
 import type { StepStatus } from '@/core/status/stepStatus';
@@ -32,10 +33,12 @@ import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
+import { useSocial } from '@/state/SocialProvider';
 
 export default function JourneyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { core, snapshot } = useApp();
+  const social = useSocial();
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('journey');
@@ -95,6 +98,9 @@ export default function JourneyDetailScreen() {
 
   const onConfirmDelete = () => {
     setConfirmingDelete(false);
+    // Support Circle (D2): a deleted Journey closes/revokes every live invite. Best-effort and
+    // server-gated (reads already stop the instant the Journey is gone); never blocks the delete.
+    void social.closeJourneyInvites(journey.id);
     core.deleteJourney(journey.id);
     dismiss();
   };
@@ -216,6 +222,10 @@ export default function JourneyDetailScreen() {
 
           {/* Managed Off/Fixed reminder (D40) — view, edit, or disable; Smart is deferred. */}
           <JourneyReminderCard journey={journey} />
+
+          {/* Support Circle (D2) — invite friends to support this Journey; renders only when the
+              social pillar is configured. Companion bundle is coach-Journeys-only. */}
+          <JourneySupportCircle journey={journey} />
 
           {/* The user's "why" */}
           {journey.why.length > 0 && (

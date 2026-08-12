@@ -222,7 +222,13 @@ function migrateState(state: AppState): AppState {
   return {
     ...base,
     ...state,
-    dreams: state.dreams ?? base.dreams,
+    // Strip any legacy runtime field (e.g. the removed `journeyIds`) from persisted Dreams so a
+    // pre-D40 snapshot never carries — or re-exports — a stale duplicate (Dream Management review).
+    dreams: (state.dreams ?? base.dreams).map((d) => ({
+      id: d.id,
+      title: d.title,
+      ...(d.description ? { description: d.description } : {}),
+    })),
     // Daily Step Reporting (D36): an already-completed Journey persisted before `completionRewarded`
     // existed had its reward granted historically — latch the flag true so a later reversal +
     // re-completion never re-grants it (idempotent rewards; no double-pay).

@@ -136,7 +136,10 @@ export function planNextWeek(journeys: Journey[], dreams: Dream[]): WeeklyReview
     // "Addressed" = linked to ANY Journey (paused/finished counts) — a Dream whose only Journeys
     // are done/abandoned still reads as one the user has taken on, so we prefer to suggest a
     // genuinely NOT-yet-addressed Dream and phrase the chosen one honestly.
-    const addressedIds = new Set(journeys.flatMap((j) => (j.dreamId ? [j.dreamId] : [])));
+    // A Dream counts as addressed via its PRIMARY or any SECONDARY link (matches isJourneyLinkedToDream).
+    const addressedIds = new Set(
+      journeys.flatMap((j) => [j.dreamId, ...(j.secondaryDreamIds ?? [])].filter((id): id is string => Boolean(id))),
+    );
     const unaddressed = dreams.find((d) => !addressedIds.has(d.id));
     const chosen = unaddressed ?? dreams[0];
     return { kind: 'dreamSuggestion', dreamTitle: chosen.title, dreamAddressed: addressedIds.has(chosen.id) };

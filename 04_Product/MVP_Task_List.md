@@ -135,7 +135,7 @@ Priority: **P1** = core initial-version, **P2** = important but can follow, **P3
 |----|------|--------|-------------|
 | **D1** | **Adding a friend** | ✅ | Works end-to-end by `@username` (`SupabaseSocialGateway`). Needs QA + small polish only. |
 | **D2** | **Connect people to a Journey (Journey Support Circle / Ally)** | ✅ Built (D40) + hardened (2026-08-13) | **Correction — this row was STALE.** It previously said "backend plumbing is real (`setAllies` → `journey_allies`), but no screen calls it — a user cannot currently propose/name an Ally in-app." In fact the real Journey Support Circle (consent gate, propose/accept UX, the Companion bundle) was **already built** in the D40 work (commit `b3a9ff5`; see `Journey_Support_Circle_PRD.md`) — that description just went stale and is corrected here. **Tonight (2026-08-13) — hardened:** hid the invite CTA on completed/frozen Journeys; distinguished an offline-load-failure state from a genuinely-empty Support Circle; added the missing UI tests. **Flagged (LOW, latent):** the older `setAllies` write path bypasses the Companion coach-Journeys-only gate — no caller reaches it today, but it should be retired or guarded. **Still open:** the live-DB authorization-matrix QA (2nd account) is a **founder action** (the Supabase migration was applied by the founder this session). See Decision Log **D44**. |
-| **D3** | **Sample/frozen social data → real** | 🟡 | Friends/Inbox fall back to `sampleSocial.ts` when empty; the Allies tab reads real data but has no producer (see D2). Covered cross-cut in **H**. |
+| **D3** | **Sample/frozen social data → real** | ✅ Done (2026-08-13) | Was 🟡 — Friends/Inbox fell back to `sampleSocial.ts` when empty. **This session (H1 pass):** removed the fabricated sample people from Home/Circle/Inbox in favor of real empty states; removed the fake `SAMPLE_COMPLETED` demo Journey; wired "Nudge" as a real, distinct `CheerKind` (was silently reusing `sendCheer`). Covered together with **H** below. |
 
 **Open questions — social scope (raised earlier, NOT yet in the MVP list; founder to confirm in/out):**
 - **Friend profile page** — does not exist. MVP or later?
@@ -173,7 +173,7 @@ Priority: **P1** = core initial-version, **P2** = important but can follow, **P3
 
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
-| **H1** | **Remove frozen data / make it real** | 🟡 | Sweep every hard-coded/placeholder value in the main tabs and either wire it to real data or remove it: streak placeholder (→ B2), `sampleSocial` fallbacks (→ D3), Journeys "Future" tab placeholder (no start-date model), Dream names workaround (→ F1), Inbox Groups empty tab, "Nudge" reusing `sendCheer`, Settings static rows (→ E2), About `v0.1`. Track each as a checklist item so nothing frozen ships silently. |
+| **H1** | **Remove frozen data / make it real** | ✅ Done (2026-08-13) | Was 🟡. Checklist status: streak placeholder → **done** (B2); `sampleSocial` fallbacks on Home/Circle/Inbox → **done this session**, replaced with real empty states + the fake `SAMPLE_COMPLETED` demo Journey removed; "Nudge" reusing `sendCheer` → **done this session**, now a real distinct `CheerKind`; the scripted coach's dead "Build this Journey" CTA → **done this session** (separate small fix, `fbff0dc`), now routes to the real manual wizard; Settings static rows → **done** (E2); About `v0.1` → **done** (E2, real app version). **Remaining, deliberately scoped out (not silent):** the Journeys "Future" tab placeholder (no start-date model yet) and the Dream-names workaround stay tied to **F1**'s own status (still partial — the coach Dream-authoring conversation is deferred); Inbox Groups empty tab stays empty because Groups itself is post-MVP (D29). None of these are oversights — they're tracked under their owning row/decision, not re-listed here as open H1 work. |
 
 ---
 
@@ -204,7 +204,7 @@ almost immutable** — these are missing and likely required for a usable initia
 
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
-| **K1** | **First-run onboarding** | ⛔ | No onboarding exists — the app drops straight into Home (`_layout.tsx` registers `(tabs)` first, no gate). Needs a real first-run: welcome → (sign-in) → notification-permission ask → guide to the first goal/coach. The notification permission ask currently lives only inside the creation wizard. |
+| **K1** | **First-run onboarding** | ✅ Done (2026-08-13) | Was ⛔ — no onboarding existed. **K2's flow (language → Personal Info → six questions → Coach) was already ~85% of this item**; this session closed the gap by adding the missing **notification-permission step**: a soft pre-prompt placed after the questionnaire and before the Coach hand-off. Onboarding is now complete for MVP. (Real sign-in inside onboarding is still 🔒 Apple/E1-gated, unchanged.) |
 | **K2** | **Initial onboarding questionnaire** | ✅ Spec ready | **MVP product flow approved 2026-08-12.** Language first → prefilled/editable Personal Information → standalone six-question introduction → six skippable pages → Coach. OS keyboard dictation only; no audio capture; no personality result; no silent Dream/Journey creation. See `PRD/Onboarding_Questionnaire_PRD.md`. Implementation remains part of K1 delivery and subject to existing Coach privacy/safety gates. |
 
 ## L. Deferred goals (NEWLY FOUND GAP)
@@ -244,7 +244,7 @@ almost immutable** — these are missing and likely required for a usable initia
 
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
-| **N1** | **i18n layer + Hebrew + RTL** | 🟡 | **Infra DONE, screen-migration PARTIAL (2026-08-09).** Was: no i18n at all — all UI copy hard-coded English, coach fixed English. Now: `i18next`/`react-i18next`/`expo-localization` (both free — no cost gate) wired in, `LanguagePreference` state, a searchable language picker, `app/src/i18n/` resource files (English + Hebrew), RTL helpers, `RestartPrompt` for direction flips. Settings + Home + `TopStatusBar` + `journey/[id].tsx` + tab labels translated. **Remaining:** `journeys.tsx`, `journey/new.tsx`, most home/journey components, Coach, secondary tabs still English-only (no crash); a full **RTL layout** sweep across every screen is not yet device-verified; the coach does not yet converse in Hebrew. Ties into the future bilingual safety floor. Do the remaining migration in controlled batches — an earlier single large pass stalled. |
+| **N1** | **i18n layer + Hebrew + RTL** | 🟡 | **Infra DONE, all reachable MVP screens now fully translated (confirmed 2026-08-13).** Was: no i18n at all — all UI copy hard-coded English. The per-batch screen-migration work recorded earlier in this doc's "Build progress" log finished the core + secondary screens (14+ namespaces at en/he parity) and the coach now converses in Hebrew for the general path. **The one remaining gap is the 4 domain-expert catalogs' Hebrew content** (Addiction/Relationships/BodyImage/Career) — these stay English by design, since they're internal tools gated behind `liveCoach`/not yet specced (see the Batch-3 note above and Decision Log D30); it is a **dormant, liveCoach-gated follow-up**, not a shipping gap. A full device **RTL layout** sweep is still not verified (Apple-account-gated, unchanged). |
 
 ## O. Account deletion / data export (CONFIRMED IN — D29, release gate)
 
@@ -292,11 +292,19 @@ These come **after** the initial version, in this order per the founder:
 
 | ID | Item | Status | What's left |
 |----|------|--------|-------------|
-| **Q1** | **Gender-aware "form of address" across all languages** | 🟡 | **Decision (Decision Log D31):** the app must address the user in the right grammatical form (Hebrew is gendered). Mechanism = i18next **context** (`key_feminine`/`key_masculine`, base = fallback; English just uses base, so it generalizes to every language). A persisted **`addressForm`** preference (`neutral`/`feminine`/`masculine`) drives it via a React hook (components) + a module-level accessor (framework-free engines/coach). **Sourcing:** asked at **onboarding**; if Google/Apple sign-in returns the user's gender, **auto-set** it — but still surface it in the onboarding questionnaire and let the user edit it (and edit it later in the profile). **Building now:** the mechanism + preference + a Settings/onboarding control + converting the most user-facing strings (coach + Home greeting) as a proof. **Remaining after the foundation:** convert the rest of the gendered strings incrementally (base stays the fallback); wire the sign-in auto-detect once real OAuth lands (E1, Apple-gated); move the picker into the P1 profile redesign. |
+| **Q1** | **Gender-aware "form of address" across all languages** | 🟡 | **Decision (Decision Log D31):** the app must address the user in the right grammatical form (Hebrew is gendered). Mechanism = i18next **context** (`key_feminine`/`key_masculine`, base = fallback; English just uses base, so it generalizes to every language). A persisted **`addressForm`** preference (`neutral`/`feminine`/`masculine`) drives it via a React hook (components) + a module-level accessor (framework-free engines/coach). **Sourcing:** asked at **onboarding**; if Google/Apple sign-in returns the user's gender, **auto-set** it — but still surface it in the onboarding questionnaire and let the user edit it (and edit it later in the profile). **Built:** the mechanism + preference + a Settings/onboarding control + the coach + Home greeting (foundation). **Extended (2026-08-13):** the Coach screen, the Miss-Recovery caring copy, Settings/Profile, and the onboarding self-description step now also use the gendered forms. **Remaining:** convert the rest of the gendered base-namespace strings incrementally (base stays the universal fallback); wire the sign-in auto-detect once real OAuth lands (E1, Apple-gated); move the picker into the P1 profile redesign. |
 
 **Apple Developer Program** (purchased 2026-08-08, account details expected ~08-10) gates: real
 device notifications, a native dev build, real Apple **and** native-Google sign-in, and full
 onboarding. Unblocked work (B, C, D2, F, G, H, I) proceeds in parallel while waiting.
+
+**Status as of 2026-08-13 (MVP-ready sweep session):** with K1, H1/D3, N1 (screen-migration), and Q1's
+foundation all closed or extended this session, **the buildable-without-founder-input MVP queue is
+essentially drained.** What remains open is gated on one of: a founder design session (P1 friend
+profile, coach-authoring for Dreams/Step-dependencies), the Apple Developer account (E1, device
+notifications, native build, G1 sign-off, RTL/gendered visual QA), or new spec work not yet written
+(the Invite feature). See `Current_Context.md` → the top "⭐ HANDOFF SNAPSHOT — 2026-08-13 (SESSION —
+MVP-ready sweep)" for the full ▶ NEXT queue.
 
 ## How this list is tracked
 

@@ -1,9 +1,12 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-13 (overnight autonomous session)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13"
-just below (most current and authoritative). Prior top snapshot: 2026-08-12 SESSION 2 (kept below as
-accurate history, superseded only as "most current"). Prior to that: 2026-08-10 (kept below as accurate
+Last updated: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
+(SESSION — MVP-ready sweep)" just below (most current and authoritative). It supersedes — but does not
+replace — the same-day "⭐ HANDOFF SNAPSHOT — 2026-08-13 (overnight autonomous session)" underneath it,
+which is kept in full as accurate history of that earlier batch. Prior top snapshot before that:
+2026-08-12 SESSION 2 (kept below as accurate history, superseded only as "most current"). Prior to
+that: 2026-08-10 (kept below as accurate
 history) — which itself noted: this
 [08-10] session finished the i18n rollout, D30 (coach voice), J3
 (Freeze/Resume + Journey.status), D31 (form of address), D33 (one week boundary), D34 (unified Own
@@ -22,6 +25,111 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-13 (SESSION — MVP-ready sweep — supersedes the same-day "overnight autonomous session" snapshot below as "most current"; that snapshot and everything under it is kept in full as accurate history)
+
+**Branch `feat/buddy-3d-and-reminders`. Continuation of the same day's overnight batch. Each item this
+session: built → adversarially reviewed (code-reviewer + security-privacy where it touched data) →
+findings fixed → green. Final state: `tsc` clean · `eslint` 0 · `jest` 969/969 (up from 916/916 at the
+start of this session). Everything is COMMITTED by topic (one commit per completed item) but NOT
+pushed — nothing is pushed without the founder's ask.**
+
+### Commits this session (newest first)
+`ff8a046` Q1 gendered form-of-address · `eb1a8d5` copy polish · `fbff0dc` coach dead-CTA wired ·
+`d77a185` H1 data-realness · `1210206` K1 onboarding notif step · `cbb187c` docs (Step Dependencies PRD +
+D45 Buddy→Future) · `0762422` Step Dependencies feature · `689a835` setAllies removal + L1 read-only —
+plus the earlier overnight batch already recorded in the snapshot below (`a9c0c48`/`23dd121`/`9a68ec8`).
+
+### Shipped this session
+1. **`setAllies` removed** — the dead write path that bypassed the Companion coach-Journeys-only gate
+   (flagged LOW/latent in the overnight D2 hardening below); no caller reached it, now gone outright
+   rather than left as a guarded footgun. **L1 parked-goals surface made read-only** — the founder wants
+   a coach-in-context entry point for activating a parked goal later, not a standalone action surface
+   yet; the "activate" affordance was pulled pending that design.
+2. **Step Dependencies — full feature** (linear, single-predecessor + single-dependent, chains ≤3,
+   within-Milestone, coach-authored). A waiting-deck UI (approved mockup `04_Product/UX/
+   Step_Dependency_Cards.html`); **fail-open** so a broken/unmet dependency never produces a dead-end;
+   the adaptive engine never auto-drops a dependency Step; a `deferDependents` cascade so deferring a
+   predecessor correctly defers what waits on it. Reviewed and fixed (a fan-out edge case, a
+   defer-stranding bug, and an honesty pass on the waiting-deck copy — it must not imply the dependent
+   Step is broken/blocked forever). PRD: `04_Product/PRD/Step_Dependencies_PRD.md`. **Follow-up, not yet
+   built:** the coach does not yet PROPOSE a dependency during a live conversation — that authoring
+   decision-logic is a coach-design task, tracked below in ▶ NEXT.
+3. **Buddy re-staged to Future — Decision Log D45.** Confirmed **not** MVP; the coach (meta-agent) stays
+   the MVP's central user-facing entity. The full Buddy vision is preserved, not deleted, annotated
+   across `AI_Product_Principles.md` Principle 9, `09_Product_Philosophy/Product_Terminology.md`, and
+   `04_Product/Version_Roadmap.md` / `POC_and_MVP_Scope.md`. (Full reasoning already in D45 — see the
+   Decision Log; nothing further needed here.)
+4. **K1 first-run onboarding — CLOSED.** Was already ~85% built (language-first → Personal Info → six
+   questions → Coach handoff, K2). This session added the missing piece: a soft notification-permission
+   pre-prompt step, placed after the questionnaire and before the Coach hand-off. Onboarding is now
+   complete for MVP purposes.
+5. **H1 data-realness sweep (this pass).** Replaced fabricated sample people (`sampleSocial`) on
+   Home/Circle/Inbox with real empty states; removed the fake `SAMPLE_COMPLETED` demo Journey; wired
+   "Nudge" as a real, distinct `CheerKind` (was silently reusing `sendCheer` with no dedicated meaning).
+   The scripted coach's "Build this Journey" dead CTA now routes to the real manual creation wizard
+   instead of doing nothing.
+6. **Copy polish** (content-writer pass) across this session's new/changed user-facing strings — human
+   phrasing, no em-dashes, en+he parity maintained.
+7. **Q1 gender-aware form-of-address (D31) — extended.** Beyond the earlier foundation (mechanism +
+   coach + Home greeting), this session converted the Coach screen, the Miss-Recovery caring copy,
+   Settings/Profile, and the onboarding self-description step to the gendered `_feminine`/`_masculine`
+   i18next-context forms (Hebrew), with the neutral base kept as the universal fallback for languages
+   (and users) that don't need it.
+
+### Non-code this session
+- **Partner coaching content v1.0 evaluated** — verdict: strong, adopt-with-conditions. Only the wrapper
+  file was actually sent; it references (but doesn't include) the worked Journeys and calibration cases.
+  A message was sent back to the partner requesting: the referenced files; the operational referral
+  triggers written inline for the 3 sensitive domains (not just described); a Body-Image eating
+  daily-adherence mechanic; and a decision on unifying with the earlier v0.7 version. **Awaiting the
+  partner's files** — nothing to do here until they arrive.
+- **Invite feature scoped, not yet spec'd.** The founder wants a share/download-link invite that creates
+  a friend request automatically on install (a deferred deep link). Confirmed feasible: needs a deferred
+  deep-link service (e.g. Branch — a paid dependency, cost-guardian territory) or a manual invite-code
+  fallback; Android has Play Install Referrer built in, iOS needs a service or the manual code path.
+  **No PRD exists yet** — this is new scope, not started. Also gated in part on real sign-in (E1/Apple),
+  since an invite needs a real identity to attach the friend request to.
+
+### Repo docs touched this session
+`04_Product/MVP_Task_List.md` (K1 → Done; H1/D3 rows updated with what's now real vs. still open; N1
+clarified — reachable MVP screens are now fully translated, the DomainExpert catalogs are the one
+remaining dormant/liveCoach-gated gap; Q1 → extended-surfaces note); `00_Foundation/CHANGELOG.md`
+(new entry for this session); this file.
+
+### ▶ NEXT (read this before starting new work)
+1. **Needs a design session with the founder (MVP-blocking):** the **P1 friend profile page** (still
+   doesn't exist — see the D-section rows below); the **coach-authoring decision logic** — specifically
+   the coach PROPOSING a Dream (F1, still deferred) and the coach PROPOSING a Step dependency (new,
+   from this session's Step Dependencies build) inside a live conversation. Both are conversation-design
+   work, not implementation — good candidates for the next joint session.
+2. **Apple-gated (founder action, unchanged):** the Apple Developer account still unblocks — real
+   sign-in (E1), real device notifications, a native build, the G1 on-device design sign-off, and
+   RTL/gendered visual QA of every new screen (including this session's Step Dependencies waiting deck
+   and the extended Q1 surfaces). Also still pending, independent of Apple: deploy the `delete-account`
+   Edge Function + host a Google Play deletion URL (O1 release gate); the D2 Support-Circle live-DB
+   authorization QA with a 2nd account.
+3. **Spec track (good use of Apple-blocked time):** write the **Invite** PRD (deferred-deep-link —
+   cost-flag Branch vs. a manual invite-code fallback before choosing); close the "Approved-but-not-Ready"
+   PRDs to execution precision — `Coach_Context_Summaries_PRD.md`, `Future_Journey_Management_PRD.md`,
+   `Smart_Notification_Timing_PRD.md`, and a Friend Profile PRD (doesn't exist yet — needed before P1
+   can be built).
+4. **Tracked follow-ups (not urgent, don't lose them):** coach-authoring for both dependencies and
+   Dreams (item 1 above); the DomainExpert catalog i18n gap, deferred to live-coach GA (still English —
+   dormant/liveCoach-gated, non-issue while the experts stay gated, same reasoning as the N1 row below);
+   an optional Decision Log entry once the on-call/safety-floor design lands from the v1.0 partner
+   content eval; await the partner's v1.0 content files (see "Non-code" above).
+5. **Working-tree discipline (KEEP THIS NOTE — still true):** Codex works this repo in parallel and only
+   ADDS untracked PRD drafts / edits its own docs (`.codex/`, root `AGENTS.md`,
+   `04_Product/PRD/README.md`, `05_Research/*`, new `Future/` PRDs including a Creator-platform draft).
+   **Never `git add -A`** — stage explicit paths. Only this side (Claude Code) develops code.
+
+**Git status:** everything above is committed by topic this session, on branch
+`feat/buddy-3d-and-reminders`, **not pushed** — the founder has not asked for a push.
+**The buildable-without-founder-input MVP queue is now essentially drained** — nearly everything
+remaining in `04_Product/MVP_Task_List.md` needs either a founder design session (item 1 above) or the
+Apple account (item 2 above). The next session should start with the spec track (item 3) or wait for
+one of those two gates to clear.
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-08-13 (overnight autonomous session — supersedes the 2026-08-12 SESSION 2 snapshot below as "most current"; that snapshot and everything under it is kept as accurate history)
 

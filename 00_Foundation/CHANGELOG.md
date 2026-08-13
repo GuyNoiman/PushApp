@@ -4,6 +4,47 @@ Status: Living Document
 
 ---
 
+# 2026-08-13 (continued) — MVP-ready sweep: Step Dependencies, Buddy→Future, K1/H1 closed, coach CTA, Q1 extended (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
+
+Same-day continuation of the overnight batch below. Each item: built → adversarially reviewed
+(code-reviewer + security-privacy where it touched data) → fixed → green. Final state: `tsc` clean,
+`eslint` 0 errors, **jest 969/969** (up from 916). Full narrative + resume: `Current_Context.md` →
+"⭐ HANDOFF SNAPSHOT — 2026-08-13 (SESSION — MVP-ready sweep)". Commits, newest first: `ff8a046` Q1 ·
+`eb1a8d5` copy polish · `fbff0dc` coach dead-CTA · `d77a185` H1 data-realness · `1210206` K1 onboarding
+notif step · `cbb187c` docs · `0762422` Step Dependencies · `689a835` setAllies removal + L1 read-only.
+
+- **Step Dependencies** (`04_Product/PRD/Step_Dependencies_PRD.md`) — a new MVP feature: linear,
+  single-predecessor + single-dependent Step dependencies, chains ≤3, within-Milestone, coach-authored.
+  A waiting-deck UI (approved mockup `04_Product/UX/Step_Dependency_Cards.html`), fail-open (never a
+  dead-end), the adaptive engine never auto-drops a dependency Step, a `deferDependents` cascade.
+  Reviewed and fixed (fan-out, defer-stranding, honest waiting-deck copy). The coach does not yet
+  PROPOSE a dependency mid-conversation — that authoring logic is a tracked follow-up.
+- **Buddy / avatar re-staged to Future** — Decision Log **D45**. The coach (meta-agent) is confirmed as
+  the MVP's central user-facing entity; the full Buddy vision is preserved (not deleted) and annotated
+  across `AI_Product_Principles.md`, `Product_Terminology.md`, and the roadmap docs.
+- **`setAllies` removed** — a dead write path that bypassed the Companion coach-Journeys-only gate
+  (flagged LOW/latent in the overnight D2 hardening, now retired outright). **L1 parked-goals surface
+  made read-only** pending a coach-in-context activation entry point (founder direction).
+- **K1 first-run onboarding — CLOSED.** Added the missing notification-permission pre-prompt (after the
+  questionnaire, before the Coach hand-off). Onboarding is now complete for MVP.
+- **H1 data-realness sweep** — real empty states replace fabricated `sampleSocial` people on
+  Home/Circle/Inbox; the fake `SAMPLE_COMPLETED` demo Journey removed; "Nudge" is now a real distinct
+  `CheerKind`; the scripted coach's dead "Build this Journey" CTA now routes to the real manual wizard.
+- **Copy polish** (content-writer) across this session's new/changed strings — human phrasing, no
+  em-dashes, en+he parity.
+- **Q1 gender-aware form-of-address (D31) extended** to the Coach screen, Miss-Recovery caring copy,
+  Settings/Profile, and the onboarding self-description step (Hebrew `_feminine`/`_masculine`; neutral
+  base stays the universal fallback).
+- **Non-code:** the partner's v1.0 coaching-content package was evaluated (adopt-with-conditions;
+  awaiting the referenced files); the Invite (deferred-deep-link) feature was scoped as feasible but has
+  no PRD yet.
+- **Repo docs updated:** `04_Product/MVP_Task_List.md` (K1 → Done, H1/D3 → Done, N1 clarified, Q1
+  extended, plus a note that the buildable-without-founder-input MVP queue is essentially drained);
+  `Current_Context.md` (new top snapshot).
+
+The founder ▶ NEXT decision queue (a P1/coach-authoring design session, the Apple-gated items, and the
+spec track) is in `Current_Context.md`.
+
 # 2026-08-13 — Overnight autonomous batch (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
 
 Autonomous session while the founder slept: the remaining ready tasks were built, each adversarially

@@ -35,7 +35,7 @@
     "inWeeks_other": "ends in {{count}} wks"
   },
   "parked": {
-    "heading": "For later",
+    "heading": "Ideas for later",
     "activate": "Start this",
     "dismiss": "Dismiss",
     "kind": {
@@ -51,13 +51,13 @@
     },
     "dismissConfirm": {
       "title": "Remove this idea?",
-      "body": "\"{{title}}\" will leave your For later list. You can always mention it to the coach again.",
+      "body": "\"{{title}}\" will leave your Ideas for later list. You can always mention it to the coach again.",
       "cancel": "Keep",
       "confirm": "Remove"
     },
     "empty": {
-      "title": "Nothing saved for later",
-      "body": "When you tell the coach about more than one goal, the ones you don't start right away wait for you here."
+      "title": "No ideas saved yet",
+      "body": "When you tell the coach about more than one goal, the ones you're saving for later show up here."
     }
   }
 }

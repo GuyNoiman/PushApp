@@ -16,7 +16,7 @@
   },
   "confirmFinal": {
     "title": "Finish this Journey?",
-    "body": "By completing this step you complete the Journey. Confirm?",
+    "body": "Finishing this Step also finishes the whole Journey. Ready?",
     "confirm": "Yes, finish it",
     "cancel": "Not yet"
   },
@@ -28,7 +28,7 @@
     "daysStat_other": "{{count}} days",
     "classic": {
       "headline": "You did it",
-      "body": "A Journey finished, start to end."
+      "body": "A whole Journey, start to finish."
     },
     "milestone": {
       "headline": "Journey complete",

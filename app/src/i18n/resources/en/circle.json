@@ -9,7 +9,7 @@
   "aJourney": "a Journey",
   "progressStatus": "{{pct}}% on {{title}}",
   "empty": {
-    "title": "Your circle is empty for now",
+    "title": "Your circle is just getting started",
     "body": "Add a friend by username to start cheering each other on."
   }
 }

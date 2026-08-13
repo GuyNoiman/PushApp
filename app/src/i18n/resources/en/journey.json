@@ -185,19 +185,19 @@
   },
   "dependents": {
     "deferConfirm": {
-      "title": "Others are waiting on this",
-      "message": "Some Steps are waiting on this one, and they'll keep waiting until you finish it. This Step stays on your list and comes back next week.",
+      "title": "Other Steps are lined up behind this one",
+      "message": "A few Steps are lined up behind this one, so they'll hold until it's done. This Step stays on your list and comes back next week.",
       "confirm": "Got it",
       "cancel": "Not now"
     },
     "waiting": {
-      "hint_one": "1 more Step is waiting. It opens up once you check in \"{{predecessor}}\".",
-      "hint_other": "{{count}} more Steps are waiting. They open up once you check in \"{{predecessor}}\".",
-      "orphanHint": "This opens up once you check in \"{{predecessor}}\".",
-      "a11y": "Waiting. Opens after \"{{predecessor}}\"."
+      "hint_one": "1 more Step is coming up next, right after you check in \"{{predecessor}}\".",
+      "hint_other": "{{count}} more Steps are coming up, right after you check in \"{{predecessor}}\".",
+      "orphanHint": "This one's coming up next, right after you check in \"{{predecessor}}\".",
+      "a11y": "Coming up next. Opens after \"{{predecessor}}\"."
     },
     "nudge": {
-      "line": "Some of this week's Steps are waiting on an earlier one. If you can take that first Step soon, the rest still have room to follow this week."
+      "line": "Some of this week's Steps are lined up behind an earlier one. If you can take that first Step soon, the rest will still have room to follow this week."
     }
   },
   "new": {

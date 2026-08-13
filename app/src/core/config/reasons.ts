@@ -17,6 +17,7 @@
  * Pure TS — no React, no UI, no vendor imports (the i18next core is framework-free).
  */
 import i18n from '../../i18n';
+import { addressContext } from '../../i18n/addressForm';
 import type { ReasonId } from '../types/domain';
 
 export interface Reason {
@@ -46,9 +47,14 @@ export function reasonLabel(id: ReasonId): string {
   return i18n.t(`reason.list.${id}.label`, { ns: 'journey' });
 }
 
-/** The gentle, non-accusatory line shown when a reason is chosen, in the active language. */
+/**
+ * The gentle, non-accusatory line shown when a reason is chosen, in the active language — and, for
+ * Hebrew, in the user's FORM OF ADDRESS (D31): the caring copy speaks to "you", so it resolves the
+ * `_feminine` / `_masculine` variant, falling back to the base. Framework-free (`addressContext()`
+ * reads the applied form), mirroring `interviewPlaybook`'s `cc()`.
+ */
 export function reasonCaringCopy(id: ReasonId): string {
-  return i18n.t(`reason.list.${id}.caring`, { ns: 'journey' });
+  return i18n.t(`reason.list.${id}.caring`, { ns: 'journey', context: addressContext() });
 }
 
 /** The caring header for the "What happened?" screen (product-guardian, locked). */

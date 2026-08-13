@@ -73,8 +73,14 @@
       "options": {
         "takingAction": "כבר יש לי מעשים ואני רוצה להתקדם טוב יותר.",
         "notStarted": "אני יודע מה אני רוצה, אבל עוד לא התחלתי.",
+        "notStarted_feminine": "אני יודעת מה אני רוצה, אבל עוד לא התחלתי.",
+        "notStarted_masculine": "אני יודע מה אני רוצה, אבל עוד לא התחלתי.",
         "noHowToBegin": "יש לי כיוון, אבל אני לא יודע איך להתחיל.",
+        "noHowToBegin_feminine": "יש לי כיוון, אבל אני לא יודעת איך להתחיל.",
+        "noHowToBegin_masculine": "יש לי כיוון, אבל אני לא יודע איך להתחיל.",
         "tooManyDirections": "יש לי כמה כיוונים ואני לא יודע במה לבחור.",
+        "tooManyDirections_feminine": "יש לי כמה כיוונים ואני לא יודעת במה לבחור.",
+        "tooManyDirections_masculine": "יש לי כמה כיוונים ואני לא יודע במה לבחור.",
         "triedInconsistent": "ניסיתי בעבר, אבל התקשיתי להתמיד.",
         "noneFits": "אף אחד מאלה לא מתאים לי."
       }
@@ -85,12 +91,16 @@
       "otherReveal": "מה יכול לעזור לך?",
       "options": {
         "clearPlan": "תוכנית ברורה שאני יודע לפיה איך להתקדם.",
+        "clearPlan_feminine": "תוכנית ברורה שאני יודעת לפיה איך להתקדם.",
+        "clearPlan_masculine": "תוכנית ברורה שאני יודע לפיה איך להתקדם.",
         "smallSteps": "צעדים קטנים שקל להתחיל בהם.",
         "flexibility": "גמישות כשהחיים משתנים.",
         "seeProgress": "מבט ברור על ההתקדמות שלי.",
         "remindersEncouragement": "תזכורות ועידוד בזמן הנכון.",
         "supportClose": "תמיכה ממישהו קרוב אליי.",
         "dontKnow": "עוד לא יודע.",
+        "dontKnow_feminine": "עוד לא יודעת.",
+        "dontKnow_masculine": "עוד לא יודע.",
         "other": "משהו אחר."
       }
     },
@@ -107,6 +117,8 @@
         "hardToRestart": "אחרי החמצה קשה לחזור למסלול.",
         "lackSupport": "חסרה לי תמיכה מאנשים אחרים.",
         "dontKnow": "עוד לא יודע.",
+        "dontKnow_feminine": "עוד לא יודעת.",
+        "dontKnow_masculine": "עוד לא יודע.",
         "other": "משהו אחר."
       }
     },
@@ -121,8 +133,12 @@
         "shortFewTimes": "מעט זמן כמה פעמים בשבוע.",
         "halfHour": "כחצי שעה ברוב הימים.",
         "moreWhenNeeded": "אני יכול להשקיע יותר כשצריך.",
+        "moreWhenNeeded_feminine": "אני יכולה להשקיע יותר כשצריך.",
+        "moreWhenNeeded_masculine": "אני יכול להשקיע יותר כשצריך.",
         "changesWeekly": "זה משתנה מאוד משבוע לשבוע.",
-        "dontKnow": "עוד לא יודע."
+        "dontKnow": "עוד לא יודע.",
+        "dontKnow_feminine": "עוד לא יודעת.",
+        "dontKnow_masculine": "עוד לא יודע."
       }
     }
   },

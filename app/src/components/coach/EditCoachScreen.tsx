@@ -14,7 +14,6 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 
 import { CoachBubble } from '@/components/coach/CoachBubble';
 import { CoachEditProposalCard } from '@/components/coach/CoachEditProposalCard';
@@ -25,13 +24,14 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
+import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 
 export function EditCoachScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
-  const { t } = useTranslation('coach');
+  const { t } = useAddressedTranslation('coach');
   const { journeyId } = useLocalSearchParams<{ journeyId: string }>();
   const coach = useJourneyEditCoach({ journeyId });
 

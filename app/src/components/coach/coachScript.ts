@@ -19,7 +19,12 @@
  * user-facing line from the `coach` namespace (`script.*`) through the passed `t`, so the
  * prototype speaks the active language (canonical terms preserved).
  */
-import type { TFunction } from 'i18next';
+/**
+ * The minimal translate signature this builder needs: a key (plus optional i18next options) → string.
+ * Satisfied by react-i18next's `t` AND the form-of-address–aware `t` from {@link useAddressedTranslation}
+ * (D31), so the scripted coach can speak in the user's grammatical gender.
+ */
+export type CoachScriptT = (key: string, options?: Record<string, unknown>) => string;
 
 /** One selectable answer in an option block (rendered as a check-able card). */
 export interface CoachOption {
@@ -85,7 +90,7 @@ export interface CoachStage {
  * Journey the coach will build. Every line is resolved from the `coach` namespace so
  * the prototype follows the active language.
  */
-export function buildCoachScript(t: TFunction<'coach'>): CoachStage[] {
+export function buildCoachScript(t: CoachScriptT): CoachStage[] {
   return [
     {
       id: 'opening',

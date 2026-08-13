@@ -19,7 +19,6 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 
 import { CoachBubble } from '@/components/coach/CoachBubble';
 import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
@@ -34,6 +33,7 @@ import { featureFlags } from '@/core/config/featureFlags';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
+import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useApp } from '@/state/AppProvider';
 
 /**
@@ -59,7 +59,7 @@ function LiveCoachScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const { core } = useApp();
   const coach = useLiveCoach();
-  const { t } = useTranslation('coach');
+  const { t } = useAddressedTranslation('coach');
 
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);
 
@@ -243,7 +243,7 @@ function ScriptedCoachScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
-  const { t } = useTranslation('coach');
+  const { t } = useAddressedTranslation('coach');
 
   // The scripted (offline) conversation, resolved in the active language.
   const script = useMemo(() => buildCoachScript(t), [t]);

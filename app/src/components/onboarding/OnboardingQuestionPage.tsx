@@ -9,12 +9,12 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
+import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import type { OnboardingQuestion } from '@/core/onboarding/questions';
 
 export function OnboardingQuestionPage({
@@ -36,7 +36,10 @@ export function OnboardingQuestionPage({
   onChangeText: (text: string) => void;
 }) {
   const theme = useTheme();
-  const { t } = useTranslation('onboarding');
+  // Form-of-address–aware `t` (D31): the q3–q6 self-description options are FIRST-person about the
+  // user (Hebrew genders "אני יודע/יודעת", "אני יכול/יכולה"), so they resolve the gendered variant;
+  // every non-gendered string falls back to its base.
+  const { t } = useAddressedTranslation('onboarding');
   const base = `questions.${question.id}`;
 
   const otherSelected = question.options.some((o) => o.isOther && selected.includes(o.id));

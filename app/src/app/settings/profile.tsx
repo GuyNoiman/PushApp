@@ -27,6 +27,7 @@ import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import type { AddressForm } from '@/i18n/addressForm';
 import { isRTL } from '@/i18n/rtl';
+import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useProfile } from '@/state/ProfileProvider';
 import { useSocial } from '@/state/SocialProvider';
 
@@ -50,7 +51,10 @@ function initialsFor(name: string): string {
 export default function MyProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { t, i18n } = useTranslation('settings');
+  const { i18n } = useTranslation('settings');
+  // Form-of-address–aware `t` (D31) so the private-scope note addresses the user in their gender;
+  // every non-gendered key simply falls back to its base.
+  const { t } = useAddressedTranslation('settings');
   const { profile, setDisplayName, setBirthDate, setAddressForm, setWeekStartDay: _w } = useProfile();
   void _w;
   const social = useSocial();

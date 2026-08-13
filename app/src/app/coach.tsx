@@ -426,8 +426,10 @@ function ScriptedCoachScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={current.reply.primaryLabel}
-                // TODO(coach): build the Journey via goalSpecToJourney + the Repository.
-                onPress={() => {}}
+                // The scripted coach is a placeholder for the live LLM coach (which builds a Journey
+                // from a GoalSpec). Until that lands for this path, route to the manual Journey wizard
+                // so the primary CTA is a live destination, not a dead button.
+                onPress={() => router.push('/journey/new')}
                 style={({ pressed }) => [styles.ctaPrimary, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
                 <Ionicons name="checkmark" size={17} color={theme.backgroundElement} />
                 <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
@@ -437,7 +439,7 @@ function ScriptedCoachScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={current.reply.secondaryLabel}
-                onPress={() => {}}
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
                 style={({ pressed }) => [styles.ctaSecondary, pressed && styles.pressed]}>
                 <ThemedText type="small" themeColor="textSecondary">
                   {current.reply.secondaryLabel}

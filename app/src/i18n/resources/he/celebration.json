@@ -1,0 +1,50 @@
+{
+  "smallAck": "צעד הושלם",
+  "smallAckA11y": "השלמת צעד",
+  "ceremony": {
+    "title": "מסע הושלם",
+    "heroA11y": "חגיגה על השלמת המסע שלך",
+    "reopenTitle": "שיתוף השלמה",
+    "captionLabel": "אפשר להוסיף מילה אישית (רשות)",
+    "captionPlaceholder": "משהו שבא לך לומר על זה…",
+    "share": "שיתוף השלמה",
+    "saveImage": "שמירת תמונה",
+    "close": "סגירה",
+    "missing": "ההשלמה הזו כבר לא זמינה.",
+    "shareFailed": "השיתוף לא עבר. המסע שלך עדיין הושלם.",
+    "shareUnavailable": "שיתוף לא זמין במכשיר הזה כרגע."
+  },
+  "confirmFinal": {
+    "title": "לסיים את ה-Journey?",
+    "body": "על ידי ביצוע הצעד הזה אתה מסיים את ה-Journey. לאשר?",
+    "body_masculine": "על ידי ביצוע הצעד הזה אתה מסיים את ה-Journey. לאשר?",
+    "body_feminine": "על ידי ביצוע הצעד הזה את מסיימת את ה-Journey. לאשר?",
+    "confirm": "כן, לסיים",
+    "cancel": "עוד לא"
+  },
+  "card": {
+    "brand": "PushApp",
+    "stepsStat_one": "צעד אחד",
+    "stepsStat_other": "{{count}} צעדים",
+    "daysStat_one": "יום אחד",
+    "daysStat_other": "{{count}} ימים",
+    "classic": {
+      "headline": "עשית את זה",
+      "body": "מסע שלם, מההתחלה ועד הסוף."
+    },
+    "milestone": {
+      "headline": "מסע הושלם",
+      "body": "כל צעד, הושלם."
+    },
+    "private": {
+      "headline": "קיימתי הבטחה לעצמי",
+      "body": "עוד מסע, הושלם."
+    }
+  },
+  "privacy": {
+    "heading": "לפני השיתוף",
+    "revealsName": "הכרטיס הזה מציג את שם המסע שלך.",
+    "hidesName": "שם המסע שלך נשאר פרטי בכרטיס הזה.",
+    "safeNote": "הדיווחים, ההערות והחלום שלך אף פעם לא נכללים."
+  }
+}

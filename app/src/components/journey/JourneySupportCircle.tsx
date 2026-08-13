@@ -20,7 +20,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { isCompanionEligible, type AllyBundle, type AllyMember, type Friend } from '@/core/social';
-import type { Journey } from '@/core/types/domain';
+import type { Journey, JourneyStatus } from '@/core/types/domain';
+import { resolveJourneyStatus } from '@/core/util/journeyStatus';
 import { useTheme } from '@/hooks/use-theme';
 import { useSocial } from '@/state/SocialProvider';
 
@@ -32,13 +33,33 @@ function memberName(member: AllyMember): string {
   return member.profile.buddySummary?.name?.trim() || `@${member.profile.handle}`;
 }
 
-export function JourneySupportCircle({ journey }: { journey: Journey }) {
+/**
+ * @param journeyStatus the Journey's lifecycle status; when omitted it is resolved from the Journey.
+ *   A `completed` or `frozen` Journey hides the Invite CTA (no new Allies on a finished/paused
+ *   Journey) while still listing existing members read-only.
+ */
+export function JourneySupportCircle({
+  journey,
+  journeyStatus,
+}: {
+  journey: Journey;
+  journeyStatus?: JourneyStatus;
+}) {
   const social = useSocial();
   const theme = useTheme();
   const { t } = useTranslation('journey');
 
   const [members, setMembers] = useState<AllyMember[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Distinguish "load failed" from genuinely "no members yet" so an offline blip never reads as
+  // an empty circle. Set when reload() surfaces an error; cleared on a successful load.
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  // Don't invite new Allies to a Journey that's over or paused (D2). Members still render read-only.
+  const status = journeyStatus ?? resolveJourneyStatus(journey);
+  const isCompleted = status === 'completed';
+  const isFrozen = status === 'frozen';
+  const canInvite = !isCompleted && !isFrozen;
 
   const eligible = isCompanionEligible(journey);
   const acceptedFriends = useMemo(
@@ -48,7 +69,14 @@ export function JourneySupportCircle({ journey }: { journey: Journey }) {
 
   const reload = useCallback(async () => {
     if (!social.enabled) return;
-    setMembers(await social.listJourneyAllies(journey.id));
+    try {
+      setMembers(await social.listJourneyAllies(journey.id));
+      setLoadFailed(false);
+    } catch {
+      // The provider already surfaced the message; here we only flag the failed load so the
+      // panel shows a calm retry line instead of the empty state.
+      setLoadFailed(true);
+    }
   }, [social, journey.id]);
 
   useEffect(() => {
@@ -79,7 +107,22 @@ export function JourneySupportCircle({ journey }: { journey: Journey }) {
         {t('supportCircle.subtitle')}
       </ThemedText>
 
-      {members.length === 0 ? (
+      {loadFailed ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('supportCircle.retry')}
+          onPress={() => void reload()}
+          hitSlop={6}
+          style={({ pressed }) => [styles.loadErrorRow, pressed && styles.pressed]}>
+          <Ionicons name="cloud-offline-outline" size={16} color={theme.textMuted} />
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('supportCircle.loadError')}
+          </ThemedText>
+          <ThemedText type="small" style={{ color: theme.tealStrong }}>
+            {t('supportCircle.retry')}
+          </ThemedText>
+        </Pressable>
+      ) : members.length === 0 ? (
         <ThemedText type="small" themeColor="textMuted" style={styles.emptyLine}>
           {t('supportCircle.empty')}
         </ThemedText>
@@ -99,31 +142,39 @@ export function JourneySupportCircle({ journey }: { journey: Journey }) {
         </View>
       )}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('supportCircle.inviteA11y')}
-        onPress={() => setInviteOpen(true)}
-        style={({ pressed }) => [
-          styles.inviteRow,
-          { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
-          pressed && styles.pressed,
-        ]}>
-        <Ionicons name="person-add-outline" size={18} color={theme.tealStrong} />
-        <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-          {t('supportCircle.invite')}
-        </ThemedText>
-      </Pressable>
+      {canInvite ? (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('supportCircle.inviteA11y')}
+            onPress={() => setInviteOpen(true)}
+            style={({ pressed }) => [
+              styles.inviteRow,
+              { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+              pressed && styles.pressed,
+            ]}>
+            <Ionicons name="person-add-outline" size={18} color={theme.tealStrong} />
+            <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+              {t('supportCircle.invite')}
+            </ThemedText>
+          </Pressable>
 
-      <InviteModal
-        visible={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        friends={invitable}
-        eligible={eligible}
-        onInvite={async (allyId, bundle) => {
-          setInviteOpen(false);
-          await act(() => social.inviteAlly(journey.id, allyId, bundle));
-        }}
-      />
+          <InviteModal
+            visible={inviteOpen}
+            onClose={() => setInviteOpen(false)}
+            friends={invitable}
+            eligible={eligible}
+            onInvite={async (allyId, bundle) => {
+              setInviteOpen(false);
+              await act(() => social.inviteAlly(journey.id, allyId, bundle));
+            }}
+          />
+        </>
+      ) : (
+        <ThemedText type="small" themeColor="textMuted" style={styles.closedNote}>
+          {t(isCompleted ? 'supportCircle.closedForCompleted' : 'supportCircle.pausedNote')}
+        </ThemedText>
+      )}
     </View>
   );
 }
@@ -370,6 +421,15 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.half,
   },
   emptyLine: {
+    marginTop: Spacing.one,
+  },
+  closedNote: {
+    marginTop: Spacing.one,
+  },
+  loadErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     marginTop: Spacing.one,
   },
   memberList: {

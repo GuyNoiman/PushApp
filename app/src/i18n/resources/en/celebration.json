@@ -1,0 +1,48 @@
+{
+  "smallAck": "Step done",
+  "smallAckA11y": "Step completed",
+  "ceremony": {
+    "title": "Journey complete",
+    "heroA11y": "Celebration for completing your Journey",
+    "reopenTitle": "Share completion",
+    "captionLabel": "Add a personal note (optional)",
+    "captionPlaceholder": "Say something about this…",
+    "share": "Share completion",
+    "saveImage": "Save image",
+    "close": "Close",
+    "missing": "This completion is no longer available.",
+    "shareFailed": "Sharing didn't go through. Your Journey is still complete.",
+    "shareUnavailable": "Sharing isn't available on this device right now."
+  },
+  "confirmFinal": {
+    "title": "Finish this Journey?",
+    "body": "By completing this step you complete the Journey. Confirm?",
+    "confirm": "Yes, finish it",
+    "cancel": "Not yet"
+  },
+  "card": {
+    "brand": "PushApp",
+    "stepsStat_one": "{{count}} step",
+    "stepsStat_other": "{{count}} steps",
+    "daysStat_one": "{{count}} day",
+    "daysStat_other": "{{count}} days",
+    "classic": {
+      "headline": "You did it",
+      "body": "A Journey finished, start to end."
+    },
+    "milestone": {
+      "headline": "Journey complete",
+      "body": "Every step, done."
+    },
+    "private": {
+      "headline": "I kept my promise to myself",
+      "body": "One more Journey, finished."
+    }
+  },
+  "privacy": {
+    "heading": "Before you share",
+    "revealsName": "This card shows your Journey name.",
+    "hidesName": "Your Journey name stays private on this card.",
+    "safeNote": "Your step reports, notes, and Dream are never included."
+  }
+}

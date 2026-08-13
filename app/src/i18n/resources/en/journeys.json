@@ -2,6 +2,7 @@
   "title": "Journeys",
   "createJourney": "Create journey",
   "createA11y": "Create a new Journey",
+  "myDreamsA11y": "See My Dreams",
   "tabs": {
     "active": "Active",
     "completed": "Completed",
@@ -26,5 +27,31 @@
     "thisWeek": "ends this week",
     "inWeeks_one": "ends in {{count}} wk",
     "inWeeks_other": "ends in {{count}} wks"
+  },
+  "parked": {
+    "heading": "For later",
+    "activate": "Start this",
+    "dismiss": "Dismiss",
+    "kind": {
+      "recurring": "A recurring habit to build",
+      "process": "A step-by-step goal"
+    },
+    "domain": {
+      "addiction": "Wellbeing",
+      "relationships": "Relationships",
+      "body_image": "Body and health",
+      "career": "Career and growth",
+      "general": "Personal growth"
+    },
+    "dismissConfirm": {
+      "title": "Remove this idea?",
+      "body": "\"{{title}}\" will leave your For later list. You can always mention it to the coach again.",
+      "cancel": "Keep",
+      "confirm": "Remove"
+    },
+    "empty": {
+      "title": "Nothing saved for later",
+      "body": "When you tell the coach about more than one goal, the ones you don't start right away wait for you here."
+    }
   }
 }

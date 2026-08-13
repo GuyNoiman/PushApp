@@ -1,0 +1,25 @@
+{
+  "return": {
+    "title": "Welcome back",
+    "intro": "You've been away for a while, so we gently paused your Journeys. Nothing was lost. Pick up wherever feels right.",
+    "close": "Not now",
+    "talkToCoach": "Talk to your coach",
+    "chooseToResume": "Choose Journeys to resume",
+    "done": "Done",
+    "sections": {
+      "away": "Paused while you were away",
+      "awayHint": "Tap Resume to pick any of these back up.",
+      "future": "Coming up",
+      "futureHint": "These are still scheduled to start later.",
+      "manual": "You paused these earlier",
+      "manualHint": "Left as you set them. Resume from the Journey when you're ready."
+    },
+    "resume": "Resume",
+    "keepPaused": "Keep paused",
+    "empty": "Nothing to pick up right now."
+  },
+  "home": {
+    "cta": "Welcome back — pick up your Journeys",
+    "ctaHint": "We paused a few while you were away"
+  }
+}

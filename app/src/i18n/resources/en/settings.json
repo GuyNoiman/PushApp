@@ -60,7 +60,11 @@
       "masculine": "Masculine"
     },
     "weekStart": "My week starts",
-    "weekStartDetail": "First day of the week"
+    "weekStartDetail": "First day of the week",
+    "celebrations": "Small celebrations",
+    "celebrationsDetail": "A short burst when you finish a step. The Journey completion celebration always stays on.",
+    "celebrationsOn": "On",
+    "celebrationsOff": "Off"
   },
   "activeHours": {
     "title": "Active Hours",

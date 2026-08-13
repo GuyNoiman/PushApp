@@ -21,6 +21,10 @@
     "companion": "Companion",
     "companionBlurb": "Everything an Encourager sees, plus your step names and their status.",
     "companionCoachOnly": "Companion is available on coach-built Journeys only.",
+    "closedForCompleted": "This Journey is finished, so you can't add new supporters.",
+    "pausedNote": "This Journey is paused, so new invites are on hold until you resume it.",
+    "loadError": "Couldn't load your Support Circle.",
+    "retry": "Try again",
     "status": {
       "requested": "Invited",
       "accepted": "Supporting",
@@ -48,6 +52,7 @@
     "starter": "Starter",
     "checkIn": "Check in",
     "checkInA11y": "Check in on {{title}}",
+    "shareCompletion": "Share completion",
     "delete": "Delete journey",
     "deleteConfirmTitle": "Delete this journey?",
     "deleteConfirmBody": "This permanently removes the journey and all its steps. This can't be undone.",
@@ -75,6 +80,16 @@
       "permissionOffBody": "Turn on notifications in Settings to get your reminders.",
       "openSettings": "Open Settings"
     }
+  },
+  "dream": {
+    "partOf": "Part of your Dream",
+    "openA11y": "Open {{title}}",
+    "connectTitle": "Connect this Journey to a Dream",
+    "connectBody": "Link this Journey to one of your Dreams, so what you're building toward stays clear.",
+    "connectA11y": "Connect this Journey to {{title}}",
+    "emptyTitle": "No Dreams yet",
+    "emptyBody": "Your coach shapes your Dreams as you talk. Once you have one, you can connect this Journey to it.",
+    "emptyAction": "See My Dreams"
   },
   "stepCard": {
     "missed": "Missed · still time to catch it",

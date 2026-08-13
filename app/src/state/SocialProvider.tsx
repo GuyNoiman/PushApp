@@ -377,7 +377,9 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
         return members;
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Something went wrong.');
-        return [];
+        // Re-throw so the Support Circle panel can tell a failed load from a genuinely empty
+        // circle (D2) — an offline blip must never read as "no members yet".
+        throw e;
       }
     },
     [gateway],

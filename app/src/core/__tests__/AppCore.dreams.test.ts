@@ -111,6 +111,49 @@ describe('AppCore Dreams facade + persistence', () => {
     expect(core.getDreams()).toHaveLength(before + 1);
   });
 
+  it('links an UNLINKED Journey to an existing Dream (F1) — sets dreamId, notifies, persists, and never touches the plan', async () => {
+    const first = repoWith(null);
+    const core = new AppCore(first.repo);
+    await core.start();
+
+    // An unlinked Journey (coach spec carried no Dream signal) + a separately-created Dream — the
+    // exact state the Journey-detail link-approval surface (JourneyDreamLink, T1) operates on.
+    const journey = core.createJourneyFromGoalSpec(specWith());
+    expect(journey.dreamId).toBeUndefined();
+    const dream = core.createDream({ title: 'Be present' })!;
+
+    // Snapshot the plan BEFORE the link so we can prove linking leaves it untouched (PRD §6/§9).
+    const before = core.getSnapshot().journeys.find((j) => j.id === journey.id)!;
+    const stepsBefore = JSON.stringify(before.steps);
+    const scheduleBefore = { durationDays: before.durationDays, rhythm: before.rhythm, createdAt: before.createdAt };
+    const statusBefore = before.status;
+
+    // The JourneyDreamLinked → onChanged → save → notify chain is the facade-observable proof the
+    // event fired (the raw JourneyDreamLinked shape is asserted in JourneyEngine.dreams.test.ts).
+    let notified = 0;
+    const stop = core.subscribe(() => {
+      notified += 1;
+    });
+    expect(core.linkJourneyToDream(journey.id, dream.id, { primary: true })).toBe(true);
+    stop();
+    expect(notified).toBeGreaterThan(0);
+
+    const linked = core.getSnapshot().journeys.find((j) => j.id === journey.id)!;
+    expect(linked.dreamId).toBe(dream.id);
+    // The link edits NONE of the Journey's Steps, schedule, or status.
+    expect(JSON.stringify(linked.steps)).toBe(stepsBefore);
+    expect({ durationDays: linked.durationDays, rhythm: linked.rhythm, createdAt: linked.createdAt }).toEqual(
+      scheduleBefore,
+    );
+    expect(linked.status).toBe(statusBefore);
+
+    // Persisted: a fresh core reloads the link losslessly.
+    const reloaded = repoWith(first.saved());
+    const core2 = new AppCore(reloaded.repo);
+    await core2.start();
+    expect(core2.getSnapshot().journeys.find((j) => j.id === journey.id)?.dreamId).toBe(dream.id);
+  });
+
   it('creates an UNLINKED Journey when the coach spec carries no Dream signal (not a hard gate)', async () => {
     const core = new AppCore(repoWith(null).repo);
     await core.start();

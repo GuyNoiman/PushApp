@@ -20,6 +20,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import '@/i18n';
 import { AppProvider, useApp } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
+import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
 import { ProfileProvider } from '@/state/ProfileProvider';
@@ -96,16 +97,21 @@ export default function RootLayout() {
                   It must wrap ThemedChrome — which resolves useColorScheme() for the
                   nav palette + StatusBar — so a preference change re-themes the app. */}
               <ThemePreferenceProvider>
-                {/* Owns the user's language choice (Settings › Language) + the
-                    RTL/restart bookkeeping. A sibling concern to theme. */}
-                <LanguagePreferenceProvider>
-                  {/* The ONE profile store (Own_Profile) — the private source of truth for identity +
-                      adaptation fields. It mirrors form-of-address (D31) + week-start day (D33) into
-                      the framework-free modules the engines read, so there is a single home. */}
-                  <ProfileProvider>
-                    <ThemedChrome />
-                  </ProfileProvider>
-                </LanguagePreferenceProvider>
+                {/* Owns the user's on/off choice for SMALL Step celebrations
+                    (Settings › App). A sibling concern to theme; the big Journey
+                    ceremony is never governed by this flag. */}
+                <CelebrationPreferenceProvider>
+                  {/* Owns the user's language choice (Settings › Language) + the
+                      RTL/restart bookkeeping. A sibling concern to theme. */}
+                  <LanguagePreferenceProvider>
+                    {/* The ONE profile store (Own_Profile) — the private source of truth for identity +
+                        adaptation fields. It mirrors form-of-address (D31) + week-start day (D33) into
+                        the framework-free modules the engines read, so there is a single home. */}
+                    <ProfileProvider>
+                      <ThemedChrome />
+                    </ProfileProvider>
+                  </LanguagePreferenceProvider>
+                </CelebrationPreferenceProvider>
               </ThemePreferenceProvider>
             </SocialProvider>
           </EntitlementProvider>
@@ -182,6 +188,13 @@ function ThemedChrome() {
             opens over the tabs on the first app entry after week close, minimizable but not
             dismissible without choosing an outcome. */}
         <Stack.Screen name="weekly-review" options={{ presentation: 'modal' }} />
+        {/* Completion ceremony (Completion Celebration, I1) — the big Journey-completion moment +
+            reusable share flow. A modal that auto-opens the first foreground after a Journey
+            completes, and reopens (mode=reopen) from the completed Journey's Share completion. */}
+        <Stack.Screen name="completion" options={{ presentation: 'modal' }} />
+        {/* Inactivity return (Account Inactivity Freeze, J5) — the calm "welcome back" modal that
+            auto-opens the first foreground after the app paused Journeys for a long absence. */}
+        <Stack.Screen name="return" options={{ presentation: 'modal' }} />
         {/* Coach conversation — a root Stack route (NOT a tab), opened from the
             Home hero via router.push('/coach'). A card push with its own back
             button so it slides over the tabs. */}

@@ -20,7 +20,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -33,13 +33,15 @@ import {
   type JourneyBucket,
   type JourneyView,
 } from '@/components/journey/journeyView';
+import { ParkedGoalCard } from '@/components/journeys/ParkedGoalCard';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import type { ParkedGoal } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
 // Current · Completed · Future — the segmented tabs (founder decision 2026-07-14).
-// Current is the default landing tab. Future has no scheduled-start data model
-// yet, so it renders a calm placeholder rather than fabricated Journeys.
+// Current is the default landing tab. Future is the "For later" surface: the goals the coach
+// detected but the user didn't build first (Parked/deferred goals, L1) wait here.
 type JourneyTab = 'active' | 'completed' | 'future';
 
 // Numbers that change (counts, %) read as tabular figures — the mature
@@ -54,9 +56,9 @@ interface JourneyCardData {
 }
 
 // ── Dev-fallback samples ─────────────────────────────────────────────────────
-// The POC has no real Completed or Future Journeys yet. These ONE-each samples let
-// the founder see those card states; each renders ONLY when the matching real
-// bucket is empty and never mixes with real data. Remove once real data exists.
+// The POC has no real Completed Journeys yet. This ONE sample lets the founder see that card
+// state; it renders ONLY when the real Completed bucket is empty and never mixes with real data.
+// Remove once real data exists. (The Future tab now shows REAL parked goals — no sample.)
 const DEV_DAY = 24 * 60 * 60 * 1000;
 const DEV_NOW = Date.now();
 const SAMPLE_COMPLETED: JourneyCardData = {
@@ -75,41 +77,21 @@ const SAMPLE_COMPLETED: JourneyCardData = {
     endsAt: DEV_NOW - 10 * DEV_DAY,
   },
 };
-const SAMPLE_FUTURE: JourneyCardData = {
-  dream: 'Feel strong',
-  view: {
-    id: 'sample-future',
-    title: 'Learn to swim',
-    bucket: 'future',
-    status: 'active',
-    progress: 0,
-    doneSteps: 0,
-    totalSteps: 8,
-    phase: 1,
-    phases: 3,
-    startedAt: DEV_NOW + 14 * DEV_DAY,
-    endsAt: DEV_NOW + 74 * DEV_DAY,
-  },
-};
 
 export default function JourneysScreen() {
-  const { snapshot } = useApp();
+  const { snapshot, core } = useApp();
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('journeys');
   const [activeTab, setActiveTab] = useState<JourneyTab>('active');
 
-  // Resolve a Journey's Dream name from its dreamId. Dreams are NOT on the Snapshot
-  // read-model yet, so we read them defensively: the moment getSnapshot() surfaces
-  // `dreams`, real Journeys show their Dream eyebrow with no further change here.
-  // TODO(snapshot): expose `dreams` on Snapshot (AppCore.getSnapshot) so real
-  // Journeys can render their Dream eyebrow from journey.dreamId.
+  // Resolve a Journey's Dream name from its dreamId for the card eyebrow. `dreams` is on the
+  // Snapshot read-model (AppCore.getSnapshot), so this reads it directly.
   const dreamNameById = useMemo(() => {
     const map = new Map<string, string>();
-    const dreams = (snapshot as { dreams?: { id: string; title: string }[] } | null)?.dreams ?? [];
-    for (const d of dreams) map.set(d.id, d.title);
+    for (const d of snapshot?.dreams ?? []) map.set(d.id, d.title);
     return map;
-  }, [snapshot]);
+  }, [snapshot?.dreams]);
 
   const buckets = useMemo(() => {
     const now = Date.now();
@@ -130,30 +112,62 @@ export default function JourneysScreen() {
     { id: 'future', label: t('tabs.future') },
   ];
 
-  // Dev fallback: show ONE sample when a real bucket is empty so those states are
-  // visible. Future has no real data model yet, so it always shows its sample.
+  // Dev fallback: show ONE sample when the real Completed bucket is empty so that state is visible.
   const completedCards = buckets.completed.length > 0 ? buckets.completed : [SAMPLE_COMPLETED];
-  const futureCards: JourneyCardData[] = [SAMPLE_FUTURE];
+
+  // The "For later" surface (L1): the real parked goals the coach detected but the user didn't build.
+  const parkedGoals = snapshot?.parkedGoals ?? [];
+
+  // Activate a parked goal into a real Journey, then open it. Dismiss asks first (it's removed for good).
+  const activateParked = (id: string) => {
+    const journey = core.activateParkedGoal(id);
+    if (journey) router.push(`/journey/${journey.id}`);
+  };
+  const dismissParked = (goal: ParkedGoal) => {
+    Alert.alert(t('parked.dismissConfirm.title'), t('parked.dismissConfirm.body', { title: goal.title }), [
+      { text: t('parked.dismissConfirm.cancel'), style: 'cancel' },
+      {
+        text: t('parked.dismissConfirm.confirm'),
+        style: 'destructive',
+        onPress: () => core.removeParkedGoal(goal.id),
+      },
+    ]);
+  };
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <ThemedText type="title">{t('title')}</ThemedText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('createA11y')}
-            onPress={() => router.push('/journey/new')}
-            style={({ pressed }) => [
-              styles.newButton,
-              { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
-              pressed && styles.pressed,
-            ]}>
-            <Ionicons name="add" size={18} color={theme.teal} />
-            <ThemedText type="smallBold" style={{ color: theme.teal }}>
-              {t('createJourney')}
-            </ThemedText>
-          </Pressable>
+          <View style={styles.headerActions}>
+            {/* My Dreams entry (T0-a) — Dreams are the "who I'm becoming" behind these Journeys. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('myDreamsA11y')}
+              onPress={() => router.push('/my-dreams')}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.dreamsButton,
+                { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+                pressed && styles.pressed,
+              ]}>
+              <Ionicons name="sparkles-outline" size={18} color={theme.teal} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('createA11y')}
+              onPress={() => router.push('/journey/new')}
+              style={({ pressed }) => [
+                styles.newButton,
+                { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+                pressed && styles.pressed,
+              ]}>
+              <Ionicons name="add" size={18} color={theme.teal} />
+              <ThemedText type="smallBold" style={{ color: theme.teal }}>
+                {t('createJourney')}
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
 
         {/* Underlined segmented control (Current · Completed · Future) — the active
@@ -180,11 +194,23 @@ export default function JourneysScreen() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {activeTab === 'future' ? (
-            <View style={styles.list}>
-              {futureCards.map((card) => (
-                <JourneyCard key={card.view.id} view={card.view} dream={card.dream} bucket="future" />
-              ))}
-            </View>
+            parkedGoals.length === 0 ? (
+              <EmptyState title={t('parked.empty.title')} body={t('parked.empty.body')} />
+            ) : (
+              <View style={styles.list}>
+                <ThemedText type="smallBold" themeColor="textSecondary" style={styles.parkedHeading}>
+                  {t('parked.heading')}
+                </ThemedText>
+                {parkedGoals.map((goal) => (
+                  <ParkedGoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onActivate={() => activateParked(goal.id)}
+                    onDismiss={() => dismissParked(goal)}
+                  />
+                ))}
+              </View>
+            )
           ) : activeTab === 'completed' ? (
             <View style={styles.list}>
               {completedCards.map((card) => (
@@ -363,6 +389,19 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  dreamsButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: Radius.button,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+  },
   newButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -397,6 +436,10 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: Spacing.three,
+  },
+  parkedHeading: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   card: {
     borderRadius: Radius.card,

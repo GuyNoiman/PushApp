@@ -22,7 +22,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import type { Journey } from '../types/domain';
+import type { Journey, ParkedGoal } from '../types/domain';
 import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
 import { getExpert } from '../learning/experts/registry';
@@ -134,6 +134,25 @@ export function dreamSignalFromSpec(spec: GoalSpec): NewDreamInput | null {
   const dream = spec.dream;
   if (!dream || !isValidDreamTitle(dream.title)) return null;
   return { title: dream.title, ...(dream.why ? { why: dream.why } : {}) };
+}
+
+/**
+ * Turn a durable {@link ../types/domain ParkedGoal} back into the MINIMAL {@link GoalSpec} needed to
+ * build it (Parked/deferred goals, L1). It carries only what the understanding step knew — title,
+ * domain and process shape — with empty milestones/failureRisks/timing, so {@link buildJourneyInput}
+ * takes the generic {@link planJourney} fallback path (there are no interview answers to honour).
+ * `isHabit` mirrors a `recurring` habit. PURE.
+ */
+export function parkedGoalToSpec(goal: ParkedGoal): GoalSpec {
+  return {
+    title: goal.title,
+    domain: goal.domain,
+    processType: goal.processType,
+    isHabit: goal.processType === 'recurring',
+    milestones: [],
+    failureRisks: [],
+    timing: {},
+  };
 }
 
 /** True when the spec carries at least one recorded interview answer. */

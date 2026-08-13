@@ -22,15 +22,19 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { StepStatusChip } from '@/components/home/StepStatusChip';
+import { JourneyDreamLink } from '@/components/journey/JourneyDreamLink';
 import { JourneyReminderCard } from '@/components/journey/JourneyReminderCard';
 import { JourneySupportCircle } from '@/components/journey/JourneySupportCircle';
 import { shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
 import { featureFlags } from '@/core/config/featureFlags';
+import { dreamsForJourney } from '@/core/dreams/dreams';
 import type { StepStatus } from '@/core/status/stepStatus';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
@@ -42,6 +46,9 @@ export default function JourneyDetailScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('journey');
+  // Completion Celebration I1 (Slice 5): the SAME shared gate the Home paths use — the check-in CTA
+  // asks a gentle confirmation only when this Step would complete the Journey (final, D41).
+  const { confirmVisible, requestDone, confirm, cancel } = useFinalStepConfirm(core);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // null = follow the current week; a number = the week the user paged to.
   const [weekIndex, setWeekIndex] = useState<number | null>(null);
@@ -72,6 +79,11 @@ export default function JourneyDetailScreen() {
 
   const view = toJourneyView(journey);
   const nextStep = journey.steps.find((s) => !s.done);
+
+  // Dream Management (D40 / F1): the private, coach-owned Dream(s) this Journey serves — resolved on
+  // the owner's OWN Journey view only. Dream titles are private on-device data and never enter any
+  // social/Ally payload (PRD §8), so this surface adds no egress path.
+  const linkedDreams = dreamsForJourney(journey, snapshot?.dreams ?? []);
 
   // Weekly model: page through the Journey's Steps one week at a time (founder design).
   const weekly = stepsByWeek(journey);
@@ -156,6 +168,50 @@ export default function JourneyDetailScreen() {
             </View>
           )}
 
+          {/* Part of your Dream (D40 / F1) — a READ-ONLY link to the coach-owned Dream(s) this
+              Journey serves; each row opens the Dream detail. No progress/%. When the Journey has no
+              RESOLVABLE linked Dream (never linked, OR its dreamId points at a since-removed Dream),
+              the gentle connect surface shows instead (offering existing Dreams only) — so a dangling
+              link still offers a re-link rather than a dead-end. */}
+          {linkedDreams.length > 0 ? (
+            <View style={styles.block}>
+              <ThemedText type="smallBold" style={[styles.blockLabel, { color: theme.goldStrong }]}>
+                {t('dream.partOf')}
+              </ThemedText>
+              <View style={styles.dreamList}>
+                {linkedDreams.map((dream) => (
+                  <Pressable
+                    key={dream.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('dream.openA11y', { title: dream.title })}
+                    onPress={() => router.push(`/dream/${dream.id}`)}
+                    style={({ pressed }) => [pressed && styles.pressed]}>
+                    <ThemedView
+                      type="backgroundElement"
+                      style={[styles.dreamCard, { borderColor: theme.hairline }, CARD_SHADOW]}>
+                      <View style={[styles.dreamIcon, { backgroundColor: theme.tealTint }]}>
+                        <Ionicons name="sparkles-outline" size={18} color={theme.teal} />
+                      </View>
+                      <ThemedText type="default" numberOfLines={2} style={styles.dreamTitle}>
+                        {dream.title}
+                      </ThemedText>
+                      <Ionicons
+                        name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+                        size={18}
+                        color={theme.textMuted}
+                      />
+                    </ThemedView>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <JourneyDreamLink
+              dreams={snapshot?.dreams ?? []}
+              onLink={(dreamId) => core.linkJourneyToDream(journey.id, dreamId, { primary: true })}
+            />
+          )}
+
           {/* Steps by week — page through the plan one week at a time (founder design). */}
           <View style={styles.block}>
             <View style={styles.weekHeader}>
@@ -225,7 +281,7 @@ export default function JourneyDetailScreen() {
 
           {/* Support Circle (D2) — invite friends to support this Journey; renders only when the
               social pillar is configured. Companion bundle is coach-Journeys-only. */}
-          <JourneySupportCircle journey={journey} />
+          <JourneySupportCircle journey={journey} journeyStatus={view.status} />
 
           {/* The user's "why" */}
           {journey.why.length > 0 && (
@@ -273,6 +329,30 @@ export default function JourneyDetailScreen() {
             </Pressable>
           )}
 
+          {/* Share completion (I1, Slice 6) — a completed Journey keeps a reusable "Share completion"
+              action that reopens the card + share (no celebratory animation). PRD §6. */}
+          {journey.status === 'completed' && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('detail.shareCompletion')}
+              onPress={() =>
+                router.push({
+                  pathname: '/completion',
+                  params: { journeyId: journey.id, mode: 'reopen' },
+                })
+              }
+              style={({ pressed }) => [
+                styles.shareCompletionRow,
+                { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+                pressed && styles.pressed,
+              ]}>
+              <Ionicons name="share-outline" size={18} color={theme.tealStrong} />
+              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                {t('detail.shareCompletion')}
+              </ThemedText>
+            </Pressable>
+          )}
+
           {/* Permanent, deliberate delete — visually separated, destructive ink. */}
           <Pressable
             accessibilityRole="button"
@@ -296,7 +376,9 @@ export default function JourneyDetailScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('detail.checkInA11y', { title: nextStep.title })}
-              onPress={() => core.checkInStep(journey.id, nextStep.id)}
+              onPress={() =>
+                requestDone(journey.id, nextStep.id, () => core.checkInStep(journey.id, nextStep.id))
+              }
               style={({ pressed }) => [
                 styles.cta,
                 { backgroundColor: theme.coral },
@@ -357,6 +439,9 @@ export default function JourneyDetailScreen() {
             </Pressable>
           </Pressable>
         </Modal>
+
+        {/* Gentle final-step confirmation — only when the check-in would complete the Journey (D41). */}
+        <FinalStepConfirmSheet visible={confirmVisible} onConfirm={confirm} onCancel={cancel} />
       </SafeAreaView>
     </ThemedView>
   );
@@ -578,6 +663,28 @@ const styles = StyleSheet.create({
   blockLabel: {
     marginBottom: Spacing.half,
   },
+  dreamList: {
+    gap: Spacing.two,
+  },
+  dreamCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    padding: Spacing.three,
+  },
+  dreamIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  dreamTitle: {
+    flex: 1,
+  },
   weekHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -675,6 +782,16 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   freezeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+  },
+  shareCompletionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

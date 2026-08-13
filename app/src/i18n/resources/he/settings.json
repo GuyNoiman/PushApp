@@ -60,7 +60,11 @@
       "masculine": "זכר"
     },
     "weekStart": "השבוע שלי מתחיל ב",
-    "weekStartDetail": "יום ראשון בשבוע"
+    "weekStartDetail": "יום ראשון בשבוע",
+    "celebrations": "חגיגות קטנות",
+    "celebrationsDetail": "הבזק קצר בכל פעם שמשלימים צעד. חגיגת סיום המסע תמיד נשארת פעילה.",
+    "celebrationsOn": "פעיל",
+    "celebrationsOff": "כבוי"
   },
   "activeHours": {
     "title": "שעות פעילות",

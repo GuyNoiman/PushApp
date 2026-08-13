@@ -16,6 +16,7 @@ import type {
   Cadence,
   Constraint,
   Dream,
+  FreezeReason,
   Journey,
   Milestone,
   ReasonEntry,
@@ -32,6 +33,7 @@ import {
   type NewDreamInput,
 } from '../dreams/dreams';
 import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/stepStatus';
+import { buildCompletionCard } from '../celebration/completionCard';
 
 /**
  * SECURITY-PRIVACY G5: cap the per-user reason log to a rolling window PER STEP so it
@@ -220,16 +222,21 @@ export class JourneyEngine {
   }
 
   /**
-   * PAUSE a Journey (task J3) — flip its {@link Journey.status} to `frozen` without losing any
-   * progress (Step ids / check-in history / XP all stay). A frozen Journey fires no reminders (the
+   * PAUSE a Journey — flip its {@link Journey.status} to `frozen` without losing any progress (Step
+   * ids / check-in history / XP all stay). A frozen Journey fires no reminders (the
    * CommunicationScheduler skips it) and reads as paused in the UI. No-op (returns null) for an
    * unknown id, an already-frozen Journey, or a completed one (nothing to pause). Emits
    * {@link JourneyFrozen}; AppCore persists + re-plans reminders off it.
+   *
+   * `reason` records PROVENANCE on the SAME frozen path (Account Inactivity Freeze, J5): the user
+   * pause (task J3) passes the default `'manual'`; the {@link InactivityEngine} passes
+   * `'account_inactivity'`. The default keeps every existing caller/test unchanged.
    */
-  freezeJourney(journeyId: string): Journey | null {
+  freezeJourney(journeyId: string, reason: FreezeReason = 'manual'): Journey | null {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
     if (!journey || journey.completedAt || journey.status === 'frozen') return null;
     journey.status = 'frozen';
+    journey.freezeReason = reason;
     this.bus.emit({ type: 'JourneyFrozen', journey });
     return journey;
   }
@@ -243,6 +250,8 @@ export class JourneyEngine {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
     if (!journey || journey.status !== 'frozen') return null;
     journey.status = 'active';
+    // Clear the freeze provenance (J5) so a later manual pause / inactivity freeze starts clean.
+    journey.freezeReason = undefined;
     this.bus.emit({ type: 'JourneyResumed', journey });
     return journey;
   }
@@ -390,8 +399,32 @@ export class JourneyEngine {
       journey.completionRewarded = true;
       journey.completedAt = now;
       journey.status = 'completed';
+      // Completion Celebration (I1): mint the durable completion card ONCE, latched like
+      // completionRewarded (guarded by `!completionCard`) so a reversal + re-completion — or a
+      // rapid duplicate check-in — never rebuilds or overwrites it. Safe fields only (the builder
+      // copies no report/why/note/Dream/Ally data).
+      if (!journey.completionCard) {
+        journey.completionCard = buildCompletionCard(journey, now);
+      }
       this.bus.emit({ type: 'JourneyCompleted', journey, firstCompletion: firstJourneyCompletion });
     }
+  }
+
+  /**
+   * PURE selector (Completion Celebration, I1): would checking in `stepId` complete the Journey —
+   * i.e. is this the LAST required Step? True iff every OTHER non-dropped Step is already done.
+   * Mutates nothing (safe to call during render, e.g. to gate the "you complete the Journey" final
+   * confirmation). Returns false for an unknown Journey/Step, an already-completed Journey, or a
+   * Step that is already done or dropped (checking it in would change nothing).
+   */
+  willCompleteJourney(journeyId: string, stepId: string): boolean {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey) return false;
+    if (journey.status === 'completed' || journey.completedAt !== undefined) return false;
+    const step = journey.steps.find((s) => s.id === stepId);
+    if (!step || step.done || step.dropped) return false;
+    // The target Step counts as done; every other in-scope Step must already be done.
+    return journey.steps.every((s) => s.dropped || s.done || s.id === stepId);
   }
 
   /**

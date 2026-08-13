@@ -39,6 +39,7 @@ import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
 import { useApp } from '@/state/AppProvider';
+import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useTheme } from '@/hooks/use-theme';
 import { findLanguage } from '@/i18n/languages';
 import type { AddressForm } from '@/i18n/addressForm';
@@ -68,6 +69,7 @@ export default function SettingsScreen() {
   const weekStartDay = profile.weekStartDay;
   const communicationProfile = profile.communicationProfile;
   const { status: notifStatus, request: requestNotif } = useNotificationPermission();
+  const { celebrationsEnabled, setCelebrationsEnabled } = useCelebrationPreference();
 
   // Localized weekday names (Sun..Sat) for the week-start row's value.
   const weekdayNames = t('weekdays', { ns: 'common', returnObjects: true }) as string[];
@@ -223,6 +225,15 @@ export default function SettingsScreen() {
               detail={t('app.weekStartDetail')}
               value={weekdayNames[weekStartDay]}
               onPress={cycleWeekStart}
+            />
+            {/* Small Step celebrations on/off (Completion Celebration §2.1). Tap toggles;
+                the big Journey completion ceremony can't be disabled (detail line). */}
+            <SettingsRow
+              icon="sparkles-outline"
+              label={t('app.celebrations')}
+              detail={t('app.celebrationsDetail')}
+              value={celebrationsEnabled ? t('app.celebrationsOn') : t('app.celebrationsOff')}
+              onPress={() => setCelebrationsEnabled(!celebrationsEnabled)}
             />
             <SettingsRow
               icon="time-outline"

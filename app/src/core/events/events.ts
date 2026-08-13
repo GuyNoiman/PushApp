@@ -131,6 +131,34 @@ export interface JourneyDreamUnlinked {
   dreamId: string;
 }
 
+/**
+ * The local {@link InactivityEngine} detected a long absence and FROZE the account's active Journeys
+ * (Account Inactivity Freeze, J5, LOCAL-FIRST POC). Reuses the SAME J3 frozen path (each Journey also
+ * emits its own {@link JourneyFrozen}); this account-level event drives persistence + the return UI.
+ *
+ * SECURITY-PRIVACY G1 — SCALAR-ONLY: `frozenAt` is a single timestamp and `journeyCount` a plain
+ * count. It carries NO Journey title, no reason, no id list — nothing that widens what may leave the
+ * device. IN-PROCESS ONLY; AppCore persists off it.
+ */
+export interface AccountInactivityFrozen {
+  type: 'AccountInactivityFrozen';
+  /** Epoch ms the freeze was detected. */
+  frozenAt: number;
+  /** How many active Journeys were frozen by the inactivity sweep. Scalar count only. */
+  journeyCount: number;
+}
+
+/**
+ * The user RETURNED after an inactivity freeze — emitted on the same beat as {@link AccountInactivityFrozen}
+ * (Account Inactivity Freeze, J5). Marks that a "welcome back" return is pending. SCALAR-ONLY (`returnedAt`
+ * timestamp): no titles, no reasons (G1). IN-PROCESS ONLY; AppCore persists off it.
+ */
+export interface AccountInactivityReturned {
+  type: 'AccountInactivityReturned';
+  /** Epoch ms the return was recorded. */
+  returnedAt: number;
+}
+
 export interface RewardGranted {
   type: 'RewardGranted';
   xp: number;
@@ -400,6 +428,8 @@ export type DomainEvent =
   | DreamCreated
   | JourneyDreamLinked
   | JourneyDreamUnlinked
+  | AccountInactivityFrozen
+  | AccountInactivityReturned
   | RewardGranted
   | BuddyReacted
   | BuddyEvolved

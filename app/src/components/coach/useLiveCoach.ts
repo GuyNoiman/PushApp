@@ -27,11 +27,8 @@ import { CoachOrchestrator, type CoachTurn } from '@/core/coach/CoachOrchestrato
 import type { GoalSpec } from '@/core/coach/interviewPlaybook';
 import { SafetyLayer } from '@/core/coach/SafetyLayer';
 import type { DomainQuestion } from '@/core/learning/DomainExpert';
-import type { DomainId } from '@/core/learning/experts/registry';
+import { SENSITIVE_DOMAINS } from '@/core/coach/sensitiveDomains';
 import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
-
-/** The domains too sensitive for an app-shaped plan — the coach hands off instead of interviewing. */
-const SENSITIVE_DOMAINS = new Set<DomainId>(['addiction', 'relationships']);
 
 /**
  * The calm, always-safe hand-off shown when the goal routes to a sensitive domain, and the soft retry

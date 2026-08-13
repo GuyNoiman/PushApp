@@ -424,8 +424,22 @@ describe('JourneyEngine.freezeJourney / resumeJourney (J3)', () => {
 
     expect(frozen).not.toBeNull();
     expect(journey.status).toBe('frozen');
+    // Provenance defaults to 'manual' so every existing caller (task J3) is unchanged (J5).
+    expect(journey.freezeReason).toBe('manual');
     expect(journey.steps).toHaveLength(2); // progress preserved, nothing removed
     expect(events.map((e) => e.type)).toEqual(['JourneyFrozen']);
+  });
+
+  it('records provenance when frozen for account inactivity, and resume clears it (J5)', () => {
+    const { engine, journey } = frozenSetup();
+
+    engine.freezeJourney(journey.id, 'account_inactivity');
+    expect(journey.status).toBe('frozen');
+    expect(journey.freezeReason).toBe('account_inactivity');
+
+    engine.resumeJourney(journey.id);
+    expect(journey.status).toBe('active');
+    expect(journey.freezeReason).toBeUndefined();
   });
 
   it('resumes a frozen Journey: status → active, emits JourneyResumed', () => {

@@ -21,10 +21,11 @@
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SupportBoard, type SupportPerson } from '@/components/home/SupportBoard';
+import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { CoachButton } from '@/components/home/CoachButton';
 import { Confetti } from '@/components/home/Confetti';
 import { SectionHeader } from '@/components/home/SectionHeader';
@@ -43,8 +44,10 @@ import type { WeekReviewOutcome } from '@/core/AppCore';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import type { Dream, Journey, Step } from '@/core/types/domain';
+import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
+import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useSocial } from '@/state/SocialProvider';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -52,6 +55,12 @@ import { Ionicons } from '@expo/vector-icons';
 // days old; otherwise they've recently moved (→ Cheer).
 const QUIET_AFTER_DAYS = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// ── Auto-open priority (Completion Celebration I1, founder default) ──────────────────────────────
+// When BOTH a completion ceremony and a Weekly Review are pending in the SAME foreground, the
+// COMPLETION CEREMONY WINS; the Weekly Review opens on the next foreground. Only ONE major event
+// auto-opens per foreground (PRD §2.2). Flip this single constant to reverse the priority.
+const COMPLETION_CEREMONY_WINS = true;
 
 // Calm, monochrome glyphs picked deterministically per Journey so a Step's tile stays
 // stable across renders (no per-Step icon in the model yet). Never colourful/emoji.
@@ -126,8 +135,17 @@ export default function HomeScreen() {
   const theme = useTheme();
   const { t } = useTranslation('home');
 
-  // Confetti fires on the pending→done moment (bumped by the report flow's Done).
+  // Confetti fires on the pending→done moment (bumped by the report flow's Done),
+  // unless the user turned SMALL celebrations off in Settings (the big Journey
+  // ceremony is a later slice and is never governed by this flag).
+  const { celebrationsEnabled } = useCelebrationPreference();
   const [confettiKey, setConfettiKey] = useState(0);
+  const fireSmallCelebration = useCallback(() => {
+    if (celebrationsEnabled) setConfettiKey((k) => k + 1);
+  }, [celebrationsEnabled]);
+  // Completion Celebration I1 (Slice 5): the ONE shared gate that gently confirms a check-in which
+  // would COMPLETE the Journey (final under D41) before it happens. A non-final Step never prompts.
+  const { confirmVisible, requestDone, confirm, cancel } = useFinalStepConfirm(core);
   // The Step whose ⋯ report sheet is open, or null when closed.
   const [reportStep, setReportStep] = useState<TodayStep | null>(null);
   // The last adaptive week-review that CHANGED the plan, shown as the calm "I adjusted your
@@ -147,16 +165,112 @@ export default function HomeScreen() {
   // `openedAt` (weeklyReviewNeedsAutoOpen) is the source of truth; the ref just dedupes within the
   // navigation round-trip so we don't push twice before the screen stamps it opened.
   const autoOpenedIdRef = useRef<string | null>(null);
+
+  // Completion ceremony (I1): the pending completed-Journey ceremony auto-opens ONCE on the first
+  // foreground after completion (mirrors the review latch above). Reading is a PURE getter; the
+  // persisted `ceremonyShownAt` (completionCeremonyNeedsAutoOpen) is the source of truth, the ref
+  // just dedupes within the navigation round-trip. Recomputed from the snapshot so a completion that
+  // happens while Home is already open (a final-step Done) still opens the ceremony.
+  const pendingCeremony = ready && snapshot ? core.getPendingCompletionCeremony() : null;
+  const autoOpenedCeremonyIdRef = useRef<string | null>(null);
+
+  // Inactivity return (J5): the pending "welcome back" after the app paused Journeys for a long
+  // absence. It is the LOWEST-priority major event — it auto-opens only when neither a completion
+  // ceremony nor a Weekly Review is competing, and at most once per foreground. A PURE getter; the
+  // persisted `returnOpenedAt` (inactivityReturnNeedsAutoOpen) is the source of truth, the ref just
+  // dedupes within this foreground / navigation round-trip.
+  const pendingInactivity = ready && snapshot ? core.getInactivityReturn() : null;
+  const autoOpenedInactivityRef = useRef(false);
+  // "One major event per FOREGROUND" (PRD §2.2 / §8): once a ceremony auto-opens, both flags below
+  // stay set for the rest of THIS foreground and reset on the next background→active transition (the
+  // AppState effect below). `ceremonyOpenedThisForegroundRef` stops a SECOND queued ceremony from
+  // popping the instant the first is closed+marked-shown (several Journeys completed before opening —
+  // the next surfaces on the next app entry). `ceremonyDeferredReviewRef` keeps the Weekly Review from
+  // popping the moment the ceremony closes — but only for this foreground, so a later week-close review
+  // still auto-opens on a fresh entry.
+  const ceremonyOpenedThisForegroundRef = useRef(false);
+  const ceremonyDeferredReviewRef = useRef(false);
+  // Shared "one MAJOR modal per foreground" latch across all three (ceremony / review / inactivity):
+  // set the instant ANY of them auto-opens, so a major modal that closes-and-RESOLVES in the same
+  // foreground (e.g. a Weekly Review completes → pendingReview flips null) can't let a lower-priority
+  // one (the inactivity return) stack behind it. It gates ONLY the inactivity auto-open below; the
+  // ceremony-wins-over-review priority stays governed by its own latches. Reset on the next foreground.
+  const majorOpenedThisForegroundRef = useRef(false);
+
+  // Reset the per-foreground latches when the app returns to the foreground, so the "one major event
+  // per foreground" budget refreshes each entry (a resident app across a week boundary still opens the
+  // review; a second queued ceremony opens on the next entry). Modal close is in-app navigation, NOT a
+  // background→active transition, so it never trips this — exactly why a closed ceremony can't pop the
+  // next major event within the same foreground.
   useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        ceremonyOpenedThisForegroundRef.current = false;
+        ceremonyDeferredReviewRef.current = false;
+        autoOpenedCeremonyIdRef.current = null;
+        autoOpenedIdRef.current = null;
+        autoOpenedInactivityRef.current = false;
+        majorOpenedThisForegroundRef.current = false;
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // The Weekly Review auto-opens UNLESS the completion ceremony has priority and one is pending, or
+  // the ceremony already took priority this foreground (the single decision point above).
+  useEffect(() => {
+    const cedeToCeremony =
+      (COMPLETION_CEREMONY_WINS && pendingCeremony != null) || ceremonyDeferredReviewRef.current;
     if (
       pendingReview &&
+      !cedeToCeremony &&
       pendingReview.id !== autoOpenedIdRef.current &&
       core.weeklyReviewNeedsAutoOpen()
     ) {
       autoOpenedIdRef.current = pendingReview.id;
+      majorOpenedThisForegroundRef.current = true;
       router.push('/weekly-review' as Href);
     }
-  }, [pendingReview, core, router]);
+  }, [pendingReview, pendingCeremony, core, router]);
+
+  // The completion ceremony auto-opens when it has priority, or when no Weekly Review is competing —
+  // and at most ONCE per foreground, so several already-completed Journeys don't chain back-to-back.
+  useEffect(() => {
+    const ceremonyMayOpen = COMPLETION_CEREMONY_WINS || pendingReview == null;
+    if (
+      pendingCeremony &&
+      ceremonyMayOpen &&
+      !ceremonyOpenedThisForegroundRef.current &&
+      pendingCeremony.id !== autoOpenedCeremonyIdRef.current &&
+      core.completionCeremonyNeedsAutoOpen()
+    ) {
+      autoOpenedCeremonyIdRef.current = pendingCeremony.id;
+      ceremonyOpenedThisForegroundRef.current = true;
+      ceremonyDeferredReviewRef.current = true;
+      majorOpenedThisForegroundRef.current = true;
+      router.push('/completion' as Href);
+    }
+  }, [pendingCeremony, pendingReview, core, router]);
+
+  // The inactivity return auto-opens only when no higher-priority major event (ceremony / review) is
+  // pending, none has already opened this foreground (shared latch — so it can't stack after a review
+  // that opened then RESOLVED this same foreground), and it hasn't itself opened — one major event per
+  // foreground (PRD §2.2 discipline).
+  useEffect(() => {
+    const higherMajorPending = pendingCeremony != null || pendingReview != null;
+    if (
+      pendingInactivity &&
+      !higherMajorPending &&
+      !ceremonyOpenedThisForegroundRef.current &&
+      !majorOpenedThisForegroundRef.current &&
+      !autoOpenedInactivityRef.current &&
+      core.inactivityReturnNeedsAutoOpen()
+    ) {
+      autoOpenedInactivityRef.current = true;
+      majorOpenedThisForegroundRef.current = true;
+      router.push('/return' as Href);
+    }
+  }, [pendingInactivity, pendingCeremony, pendingReview, core, router]);
 
   const hour = new Date().getHours();
   const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
@@ -199,10 +313,17 @@ export default function HomeScreen() {
     (item: TodayStep) => {
       // A closed (past) week is read-only (D35.3): swipe is inert, matching the ⋯ sheet's lock.
       if (isInClosedWeek(item.step.plannedFor)) return;
-      core.checkInStep(item.journeyId, item.step.id);
-      setConfettiKey((k) => k + 1);
+      // Completion Celebration I1: route Done through the shared gate. A Done that would complete the
+      // whole Journey first asks a gentle confirmation (Slice 5); a non-final Step proceeds at once.
+      // On confirm we SUPPRESS the small confetti for a completion — the big ceremony (auto-opened by
+      // the effect above once the snapshot updates) is the only celebration for it (PRD §2.2).
+      requestDone(item.journeyId, item.step.id, () => {
+        const completesJourney = core.willCompleteJourney(item.journeyId, item.step.id);
+        core.checkInStep(item.journeyId, item.step.id);
+        if (!completesJourney) fireSmallCelebration();
+      });
     },
-    [core],
+    [core, fireSmallCelebration, requestDone],
   );
   // Swipe Postpone reports a PURE postpone (kept, not moved yet) — it must leave the Step
   // `unreported` (D37: postpone is an action, not a status) and never fire StepPartial. It then runs
@@ -426,6 +547,26 @@ export default function HomeScreen() {
             />
           ) : null}
 
+          {/* ── Inactivity return — the calm persistent "welcome back" CTA (J5) ── */}
+          {pendingInactivity ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('home.cta', { ns: 'inactivity' })}
+              onPress={() => router.push('/return' as Href)}
+              style={({ pressed }) => [
+                styles.returnCta,
+                { backgroundColor: theme.tealTint, borderColor: theme.tint },
+                pressed && styles.returnCtaPressed,
+              ]}>
+              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                {t('home.cta', { ns: 'inactivity' })}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                {t('home.ctaHint', { ns: 'inactivity' })}
+              </ThemedText>
+            </Pressable>
+          ) : null}
+
           {/* ── "I adjusted your week" — the calm adaptive report→replan banner (dismissible) ── */}
           {weekOutcome?.changed && weekOutcome.narration ? (
             <WeekAdjustedCard
@@ -505,10 +646,13 @@ export default function HomeScreen() {
         <StepReportFlow
           step={reportStep}
           core={core}
-          onDone={() => setConfettiKey((k) => k + 1)}
+          onDone={fireSmallCelebration}
           onReviewed={surfaceReview}
           onClose={() => setReportStep(null)}
         />
+
+        {/* Gentle final-step confirmation — shown only when a Done would complete the Journey (D41). */}
+        <FinalStepConfirmSheet visible={confirmVisible} onConfirm={confirm} onCancel={cancel} />
 
         {/* Celebration overlay — never intercepts touches. */}
         <Confetti fireKey={confettiKey} />
@@ -560,5 +704,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     gap: Spacing.one,
+  },
+  returnCta: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 2,
+  },
+  returnCtaPressed: {
+    opacity: 0.7,
   },
 });

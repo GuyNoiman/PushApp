@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
+import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { RecoveryFlow } from '@/components/journey/RecoveryFlow';
 import { RescheduleModal } from '@/components/journey/RescheduleModal';
 import { interpretPostponeResult } from '@/components/journey/postponeResult';
@@ -25,6 +26,7 @@ import { StepReportSheet, type ReportChoice } from '@/components/home/StepReport
 import type { AppCore, WeekReviewOutcome } from '@/core/AppCore';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import { isInClosedWeek } from '@/core/util/week';
+import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 
 type Stage = 'menu' | 'partialNote' | 'recovery' | 'reschedule';
 
@@ -49,6 +51,9 @@ export function StepReportFlow({
 }) {
   const [stage, setStage] = useState<Stage>('menu');
   const { t } = useTranslation('journey');
+  // Completion Celebration I1 (Slice 5): the SAME shared gate the swipe path uses — a Done that would
+  // complete the Journey (final, D41) first asks a gentle confirmation.
+  const { confirmVisible, requestDone, confirm, cancel } = useFinalStepConfirm(core);
 
   // Every time a new Step opens the flow, start at the compact menu.
   useEffect(() => {
@@ -91,12 +96,20 @@ export function StepReportFlow({
 
   const choose = (choice: ReportChoice) => {
     switch (choice) {
-      case 'done':
-        // Done wins regardless of the prior status (checkInStep is a no-op if already done).
-        core.checkInStep(journeyId, s.id);
-        onDone();
-        onClose();
+      case 'done': {
+        // Done wins regardless of the prior status (checkInStep is a no-op if already done). Route
+        // through the shared gate: a Done that would complete the whole Journey first asks a gentle
+        // confirmation (Slice 5); a non-final Step proceeds at once. On completion we SUPPRESS the
+        // small confetti (skip onDone) — the big ceremony auto-opens from Home (PRD §2.2). The confirm
+        // sheet closes the whole flow itself, so we do NOT call onClose here for the prompted path.
+        requestDone(journeyId, s.id, () => {
+          const completesJourney = core.willCompleteJourney(journeyId, s.id);
+          core.checkInStep(journeyId, s.id);
+          if (!completesJourney) onDone();
+          onClose();
+        });
         break;
+      }
       case 'partial':
         // Reveal the OPTIONAL on-device note first; the actual report fires on save (D36).
         setStage('partialNote');
@@ -125,12 +138,23 @@ export function StepReportFlow({
   return (
     <>
       <StepReportSheet
-        visible={stage === 'menu'}
+        visible={stage === 'menu' && !confirmVisible}
         stepTitle={s.title}
         status={status}
         locked={locked}
         onChoose={choose}
         onClose={onClose}
+      />
+
+      {/* Gentle final-step confirmation — only when a Done would complete the Journey (D41). Cancel
+          closes the whole flow with no side effect; confirm runs the deferred check-in + closes. */}
+      <FinalStepConfirmSheet
+        visible={confirmVisible}
+        onConfirm={confirm}
+        onCancel={() => {
+          cancel();
+          onClose();
+        }}
       />
 
       {/* Partial — an OPTIONAL, non-blocking on-device note, then record the partial progress. */}

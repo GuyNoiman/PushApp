@@ -20,12 +20,18 @@ import {
   type MissionView,
 } from './engines/MissionEngine';
 import { EntitlementEngine } from './engines/EntitlementEngine';
+import { InactivityEngine } from './engines/InactivityEngine';
 import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
 import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
 import { StreakEngine } from './engines/StreakEngine';
-import { createJourneyFromGoalSpec, dreamSignalFromSpec } from './coach/goalSpecToJourney';
+import {
+  createJourneyFromGoalSpec,
+  dreamSignalFromSpec,
+  parkedGoalToSpec,
+} from './coach/goalSpecToJourney';
+import { isSensitiveDomain } from './coach/sensitiveDomains';
 import { companionStepsFor, isCompanionEligible } from './social/companion';
 import type { CompanionStepInput } from './social/SocialGateway';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
@@ -68,8 +74,10 @@ import type {
   Buddy,
   BuddyStage,
   CommunicationPrefs,
+  CompletionCard,
   Dream,
   Journey,
+  ParkedGoal,
   ReasonEntry,
   ReasonId,
   ReminderRule,
@@ -78,6 +86,7 @@ import type {
   Step,
   WeeklyReview,
 } from './types/domain';
+import { buildCompletionCard } from './celebration/completionCard';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
 import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
@@ -133,6 +142,8 @@ export interface Snapshot {
   /** Long-term Dreams — Home groups the week's Steps by the Dream their Journey serves. */
   dreams: Dream[];
   journeys: Journey[];
+  /** Goals the coach detected but the user didn't build first — the Journeys "For later" surface (L1). */
+  parkedGoals: ParkedGoal[];
   todaySteps: TodayStep[];
   /** Home's "Week's steps" list — todaySteps plus already-done Steps (kept visible, sunk to the bottom). */
   weekSteps: TodayStep[];
@@ -177,6 +188,23 @@ export interface PostponeReminderResult {
   error?: PostponeError;
 }
 
+/**
+ * The pending "welcome back" return after an inactivity freeze (Account Inactivity Freeze, J5),
+ * split by provenance so the UI never conflates the three groups:
+ *  - `frozenJourneyIds` — the away-frozen Journeys (freezeReason `account_inactivity`), the ONLY set
+ *    offered for one-tap resume;
+ *  - `futureJourneyIds` — Journeys scheduled to begin later (untouched by the sweep), shown for
+ *    context;
+ *  - `manualFrozenJourneyIds` — Journeys the user had already paused themselves, shown LABELED and
+ *    never in the resume set.
+ * Ids only; the screen resolves titles from the snapshot. Ordered by the Journeys' array order.
+ */
+export interface InactivityReturn {
+  frozenJourneyIds: string[];
+  futureJourneyIds: string[];
+  manualFrozenJourneyIds: string[];
+}
+
 function initialBuddy(): Buddy {
   return { name: 'Pip', xp: 0, level: 1, stage: 'egg', coins: 0, ownedCosmetics: [], equippedCosmetic: null };
 }
@@ -216,6 +244,7 @@ function emptyState(): AppState {
     weekReviewAt: {},
     streak: 0,
     lastActiveDay: null,
+    parkedGoals: [],
     // First-run gate marker (K2): a genuine fresh run stamps the resume step BEFORE any state is
     // persisted (the demo seed in start() saves immediately). This makes a first-run snapshot
     // distinguishable from a legacy pre-onboarding snapshot — so a user who opens the app and leaves
@@ -248,9 +277,34 @@ function migrateState(state: AppState): AppState {
     // Daily Step Reporting (D36): an already-completed Journey persisted before `completionRewarded`
     // existed had its reward granted historically — latch the flag true so a later reversal +
     // re-completion never re-grants it (idempotent rewards; no double-pay).
-    journeys: (state.journeys ?? base.journeys).map((j) =>
-      j.completedAt && j.completionRewarded === undefined ? { ...j, completionRewarded: true } : j,
-    ),
+    //
+    // Completion Celebration (I1): a Journey that was ALREADY completed before this feature existed
+    // (completed + NO completionCard) must never retro-flood a ceremony. Give it a minimal card
+    // STAMPED already-shown at its completion time so getPendingCompletionCeremony never surfaces it.
+    // A Journey completed AFTER this feature carries its OWN card and is left untouched — so a
+    // genuinely-pending ceremony (card present, no ceremonyShownAt) survives an app restart.
+    journeys: (state.journeys ?? base.journeys).map((j) => {
+      let next = j;
+      if (next.completedAt && next.completionRewarded === undefined) {
+        next = { ...next, completionRewarded: true };
+      }
+      // Account Inactivity Freeze (J5): a Journey persisted as `frozen` before provenance existed was
+      // a MANUAL (user) pause — backfill `freezeReason: 'manual'`, the safe default (never auto-resumed
+      // by the inactivity return). Only an inactivity sweep sets `'account_inactivity'`.
+      if (next.status === 'frozen' && next.freezeReason === undefined) {
+        next = { ...next, freezeReason: 'manual' };
+      }
+      if (next.completedAt && !next.completionCard) {
+        next = {
+          ...next,
+          completionCard: {
+            ...buildCompletionCard(next, next.completedAt),
+            ceremonyShownAt: next.completedAt,
+          },
+        };
+      }
+      return next;
+    }),
     checkIns: state.checkIns ?? base.checkIns,
     buddy: { ...base.buddy, ...state.buddy },
     missions: {
@@ -265,6 +319,14 @@ function migrateState(state: AppState): AppState {
     // Miss-Recovery reason log — backfill to [] for a snapshot that predates it. Kept
     // on-device only; whitelist-excluded from the Social sync path (G2).
     reasonLog: state.reasonLog ?? [],
+    // Parked/deferred goals (L1) — backfill to [] for a snapshot that predates it, and defensively
+    // keep only the known fields (drop any junk a hand-edited/legacy blob carried). ON-DEVICE ONLY (G1).
+    parkedGoals: (state.parkedGoals ?? base.parkedGoals ?? []).map((g) => ({
+      id: g.id,
+      title: g.title,
+      processType: g.processType,
+      domain: g.domain,
+    })),
     // Adaptive-coach on-device signal (S1.16) — backfill the raw log to [] for a snapshot
     // that predates it, so hydrate never dereferences an absent field. The derived
     // insightModel carries over untouched (undefined until first recomputed). ON-DEVICE
@@ -305,6 +367,14 @@ function clampLogin(login: AppState['login']): AppState['login'] {
   return { ...login, dayIndex };
 }
 
+/**
+ * De-dupe key for a parked/deferred goal (L1) — normalized title + domain, so the same goal is
+ * parked at most once (across conversations, and never as the goal being built right now).
+ */
+function parkedKey(title: string, domain: string): string {
+  return `${title.trim().toLowerCase()}::${domain}`;
+}
+
 export class AppCore {
   /** Exposed so the UI can react to one-off moments (e.g. a Buddy celebration). */
   readonly bus = new EventBus();
@@ -328,6 +398,12 @@ export class AppCore {
   private readonly missionEngine: MissionEngine;
   private readonly entitlementEngine: EntitlementEngine;
   private readonly recoveryEngine: RecoveryEngine;
+  /**
+   * Account Inactivity Freeze (J5, LOCAL-FIRST POC): detects a long absence on a lifecycle beat
+   * (start / syncTime) and freezes active Journeys through the SAME J3 path (provenance-tagged). Pure
+   * and always constructed — it seeds a grace anchor on first sight, so it never freezes a fresh user.
+   */
+  private readonly inactivity: InactivityEngine;
   /**
    * The adaptive coach's "learn the user" engine — constructed ONLY when the
    * `adaptiveCoach` flag is on (undefined otherwise, so production wires nothing new).
@@ -417,6 +493,9 @@ export class AppCore {
       location,
       calendar,
     );
+    // Account Inactivity Freeze (J5): reuses the JourneyEngine's J3 freeze path (provenance-tagged),
+    // so there is no parallel state to keep in sync. Always constructed; inert until a real long gap.
+    this.inactivity = new InactivityEngine(this.bus, getState, this.journeyEngine);
     // Adaptive-coach pivot (S1.16): DORMANT in production. Only when the flag is on do we
     // construct the BehaviorModelEngine (shared bus + getState + default clock). Off ⇒ this
     // stays undefined and no behaviour is observed, recorded, or persisted.
@@ -472,6 +551,11 @@ export class AppCore {
     this.bus.on('DreamCreated', this.onChanged);
     this.bus.on('JourneyDreamLinked', this.onChanged);
     this.bus.on('JourneyDreamUnlinked', this.onChanged);
+    // Account Inactivity Freeze (J5): persist the recorded cycle. Each swept Journey also emits its
+    // own JourneyFrozen (above) which reconciles reminders + clears postpones; these account-level
+    // events just persist the accountInactivity marker + the refreshed activity anchor.
+    this.bus.on('AccountInactivityFrozen', this.onChanged);
+    this.bus.on('AccountInactivityReturned', this.onChanged);
     this.bus.on('BuddyReacted', this.onChanged);
     // Persist a streak increment (new-day check-in) or reset (urgent miss). StepMissed itself is
     // not a persistence hook, so this is what saves a reset.
@@ -529,6 +613,12 @@ export class AppCore {
     if (!loaded && !(await this.firstRunFlag.isConsumed())) {
       this.seedDemoJourney();
     }
+
+    // Account Inactivity Freeze (J5): run the detector ONCE on launch. On a fresh/legacy install (no
+    // activity anchor) this only SEEDS `now` — it never freezes on first sight. On a returning user
+    // whose persisted anchor is older than the threshold it freezes their active Journeys here, so the
+    // return experience is ready the moment Home mounts.
+    this.inactivity.tick(Date.now());
   }
 
   private readonly onChanged = (): void => {
@@ -742,6 +832,11 @@ export class AppCore {
    * gated behind `adaptiveCoach`; the goal specifics stay ON DEVICE (G1). No planning logic here.
    */
   createJourneyFromGoalSpec(spec: GoalSpec): Journey {
+    // Parked/deferred goals (L1): the coach may have detected OTHER goals in the opening the user did
+    // NOT choose to build now. Capture them BEFORE delegating, so they persist in the SAME
+    // JourneyCreated save. Sensitive-domain goals are filtered out at capture and never parked.
+    if (spec.deferredGoals?.length) this.parkDeferredGoals(spec);
+
     const journey = createJourneyFromGoalSpec(this.journeyEngine, spec);
     // Dream Management (D40): the coach OWNS the Dream layer. When the conversation produced a Dream
     // signal, create-or-reuse that Dream and set it as the new Journey's PRIMARY — no user-approval
@@ -753,6 +848,60 @@ export class AppCore {
       if (dream) this.journeyEngine.linkJourneyToDream(journey.id, dream.id, { primary: true });
     }
     return journey;
+  }
+
+  // ── Parked/deferred goals (L1) ──────────────────────────────────────────────
+  // The coach's understanding step can detect MORE than one goal in the opening; the user builds one
+  // now and the rest are "parked" so the Journeys "For later" surface can offer them next. Raw title
+  // is ON-DEVICE-ONLY (G1); a SENSITIVE-domain goal is NEVER parked (it must never become an
+  // activatable Journey that bypasses the coach's sensitive-domain hand-off).
+
+  /**
+   * Append a finished spec's on-device {@link GoalSpec.deferredGoals} to {@link AppState.parkedGoals}
+   * with fresh ids. IN-MEMORY only (the surrounding JourneyCreated save persists them): sensitive
+   * domains are dropped, and each goal is de-duplicated against those already parked AND against the
+   * goal being built right now (title+domain), so re-running the same conversation never re-parks.
+   */
+  private parkDeferredGoals(spec: GoalSpec): void {
+    const parked = (this.state.parkedGoals ??= []);
+    const seen = new Set<string>(parked.map((g) => parkedKey(g.title, g.domain)));
+    seen.add(parkedKey(spec.title, spec.domain)); // never re-park the goal being built now
+    for (const g of spec.deferredGoals ?? []) {
+      if (isSensitiveDomain(g.domain)) continue; // L1 security: never park a sensitive-domain goal
+      const key = parkedKey(g.title, g.domain);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      parked.push({ id: createId(), title: g.title, processType: g.processType, domain: g.domain });
+    }
+  }
+
+  /**
+   * Activate a parked goal (L1) into a real Journey — builds it through the SAME coach path
+   * ({@link createJourneyFromGoalSpec} over {@link parkedGoalToSpec}, so it plans + persists +
+   * notifies via JourneyCreated), then removes it from the parked list. The removal is written by the
+   * build's own save. Returns the new Journey, or null when the id is unknown (a second call with the
+   * same id also returns null — no double-activate).
+   */
+  activateParkedGoal(id: string): Journey | null {
+    const parked = this.state.parkedGoals ?? [];
+    const index = parked.findIndex((g) => g.id === id);
+    if (index < 0) return null;
+    // Defense-in-depth (L1): a sensitive-domain goal is filtered at capture and can never be parked,
+    // but re-check here so a future capture path can never let one become an activatable Journey that
+    // bypasses the coach's sensitive-domain hand-off. Leave it parked (do not activate).
+    if (isSensitiveDomain(parked[index].domain)) return null;
+    const [goal] = parked.splice(index, 1); // remove first so the JourneyCreated save reflects it
+    return this.createJourneyFromGoalSpec(parkedGoalToSpec(goal));
+  }
+
+  /** Dismiss a parked goal (L1) without building it. Returns whether one was removed; persists + notifies. */
+  removeParkedGoal(id: string): boolean {
+    const parked = this.state.parkedGoals ?? [];
+    const index = parked.findIndex((g) => g.id === id);
+    if (index < 0) return false;
+    parked.splice(index, 1);
+    this.onChanged();
+    return true;
   }
 
   /**
@@ -803,6 +952,104 @@ export class AppCore {
    */
   resumeJourney(journeyId: string): Journey | null {
     return this.journeyEngine.resumeJourney(journeyId);
+  }
+
+  // ── Account Inactivity Freeze (J5, LOCAL-FIRST POC) ─────────────────────────
+  // The return experience after the local InactivityEngine froze the account's Journeys for a long
+  // absence. Freezing reused the J3 path (provenance-tagged), so these methods only READ the marker
+  // and RESUME away-frozen Journeys. NO method auto-resumes; a manually-paused or Future Journey is
+  // never touched by the resume path. All are PURE reads except where noted (they persist on write).
+
+  /**
+   * The pending inactivity return, grouped by provenance ({@link InactivityReturn}), or null when
+   * there is no unresolved freeze cycle. PURE read — safe to call during render. The away-frozen set
+   * (freezeReason `account_inactivity`) is the only one offered for resume; manual pauses + Future
+   * Journeys are surfaced separately and never in the resume set.
+   */
+  getInactivityReturn(): InactivityReturn | null {
+    const marker = this.state.accountInactivity;
+    if (!marker || marker.resolved) return null;
+    const now = Date.now();
+    const frozenJourneyIds: string[] = [];
+    const manualFrozenJourneyIds: string[] = [];
+    const futureJourneyIds: string[] = [];
+    for (const j of this.state.journeys) {
+      if (j.status === 'frozen') {
+        if (j.freezeReason === 'account_inactivity') frozenJourneyIds.push(j.id);
+        else manualFrozenJourneyIds.push(j.id);
+      } else if (resolveJourneyStatus(j) === 'active' && j.createdAt > now) {
+        futureJourneyIds.push(j.id);
+      }
+    }
+    return { frozenJourneyIds, futureJourneyIds, manualFrozenJourneyIds };
+  }
+
+  /** Whether the return has not yet been auto-opened (drives the one-shot auto-open, mirrors Weekly Review). */
+  inactivityReturnNeedsAutoOpen(): boolean {
+    const marker = this.state.accountInactivity;
+    return marker != null && !marker.resolved && marker.returnOpenedAt == null;
+  }
+
+  /**
+   * Stamp the return as OPENED so it auto-opens only on the FIRST foreground after the freeze;
+   * afterwards the persistent Home CTA is the entry point. Idempotent.
+   */
+  markInactivityReturnOpened(): void {
+    const marker = this.state.accountInactivity;
+    if (marker && !marker.resolved && marker.returnOpenedAt == null) {
+      marker.returnOpenedAt = Date.now();
+      this.onChanged();
+    }
+  }
+
+  /**
+   * Resume ONE away-frozen Journey from the return (J5) — guarded to `freezeReason === 'account_inactivity'`
+   * so a manual pause / Future Journey can never be flipped by this path. Delegates to {@link resumeJourney}
+   * (clears the provenance, reconciles reminders), then AUTO-RESOLVES the return once no away-frozen Journey
+   * remains. Returns the resumed Journey, or null when the id is unknown / not away-frozen.
+   */
+  resumeInactivityJourney(journeyId: string): Journey | null {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.freezeReason !== 'account_inactivity') return null;
+    const resumed = this.resumeJourney(journeyId);
+    if (resumed) {
+      this.autoResolveInactivityReturn();
+      this.onChanged();
+    }
+    return resumed;
+  }
+
+  /**
+   * Keep an away-frozen Journey PAUSED (J5) — the user chose to leave it frozen. It converts to a
+   * MANUAL pause (provenance `'manual'`) so it drops out of the resume set and is never auto-resumed,
+   * then auto-resolves the return once no away-frozen Journey remains. No-op for an unknown id or a
+   * Journey that is not away-frozen.
+   */
+  keepInactivityJourneyFrozen(journeyId: string): void {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.status !== 'frozen' || journey.freezeReason !== 'account_inactivity') return;
+    journey.freezeReason = 'manual';
+    this.autoResolveInactivityReturn();
+    this.onChanged();
+  }
+
+  /** Explicitly resolve the return (e.g. the user finished with it). Idempotent; persists. */
+  resolveInactivityReturn(): void {
+    const marker = this.state.accountInactivity;
+    if (marker && !marker.resolved) {
+      marker.resolved = true;
+      this.onChanged();
+    }
+  }
+
+  /** Mark the return resolved once no away-frozen Journey remains to act on (in-memory; caller persists). */
+  private autoResolveInactivityReturn(): void {
+    const marker = this.state.accountInactivity;
+    if (!marker || marker.resolved) return;
+    const anyAwayFrozen = this.state.journeys.some(
+      (j) => j.status === 'frozen' && j.freezeReason === 'account_inactivity',
+    );
+    if (!anyAwayFrozen) marker.resolved = true;
   }
 
   // ── Dreams (Dream Management, D40 — coach-owned) ────────────────────────────
@@ -1054,6 +1301,83 @@ export class AppCore {
     return review != null && review.openedAt == null;
   }
 
+  // ── Completion Celebration (I1) ─────────────────────────────────────────────
+  // The big Journey-completion ceremony reuses the Weekly-Review auto-open-next-foreground latch:
+  // a Journey completes with a durable completionCard (minted once in JourneyEngine); the ceremony
+  // is pending until markCompletionCeremonyShown stamps `ceremonyShownAt`. Only ONE major event
+  // shows at a time (PRD §2.2). Deleted Journeys are absent from state, so they never surface.
+
+  /**
+   * PURE selector: would checking in `stepId` complete the Journey (the last required Step)?
+   * Delegates to the engine — safe to call during render to gate the final confirmation (PRD §2.2).
+   */
+  willCompleteJourney(journeyId: string, stepId: string): boolean {
+    return this.journeyEngine.willCompleteJourney(journeyId, stepId);
+  }
+
+  /** The durable completion card attached to a Journey, or undefined (unknown / not yet completed). */
+  getCompletionCard(journeyId: string): CompletionCard | undefined {
+    return this.state.journeys.find((j) => j.id === journeyId)?.completionCard;
+  }
+
+  /**
+   * The completion card for the REOPEN path (PRD §6, "Share completion"). Returns the durable card
+   * when present; for a COMPLETED Journey that somehow lacks one (a legacy record predating the card
+   * — normally healed by migration, but guarded here too) it LAZILY mints a minimal card stamped
+   * already-shown, so reopening "Share completion" never crashes on a blank card. Idempotent: a second
+   * call returns the same card without re-minting. A non-completed Journey is never mutated and yields
+   * undefined. Framework-free — no React, mirrors {@link markCompletionCeremonyShown}'s direct mutate.
+   */
+  getOrBuildCompletionCard(journeyId: string): CompletionCard | undefined {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey) return undefined;
+    if (journey.completionCard) return journey.completionCard;
+    if (!journey.completedAt) return undefined;
+    journey.completionCard = {
+      ...buildCompletionCard(journey, journey.completedAt),
+      ceremonyShownAt: journey.completedAt,
+    };
+    this.onChanged();
+    return journey.completionCard;
+  }
+
+  /**
+   * The single completed Journey whose big ceremony has NOT yet been shown — the pending major
+   * event to surface on next foreground (PRD §2.2 "show only one at a time"). A completed Journey
+   * carries a completionCard; it is pending until {@link markCompletionCeremonyShown} stamps
+   * `ceremonyShownAt`. When several are pending, the EARLIEST-completed one wins (id break for
+   * determinism). PURE READ — no state write. Deleted Journeys are absent from state, so a Journey
+   * deleted before its ceremony opened never surfaces (PRD §8).
+   */
+  getPendingCompletionCeremony(): Journey | undefined {
+    const pending = this.state.journeys.filter(
+      (j) => j.status === 'completed' && j.completionCard != null && j.completionCard.ceremonyShownAt == null,
+    );
+    if (pending.length === 0) return undefined;
+    return pending.sort(
+      (a, b) =>
+        a.completionCard!.completedAt - b.completionCard!.completedAt || a.id.localeCompare(b.id),
+    )[0];
+  }
+
+  /** Whether a completion ceremony is pending (drives the one-shot auto-open, mirroring Weekly Review). */
+  completionCeremonyNeedsAutoOpen(): boolean {
+    return this.getPendingCompletionCeremony() != null;
+  }
+
+  /**
+   * Stamp a Journey's ceremony as SHOWN so the big ceremony auto-opens only on the FIRST foreground
+   * after completion; afterwards the completed Journey's "Share completion" action is the persistent
+   * entry point (PRD §6). Idempotent — a no-op if the card is absent or already stamped.
+   */
+  markCompletionCeremonyShown(journeyId: string): void {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (journey?.completionCard && journey.completionCard.ceremonyShownAt == null) {
+      journey.completionCard.ceremonyShownAt = Date.now();
+      this.onChanged();
+    }
+  }
+
   /**
    * APPROVE the pending Weekly Review — apply the proposed plan change (PRD §8 "Approve the complete
    * upcoming plan"). REBASED against current reality and FORWARD-ONLY (D40/D41): the proposal is
@@ -1234,6 +1558,9 @@ export class AppCore {
    * none are forfeited), then state is persisted + subscribers notified once.
    */
   syncTime(): void {
+    // Account Inactivity Freeze (J5): run the detector FIRST, so any Journey newly frozen for a long
+    // absence is already `frozen` when the reconcile below cancels its reminders in the same beat.
+    this.inactivity.tick(Date.now());
     this.missionEngine.refresh();
     // Re-plan reminders on the same lifecycle beat as the Mission rollover, so a
     // day/week change (and any Journey that lapsed) is reflected in what's pending.
@@ -1668,6 +1995,7 @@ export class AppCore {
       buddy,
       dreams: this.state.dreams,
       journeys: this.state.journeys,
+      parkedGoals: this.state.parkedGoals ?? [],
       todaySteps: this.journeyEngine.getTodaySteps(),
       weekSteps: this.journeyEngine.getWeekSteps(),
       activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,

@@ -57,6 +57,28 @@ export function journeysForDream(dreamId: string, journeys: Journey[]): Journey[
 }
 
 /**
+ * The Dreams a single Journey serves, resolved to full {@link Dream} objects — the read model behind
+ * the Journey detail "Part of your Dream" surface. The PRIMARY ({@link Journey.dreamId}) comes first,
+ * then each secondary ({@link Journey.secondaryDreamIds}) in order. Ids are de-duplicated (a corrupt
+ * link listing the same id primary AND secondary yields ONE Dream), and any unknown/stale id — a
+ * Dream the coach has since removed — is silently dropped so a dangling link never crashes the UI.
+ * An unlinked Journey returns `[]`. Pure — no state, ids, or bus.
+ */
+export function dreamsForJourney(journey: Journey, dreams: Dream[]): Dream[] {
+  const byId = new Map(dreams.map((d) => [d.id, d]));
+  const ordered = [journey.dreamId, ...(journey.secondaryDreamIds ?? [])];
+  const seen = new Set<string>();
+  const result: Dream[] = [];
+  for (const id of ordered) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const dream = byId.get(id);
+    if (dream) result.push(dream);
+  }
+  return result;
+}
+
+/**
  * Find an existing Dream whose normalized title matches `title` (case-insensitive) — the reuse half
  * of create-or-reuse, so the coach never mints a duplicate Dream for the same aspiration. Returns
  * undefined when none matches.

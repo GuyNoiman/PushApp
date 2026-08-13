@@ -12,6 +12,9 @@ import type { OnboardingAnswers, OnboardingStep } from '../onboarding/model';
 // Type-only cross-import (erased at runtime — no cycle): a Weekly Review proposal carries the
 // SAME coarse adjustment kinds + per-Step diff the AdaptivePlanner already speaks.
 import type { ReplanAdjustment, StepAdjustment } from '../learning/types';
+// Type-only cross-import (erased at runtime — no cycle): the classified goal domain, so a parked
+// goal can be routed back to the right expert on activation. Same source the coach's DeferredGoal uses.
+import type { DomainId } from '../learning/experts/registry';
 
 /** How often a Step is meant to recur. A Step may be one-time or repeating. */
 export type Cadence = 'once' | 'daily' | 'weekly';
@@ -134,6 +137,16 @@ export interface Milestone {
  */
 export type JourneyStatus = 'active' | 'frozen' | 'completed' | 'abandoned';
 
+/**
+ * WHY a Journey is `frozen` (Account Inactivity Freeze, J5) — provenance on the SAME J3
+ * frozen path, never a parallel state. `'manual'` = the user paused it (task J3); it is
+ * NEVER auto-resumed. `'account_inactivity'` = the local {@link InactivityEngine} paused it
+ * after a long absence (config/inactivityPolicy). Only the latter is offered for one-tap
+ * resume on the return screen. Absent on a Journey that was never frozen; cleared on resume.
+ * ON-DEVICE ONLY — never emitted or synced (the freeze events carry scalar counts only, G1).
+ */
+export type FreezeReason = 'manual' | 'account_inactivity';
+
 /** A finite transformation — the core object of PushApp. */
 export interface Journey {
   id: string;
@@ -154,6 +167,15 @@ export interface Journey {
    * in `components/journey/journeyView.ts`). New Journeys carry it explicitly.
    */
   status?: JourneyStatus;
+  /**
+   * WHY this Journey is currently `frozen` (Account Inactivity Freeze, J5) — provenance ONLY,
+   * meaningful when {@link status} is `frozen`. Defaults to `'manual'` for a user-paused Journey
+   * (task J3) and is set to `'account_inactivity'` when the {@link InactivityEngine} froze it after
+   * a long absence. Cleared (undefined) on resume. Optional/additive: a Journey persisted before this
+   * field existed carries none, and migration backfills a legacy frozen Journey to `'manual'` (the
+   * safe default — never auto-resumed). ON-DEVICE ONLY — never emitted or synced.
+   */
+  freezeReason?: FreezeReason;
   /**
    * The PRIMARY {@link Dream} this Journey serves — the authoritative, deterministic link used for
    * grouping (Home / Journeys eyebrow) and back-compat (Dream Management, D40). Optional: a Journey
@@ -192,6 +214,47 @@ export interface Journey {
    * a fresh completion sets it. Carries no PII.
    */
   completionRewarded?: boolean;
+  /**
+   * The durable {@link CompletionCard} minted the FIRST time this Journey completed (Completion
+   * Celebration, I1). Built once (latched, like {@link completionRewarded}) in
+   * {@link JourneyEngine.checkInStep} and never rewritten. Optional — absent until a Journey
+   * completes (and absent on a legacy pre-feature completion until an explicit reopen builds one).
+   * Holds SAFE FIELDS ONLY (see {@link CompletionCard}).
+   */
+  completionCard?: CompletionCard;
+}
+
+/**
+ * The durable, shareable record of a completed {@link Journey} (Completion Celebration, I1). It is
+ * NOT an Achievement from the global Achievement engine and must never be called one (PRD §3). It
+ * powers the big completion ceremony and the reopenable "Share completion" action.
+ *
+ * SECURITY-PRIVACY (PRD §3, §6, §9, whitelist like {@link OutreachInsight}): this is a WHITELIST of
+ * SAFE FIELDS ONLY. It must NEVER hold Step reports, a Step's `why`/reason data, private notes,
+ * Dream information, or Ally names — nothing that reveals raw or sensitive content. Fields are ids,
+ * timestamps, a version, and non-sensitive display counts. ON-DEVICE ONLY: covered by
+ * export/deletion (cascades with the Journey), and WHITELIST-EXCLUDED from any social/sync payload.
+ * Adding any field carrying raw content needs a fresh security-privacy review.
+ */
+export interface CompletionCard {
+  /** The completed Journey this card belongs to. */
+  journeyId: string;
+  /** The Journey title SNAPSHOTTED at completion time (a late rename does not rewrite the card). */
+  journeyTitleSnapshot: string;
+  /** Epoch ms the Journey completed (the authoritative transition to `completed`). */
+  completedAt: number;
+  /** The {@link CARD_TEMPLATE_VERSION} the card was built under, so a variant set can be reconstructed. */
+  templateVersion: number;
+  /**
+   * Epoch ms the big ceremony was first SHOWN, if it has been (Weekly-Review-style auto-open latch).
+   * Absent ⇒ the ceremony is still pending. Legacy completions are stamped already-shown by
+   * migration so the feature never retro-floods historical completions.
+   */
+  ceremonyShownAt?: number;
+  /** Non-sensitive display count: how many in-scope (non-dropped) Steps the Journey held. */
+  totalSteps: number;
+  /** Non-sensitive display value: the Journey's planned duration in days. */
+  durationDays: number;
 }
 
 /**
@@ -693,6 +756,50 @@ export interface WeeklyReview {
   resolvedAt?: number;
 }
 
+/**
+ * The record of ONE detected account-inactivity freeze cycle (Account Inactivity Freeze, J5,
+ * LOCAL-FIRST POC). Present + `resolved` falsy ⇒ there is a pending "welcome back" return the UI
+ * should surface. It is stamped when the local {@link InactivityEngine} detects a gap of at least
+ * the configured threshold (config/inactivityPolicy) and freezes the account's active Journeys.
+ *
+ * ON-DEVICE ONLY: scalar timestamps + a boolean, no titles or reasons; in scope for account
+ * deletion/export and WHITELIST-EXCLUDED from any sync/social payload (same footing as
+ * {@link AppState.reasonLog}, G1).
+ */
+export interface AccountInactivity {
+  /** Epoch ms the freeze was detected (the gap crossed the threshold on this local beat). */
+  frozenAt: number;
+  /** Epoch ms the user was seen returning — the same beat that detected the freeze (POC). */
+  returnedAt?: number;
+  /** Epoch ms the return screen was first auto-opened, so it opens ONCE (mirrors weekly review). */
+  returnOpenedAt?: number;
+  /** True once the return is resolved (all away-frozen Journeys handled, or nothing to review). */
+  resolved?: boolean;
+}
+
+/**
+ * A goal the coach DETECTED in the user's opening but that the user chose NOT to build first
+ * (Parked/deferred goals, L1). Persisted so the Journeys "For later" surface can show it and let the
+ * user activate it into a real Journey next — the durable mirror of the coach's on-device
+ * `DeferredGoal` (interviewPlaybook), with a stable `id` so the UI can list / activate / dismiss it.
+ * The `processType` union is redeclared inline (rather than importing the coach's `GoalKind`) to keep
+ * this base types file from depending on the coach layer.
+ *
+ * SECURITY-PRIVACY G1 — ON-DEVICE ONLY: `title` is the user's own raw framing; it must NEVER be copied
+ * into a DomainEvent, a ProgressSummary, or any sync/analytics path (same footing as {@link ReasonEntry.note}).
+ * A goal in a SENSITIVE domain is never parked (filtered at capture, L1). In scope for account
+ * deletion/export (lives in the AppState blob).
+ */
+export interface ParkedGoal {
+  id: string;
+  /** Short title in the user's framing. ON-DEVICE-ONLY. */
+  title: string;
+  /** The shape of work understood — a recurring habit or a staged process. */
+  processType: 'recurring' | 'process';
+  /** The classified domain, so activating it routes to the right expert. */
+  domain: DomainId;
+}
+
 /** The full persisted application state (offline-first). */
 export interface AppState {
   dreams: Dream[];
@@ -757,6 +864,17 @@ export interface AppState {
    */
   reasonLog?: ReasonEntry[];
   /**
+   * Goals the coach detected but the user chose NOT to build first (Parked/deferred goals, L1).
+   * Surfaced on the Journeys "For later" tab so the user can activate one into a real Journey or
+   * dismiss it. Optional so an older snapshot loads without it (backfilled to `[]` in
+   * AppCore.migrateState).
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. A {@link ParkedGoal}'s `title` is the user's raw framing and
+   * must NEVER enter a DomainEvent, a ProgressSummary, or any sync path (same footing as {@link reasonLog}).
+   * A SENSITIVE-domain goal is never parked (filtered at capture). In scope for account deletion/export.
+   */
+  parkedGoals?: ParkedGoal[];
+  /**
    * The adaptive coach's ON-DEVICE raw behaviour log (adaptive coach, S1.16). Optional so
    * an older snapshot loads without it (backfilled to `[]` in AppCore.migrateState). Only
    * populated when the `adaptiveCoach` flag is on; the BehaviorModelEngine hydrates from it
@@ -801,4 +919,22 @@ export interface AppState {
    * path; in scope for account deletion/export.
    */
   weeklyReview?: WeeklyReview;
+  /**
+   * Epoch ms of the last AUTHENTICATED activity the {@link InactivityEngine} observed — the anchor
+   * the inactivity gap is measured from (Account Inactivity Freeze, J5). ABSENT on a fresh install
+   * or a legacy snapshot, so the first tick simply SEEDS `now` and never instantly freezes (grace on
+   * first sight). Refreshed to `now` on every tick.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. A local scheduling anchor; never copied into a DomainEvent
+   * (the freeze events carry scalar counts only), a ProgressSummary, or any sync path. In scope for
+   * account deletion/export.
+   */
+  lastAuthenticatedActivityAt?: number;
+  /**
+   * The pending/last account-inactivity freeze cycle (Account Inactivity Freeze, J5, LOCAL-FIRST
+   * POC). Present + unresolved ⇒ the return experience is pending. Absent until the first freeze is
+   * detected. ON-DEVICE ONLY (same G1 footing as {@link lastAuthenticatedActivityAt}); in scope for
+   * account deletion/export.
+   */
+  accountInactivity?: AccountInactivity;
 }

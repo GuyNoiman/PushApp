@@ -8,12 +8,14 @@ import { EventBus } from '../../events/EventBus';
 import { JourneyEngine } from '../../engines/JourneyEngine';
 import { GeneralExpert } from '../../learning/DomainExpert';
 import { BodyImageExpert } from '../../learning/experts/BodyImageExpert';
-import type { AppState } from '../../types/domain';
+import type { AppState, ParkedGoal } from '../../types/domain';
 import type { GoalSpec } from '../interviewPlaybook';
 import {
   buildJourneyInput,
   createJourneyFromGoalSpec,
+  dreamSignalFromSpec,
   goalSpecToPlan,
+  parkedGoalToSpec,
 } from '../goalSpecToJourney';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -238,6 +240,39 @@ describe('domain routing (SX.2)', () => {
     // No explicit expert — createJourneyFromGoalSpec routes by domain too.
     const journey = createJourneyFromGoalSpec(engine, spec, undefined, { now: NOW });
     expect(journey.milestones?.map((m) => m.title)).toEqual(BODY_IMAGE_ARC);
+  });
+});
+
+describe('parkedGoalToSpec (Parked/deferred goals, L1)', () => {
+  it('plans a recurring parked goal via the generic habit path (isHabit true)', () => {
+    const goal: ParkedGoal = { id: 'p1', title: 'Stretch every day', processType: 'recurring', domain: 'general' };
+    const spec = parkedGoalToSpec(goal);
+
+    expect(spec.title).toBe('Stretch every day');
+    expect(spec.domain).toBe('general');
+    expect(spec.processType).toBe('recurring');
+    expect(spec.isHabit).toBe(true);
+    expect(spec.milestones).toEqual([]);
+    expect(spec.failureRisks).toEqual([]);
+    expect(spec.timing).toEqual({});
+
+    // No interview answers ⇒ the generic planJourney path lays the habit arc (not an answer-aware one).
+    const plan = buildJourneyInput(spec, GeneralExpert, { now: NOW });
+    expect(plan.milestones?.map((m) => m.title)).toEqual(HABIT_ARC);
+  });
+
+  it('plans a process parked goal via the generic finite-goal path (isHabit false)', () => {
+    const goal: ParkedGoal = { id: 'p2', title: 'Write a short story', processType: 'process', domain: 'general' };
+    const spec = parkedGoalToSpec(goal);
+
+    expect(spec.isHabit).toBe(false);
+    const plan = buildJourneyInput(spec, GeneralExpert, { now: NOW });
+    expect(plan.milestones?.map((m) => m.title)).toEqual(GOAL_ARC);
+  });
+
+  it('carries no Dream signal — an activated parked goal is created UNLINKED', () => {
+    const goal: ParkedGoal = { id: 'p3', title: 'Learn guitar', processType: 'process', domain: 'general' };
+    expect(dreamSignalFromSpec(parkedGoalToSpec(goal))).toBeNull();
   });
 });
 

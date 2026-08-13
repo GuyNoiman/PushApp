@@ -184,7 +184,6 @@ export interface SocialGateway {
   companionSteps(ownerId: string, journeyId: string): Promise<CompanionStep[]>;
 
   // ── Allies (per-Journey sharing) ──
-  setAllies(journeyId: string, allyIds: string[], visibility: Visibility): Promise<void>;
   publishProgress(summary: ProgressSummary): Promise<void>;
   /** Journeys the current user is an Ally of. */
   allyProgress(): Promise<AllyProgress[]>;
@@ -230,7 +229,6 @@ export const NullSocialGateway: SocialGateway = {
   async closeJourneyInvites() {},
   async publishCompanionSteps() {},
   async companionSteps() { return []; },
-  async setAllies() {},
   async publishProgress() {},
   async allyProgress() { return []; },
   async mySharedJourneyIds() { return []; },

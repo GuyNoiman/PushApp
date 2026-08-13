@@ -282,18 +282,6 @@ export class SupabaseSocialGateway implements SocialGateway {
   }
 
   // ── Allies (per-Journey sharing) ──
-  async setAllies(journeyId: string, allyIds: string[], visibility: Visibility): Promise<void> {
-    const id = await this.requireUid();
-    const c = this.client();
-    // Replace the ally set for this Journey: clear then insert the chosen friends.
-    const { error: delErr } = await c.from('journey_allies').delete().eq('journey_id', journeyId).eq('owner_id', id);
-    if (delErr) throw delErr;
-    if (allyIds.length === 0) return;
-    const rows = allyIds.map((ally_id) => ({ journey_id: journeyId, owner_id: id, ally_id, visibility }));
-    const { error } = await c.from('journey_allies').insert(rows);
-    if (error) throw error;
-  }
-
   async publishProgress(summary: { journeyId: string; title: string; progress: number; streak: number }): Promise<void> {
     const id = await this.requireUid();
     const { error } = await this.client().from('progress_snapshots').upsert({

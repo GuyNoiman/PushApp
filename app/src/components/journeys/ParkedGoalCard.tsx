@@ -1,15 +1,15 @@
 /**
  * ParkedGoalCard — one "For later" goal on the Journeys "Future" tab (Parked/deferred goals, L1).
- * The coach detected it in an opening the user chose NOT to build first; this card lets the user
- * activate it into a real Journey or dismiss it. Presentational only — it takes a {@link ParkedGoal}
- * plus two callbacks; the activate/remove logic lives in AppCore (Engineering Bible §19).
+ * The coach detected it in an opening the user chose NOT to build first. Read-only for now (founder
+ * decision 2026-08-13): the card is a plain display of the parked goal; the coach will offer an
+ * in-context way to activate/dismiss it later. Presentational only — it takes a {@link ParkedGoal};
+ * the activate/remove logic lives in AppCore (Engineering Bible §19).
  *
  * Mirrors the JourneyCard language: a domain eyebrow above the title, a one-line description derived
  * from the goal's process shape, on an elegant white/near-black card with a hairline. RTL-aware.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -18,15 +18,7 @@ import type { ParkedGoal } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 
-export function ParkedGoalCard({
-  goal,
-  onActivate,
-  onDismiss,
-}: {
-  goal: ParkedGoal;
-  onActivate: () => void;
-  onDismiss: () => void;
-}) {
+export function ParkedGoalCard({ goal }: { goal: ParkedGoal }) {
   const theme = useTheme();
   const { t } = useTranslation('journeys');
   const align = isRTL() ? 'right' : 'left';
@@ -52,34 +44,6 @@ export function ParkedGoalCard({
           {t(`parked.kind.${goal.processType}`)}
         </ThemedText>
       </View>
-
-      <View style={[styles.actions, { borderTopColor: theme.hairline }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('parked.activate')}
-          onPress={onActivate}
-          style={({ pressed }) => [
-            styles.activate,
-            { backgroundColor: theme.teal },
-            pressed && styles.pressed,
-          ]}>
-          <Ionicons
-            name={isRTL() ? 'arrow-back' : 'arrow-forward'}
-            size={16}
-            color={theme.backgroundElement}
-          />
-          <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
-            {t('parked.activate')}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('parked.dismiss')}
-          onPress={onDismiss}
-          style={({ pressed }) => [styles.dismiss, pressed && styles.pressed]}>
-          <Ionicons name="trash-outline" size={18} color={theme.textMuted} />
-        </Pressable>
-      </View>
     </ThemedView>
   );
 }
@@ -103,28 +67,5 @@ const styles = StyleSheet.create({
   },
   sub: {
     marginTop: Spacing.half,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-    borderTopWidth: 1,
-    paddingTop: Spacing.two,
-    marginTop: Spacing.one,
-  },
-  activate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.half,
-    borderRadius: Radius.button,
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-  },
-  dismiss: {
-    padding: Spacing.one,
-  },
-  pressed: {
-    opacity: 0.7,
   },
 });

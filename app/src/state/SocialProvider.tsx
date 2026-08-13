@@ -21,7 +21,6 @@ import type {
   Cheer,
   Friend,
   SocialProfile,
-  Visibility,
 } from '@/core/social';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
@@ -41,7 +40,6 @@ export interface SocialContextValue {
   setHandle: (handle: string) => Promise<void>;
   addFriendByHandle: (handle: string) => Promise<void>;
   respondToFriend: (requesterId: string, accept: boolean) => Promise<void>;
-  setAllies: (journeyId: string, allyIds: string[], visibility: Visibility) => Promise<void>;
   sendCheer: (toId: string, journeyId: string) => Promise<void>;
   // ── Support Circle (per-Journey Ally invites, D2) ──
   inviteAlly: (journeyId: string, allyId: string, bundle: AllyBundle) => Promise<void>;
@@ -67,7 +65,6 @@ const EMPTY: SocialContextValue = {
   setHandle: async () => {},
   addFriendByHandle: async () => {},
   respondToFriend: async () => {},
-  setAllies: async () => {},
   sendCheer: async () => {},
   inviteAlly: async () => {},
   respondToAllyInvite: async () => {},
@@ -268,26 +265,6 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     [gateway, guard, refresh],
   );
 
-  const setAllies = useCallback(
-    async (journeyId: string, allyIds: string[], visibility: Visibility) => {
-      await guard(async () => {
-        await gateway.setAllies(journeyId, allyIds, visibility);
-        // Publish this Journey's summary immediately so a new Ally sees it at once.
-        const snapshot = core.getSnapshot();
-        const journey = snapshot.journeys.find((j) => j.id === journeyId);
-        if (journey) {
-          await gateway.publishProgress({
-            journeyId,
-            title: journey.title,
-            progress: core.journeyProgress(journeyId), // engine owns the math (Bible §19)
-            streak: snapshot.streak, // the real engine-computed day-count streak (Bible §19)
-          });
-        }
-      });
-    },
-    [core, gateway, guard],
-  );
-
   const sendCheer = useCallback(
     async (toId: string, journeyId: string) => {
       await guard(async () => {
@@ -406,7 +383,6 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     setHandle,
     addFriendByHandle,
     respondToFriend,
-    setAllies,
     sendCheer,
     inviteAlly,
     respondToAllyInvite,

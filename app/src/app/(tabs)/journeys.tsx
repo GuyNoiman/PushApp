@@ -20,7 +20,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +35,6 @@ import {
 } from '@/components/journey/journeyView';
 import { ParkedGoalCard } from '@/components/journeys/ParkedGoalCard';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import type { ParkedGoal } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
@@ -79,7 +78,7 @@ const SAMPLE_COMPLETED: JourneyCardData = {
 };
 
 export default function JourneysScreen() {
-  const { snapshot, core } = useApp();
+  const { snapshot } = useApp();
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('journeys');
@@ -116,23 +115,8 @@ export default function JourneysScreen() {
   const completedCards = buckets.completed.length > 0 ? buckets.completed : [SAMPLE_COMPLETED];
 
   // The "For later" surface (L1): the real parked goals the coach detected but the user didn't build.
+  // Read-only for now (founder decision 2026-08-13) — the coach will offer activate/dismiss in context.
   const parkedGoals = snapshot?.parkedGoals ?? [];
-
-  // Activate a parked goal into a real Journey, then open it. Dismiss asks first (it's removed for good).
-  const activateParked = (id: string) => {
-    const journey = core.activateParkedGoal(id);
-    if (journey) router.push(`/journey/${journey.id}`);
-  };
-  const dismissParked = (goal: ParkedGoal) => {
-    Alert.alert(t('parked.dismissConfirm.title'), t('parked.dismissConfirm.body', { title: goal.title }), [
-      { text: t('parked.dismissConfirm.cancel'), style: 'cancel' },
-      {
-        text: t('parked.dismissConfirm.confirm'),
-        style: 'destructive',
-        onPress: () => core.removeParkedGoal(goal.id),
-      },
-    ]);
-  };
 
   return (
     <ThemedView style={styles.container}>
@@ -202,12 +186,7 @@ export default function JourneysScreen() {
                   {t('parked.heading')}
                 </ThemedText>
                 {parkedGoals.map((goal) => (
-                  <ParkedGoalCard
-                    key={goal.id}
-                    goal={goal}
-                    onActivate={() => activateParked(goal.id)}
-                    onDismiss={() => dismissParked(goal)}
-                  />
+                  <ParkedGoalCard key={goal.id} goal={goal} />
                 ))}
               </View>
             )

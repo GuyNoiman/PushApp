@@ -366,6 +366,135 @@ check-in doesn't permanently complete a Journey.
 **Categorization:** **Approved + Implemented.** **Reflected in:** `Daily_Step_Reporting_PRD.md` (§7 + §12.2);
 `app/src/core/engines/JourneyEngine.ts` (`reverseReport`).
 
+### D42 — Completion Celebration (I1): MVP scope, deferrals, and the final-Step confirmation (2026-08-12)
+**Decision (founder, 2026-08-12):** built the Completion Celebration (`PRD/Completion_Celebration_PRD.md`,
+I1) with a deliberately scoped MVP slice. **Three founder calls this session:** (1) **Defer the in-app
+Ally completion/thanks message** (PRD §5) — there is no delivery channel (no push backend; in-app messaging
+is post-MVP per D29). The ceremony still offers the OS share sheet now; the in-app Ally path is tracked as a
+follow-up (`MVP_Task_List.md` **I1-a**). (2) **Save the card as an image** stays in scope, but real
+device-verified image export needs the not-yet-existing native build, so all native capture sits behind a
+`CardShareGateway` seam with a degraded web/Expo-Go fallback (text share via `expo-sharing`); device
+verification is follow-up **I1-b**. (3) **Add a gentle final-Step confirmation** before the last Step
+completes a Journey (D41 makes completion final) — copy: "על ידי ביצוע הצעד הזה אתה מסיים את ה-Journey. לאשר?"
+(gendered, en+he), wired once through a shared gate into all three completion paths (Home swipe, ⋯ report,
+Journey-detail check-in). **Auto-open priority (founder default):** when a Weekly Review and a completion
+ceremony are both pending, the **ceremony wins** and the review defers to the next foreground (one flippable
+decision point, `COMPLETION_CEREMONY_WINS`; "one major event per foreground" enforced via per-foreground
+latches reset on `AppState` active).
+**Built:** small-celebration variants + reduced-motion guard + Settings toggle; the big ceremony (dedicated
+modal route, idempotent card minted once at the first `completed` transition, auto-open latch mirroring
+Weekly Review); the swipeable completion card (name-revealing + name-omitting variants, safe-fields-only,
+privacy preview before share); the share gateway. **Reviewed** (code-reviewer + security-privacy): privacy
+model sound (safe-field whitelist enforced, caption never persisted, card exported + wiped with the account);
+fixed a HIGH i18n key bug (doubled `card.` prefix, now a single tested `cardCopyKey` seam) and a
+Weekly-Review auto-open suppression bug. **Green: tsc clean · eslint 0 · jest 852/852.**
+**Open (Low, founder's call):** the default card variant reveals the Journey name — consider defaulting to a
+name-omitting variant for privacy on sensitive Journeys (privacy-review L1).
+**Categorization:** **Approved + Implemented (MVP slice).** **Reflected in:** `Completion_Celebration_PRD.md`
+(§0), `MVP_Task_List.md` (I1, I1-a, I1-b); `app/src/core/celebration/*`, `app/src/core/share/*`,
+`app/src/app/completion.tsx`, `app/src/components/celebration/*`, `app/src/hooks/useFinalStepConfirm.ts`.
+
+## 2026-08-13 — Weekly Review closed; overnight autonomous build batch (J5, L1, F1, D2)
+
+> Continues the branch `feat/buddy-3d-and-reminders`. The founder pre-authorized autonomous execution
+> overnight; each item was built → adversarially reviewed (code-reviewer + security-privacy) →
+> findings fixed → green. Final state: `tsc` clean · `eslint` 0 · `jest` 916/916. Everything is
+> committed by topic but not pushed. Full narrative: `Current_Context.md` → "⭐ HANDOFF SNAPSHOT —
+> 2026-08-13".
+
+### D43 — Weekly Review: the two-layer split is authoritative; apply-on-approval, not automatic
+**Decision:** closes a wording ambiguity between the founder's original 2026-08-07 direction and the
+ratified/shipped behavior. The system has exactly **two layers** of plan change, and they must never be
+confused:
+1. **Tactical layer (immediate):** per-occurrence recovery (Step postponement, D37) and direct user
+   edits to a Journey (coach-led, J1) apply **immediately**, effective the moment the user acts.
+2. **Strategic layer (weekly boundary):** Weekly Review analyses the past week and proposes next
+   week's plan **at the week close/open boundary**. The proposal is retained for **≤48h** and **owns
+   the plan for that window** — but it never applies silently. It applies **only on the user's
+   explicit approval** (or expires unapplied at the 48h mark), per `Weekly_Review_PRD.md` §1/§2
+   ("meaningful Journey changes never apply without explicit user approval").
+**Wording correction:** `MVP_Task_List.md`'s original C1 line (carried from the founder's 2026-08-07
+note in `Current_Context.md`, and repeated in D40's Weekly Review summary bullet) said the weekly plan
+"applies automatically... for the coming week." That phrasing is **superseded** by the ratified PRD and
+the shipped code — apply-on-approval, not a silent daily/automatic apply. The 2026-08-07
+`Current_Context.md` snapshot is left unchanged as accurate history of the founder's original framing;
+only the now-stale `MVP_Task_List.md` C1 row is corrected.
+**Why:** a silent automatic re-plan would contradict the product's trust model (the user must always
+see and approve a change to their week) and would collide with D41 (Journey completion is final) and
+the PRD's own "the previous valid plan remains active while a proposal awaits a decision" principle.
+Naming the two-layer split explicitly (rather than leaving it implicit inside D40's Weekly Review
+bullet) prevents this ambiguity recurring as the feature evolves (Smart reminder timing, D2 lifecycle
+notices, etc.).
+**Status (2026-08-13):** C1 was found **already built** during tonight's work — a real week-boundary
+trigger (`weekGate`), a real `weekly-review.tsx` screen, forward-only apply-on-approval,
+`adaptiveEnabled`-gated (so production stays dormant). Tonight only closed the gap with 4 new coverage
+tests (flag-off inert, empty-week, 48h expiry, late-approval rebase).
+**Categorization:** **Approved + Implemented.** **Reflected in:** `Weekly_Review_PRD.md` (§1/§2,
+already correctly worded); `MVP_Task_List.md` (C1 row, wording corrected); the weekly-review test
+suite.
+
+### D44 — Overnight build batch: inactivity freeze (J5, local-first), parked goals (L1), Dream surfacing (F1, initial cut), Support Circle hardening (D2)
+**Decision / session record** (founder pre-authorized autonomous execution; each item built →
+adversarially reviewed by code-reviewer + security-privacy → findings fixed → green):
+
+1. **J5 — Account Inactivity Freeze, LOCAL-FIRST POC.** Per `Account_Inactivity_Freeze_PRD.md`
+   (Ready), built a pure `InactivityEngine` reusing the existing J3 frozen path via a new
+   `Journey.freezeReason` provenance field (`manual` vs `account_inactivity`, matching PRD §4); a
+   21-day threshold (`config/inactivityPolicy.ts`); a lazy foreground-evaluated tick (no server job);
+   a return flow (`return.tsx`) offering Talk-to-coach / Choose-Journeys-to-resume / Not-now — **never
+   auto-resumes**, matching the PRD's core promise. Review found and fixed a **HIGH** bug (freeze
+   could re-arm across cycles) and a **MEDIUM** bug (a zero-frozen cycle left an undismissable CTA).
+   **Deferred — server-authoritative enforcement:** freezing exactly at-the-mark while the app is
+   closed, authoritative server time, multi-device consistency, and Ally lifecycle notices (PRD §3/§6)
+   all need a backend and are explicitly NOT built — the local-first POC only evaluates on foreground
+   open, using device time. This is a scoped, honest MVP-POC slice, not a silent gap: safe for the
+   founder's own single-device testing, not yet correct for a multi-device or server-timed release.
+2. **L1 — Parked (deferred) goals.** Coach-detected extra goals (`GoalSpec.deferredGoals`) now persist
+   to `AppState.parkedGoals` instead of being dropped once the conversation instance ends. Surfaced on
+   the Journeys "For later"/Future tab; **activatable** into a real Journey (reuses the existing
+   `createJourneyFromGoalSpec`, so no new Journey-creation path); **dismissable**. **Sensitive-domain
+   goals (addiction/relationships) are filtered at capture AND guarded again at activation** via a
+   shared `core/coach/sensitiveDomains.ts` — a deliberate double-gate so a sensitive goal can never
+   reach a Journey through the parked-goals side door, consistent with D24's gating of those domains.
+3. **F1 — Dream creation, INITIAL surfacing cut only.** Added: a My Journeys → My Dreams nav entry; a
+   read-only "Part of your Dream" card on the Journey detail screen; a link-approval card for Journeys
+   not yet linked to a Dream (reuses the already-tested `linkJourneyToDream`). **The coach
+   Dream-authoring conversation itself (the coach actually creating/naming a Dream from conversation)
+   is explicitly DEFERRED** to a joint design session — open questions remain in
+   `Dream_Management_PRD.md`. This slice is surfacing/linking only, not Dream creation. Note: this does
+   not touch D40's "coach owns the Dream layer, no user approval to create/edit" model — the
+   link-approval card here approves *attaching an existing Journey to an existing Dream*, a distinct,
+   still-approval-gated action from Dream creation itself.
+4. **D2 — Journey Support Circle hardening (correcting a stale task-list line).**
+   `MVP_Task_List.md`'s D2 row said "no screen calls [`setAllies`] — a user cannot currently
+   propose/name an Ally in-app," but the real Journey Support Circle (consent gate + propose/accept UX
+   + the Companion bundle) was **already built** in the D40 work (commit `b3a9ff5`, see
+   `Journey_Support_Circle_PRD.md`). That row was simply stale; corrected tonight. Tonight's actual
+   work was **hardening**, not building from scratch: hid the invite CTA on completed/frozen Journeys
+   (inviting an Ally to a Journey that can no longer progress is a dead end); distinguished an
+   offline-load-failure state from a genuinely-empty Support Circle (previously indistinguishable,
+   risking a user believing they have no Support Circle when the real cause is network); added the
+   missing UI test coverage. **Flagged, not fixed tonight (LOW, latent):** the older `setAllies` write
+   path bypasses the Companion coach-Journeys-only gate (D40's scope restriction) — no caller reaches
+   it today so it is inert, but it should be **retired or guarded** so a future caller can't silently
+   reintroduce ungated Ally sharing.
+
+**Why (shared reasoning across all four):** each was picked because it was fully executable without
+founder input tonight (a closed PRD spec, or a straightforward code-grounding correction), per CLAUDE.md
+§3.8 ("solve autonomously, escalate sparingly"). None required a founder aesthetic/positioning call —
+J5/L1/D2 had closed specs (PRDs Ready, or already-built code needing only correction/hardening); F1 was
+deliberately capped to the surfacing-only slice specifically because the remaining piece (coach
+Dream-authoring) does need founder/design input, so it was left out rather than guessed at.
+**Verification:** built → adversarially reviewed (code-reviewer + security-privacy) → findings fixed →
+green throughout this batch: `tsc` clean · `eslint` 0 · **`jest` 916/916**.
+**Categorization:** **Approved + Implemented** (J5 local-first POC, L1, F1 initial cut, D2 hardening) +
+**Open/Deferred** (J5 server-authoritative enforcement; F1 coach Dream-authoring conversation; D2
+live-DB authorization-matrix QA + the latent `setAllies` gap; L1's user-facing label / cap /
+activation-mechanics need founder confirmation).
+**Reflected in:** `MVP_Task_List.md` (J5, L1, F1, D2 rows); `PRD/Account_Inactivity_Freeze_PRD.md`;
+`PRD/Journey_Support_Circle_PRD.md`; `PRD/Dream_Management_PRD.md`; `Current_Context.md` (2026-08-13
+overnight snapshot).
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

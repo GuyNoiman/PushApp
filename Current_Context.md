@@ -1,8 +1,10 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-12** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-12" just below (most current and
-authoritative). Prior top snapshot: 2026-08-10 (kept below as accurate history) — which itself noted: this
+Last updated: **2026-08-13 (overnight autonomous session)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13"
+just below (most current and authoritative). Prior top snapshot: 2026-08-12 SESSION 2 (kept below as
+accurate history, superseded only as "most current"). Prior to that: 2026-08-10 (kept below as accurate
+history) — which itself noted: this
 [08-10] session finished the i18n rollout, D30 (coach voice), J3
 (Freeze/Resume + Journey.status), D31 (form of address), D33 (one week boundary), D34 (unified Own
 Profile), and introduced the PRD-per-feature working method. Everything is **COMMITTED** (9 topic
@@ -21,7 +23,138 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
-## ⭐ HANDOFF SNAPSHOT — 2026-08-12 (most current — supersedes the 2026-08-10 snapshot below)
+## ⭐ HANDOFF SNAPSHOT — 2026-08-13 (overnight autonomous session — supersedes the 2026-08-12 SESSION 2 snapshot below as "most current"; that snapshot and everything under it is kept as accurate history)
+
+**Branch `feat/buddy-3d-and-reminders`. Founder pre-authorized autonomous execution overnight. Five
+items shipped — each: built → adversarially reviewed (code-reviewer + security-privacy) → findings
+fixed → green. Final state: `tsc` clean · `eslint` 0 · `jest` 916/916 (up from 852/852 the previous
+session). Everything is COMMITTED tonight by topic (one commit per completed item) but NOT pushed —
+nothing is pushed without the founder's ask.**
+
+### Shipped this session
+1. **I1 Completion Celebration** — already logged in full as Decision Log **D42** +
+   `PRD/Completion_Celebration_PRD.md` §0 (see the 2026-08-12 SESSION 2 snapshot below for the full
+   build narrative). Included in tonight's commit set; no new doc content needed beyond this
+   confirmation.
+2. **C1 Weekly Review — CLOSED.** Discovered **already built** inside the D40 work: a real
+   week-boundary trigger (`weekGate`), a real `weekly-review.tsx` screen, forward-only apply, and
+   `adaptiveEnabled`-gated (so it stays dormant in plain production). Tonight only **closed the gap**
+   with 4 coverage tests (flag-off inert, empty-week, 48h expiry, late-approval rebase).
+   **Wording correction:** `MVP_Task_List.md`'s C1 row said the plan applies "automatically" — that
+   was the founder's original 2026-08-07 framing; the ratified PRD and shipped code apply the proposed
+   plan only **on explicit user approval** within the 48h window, never silently. See Decision Log
+   **D43** for the two-layer split (strategic weekly proposal vs. tactical per-occurrence recovery +
+   immediate user edits) — a pending weekly proposal owns the plan for its 48h window, but a silent
+   daily/automatic apply never happens.
+3. **J5 Account Inactivity Freeze — LOCAL-FIRST POC built.** A pure `InactivityEngine` reusing the
+   existing J3 frozen path via a new `Journey.freezeReason` provenance field; a 21-day threshold
+   (`config/inactivityPolicy.ts`); a lazy foreground-evaluated tick; a return flow (`return.tsx`) with
+   Talk-to-coach / Choose-Journeys-to-resume / Not-now — **never auto-resumes**. Review fixed a HIGH
+   bug (freeze re-armed across cycles) and a MEDIUM (a zero-frozen cycle left an undismissable CTA).
+   **Server-authoritative enforcement (at-the-mark freeze while the app is closed, authoritative
+   server time, multi-device consistency, Ally lifecycle notices) is DEFERRED** — needs the backend.
+4. **L1 Parked (deferred) goals — built.** Coach-detected extra goals (`GoalSpec.deferredGoals`) now
+   persist to `AppState.parkedGoals`, shown on the Journeys "For later"/Future tab, activatable into a
+   real Journey (reuses `createJourneyFromGoalSpec`) or dismissable. **Sensitive-domain goals
+   (addiction/relationships) are filtered at capture AND guarded again at activation** (shared
+   `core/coach/sensitiveDomains.ts` — a deliberate double-gate).
+5. **F1 Dream creation — INITIAL surfacing cut only.** My Journeys → My Dreams nav entry; a read-only
+   "Part of your Dream" card on the Journey detail screen; a link-approval card for UNLINKED Journeys
+   (reuses the tested `linkJourneyToDream`). **The coach Dream-authoring conversation itself is
+   explicitly DEFERRED** to a joint design session — open questions remain.
+6. **D2 Journey Support Circle — hardened (and a stale task-list line corrected).**
+   `MVP_Task_List.md`'s D2 row said "no screen calls it — a user cannot currently propose/name an Ally
+   in-app," but the real Support Circle (consent gate, propose/accept UX, the Companion bundle) was
+   **already built** in the D40 work (commit `b3a9ff5`) — that row was simply stale and is now
+   corrected. Tonight's real work was **hardening**: hid the invite CTA on completed/frozen Journeys,
+   distinguished an offline-load-failure state from a genuinely-empty Support Circle, and added the
+   missing UI tests. Live-DB authorization-matrix verification (2nd account) remains a **founder
+   action** — the Supabase migration was applied by the founder this session.
+
+All four non-I1/non-C1 items (J5, L1, F1, D2) are recorded together with full reasoning + deferrals in
+Decision Log **D44**; C1's two-layer split + wording correction is Decision Log **D43**.
+
+### Backfill PRDs (written earlier this session, before the overnight batch)
+Five retroactive PRDs for already-shipped features that had no PRD, grounded in the actual code, now
+indexed in `04_Product/PRD/README.md` → "Backfill": `Journey_Lifecycle_Management`, `Streak_Mechanism`,
+`Account_Deletion_and_Data_Export`, `Notification_Content_Service`, `i18n_Localization_and_RTL`. Real
+gaps they surfaced, worth carrying into the ▶ NEXT queue:
+- The **streak reset is dormant in plain production** — it depends on `StepMissed`, which today is
+  only emitted under `adaptiveCoach` (long-known limitation, B2, re-confirmed by the backfill).
+- The **`abandoned` Journey status is defined but never written** — `deleteJourney` hard-removes
+  instead of marking abandoned.
+- The **`delete-account` Edge Function is undeployed**, and there is **no hosted Google Play deletion
+  URL** — both are O1 release gates, unchanged from prior snapshots, re-confirmed.
+- **`buildNotificationContent` is not on any delivery path yet** (built infrastructure, D40, no caller).
+- **i18n engine/config DATA strings are still English** (MissionEngine titles, `shopItems` names,
+  sample data — known, H1) and **RTL is still device-unverified**.
+
+### ▶ NEXT / founder-decision queue for tomorrow
+1. **D2:** retire the dead `setAllies` path (it bypasses the Companion coach-Journeys-only gate — LOW
+   latent risk, no caller today) or add a guard; run the **live-DB authorization-matrix QA** (2nd
+   account); close the D2 lifecycle-gating design questions.
+2. **C1:** the wording is now reconciled in `MVP_Task_List.md` + Decision Log D43 — nothing further
+   needed unless the founder wants a different apply model.
+3. **F1:** design the **coach Dream-authoring conversation** (+ the remaining F1 open questions in
+   `Dream_Management_PRD.md`).
+4. **L1:** confirm the user-facing label, a cap on parked goals, and whether "activate" means
+   direct-build vs. re-running the coach interview.
+5. **J5:** plan the **server-authoritative version** for when the backend lands; confirm the Home
+   auto-open priority across ceremony / weekly review / inactivity-return (ceremony wins over review
+   per D42 — inactivity-return still needs its place in that ordering; one major modal per foreground).
+6. **Founder release-gate actions (unchanged, re-flagged by the Backfill audit):** deploy the
+   `delete-account` Edge Function + host a Google Play deletion URL (O1); on-device QA (RTL,
+   notifications, the new return/ceremony/parked-goals/Dream surfaces) once the Apple account lands;
+   the Support Circle live-DB QA (item 1 above).
+7. **Partner coaching package (v0.7):** feedback already sent; the on-call flow + expert calibration +
+   safety-floor work is tracked there, not in this repo's task list.
+
+**Git status:** everything above is committed by topic tonight, on branch
+`feat/buddy-3d-and-reminders`, **not pushed** — the founder has not asked for a push.
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-12 (SESSION 2 — most current; supersedes the 2026-08-12 session-1 snapshot below)
+
+**Branch `feat/buddy-3d-and-reminders`. Built the top Ready task — Completion Celebration (I1) — end to end:
+implemented in 6 slices, adversarially reviewed (code-reviewer + security-privacy), findings fixed. Green:
+tsc clean · eslint 0 · jest 852/852. UNCOMMITTED (working tree) — the founder has not asked for a commit.**
+
+### Built this session (I1, Decision Log D42; PRD §0)
+- **Small celebration:** the existing Step confetti now rolls 1 of 3 comparable-intensity variants, is
+  suppressed on a Journey-completing Done, has a **reduced-motion** guard (new `use-reduced-motion` hook —
+  none existed before), and a **Settings toggle** (`CelebrationPreference`, small-celebrations only; the big
+  ceremony can't be disabled).
+- **Big ceremony:** a dedicated modal route `app/src/app/completion.tsx`. The card is minted ONCE at the
+  first authoritative `completed` transition in `JourneyEngine.checkInStep` (idempotent, latched like
+  `completionRewarded`). Auto-open mirrors the Weekly-Review latch (`getPendingCompletionCeremony` /
+  `completionCeremonyNeedsAutoOpen` / `markCompletionCeremonyShown` + `migrateState` marks legacy completions
+  already-shown). **Priority: ceremony wins over Weekly Review** (`COMPLETION_CEREMONY_WINS`, one flippable
+  point; "one major event per foreground" via per-foreground latches reset on `AppState` active).
+- **Completion card:** safe-fields-only (`core/celebration/completionCard.ts` + `cardTemplates.ts`; title
+  snapshot + step/day counts, NO reports/why/Dream/Ally), swipeable name-revealing + name-omitting variants,
+  a **privacy preview before share**, transient caption never persisted, reopenable **Share completion** on a
+  completed Journey. Share/save behind a `CardShareGateway` seam (`NullCardShareGateway` degrades to
+  `expo-sharing` text share on web/Expo Go; native `react-native-view-shot` NOT installed — lights up on the
+  native build). Card is exported + wiped with the account (O1/GDPR verified).
+- **Gentle final-Step confirmation** (D41 finality): one shared gate (`hooks/useFinalStepConfirm.ts` +
+  `FinalStepConfirmSheet`) wired into all three completion paths (Home swipe, ⋯ report, Journey-detail
+  check-in). Copy (gendered, en+he): "על ידי ביצוע הצעד הזה אתה מסיים את ה-Journey. לאשר?".
+- **Review fixes:** a HIGH i18n bug (doubled `card.` prefix → card rendered raw keys; now a single tested
+  `cardCopyKey` seam + regression test) and a MEDIUM Weekly-Review auto-open suppression bug. Privacy model
+  judged sound.
+
+### ▶ NEXT
+1. **Founder on-device visual pass** of the ceremony / card / final-Step confirmation (RTL both address
+   forms) — impractical to drive fully in web (needs completing a multi-week Journey). Then **move
+   `Completion_Celebration_PRD.md` → `Done/`** (its status header already notes shipped vs deferred).
+2. **Offer a commit** — I1 is uncommitted; commit by topic when the founder wants (nothing is pushed).
+3. **Deferred follow-ups now tracked in `MVP_Task_List.md`:** **I1-a** in-app Ally completion/thanks message
+   (needs the notify/message backend), **I1-b** device-verified image export (needs the native build).
+4. **Open Low (founder's call):** default card variant reveals the Journey name — consider defaulting to a
+   name-omitting variant for privacy on sensitive Journeys (privacy-review L1).
+5. Remaining Ready/queue unchanged from session-1 snapshot below (Account_Inactivity_Freeze ready; the
+   approved-but-not-Ready PRDs; the Support Circle migration + live-coach hardening still founder/Apple-gated).
+
+## ⭐ HANDOFF SNAPSHOT — 2026-08-12 (session 1 — supersedes the 2026-08-10 snapshot below)
 
 **Branch `feat/buddy-3d-and-reminders`. A large feature-build session: the entire "Ready" PRD queue was
 implemented — each feature adversarially reviewed (code-reviewer, + security-privacy where it touched

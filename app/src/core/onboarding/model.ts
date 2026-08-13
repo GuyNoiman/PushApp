@@ -12,7 +12,11 @@
  * live-Coach gates as any Coach use. No React, no UI, no vendor imports.
  */
 
-/** Every page of the first-run flow, in order. `completion` opens the first Coach conversation. */
+/**
+ * Every page of the first-run flow, in order. `completion` recaps the starting point; the final
+ * `notifications` soft pre-prompt then opens the first Coach conversation (permission is optional
+ * and never blocks completion — K1).
+ */
 export type OnboardingStep =
   | 'language'
   | 'personalInfo'
@@ -23,7 +27,8 @@ export type OnboardingStep =
   | 'q4'
   | 'q5'
   | 'q6'
-  | 'completion';
+  | 'completion'
+  | 'notifications';
 
 /** The six questions (PRD §6). Every question is skippable; none is a diagnosis or score. */
 export type OnboardingQuestionId = 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'q6';

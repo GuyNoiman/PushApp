@@ -149,7 +149,11 @@ export const ONBOARDING_QUESTION_IDS: readonly OnboardingQuestionId[] = ONBOARDI
 /** Total question count for the "Question X of N" progress copy (PRD §8). */
 export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
 
-/** The whole flow in order (PRD §2). */
+/**
+ * The whole flow in order (PRD §2). `notifications` is the terminal soft pre-prompt AFTER
+ * `completion` (K1): "Maybe later" still converges on `completion` before the ask, and the
+ * permission request never blocks finishing onboarding.
+ */
 export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'language',
   'personalInfo',
@@ -161,6 +165,7 @@ export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'q5',
   'q6',
   'completion',
+  'notifications',
 ];
 
 /** The config for a question id, or undefined for a non-question step. */

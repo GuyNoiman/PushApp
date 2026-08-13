@@ -16,8 +16,11 @@ import {
 import {
   ONBOARDING_QUESTION_COUNT,
   ONBOARDING_QUESTION_IDS,
+  ONBOARDING_STEP_ORDER,
   ONBOARDING_VERSION,
   isQuestionStep,
+  nextStep,
+  prevStep,
   questionById,
   questionNumber,
 } from '../questions';
@@ -53,6 +56,16 @@ describe('onboarding config (PRD §6)', () => {
     expect(questionNumber('q1')).toBe(1);
     expect(questionNumber('q6')).toBe(6);
     expect(questionNumber('completion')).toBe(0);
+  });
+
+  it('places the notifications soft pre-prompt AFTER completion as the terminal step (K1)', () => {
+    // "Maybe later" converges on completion first, then the ask — and the flow ends at notifications.
+    expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.indexOf('completion') + 1]).toBe('notifications');
+    expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.length - 1]).toBe('notifications');
+    expect(nextStep('completion')).toBe('notifications');
+    expect(nextStep('notifications')).toBe('notifications'); // terminal (clamped)
+    expect(prevStep('notifications')).toBe('completion');
+    expect(isQuestionStep('notifications')).toBe(false);
   });
 });
 

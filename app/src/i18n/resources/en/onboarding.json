@@ -132,5 +132,11 @@
     "titleSkipped": "That's completely fine, we can start here",
     "bodySkipped": "The Coach will get to know you through the conversation, and together you can decide where to focus.",
     "start": "Let's get started"
+  },
+  "notifications": {
+    "title": "One last thing",
+    "body": "Reminders help you show up when it matters, a gentle nudge at the right moment so your progress doesn't slip. The timing is up to you, and you can turn them off anytime in Settings.",
+    "primary": "Turn on reminders",
+    "secondary": "Not now"
   }
 }

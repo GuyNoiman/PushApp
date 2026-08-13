@@ -115,6 +115,16 @@ export default function OnboardingScreen() {
     requestAnimationFrame(() => router.replace('/coach'));
   }, [answers, core]);
 
+  // K1 — the final soft pre-prompt: ask for notification permission in context, then finish. The
+  // request is best-effort; whatever the user (or OS) decides, completion still proceeds.
+  const enableReminders = useCallback(async () => {
+    try {
+      await core.initReminders();
+    } finally {
+      finish();
+    }
+  }, [core, finish]);
+
   // ── Render the current page ──────────────────────────────────────────────────
   if (step === 'language') {
     return <LanguageStep onContinue={() => go('personalInfo')} />;
@@ -173,9 +183,15 @@ export default function OnboardingScreen() {
     );
   }
 
-  // completion
-  const skippedAll = ONBOARDING_QUESTION_IDS.every((id) => answers.skipped.includes(id));
-  return <CompletionStep skippedAll={skippedAll} onStart={finish} />;
+  if (step === 'completion') {
+    // Advance to the notifications pre-prompt (persist the resume point) rather than finishing here,
+    // so the gate stays closed and the final step is reachable/resumable after an interruption.
+    const skippedAll = ONBOARDING_QUESTION_IDS.every((id) => answers.skipped.includes(id));
+    return <CompletionStep skippedAll={skippedAll} onStart={() => go('notifications')} />;
+  }
+
+  // notifications — the final soft pre-prompt; both actions finish onboarding and open the Coach.
+  return <NotificationsStep onTurnOn={enableReminders} onNotNow={finish} />;
 }
 
 // ── Step bodies (presentational; flow-specific, co-located like coach.tsx) ──────
@@ -394,6 +410,36 @@ function CompletionStep({ skippedAll, onStart }: { skippedAll: boolean; onStart:
       </ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
         {skippedAll ? t('completion.bodySkipped') : t('completion.body')}
+      </ThemedText>
+    </OnboardingScaffold>
+  );
+}
+
+/** K1 — final soft pre-prompt: a value-framed reminders ask AFTER completion, right before the Coach
+ *  opens. "Turn on reminders" requests OS permission in context; "Not now" declines. Either action
+ *  finishes onboarding — permission denial or declining must NEVER block completion. */
+function NotificationsStep({ onTurnOn, onNotNow }: { onTurnOn: () => void; onNotNow: () => void }) {
+  const { t } = useTranslation('onboarding');
+  // Guard the async permission request from a double-tap; the choice still resolves to finish().
+  const [busy, setBusy] = useState(false);
+  return (
+    <OnboardingScaffold
+      footer={
+        <>
+          <OnboardingPrimaryButton
+            label={t('notifications.primary')}
+            disabled={busy}
+            onPress={() => {
+              setBusy(true);
+              onTurnOn();
+            }}
+          />
+          <OnboardingSecondaryButton label={t('notifications.secondary')} onPress={onNotNow} />
+        </>
+      }>
+      <ThemedText type="title">{t('notifications.title')}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('notifications.body')}
       </ThemedText>
     </OnboardingScaffold>
   );

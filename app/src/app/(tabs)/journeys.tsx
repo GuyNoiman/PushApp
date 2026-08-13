@@ -54,29 +54,6 @@ interface JourneyCardData {
   dream?: string;
 }
 
-// ── Dev-fallback samples ─────────────────────────────────────────────────────
-// The POC has no real Completed Journeys yet. This ONE sample lets the founder see that card
-// state; it renders ONLY when the real Completed bucket is empty and never mixes with real data.
-// Remove once real data exists. (The Future tab now shows REAL parked goals — no sample.)
-const DEV_DAY = 24 * 60 * 60 * 1000;
-const DEV_NOW = Date.now();
-const SAMPLE_COMPLETED: JourneyCardData = {
-  dream: 'Be a calmer person',
-  view: {
-    id: 'sample-completed',
-    title: 'Morning Pages',
-    bucket: 'completed',
-    status: 'completed',
-    progress: 1,
-    doneSteps: 12,
-    totalSteps: 12,
-    phase: 3,
-    phases: 3,
-    startedAt: DEV_NOW - 90 * DEV_DAY,
-    endsAt: DEV_NOW - 10 * DEV_DAY,
-  },
-};
-
 export default function JourneysScreen() {
   const { snapshot } = useApp();
   const router = useRouter();
@@ -110,9 +87,6 @@ export default function JourneysScreen() {
     { id: 'completed', label: t('tabs.completed') },
     { id: 'future', label: t('tabs.future') },
   ];
-
-  // Dev fallback: show ONE sample when the real Completed bucket is empty so that state is visible.
-  const completedCards = buckets.completed.length > 0 ? buckets.completed : [SAMPLE_COMPLETED];
 
   // The "For later" surface (L1): the real parked goals the coach detected but the user didn't build.
   // Read-only for now (founder decision 2026-08-13) — the coach will offer activate/dismiss in context.
@@ -191,16 +165,20 @@ export default function JourneysScreen() {
               </View>
             )
           ) : activeTab === 'completed' ? (
-            <View style={styles.list}>
-              {completedCards.map((card) => (
-                <JourneyCard
-                  key={card.view.id}
-                  view={card.view}
-                  dream={card.dream}
-                  bucket="completed"
-                />
-              ))}
-            </View>
+            buckets.completed.length === 0 ? (
+              <EmptyState title={t('completed.empty.title')} body={t('completed.empty.body')} />
+            ) : (
+              <View style={styles.list}>
+                {buckets.completed.map((card) => (
+                  <JourneyCard
+                    key={card.view.id}
+                    view={card.view}
+                    dream={card.dream}
+                    bucket="completed"
+                  />
+                ))}
+              </View>
+            )
           ) : buckets.active.length === 0 ? (
             <EmptyState title={t('empty.title')} body={t('empty.body')} />
           ) : (

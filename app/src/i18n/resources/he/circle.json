@@ -7,5 +7,9 @@
   "cheer": "עידוד",
   "cheerA11y": "עידוד {{name}}",
   "aJourney": "מסע",
-  "progressStatus": "{{pct}}% ב{{title}}"
+  "progressStatus": "{{pct}}% ב{{title}}",
+  "empty": {
+    "title": "המעגל שלך ריק בינתיים",
+    "body": "הוסיפו חבר לפי שם משתמש כדי להתחיל לעודד זה את זה."
+  }
 }

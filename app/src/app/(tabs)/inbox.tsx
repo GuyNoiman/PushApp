@@ -17,9 +17,8 @@
  *   · incoming friend REQUESTS surface under Requested (Accept / Decline).
  *   · accepted friends + received CHEERS / nudges surface under Friends.
  *   · Journeys the user is an Ally of surface under Allies.
- * When a list's real data is empty it falls back to the dev sample (`sampleInbox`
- * / `sampleDeservePraise`, via `useSampleWhenEmpty`) so the surface always reads
- * populated; Groups has no POC data and shows a calm empty state.
+ * When a list's real data is empty, that tab shows a calm empty state; Groups has
+ * no POC data and shows its own empty state.
  */
 import { Ionicons } from '@expo/vector-icons';
 import type { TFunction } from 'i18next';
@@ -35,13 +34,6 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { AllyProgress, Cheer, Friend, SocialProfile } from '@/core/social';
-import {
-  sampleDeservePraise,
-  sampleInbox,
-  useSampleWhenEmpty,
-  type SampleFriend,
-  type SampleInboxItem,
-} from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
@@ -155,38 +147,14 @@ export default function InboxScreen() {
     [social, t],
   );
 
-  // ── Fall back to the dev sample per-list so the tabs read populated (founder
-  // feedback). Sample rows carry no real target — their inline actions are inert
-  // placeholders, never persisted or sent. Groups has no POC data → empty state. ──
-  const sampleFriendsRows = useMemo<InboxRowData[]>(
-    () => sampleInbox.filter((s) => s.kind !== 'request').map((s) => sampleRow(s)),
-    [],
-  );
-  const sampleAlliesRows = useMemo<InboxRowData[]>(
-    () => sampleDeservePraise.map((f) => sampleAllyRow(f)),
-    [],
-  );
-  const sampleRequestedRows = useMemo<InboxRowData[]>(
-    () =>
-      sampleInbox
-        .filter((s) => s.kind === 'request')
-        .map((s) =>
-          sampleRow(s, [
-            { label: t('accept'), onPress: () => {} },
-            { label: t('decline'), variant: 'ghost', onPress: () => {} },
-          ]),
-        ),
-    [t],
-  );
-
-  const friendsRows = useSampleWhenEmpty(friendsRowsReal, sampleFriendsRows);
-  const alliesRows = useSampleWhenEmpty(alliesRowsReal, sampleAlliesRows);
+  // Each tab reads its REAL data; an empty list shows the calm per-tab empty state below.
+  const friendsRows = friendsRowsReal;
+  const alliesRows = alliesRowsReal;
   // Friend requests + Ally invites share the Requested tab; both are real, actionable rows.
-  const requestedRowsCombined = useMemo(
+  const requestedRows = useMemo(
     () => [...requestedRowsReal, ...allyInviteRowsReal],
     [requestedRowsReal, allyInviteRowsReal],
   );
-  const requestedRows = useSampleWhenEmpty(requestedRowsCombined, sampleRequestedRows);
 
   const tabs: InboxTab[] = [
     { key: 'friends', label: t('tabs.friends'), unread: friendsRows.some((r) => r.unread) },
@@ -289,29 +257,6 @@ export default function InboxScreen() {
       </SafeAreaView>
     </ThemedView>
   );
-}
-
-/** Map a dev-sample inbox item to a presentational row. */
-function sampleRow(item: SampleInboxItem, actions?: InboxRowData['actions']): InboxRowData {
-  return {
-    id: `sample:${item.id}`,
-    name: item.name,
-    initials: item.initials,
-    preview: item.text.charAt(0).toUpperCase() + item.text.slice(1),
-    timestamp: item.when,
-    unread: true,
-    actions,
-  };
-}
-
-/** Map a dev-sample friend to an Allies row (a friend whose Journey you support). */
-function sampleAllyRow(friend: SampleFriend): InboxRowData {
-  return {
-    id: `sample-ally:${friend.id}`,
-    name: friend.name,
-    initials: friend.initials,
-    preview: friend.status,
-  };
 }
 
 /** Translated title for an empty tab. */

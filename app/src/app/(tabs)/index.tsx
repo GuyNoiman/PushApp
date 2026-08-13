@@ -15,8 +15,8 @@
  * Presentational only (Engineering Bible §19): every value is read from the AppCore
  * snapshot / social hook, and check-ins call the facade — no business logic here. A
  * row's ⋯ menu opens the report sheet (Done · Partial · Couldn't · Postpone ·
- * Reschedule); a Done fires a brief confetti burst. Empty data degrades gently, and
- * the support board falls back to DEV sample people until the social backend fills.
+ * Reschedule); a Done fires a brief confetti burst. Empty data degrades gently — the
+ * support board shows a calm empty state per tab until the social backend fills.
  */
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -38,7 +38,6 @@ import { TodayFocusCard, type StepUrgency } from '@/components/home/TodayFocusCa
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
-import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty } from '@/dev/sampleSocial';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
 import { isInClosedWeek } from '@/core/util/week';
@@ -452,9 +451,9 @@ export default function HomeScreen() {
           initials: initialsOf(ap.owner.handle),
           name: ap.owner.handle,
           status: t('support.quiet', { count: days, on }),
-          // TODO(data): only `sendCheer` exists today — a dedicated "nudge" outreach for
-          // a quiet friend is a later slice. Both reach out for now.
-          onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId),
+          // A quiet friend gets a genuine NUDGE — a distinct outreach kind from a Cheer (the
+          // gateway persists which one it is), so the amber action is honest, not a relabeled cheer.
+          onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId, 'nudge'),
         };
       });
   }, [social, t]);
@@ -475,38 +474,10 @@ export default function HomeScreen() {
           initials: initialsOf(ap.owner.handle),
           name: ap.owner.handle,
           status,
-          onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId),
+          onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId, 'cheer'),
         };
       });
   }, [social, t]);
-
-  // Until the social backend fills, each tab falls back to the shared DEV sample so
-  // BOTH tabs show real-looking people — with their WHY/status line intact.
-  const sampleNudge: SupportPerson[] = useMemo(
-    () =>
-      sampleNeedHelp.map((f) => ({
-        key: f.id,
-        initials: f.initials,
-        name: f.name,
-        status: f.status,
-        onPress: () => router.push('/friends'),
-      })),
-    [router],
-  );
-  const sampleCheer: SupportPerson[] = useMemo(
-    () =>
-      sampleDeservePraise.map((f) => ({
-        key: f.id,
-        initials: f.initials,
-        name: f.name,
-        status: f.status,
-        onPress: () => router.push('/friends'),
-      })),
-    [router],
-  );
-
-  const nudgePeople = useSampleWhenEmpty(realNudge, sampleNudge);
-  const cheerPeople = useSampleWhenEmpty(realCheer, sampleCheer);
 
   if (!ready || !snapshot) {
     return (
@@ -650,7 +621,7 @@ export default function HomeScreen() {
               </ThemedText>
             }
           />
-          <SupportBoard needSupport={nudgePeople} deservePraise={cheerPeople} />
+          <SupportBoard needSupport={realNudge} deservePraise={realCheer} />
         </ScrollView>
 
         {/* Report menu (⋯) + reused Miss-Recovery sheets. */}

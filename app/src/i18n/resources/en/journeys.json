@@ -12,6 +12,12 @@
     "title": "No active Journeys yet",
     "body": "Start your first Journey and it will appear here as you make progress."
   },
+  "completed": {
+    "empty": {
+      "title": "No completed Journeys yet",
+      "body": "Every Journey you finish will rest here, so you can look back on how far you've come."
+    }
+  },
   "card": {
     "milestone": "Milestone {{phase}} of {{phases}}",
     "milestoneComplete": "Milestone {{phases}} of {{phases}} — complete",

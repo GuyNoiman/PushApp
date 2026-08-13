@@ -19,6 +19,7 @@ import type {
   AllyMember,
   AllyProgress,
   Cheer,
+  CheerKind,
   Friend,
   SocialProfile,
 } from '@/core/social';
@@ -40,7 +41,7 @@ export interface SocialContextValue {
   setHandle: (handle: string) => Promise<void>;
   addFriendByHandle: (handle: string) => Promise<void>;
   respondToFriend: (requesterId: string, accept: boolean) => Promise<void>;
-  sendCheer: (toId: string, journeyId: string) => Promise<void>;
+  sendCheer: (toId: string, journeyId: string, kind?: CheerKind) => Promise<void>;
   // ── Support Circle (per-Journey Ally invites, D2) ──
   inviteAlly: (journeyId: string, allyId: string, bundle: AllyBundle) => Promise<void>;
   respondToAllyInvite: (journeyId: string, ownerId: string, accept: boolean) => Promise<void>;
@@ -265,10 +266,13 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     [gateway, guard, refresh],
   );
 
+  // A Cheer celebrates a friend who just moved forward; a Nudge is a gentle reach-out to a friend
+  // who's gone quiet. They are semantically distinct outreach (the gateway persists the kind), so
+  // the caller passes which one it is — defaulting to a Cheer.
   const sendCheer = useCallback(
-    async (toId: string, journeyId: string) => {
+    async (toId: string, journeyId: string, kind: CheerKind = 'cheer') => {
       await guard(async () => {
-        await gateway.sendCheer(toId, journeyId, 'cheer');
+        await gateway.sendCheer(toId, journeyId, kind);
       });
     },
     [gateway, guard],

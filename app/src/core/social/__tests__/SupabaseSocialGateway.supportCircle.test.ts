@@ -175,6 +175,23 @@ describe('incomingAllyInvites (recipient view)', () => {
   });
 });
 
+describe('sendCheer — cheer vs nudge kind', () => {
+  it('persists a nudge as a distinct kind (an honest reach-out to a quiet friend)', async () => {
+    await new SupabaseSocialGateway().sendCheer('friend-1', 'j1', 'nudge');
+    expect(mock.from).toHaveBeenCalledWith('cheers');
+    expect(mock.__builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ from_id: 'me', to_id: 'friend-1', journey_id: 'j1', kind: 'nudge' }),
+    );
+  });
+
+  it('persists a cheer as kind "cheer"', async () => {
+    await new SupabaseSocialGateway().sendCheer('friend-1', 'j1', 'cheer');
+    expect(mock.__builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'cheer' }),
+    );
+  });
+});
+
 describe('NullSocialGateway parity (D2 methods are inert no-ops)', () => {
   it('the new Support Circle methods resolve without a backend', async () => {
     await expect(NullSocialGateway.inviteAlly('j1', 'a1', 'companion')).resolves.toBeUndefined();

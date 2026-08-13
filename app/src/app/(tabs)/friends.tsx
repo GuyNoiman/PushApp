@@ -10,8 +10,8 @@
  *     sitting inline by default.
  *   · A SINGLE "Your friends" list — the Support Circle. Each person is a row
  *     (monogram avatar, name, a human status line, and ONE Cheer action).
- *     Populated from the real social lists when present, else from the dev
- *     sample (`useSampleWhenEmpty`) so the surface always reads populated.
+ *     Populated from the real social lists; a calm empty state shows until the
+ *     user has friends.
  *
  * The user's own identity (the editable @username) NO LONGER lives here — it
  * moved to the Settings tab's Profile section (founder feedback 2026-08-07).
@@ -35,7 +35,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { sampleDeservePraise, sampleNeedHelp, useSampleWhenEmpty, type SampleFriend } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
@@ -70,18 +69,13 @@ function initialsFor(name: string): string {
   return clean.slice(0, 2).toUpperCase();
 }
 
-/** A person row in the Circle list. `onAction` is undefined for sample rows
- *  (no real target to cheer yet) so their button is inert. */
+/** A person row in the Circle list. Each real row carries a Cheer target via `onAction`. */
 interface CircleRowModel {
   id: string;
   name: string;
   initials: string;
   status: string;
   onAction?: () => void;
-}
-
-function sampleToRow(f: SampleFriend): CircleRowModel {
-  return { id: f.id, name: f.name, initials: f.initials, status: f.status };
 }
 
 export default function FriendsScreen() {
@@ -93,11 +87,10 @@ export default function FriendsScreen() {
 
   const signedIn = social.enabled && !social.needsHandle && !!social.profile;
 
-  // ── Your friends ← real ally progress (each can get a Cheer via sendCheer),
-  // falling back to the dev sample when there's nothing real yet. The single
-  // list merges what used to be the two tabs so the Circle reads as one Support
+  // ── Your friends ← real ally progress (each can get a Cheer via sendCheer). The
+  // single list merges what used to be the two tabs so the Circle reads as one Support
   // Circle (the Need-help / Deserve-praise split now lives on Home). ──
-  const friendsReal = useMemo<CircleRowModel[]>(
+  const rows = useMemo<CircleRowModel[]>(
     () =>
       social.allyProgress.map((ap) => {
         const name = ap.owner.buddySummary?.name?.trim() || `@${ap.owner.handle}`;
@@ -113,12 +106,6 @@ export default function FriendsScreen() {
       }),
     [social, t],
   );
-
-  const sampleRows = useMemo<CircleRowModel[]>(
-    () => [...sampleNeedHelp, ...sampleDeservePraise].map(sampleToRow),
-    [],
-  );
-  const rows = useSampleWhenEmpty(friendsReal, sampleRows);
 
   return (
     <ThemedView style={styles.container}>
@@ -158,12 +145,16 @@ export default function FriendsScreen() {
             {t('yourFriends')}
           </ThemedText>
 
-          <View style={styles.list}>
-            {rows.map((row) => {
-              const tint = tintFor(theme, row.id);
-              return <PersonRow key={row.id} row={row} tint={tint.bg} tintInk={tint.ink} />;
-            })}
-          </View>
+          {rows.length === 0 ? (
+            <EmptyState title={t('empty.title')} body={t('empty.body')} />
+          ) : (
+            <View style={styles.list}>
+              {rows.map((row) => {
+                const tint = tintFor(theme, row.id);
+                return <PersonRow key={row.id} row={row} tint={tint.bg} tintInk={tint.ink} />;
+              })}
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -242,6 +233,19 @@ function PersonRow({ row, tint, tintInk }: { row: CircleRowModel; tint: string; 
         </ThemedText>
       </Pressable>
     </View>
+  );
+}
+
+// A calm empty state for an empty Support Circle — same card language as the other tabs.
+function EmptyState({ title, body }: { title: string; body: string }) {
+  const theme = useTheme();
+  return (
+    <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.hairline }]}>
+      <ThemedText type="default">{title}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+        {body}
+      </ThemedText>
+    </ThemedView>
   );
 }
 
@@ -356,6 +360,17 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: Spacing.two,
+  },
+  empty: {
+    alignSelf: 'stretch',
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    padding: Spacing.four,
+    gap: Spacing.two,
+    alignItems: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
   },
   card: {
     flexDirection: 'row',

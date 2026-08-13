@@ -218,6 +218,11 @@ Object hierarchy: Dream → Journey → Phase (optional) → Step.
 
 # Buddy
 
+> **Stage: Future — deferred from the MVP (Decision Log D45, 2026-08-13).** The MVP user-facing
+> entity is the coach (meta-agent); there is no avatar/Buddy in the current app. The definition below
+> is preserved in full and may be reintroduced post-MVP. "Buddy" remains the canonical term for this
+> concept — do not rename it or substitute another term while it is dormant.
+
 Buddy is the user's companion.
 
 Buddy is not the user.

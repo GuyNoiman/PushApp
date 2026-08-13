@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Step Dependency Cards — Design Mockup (Rev 2: equal-size stacked deck)</title>
+<style>
+  :root {
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #DCDAD3;
+    font-family: var(--font);
+    color: #1B1D1B;
+  }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 32px 80px; }
+
+  /* ── Doc header / design notes ─────────────────────────────────────────── */
+  .doc-header { max-width: 980px; margin: 0 auto 36px; }
+  .doc-header h1 {
+    font-size: 26px; font-weight: 700; margin: 0 0 6px;
+    letter-spacing: -0.2px;
+  }
+  .doc-header .doc-sub {
+    font-size: 14px; color: #5B605B; margin: 0 0 18px; line-height: 1.5;
+  }
+  .revision-flag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+    background: #FBEAE3; color: #A6431E; border: 1px solid #F0CFC0;
+    padding: 3px 10px; border-radius: 8px; margin-bottom: 14px;
+  }
+  .notes-box {
+    background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 14px;
+    padding: 18px 20px; font-size: 13px; line-height: 1.65; color: #33362F;
+  }
+  .notes-box b { color: #0A565B; }
+  .notes-box ol { margin: 0; padding-inline-start: 20px; }
+  .notes-box li { margin-bottom: 8px; }
+  .notes-box li:last-child { margin-bottom: 0; }
+  .copy-opts {
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E4E2DC;
+  }
+  .copy-opts .opt {
+    display: flex; align-items: baseline; gap: 8px; margin: 4px 0; font-size: 13px;
+  }
+  .copy-opts .tag {
+    flex-shrink: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 1px 6px; border-radius: 6px; background: #E1EFEF; color: #0A565B;
+  }
+  .copy-opts .tag.alt { background: #EEEDE7; color: #5B605B; }
+  .copy-opts .opt.rec span.txt { font-weight: 600; }
+
+  /* ── Layout: theme columns side by side ──────────────────────────────── */
+  .section-heading {
+    max-width: 980px; margin: 44px auto 14px; font-size: 15px; font-weight: 700;
+    color: #33362F;
+  }
+  .themes-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    max-width: 1180px; margin: 0 auto;
+  }
+  @media (max-width: 900px) { .themes-grid { grid-template-columns: 1fr; } }
+
+  .theme-col {
+    border-radius: 20px;
+    padding: 22px 26px 28px 20px;
+    background: var(--bg);
+    --offset: 10px;      /* per-layer stacked-card offset (down + toward trailing edge) */
+    --stack-dir: 1;       /* 1 = trailing edge is right (LTR); flipped to -1 under RTL below */
+  }
+  .theme-col[dir="rtl"] { --stack-dir: -1; padding: 22px 20px 28px 26px; }
+  .theme-col[data-theme="light"] {
+    --bg: #F6F5F1;
+    --card: #FFFFFF;
+    --card-selected: #EEEDE7;
+    --hairline: #E4E2DC;
+    --text: #1B1D1B;
+    --text-secondary: #5B605B;
+    --text-muted: #8A8F89;
+    --teal: #0E6E74;
+    --teal-tint: #E1EFEF;
+    --teal-strong: #0A565B;
+    --gold: #AD7A2C;
+    --gold-tint: #F2EAD9;
+    --gold-strong: #8A5E1C;
+    --shadow: 0 4px 12px rgba(46,46,44,0.07);
+    --shadow-soft: 0 3px 8px rgba(46,46,44,0.06);
+    border: 1px solid #EAE8E1;
+  }
+  .theme-col[data-theme="dark"] {
+    --bg: #181D1E;
+    --card: #222829;
+    --card-selected: #2B3232;
+    --hairline: #353D3B;
+    --text: #ECEFEC;
+    --text-secondary: #A4ABA5;
+    --text-muted: #767D77;
+    --teal: #42C7C9;
+    --teal-tint: #123230;
+    --teal-strong: #7FE3E4;
+    --gold: #DBA660;
+    --gold-tint: #322810;
+    --gold-strong: #EFC98A;
+    --shadow: 0 4px 14px rgba(0,0,0,0.38);
+    --shadow-soft: 0 3px 10px rgba(0,0,0,0.34);
+  }
+
+  .theme-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 14px;
+  }
+
+  /* ── Mini screen chrome (grounding context) ──────────────────────────── */
+  .mini-header { margin-bottom: 18px; }
+  .mini-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 2px;
+  }
+  .mini-title { font-size: 18px; font-weight: 700; color: var(--text); margin: 0; }
+  .mini-week { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  .state-label {
+    font-size: 12px; font-weight: 700; color: var(--teal-strong);
+    margin: 26px 0 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .state-label:first-of-type { margin-top: 0; }
+  .state-label .dot { width: 6px; height: 6px; border-radius: 3px; background: var(--teal); flex-shrink: 0; }
+
+  .steps-list { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── Step card (matches app StepRow) ─────────────────────────────────── */
+  .step-card {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .step-card.current { border: 1.5px solid var(--teal); }
+  .step-dot {
+    width: 24px; height: 24px; border-radius: 12px; border: 2px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-dot.done { background: var(--teal); border-color: var(--teal); }
+  .step-dot.current { border-color: var(--teal); }
+  .step-dot .check { color: var(--card); font-size: 13px; line-height: 1; font-weight: 700; }
+  .step-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .step-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .step-title { font-size: 15px; line-height: 22px; font-weight: 500; color: var(--text); }
+  .step-title.upcoming { color: var(--text-secondary); }
+  .step-desc { font-size: 12px; line-height: 18px; color: var(--text-secondary); }
+  .chip-partial {
+    font-size: 11px; padding: 2px 8px; border-radius: 8px;
+    background: var(--gold-tint); color: var(--gold-strong);
+  }
+  .next-flag { font-size: 12px; font-weight: 600; color: var(--teal-strong); flex-shrink: 0; }
+
+  /* ── The dependency stack — equal-size cards stacked BEHIND the top card ─
+     Each hidden layer is the exact same box as the front card (position:
+     absolute, inset:0 within the shell, whose own size is set by the front
+     card in normal flow) then nudged with `transform: translate()` down +
+     toward the trailing edge. Because it's a translate (paint-time offset,
+     not a resize), width and height stay pixel-identical to the front card
+     — never a smaller/narrower sliver. `--stack-dir` flips the horizontal
+     nudge under RTL so it always goes toward the reading-direction's
+     trailing edge, without a separate RTL rule set. */
+  .stack-shell { position: relative; }
+  .stack-behind {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    border: 1px solid var(--hairline);
+    background: var(--card);
+    box-shadow: var(--shadow-soft);
+    transform: translate(calc(var(--stack-dir) * var(--n) * var(--offset)), calc(var(--n) * var(--offset)));
+    z-index: calc(10 - var(--n));
+    pointer-events: none;
+  }
+  .step-card.stack-front { position: relative; z-index: 20; }
+
+  .stack-pad-2 { margin-block-end: 40px; }  /* clearance for a 2-layer stack before the hint */
+  .stack-pad-1 { margin-block-end: 30px; }  /* clearance for a 1-layer stack before the hint */
+
+  .stack-hint {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding-inline-start: 4px;
+  }
+  .stack-hint svg { flex-shrink: 0; margin-top: 1px; }
+  .stack-hint .txt { font-size: 12px; line-height: 18px; color: var(--text-secondary); }
+  .stack-hint .txt b { color: var(--text); font-weight: 600; }
+
+  /* ── RTL demo section ─────────────────────────────────────────────────── */
+  .rtl-section { margin-top: 56px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <h1>Step Dependency Cards — waiting stack (Rev 2)</h1>
+    <div class="revision-flag">REV 2 — revised per founder feedback + reference image</div>
+    <p class="doc-sub">
+      Stage: MVP (design-only render, per Step_Dependencies_PRD.md — no code changes). Visual
+      answer to §2.3 / §4h / §4j of that PRD: how a locked-behind Step is shown, and how it reads
+      in RTL. Rendered against the current mature app tokens (theme.ts, 2026-08-07 redesign —
+      single teal accent, amber reserved for urgency, Inter throughout).
+    </p>
+    <div class="notes-box">
+      <ol>
+        <li><b>Deck of equal cards, not slivers.</b> Rev 1 showed the hidden Steps as thin
+        receding edges. Per the founder's reference, hidden cards are now the exact same
+        width <i>and</i> height as the top card — a real stacked deck, sitting directly behind
+        the card being worked on, not off to the side.</li>
+        <li><b>Waiting, not blocked.</b> Still no padlock, no grey/disabled treatment. The hidden
+        cards stay in the same white-card family as an ordinary Step card — they're just behind,
+        with a blank face (no title, no content leaks through). There's nothing to tap back
+        there, so nothing is drawn as tappable-then-refused.</li>
+        <li><b>Depth is literal.</b> One full card-outline peeking behind = one Step waiting.
+        The founder's "up to 3" chain becomes a front card plus up to 2 identical outlines behind
+        it. When the predecessor is reported, the chain shortens by one: the next card promotes
+        to the full front position and the remaining hidden card moves up to take its place.</li>
+        <li><b>Offset &amp; RTL.</b> Each hidden layer is nudged ~10px down and ~10px toward the
+        trailing edge per layer (2nd layer = 20px, so its edge is still legible past the 1st).
+        The horizontal nudge is driven by a <code>--stack-dir</code> token that's <code>1</code>
+        in LTR and flips to <code>-1</code> under <code>dir="rtl"</code>, so the whole deck
+        mirrors to the opposite edge for free — see the Hebrew demo below.</li>
+        <li><b>Hint copy.</b> Sits below the stack (not crammed into a card), so a long
+        predecessor title can wrap. Recommended option marked below.</li>
+      </ol>
+      <div class="copy-opts">
+        <div class="opt rec"><span class="tag">RECOMMENDED</span><span class="txt">"2 more Steps are waiting — they open up once you check in <b>'Book the venue'</b>."</span></div>
+        <div class="opt"><span class="tag alt">ALT</span><span class="txt">"Coming up after <b>'Book the venue'</b>."</span></div>
+        <div class="opt"><span class="tag alt">ALT</span><span class="txt">"Opens up once <b>'Book the venue'</b> is checked in."</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ STATE 1 + STATE 2, LTR ══════════════════════════ -->
+  <div class="themes-grid">
+
+    <!-- LIGHT -->
+    <div class="theme-col" data-theme="light">
+      <div class="theme-label">Light</div>
+      <div class="mini-header">
+        <p class="mini-eyebrow">Journey</p>
+        <h2 class="mini-title">Plan the trip</h2>
+        <p class="mini-week">Week 2 of 4</p>
+      </div>
+
+      <div class="state-label"><span class="dot"></span>State 1 — waiting stack (chain of 3)</div>
+      <div class="steps-list">
+        <div class="step-card">
+          <div class="step-dot done"><span class="check">✓</span></div>
+          <div class="step-text">
+            <div class="step-title-row"><span class="step-title">Set the budget</span></div>
+          </div>
+        </div>
+
+        <div class="stack-shell stack-pad-2">
+          <div class="stack-behind" style="--n:2"></div>
+          <div class="stack-behind" style="--n:1"></div>
+          <div class="step-card current stack-front">
+            <div class="step-dot current"></div>
+            <div class="step-text">
+              <div class="step-title-row"><span class="step-title">Book the venue</span></div>
+              <span class="step-desc">Call or book online — confirm the date works.</span>
+            </div>
+            <span class="next-flag">Next</span>
+          </div>
+        </div>
+        <div class="stack-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#5B605B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="txt">2 more Steps are waiting — they open up once you check in <b>"Book the venue"</b>.</span>
+        </div>
+      </div>
+
+      <div class="state-label"><span class="dot"></span>State 2 — after unlock <span style="font-weight:400; color:var(--text-muted);">(predecessor reported FULL)</span></div>
+      <div class="steps-list">
+        <div class="step-card">
+          <div class="step-dot done"><span class="check">✓</span></div>
+          <div class="step-text">
+            <div class="step-title-row"><span class="step-title">Book the venue</span></div>
+          </div>
+        </div>
+
+        <div class="stack-shell stack-pad-1">
+          <div class="stack-behind" style="--n:1"></div>
+          <div class="step-card current stack-front">
+            <div class="step-dot current"></div>
+            <div class="step-text">
+              <div class="step-title-row"><span class="step-title">Choose flight dates</span></div>
+              <span class="step-desc">Check prices for the two weekends after the venue date.</span>
+            </div>
+            <span class="next-flag">Next</span>
+          </div>
+        </div>
+        <div class="stack-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#5B605B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="txt">1 more Step is waiting — it opens up once you check in <b>"Choose flight dates"</b>.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DARK -->
+    <div class="theme-col" data-theme="dark">
+      <div class="theme-label">Dark</div>
+      <div class="mini-header">
+        <p class="mini-eyebrow">Journey</p>
+        <h2 class="mini-title">Plan the trip</h2>
+        <p class="mini-week">Week 2 of 4</p>
+      </div>
+
+      <div class="state-label"><span class="dot"></span>State 1 — waiting stack (chain of 3)</div>
+      <div class="steps-list">
+        <div class="step-card">
+          <div class="step-dot done"><span class="check">✓</span></div>
+          <div class="step-text">
+            <div class="step-title-row"><span class="step-title">Set the budget</span></div>
+          </div>
+        </div>
+
+        <div class="stack-shell stack-pad-2">
+          <div class="stack-behind" style="--n:2"></div>
+          <div class="stack-behind" style="--n:1"></div>
+          <div class="step-card current stack-front">
+            <div class="step-dot current"></div>
+            <div class="step-text">
+              <div class="step-title-row"><span class="step-title">Book the venue</span></div>
+              <span class="step-desc">Call or book online — confirm the date works.</span>
+            </div>
+            <span class="next-flag">Next</span>
+          </div>
+        </div>
+        <div class="stack-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#A4ABA5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="txt">2 more Steps are waiting — they open up once you check in <b>"Book the venue"</b>.</span>
+        </div>
+      </div>
+
+      <div class="state-label"><span class="dot"></span>State 2 — after unlock <span style="font-weight:400; color:var(--text-muted);">(predecessor reported PARTIAL)</span></div>
+      <div class="steps-list">
+        <div class="step-card">
+          <div class="step-dot"></div>
+          <div class="step-text">
+            <div class="step-title-row">
+              <span class="step-title upcoming">Book the venue</span>
+              <span class="chip-partial">Partially completed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack-shell stack-pad-1">
+          <div class="stack-behind" style="--n:1"></div>
+          <div class="step-card current stack-front">
+            <div class="step-dot current"></div>
+            <div class="step-text">
+              <div class="step-title-row"><span class="step-title">Choose flight dates</span></div>
+              <span class="step-desc">Check prices for the two weekends after the venue date.</span>
+            </div>
+            <span class="next-flag">Next</span>
+          </div>
+        </div>
+        <div class="stack-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#A4ABA5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="txt">1 more Step is waiting — it opens up once you check in <b>"Choose flight dates"</b>.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════ RTL DEMO (Hebrew), State 1 ══════════════════════════ -->
+  <div class="rtl-section">
+    <div class="section-heading">RTL variant — State 1, Hebrew (deck mirrors to the opposite trailing edge automatically)</div>
+    <div class="themes-grid">
+
+      <div class="theme-col" data-theme="light" dir="rtl" lang="he">
+        <div class="theme-label">LIGHT · RTL</div>
+        <div class="mini-header">
+          <p class="mini-eyebrow">מסע</p>
+          <h2 class="mini-title">לתכנן את הטיול</h2>
+          <p class="mini-week">שבוע 2 מתוך 4</p>
+        </div>
+        <div class="steps-list">
+          <div class="step-card">
+            <div class="step-dot done"><span class="check">✓</span></div>
+            <div class="step-text">
+              <div class="step-title-row"><span class="step-title">לקבוע תקציב</span></div>
+            </div>
+          </div>
+          <div class="stack-shell stack-pad-2">
+            <div class="stack-behind" style="--n:2"></div>
+            <div class="stack-behind" style="--n:1"></div>
+            <div class="step-card current stack-front">
+              <div class="step-dot current"></div>
+              <div class="step-text">
+                <div class="step-title-row"><span class="step-title">להזמין את המקום</span></div>
+                <span class="step-desc">להתקשר או להזמין באתר — לוודא שהתאריך פנוי.</span>
+              </div>
+              <span class="next-flag">הבא</span>
+            </div>
+          </div>
+          <div class="stack-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#5B605B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="txt">עוד 2 צעדים ממתינים — הם ייפתחו לאחר שתדווחו על <b>"להזמין את המקום"</b>.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="theme-col" data-theme="dark" dir="rtl" lang="he">
+        <div class="theme-label">DARK · RTL</div>
+        <div class="mini-header">
+          <p class="mini-eyebrow">מסע</p>
+          <h2 class="mini-title">לתכנן את הטיול</h2>
+          <p class="mini-week">שבוע 2 מתוך 4</p>
+        </div>
+        <div class="steps-list">
+          <div class="step-card">
+            <div class="step-dot done"><span class="check">✓</span></div>
+            <div class="step-text">
+              <div class="step-title-row"><span class="step-title">לקבוע תקציב</span></div>
+            </div>
+          </div>
+          <div class="stack-shell stack-pad-2">
+            <div class="stack-behind" style="--n:2"></div>
+            <div class="stack-behind" style="--n:1"></div>
+            <div class="step-card current stack-front">
+              <div class="step-dot current"></div>
+              <div class="step-text">
+                <div class="step-title-row"><span class="step-title">להזמין את המקום</span></div>
+                <span class="step-desc">להתקשר או להזמין באתר — לוודא שהתאריך פנוי.</span>
+              </div>
+              <span class="next-flag">הבא</span>
+            </div>
+          </div>
+          <div class="stack-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#A4ABA5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="txt">עוד 2 צעדים ממתינים — הם ייפתחו לאחר שתדווחו על <b>"להזמין את המקום"</b>.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -495,6 +495,30 @@ activation-mechanics need founder confirmation).
 `PRD/Journey_Support_Circle_PRD.md`; `PRD/Dream_Management_PRD.md`; `Current_Context.md` (2026-08-13
 overnight snapshot).
 
+### D45 — Buddy / avatar DEFERRED to Future; the coach (meta-agent) is the MVP's central user-facing entity
+**Decision:** The Buddy companion/avatar is **deferred to Future — it is NOT part of the MVP.**
+Currently there is no avatar and no Buddy in the app; the user talks directly to the **coach** (the
+meta-agent, see D30), which is the MVP's central user-facing entity. The Buddy vision itself is **not
+cut** — it is fully preserved and may be reintroduced post-MVP (per CLAUDE.md §3.3, "the vision never
+shrinks — move it later, never delete").
+**Why now:** this resolves a standing tension in the repository between two philosophy/principle docs
+written when Buddy was the active design (`AI_Product_Principles.md` Principle 9, "Buddy Is The
+Experience" — present the AI through Buddy; and `09_Product_Philosophy/Product_Terminology.md`'s "Buddy"
+entry — "Buddy becomes the emotional face of PushApp") and the mature-redesign / AI-adaptive-coach
+direction already shipped in the app (origin: the 2026-08-07 mature-redesign snapshot in
+`Current_Context.md`, which removed the Buddy tab from the navigation and made the coach the primary
+AI-facing surface; formalized as the meta-agent being the sole user-facing voice in D30, 2026-08-09).
+Those docs were never updated to reflect that the avatar had already been dropped from the shipped
+product — this decision makes the staging explicit rather than leaving an unresolved contradiction.
+**What does NOT change:** "Buddy" remains the **canonical term** for the deferred companion/avatar
+concept — it is not renamed, and no synonym is introduced. All existing Buddy reasoning (why it exists,
+what it represents, its role in the reward loop/economy, its Future-vision depth) stays intact in the
+docs, annotated with a Future/deferred stage marker rather than deleted or rewritten.
+**Categorization:** **Approved** (product direction; re-staging, not a new invention).
+**Reflected in:** `AI_Product_Principles.md` (Principle 9 annotated), `09_Product_Philosophy/
+Product_Terminology.md` ("Buddy" entry annotated), `04_Product/Version_Roadmap.md` (Future entry for
+Buddy/avatar reintroduction), `Current_Context.md` (2026-08-13 snapshot note).
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

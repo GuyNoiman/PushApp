@@ -274,6 +274,12 @@ Buddy represents the emotional relationship.
 
 AI is simply the technology behind it.
 
+> **Stage: Future — deferred from the MVP (Decision Log D45, 2026-08-13).** The MVP user-facing
+> entity is the coach (meta-agent); there is no avatar/Buddy in the current app. This vision is
+> preserved and may be reintroduced post-MVP. Until then, read this principle as: prefer presenting
+> AI functionality through a warm, non-generic-feeling voice — currently the coach — rather than a
+> raw AI interface; the Buddy companion form is the deeper, Future expression of that same idea.
+
 ---
 
 # Principle 10

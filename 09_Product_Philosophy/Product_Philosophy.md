@@ -161,6 +161,15 @@ Adapt.
 
 Buddy should always make users feel that tomorrow is another opportunity.
 
+> **Stage: Future — deferred from the MVP (Decision Log D45, 2026-08-13).** The MVP user-facing
+> entity is the coach (meta-agent); there is no avatar/Buddy in the current app. Everything above is
+> preserved and may be reintroduced post-MVP. Until then, treat "the coach" as carrying this same
+> emotional-support role (never disappointed, never punishing, always celebrating, always framing
+> tomorrow as another opportunity) without a visual companion form. Other scattered "Buddy" mentions
+> elsewhere on this page (the screen-inventory example, completion reactions, the "always alive"
+> examples, the Journey-creation effort curve) describe this same deferred vision and are covered by
+> this one note rather than repeated individually.
+
 ---
 
 # Growth Happens In Real Life

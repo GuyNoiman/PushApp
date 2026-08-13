@@ -16,7 +16,8 @@ complete/progress a Journey, crediting friends and/or Buddy.
 
 - Journey **create** (name · rhythm · a few Steps · **Starter Step** · the **"why"**)
 - **Check-in loop** + Home "what to do now"
-- **Buddy** — evolves, reacts to check-ins, celebrates completions
+- **Buddy** — evolves, reacts to check-ins, celebrates completions — **Stage: Future, deferred from
+  the MVP (Decision Log D45, 2026-08-13); see the Notes section below for the current state.**
 - **Social** — add friends → **Allies** see progress → **cheer / nudge**; see theirs too
 - **Coin economy + Shop** — earn coins → Buddy cosmetics (shallow: coins only, small set)
 - **Missions + Login rewards** (shallow) — the return loop
@@ -70,6 +71,16 @@ Goal: creator/business ecosystem and the differentiated AI/experience layer that
 
 ## Notes
 
+- **Buddy / avatar — currently Future, has no fixed version slot (Decision Log D45, 2026-08-13).**
+  This document predates the AI-adaptive-coach pivot (D23, 2026-08-01) and the mature-redesign
+  (2026-08-07) that made the coach — not Buddy — the MVP's central user-facing entity; the app
+  currently has no avatar. The Buddy vision below (V1's evolving companion, V3's customization depth,
+  V4's voice & conversations) is fully preserved and not cut — it is simply not yet re-placed on this
+  roadmap's version ladder pending a founder decision on when/how it's reintroduced. A **`04_Product/
+  PRD/Future/` stub** (following the pattern already used for other deferred features, see `PRD/
+  README.md` → "Future") is the natural home for a scoped Buddy-reintroduction PRD whenever that
+  design work is picked up — none exists yet; this note flags the gap rather than speculatively
+  authoring one.
 - **Investor framing:** V1–V2 = "we can prove people change behavior here"; V3 = "we can charge";
   V4 = "platform + moat" (creators, businesses, adaptive AI, rich experiences). The **Rich Step
   Types** (§35) and **Marketplace** are the strongest "vision" slides.

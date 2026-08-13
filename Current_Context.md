@@ -109,6 +109,12 @@ gaps they surfaced, worth carrying into the ▶ NEXT queue:
 7. **Partner coaching package (v0.7):** feedback already sent; the on-call flow + expert calibration +
    safety-floor work is tracked there, not in this repo's task list.
 
+**Open decision resolved today:** Buddy/avatar is now formally staged **Future** (not MVP) — Decision
+Log **D45**. The coach (meta-agent) is the MVP's central user-facing entity; there is no avatar/Buddy
+in the current app. The full Buddy vision is preserved, annotated (not deleted) in
+`AI_Product_Principles.md` Principle 9, `09_Product_Philosophy/Product_Terminology.md` and
+`Product_Philosophy.md`, and `04_Product/Version_Roadmap.md` / `POC_and_MVP_Scope.md`.
+
 **Git status:** everything above is committed by topic tonight, on branch
 `feat/buddy-3d-and-reminders`, **not pushed** — the founder has not asked for a push.
 

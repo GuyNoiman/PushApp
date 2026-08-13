@@ -6,6 +6,15 @@ Status: **POC + MVP + roadmap staging defined 2026-07-08** (jointly with founder
 > independently. It builds on the staging framework in `Product_Roadmap_and_Scope.md`
 > (Vision → POC → MVP → Commercial → Future).
 
+> **Buddy status note (Decision Log D45, 2026-08-13):** this document was drafted 2026-07-08, before
+> the AI-adaptive-coach pivot (D23, 2026-08-01) and the mature-redesign (2026-08-07) that made the
+> coach — not Buddy — the MVP's central user-facing entity. Every "Buddy" reference below (the POC
+> hypothesis itself, the reward loop, the cosmetics economy) is preserved as accurate history of the
+> original POC bet and is **not cut** — it is re-staged **Future**, deferred from the current MVP. The
+> app currently has no avatar; the user talks directly to the coach. See D45 for the full reasoning
+> and `Current_Context.md` / `06_Decisions/Decision_Log.md` (D23, D29–D45) for how the actual shipped
+> scope diverged from this original POC/MVP framing.
+
 ---
 
 # 1. Proof of Concept (POC)

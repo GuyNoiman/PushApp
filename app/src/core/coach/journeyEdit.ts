@@ -19,7 +19,8 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import type { Cadence, Rhythm } from '../types/domain';
+import type { Cadence, Journey, Rhythm, Step } from '../types/domain';
+import { validateDependency } from '../status/stepDependencies';
 
 /** The valid {@link Rhythm} values, used to reject anything the model invents. */
 const RHYTHMS: readonly Rhythm[] = ['daily', 'few-times-week', 'weekly'];
@@ -31,6 +32,12 @@ export interface AddStepEdit {
   title: string;
   description?: string;
   cadence?: Cadence;
+  /**
+   * An existing predecessor Step id this new Step should depend on (Step Dependencies). The parser
+   * only keeps a KNOWN id; the engine re-validates it via {@link validateDependency} after minting the
+   * new Step (its own id exists only then) and drops it if invalid.
+   */
+  dependsOnStepId?: string;
 }
 
 /** An in-place change to an EXISTING Step, addressed by its id. */
@@ -39,6 +46,12 @@ export interface EditStepEdit {
   title?: string;
   description?: string;
   cadence?: Cadence;
+  /**
+   * A predecessor this Step should depend on (Step Dependencies) — already VALIDATED by the parser via
+   * {@link validateDependency} against the real Journey (same Milestone, earlier, no cycle, ≤3). Present
+   * only when the edit authors a valid dependency; the engine applies it (re-guarding defensively).
+   */
+  dependsOnStepId?: string;
 }
 
 /**
@@ -78,6 +91,10 @@ export interface JourneyEditStepContext {
   cadence: Cadence;
   done: boolean;
   dropped: boolean;
+  /** The owning {@link Milestone} id (Step Dependencies validation is Milestone-aware). */
+  milestoneId?: string;
+  /** The Step's current predecessor id, so dependency validation sees the real graph (cycle/≤3 checks). */
+  dependsOnStepId?: string;
 }
 
 /** The on-device projection of the Journey being edited — everything the parser validates against. */
@@ -120,17 +137,76 @@ function cleanWhy(value: unknown): string[] | undefined {
   return lines.length > 0 ? lines : undefined;
 }
 
+/**
+ * Build a minimal {@link Journey} from the on-device edit context so {@link validateDependency} can run
+ * AT PARSE TIME against the REAL Step graph (ids, order, Milestone, existing predecessors). Only the
+ * fields the validator reads are populated; the rest are inert placeholders (this is never persisted).
+ */
+function toValidationJourney(context: JourneyEditContext): Journey {
+  return {
+    id: context.id,
+    title: context.title,
+    why: context.why,
+    durationDays: context.durationDays,
+    rhythm: context.rhythm,
+    createdAt: 0,
+    steps: context.steps.map(
+      (s): Step => ({
+        id: s.id,
+        title: s.title,
+        isStarterStep: false,
+        cadence: s.cadence,
+        done: s.done,
+        ...(s.dropped ? { dropped: true } : {}),
+        ...(s.milestoneId !== undefined ? { milestoneId: s.milestoneId } : {}),
+        ...(s.dependsOnStepId !== undefined ? { dependsOnStepId: s.dependsOnStepId } : {}),
+      }),
+    ),
+  };
+}
+
+/**
+ * Resolve a raw predecessor reference on a Step edit (Step Dependencies) — either `dependsOnStepId` (a
+ * Step id) or a positional `dependsOnStepIndex` (index into the Journey's Steps) — to a KNOWN
+ * predecessor id, or undefined when neither is present/known. Structural only; the caller validates.
+ */
+function resolveDependencyRef(
+  rec: { dependsOnStepId?: unknown; dependsOnStepIndex?: unknown },
+  context: JourneyEditContext,
+): string | undefined {
+  if (
+    typeof rec.dependsOnStepId === 'string' &&
+    context.steps.some((s) => s.id === rec.dependsOnStepId)
+  ) {
+    return rec.dependsOnStepId;
+  }
+  if (typeof rec.dependsOnStepIndex === 'number' && Number.isInteger(rec.dependsOnStepIndex)) {
+    return context.steps[rec.dependsOnStepIndex]?.id;
+  }
+  return undefined;
+}
+
 /** Validate one `addSteps` entry: a non-empty title is required; description/cadence are optional. */
-function cleanAddStep(value: unknown): AddStepEdit | undefined {
+function cleanAddStep(value: unknown, context: JourneyEditContext): AddStepEdit | undefined {
   if (!value || typeof value !== 'object') return undefined;
-  const rec = value as { title?: unknown; description?: unknown; cadence?: unknown };
+  const rec = value as {
+    title?: unknown;
+    description?: unknown;
+    cadence?: unknown;
+    dependsOnStepId?: unknown;
+    dependsOnStepIndex?: unknown;
+  };
   const title = cleanString(rec.title);
   if (!title) return undefined; // never add a nameless Step
   const description = cleanString(rec.description);
+  // A new Step cannot be validated by validateDependency yet (its id is minted by the engine): keep
+  // only a KNOWN predecessor id here and let the engine re-validate + drop it after minting.
+  const dependsOnStepId = resolveDependencyRef(rec, context);
   return {
     title,
     ...(description ? { description } : {}),
     ...(isCadence(rec.cadence) ? { cadence: rec.cadence } : {}),
+    ...(dependsOnStepId ? { dependsOnStepId } : {}),
   };
 }
 
@@ -140,18 +216,41 @@ function cleanAddStep(value: unknown): AddStepEdit | undefined {
  */
 function cleanEditStep(value: unknown, context: JourneyEditContext): EditStepEdit | undefined {
   if (!value || typeof value !== 'object') return undefined;
-  const rec = value as { stepId?: unknown; title?: unknown; description?: unknown; cadence?: unknown };
+  const rec = value as {
+    stepId?: unknown;
+    title?: unknown;
+    description?: unknown;
+    cadence?: unknown;
+    dependsOnStepId?: unknown;
+    dependsOnStepIndex?: unknown;
+  };
   const stepId = typeof rec.stepId === 'string' ? rec.stepId : '';
   if (!context.steps.some((s) => s.id === stepId)) return undefined; // guard unknown/cross-Journey ids
   const title = cleanString(rec.title);
   const description = cleanString(rec.description);
   const cadence = isCadence(rec.cadence) ? rec.cadence : undefined;
-  if (title === undefined && description === undefined && cadence === undefined) return undefined;
+  // Dependency authoring (Step Dependencies): resolve the predecessor ref, then VALIDATE it against the
+  // real Journey (same Milestone, earlier, single predecessor, no cycle, ≤3). Anything invalid is dropped.
+  const predecessorId = resolveDependencyRef(rec, context);
+  const dependsOnStepId =
+    predecessorId !== undefined &&
+    validateDependency(stepId, predecessorId, toValidationJourney(context))
+      ? predecessorId
+      : undefined;
+  if (
+    title === undefined &&
+    description === undefined &&
+    cadence === undefined &&
+    dependsOnStepId === undefined
+  ) {
+    return undefined;
+  }
   return {
     stepId,
     ...(title ? { title } : {}),
     ...(description ? { description } : {}),
     ...(cadence ? { cadence } : {}),
+    ...(dependsOnStepId ? { dependsOnStepId } : {}),
   };
 }
 
@@ -189,7 +288,9 @@ export function extractJourneyEdit(text: string, context: JourneyEditContext): J
   if (durationDays !== undefined) edit.durationDays = Math.round(durationDays);
 
   if (Array.isArray(rec.addSteps)) {
-    const adds = rec.addSteps.map(cleanAddStep).filter((s): s is AddStepEdit => s !== undefined);
+    const adds = rec.addSteps
+      .map((s) => cleanAddStep(s, context))
+      .filter((s): s is AddStepEdit => s !== undefined);
     if (adds.length > 0) edit.addSteps = adds;
   }
 

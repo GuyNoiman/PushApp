@@ -74,6 +74,10 @@ function buildContext(journey: Journey): JourneyEditContext {
       cadence: s.cadence,
       done: s.done,
       dropped: s.dropped ?? false,
+      // Carry the dependency graph (Step Dependencies) so the parser can validate a coach-authored
+      // dependency against the real Steps (Milestone-aware, cycle/≤3 checks).
+      ...(s.milestoneId !== undefined ? { milestoneId: s.milestoneId } : {}),
+      ...(s.dependsOnStepId !== undefined ? { dependsOnStepId: s.dependsOnStepId } : {}),
     })),
   };
 }

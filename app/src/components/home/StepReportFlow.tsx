@@ -70,8 +70,10 @@ export function StepReportFlow({
   if (!step) return null;
   const { journeyId, step: s, status } = step;
 
-  // Past (closed) weeks are read-only on Home (D35.3) — the sheet disables its report actions.
-  const locked = isInClosedWeek(s.plannedFor);
+  // Report actions are disabled when the Step is read-only: a past (closed) week (D35.3), OR a Step
+  // LOCKED by an unmet dependency (Step Dependencies) — a locked dependent must never independently
+  // record a report/miss; it becomes actionable only once its predecessor unlocks it.
+  const locked = isInClosedWeek(s.plannedFor) || step.locked;
 
   // Moving OUT of `completed` first clears the completion via reverseReport (D36), so the target
   // report (partial / couldn't / postpone / reschedule) can actually take — checkInStep/markPartial
@@ -115,9 +117,27 @@ export function StepReportFlow({
         setStage('partialNote');
         break;
       case 'couldnt':
-        // Let this occurrence go — free, no penalty (couldnt → grace lever).
-        reverseIfCompleted();
-        void reportAndReview('cancel', 'couldnt');
+        // Let this occurrence go — free, no penalty (couldnt → grace lever). If OTHER Steps depend on
+        // this one (Step Dependencies), first confirm the consequence: the dependents keep waiting until
+        // this Step is done, and it (with any scheduled chain) comes back next week. Confirm → record the
+        // not-done AND defer the chain forward; decline → nothing happens (no report, no reschedule). A
+        // Step with no dependents behaves exactly as before.
+        if (core.hasDependentSteps(journeyId, s.id)) {
+          Alert.alert(t('dependents.deferConfirm.title'), t('dependents.deferConfirm.message'), [
+            { text: t('dependents.deferConfirm.cancel'), style: 'cancel' },
+            {
+              text: t('dependents.deferConfirm.confirm'),
+              onPress: () => {
+                reverseIfCompleted();
+                core.deferDependents(journeyId, s.id);
+                void reportAndReview('cancel', 'couldnt');
+              },
+            },
+          ]);
+        } else {
+          reverseIfCompleted();
+          void reportAndReview('cancel', 'couldnt');
+        }
         break;
       case 'postpone':
         reverseIfCompleted();

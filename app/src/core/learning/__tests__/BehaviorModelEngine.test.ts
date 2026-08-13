@@ -138,6 +138,21 @@ describe('BehaviorModelEngine — slip detector (tick)', () => {
     expect(model.getRawLog()[0]).toMatchObject({ plannedFor: NOW - 1000, at: NOW });
   });
 
+  it('does NOT flag a LOCKED Step whose plannedFor elapsed, but still flags a non-locked one', () => {
+    // b depends on a; a is unreported → b is locked. Both have an elapsed plannedFor.
+    const a = step({ id: 'a', milestoneId: 'm1', plannedFor: NOW - 1000 });
+    const b = step({ id: 'b', milestoneId: 'm1', plannedFor: NOW - 1000, dependsOnStepId: 'a' });
+    const { bus, model } = harness([journey({ steps: [a, b] })]);
+    const missed: string[] = [];
+    bus.on('StepMissed', (e) => missed.push(e.stepId));
+
+    model.tick(NOW);
+
+    // Only the non-locked predecessor slips; the locked dependent never emits StepMissed.
+    expect(missed).toEqual(['a']);
+    expect(model.getRawLog().filter((r) => r.kind === 'slipped').map((r) => r.stepId)).toEqual(['a']);
+  });
+
   it('does not flag a future, an unplanned, a done, or a completed-Journey Step', () => {
     const j = journey({
       steps: [

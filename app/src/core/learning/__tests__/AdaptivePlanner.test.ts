@@ -173,6 +173,36 @@ describe('replan — deadline load-shedding, then at-risk honesty', () => {
   });
 });
 
+describe('replan — never auto-drops a dependency-linked Step (Step Dependencies guard)', () => {
+  it('sheds non-dependency load instead of dropping a linked Step, leaving the chain intact', () => {
+    const targetDate = NOW + 7 * MS_PER_DAY;
+    const steps = Array.from({ length: 6 }, () =>
+      step({ plannedFor: NOW + 6 * MS_PER_DAY, estimatedDuration: 60 }),
+    );
+    // Make the TAIL a dependency chain: steps[5] depends on steps[4]. Without the guard the tail is
+    // exactly what the load-shed drops first — so this proves the guard skips it.
+    steps[5].dependsOnStepId = steps[4].id;
+
+    const result = replan(
+      journey(steps),
+      insight({ paceRatio: 0.3 }),
+      constraints({ targetDate, weeklyAvailabilityMinutes: 140 }),
+      undefined,
+      NOW,
+    );
+
+    const removed = new Set(
+      result.stepAdjustments.filter((a) => a.kind === 'removed').map((a) => a.stepId),
+    );
+    // The dependency-linked Steps are NEVER dropped…
+    expect(removed.has(steps[4].id)).toBe(false);
+    expect(removed.has(steps[5].id)).toBe(false);
+    // …but the shed still happened — non-dependency scope was dropped, and the plan is honestly at-risk.
+    expect(removed.size).toBeGreaterThan(0);
+    expect(result.atRisk).toBe(true);
+  });
+});
+
 describe('replan — open-ended habit that is slipping shrinks the session', () => {
   it('shrinks every remaining Step toward the floor and never reschedules or drops scope', () => {
     const steps = [

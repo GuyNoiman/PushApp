@@ -74,6 +74,17 @@ export function replan(
     .filter((s) => !s.done)
     .map((s) => ({ step: s, plannedFor: s.plannedFor, shrunk: false, dropped: false }));
 
+  // Step Dependencies: a Step that is part of a dependency (it has a predecessor, OR another Step
+  // depends on it) is SIGNIFICANT and must never be auto-dropped by the load-shed — the coach prefers
+  // to shrink/defer it and shed non-dependency load instead. Collect both ends of every link.
+  const dependencyLinked = new Set<string>();
+  for (const s of journey.steps) {
+    if (s.dependsOnStepId) {
+      dependencyLinked.add(s.id);
+      dependencyLinked.add(s.dependsOnStepId);
+    }
+  }
+
   const hasDeadline = constraints.targetDate != null;
   const fallbackMinutes =
     insight.typicalSessionMinutes > 0 ? insight.typicalSessionMinutes : policy.session.defaultMinutes;
@@ -136,11 +147,23 @@ export function replan(
           }
         }
       }
-      // If it still won't fit, drop scope from the tail — and be honest that we did.
+      // If it still won't fit, drop scope from the tail — and be honest that we did. Step Dependencies:
+      // NEVER auto-drop a dependency-linked Step; shed the LAST non-dependency Step instead. When only
+      // dependency-linked Steps remain, stop dropping (leave the chain intact) and fall through to
+      // at-risk rather than break a dependency.
       let droppedAny = false;
-      while (sumMinutes(alive, durOf) > capacity && alive.length > 0) {
-        alive[alive.length - 1].dropped = true;
-        alive = alive.slice(0, -1);
+      for (;;) {
+        if (sumMinutes(alive, durOf) <= capacity || alive.length === 0) break;
+        let idx = -1;
+        for (let i = alive.length - 1; i >= 0; i--) {
+          if (!dependencyLinked.has(alive[i].step.id)) {
+            idx = i;
+            break;
+          }
+        }
+        if (idx === -1) break; // only dependency-linked load left — do not drop it
+        alive[idx].dropped = true;
+        alive = alive.filter((w) => !w.dropped);
         droppedAny = true;
       }
       // Shed scope, or a plan we still cannot hold ⇒ at-risk (never a silent failure).

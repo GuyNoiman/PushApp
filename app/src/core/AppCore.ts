@@ -88,6 +88,7 @@ import type {
 } from './types/domain';
 import { buildCompletionCard } from './celebration/completionCard';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
+import { directDependentsOf } from './status/stepDependencies';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
 import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
 import { resolveReminderRule, type JourneyReminder } from './util/reminderView';
@@ -1463,6 +1464,29 @@ export class AppCore {
   }
 
   /**
+   * Whether a Step has any DIRECT dependents (Step Dependencies) — a pure read the report flow uses to
+   * decide whether reporting the Step not-done needs the "this also moves the Steps that depend on it"
+   * confirmation. False for an unknown Journey/Step. Safe to call during render.
+   */
+  hasDependentSteps(journeyId: string, stepId: string): boolean {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    const step = journey?.steps.find((s) => s.id === stepId);
+    if (!journey || !step) return false;
+    return directDependentsOf(step, journey).length > 0;
+  }
+
+  /**
+   * Defer a predecessor's whole DEPENDENT chain forward by one week (Step Dependencies) — the cascade
+   * the report flow runs after the user confirms a predecessor is not done. Delegates to the
+   * JourneyEngine (which moves each dependent's `plannedFor` +1 week via the {@link rescheduleStep}
+   * seam), then persists + notifies. No-op for an unknown Journey/Step.
+   */
+  deferDependents(journeyId: string, predecessorStepId: string): void {
+    this.journeyEngine.deferDependents(journeyId, predecessorStepId);
+    this.onChanged();
+  }
+
+  /**
    * A Journey's completion ratio in [0,1] (done Steps / total). Facade over the
    * JourneyEngine selector so callers (e.g. SocialProvider's progress publish)
    * don't recompute Step math inline (Engineering Bible §19).
@@ -1479,6 +1503,17 @@ export class AppCore {
    */
   getStepStatus(step: Step): StepStatus {
     return deriveStepStatus(step, this.state.reasonLog ?? []);
+  }
+
+  /**
+   * The raw on-device Daily-Reporting log (D36) in append order — the SAME log {@link getStepStatus}
+   * and the engines derive from. Presentational callers that arrange Step Dependencies
+   * ({@link ../components/journey/journeyView.computeWeekLayout}) read it so their partial-unlock /
+   * promote-on-unlock view matches the engine's `locked` flag exactly. On-device only (G1) — the log
+   * never leaves the device; this is an in-process read for the UI.
+   */
+  getReasonLog(): readonly ReasonEntry[] {
+    return this.state.reasonLog ?? [];
   }
 
   /**

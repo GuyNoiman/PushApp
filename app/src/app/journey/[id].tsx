@@ -27,10 +27,11 @@ import { StepStatusChip } from '@/components/home/StepStatusChip';
 import { JourneyDreamLink } from '@/components/journey/JourneyDreamLink';
 import { JourneyReminderCard } from '@/components/journey/JourneyReminderCard';
 import { JourneySupportCircle } from '@/components/journey/JourneySupportCircle';
-import { shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
+import { computeWeekLayout, shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
 import { featureFlags } from '@/core/config/featureFlags';
 import { dreamsForJourney } from '@/core/dreams/dreams';
 import type { StepStatus } from '@/core/status/stepStatus';
+import { remainingDaysInWeek } from '@/core/util/week';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
@@ -38,6 +39,12 @@ import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
+
+// Per-layer offset of a waiting card behind the actionable top card — ~10px down + ~10px toward the
+// reading-direction's TRAILING edge, per the approved deck mockup (Step_Dependency_Cards.html Rev 2).
+const STACK_OFFSET = 10;
+// Slice 9 — surface the runway nudge only when this many days (or fewer) remain in the current week.
+const NUDGE_RUNWAY_DAYS = 3;
 
 export default function JourneyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -88,9 +95,21 @@ export default function JourneyDetailScreen() {
   // Weekly model: page through the Journey's Steps one week at a time (founder design).
   const weekly = stepsByWeek(journey);
   const shownWeek = Math.min(weekly.totalWeeks - 1, Math.max(0, weekIndex ?? weekly.currentWeek));
-  const weekSteps = weekly.weeks[shownWeek] ?? [];
   const goWeek = (delta: number) =>
     setWeekIndex(Math.min(weekly.totalWeeks - 1, Math.max(0, shownWeek + delta)));
+
+  // Step Dependencies (Slices 8–9): arrange the shown week into render units — plain Steps and STACKS
+  // (an actionable top Step with its still-waiting dependents piled behind it). computeWeekLayout is
+  // the SINGLE display-arrangement source (journeyView), read with the SAME on-device reasonLog the
+  // engine's `locked` flag uses, so the pager and Home never disagree on what is waiting.
+  const layout = computeWeekLayout(journey, shownWeek, Date.now(), core.getReasonLog());
+  // Slice 9 — the calm "handle the gating Step early" nudge: only on the CURRENT week (never a
+  // future/past page), only when a stack actually gates Steps this week, and only when the week's
+  // runway is short. Title-free, Buddy-voiced, local UI copy (Step titles stay on-device, G1).
+  const showRunwayNudge =
+    shownWeek === weekly.currentWeek &&
+    layout.some((u) => u.kind === 'stack') &&
+    remainingDaysInWeek(Date.now()) <= NUDGE_RUNWAY_DAYS;
 
   // Editing runs through the coach's understanding call, so it is gated on liveCoach; a completed
   // Journey is never editable (its plan is finished).
@@ -258,20 +277,45 @@ export default function JourneyDetailScreen() {
                 </Pressable>
               </View>
             </View>
-            {weekSteps.length === 0 ? (
+            {layout.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
                 {t('detail.emptyWeek')}
               </ThemedText>
             ) : (
               <View style={styles.stepList}>
-                {weekSteps.map((step) => (
-                  <StepRow
-                    key={step.id}
-                    step={step}
-                    isNext={!journey.completedAt && step.id === nextStep?.id}
-                    reportStatus={core.getStepStatus(step)}
-                  />
-                ))}
+                {layout.map((unit) =>
+                  unit.kind === 'step' ? (
+                    <StepRow
+                      key={unit.step.id}
+                      step={unit.step}
+                      isNext={!journey.completedAt && unit.step.id === nextStep?.id}
+                      reportStatus={core.getStepStatus(unit.step)}
+                    />
+                  ) : (
+                    <StepStack
+                      key={unit.top.id}
+                      top={unit.top}
+                      depth={unit.depth}
+                      isNext={!journey.completedAt && unit.top.id === nextStep?.id}
+                      reportStatus={core.getStepStatus(unit.top)}
+                    />
+                  ),
+                )}
+              </View>
+            )}
+
+            {/* Slice 9 — a gentle, Buddy-voiced runway nudge under the week's Steps (title-free). */}
+            {showRunwayNudge && (
+              <View style={[styles.nudge, { backgroundColor: theme.tealTint, borderColor: theme.tint }]}>
+                <Ionicons
+                  name="sparkles-outline"
+                  size={16}
+                  color={theme.tealStrong}
+                  style={styles.nudgeIcon}
+                />
+                <ThemedText type="small" style={[styles.nudgeText, { color: theme.tealStrong }]}>
+                  {t('dependents.nudge.line')}
+                </ThemedText>
               </View>
             )}
           </View>
@@ -582,6 +626,76 @@ function StepRow({
   );
 }
 
+/**
+ * A dependency STACK (Step Dependencies, Slice 8): the actionable `top` Step as a normal, interactive
+ * {@link StepRow}, with `depth` EQUAL-SIZE blank card layers stacked directly BEHIND it — a deck. Each
+ * hidden layer is nudged ~{@link STACK_OFFSET}px down and toward the reading-direction's trailing edge
+ * (mirrors under RTL via `dir`), with a blank face so only the top card shows content. The hidden
+ * layers are decorative and non-interactive; only the top card reports. A gentle "waiting" hint sits
+ * below the deck, framed as coming-up-next (never "locked / blocked"). Matches the approved Rev 2
+ * mockup (04_Product/UX/Step_Dependency_Cards.html).
+ */
+function StepStack({
+  top,
+  depth,
+  isNext,
+  reportStatus,
+}: {
+  top: Step;
+  depth: number;
+  isNext: boolean;
+  reportStatus: StepStatus;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation('journey');
+  const dir = isRTL() ? -1 : 1;
+  // Layers 1..depth, nearest-behind → farthest; the farthest sits deepest (largest offset).
+  const layers = Array.from({ length: depth }, (_, i) => i + 1);
+
+  return (
+    <View>
+      <View style={[styles.stackShell, { marginBottom: depth * STACK_OFFSET }]}>
+        {layers.map((n) => (
+          <View
+            key={n}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[
+              styles.stackBehind,
+              CARD_SHADOW,
+              {
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.hairline,
+                transform: [
+                  { translateX: dir * n * STACK_OFFSET },
+                  { translateY: n * STACK_OFFSET },
+                ],
+              },
+            ]}
+          />
+        ))}
+        <View style={styles.stackFront}>
+          <StepRow step={top} isNext={isNext} reportStatus={reportStatus} />
+        </View>
+      </View>
+      <View
+        style={styles.stackHint}
+        accessible
+        accessibilityLabel={t('dependents.waiting.a11y', { predecessor: top.title })}>
+        <Ionicons
+          name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+          size={13}
+          color={theme.textSecondary}
+          style={styles.stackHintIcon}
+        />
+        <ThemedText type="small" themeColor="textSecondary" style={styles.stackHintText}>
+          {t('dependents.waiting.hint', { count: depth, predecessor: top.title })}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
+
 /** Calm work-surface card depth (matches ExploreCards.tsx) — subtle, not game-juice. */
 const CARD_SHADOW = {
   shadowColor: '#2E2E2C',
@@ -713,6 +827,53 @@ const styles = StyleSheet.create({
   },
   stepList: {
     gap: Spacing.two,
+  },
+  // ── Dependency deck (Slice 8) ──────────────────────────────────────────────
+  // The shell is sized by the in-flow top card; the blank layers fill it absolutely and are then
+  // translated, so they stay pixel-identical to the top card (a translate never resizes). marginBottom
+  // is set inline from `depth` to clear the deepest offset layer before the hint.
+  stackShell: {
+    position: 'relative',
+  },
+  stackBehind: {
+    position: 'absolute',
+    top: 0,
+    start: 0,
+    end: 0,
+    bottom: 0,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+  },
+  stackFront: {
+    zIndex: 1,
+  },
+  stackHint: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.one,
+    marginTop: Spacing.two,
+    paddingStart: Spacing.one,
+  },
+  stackHintIcon: {
+    marginTop: 2,
+  },
+  stackHintText: {
+    flex: 1,
+  },
+  nudge: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+  },
+  nudgeIcon: {
+    marginTop: 1,
+  },
+  nudgeText: {
+    flex: 1,
   },
   stepRow: {
     flexDirection: 'row',

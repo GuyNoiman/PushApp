@@ -67,6 +67,18 @@ export interface Step {
   plannedFor?: number;
   /** The {@link Milestone} (mid-layer) this Step belongs to, when the Journey has Milestones. */
   milestoneId?: string;
+  /**
+   * The id of the SINGLE predecessor Step this Step depends on (Step Dependencies, linear). When set,
+   * this Step is LOCKED until the predecessor's derived status ({@link deriveStepStatus}) is
+   * `completed`/`partially_completed` (see `core/status/stepDependencies.ts`, the single source of
+   * dependency truth). Dependencies are linear (one predecessor), chained up to 3 Steps, and only ever
+   * link Steps WITHIN THE SAME {@link Milestone}. Fail-open: a missing/unknown/`dropped` predecessor
+   * counts as unlocked, so a dependent can never be permanently stranded. Optional/additive — a Step
+   * without a dependency simply has none, so existing Journeys keep their current behaviour (no
+   * migration needed). ON-DEVICE ONLY — a local ordering hint, never emitted or synced; covered by
+   * export/deletion.
+   */
+  dependsOnStepId?: string;
   /** Relative difficulty 1..5 the Planner/DomainExpert assigned. Optional metadata. */
   difficulty?: number;
   /**

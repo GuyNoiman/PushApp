@@ -33,6 +33,7 @@ import {
   type NewDreamInput,
 } from '../dreams/dreams';
 import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/stepStatus';
+import { isStepLocked, transitiveDependentsOf, validateDependency } from '../status/stepDependencies';
 import { buildCompletionCard } from '../celebration/completionCard';
 
 /**
@@ -42,6 +43,9 @@ import { buildCompletionCard } from '../celebration/completionCard';
  * records, and never the `note`.
  */
 const MAX_REASONS_PER_STEP = 20;
+
+/** One calendar week in ms — the amount {@link JourneyEngine.deferDependents} shifts a slipped chain. */
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Remove `id` from a Dream-links list, returning undefined when the result is empty so a Journey's
@@ -67,6 +71,20 @@ export interface NewStepInput {
   milestoneId?: string;
   /** Optional relative difficulty 1..5 (adaptive coach, S1). */
   difficulty?: number;
+  /**
+   * POSITIONAL dependency for {@link createJourney} (Step Dependencies, linear): an index into the
+   * SAME `input.steps[]`, which MUST be `< own index` (a Step may only depend on an earlier one).
+   * Because a Step's `id` is minted in {@link makeStep}, a build-time dependency is expressed
+   * positionally and RESOLVED to a real {@link Step.dependsOnStepId} after minting (dropped if it
+   * fails {@link validateDependency}). Ignored by the addSteps edit path (which passes a resolved id).
+   */
+  dependsOnStepIndex?: number;
+  /**
+   * An ALREADY-RESOLVED predecessor id (Step Dependencies). Used by the addSteps edit path, which
+   * already holds minted ids; {@link makeStep} carries it straight through. The creation path uses
+   * {@link dependsOnStepIndex} instead (resolved positionally after minting).
+   */
+  dependsOnStepId?: string;
 }
 
 export interface NewJourneyInput {
@@ -96,6 +114,13 @@ export interface TodayStep {
   step: Step;
   /** The DERIVED Daily-Reporting status (D36) — from `done`/`dropped` + the reasonLog + any clear. */
   status: StepStatus;
+  /**
+   * Whether this Step is LOCKED by an unmet dependency (Step Dependencies). Computed ONCE here via
+   * {@link isStepLocked} so the UI reads a single source of truth. Always `false` in
+   * {@link getTodaySteps} (locked Steps are excluded from the actionable subset); it is meaningful in
+   * {@link getWeekSteps}, where a locked Step is KEPT but flagged so the UI can render + disable it.
+   */
+  locked: boolean;
 }
 
 export class JourneyEngine {
@@ -125,9 +150,35 @@ export class JourneyEngine {
       ...(input.createdVia !== undefined ? { createdVia: input.createdVia } : {}),
     };
 
+    this.resolveDependencies(steps, input.steps, journey);
+
     this.getState().journeys.push(journey);
     this.bus.emit({ type: 'JourneyCreated', journey });
     return journey;
+  }
+
+  /**
+   * Resolve each POSITIONAL {@link NewStepInput.dependsOnStepIndex} to the minted predecessor's real
+   * {@link Step.dependsOnStepId}, then DROP any link that fails {@link validateDependency} (Step
+   * Dependencies, linear). Fail-safe: an invalid reference (forward/self, cross-Milestone, a cycle, a
+   * 4th link, or a second predecessor) is silently dropped so the Journey is always created with a
+   * VALID dependency graph — never a broken one. Runs after all Steps are minted (ids exist) and the
+   * Journey's Milestone data is in place (validation is Milestone-aware).
+   */
+  private resolveDependencies(steps: Step[], inputs: NewStepInput[], journey: Journey): void {
+    inputs.forEach((input, index) => {
+      const predecessorIndex = input.dependsOnStepIndex;
+      // Positional guard: an index must point to an EARLIER Step in the same list.
+      if (predecessorIndex == null) return;
+      if (predecessorIndex < 0 || predecessorIndex >= index) return;
+      const dependent = steps[index];
+      const predecessor = steps[predecessorIndex];
+      dependent.dependsOnStepId = predecessor.id;
+      if (!validateDependency(dependent.id, predecessor.id, journey)) {
+        // Invalid link — never persist it (fail-safe).
+        delete dependent.dependsOnStepId;
+      }
+    });
   }
 
   /**
@@ -148,6 +199,7 @@ export class JourneyEngine {
       ...(s.plannedFor !== undefined ? { plannedFor: s.plannedFor } : {}),
       ...(s.milestoneId !== undefined ? { milestoneId: s.milestoneId } : {}),
       ...(s.difficulty !== undefined ? { difficulty: s.difficulty } : {}),
+      ...(s.dependsOnStepId !== undefined ? { dependsOnStepId: s.dependsOnStepId } : {}),
     };
   }
 
@@ -183,6 +235,14 @@ export class JourneyEngine {
       if (change.title !== undefined) step.title = change.title;
       if (change.description !== undefined) step.description = change.description;
       if (change.cadence !== undefined) step.cadence = change.cadence;
+      // Dependency authoring (Step Dependencies): the parser validated it, but re-guard against the
+      // LIVE Journey (defensive, mirrors resolveDependencies) before persisting the link.
+      if (
+        change.dependsOnStepId !== undefined &&
+        validateDependency(step.id, change.dependsOnStepId, journey)
+      ) {
+        step.dependsOnStepId = change.dependsOnStepId;
+      }
     }
 
     // Remove Steps: drop-preserve when there is history, splice when pristine.
@@ -196,9 +256,26 @@ export class JourneyEngine {
       }
     }
 
-    // Add new Steps through the shared builder.
+    // Unlink dangling dependents (Step Dependencies): any Step that pointed at a REMOVED predecessor
+    // clears its `dependsOnStepId` and becomes a normal Step — never left stranded on a gone predecessor.
+    for (const removedId of edit.removeStepIds ?? []) {
+      for (const s of journey.steps) {
+        if (s.dependsOnStepId === removedId) delete s.dependsOnStepId;
+      }
+    }
+
+    // Add new Steps through the shared builder, then validate any dependency now that the id exists.
     for (const add of edit.addSteps ?? []) {
-      journey.steps.push(this.makeStep(add));
+      const step = this.makeStep(add);
+      journey.steps.push(step);
+      // A newly-added Step's dependency can only be checked now (its id was just minted); drop it if
+      // invalid (fail-safe, mirrors createJourney's resolveDependencies).
+      if (
+        step.dependsOnStepId !== undefined &&
+        !validateDependency(step.id, step.dependsOnStepId, journey)
+      ) {
+        delete step.dependsOnStepId;
+      }
     }
 
     this.bus.emit({ type: 'JourneyUpdated', journey });
@@ -632,6 +709,35 @@ export class JourneyEngine {
     this.bus.emit({ type: 'StepDropped', journeyId, stepId });
   }
 
+  /**
+   * Defer a slipped predecessor AND its whole DEPENDENT chain forward by one week (Step Dependencies).
+   * When a predecessor is reported not-done, it must re-appear ACTIONABLE next week WITH its chain —
+   * otherwise next week it sits in a now-closed, read-only week, can never be completed, its dependent
+   * never unlocks, and the Journey becomes uncompletable (the dead-end the fail-open rule exists to
+   * prevent). So we move the predecessor +1 week too, then every Step that transitively depends on it,
+   * all through the SAME {@link rescheduleStep} seam (emitting PlanAdapted per Step) so relative order
+   * is preserved. A Step with no schedule (`plannedFor` absent) is left as-is — nothing to move; that
+   * (even-spread) case relies on the display-pull in computeWeekLayout to re-surface it. No-op for an
+   * unknown Journey/Step, or when nothing depends on the predecessor (no chain to defer).
+   */
+  deferDependents(journeyId: string, predecessorStepId: string): void {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey) return;
+    const predecessor = journey.steps.find((s) => s.id === predecessorStepId);
+    if (!predecessor) return;
+    const dependents = transitiveDependentsOf(predecessor, journey);
+    if (dependents.length === 0) return; // nothing depends on it → leave the predecessor put
+    // Move the predecessor forward too, so it re-appears reachable next week ahead of its chain.
+    if (predecessor.plannedFor != null) {
+      this.rescheduleStep(journeyId, predecessor.id, predecessor.plannedFor + ONE_WEEK_MS);
+    }
+    for (const dependent of dependents) {
+      if (dependent.plannedFor != null) {
+        this.rescheduleStep(journeyId, dependent.id, dependent.plannedFor + ONE_WEEK_MS);
+      }
+    }
+  }
+
   /** Find a Step within a Journey, or undefined if either is missing. */
   private findStep(journeyId: string, stepId: string): Step | undefined {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
@@ -655,7 +761,11 @@ export class JourneyEngine {
     state.reasonLog = log.filter((e) => e.stepId !== stepId || keep.has(e.id));
   }
 
-  /** Steps the user can act on now: the not-yet-done Steps of active (incomplete) Journeys. */
+  /**
+   * Steps the user can act on now: the not-yet-done Steps of active (incomplete) Journeys. A Step
+   * LOCKED by an unmet dependency (Step Dependencies) is EXCLUDED — the actionable "today" subset must
+   * never include a Step the user cannot do yet (its predecessor is still open).
+   */
   getTodaySteps(): TodayStep[] {
     const state = this.getState();
     const reasonLog = state.reasonLog ?? [];
@@ -663,12 +773,13 @@ export class JourneyEngine {
     for (const journey of state.journeys) {
       if (journey.completedAt) continue;
       for (const step of journey.steps) {
-        if (!step.done && !step.dropped) {
+        if (!step.done && !step.dropped && !isStepLocked(step, journey, reasonLog)) {
           today.push({
             journeyId: journey.id,
             journeyTitle: journey.title,
             step,
             status: deriveStepStatus(step, reasonLog),
+            locked: false,
           });
         }
       }
@@ -693,11 +804,13 @@ export class JourneyEngine {
       if (journey.completedAt) continue;
       for (const step of journey.steps) {
         if (step.dropped) continue; // shed from scope — not shown in the week's steps.
+        // A locked Step (Step Dependencies) is KEPT here but flagged so the UI can render it disabled.
         week.push({
           journeyId: journey.id,
           journeyTitle: journey.title,
           step,
           status: deriveStepStatus(step, reasonLog),
+          locked: isStepLocked(step, journey, reasonLog),
         });
       }
     }

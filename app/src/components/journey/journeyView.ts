@@ -7,7 +7,8 @@
  * createdAt + durationDays. This is DISPLAY math only — no rewards/Buddy logic
  * (Engineering Bible §19). When real Phases land, replace these derivations.
  */
-import type { Journey, JourneyStatus, Step } from '@/core/types/domain';
+import type { Journey, JourneyStatus, ReasonEntry, Step } from '@/core/types/domain';
+import { isStepLocked } from '@/core/status/stepDependencies';
 import { resolveJourneyStatus } from '@/core/util/journeyStatus';
 import { weeksBetween } from '@/core/util/week';
 import i18n from '@/i18n';
@@ -125,6 +126,100 @@ export function stepsByWeek(journey: Journey, now: number = Date.now()): Journey
 
   const currentWeek = Math.min(totalWeeks - 1, Math.max(0, weeksBetween(journey.createdAt, now)));
   return { totalWeeks, weeks, currentWeek };
+}
+
+/**
+ * A single render unit for a shown week's Steps (Step Dependencies, Slice 5) — either a plain Step,
+ * or a STACK: an actionable `top` Step with the still-LOCKED dependents piled behind it
+ * (`hiddenChain`, in dependency order). `depth` is how many Steps wait behind the top. The stacked-card
+ * VISUAL is rendered later (Pass 3); this type only describes the arrangement.
+ */
+export type WeekLayoutUnit =
+  | { kind: 'step'; step: Step }
+  | { kind: 'stack'; top: Step; hiddenChain: Step[]; depth: number };
+
+/**
+ * Arrange a shown week's Steps into ordered render units, resolving Step Dependencies into stacks
+ * (Slice 5). PURE display arrangement — it writes NO state and mutates nothing; it only reads
+ * {@link stepsByWeek} plus the dependency helpers to decide what stacks behind what.
+ *
+ * Rules:
+ *  - Same-week stack: a LOCKED dependent whose predecessor is also in this week renders behind that
+ *    predecessor — the actionable predecessor is the stack `top`, the waiting dependents are its
+ *    `hiddenChain` (in order), and `depth` is how many wait.
+ *  - Promote-on-unlock: once a predecessor is partial/complete the next Step moves to the front (a
+ *    normal unit, or the new stack top when a further dependent still waits behind it).
+ *  - Cross-week display-pull: a Step locked by a predecessor NOT shown in this week pulls that
+ *    predecessor in (RENDER-ONLY — no `plannedFor` change) as the stack top; if the predecessor is
+ *    already done the dependent simply renders as a normal unit.
+ *
+ * `reasonLog` powers the predecessor's DERIVED status (a partial unlocks — D36); it defaults to empty
+ * for callers that only track `done`.
+ */
+export function computeWeekLayout(
+  journey: Journey,
+  shownWeek: number,
+  now: number = Date.now(),
+  reasonLog: readonly ReasonEntry[] = [],
+): WeekLayoutUnit[] {
+  const { weeks } = stepsByWeek(journey, now);
+  const weekSteps = weeks[shownWeek] ?? [];
+  const weekIds = new Set(weekSteps.map((s) => s.id));
+  const predecessorOf = (step: Step): Step | undefined =>
+    step.dependsOnStepId ? journey.steps.find((s) => s.id === step.dependsOnStepId) : undefined;
+
+  // The ordered VISUAL node set: the week's Steps, plus any out-of-week predecessor pulled in
+  // (render-only) IN FRONT of a dependent it still locks (cross-week display-pull).
+  const nodes: Step[] = [];
+  const seen = new Set<string>();
+  const pushNode = (step: Step) => {
+    if (!seen.has(step.id)) {
+      seen.add(step.id);
+      nodes.push(step);
+    }
+  };
+  for (const step of weekSteps) {
+    const predecessor = predecessorOf(step);
+    if (predecessor && !weekIds.has(predecessor.id) && isStepLocked(step, journey, reasonLog)) {
+      pushNode(predecessor); // pull the undone out-of-week predecessor in as the stack top
+    }
+    pushNode(step);
+  }
+  const nodeIds = new Set(nodes.map((s) => s.id));
+
+  // Group the nodes into linear chains (single predecessor → single dependent) and arrange each.
+  const units: WeekLayoutUnit[] = [];
+  const consumed = new Set<string>();
+  for (const node of nodes) {
+    if (consumed.has(node.id)) continue;
+    const predecessor = predecessorOf(node);
+    if (predecessor && nodeIds.has(predecessor.id)) continue; // not a chain root — its root handles it
+
+    // Walk the chain forward through the dependents that live in the visual set.
+    const chain: Step[] = [node];
+    let cursor = node;
+    for (;;) {
+      const next = nodes.find((s) => s.dependsOnStepId === cursor.id && !consumed.has(s.id));
+      if (!next || next.id === node.id) break;
+      chain.push(next);
+      cursor = next;
+    }
+    chain.forEach((s) => consumed.add(s.id));
+
+    // The FIRST locked Step's predecessor is the actionable stack top; earlier Steps render normally
+    // and the locked tail piles behind. No locked Step (index -1) — or a locked root with no visible
+    // predecessor (index 0, a fail-safe) — ⇒ every Step is a plain unit.
+    const firstLocked = chain.findIndex((s) => isStepLocked(s, journey, reasonLog));
+    if (firstLocked <= 0) {
+      for (const s of chain) units.push({ kind: 'step', step: s });
+      continue;
+    }
+    for (let i = 0; i < firstLocked - 1; i++) units.push({ kind: 'step', step: chain[i] });
+    const hiddenChain = chain.slice(firstLocked);
+    units.push({ kind: 'stack', top: chain[firstLocked - 1], hiddenChain, depth: hiddenChain.length });
+  }
+
+  return units;
 }
 
 /**

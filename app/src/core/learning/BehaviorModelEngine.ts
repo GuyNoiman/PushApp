@@ -27,6 +27,7 @@ import type { AppState, InsightModel, RawBehaviorRecord, Step } from '../types/d
 import { createId } from '../util/id';
 import { resolveJourneyStatus } from '../util/journeyStatus';
 import { deriveInsights } from '../insights/deriveInsights';
+import { isStepLocked } from '../status/stepDependencies';
 
 /**
  * SECURITY-PRIVACY G5: cap the on-device raw log to a rolling window PER STEP so it never
@@ -69,6 +70,9 @@ export class BehaviorModelEngine {
       if (resolveJourneyStatus(journey) === 'frozen') continue;
       for (const step of journey.steps) {
         if (step.done || step.dropped) continue; // a shed Step is out of scope — never slips.
+        // A LOCKED Step (Step Dependencies) cannot be actioned yet — its predecessor is still open —
+        // so an elapsed `plannedFor` on it is never the user's miss. Never emit StepMissed for it.
+        if (isStepLocked(step, journey, this.getState().reasonLog ?? [])) continue;
         const plannedFor = step.plannedFor;
         if (plannedFor == null || plannedFor > now) continue;
         const alreadyFlagged = this.log.some(

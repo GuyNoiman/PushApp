@@ -172,6 +172,39 @@ describe('JourneyEngine.updateJourney', () => {
     expect(events.some((e) => e.type === 'JourneyUpdated')).toBe(false);
   });
 
+  it('authors a valid dependency via an edit and applies it in place (Step Dependencies, Slice 7)', () => {
+    const { engine } = setup();
+    const journey = seedJourney(engine);
+    const [a, b] = journey.steps;
+
+    engine.updateJourney(journey.id, {
+      editSteps: [{ stepId: b.id, dependsOnStepId: a.id }],
+    });
+
+    expect(journey.steps.find((s) => s.id === b.id)?.dependsOnStepId).toBe(a.id);
+  });
+
+  it('unlinks dependents when their predecessor is removed (dangling → normal Step)', () => {
+    const { engine } = setup();
+    const journey = seedJourney(engine);
+    const [a, b, c] = journey.steps;
+    // Chain a → b → c, then remove the pristine predecessor a.
+    engine.updateJourney(journey.id, {
+      editSteps: [
+        { stepId: b.id, dependsOnStepId: a.id },
+        { stepId: c.id, dependsOnStepId: b.id },
+      ],
+    });
+    expect(journey.steps.find((s) => s.id === b.id)?.dependsOnStepId).toBe(a.id);
+
+    engine.updateJourney(journey.id, { removeStepIds: [a.id] });
+
+    // a is gone (pristine → spliced); b no longer points at it — it became a normal Step. c still → b.
+    expect(journey.steps.some((s) => s.id === a.id)).toBe(false);
+    expect(journey.steps.find((s) => s.id === b.id)?.dependsOnStepId).toBeUndefined();
+    expect(journey.steps.find((s) => s.id === c.id)?.dependsOnStepId).toBe(b.id);
+  });
+
   it('leaves the create path unchanged (Steps still built the same way)', () => {
     const { engine, state } = setup();
     const journey = seedJourney(engine);

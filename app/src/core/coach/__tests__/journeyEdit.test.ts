@@ -72,6 +72,67 @@ describe('extractJourneyEdit', () => {
   });
 });
 
+describe('extractJourneyEdit — dependency authoring (Step Dependencies, Slice 7)', () => {
+  it('authors a VALID dependency on an existing Step (predecessor earlier, same Milestone)', () => {
+    const json = JSON.stringify({ editSteps: [{ stepId: 'step_b', dependsOnStepId: 'step_a' }] });
+    const edit = extractJourneyEdit(json, context());
+    expect(edit.editSteps).toEqual([{ stepId: 'step_b', dependsOnStepId: 'step_a' }]);
+  });
+
+  it('resolves a POSITIONAL predecessor index to the Step id', () => {
+    const json = JSON.stringify({ editSteps: [{ stepId: 'step_b', dependsOnStepIndex: 0 }] });
+    const edit = extractJourneyEdit(json, context());
+    expect(edit.editSteps).toEqual([{ stepId: 'step_b', dependsOnStepId: 'step_a' }]);
+  });
+
+  it('rejects a FORWARD reference (predecessor later in order)', () => {
+    const json = JSON.stringify({ editSteps: [{ stepId: 'step_a', dependsOnStepId: 'step_b' }] });
+    // No other field changes → the whole edit is dropped as a no-op.
+    expect(extractJourneyEdit(json, context()).editSteps).toBeUndefined();
+  });
+
+  it('rejects a CROSS-Milestone dependency', () => {
+    const ctx: JourneyEditContext = {
+      ...context(),
+      steps: [
+        { id: 'step_a', title: 'A', cadence: 'once', done: false, dropped: false, milestoneId: 'm1' },
+        { id: 'step_b', title: 'B', cadence: 'weekly', done: false, dropped: false, milestoneId: 'm2' },
+      ],
+    };
+    const json = JSON.stringify({ editSteps: [{ stepId: 'step_b', dependsOnStepId: 'step_a' }] });
+    expect(extractJourneyEdit(json, ctx).editSteps).toBeUndefined();
+  });
+
+  it('rejects a link that would exceed the max chain length (>3)', () => {
+    const ctx: JourneyEditContext = {
+      ...context(),
+      steps: [
+        { id: 'a', title: 'A', cadence: 'daily', done: false, dropped: false },
+        { id: 'b', title: 'B', cadence: 'daily', done: false, dropped: false, dependsOnStepId: 'a' },
+        { id: 'c', title: 'C', cadence: 'daily', done: false, dropped: false, dependsOnStepId: 'b' },
+        { id: 'd', title: 'D', cadence: 'daily', done: false, dropped: false },
+      ],
+    };
+    // a→b→c is already 3 long; making d depend on c would make a 4-chain → rejected.
+    const json = JSON.stringify({ editSteps: [{ stepId: 'd', dependsOnStepId: 'c' }] });
+    expect(extractJourneyEdit(json, ctx).editSteps).toBeUndefined();
+  });
+
+  it('keeps a KNOWN predecessor id on an added Step, drops an unknown one', () => {
+    const known = extractJourneyEdit(
+      JSON.stringify({ addSteps: [{ title: 'Cool-down', dependsOnStepId: 'step_a' }] }),
+      context(),
+    );
+    expect(known.addSteps).toEqual([{ title: 'Cool-down', dependsOnStepId: 'step_a' }]);
+
+    const unknown = extractJourneyEdit(
+      JSON.stringify({ addSteps: [{ title: 'Cool-down', dependsOnStepId: 'ghost' }] }),
+      context(),
+    );
+    expect(unknown.addSteps).toEqual([{ title: 'Cool-down' }]); // unknown predecessor dropped
+  });
+});
+
 describe('summarizeEdit', () => {
   it('produces language-free EditChange[] resolving Step titles from context', () => {
     const ctx = context();

@@ -391,6 +391,14 @@ export default function HomeScreen() {
       const dream = journey?.dreamId ? dreamById.get(journey.dreamId) : undefined;
       const key = dream ? `dream:${dream.id}` : `journey:${item.journeyId}`;
       const title = dream?.title ?? journey?.title ?? item.journeyTitle;
+      // Step Dependencies (Slice 8): a Step waiting on an unmet dependency (engine `locked` flag) is
+      // rendered non-interactively — folded behind its predecessor as a blank deck layer, or shown as
+      // a calm "waiting" card when the predecessor isn't in this group. The predecessor's title is
+      // on-device (G1) UI copy for the hint only.
+      const dependsOnStepId = item.step.dependsOnStepId;
+      const predecessorTitle = dependsOnStepId
+        ? journey?.steps.find((s) => s.id === dependsOnStepId)?.title
+        : undefined;
       const row: WeekStepView = {
         key: item.step.id,
         icon: iconForJourney(item.journeyId),
@@ -399,6 +407,9 @@ export default function HomeScreen() {
         done: item.step.done,
         status: item.status,
         locked: isInClosedWeek(item.step.plannedFor),
+        waiting: item.locked,
+        dependsOnStepId,
+        predecessorTitle,
         onPress: () => setReportStep(item),
         onDone: () => reportDone(item),
         onPostpone: () => reportPostpone(item),

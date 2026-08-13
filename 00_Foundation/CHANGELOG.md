@@ -4,6 +4,37 @@ Status: Living Document
 
 ---
 
+# 2026-08-13 — Overnight autonomous batch (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
+
+Autonomous session while the founder slept: the remaining ready tasks were built, each adversarially
+reviewed (code-reviewer + security-privacy) and fixed. Green throughout: `tsc` clean, `eslint` 0 errors,
+**jest 916/916** (up from 806). Two topic commits — code `a9c0c48`, docs `23dd121`. Full narrative +
+resume: `Current_Context.md` → "⭐ HANDOFF SNAPSHOT — 2026-08-13". Highlights:
+
+- **I1 Completion Celebration** (D42) — small-Step variants + reduced-motion guard + Settings toggle; the
+  big Journey ceremony (idempotent card, auto-open latch); a swipeable privacy-selectable completion card +
+  Share completion; sharing behind a `CardShareGateway` (native image export deferred); a gentle final-Step
+  confirmation. In-app Ally thanks (§5) + device-verified image export deferred (tasks I1-a/I1-b).
+- **J5 Account Inactivity Freeze** (D44, local-first POC) — a pure `InactivityEngine` reusing the J3 frozen
+  path via a new `Journey.freezeReason`; 21-day threshold; a return flow that never auto-resumes.
+  Server-authoritative enforcement deferred to the backend.
+- **L1 Parked goals** (D44) — coach-detected extra goals persist to a "For later" surface, activatable /
+  dismissable; sensitive domains filtered at capture and activation.
+- **F1 Dream creation, initial cut** (D44) — My Dreams entry, a read-only "Part of your Dream" card, and a
+  link-approval card for unlinked Journeys. The coach Dream-authoring conversation is deferred to a joint
+  design session.
+- **D2 Ally hardening** (D44) — invite CTA gated on completed/frozen Journeys, offline-vs-empty distinction,
+  and the missing UI tests (Support Circle itself shipped earlier under `b3a9ff5`; live-DB QA is a founder action).
+- **C1 Weekly Review** (D43) — found already built under D40; closed with 4 coverage tests. Two-layer split
+  (strategic weekly proposal vs tactical/immediate) logged; the "applies automatically" wording corrected to
+  the ratified apply-on-approval model.
+- **Backfill PRDs** (`04_Product/PRD/Backfill/`) — initial PRDs for 5 shipped-but-undocumented features
+  (Journey Lifecycle, Streak, Account Deletion/Export, Notification Content, i18n/RTL), each grounded in code
+  with open questions/edge cases flagged for review.
+
+Review found + fixed a HIGH inactivity-freeze re-arm bug (freeze fired only once per account lifetime) plus
+4 lesser issues, all with regression tests. The founder ▶ NEXT decision queue is in `Current_Context.md`.
+
 # 2026-08-12 — The "Ready" PRD queue, implemented (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
 
 A large feature-build session: the whole Ready PRD queue was built, each feature adversarially reviewed

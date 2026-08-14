@@ -1,4 +1,9 @@
 /**
+ * ARCHIVED 2026-08-14 — see ./README.md. Moved out of the router tree by founder decision: it had
+ * no entry point anywhere, but any file under src/app/ is a live deep-linkable route whether or not
+ * it is registered, so /buddy3d-spike was reachable in a shipped build. Buddy itself is staged
+ * Future (Decision Log D45); this preview harness is preserved, not deleted.
+ *
  * buddy3d-spike — throwaway preview route (/buddy3d-spike), NOT wired into the tabs.
  *
  * Now a thin screen over the real modular pieces: it renders <BuddyView> (the generic,

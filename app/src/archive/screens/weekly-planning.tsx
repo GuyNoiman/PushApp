@@ -13,6 +13,8 @@
  * engine exposes real weekday scheduling, we deterministically derive a display
  * weekday per Step (see `weekdayForStep` below) so the grouped-by-day layout has
  * real Step data to show. Replace with the engine's real schedule when it lands.
+ *
+ * ARCHIVED 2026-08-14 — see ./README.md.
  */
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';

@@ -8,6 +8,10 @@
  *
  * Theme + safe-area + router are stubbed so the screen renders without their providers; the
  * `isRunning` predicate under test is the REAL pure helper.
+ *
+ * ARCHIVED 2026-08-14 with its screen (see ../README.md) — jest no longer runs this file.
+ * The `isRunning` predicate itself stays covered by core/util/__tests__/journeyStatus.test.ts;
+ * only the screen-level wiring assertion is parked here until the surface is revived.
  */
 import { createElement, type ReactElement } from 'react';
 

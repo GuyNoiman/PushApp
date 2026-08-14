@@ -6,7 +6,9 @@
  * centered detail **sheet** with a close (X) button. Tabs: All · Journeys · Social.
  *
  * NOTE: there is no achievements engine yet, so this renders DESIGN-PLACEHOLDER
- * sample data (components/achievements/sampleAchievements.ts). Presentational only.
+ * sample data (./sampleAchievements.ts). Presentational only.
+ *
+ * ARCHIVED 2026-08-14 — see ./README.md.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -22,7 +24,7 @@ import {
   isUnlocked,
   remaining,
   type SampleAchievement,
-} from '@/components/achievements/sampleAchievements';
+} from './sampleAchievements';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 

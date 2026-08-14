@@ -76,6 +76,10 @@
     "testMatch": [
       "**/*.test.ts",
       "**/*.test.tsx"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/src/archive/"
     ]
   },
   "private": true

@@ -9,6 +9,8 @@
  * Presentational only — it reads the snapshot / facade and calls claimMission /
  * claimLoginReward. No Mission, reward, or rollover logic lives here (Engineering
  * Bible §19); the MissionEngine owns it all. Warm palette (cream / gold accents).
+ *
+ * ARCHIVED 2026-08-14 — see ./README.md.
  */
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';

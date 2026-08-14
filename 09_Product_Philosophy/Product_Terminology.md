@@ -245,6 +245,39 @@ Buddy becomes the emotional face of PushApp.
 
 ---
 
+# Meta-agent (the coach)
+
+The single entity the user talks to.
+
+**"The coach" is the user-facing name. "Meta-agent" is the internal, architectural name.** Both are
+official — they are the same thing described at two levels. Use "the coach" in anything a user reads,
+"meta-agent" in specs, PRDs and code.
+
+The meta-agent:
+
+- owns all user communication — it is the **only** user-facing voice;
+- owns the user's language and form of address (Decision Log **D30**, **D31**);
+- consults **domain experts** as internal tools and integrates their judgement with the user's goals,
+  constraints and safety boundaries;
+- decides what to ask, what to propose, and what to leave alone.
+
+A **domain expert** (Addiction · Relationships & Loneliness · Body Image · Career — **D24**) is an
+internal professional-judgment tool. An expert never speaks to the user, never becomes a second
+personality, and carries no language requirement of its own: the meta-agent re-voices everything it
+returns (**D30**).
+
+Do not introduce synonyms. Not "Meta-Coach", not "assistant", not "bot", not "AI Coach" as a third name.
+
+Stage: **MVP** — the coach is the MVP's central user-facing entity (**D45**; Buddy is deferred to
+Future, above).
+
+(Added 2026-08-14, **D49**. The term was decided in **D30** on 2026-08-09 and used throughout
+`04_Product/Domain_Expert_Authoring_Guide.md`, but it was never written into *this* document — which is
+where an outside author looks. External coaching content consequently drifted to its own name,
+"Meta-Coach". The rule this closes: a term is not canonical until it is defined here.)
+
+---
+
 # Ally
 
 An Ally is someone chosen to support a specific Journey.
@@ -268,6 +301,16 @@ Examples:
 - Full visibility.
 - Progress only.
 - Private Journey with anonymous progress.
+
+An Ally is only ever someone the user chose to add to a Journey's Support Circle. Nothing else.
+
+A sponsor, a clinician, or a family member is not an Ally, and is not currently modeled as any in-app
+concept. When the coach refers to real-world support, it speaks in plain language ("someone you trust",
+"a professional") and never points the user to the in-app Ally list as if it were crisis support.
+
+(Founder decision, 2026-08-13, D47 — settles an ambiguity found in third-party coaching content, which
+used "Ally" loosely to also mean a sponsor/clinician/family member. Whether real-world supporters should
+ever become their own modeled concept is left open.)
 
 ---
 
@@ -426,6 +469,19 @@ Reflection prompt.
 
 Interventions should always have a clear behavioural purpose.
 
+**Proactive only (sharpened 2026-08-14, Decision Log D48).** The defining property is *who starts the
+moment*: an Intervention is something **PushApp initiates**, reaching a user who was not in the app.
+That is why every Intervention carries a scheduling, permission and quiet-hours dimension (see **D21**,
+the Communication Scheduler and its privacy red-lines).
+
+Something the coach says **inside a conversation the user opened** is *not* an Intervention. It is a
+**comment** — a reactive coaching move, with no scheduling, permission or quiet-hours dimension. The
+distinction decides which engine owns the behaviour, so the two words must not be swapped.
+
+`comment` is currently a term of the **external coaching content** in `10_Partner_Coaching_Content/`
+(which used "intervention" for the reactive sense, the exact opposite of ours). It is not yet a modeled
+in-app object; it is recorded here so the two vocabularies cannot silently collide.
+
 ---
 
 # Future Journey
@@ -490,7 +546,6 @@ The following concepts (migrated from the former Glossary) are official PushApp 
 - Report
 - Progress
 - Recommendation
-- AI Coach
 - Growth Library
 
 **Note (2026-08-03):** "Milestone" was removed from this to-define list because it is now the
@@ -498,6 +553,11 @@ canonical mid-layer term (see the **Milestone** section above, renamed from "Pha
 2026-08-01) — it already has a full definition, it is not still-to-define. If a *different*,
 generic sense of "milestone" (e.g. a celebratory checkpoint distinct from the mid-layer object)
 is ever wanted, it must not fork the term — see the disambiguation note in the Milestone section.
+
+**Note (2026-08-14):** "AI Coach" was removed from this to-define list for the same reason — the entity
+now has a full definition, see **Meta-agent (the coach)** above. "The coach" is its user-facing name and
+"meta-agent" its architectural one; "AI Coach" was an informal early label and must not be revived as a
+third synonym.
 
 (Support Circle, Ally, Check-in, Reflection, Intervention, Community Insight and Marketplace — plus the core Dream / Journey / Milestone / Step / Buddy / Mission / XP / Coins terms — are already defined here or in the Product Bible.)
 

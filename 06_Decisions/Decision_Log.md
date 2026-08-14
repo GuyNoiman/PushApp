@@ -519,6 +519,164 @@ docs, annotated with a Future/deferred stage marker rather than deleted or rewri
 Product_Terminology.md` ("Buddy" entry annotated), `04_Product/Version_Roadmap.md` (Future entry for
 Buddy/avatar reintroduction), `Current_Context.md` (2026-08-13 snapshot note).
 
+## 2026-08-13 (continued) — Journey cancellation model; partner-content terminology resolved
+
+> Same day, a second founder pass: answers to `Journey_Abandonment_PRD.md` §12 (the open questions from
+> the initial 2026-08-13 spec) and to the terminology audit of `10_Partner_Coaching_Content/`.
+
+### D46 — Journey cancellation: irreversible with no undo, Future Journeys are deleted not canceled, History tab approved, inactivity-return offers cancel
+**Decision (founder, 2026-08-13):** four linked calls that resolve five of the seven open questions in
+`Journey_Abandonment_PRD.md` §12:
+1. **Cancelling a Journey is IRREVERSIBLE.** No undo window of any kind. Pressing the action raises a
+   confirmation that asks the user whether they are sure **and states plainly that the action is
+   irreversible**; on confirm it is done and final.
+2. **The "Completed" tab is renamed "History"** (Hebrew "היסטוריה"), with **Completed** and **Stopped**
+   grouped inside it — approved exactly as recommended.
+3. **A Future Journey is DELETED, not cancelled — it simply disappears.** It has no history to preserve,
+   so Delete is the honest action; the Journey-detail action is **Delete** for a `future` Journey and
+   **Cancel** for an active or frozen one, never both.
+4. **The inactivity-return screen also offers cancelling a Journey**, per-Journey, alongside Resume.
+5. **"Start again" appears only for FROZEN Journeys** — meaning there is **no restart-from-cancelled
+   path.** Verified against the shipped code (`JourneyEngine.resumeJourney`, surfaced as "Resume journey"
+   / "חידוש המסע" on the Journey-detail screen and "Choose Journeys to resume" / "חידוש" on the
+   inactivity-return screen): this is the **existing Resume affordance**, not a new feature — nothing new
+   needs to be built for it.
+**Rejected, and why (preserved, not discarded):**
+- **A short (~10s) undo window after cancelling** — the PRD's own recommendation, built on the reasoning
+  that "the splice is genuine data loss and mistaps are real." The founder heard this and declined it
+  anyway; no verbatim reason was captured, so none is invented here, but the outcome is firm: no undo,
+  immediate or delayed.
+- **"Start it again as a new Journey," seeded from a canceled one** — the PRD's recommended fast-follow
+  restart path for a *canceled* Journey. Superseded by point 5 above: the founder's "start again" refers
+  only to the frozen-Journey case (the existing Resume), so this seeded-restart idea for canceled
+  Journeys is not being built, not now and not later as currently scoped.
+- **Allowing Cancel (not just Delete) on a Future Journey**, the PRD's primary recommendation for §7.2 —
+  the founder chose the PRD's own noted counter-argument instead (zero history means nothing to
+  preserve, so Delete is the honest and only action).
+**Why:** finality mirrors D41 (Journey completion is FINAL) — one coherent rule that terminal states are
+terminal and only Pause/Freeze is reversible; a tab named "Completed" holding canceled Journeys would be
+a label that lies; a Future Journey has no lived history, so "cancel, keep what I did" doesn't apply to
+it; the inactivity-return screen is exactly the moment a user decides whether a paused thing is worth
+resuming, so offering cancel there (not just resume-or-nothing) matches user intent honestly.
+**Still open (not answered this session):** how loudly stopping is affirmed and whether the Support
+Circle gets an owner-initiated "I'm stopping this one" note (§12.4); whether cancelled Journeys ever
+appear under their Dream (§12.6).
+**Categorization:** **Approved.**
+**Reflected in:** `04_Product/PRD/Journey_Abandonment_PRD.md` (§5.7, §5.8, §7.1, §7.2, §8.1, §8.3, §8.4,
+§12, §13.2, §14 — each resolution recorded in place, prior recommendations and rejected alternatives kept
+intact).
+
+### D47 — Ally = whoever the user added to the Support Circle; real-world supporters are not modeled
+**Decision (founder, 2026-08-13, from the terminology audit of `10_Partner_Coaching_Content/`):** **An
+Ally is whoever the user chose to add to the Support Circle. Nothing else.** This settles an ambiguity
+found in the partner's addiction on-call content, which used "Ally/support" to also mean a sponsor, a
+clinician, or family — none of whom are Allies in PushApp's model, and none of whom are currently modeled
+as any in-app object.
+**Consequence, made explicit:** when the coach refers to real-world support (a sponsor, a clinician, a
+family member, "someone you trust"), it must speak in **plain language** — never the term "Ally," and it
+must **never route a user to the in-app Ally/Support Circle list as if it were crisis support.** The
+in-app Support Circle is Journey-scoped, consensual, and not a safety mechanism; conflating it with
+real-world crisis support would be actively unsafe. This connects to the still-open safety-floor gate on
+the Addiction and Relationships & Loneliness domains (D24) — this decision does not close that gate, it
+only prevents one specific way the product could mislead a user before it does.
+**Left open, deliberately not decided today:** whether real-world supporters (sponsor, clinician, family)
+should ever be modeled as their own in-app concept. The founder did not say, and product-guardian's
+advice — followed here — was **not to invent a term for this before the underlying vision question is
+answered.** No new terminology is introduced for this pass; the audit's own fix (widening the partner
+content's generic "Ally" uses to also name a sponsor/clinician/family member in plain language) already
+matches this decision and needed no further change.
+**Also from this audit pass (not a Decision Log item on its own, recorded here for provenance):** the
+Dreams screen stays user-visible for now (helps testing), settling the partner content's position that
+the coach should own Dreams as an internal-only abstraction — our Dream stays user-visible, with the
+decision explicitly marked revisitable. See `10_Partner_Coaching_Content/PARTNER_FILE_MANIFEST.md`.
+**Categorization:** **Approved** (the Ally definition) + **Open Question** (whether real-world supporters
+are ever modeled).
+**Reflected in:** `10_Partner_Coaching_Content/PARTNER_FILE_MANIFEST.md` (resolution note appended);
+`09_Product_Philosophy/Product_Terminology.md` (Ally entry — checked against this decision; see that
+file's own note on whether it needed sharpening).
+
+## 2026-08-14 — Partner content, second terminology pass: `intervention` split, Meta-Coach resolved, ONE Weekly Review
+
+> Second editing pass over `10_Partner_Coaching_Content/` (the external coaching partner's v1.1
+> package), under the same founder rule as the first: partner files may be edited for terminology
+> alignment, **PushApp's own code is not changed to accommodate them**, and nothing there is wired
+> into the app. The reply the founder will send the partner is
+> `04_Product/Partner_Reply_Terminology_2026-08-13.md`.
+
+### D48 — `intervention` keeps its PushApp meaning (proactive); the partner's reactive coaching move becomes `comment`
+**Decision (founder, 2026-08-13/14):** the two vocabularies use the same word for opposite things, so
+each sense keeps its own word:
+- **Ours — `intervention`: a proactive action PushApp initiates** — a notification, a reminder, an
+  outreach. Unchanged; this is the definition already in `Product_Terminology.md`.
+- **Theirs — a reactive coaching move made inside a conversation the user started** — renamed
+  **`comment`**. Their `prepared intervention` / `micro-intervention` headings are now
+  `Prepared comment` / `one prepared comment`.
+**Why both words were needed:** the difference is *who initiates*, and that is not cosmetic — it decides
+which engine owns the behaviour. A proactive intervention is scheduled work the product does while the
+user is absent (Communication Scheduler, notification permission, quiet hours, D21); a reactive comment
+is something the coach says in a turn the user opened, and it has no scheduling, permission or
+quiet-hours dimension at all. Collapsing them into one term would have let on-call conversational
+content be read as licence to push notifications, which is exactly the kind of drift the privacy
+red-lines exist to stop. Renaming ours instead was rejected: `intervention` is load-bearing in our own
+docs, and it is the accurate word for the proactive sense.
+**Explicitly not renamed:** the **45 academic/clinical uses** — "intervention research",
+"behaviour-change interventions", NICE guidance, meta-analysis citations (Masi, Liu/Huang/Wang, Guest,
+Alleva, Oprea, CDC). Those name cited literature; rewriting them would misrepresent the sources.
+**Categorization:** **Approved.**
+**Reflected in:** `09_Product_Philosophy/Product_Terminology.md` (Intervention entry sharpened, with
+`comment` recorded as the partner-side counterpart); `10_Partner_Coaching_Content/` (53 occurrences
+renamed across 6 files + the consolidated bundle, logged in `PARTNER_FILE_MANIFEST.md`);
+`04_Product/Partner_Reply_Terminology_2026-08-13.md` §3.2.
+
+### D49 — The partner's "Meta-Coach" is our coach (user-facing) / meta-agent (architecture)
+**Decision (founder, 2026-08-13/14):** the partner's **Meta-Coach** is the same entity we call **the
+coach**, whose internal architectural name is **meta-agent** (D30). Their content is aligned to ours:
+**"the coach"** where the sentence is about what the user experiences (identity, voice, what the coach
+says or must not say, safety wording the user reads), **"meta-agent"** where it is architecture (spec
+metadata, Dream ownership, Expert consultation and routing, on-call hand-back to the orchestrating
+layer). 111 occurrences across 27 files, judged one at a time rather than swapped as a token.
+**Our own fault, named plainly:** the partner did not disobey the brief — **`meta-agent` existed only in
+D30 and `04_Product/Domain_Expert_Authoring_Guide.md`, and was missing from the canonical terminology
+document**, which is the one place an outside author would look. That gap is the reason the drift
+happened, and it is now closed (see below). This is the second time a partner-facing term was
+under-documented on our side; the rule going forward is that a term is not canonical until it is in
+`Product_Terminology.md`.
+**Filenames deliberately unchanged:** `Master_Specs_Original/15_Meta_Coach_Master_Spec.md` and
+`Calibration/14_Meta_Coach_Calibration_24_Cases.md` keep their names so the package stays traceable to
+the zip the partner sent, and so the manifest's hashes stay comparable with their originals. Content
+inside them uses our naming; the mismatch is intentional and recorded in the manifest.
+**Categorization:** **Approved.**
+**Reflected in:** `09_Product_Philosophy/Product_Terminology.md` (new **Meta-agent** entry);
+`10_Partner_Coaching_Content/` (111 occurrences, logged in `PARTNER_FILE_MANIFEST.md`);
+`04_Product/Partner_Reply_Terminology_2026-08-13.md` §3.1.
+
+### D50 — There is exactly ONE Weekly Review; per-Journey and per-expert content nests inside it
+**Decision (founder, 2026-08-13):** the partner's per-Journey weekly adherence review — the
+`STABILIZE / ADAPT / PROGRESS` decision in
+`10_Partner_Coaching_Content/01_Eating_Daily_Consistency_Progression.md` §7 — **does not become a second
+object.** It **nests inside our existing Weekly Review** (`04_Product/PRD/Done/Weekly_Review_PRD.md`,
+D40/D43).
+**The founder's framing, which is the architectural part:** *the Weekly Review is a shared mechanism
+available to every domain expert and every Journey, into which they can contribute information for
+display.* So there is one Weekly Review surface, one week boundary, one 48-hour approval window — and
+per-Journey and per-expert content is nested content **within** it, not a parallel ritual with the same
+name.
+**Why:** two weekly rituals would compete for the same week boundary and the same approval moment, and
+the user would have to learn which one owns their plan. It would also fork the trust model D43 protects
+(nothing applies without one explicit approval). Treating the Weekly Review as a shared contribution
+surface keeps the domain experts where D30 puts them — internal tools that feed the meta-agent, never a
+second user-facing voice.
+**Flagged, not built:** this gives the Weekly Review a **contribution slot that does not exist in the
+code today.** `Weekly_Review_PRD.md` §6/§7 defines review inputs and Journey-level analysis as
+first-party logic; there is no interface for a domain expert to contribute a per-Journey block for
+display, and none was added. **This is a future implementation item**, to be specified before any
+partner content is wired — which, per the folder's standing rule, it is not.
+**Categorization:** **Approved** (the architecture) + **Future** (the contribution slot itself).
+**Reflected in:** `04_Product/Partner_Reply_Terminology_2026-08-13.md` §3.5;
+`10_Partner_Coaching_Content/PARTNER_FILE_MANIFEST.md` (second-pass note). `Weekly_Review_PRD.md` is in
+`04_Product/PRD/Done/` and is immutable — it was **not** edited; when the contribution slot is built it
+needs its own PRD delta.
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

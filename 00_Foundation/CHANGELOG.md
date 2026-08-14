@@ -4,6 +4,126 @@ Status: Living Document
 
 ---
 
+# 2026-08-14 — Partner content, second terminology pass: `Meta-Coach` resolved, `intervention` split, ONE Weekly Review (D48–D50)
+
+Second editing pass over `10_Partner_Coaching_Content/` (the external coaching partner's v1.1 package),
+under the standing founder rule for that folder: partner files may be edited **for terminology alignment
+only**, **PushApp's own code is not changed to accommodate them**, and nothing there is wired into the app.
+Docs only; no code changed.
+
+**`Meta-Coach` → the coach / meta-agent (D49) — 111 occurrences across 27 files.** The partner's
+"Meta-Coach" is the entity we call **the coach**, internally the **meta-agent** (D30). Each occurrence was
+judged in context rather than swapped as a token: **"the coach"** where the sentence is about what the user
+experiences (identity lists, "user-facing voice", safety-table wording), **"meta-agent"** where it is
+architecture (spec metadata, Dream ownership, Expert consultation, on-call hand-back). All casings the
+package used were covered. **Filenames were left unchanged** (`15_Meta_Coach_Master_Spec.md`,
+`14_Meta_Coach_Calibration_24_Cases.md`) so the package stays traceable to the zip the partner sent — the
+filename/content mismatch is intentional and recorded in the manifest.
+
+**`intervention` split (D48) — 53 occurrences renamed, 45 deliberately not.** Ours stays **proactive** (a
+notification/reminder/outreach PushApp initiates); the partner's opposite, **reactive** sense — a coaching
+move inside a conversation the user started — became **`comment`**. Sentences were re-read and adjusted so
+each still reads naturally (`Prepared intervention` → `Prepared comment`; `Level 1 — Prepared
+micro-intervention` → `Level 1 — One prepared comment`). The **45 academic/clinical uses** ("intervention
+research", NICE guidance, the Masi / Liu-Huang-Wang / Guest / Alleva / Oprea / CDC citations) were left
+untouched — renaming those would misrepresent cited sources. **Four genuinely ambiguous occurrences were
+left alone** rather than guessed at, and are listed individually in the manifest.
+
+**ONE Weekly Review (D50).** The partner's per-Journey weekly `STABILIZE / ADAPT / PROGRESS` adherence
+review does **not** become a second object — it **nests inside** our existing Weekly Review
+(`04_Product/PRD/Done/Weekly_Review_PRD.md`, D40/D43). The founder's framing: the Weekly Review is a
+**shared mechanism available to every domain expert and every Journey, into which they can contribute
+information for display**. **Flagged as a future implementation item:** that contribution slot **does not
+exist in the code today** and was not built; `Weekly_Review_PRD.md` is in `PRD/Done/` and was not edited.
+
+**Terminology doc gap closed.** `meta-agent` existed only in D30 and
+`04_Product/Domain_Expert_Authoring_Guide.md` and was **missing from
+`09_Product_Philosophy/Product_Terminology.md`** — which is why the partner drifted to their own name.
+Added a full **Meta-agent (the coach)** entry (including the domain-expert relationship), sharpened
+**Intervention** to proactive-only with `comment` recorded as its counterpart, and retired "AI Coach" from
+the terms-still-to-define list (with a note explaining why, following the Milestone precedent).
+
+**Verification:** the manifest's file table was regenerated (sizes + SHA-256, its own row still blank);
+the two exact-duplicate pairs still hash identically; the three near-duplicate spec pairs carry identical
+terminology; and all 81 edited lines in the bundled sources are present verbatim in the 247 KB
+concatenated `10_PushApp_v1.1_COMPLETE_QUALITY_EVALUATION.md`. The partner reply draft
+(`04_Product/Partner_Reply_Terminology_2026-08-13.md`) had its two *(to confirm)* counts replaced with the
+confirmed figures.
+
+---
+
+# 2026-08-13 (continued, repo-steward pass) — Journey cancellation model decided; partner-content Ally/Dream differences resolved
+
+A second founder pass, same day, closed five of the seven open questions in
+`04_Product/PRD/Journey_Abandonment_PRD.md` §12, and settled two model differences the terminology audit
+of `10_Partner_Coaching_Content/` had flagged. Docs only; no code changed.
+
+**Journey cancellation (D46):** canceling is **irreversible, no undo window** (the PRD's recommended
+short-undo was offered to the founder and explicitly declined); the **Completed tab is renamed "History"**
+(Completed + Stopped grouped inside it), approved as recommended; a **Future Journey is deleted, not
+cancelled** — it has no history, so it simply disappears, and the Journey-detail action for it is Delete,
+never Cancel; the **inactivity-return screen also offers cancelling a Journey**, per-Journey, alongside
+Resume; and **"start again" turns out to be the already-shipped Resume affordance for frozen Journeys**
+(`JourneyEngine.resumeJourney`) — there is no restart-from-cancelled path, so nothing new needs building
+for that part. Still open: how loudly stopping is affirmed / whether the Support Circle gets an
+owner-initiated note (§12.4), and whether cancelled Journeys ever appear under their Dream (§12.6). Every
+resolution was written in place in the PRD, preserving the original recommendation and — where the
+founder overruled it — recording what was rejected and why.
+
+**Partner-content terminology (D47):** an **Ally is only ever someone the user added to a Journey's
+Support Circle** — settles the partner addiction content's looser use of "Ally" to also mean a sponsor,
+clinician, or family member. Those real-world supporters are not modeled; the coach must speak of them in
+plain language and must never route a user to the in-app Ally list as crisis support. Whether real-world
+supporters should ever be modeled is left open (per product-guardian's advice, no new term was invented
+to answer it today). Separately, the **Dreams screen stays user-visible for now** (helps testing,
+explicitly revisitable) — this is our answer to the partner spec's Dream-as-internal-only-abstraction
+model.
+
+**Files changed:** `04_Product/PRD/Journey_Abandonment_PRD.md` (§5.7, §5.8, §7.1, §7.2, §8.1, §8.3, §8.4,
+§12, §13.2, §14); `06_Decisions/Decision_Log.md` (new **D46**, **D47**);
+`09_Product_Philosophy/Product_Terminology.md` (Ally entry sharpened, not duplicated);
+`10_Partner_Coaching_Content/PARTNER_FILE_MANIFEST.md` (new "Model differences — resolved" section,
+appended).
+
+---
+
+# 2026-08-13 (repo housekeeping) — PRD Done-tracking sweep: 9 PRDs moved to `Done/`, 3 kept in root on close verification, index reconciled
+
+Applied `04_Product/PRD/README.md`'s Done-tracking rule (a PRD moves to `Done/` once its approved/current
+scope is implemented and green, keeping a status header naming what shipped vs. deferred) across every
+candidate PRD whose status header had gone stale relative to `Current_Context.md`/`MVP_Task_List.md`.
+Corrected each header BEFORE moving (`Done/` is immutable); verified every claim against the actual code
+and commit history, not just the founder's framing.
+
+**Moved to `Done/` (headers corrected first):** `Completion_Celebration_PRD.md`, `Step_Dependencies_PRD.md`,
+`User_Active_Hours_PRD.md`, `Daily_Step_Reporting_PRD.md` (D35/D36), `Step_Postponement_PRD.md` (D37),
+`Weekly_Review_PRD.md` (D40/D43), `Journey_Support_Circle_PRD.md` (D2/D40, hardened 2026-08-13),
+`Onboarding_Questionnaire_PRD.md` (K2 + K1's notification-permission close), `Journey_Reminder_Management_PRD.md`
+(Off/Fixed slice, D40). Each Done header now names its deferred item(s) explicitly (a later phase or a
+named dependency — e.g. I1-a/I1-b, Smart mode gated on `Smart_Notification_Timing_PRD.md`, the live-DB
+Support Circle QA, real sign-in inside onboarding).
+
+**Kept in the PRD root on close verification (annotated, not moved) — each PRD's approved/current scope
+requires something not yet built, not a peripheral deferral:**
+- `Dream_Management_PRD.md` — only a read-only surfacing cut shipped 2026-08-13; the Coach-led Dream
+  authoring conversation (§5/§7, this PRD's core mechanism) is unbuilt.
+- `Account_Inactivity_Freeze_PRD.md` — a local-first POC shipped 2026-08-13, but the PRD specifies
+  **server-authoritative** enforcement throughout (§2/§3/§10); the POC is a client-only approximation, not
+  the specified model.
+- `Communication_Style_Profile_PRD.md` — the quiz/styles/persistence are built (commit 8313fc7), but §9's
+  scope-of-application and Acceptance Criterion #4 (style must change Coach phrasing + notification copy)
+  are unmet: `profileToCoachStyle()` and `CommunicationScheduler` → `buildNotificationContent` are both
+  explicitly not-yet-wired seams. Flagged because this file was pointed to as a likely-Done candidate;
+  verification against the code found the opposite.
+
+**Also:** added the two index entries missing per the coverage audit — `Future/User_Learning_PRD.md`
+(was absent from the Index) and `Personal_Growth_Style_Assessment_Form.md` (indexed as reference material,
+not moved — it already declares itself non-PRD reference input). Removed the 6 now-`Done/` files' entries
+from the main Index list (their `Weekly_Review`/`Daily_Step_Reporting`/`Step_Postponement` counterparts were
+never in the Index to begin with — added directly under Done). `PRD/README.md` and the 12 touched PRD files
+carry the only edits; nothing was staged with `git add -A` — each move used `git mv` and each edit was
+surgical to preserve Codex's parallel in-flight changes to the same files.
+
 # 2026-08-13 (continued) — MVP-ready sweep: Step Dependencies, Buddy→Future, K1/H1 closed, coach CTA, Q1 extended (branch `feat/buddy-3d-and-reminders`, COMMITTED, not pushed)
 
 Same-day continuation of the overnight batch below. Each item: built → adversarially reviewed

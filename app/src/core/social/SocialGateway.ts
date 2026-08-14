@@ -131,6 +131,79 @@ export interface Cheer {
   createdAt: number;
 }
 
+// ── Friend Profile (Friend_Profile_PRD.md) ──────────────────────────────────
+
+/**
+ * One raw `journey_allies` row BETWEEN two specific users, in either direction. The friend
+ * profile's relationship arithmetic is the only consumer; it is exported so the pure module
+ * (`friendProfile.ts`) can do the counting and the gateway stays a dumb mapper (Bible §19).
+ */
+export interface AllyRelationRow {
+  journeyId: string;
+  ownerId: string;
+  allyId: string;
+  status: AllyInviteStatus;
+  bundle: AllyBundle;
+  /** Epoch ms of the accept/decline decision, or null while the invite is still `requested`. */
+  decidedAt: number | null;
+}
+
+/**
+ * The compact relationship summary in the profile header (PRD §4.2).
+ *
+ * `lifecycle` is deliberately typed as the literal `null` and NEVER a zeroed object: the server
+ * stores no Journey lifecycle status (`progress_snapshots` has no status column, and
+ * `journey_allies.status` is the INVITE lifecycle — it conflates owner-removed-ally, completed and
+ * deleted). A breakdown built on today's data would be WRONG, not merely absent, and PRD §4.2
+ * specifically warns against implying an Abandoned Journey was a success. Typing it `null` makes it
+ * impossible for a consumer to render a fabricated breakdown. It widens to a real shape once the
+ * migration that adds `progress_snapshots.status` lands.
+ */
+export interface RelationshipSummary {
+  theySupportMe: number;
+  iSupportThem: number;
+  total: number;
+  lifecycle: null;
+}
+
+/** What removing a friend will actually cost, shown BEFORE the destructive confirm (PRD §4.5). */
+export interface UnfriendImpact {
+  journeysTheySupportForMe: number;
+  journeysISupportForThem: number;
+  pendingInvites: number;
+}
+
+/** A viewer-scoped friend profile: identity + relationship + only what THIS viewer may see. */
+export interface FriendProfileView {
+  profile: SocialProfile;
+  relationship: RelationshipSummary;
+  sharedActive: AllyProgress[];
+  /** Epoch ms the view was fetched — the authorization lease the provider's cache expires on. */
+  fetchedAt: number;
+}
+
+/**
+ * The actions a friend profile may offer. Direct messaging is deferred post-MVP (D29/D40), so
+ * it is a TYPE-LEVEL seam only — this union widens to `| 'message'` when the Inbox ships. Keeping
+ * consumers data-driven off this union means no dead button and no dead i18n key today, and no
+ * rework later.
+ */
+export type FriendAction = 'cheer' | 'remove';
+
+/**
+ * Thrown when the viewer and the requested profile are not (or are no longer) accepted friends —
+ * removed, blocked, deleted, or never connected. A distinct type so the screen can render the calm
+ * "not connected" state with ZERO shared data instead of a generic error (PRD §6).
+ */
+export class NotFriendsError extends Error {
+  constructor(message = 'You are not connected with this person.') {
+    super(message);
+    this.name = 'NotFriendsError';
+    // Keep `instanceof` reliable through Babel/Hermes' downlevel of `extends Error`.
+    Object.setPrototypeOf(this, NotFriendsError.prototype);
+  }
+}
+
 /**
  * The social surface the POC needs. Kept intentionally thin (proposal §2):
  * identity, Support Circle, per-Journey Allies, published summaries, cheers.
@@ -155,6 +228,17 @@ export interface SocialGateway {
   requestFriend(profileId: string): Promise<void>;
   respondToFriend(requesterId: string, accept: boolean): Promise<void>;
   listFriends(): Promise<Friend[]>;
+
+  // ── Friend Profile (viewer-scoped, PRD §7) ──
+  /**
+   * The profile of ONE accepted friend, scoped to what this viewer is authorized to see.
+   * Throws {@link NotFriendsError} when the friendship is absent or not yet accepted.
+   */
+  friendProfile(friendId: string): Promise<FriendProfileView>;
+  /** Real counts for the remove-friend confirmation — never guessed, never defaulted to 0. */
+  unfriendImpact(friendId: string): Promise<UnfriendImpact>;
+  /** Remove the friendship in BOTH directions. Every Ally relationship falls with it (server-side). */
+  removeFriend(friendId: string): Promise<void>;
 
   // ── Support Circle: per-Journey Ally invites (consent-gated, D2) ──
   /**
@@ -185,6 +269,14 @@ export interface SocialGateway {
 
   // ── Allies (per-Journey sharing) ──
   publishProgress(summary: ProgressSummary): Promise<void>;
+  /**
+   * Stop serving a Journey's published summary WITHOUT touching its Support Circle (PRD §4.3).
+   * Used when a shared Journey leaves the Active state (frozen / completed / gone): the
+   * `journey_allies` rows stay `accepted`, so resuming republishes and the Journey reappears for
+   * the same Allies with the same bundle. Closing the invites instead would be irreversible —
+   * `respondToAllyInvite` only accepts a `requested` row.
+   */
+  withdrawProgress(journeyId: string): Promise<void>;
   /** Journeys the current user is an Ally of. */
   allyProgress(): Promise<AllyProgress[]>;
   /** Distinct ids of the current user's own Journeys that have at least one Ally. */
@@ -219,6 +311,14 @@ export const NullSocialGateway: SocialGateway = {
   async requestFriend() {},
   async respondToFriend() {},
   async listFriends() { return []; },
+  // Deliberately ASYMMETRIC with the no-ops around them: the two READS throw, the destructive
+  // WRITE is inert. A silent empty profile or a silent `0` impact count in front of an
+  // irreversible action is exactly what PRD §4.5 forbids — the caller must surface an error
+  // rather than let someone confirm against invented numbers. `removeFriend` has nothing to
+  // remove with the pillar off, so it no-ops like `removeAlly`.
+  async friendProfile() { throw new Error('Social pillar is disabled'); },
+  async unfriendImpact() { throw new Error('Social pillar is disabled'); },
+  async removeFriend() {},
   async inviteAlly() {},
   async respondToAllyInvite() {},
   async cancelInvite() {},
@@ -230,6 +330,7 @@ export const NullSocialGateway: SocialGateway = {
   async publishCompanionSteps() {},
   async companionSteps() { return []; },
   async publishProgress() {},
+  async withdrawProgress() {},
   async allyProgress() { return []; },
   async mySharedJourneyIds() { return []; },
   async myCompanionJourneyIds() { return []; },

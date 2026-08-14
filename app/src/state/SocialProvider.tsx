@@ -11,8 +11,12 @@
  */
 import * as Notifications from 'expo-notifications';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 
 import { assertCompanionAllowed, getSocialGateway } from '@/core/social';
+// Imported from the module itself, not the barrel: this is a runtime VALUE (an `instanceof`
+// check), and the barrel pulls the Supabase-backed gateway in with it.
+import { NotFriendsError } from '@/core/social/SocialGateway';
 import type {
   AllyBundle,
   AllyInvite,
@@ -21,8 +25,11 @@ import type {
   Cheer,
   CheerKind,
   Friend,
+  FriendProfileView,
   SocialProfile,
+  UnfriendImpact,
 } from '@/core/social';
+import { isRunning } from '@/core/util/journeyStatus';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 
@@ -51,8 +58,26 @@ export interface SocialContextValue {
   /** Load the owner's Support Circle for one Journey (the screen manages its own list). */
   listJourneyAllies: (journeyId: string) => Promise<AllyMember[]>;
   closeJourneyInvites: (journeyId: string) => Promise<void>;
+  // ── Friend Profile (Friend_Profile_PRD.md) ──
+  /**
+   * One friend's viewer-scoped profile, served from the short-lived memory cache when fresh.
+   * Rejects with `NotFriendsError` when the friendship is gone, and re-throws every other
+   * failure so the screen can tell a failed load from an empty profile.
+   */
+  loadFriendProfile: (friendId: string, opts?: { force?: boolean }) => Promise<FriendProfileView>;
+  /** Real impact counts for the remove-friend confirmation. Never cached — never guessed. */
+  loadUnfriendImpact: (friendId: string) => Promise<UnfriendImpact>;
+  /** Remove a friend (both directions, Allies included). Rejects if the server refused. */
+  removeFriend: (friendId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
+
+/**
+ * How long a fetched friend profile may be reused before the friendship is re-verified — the
+ * "short authorization lease" of PRD §6. Short on purpose: the other person can withdraw a
+ * Journey, or the friendship itself, at any moment.
+ */
+const FRIEND_PROFILE_TTL_MS = 60_000;
 
 const EMPTY: SocialContextValue = {
   enabled: false,
@@ -74,6 +99,12 @@ const EMPTY: SocialContextValue = {
   changeAllyBundle: async () => {},
   listJourneyAllies: async () => [],
   closeJourneyInvites: async () => {},
+  // Same deliberate asymmetry as NullSocialGateway: the two READS reject rather than hand back an
+  // empty profile or a fabricated `0` impact count in front of a destructive action, while the
+  // destructive write itself is inert with the pillar off.
+  loadFriendProfile: async () => { throw new Error('Social pillar is disabled'); },
+  loadUnfriendImpact: async () => { throw new Error('Social pillar is disabled'); },
+  removeFriend: async () => {},
   refresh: async () => {},
 };
 
@@ -108,6 +139,27 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const profileRef = useRef<SocialProfile | null>(null);
   profileRef.current = profile;
 
+  // ── Friend-profile cache — the answer to PRD §6/§7 ────────────────────────────────────────
+  // PROCESS MEMORY ONLY. Nothing about a friend is ever written to AsyncStorage or the
+  // EncryptedLocalRepository: not the handle, the buddy name, a Journey title, progress, streak,
+  // Step names, completion text or report media. Because the cache physically cannot reach disk,
+  // the PRD's "encrypt any short-lived cache" requirement is met BY CONSTRUCTION instead of by
+  // adding a second crypto path to keep correct.
+  //
+  // The authorization lease is {@link FRIEND_PROFILE_TTL_MS}; past it the profile is refetched, which
+  // re-runs both the friendship check and the server-side `are_friends()` gate. Entries are purged
+  // on remove-friend, cleared on sign-out / uid change, and cleared when the app returns to the
+  // foreground. A lapsed entry is dropped BEFORE the refetch, so a failed refresh can never render
+  // stale data the viewer may no longer be allowed to see — only a fresh entry ever renders.
+  //
+  // The profile deliberately never asks for Companion Steps: Step names stay on the Journey ally
+  // view. Least exposure, and it removes the "don't durably cache Step names" risk class here.
+  const friendProfileCache = useRef<Map<string, FriendProfileView>>(new Map());
+
+  const purgeFriendProfile = useCallback((friendId: string) => {
+    friendProfileCache.current.delete(friendId);
+  }, []);
+
   /** Run a gateway call, surfacing any failure as a string instead of crashing. */
   const guard = useCallback(async (fn: () => Promise<void>) => {
     try {
@@ -140,6 +192,9 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   // subscribe effect below, which re-binds on the new uid. ──
   useEffect(() => {
     let mounted = true;
+    // Any change of identity (including sign-out) invalidates every cached friend profile — it was
+    // fetched for a different viewer's authorization.
+    friendProfileCache.current.clear();
     if (!uid) {
       setProfile(null);
       setFriends([]);
@@ -155,6 +210,17 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       mounted = false;
     };
   }, [uid, refresh]);
+
+  // ── Revalidate friend profiles on foreground (PRD §6) ──
+  // Anything can have changed while the app was in the background — the friend may have removed
+  // us, or stopped sharing a Journey. Dropping the whole map means the next profile opened is
+  // fetched fresh, with the friendship re-checked, rather than trusting a lease taken before.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (status) => {
+      if (status === 'active') friendProfileCache.current.clear();
+    });
+    return () => subscription.remove();
+  }, []);
 
   // ── Incoming cheers: append to state + fire a local notification ──
   useEffect(() => {
@@ -204,7 +270,24 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       const journeys = snapshot.journeys;
       for (const journeyId of sharedIds) {
         const journey = journeys.find((j) => j.id === journeyId);
-        if (!journey) continue;
+        // PRD §4.3 (Friend Profile): an Ally sees ACTIVE Journeys only. Anything else — frozen,
+        // completed, abandoned, any lifecycle status added later, or a Journey that no longer
+        // exists on this device — has its published summary and its Companion Step names
+        // WITHDRAWN instead of refreshed. Gated on the POSITIVE `isRunning` predicate on purpose:
+        // an allowlist keeps every future lifecycle state private by default instead of letting it
+        // leak through a negation nobody remembered to update.
+        //
+        // Withdrawing the SNAPSHOT (not the invites) is the whole point: `closeJourneyInvites`
+        // would be irreversible for the recipient (`respondToAllyInvite` only accepts a still
+        // `requested` row), whereas leaving `journey_allies` accepted means resuming a Frozen
+        // Journey republishes it below and it reappears for the same Allies with the same bundle.
+        // The Step clear runs unconditionally: a Journey that used to be Companion must stop
+        // serving Step names even after its Companion Ally is gone (the delete is idempotent).
+        if (!journey || !isRunning(journey)) {
+          await gateway.withdrawProgress(journeyId);
+          await gateway.publishCompanionSteps(journeyId, []);
+          continue;
+        }
         await gateway.publishProgress({
           journeyId,
           title: journey.title,
@@ -366,6 +449,69 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     [gateway],
   );
 
+  // ── Friend Profile actions (Friend_Profile_PRD.md) ──
+  // These follow the `listJourneyAllies` pattern rather than `guard()`: they set `error` AND
+  // re-throw, because a profile screen must be able to tell a failed load from a genuinely empty
+  // profile. Swallowing here would render "nothing shared" over an offline blip.
+  const loadFriendProfile = useCallback(
+    async (friendId: string, opts?: { force?: boolean }): Promise<FriendProfileView> => {
+      const cached = friendProfileCache.current.get(friendId);
+      if (!opts?.force && cached && Date.now() - cached.fetchedAt < FRIEND_PROFILE_TTL_MS) {
+        return cached;
+      }
+      // Drop the lapsed entry BEFORE the refetch — never stale-on-error.
+      friendProfileCache.current.delete(friendId);
+      try {
+        const view = await gateway.friendProfile(friendId);
+        friendProfileCache.current.set(friendId, view);
+        setError(null);
+        return view;
+      } catch (e) {
+        // "You're not connected" is an authorization STATE the screen renders on purpose, not a
+        // gateway failure — surfacing it in the shared error banner would light up the Circle tab
+        // for something that is working exactly as designed.
+        setError(e instanceof NotFriendsError ? null : e instanceof Error ? e.message : 'Something went wrong.');
+        throw e;
+      }
+    },
+    [gateway],
+  );
+
+  const loadUnfriendImpact = useCallback(
+    async (friendId: string): Promise<UnfriendImpact> => {
+      // Never cached: these counts sit in front of an irreversible action, so they are read fresh
+      // every time the confirmation opens.
+      try {
+        const impact = await gateway.unfriendImpact(friendId);
+        setError(null);
+        return impact;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+        // Re-thrown so the confirmation can disable itself instead of showing an invented 0.
+        throw e;
+      }
+    },
+    [gateway],
+  );
+
+  const removeFriend = useCallback(
+    async (friendId: string) => {
+      // Destructive and confirmed by a sheet that must stay open when the server refuses — so this
+      // sets `error` like guard() does but also RE-THROWS, and only purges/refreshes once the
+      // removal actually landed. The Ally rows fall server-side via `cascade_unfriend()`.
+      try {
+        await gateway.removeFriend(friendId);
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+        throw e;
+      }
+      purgeFriendProfile(friendId);
+      await refresh();
+    },
+    [gateway, purgeFriendProfile, refresh],
+  );
+
   const closeJourneyInvites = useCallback(
     async (journeyId: string) => {
       await guard(async () => {
@@ -395,6 +541,9 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     changeAllyBundle,
     listJourneyAllies,
     closeJourneyInvites,
+    loadFriendProfile,
+    loadUnfriendImpact,
+    removeFriend,
     refresh,
   };
 

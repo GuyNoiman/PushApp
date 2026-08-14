@@ -5,27 +5,34 @@
   "myDreamsA11y": "See My Dreams",
   "tabs": {
     "active": "Active",
-    "completed": "Completed",
+    "history": "History",
     "future": "Future"
   },
   "empty": {
     "title": "No active Journeys yet",
     "body": "Start your first Journey and it will appear here as you make progress."
   },
-  "completed": {
+  "history": {
+    "groups": {
+      "completed": "Completed",
+      "stopped": "Stopped"
+    },
     "empty": {
-      "title": "No completed Journeys yet",
-      "body": "Every Journey you finish will rest here, so you can look back on how far you've come."
+      "title": "Nothing here yet",
+      "body": "The Journeys you finish, and the ones you decide to stop, both rest here so you can look back on them."
     }
   },
   "card": {
     "milestone": "Milestone {{phase}} of {{phases}}",
     "milestoneComplete": "Milestone {{phases}} of {{phases}} — complete",
     "completed": "Completed",
+    "stopped": "Stopped {{date}}",
     "starts": "Starts {{date}}",
     "done": "DONE",
     "soon": "SOON",
     "paused": "PAUSED",
+    "canceled": "CANCELED",
+    "stepsDone": "{{done}} of {{total}} Steps done",
     "open": "Open {{title}}"
   },
   "ends": {

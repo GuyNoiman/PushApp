@@ -26,6 +26,7 @@ import enCommon from './resources/en/common.json';
 import enCommunication from './resources/en/communication.json';
 import enDreams from './resources/en/dreams.json';
 import enExplore from './resources/en/explore.json';
+import enFriendProfile from './resources/en/friendProfile.json';
 import enHome from './resources/en/home.json';
 import enInactivity from './resources/en/inactivity.json';
 import enInbox from './resources/en/inbox.json';
@@ -34,6 +35,7 @@ import enJourneys from './resources/en/journeys.json';
 import enMissions from './resources/en/missions.json';
 import enNotify from './resources/en/notify.json';
 import enOnboarding from './resources/en/onboarding.json';
+import enRecovery from './resources/en/recovery.json';
 import enSettings from './resources/en/settings.json';
 import enShop from './resources/en/shop.json';
 import enWeeklyReview from './resources/en/weeklyReview.json';
@@ -46,6 +48,7 @@ import heCoachContent from './resources/he/coachContent.json';
 import heCommon from './resources/he/common.json';
 import heCommunication from './resources/he/communication.json';
 import heExplore from './resources/he/explore.json';
+import heFriendProfile from './resources/he/friendProfile.json';
 import heHome from './resources/he/home.json';
 import heInactivity from './resources/he/inactivity.json';
 import heInbox from './resources/he/inbox.json';
@@ -58,14 +61,15 @@ import heShop from './resources/he/shop.json';
 import heWeeklyReview from './resources/he/weeklyReview.json';
 import heDreams from './resources/he/dreams.json';
 import heOnboarding from './resources/he/onboarding.json';
+import heRecovery from './resources/he/recovery.json';
 
 /** Every namespace we split copy into. `common` is the default. */
-export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'explore', 'buddy', 'shop', 'missions', 'achievements', 'weeklyReview', 'dreams', 'notify', 'onboarding', 'communication', 'celebration', 'inactivity'] as const;
+export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'friendProfile', 'explore', 'buddy', 'shop', 'missions', 'achievements', 'weeklyReview', 'dreams', 'notify', 'onboarding', 'communication', 'celebration', 'inactivity', 'recovery'] as const;
 export const DEFAULT_NAMESPACE = 'common';
 
 export const resources = {
-  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, explore: enExplore, buddy: enBuddy, shop: enShop, missions: enMissions, achievements: enAchievements, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, onboarding: enOnboarding, communication: enCommunication, celebration: enCelebration, inactivity: enInactivity },
-  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, explore: heExplore, buddy: heBuddy, shop: heShop, missions: heMissions, achievements: heAchievements, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, onboarding: heOnboarding, communication: heCommunication, celebration: heCelebration, inactivity: heInactivity },
+  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, friendProfile: enFriendProfile, explore: enExplore, buddy: enBuddy, shop: enShop, missions: enMissions, achievements: enAchievements, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, onboarding: enOnboarding, communication: enCommunication, celebration: enCelebration, inactivity: enInactivity, recovery: enRecovery },
+  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, friendProfile: heFriendProfile, explore: heExplore, buddy: heBuddy, shop: heShop, missions: heMissions, achievements: heAchievements, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, onboarding: heOnboarding, communication: heCommunication, celebration: heCelebration, inactivity: heInactivity, recovery: heRecovery },
 } as const;
 
 /**

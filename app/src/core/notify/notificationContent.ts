@@ -44,9 +44,13 @@ export interface NotificationBuildContext {
  * TONE SUFFIX (D40, Communication_Style_Profile_PRD §10). Maps the user's communication style to the
  * i18n key suffix that selects its toned variant (e.g. `warm` → `reminder.body_warm`). Adding a style
  * here is a config edit; a type that has no toned variant for the chosen style falls back to its base
- * copy (see {@link tonedKeys}), so a missing variant is always safe — never a raw key.
+ * copy (see {@link tonedKeys}), so a missing variant is always safe — never a raw key. A type the
+ * catalogue marks `neverToned` opts out of styling completely.
  */
-function toneKeySuffix(styleId: CommunicationProfileId | undefined): string {
+function toneKeySuffix(type: NotificationType, styleId: CommunicationProfileId | undefined): string {
+  // A never-toned type (see NotificationTypeSpec.neverToned) ignores the style entirely, so no
+  // toned variant can ever be selected for it — even if one is added to the i18n file by mistake.
+  if (NOTIFICATION_TYPES[type].neverToned) return '';
   return styleId ? `_${styleId}` : '';
 }
 
@@ -64,8 +68,13 @@ function tonedKeys(baseKey: string, tone: string): [string, string] {
  * Build the `{ title, body }` for a notification. Deterministic and framework-free.
  *
  * - Resolves the type's i18n keys in the active language, applying the form-of-address context (D31).
- * - `reminder` is owner-content: it passes through the recipient's own Journey/Step text when present,
- *   falling back to a gentle localized nudge when absent (so a reminder is never blank).
+ * - `reminder` is owner-content: the recipient's own Journey title is INTERPOLATED INTO the toned copy
+ *   (`reminder.titleFor`), never returned raw. A raw passthrough silently defeats toning: every real
+ *   reminder carries a Journey title, so returning it verbatim would short-circuit the style variant
+ *   100% of the time and the user's chosen style would change nothing they can see (PRD AC#4). With no
+ *   Journey title we fall back to the toned generic nudge, so a reminder is never blank.
+ * - The `stepTitle` passthrough for the body is kept for back-compat with the shipped reminder; the
+ *   {@link ./reminderCopy} adapter deliberately does not pass one (Step names stay off the lock screen).
  * - Social types interpolate only the person's display `name`; a missing/blank name degrades to a
  *   localized generic ("someone") rather than leaking a raw `{{name}}` placeholder onto the lock screen.
  */
@@ -75,12 +84,15 @@ export function buildNotificationContent<T extends NotificationType>(
   ctx: NotificationBuildContext,
 ): NotificationContent {
   const context = addressContext(ctx.addressForm);
-  const tone = toneKeySuffix(ctx.styleId);
+  const tone = toneKeySuffix(type, ctx.styleId);
 
   if (type === 'reminder') {
     const p = params as NotificationParamsByType['reminder'];
+    const journeyTitle = p.journeyTitle?.trim();
     return {
-      title: p.journeyTitle?.trim() || i18n.t(tonedKeys('reminder.title', tone), { ns: NS, context }),
+      title: journeyTitle
+        ? i18n.t(tonedKeys('reminder.titleFor', tone), { ns: NS, context, journeyTitle })
+        : i18n.t(tonedKeys('reminder.title', tone), { ns: NS, context }),
       body: p.stepTitle?.trim() || i18n.t(tonedKeys('reminder.body', tone), { ns: NS, context }),
     };
   }

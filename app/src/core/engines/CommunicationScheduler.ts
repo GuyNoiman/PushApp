@@ -27,6 +27,7 @@ import type { LocationGateway } from '../location/LocationGateway';
 import type { AppState, Journey, ReminderRule, SchedulingPrefs } from '../types/domain';
 import { dayAvailability, isDayUniform } from '../util/availability';
 import { clampMinuteToWindow, dayPartBand, minuteOfDay } from '../util/date';
+import { isRunning } from '../util/journeyStatus';
 import type { ReminderEngine } from './ReminderEngine';
 
 /**
@@ -102,12 +103,14 @@ export class CommunicationScheduler {
   ): PlannedNotification[] {
     const byId = new Map(journeys.map((j) => [j.id, j]));
 
-    // 1. Aggregate: enabled rules whose Journey exists and is currently running — not completed
-    //    and not FROZEN (a paused Journey must fire no reminders until it is resumed, J3).
+    // 1. Aggregate: enabled rules whose Journey exists and is RUNNING. Gated positively (isRunning)
+    //    so every non-running state is excluded by construction: completed, FROZEN (a paused Journey
+    //    fires nothing until resumed, J3), and FUTURE (an approved plan saved for later must produce
+    //    no reminders before it starts — Future Journey Management §5/§14.4).
     const active = rules.filter((r) => {
       if (!r.enabled) return false;
       const journey = byId.get(r.journeyId);
-      return !!journey && !journey.completedAt && journey.status !== 'frozen';
+      return !!journey && isRunning(journey);
     });
 
     // 2/3. Expand each active rule into candidate notifications.

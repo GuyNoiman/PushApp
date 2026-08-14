@@ -70,6 +70,15 @@ export interface NotificationTypeSpec {
   readonly params: readonly string[];
   /** Lock-screen classification for the body (see {@link NotificationPrivacy}). */
   readonly privacy: NotificationPrivacy;
+  /**
+   * NEVER apply the user's communication style (D40) to this type's copy — it stays the neutral,
+   * factual variant for everyone. Set only where a tone would be wrong no matter which style the
+   * READER picked: `journey_closed` tells someone that a friend stopped a Journey, and a "warm" or
+   * "energizing" spin on another person's setback is exactly the forced positivity the product
+   * refuses (AI_Product_Principles). Structural, not a copy convention: with this set, adding a
+   * toned variant to the i18n file later still cannot change what is sent.
+   */
+  readonly neverToned?: true;
 }
 
 /** The interpolation params every social (Support-Circle) type shares: a person's display name only. */
@@ -100,7 +109,13 @@ export const NOTIFICATION_TYPES: Record<NotificationType, NotificationTypeSpec> 
     params: SOCIAL_PARAMS,
     privacy: 'lock-safe',
   },
-  journey_closed: { id: 'journey_closed', keyGroup: 'journeyClosed', params: SOCIAL_PARAMS, privacy: 'lock-safe' },
+  journey_closed: {
+    id: 'journey_closed',
+    keyGroup: 'journeyClosed',
+    params: SOCIAL_PARAMS,
+    privacy: 'lock-safe',
+    neverToned: true,
+  },
 };
 
 /** All notification type ids, in catalogue order. */

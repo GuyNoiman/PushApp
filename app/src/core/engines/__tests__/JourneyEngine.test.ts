@@ -253,6 +253,45 @@ describe('JourneyEngine.getWeekSteps', () => {
   });
 });
 
+describe('JourneyEngine — Home lists show RUNNING Journeys only', () => {
+  /** Two Journeys with one pending Step each; the second is put into `status`. */
+  function twoJourneys(status: 'frozen' | 'future') {
+    const { engine, state } = setup();
+    const running = engine.createJourney({
+      title: 'Run 5km',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ title: 'Jog' }],
+    });
+    const other = engine.createJourney({
+      title: 'Read daily',
+      why: [],
+      durationDays: 30,
+      rhythm: 'daily',
+      steps: [{ title: 'Read a page' }],
+    });
+    other.status = status;
+    return { engine, state, running, other };
+  }
+
+  it('excludes a FROZEN Journey from Today AND the week (a paused Journey asks nothing — J3)', () => {
+    // Bug fix: these lists used to filter on `completedAt` only, so a paused Journey's Steps kept
+    // appearing on Home even though its check-in CTA was hidden and its reminders were suppressed.
+    const { engine } = twoJourneys('frozen');
+
+    expect(engine.getTodaySteps().map((t) => t.step.title)).toEqual(['Jog']);
+    expect(engine.getWeekSteps().map((t) => t.step.title)).toEqual(['Jog']);
+  });
+
+  it('excludes a FUTURE Journey from Today AND the week (no Home Steps before it starts, §14.4)', () => {
+    const { engine } = twoJourneys('future');
+
+    expect(engine.getTodaySteps().map((t) => t.step.title)).toEqual(['Jog']);
+    expect(engine.getWeekSteps().map((t) => t.step.title)).toEqual(['Jog']);
+  });
+});
+
 describe('JourneyEngine.checkInStep — idempotent rewards (D36)', () => {
   it('flags firstCompletion true on the first check-in of a Step', () => {
     const { bus, engine } = setup();

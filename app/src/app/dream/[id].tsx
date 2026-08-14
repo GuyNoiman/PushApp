@@ -20,6 +20,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { groupDreamJourneys } from '@/components/dreams/dreamView';
+import { CanceledPill } from '@/components/journeys/CanceledPill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -30,7 +31,7 @@ import { useApp } from '@/state/AppProvider';
 
 export default function DreamDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { snapshot } = useApp();
+  const { snapshot, core } = useApp();
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('dreams');
@@ -54,7 +55,14 @@ export default function DreamDetailScreen() {
     );
   }
 
-  const groups = groupDreamJourneys(journeysForDream(dream.id, snapshot?.journeys ?? []));
+  // The reason log is what tells a canceled Journey's PARTIAL reports apart from nothing at all, so
+  // it has to reach the visibility rule (founder, 2026-08-14). Without it a Journey the user worked
+  // on partially would silently vanish from its Dream.
+  const groups = groupDreamJourneys(
+    journeysForDream(dream.id, snapshot?.journeys ?? []),
+    Date.now(),
+    core.getReasonLog(),
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -100,6 +108,7 @@ export default function DreamDetailScreen() {
                       <JourneyRow
                         key={view.id}
                         title={view.title}
+                        canceled={group.state === 'canceled'}
                         onPress={() => router.push(`/journey/${view.id}`)}
                       />
                     ))}
@@ -114,7 +123,21 @@ export default function DreamDetailScreen() {
   );
 }
 
-function JourneyRow({ title, onPress }: { title: string; onPress: () => void }) {
+/**
+ * One linked Journey. A CANCELED Journey stays here as part of the Dream's record (founder decision,
+ * 2026-08-14) and wears the shared "Canceled" tag — the same one the History tab shows, so it reads
+ * identically wherever it appears. It carries no percentage, no bar and no completion styling here,
+ * exactly like every other row on this screen: a Dream has no progress of its own (PRD §4.2).
+ */
+function JourneyRow({
+  title,
+  canceled,
+  onPress,
+}: {
+  title: string;
+  canceled: boolean;
+  onPress: () => void;
+}) {
   const theme = useTheme();
   const { t } = useTranslation('dreams');
   return (
@@ -130,6 +153,7 @@ function JourneyRow({ title, onPress }: { title: string; onPress: () => void }) 
         <ThemedText type="default" numberOfLines={2} style={styles.journeyTitle}>
           {title}
         </ThemedText>
+        {canceled && <CanceledPill />}
         <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.textMuted} />
       </ThemedView>
     </Pressable>

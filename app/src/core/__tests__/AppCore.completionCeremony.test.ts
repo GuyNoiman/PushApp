@@ -28,7 +28,8 @@ function persistentRepo(seed: unknown = null): Repository {
   let saved: AppState | null = null;
   return {
     async load() {
-      return saved ?? ((seed as AppState | null) ?? null);
+      const found = saved ?? (seed as AppState | null);
+      return found ? { kind: 'loaded', state: found } : { kind: 'first-run' };
     },
     async save(state: AppState) {
       saved = JSON.parse(JSON.stringify(state));
@@ -127,6 +128,9 @@ describe('AppCore completion ceremony — persistence + willCompleteJourney faca
     core.markCompletionCeremonyShown(journey.id);
     const shownAt = core.getCompletionCard(journey.id)?.ceremonyShownAt;
 
+    // Saves are serialised (one write in flight, the rest coalesced), so let the queue
+    // drain before reopening the same store.
+    await core.flushSaves();
     // Reload from the same repo into a fresh core.
     const reloaded = await startedCore(repo);
     const card = reloaded.getCompletionCard(journey.id);
@@ -143,6 +147,7 @@ describe('AppCore completion ceremony — persistence + willCompleteJourney faca
     const journey = completeNewJourney(core, 'Pending across restart');
     // Do NOT mark shown — simulate app killed during the ceremony.
 
+    await core.flushSaves(); // let the coalesced write land before reopening the store
     const reloaded = await startedCore(repo);
     expect(reloaded.getPendingCompletionCeremony()?.id).toBe(journey.id);
     expect(reloaded.completionCeremonyNeedsAutoOpen()).toBe(true);

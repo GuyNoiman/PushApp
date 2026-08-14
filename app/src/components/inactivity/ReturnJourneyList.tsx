@@ -4,7 +4,10 @@
  * tap does:
  *
  *   AWAY-FROZEN  — Journeys the app paused while the user was away (freezeReason `account_inactivity`).
- *                  The ONLY resumable set: each row offers Resume + Keep paused.
+ *                  The ONLY resumable set: each row offers Resume + Keep paused + Cancel. "I'm not
+ *                  picking this one back up" is a healthy answer on return, and making the user open
+ *                  each Journey to say it would be friction in front of an honest decision (Journey
+ *                  Abandonment PRD §7.1). Cancel is confirmed by the caller, never by the row.
  *   FUTURE       — Journeys scheduled to begin later; informational only (untouched by the sweep).
  *   MANUAL       — Journeys the user had already paused themselves; shown LABELED and NOT preselected,
  *                  with no resume control here (they resume from the Journey itself).
@@ -12,7 +15,7 @@
  * Presentational only (Engineering Bible §19): it renders already-resolved rows and calls back; all
  * state lives in AppCore. RTL-safe via the shared themed primitives.
  */
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -30,12 +33,15 @@ export function ReturnJourneyList({
   manual,
   onResume,
   onKeepPaused,
+  onCancel,
 }: {
   away: ReturnJourneyRow[];
   future: ReturnJourneyRow[];
   manual: ReturnJourneyRow[];
   onResume: (id: string) => void;
   onKeepPaused: (id: string) => void;
+  /** Opens the cancel confirmation for this Journey. Nothing is canceled from the row itself. */
+  onCancel: (id: string) => void;
 }) {
   const { t } = useTranslation('inactivity');
   const theme = useTheme();
@@ -55,25 +61,43 @@ export function ReturnJourneyList({
           {away.map((row) => (
             <View
               key={row.id}
-              style={[styles.row, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+              style={[
+                styles.awayRow,
+                { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+              ]}>
               <ThemedText type="smallBold" style={[styles.rowTitle, { color: theme.text }]}>
                 {row.title}
               </ThemedText>
+              {/* Three equal-weight answers on one line: come back to it, leave it, or let it go.
+                  Cancel carries the danger ink but no extra emphasis — it is an option, not a nudge. */}
               <View style={styles.actions}>
-                <ThemedText
-                  type="smallBold"
+                <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('return.resume')}
                   onPress={() => onResume(row.id)}
-                  style={{ color: theme.tint }}>
-                  {t('return.resume')}
-                </ThemedText>
-                <ThemedText
-                  type="small"
+                  style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+                  <ThemedText type="smallBold" style={{ color: theme.tint }}>
+                    {t('return.resume')}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('return.keepPaused')}
                   onPress={() => onKeepPaused(row.id)}
-                  themeColor="textMuted">
-                  {t('return.keepPaused')}
-                </ThemedText>
+                  style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+                  <ThemedText type="small" themeColor="textMuted">
+                    {t('return.keepPaused')}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('return.cancelJourneyA11y', { title: row.title })}
+                  onPress={() => onCancel(row.id)}
+                  style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+                  <ThemedText type="small" style={{ color: theme.danger }}>
+                    {t('return.cancelJourney')}
+                  </ThemedText>
+                </Pressable>
               </View>
             </View>
           ))}
@@ -161,6 +185,14 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     borderWidth: 1,
   },
+  // The away row stacks (title over actions) rather than sitting on one line: three actions plus a
+  // Journey title never fit side by side, least of all in Hebrew.
+  awayRow: {
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+  },
   rowTitle: {
     flex: 1,
     minWidth: 0,
@@ -168,6 +200,16 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: Spacing.three,
+  },
+  // ≥44pt tap targets — three actions on one row make each label short, so the target comes from
+  // the wrapper, not from the text.
+  action: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

@@ -19,6 +19,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import type { WeekReviewOutcome } from '@/core/AppCore';
+import { isRunning } from '@/core/util/journeyStatus';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
@@ -28,7 +29,9 @@ export default function DevAdaptiveScreen() {
   const router = useRouter();
   const [outcomes, setOutcomes] = useState<Record<string, WeekReviewOutcome>>({});
 
-  const active = (snapshot?.journeys ?? []).filter((j) => !j.completedAt);
+  // Only RUNNING Journeys are exercisable — gated positively on `isRunning` like the engines, so a
+  // frozen (paused) or Future Journey never gets a forced slip or a review.
+  const active = (snapshot?.journeys ?? []).filter(isRunning);
 
   const forceSlipAndReview = (journeyId: string) => {
     const journey = active.find((j) => j.id === journeyId);

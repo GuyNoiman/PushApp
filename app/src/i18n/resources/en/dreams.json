@@ -23,6 +23,7 @@
     "active": "Active",
     "frozen": "Paused",
     "completed": "Completed",
-    "future": "Upcoming"
+    "future": "Upcoming",
+    "canceled": "Stopped"
   }
 }

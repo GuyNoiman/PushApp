@@ -38,7 +38,7 @@ function capturingRepo(): { repo: Repository; lastSaved: () => AppState | null }
   return {
     repo: {
       async load() {
-        return saved;
+        return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
       },
       async save(state: AppState) {
         saved = state;
@@ -55,7 +55,7 @@ function capturingRepo(): { repo: Repository; lastSaved: () => AppState | null }
 function loadingRepo(state: unknown): Repository {
   return {
     async load() {
-      return state as AppState;
+      return { kind: 'loaded', state: state as AppState };
     },
     async save() {},
     async clear() {},
@@ -115,6 +115,25 @@ describe('createJourneyFromGoalSpec — parking deferred goals', () => {
     // Persisted in the SAME JourneyCreated save.
     expect(lastSaved()?.parkedGoals).toHaveLength(2);
     expect(lastSaved()?.journeys.some((j) => j.id === journey.id)).toBe(true);
+  });
+
+  it('never turns an UNCHOSEN goal into a (partial) Future Journey — AC #9', async () => {
+    // Future Journey Management §12: the other aspirations are parked as ideas, not built. A Future
+    // Journey only ever exists for a COMPLETE, approved plan — so the deferred goals must produce no
+    // `future` Journey and consume no Future slot.
+    const { core } = await freshCore();
+
+    core.createJourneyFromGoalSpec(
+      specWith([
+        { title: 'Run 5k', processType: 'process', domain: 'general' },
+        { title: 'Read more', processType: 'recurring', domain: 'general' },
+      ]),
+    );
+
+    const snapshot = core.getSnapshot();
+    expect(snapshot.parkedGoals).toHaveLength(2);
+    expect(snapshot.journeys.some((j) => j.status === 'future')).toBe(false);
+    expect(snapshot.futureCapacity.count).toBe(0);
   });
 
   it('parks nothing for a single-goal spec (no deferred goals)', async () => {

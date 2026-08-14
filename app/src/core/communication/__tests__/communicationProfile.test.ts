@@ -1,16 +1,19 @@
 /**
  * communicationProfile — proves the pure preference + scoring (PRD §7): votes tally, a plurality
  * wins, ties leave `primary` null for the conditional tie-break page, the deterministic `breakTie`
- * settles a draw without hidden weighting, and the persisted id shape validates untrusted input.
+ * settles a draw without hidden weighting, the persisted id shape validates untrusted input, and the
+ * applied-style accessor the framework-free layer reads defaults and round-trips correctly.
  */
 import {
   COMMUNICATION_PROFILE_IDS,
   DEFAULT_COMMUNICATION_PROFILE,
   breakTie,
+  getCommunicationProfile,
   isCommunicationProfileId,
   leadingStyles,
   profileToCoachStyle,
   scoreAnswers,
+  setCommunicationProfile,
   tallyVotes,
   type CommunicationProfileId,
 } from '@/core/communication/communicationProfile';
@@ -23,6 +26,34 @@ describe('communicationProfile', () => {
 
     it('defaults to Warm (PRD §7 Default)', () => {
       expect(DEFAULT_COMMUNICATION_PROFILE).toBe('warm');
+    });
+  });
+
+  // Declared before every other block that could touch the module value, so the "before any set"
+  // assertion below is genuinely reading a fresh module (jest runs tests in declaration order).
+  describe('applied-style accessor (what the framework-free layer reads)', () => {
+    afterEach(() => {
+      setCommunicationProfile(DEFAULT_COMMUNICATION_PROFILE);
+    });
+
+    it('reads the Warm default before anything sets it', () => {
+      expect(getCommunicationProfile()).toBe(DEFAULT_COMMUNICATION_PROFILE);
+      expect(getCommunicationProfile()).toBe('warm');
+    });
+
+    it('round-trips every style id', () => {
+      for (const id of COMMUNICATION_PROFILE_IDS) {
+        setCommunicationProfile(id);
+        expect(getCommunicationProfile()).toBe(id);
+      }
+    });
+
+    it('only a validated id can ever reach it (the guard is the gate)', () => {
+      // The ProfileProvider normalizes through `isCommunicationProfileId` before mirroring, so a
+      // persisted Coach voice id or garbage never becomes the applied style.
+      const stored: unknown = 'steady';
+      setCommunicationProfile(isCommunicationProfileId(stored) ? stored : DEFAULT_COMMUNICATION_PROFILE);
+      expect(getCommunicationProfile()).toBe('warm');
     });
   });
 

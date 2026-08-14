@@ -17,15 +17,10 @@
  * title, id list, or reason ever rides them.
  */
 import type { EventBus } from '../events/EventBus';
-import type { AppState, Journey } from '../types/domain';
-import { resolveJourneyStatus } from '../util/journeyStatus';
+import type { AppState } from '../types/domain';
+import { isRunning } from '../util/journeyStatus';
 import { INACTIVITY_POLICY } from '../config/inactivityPolicy';
 import type { JourneyEngine } from './JourneyEngine';
-
-/** A Journey that is running now: `active` (not frozen/completed/abandoned) and already started. */
-function isActiveStarted(journey: Journey, now: number): boolean {
-  return resolveJourneyStatus(journey) === 'active' && journey.createdAt <= now;
-}
 
 export class InactivityEngine {
   constructor(
@@ -66,7 +61,11 @@ export class InactivityEngine {
     // Only an UNRESOLVED cycle blocks a fresh sweep; a resolved one re-arms so a new absence freezes.
     const inOpenCycle = state.accountInactivity != null && !state.accountInactivity.resolved;
     if (!inOpenCycle && gap >= INACTIVITY_POLICY.thresholdMs) {
-      const toFreeze = state.journeys.filter((j) => isActiveStarted(j, now));
+      // Only RUNNING Journeys are swept. A FUTURE Journey keeps its Future lifecycle state and its
+      // planned start date rather than being converted into a Frozen one (Inactivity PRD §4) — the
+      // `createdAt <= now` proxy that used to stand in for "already started" is gone with the
+      // createdAt-derived Future bucket (Future Journey Management §3).
+      const toFreeze = state.journeys.filter(isRunning);
       for (const journey of toFreeze) {
         this.journeyEngine.freezeJourney(journey.id, 'account_inactivity');
       }

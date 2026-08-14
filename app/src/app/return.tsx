@@ -7,7 +7,8 @@
  * Three ways forward (never a wall of missed days):
  *   TALK TO THE COACH        — hand off to the coach conversation.
  *   CHOOSE JOURNEYS TO RESUME — reveal the grouped list and resume any away-frozen Journey one tap
- *                               at a time (or keep it paused).
+ *                               at a time (keep it paused, or cancel it — "I'm not picking this one
+ *                               back up" is a legitimate return decision, Journey Abandonment §7.1).
  *   NOT NOW                   — just close. It does NOT resolve the return (per-foreground dedupe
  *                               stops it re-popping this session); the Home CTA brings it back later.
  *
@@ -21,10 +22,13 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ReturnJourneyList, type ReturnJourneyRow } from '@/components/inactivity/ReturnJourneyList';
+import { CancelJourneySheet } from '@/components/journey/CancelJourneySheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { unlivedStepCount } from '@/core/status/stepHistory';
 import { useTheme } from '@/hooks/use-theme';
+import { useSupportCircleImpact } from '@/hooks/useSupportCircleImpact';
 import { useApp } from '@/state/AppProvider';
 
 export default function ReturnScreen() {
@@ -34,6 +38,9 @@ export default function ReturnScreen() {
   const { t } = useTranslation('inactivity');
 
   const [showList, setShowList] = useState(false);
+  // The Journey whose cancel confirmation is open (id), or null. Canceling from here goes through the
+  // SAME sheet as the Journey detail screen — one confirmation, one wording, one set of consequences.
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   // Read the pending return (PURE getter). Recomputed from the snapshot so resuming a Journey (which
   // notifies subscribers) re-renders the list and auto-resolves + closes when the last one is handled.
@@ -53,6 +60,11 @@ export default function ReturnScreen() {
     return (id: string): ReturnJourneyRow => ({ id, title: map.get(id) ?? '' });
   }, [snapshot?.journeys]);
 
+  // The REAL Support-Circle consequence for the Journey being canceled, read only while its
+  // confirmation is open — same hook, same honesty rule as the Journey-detail sheet: nothing is
+  // stated until the counts are known, and a failed read never blocks the cancel.
+  const supportCircle = useSupportCircleImpact(cancelingId ?? undefined, cancelingId != null);
+
   // A resolved / absent return (e.g. every away-frozen Journey already resumed) has nothing to show.
   if (!returnState) {
     return (
@@ -71,6 +83,12 @@ export default function ReturnScreen() {
   const away = returnState.frozenJourneyIds.map(titleOf);
   const future = returnState.futureJourneyIds.map(titleOf);
   const manual = returnState.manualFrozenJourneyIds.map(titleOf);
+
+  // The Journey behind the open cancel confirmation, resolved from the snapshot so the sheet can
+  // state the REAL number of never-reported Steps it will remove.
+  const cancelTarget = cancelingId
+    ? (snapshot?.journeys.find((j) => j.id === cancelingId) ?? null)
+    : null;
 
   const openCoach = () => router.push('/coach' as Href);
 
@@ -102,6 +120,7 @@ export default function ReturnScreen() {
               manual={manual}
               onResume={(id) => core.resumeInactivityJourney(id)}
               onKeepPaused={(id) => core.keepInactivityJourneyFrozen(id)}
+              onCancel={(id) => setCancelingId(id)}
             />
           ) : null}
         </ScrollView>
@@ -136,6 +155,25 @@ export default function ReturnScreen() {
             </Pressable>
           ) : null}
         </View>
+
+        {/* Cancel confirmation — final, no undo. `canPause` is false here: these Journeys are already
+            paused, so "Pause it instead" would be an offer of the state they are already in. Canceling
+            does NOT resolve the inactivity marker — returning is the return flow's decision, not this
+            one — and a canceled Journey simply drops out of the resume set on the next render. */}
+        {cancelTarget && (
+          <CancelJourneySheet
+            visible
+            stepsToRemove={unlivedStepCount(cancelTarget, core.getReasonLog())}
+            canPause={false}
+            supportCircle={supportCircle}
+            onDismiss={() => setCancelingId(null)}
+            onPauseInstead={() => setCancelingId(null)}
+            onConfirm={() => {
+              core.abandonJourney(cancelTarget.id);
+              setCancelingId(null);
+            }}
+          />
+        )}
       </SafeAreaView>
     </ThemedView>
   );

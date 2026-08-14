@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { visibleDreamJourneys } from '@/components/dreams/dreamView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -36,7 +37,7 @@ interface DreamRow {
 export default function MyDreamsScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { snapshot } = useApp();
+  const { snapshot, core } = useApp();
   const { t } = useTranslation('dreams');
 
   const rows = useMemo<DreamRow[]>(() => {
@@ -44,9 +45,14 @@ export default function MyDreamsScreen() {
     return (snapshot?.dreams ?? []).map((dream) => ({
       id: dream.id,
       title: dream.title,
-      journeyCount: journeysForDream(dream.id, journeys).length,
+      // Counts exactly what the Dream detail LISTS (`visibleDreamJourneys`) — so a canceled Journey
+      // with nothing done, which that screen doesn't show, is never counted here either.
+      journeyCount: visibleDreamJourneys(
+        journeysForDream(dream.id, journeys),
+        core.getReasonLog(),
+      ).length,
     }));
-  }, [snapshot?.dreams, snapshot?.journeys]);
+  }, [snapshot?.dreams, snapshot?.journeys, core]);
 
   return (
     <ThemedView style={styles.container}>

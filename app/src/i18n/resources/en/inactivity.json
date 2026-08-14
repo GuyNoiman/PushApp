@@ -8,7 +8,7 @@
     "done": "Done",
     "sections": {
       "away": "Paused while you were away",
-      "awayHint": "Tap Resume to pick any of these back up.",
+      "awayHint": "Pick any of these back up, leave it paused, or cancel the ones you're not coming back to.",
       "future": "Coming up",
       "futureHint": "These are still scheduled to start later.",
       "manual": "You paused these earlier",
@@ -16,6 +16,8 @@
     },
     "resume": "Resume",
     "keepPaused": "Keep paused",
+    "cancelJourney": "Cancel it",
+    "cancelJourneyA11y": "Cancel the Journey {{title}}",
     "empty": "Nothing to pick up right now."
   },
   "home": {

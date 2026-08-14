@@ -30,7 +30,8 @@ function repoWith(loaded: unknown): { repo: Repository; saved: () => AppState | 
   return {
     repo: {
       async load() {
-        return (saved ?? (loaded as AppState | null)) ?? null;
+        const found = saved ?? (loaded as AppState | null);
+        return found ? { kind: 'loaded', state: found } : { kind: 'first-run' };
       },
       async save(state: AppState) {
         saved = state;

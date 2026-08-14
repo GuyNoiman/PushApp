@@ -140,16 +140,26 @@ function ThemedChrome() {
   const gateReady = ready && snapshot != null;
   const onboardingCompleted = snapshot?.onboardingCompleted === true;
 
+  // Recovery gate (Encryption_Design §6, Phase C0): the core found stored data it could not open.
+  // Nothing has been written over it and nothing will be, so the app must say so rather than show a
+  // silently empty Home. It outranks the onboarding gate — this user is not new, we just cannot read
+  // their data yet — and it clears itself the moment the recovery resolves.
+  const inRecovery = gateReady && snapshot?.dataRecovery != null;
+
   return (
     <ThemeProvider value={NavThemes[scheme]}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false }}>
+        {/* Unreadable stored data — the only reachable surface until it is resolved. */}
+        <Stack.Protected guard={inRecovery}>
+          <Stack.Screen name="data-recovery" />
+        </Stack.Protected>
         {/* The first-run onboarding flow — the only reachable surface until it completes. */}
-        <Stack.Protected guard={gateReady && !onboardingCompleted}>
+        <Stack.Protected guard={gateReady && !inRecovery && !onboardingCompleted}>
           <Stack.Screen name="onboarding" />
         </Stack.Protected>
-        <Stack.Protected guard={onboardingCompleted || !gateReady}>
+        <Stack.Protected guard={!inRecovery && (onboardingCompleted || !gateReady)}>
           <Stack.Screen name="(tabs)" />
         </Stack.Protected>
         {/* Settings › Language picker — a card push from the Settings tab. */}
@@ -167,6 +177,9 @@ function ThemedChrome() {
         <Stack.Screen name="settings/communication-style-quiz" />
         <Stack.Screen name="journey/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey/[id]" />
+        {/* Friend Profile (Friend_Profile_PRD) — a pushed detail screen, not a modal: it has
+            sub-navigation and a destructive action, so it belongs on the back stack. */}
+        <Stack.Screen name="friend/[id]" />
         {/* My Dreams (Dream Management, D40) — the private, view-only Dream list opened from the
             Settings profile area, and each Dream's detail. Coach-owned; no CRUD controls. */}
         <Stack.Screen name="my-dreams" />

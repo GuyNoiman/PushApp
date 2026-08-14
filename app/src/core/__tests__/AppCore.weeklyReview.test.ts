@@ -32,7 +32,7 @@ function inMemoryRepo(): Repository {
   let saved: AppState | null = null;
   return {
     async load() {
-      return saved;
+      return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
     },
     async save(state: AppState) {
       saved = state;
@@ -49,7 +49,7 @@ function capturingCore(): { core: AppCore; saved: () => AppState | null } {
   let saved: AppState | null = null;
   const repo: Repository = {
     async load() {
-      return saved;
+      return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
     },
     async save(state: AppState) {
       saved = state; // same object reference as core's live state — reads reflect the latest write

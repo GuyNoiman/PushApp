@@ -3,13 +3,14 @@
  *
  * The domain `Journey` (core/types/domain.ts) has no explicit Phases in the POC;
  * the mockups speak in "Phase X / Y". We derive a light, honest Phase read-out from
- * Steps (done Steps → current Phase) plus progress and a start/end window from
- * createdAt + durationDays. This is DISPLAY math only — no rewards/Buddy logic
- * (Engineering Bible §19). When real Phases land, replace these derivations.
+ * Steps (done Steps → current Phase) plus progress and a start/end window from the Journey's
+ * effective start (`effectiveStartAt`) + durationDays. This is DISPLAY math only — no
+ * rewards/Buddy logic (Engineering Bible §19). When real Phases land, replace these derivations.
  */
 import type { Journey, JourneyStatus, ReasonEntry, Step } from '@/core/types/domain';
 import { isStepLocked } from '@/core/status/stepDependencies';
-import { resolveJourneyStatus } from '@/core/util/journeyStatus';
+import { deriveStepStatus, type StepStatus } from '@/core/status/stepStatus';
+import { effectiveStartAt, resolveJourneyStatus } from '@/core/util/journeyStatus';
 import { weeksBetween } from '@/core/util/week';
 import i18n from '@/i18n';
 
@@ -24,6 +25,11 @@ export interface JourneyView {
   /** 0..1 share of Steps done (whole-Journey progress). */
   progress: number;
   doneSteps: number;
+  /**
+   * The Steps this Journey is measured against. For an ABANDONED (canceled) Journey this is the
+   * count it had when the user let it go ({@link Journey.stepsAtAbandon}), NOT the shortened array
+   * that survived the cancel — so the honest "3 of 12" is what the UI reads.
+   */
   totalSteps: number;
   /** Derived current Phase (1-based) and total Phases. */
   phase: number;
@@ -31,6 +37,15 @@ export interface JourneyView {
   /** Epoch ms the Journey began / is expected to end. */
   startedAt: number;
   endsAt: number;
+  /**
+   * The instant this Journey actually ENDED, epoch ms — its {@link Journey.abandonedAt} when the
+   * user canceled it, its {@link Journey.completedAt} when they finished it. This is what the
+   * History surface dates and orders by, and it is undefined for a still-running Journey AND for a
+   * Journey canceled/completed before its stamp existed: such a card shows no date and sorts last,
+   * rather than inventing one. A non-finite persisted value is treated as absent for the same
+   * reason — no surface may ever render "Invalid Date".
+   */
+  endedAt?: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,23 +59,43 @@ export { resolveJourneyStatus };
 
 /**
  * Bucket a Journey for the Journeys-screen tabs, from its {@link resolveJourneyStatus lifecycle
- * status}. `completed` → Completed. A still-`active` Journey scheduled to BEGIN later (createdAt in
- * the future — the creation flow starts "now", but adopted/scheduled Journeys may not) reads as
- * Future. `active` and `frozen` (paused, resumable — J3) both live under the Active tab; a frozen
- * Journey is distinguished there by its `status`, not by a separate bucket. `abandoned` Journeys are
- * removed outright today, so they never reach this.
+ * status}. `completed` → Completed; `future` (a complete plan saved for later) → Future — a STORED
+ * status now, no longer inferred from a `createdAt` in the future (Future Journey Management §3;
+ * `createdAt` means creation only). `active` and `frozen` (paused, resumable — J3) both live under
+ * the Active tab; a frozen Journey is distinguished there by its `status`, not by a separate bucket.
+ * `abandoned` (the user canceled it) → Completed, because that tab IS the history surface (the tabs
+ * are Current · Completed · Future): a canceled Journey belongs in history, never under Current. The
+ * bucket says WHERE it is listed; {@link JourneyView.status} still reports the true `abandoned`
+ * status, so the row renders its own label — a canceled Journey must never read as a success.
  */
-function bucketOf(journey: Journey, now: number): JourneyBucket {
+function bucketOf(journey: Journey): JourneyBucket {
   const status = resolveJourneyStatus(journey);
-  if (status === 'completed') return 'completed';
-  if (status === 'active' && journey.createdAt > now) return 'future';
+  if (status === 'completed' || status === 'abandoned') return 'completed';
+  if (status === 'future') return 'future';
   return 'active';
 }
 
+/**
+ * Derive the Journeys-screen read-model for one Journey. `now` is kept in the signature (and still
+ * accepted by every existing caller) even though the bucketing no longer needs a clock — the Future
+ * bucket is a stored status now — so the whole cluster keeps ONE call shape with {@link stepsByWeek}
+ * and {@link computeWeekLayout}, which genuinely do need it.
+ */
 export function toJourneyView(journey: Journey, now: number = Date.now()): JourneyView {
-  const totalSteps = journey.steps.length;
+  // A CANCELED Journey is measured against the Steps it had when the user gave up: abandoning
+  // splices the never-lived Steps away, so counting the surviving array would turn "3 of 12 done"
+  // into "3 of 3" — a full progress bar on a Journey that was let go (Friend Profile PRD §4.2).
+  const totalSteps = journey.stepsAtAbandon ?? journey.steps.length;
   const doneSteps = journey.steps.filter((s) => s.done).length;
   const progress = totalSteps === 0 ? 0 : doneSteps / totalSteps;
+
+  // The one instant history dates and orders by: the stop date of a canceled Journey, the
+  // completion date of a finished one (a cancel never stamps `completedAt`, so they can't collide).
+  // Anything that isn't a real, finite number — a legacy Journey with no stamp at all, or a corrupt
+  // persisted value — is dropped here, so the UI is never handed something it would render as
+  // "Invalid Date".
+  const endedRaw = journey.abandonedAt ?? journey.completedAt;
+  const endedAt = typeof endedRaw === 'number' && Number.isFinite(endedRaw) ? endedRaw : undefined;
 
   // Derive Phases from Steps: one Phase per Step feels too granular, so we group
   // into a small number of Phases (min 1). The current Phase advances with progress.
@@ -72,16 +107,37 @@ export function toJourneyView(journey: Journey, now: number = Date.now()): Journ
   return {
     id: journey.id,
     title: journey.title,
-    bucket: bucketOf(journey, now),
+    bucket: bucketOf(journey),
     status: resolveJourneyStatus(journey),
     progress,
     doneSteps,
     totalSteps,
     phase,
     phases,
-    startedAt: journey.createdAt,
-    endsAt: journey.createdAt + journey.durationDays * DAY_MS,
+    // Anchored on the Journey's REAL start (activation → intended start → creation), never on
+    // `createdAt` alone: a Future Journey's window must read from its planned start, and a Journey
+    // started early from the day it actually began (Future Journey Management, §5).
+    startedAt: effectiveStartAt(journey),
+    endsAt: effectiveStartAt(journey) + journey.durationDays * DAY_MS,
+    endedAt,
   };
+}
+
+/**
+ * Order the History surface: MOST RECENTLY ENDED FIRST, by {@link JourneyView.endedAt} — one rule
+ * across BOTH of its groups, so a Journey stopped yesterday leads the Stopped group exactly the way
+ * a Journey finished yesterday leads the Completed one, and the two never order by different logic.
+ *
+ * A Journey with no end stamp (canceled or completed before the stamp existed) sorts LAST rather
+ * than first: an unknown date is not a recent one, and pretending otherwise would put the oldest
+ * records on top. Ties keep their snapshot order (Array.prototype.sort is stable), so the ordering
+ * is deterministic and never re-shuffles between renders.
+ */
+export function byMostRecentlyEnded(a: JourneyView, b: JourneyView): number {
+  if (a.endedAt === b.endedAt) return 0;
+  if (a.endedAt == null) return 1;
+  if (b.endedAt == null) return -1;
+  return b.endedAt - a.endedAt;
 }
 
 export interface JourneyWeeks {
@@ -104,14 +160,18 @@ export interface JourneyWeeks {
  * DISPLAY math only (Engineering Bible §19) — dropped Steps are excluded, like progress/actionable lists.
  */
 export function stepsByWeek(journey: Journey, now: number = Date.now()): JourneyWeeks {
-  const start = new Date(journey.createdAt);
+  // The span is anchored on the Journey's REAL start (Future Journey Management, §5): its planned
+  // start while it is still Future, its actual activation once it has begun, and `createdAt` only as
+  // the legacy/"start now" fallback.
+  const startedAt = effectiveStartAt(journey);
+  const start = new Date(startedAt);
   // Calendar-correct span end (add days, not milliseconds — DST-safe).
   const endMs = new Date(
     start.getFullYear(),
     start.getMonth(),
     start.getDate() + journey.durationDays,
   ).getTime();
-  const totalWeeks = Math.max(1, weeksBetween(journey.createdAt, endMs) + 1);
+  const totalWeeks = Math.max(1, weeksBetween(startedAt, endMs) + 1);
   const active = journey.steps.filter((s) => !s.dropped);
   const weeks: Step[][] = Array.from({ length: totalWeeks }, () => []);
   const allPlanned = active.length > 0 && active.every((s) => s.plannedFor != null);
@@ -119,12 +179,12 @@ export function stepsByWeek(journey: Journey, now: number = Date.now()): Journey
   active.forEach((step, i) => {
     const raw =
       allPlanned && step.plannedFor != null
-        ? weeksBetween(journey.createdAt, step.plannedFor)
+        ? weeksBetween(startedAt, step.plannedFor)
         : Math.floor((i * totalWeeks) / Math.max(1, active.length));
     weeks[Math.min(totalWeeks - 1, Math.max(0, raw))].push(step);
   });
 
-  const currentWeek = Math.min(totalWeeks - 1, Math.max(0, weeksBetween(journey.createdAt, now)));
+  const currentWeek = Math.min(totalWeeks - 1, Math.max(0, weeksBetween(startedAt, now)));
   return { totalWeeks, weeks, currentWeek };
 }
 
@@ -220,6 +280,27 @@ export function computeWeekLayout(
   }
 
   return units;
+}
+
+/**
+ * The outcome to SHOW for one Step of a CANCELED Journey's history list.
+ *
+ * Why this exists rather than calling {@link deriveStepStatus} straight: canceling KEEPS every Step
+ * that carries a record and marks the non-done ones `dropped`, to shed them from scope so a canceled
+ * Journey asks nothing and nothing waits on it. But `dropped` is exactly what `deriveStepStatus`
+ * reads as "out of reporting scope → unreported" — so a Step the user honestly reported as a partial
+ * or a "couldn't" would render blank in the very history the cancel exists to preserve. Reading past
+ * the `dropped` flag here restores the truth WITHOUT weakening the engine's scope rule: this is a
+ * display-only read of the same pure derivation, it writes nothing, and every ACTIONABLE surface
+ * (Home, weekly planning, dependency locks) still sees the Step as dropped.
+ *
+ * History only — never call this for a live Journey.
+ */
+export function historyStepStatus(
+  step: Step,
+  reasonLog: readonly ReasonEntry[] = [],
+): StepStatus {
+  return deriveStepStatus({ ...step, dropped: false }, reasonLog);
 }
 
 /**

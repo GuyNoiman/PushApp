@@ -9,9 +9,15 @@
  *     (add-by-username). Tapping "Add" reveals the username input instead of it
  *     sitting inline by default.
  *   · A SINGLE "Your friends" list — the Support Circle. Each person is a row
- *     (monogram avatar, name, a human status line, and ONE Cheer action).
+ *     (monogram avatar, name, a human status line, and ONE Cheer action), and the
+ *     whole row opens that friend's profile (Friend_Profile_PRD §8 criterion 1).
  *     Populated from the real social lists; a calm empty state shows until the
  *     user has friends.
+ *
+ * The list is a list of PEOPLE, one row per ACCEPTED friend (`buildCircleRows`) —
+ * not one row per shared Journey, which used to hide a friend who shared nothing
+ * and show a friend who shared two Journeys twice. Shared progress folds in as the
+ * status line and the Cheer target only.
  *
  * The user's own identity (the editable @username) NO LONGER lives here — it
  * moved to the Settings tab's Profile section (founder feedback 2026-08-07).
@@ -27,84 +33,40 @@
  * screen is the Support Circle / help-first people list only.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { displayName, initialsFor, tintFor } from '@/components/friends/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+// From the module, not the `@/core/social` barrel: this is a runtime VALUE, and the barrel pulls
+// the Supabase-backed gateway in with it.
+import { buildCircleRows, type CircleRow } from '@/core/social/circleRows';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
-// A small warm palette for the monogram avatars, cycled by id so every person
-// gets a stable, distinct tint (Design System §2 role accents) — same scheme as
-// Inbox so a person reads consistently across screens. Built from the ACTIVE
-// theme so the tints adapt in dark mode.
-function avatarTints(c: ReturnType<typeof useTheme>): { bg: string; ink: string }[] {
-  return [
-    { bg: c.coralTint, ink: c.coralStrong },
-    { bg: c.goldTint, ink: c.goldStrong },
-    { bg: c.purpleTint, ink: c.purpleStrong },
-    { bg: c.tealTint, ink: c.tealStrong },
-    { bg: c.blueTint, ink: c.blueStrong },
-    { bg: c.pinkTint, ink: c.pink },
-  ];
-}
-
-function tintFor(c: ReturnType<typeof useTheme>, seed: string): { bg: string; ink: string } {
-  const tints = avatarTints(c);
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return tints[Math.abs(hash) % tints.length];
-}
-
-/** 1–2 letter monogram from a display name (skips a leading @). */
-function initialsFor(name: string): string {
-  const clean = name.replace(/^@/, '').trim();
-  const parts = clean.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return clean.slice(0, 2).toUpperCase();
-}
-
-/** A person row in the Circle list. Each real row carries a Cheer target via `onAction`. */
-interface CircleRowModel {
-  id: string;
-  name: string;
-  initials: string;
-  status: string;
-  onAction?: () => void;
-}
-
 export default function FriendsScreen() {
   const social = useSocial();
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation('circle');
 
   const [showAdd, setShowAdd] = useState(false);
 
   const signedIn = social.enabled && !social.needsHandle && !!social.profile;
 
-  // ── Your friends ← real ally progress (each can get a Cheer via sendCheer). The
-  // single list merges what used to be the two tabs so the Circle reads as one Support
-  // Circle (the Need-help / Deserve-praise split now lives on Home). ──
-  const rows = useMemo<CircleRowModel[]>(
-    () =>
-      social.allyProgress.map((ap) => {
-        const name = ap.owner.buddySummary?.name?.trim() || `@${ap.owner.handle}`;
-        const pct = Math.round(Math.max(0, Math.min(1, ap.progress)) * 100);
-        const title = ap.visibility === 'anonymous' || !ap.title ? t('aJourney') : ap.title;
-        return {
-          id: `${ap.owner.id}:${ap.journeyId}`,
-          name,
-          initials: initialsFor(name),
-          status: t('progressStatus', { pct, title }),
-          onAction: () => void social.sendCheer(ap.owner.id, ap.journeyId),
-        };
-      }),
-    [social, t],
+  // ── Your friends ← the accepted Support Circle, one row per PERSON. Shared ally
+  // progress folds in as each row's status line and Cheer target (the pure builder
+  // owns that arithmetic; this screen owns the copy). ──
+  const rows = useMemo(
+    () => buildCircleRows(social.friends, social.allyProgress),
+    [social.friends, social.allyProgress],
   );
 
   return (
@@ -150,8 +112,15 @@ export default function FriendsScreen() {
           ) : (
             <View style={styles.list}>
               {rows.map((row) => {
-                const tint = tintFor(theme, row.id);
-                return <PersonRow key={row.id} row={row} tint={tint.bg} tintInk={tint.ink} />;
+                const cheer = row.cheerTarget;
+                return (
+                  <PersonRow
+                    key={row.id}
+                    row={row}
+                    onOpen={() => router.push(`/friend/${row.id}` as Href)}
+                    onCheer={cheer ? () => void social.sendCheer(cheer.toId, cheer.journeyId) : undefined}
+                  />
+                );
               })}
             </View>
           )}
@@ -199,41 +168,80 @@ function HeaderButton({
 
 // ── Person row ───────────────────────────────────────────────────────────────
 
-function PersonRow({ row, tint, tintInk }: { row: CircleRowModel; tint: string; tintInk: string }) {
+/**
+ * One person in the Support Circle. The whole card opens their profile; the Cheer pill is a
+ * nested action that only exists when there is a Journey to cheer ON — offering it otherwise
+ * would be a button the database is guaranteed to refuse.
+ */
+function PersonRow({
+  row,
+  onOpen,
+  onCheer,
+}: {
+  row: CircleRow;
+  onOpen: () => void;
+  onCheer?: () => void;
+}) {
   const theme = useTheme();
   const { t } = useTranslation('circle');
+  const tint = tintFor(theme, row.id);
+  const name = displayName(row.profile);
   // One simple, friendly action per person: Cheer (teal). Amber is reserved for
   // urgency elsewhere; this is the general Support Circle list.
-  const accent = theme.teal;
-  const label = t('cheer');
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
-      <View style={[styles.avatar, { backgroundColor: tint }]}>
-        <ThemedText type="smallBold" style={{ color: tintInk }}>
-          {row.initials}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('openProfileA11y', { name })}
+      onPress={onOpen}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+        pressed && styles.pressed,
+      ]}>
+      <View style={[styles.avatar, { backgroundColor: tint.bg }]}>
+        <ThemedText type="smallBold" style={{ color: tint.ink }}>
+          {initialsFor(name)}
         </ThemedText>
       </View>
 
       <View style={styles.main}>
         <ThemedText type="smallBold" numberOfLines={1}>
-          {row.name}
+          {name}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-          {row.status}
+          {statusLine(row, t)}
         </ThemedText>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('cheerA11y', { name: row.name })}
-        onPress={row.onAction}
-        style={({ pressed }) => [styles.actionPill, { backgroundColor: accent }, pressed && styles.pressed]}>
-        <ThemedText type="smallBold" style={{ color: theme.background }}>
-          {label}
-        </ThemedText>
-      </Pressable>
-    </View>
+      {onCheer ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('cheerA11y', { name })}
+          onPress={onCheer}
+          style={({ pressed }) => [
+            styles.actionPill,
+            { backgroundColor: theme.teal },
+            pressed && styles.pressed,
+          ]}>
+          <ThemedText type="smallBold" style={{ color: theme.background }}>
+            {t('cheer')}
+          </ThemedText>
+        </Pressable>
+      ) : null}
+    </Pressable>
   );
+}
+
+/**
+ * The human status line for a row. The builder hands us DATA; the copy lives here. A masked
+ * (Encourager) title becomes the neutral "a Journey" placeholder rather than a guess.
+ */
+function statusLine(row: CircleRow, t: TFunction<'circle'>): string {
+  if (row.status.kind === 'none') return t('noSharedJourney');
+  const title = row.status.title ?? t('aJourney');
+  return row.status.kind === 'one'
+    ? t('progressStatus', { pct: row.status.pct, title })
+    : t('progressStatusMulti', { pct: row.status.pct, title, journeys: row.status.count });
 }
 
 // A calm empty state for an empty Support Circle — same card language as the other tabs.

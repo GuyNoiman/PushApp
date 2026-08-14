@@ -21,6 +21,7 @@ import {
 } from './engines/MissionEngine';
 import { EntitlementEngine } from './engines/EntitlementEngine';
 import { InactivityEngine } from './engines/InactivityEngine';
+import { FutureJourneyEngine } from './engines/FutureJourneyEngine';
 import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
 import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
@@ -33,8 +34,15 @@ import {
 } from './coach/goalSpecToJourney';
 import { isSensitiveDomain } from './coach/sensitiveDomains';
 import { companionStepsFor, isCompanionEligible } from './social/companion';
-import type { CompanionStepInput } from './social/SocialGateway';
+import { getSocialGateway } from './social';
+import type { CompanionStepInput, SocialGateway } from './social/SocialGateway';
+import {
+  buildJourneyClosedNotice,
+  deliverCircleNotice,
+  type CircleNotice,
+} from './notify/circleNotice';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
+import { futureCapacity, type FutureCapacity } from './journeys/futureJourneys';
 import type { GoalSpec } from './coach/interviewPlaybook';
 import type { JourneyEdit } from './coach/journeyEdit';
 import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
@@ -48,7 +56,7 @@ import { deriveConstraints } from './learning/deriveConstraints';
 import { DeterministicNarrator } from './learning/CoachNarrator';
 import { buildWeeklyReview, computeJourneyProposals } from './review/weeklyReview';
 import { evaluateWeekGate } from './review/weekGate';
-import { resolveJourneyStatus } from './util/journeyStatus';
+import { isFuture, isRunning, resolveJourneyStatus } from './util/journeyStatus';
 import { startOfWeek, weekKey } from './util/week';
 import { defaultAdaptivePolicy } from './config/adaptivePolicy';
 import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
@@ -56,6 +64,7 @@ import { featureFlags } from './config/featureFlags';
 import type { GatedFeature } from './config/tiers';
 import { EventBus } from './events/EventBus';
 import type {
+  JourneyAbandoned,
   JourneyCompleted,
   JourneyFrozen,
   StepCancelled,
@@ -67,7 +76,7 @@ import { getLocationGateway } from './location';
 import { getCalendarGateway } from './calendar';
 import { EncryptedLocalRepository } from './persistence/EncryptedLocalRepository';
 import { asyncStorageFirstRunFlag, type FirstRunFlag } from './persistence/firstRunFlag';
-import type { Repository } from './persistence/Repository';
+import type { LoadFailureReason, Repository } from './persistence/Repository';
 import type {
   ActiveHours,
   AppState,
@@ -77,6 +86,7 @@ import type {
   CompletionCard,
   Dream,
   Journey,
+  JourneyStart,
   ParkedGoal,
   ReasonEntry,
   ReasonId,
@@ -145,6 +155,12 @@ export interface Snapshot {
   journeys: Journey[];
   /** Goals the coach detected but the user didn't build first — the Journeys "For later" surface (L1). */
   parkedGoals: ParkedGoal[];
+  /**
+   * How full the Future list is (Future Journey Management, §10) — the Future tab and the creation
+   * flow read it to know whether another plan may be saved for later and whether the Coach may offer
+   * a relevance review. The Future Journeys themselves are already in {@link journeys}.
+   */
+  futureCapacity: FutureCapacity;
   todaySteps: TodayStep[];
   /** Home's "Week's steps" list — todaySteps plus already-done Steps (kept visible, sunk to the bottom). */
   weekSteps: TodayStep[];
@@ -158,6 +174,25 @@ export interface Snapshot {
    * route into the onboarding stack until it is true, then never again.
    */
   onboardingCompleted: boolean;
+  /**
+   * Set ONLY when the stored data exists but could not be opened. The root layout routes to the
+   * recovery screen while it is non-null, and nothing is saved until it is resolved. Null on every
+   * normal launch, including a genuine first run.
+   */
+  dataRecovery: DataRecovery | null;
+}
+
+/**
+ * The "we could not open your data" state (Encryption_Design §6, Phase C0). Carries the
+ * classification and when it was first seen, so the screen can be honest and specific without
+ * guessing. It is NOT part of AppState — it describes the store, not the user's content.
+ */
+export interface DataRecovery {
+  reason: LoadFailureReason;
+  /** When the failure was first seen (epoch ms). Survives relaunches via the recovery marker. */
+  at: number;
+  /** Whether the untouched original bytes were successfully copied aside. */
+  quarantined: boolean;
 }
 
 /**
@@ -388,6 +423,13 @@ export class AppCore {
    * separate persisted key; {@link resetToFirstRun} sets it.
    */
   private readonly firstRunFlag: FirstRunFlag;
+  /**
+   * Non-null when start() found stored data it could not open (Encryption_Design §6, Phase C0).
+   * While it is set NOTHING is persisted — the unreadable snapshot has been quarantined and the
+   * user is shown the recovery screen instead of a silently empty app. Cleared only by an explicit
+   * wipe ({@link resetToFirstRun}).
+   */
+  private dataRecovery: DataRecovery | null = null;
 
   private readonly journeyEngine: JourneyEngine;
   private readonly rewardEngine: RewardEngine;
@@ -405,6 +447,13 @@ export class AppCore {
    * and always constructed — it seeds a grace anchor on first sight, so it never freezes a fresh user.
    */
   private readonly inactivity: InactivityEngine;
+  /**
+   * Future Journey Management: the clock reconciler that STARTS a scheduled Journey once its
+   * approved instant has arrived, on the same lifecycle beats as {@link inactivity}. It drives the
+   * single idempotent transition through the JourneyEngine, so a long absence lands exactly one
+   * activation rather than a burst.
+   */
+  private readonly futureJourneys: FutureJourneyEngine;
   /**
    * The adaptive coach's "learn the user" engine — constructed ONLY when the
    * `adaptiveCoach` flag is on (undefined otherwise, so production wires nothing new).
@@ -435,6 +484,14 @@ export class AppCore {
 
   private readonly listeners = new Set<() => void>();
   private started = false;
+  /** True while a repo.save() is in flight; see {@link persist}. */
+  private saveRunning = false;
+  /** True when state changed since the in-flight save started — one more write is owed. */
+  private saveQueued = false;
+  /** The running write loop, awaited by {@link flushSaves}. */
+  private saveLoop: Promise<void> | null = null;
+  /** True for the duration of a wipe, so nothing is written behind {@link Repository.clear}. */
+  private wiping = false;
 
   constructor(
     repo: Repository = new EncryptedLocalRepository(),
@@ -497,6 +554,9 @@ export class AppCore {
     // Account Inactivity Freeze (J5): reuses the JourneyEngine's J3 freeze path (provenance-tagged),
     // so there is no parallel state to keep in sync. Always constructed; inert until a real long gap.
     this.inactivity = new InactivityEngine(this.bus, getState, this.journeyEngine);
+    // Future Journey Management: reuses the JourneyEngine's single Future → Active transition, so
+    // there is no parallel state. Always constructed; inert until a scheduled Journey comes due.
+    this.futureJourneys = new FutureJourneyEngine(this.bus, getState, this.journeyEngine);
     // Adaptive-coach pivot (S1.16): DORMANT in production. Only when the flag is on do we
     // construct the BehaviorModelEngine (shared bus + getState + default clock). Off ⇒ this
     // stays undefined and no behaviour is observed, recorded, or persisted.
@@ -511,11 +571,23 @@ export class AppCore {
     if (this.started) return;
     this.started = true;
 
+    // The load result distinguishes "nothing stored yet" from "there IS something stored and we
+    // could not open it" (Repository.LoadResult). Conflating them is what used to destroy data:
+    // the app started empty and the next change wrote that empty state over the real snapshot.
     const loaded = await this.repo.load();
-    if (loaded) {
-      this.state = migrateState(loaded);
+    if (loaded.kind === 'loaded') {
+      this.state = migrateState(loaded.state);
     } else {
       this.state = emptyState();
+    }
+    if (loaded.kind === 'unreadable') {
+      // Engines still start below (the app has to work if the user chooses to start fresh in this
+      // same session), but onChanged now refuses to persist and the demo seed is skipped.
+      this.dataRecovery = {
+        reason: loaded.reason,
+        at: loaded.at,
+        quarantined: loaded.quarantinedKey != null,
+      };
     }
 
     // Adaptive coach (flag on only): seed the engine from the persisted on-device log, then
@@ -547,6 +619,12 @@ export class AppCore {
     this.bus.on('JourneyDeleted', this.onChanged);
     this.bus.on('JourneyFrozen', this.onChanged);
     this.bus.on('JourneyResumed', this.onChanged);
+    // Abandon (canceled): persist the terminal `abandoned` status + the Steps that were removed,
+    // exactly like freeze/resume — the Journey stays in state, it just stops running.
+    this.bus.on('JourneyAbandoned', this.onChanged);
+    // Future Journey Management (§9): persist the one Future → Active transition (its `status` +
+    // `activatedAt`, and any rebased `plannedFor`), exactly like freeze/resume.
+    this.bus.on('JourneyActivated', this.onChanged);
     // Dreams (D40): persist a coach-created Dream + any Journey↔Dream link/unlink. These carry
     // id/boolean-only payloads; the Dream title stays private on-device (G1/G2).
     this.bus.on('DreamCreated', this.onChanged);
@@ -583,10 +661,13 @@ export class AppCore {
     this.bus.on('StepCheckedIn', this.onCheckInClearsPostpone);
     this.bus.on('StepCancelled', this.onStepReportClearsPostpone);
     this.bus.on('StepPartial', this.onStepReportClearsPostpone);
-    // A frozen/completed Journey stops nudging: cancel every pending one-shot on its Steps. A
-    // DELETED Journey is handled in the deleteJourney facade (the Journey is gone by the event).
+    // A frozen/completed/abandoned Journey stops nudging: cancel every pending one-shot on its Steps.
+    // A DELETED Journey is handled in the deleteJourney facade (the Journey is gone by the event);
+    // an ABANDONED Journey's REMOVED Steps are likewise handled in the abandonJourney facade (they
+    // are gone by the event), so this only wipes the surviving Steps' postpone fields.
     this.bus.on('JourneyFrozen', this.onJourneyClearsPostpone);
     this.bus.on('JourneyCompleted', this.onJourneyClearsPostpone);
+    this.bus.on('JourneyAbandoned', this.onJourneyClearsPostpone);
 
     // The Communication Scheduler re-plans the whole notification set whenever the
     // inputs change. The reminder facade methods reconcile directly (right after
@@ -603,15 +684,23 @@ export class AppCore {
     // Both persist through onChanged (above); here we add the reminder reconcile.
     this.bus.on('JourneyFrozen', this.onReconcile);
     this.bus.on('JourneyResumed', this.onReconcile);
+    // An abandoned (canceled) Journey must never nudge again — same reconcile as a freeze, except
+    // there is no resume: the scheduler's positive isRunning gate drops it for good.
+    this.bus.on('JourneyAbandoned', this.onReconcile);
+    // A started Journey's reminders must BEGIN: its rules were saved with the plan but planned
+    // nothing while it was Future (the scheduler gates on isRunning), so re-plan the whole set now.
+    this.bus.on('JourneyActivated', this.onReconcile);
 
     // start() runs the authoritative day/week rollover once on launch.
     this.missionEngine.start();
 
     // Seed the demo data ONLY on a genuine first run — never after an account
-    // deletion. resetToFirstRun clears the repo (so load() returns null again) but
-    // marks the first-run flag consumed, so a post-deletion relaunch stays clean
-    // (O1 adopted decision). A brand-new install has no flag ⇒ seeds as before.
-    if (!loaded && !(await this.firstRunFlag.isConsumed())) {
+    // deletion, and never over a store we could not open. resetToFirstRun clears the
+    // repo (so load() reports a first run again) but marks the first-run flag
+    // consumed, so a post-deletion relaunch stays clean (O1 adopted decision). A
+    // brand-new install has no flag ⇒ seeds as before. An `unreadable` result seeds
+    // nothing: the user has data, we just cannot read it yet.
+    if (loaded.kind === 'first-run' && !(await this.firstRunFlag.isConsumed())) {
       this.seedDemoJourney();
     }
 
@@ -620,12 +709,64 @@ export class AppCore {
     // whose persisted anchor is older than the threshold it freezes their active Journeys here, so the
     // return experience is ready the moment Home mounts.
     this.inactivity.tick(Date.now());
+    // Future Journey Management (§9): reconcile the scheduled starts that came due while the app was
+    // closed, BEFORE the first snapshot is read — so a Journey whose instant passed is already
+    // running when Home mounts (no flicker from Future to Active). Runs AFTER the inactivity sweep on
+    // purpose: a freeze detected on this same beat blocks activation on this same beat (§3.3).
+    this.futureJourneys.tick(Date.now());
   }
 
   private readonly onChanged = (): void => {
-    void this.repo.save(this.state);
+    this.persist();
     this.notify();
   };
+
+  /**
+   * Persist the current state — serialised, coalesced, and blocked during recovery.
+   *
+   * WHY NOT `void this.repo.save(...)`: that fired a fresh encrypt+write on every domain event with
+   * no ordering guarantee, so two writes could interleave and the LAST one to land was undefined
+   * (Encryption_Design D7). Here at most one write is ever in flight; anything that happens while it
+   * runs sets `saveQueued`, and the follow-up write reads `this.state` at that moment — so the store
+   * always converges on the newest state and never on a stale one. The first write still starts
+   * synchronously, exactly as before.
+   */
+  private persist(): void {
+    // A quarantined store must not be written to (the Repository refuses as well — this is the
+    // caller-side half of the same guard). Nothing is lost that was not already unreachable.
+    // Nor is anything written while a wipe is in progress; see resetToFirstRun.
+    if (this.dataRecovery || this.wiping) return;
+    this.saveQueued = true;
+    if (this.saveRunning) return;
+    this.saveLoop = this.runSaves();
+  }
+
+  /**
+   * Resolve once every queued write has landed. The normal path is deliberately fire-and-forget (a
+   * save must never block the UI), so this is for the few callers that need the store to be current
+   * right now — and for tests that reopen the same store in a fresh core.
+   */
+  async flushSaves(): Promise<void> {
+    await this.saveLoop;
+  }
+
+  private async runSaves(): Promise<void> {
+    this.saveRunning = true;
+    try {
+      while (this.saveQueued) {
+        this.saveQueued = false;
+        try {
+          await this.repo.save(this.state);
+        } catch {
+          // A failed write must never break the running app or stall the queue. The state stays in
+          // memory and the next change retries; a refusal (RepositoryLockedError) is expected while
+          // the store is quarantined and is deliberately silent here.
+        }
+      }
+    } finally {
+      this.saveRunning = false;
+    }
+  }
 
   /** Re-plan + re-apply the scheduler-owned notification set (fire-and-forget). */
   private readonly onReconcile = (): void => {
@@ -654,8 +795,10 @@ export class AppCore {
     this.clearOneShotForStep(event.journeyId, event.stepId);
   };
 
-  /** Step Postponement (D37): a frozen/completed Journey clears every Step's pending one-shot. */
-  private readonly onJourneyClearsPostpone = (event: JourneyFrozen | JourneyCompleted): void => {
+  /** Step Postponement (D37): a frozen/completed/abandoned Journey clears every Step's pending one-shot. */
+  private readonly onJourneyClearsPostpone = (
+    event: JourneyFrozen | JourneyCompleted | JourneyAbandoned,
+  ): void => {
     let changed = false;
     for (const step of event.journey.steps) {
       if (step.postponeNotificationId) void this.reminderEngine.cancel(step.postponeNotificationId);
@@ -807,16 +950,76 @@ export class AppCore {
    * keys — so this method only owns the AppCore-managed state.
    */
   async resetToFirstRun(): Promise<void> {
+    // Stop writing, and let anything already in flight finish, BEFORE the wipe. A save that landed
+    // just after clear() would leave ciphertext with no key behind it — which the next launch would
+    // rightly read as unreadable data and show a recovery screen to someone who deliberately
+    // deleted their account.
+    this.wiping = true;
+    await this.flushSaves();
     // Step Postponement (D37): drop every pending one-shot too, so an account wipe leaves no
     // orphaned OS notification scheduled. cancelAll is a safe superset of the per-Step ids.
     await this.reminderEngine.cancelAll();
     await this.repo.clear();
     await this.firstRunFlag.markConsumed();
     this.state = emptyState();
+    // The wipe took the quarantined snapshot with it, so there is nothing left to recover and the
+    // Repository accepts writes again. A deliberate deletion is NOT a failure state (§6.5 keeps the
+    // two markers apart), so the recovery screen must not linger after one.
+    this.dataRecovery = null;
     // Keep the adaptive in-memory model consistent with the wiped state (no-op when
     // the loop is off / the engine was never built).
     this.behaviorModel?.hydrate([]);
+    this.wiping = false;
     this.notify();
+  }
+
+  /**
+   * The recovery screen's LAST resort: give up on the data we could not open and start clean
+   * (Encryption_Design §6.3). It is the same wipe as an account deletion — including the
+   * quarantined snapshot, which is destroyed here and nowhere else — so the screen must confirm it
+   * explicitly before calling. No demo Journeys are seeded afterwards: this user is not new.
+   */
+  async startFreshAfterUnreadableData(): Promise<void> {
+    await this.resetToFirstRun();
+  }
+
+  /**
+   * The unreadable-store state, or null on a normal launch. Read by the root layout's recovery gate
+   * (it also rides in the {@link Snapshot}, so a resolved recovery re-renders the app).
+   */
+  getDataRecovery(): DataRecovery | null {
+    return this.dataRecovery;
+  }
+
+  /**
+   * Ask the store to open again, and adopt the data if it does. Returns whether it worked.
+   *
+   * This is a real retry, not a reassuring button: the honest case is a keychain that was simply
+   * unavailable when the app started (a device still locked), where the very same bytes open
+   * perfectly a moment later. A failure changes nothing — the quarantine and the lock stay exactly
+   * as they were.
+   */
+  async retryLoad(): Promise<boolean> {
+    if (!this.dataRecovery) return true;
+    const result = await this.repo.load();
+    if (result.kind === 'unreadable') {
+      this.dataRecovery = {
+        reason: result.reason,
+        at: result.at,
+        quarantined: result.quarantinedKey != null,
+      };
+      this.notify();
+      return false;
+    }
+
+    this.state = result.kind === 'loaded' ? migrateState(result.state) : emptyState();
+    this.dataRecovery = null;
+    this.behaviorModel?.hydrate(this.state.behaviorLog ?? []);
+    // The engines started against an empty state, so run the normal foreground beat once to bring
+    // the clock-driven ones (Missions, inactivity, Future Journeys, reminders) onto the real one.
+    this.syncTime();
+    this.notify();
+    return true;
   }
 
   // ── Facade ────────────────────────────────────────────────────────────────
@@ -826,19 +1029,46 @@ export class AppCore {
   }
 
   /**
+   * Create a complete Journey saved for LATER (Future Journey Management, §5) — the wizard's
+   * "scheduled"/"manual" start. Delegates to the JourneyEngine, which stores the `future` status +
+   * the intended start and emits the same `JourneyCreated` (so it persists + notifies exactly like an
+   * immediate Journey). Returns null when the Future list is at its cap (§10) — the UI then offers to
+   * start, reschedule, or remove one rather than silently replacing anything.
+   */
+  createFutureJourney(
+    input: NewJourneyInput,
+    start: Extract<JourneyStart, { mode: 'scheduled' | 'manual' }>,
+  ): Journey | null {
+    return this.journeyEngine.createFutureJourney(input, start);
+  }
+
+  /**
    * Create a real Journey from a finished coach interview's {@link GoalSpec} — the one-call bridge
    * the live coach's "Build my Journey" CTA calls. Delegates to the {@link ./coach/goalSpecToJourney}
    * helper over this core's JourneyEngine, so it plans + persists + notifies through the SAME
    * `JourneyCreated` path as {@link createJourney}. This is a NORMAL Journey creation — it is NOT
    * gated behind `adaptiveCoach`; the goal specifics stay ON DEVICE (G1). No planning logic here.
+   *
+   * `start` is the mode chosen at final approval (Future Journey Management, §5). For a SCHEDULED
+   * start the Planner is given the intended instant as its clock (`PlanOptions.now`), so it lays
+   * `plannedFor` across the REAL intended timeline instead of counting from creation day; a manual
+   * start keeps today's clock and is re-anchored by the rebase at {@link startJourneyNow}. Only the
+   * Future paths can decline (the cap, §10), which is why the overloads keep the default
+   * "start now" call returning a plain Journey for every existing caller.
    */
-  createJourneyFromGoalSpec(spec: GoalSpec): Journey {
+  createJourneyFromGoalSpec(spec: GoalSpec): Journey;
+  createJourneyFromGoalSpec(spec: GoalSpec, start: JourneyStart): Journey | null;
+  createJourneyFromGoalSpec(spec: GoalSpec, start: JourneyStart = { mode: 'now' }): Journey | null {
     // Parked/deferred goals (L1): the coach may have detected OTHER goals in the opening the user did
     // NOT choose to build now. Capture them BEFORE delegating, so they persist in the SAME
     // JourneyCreated save. Sensitive-domain goals are filtered out at capture and never parked.
     if (spec.deferredGoals?.length) this.parkDeferredGoals(spec);
 
-    const journey = createJourneyFromGoalSpec(this.journeyEngine, spec);
+    const options = start.mode === 'scheduled' ? { now: start.at } : undefined;
+    const journey = createJourneyFromGoalSpec(this.journeyEngine, spec, undefined, options, start);
+    // At the Future cap nothing was created — return null untouched (no Dream is minted for a
+    // Journey that does not exist).
+    if (!journey) return null;
     // Dream Management (D40): the coach OWNS the Dream layer. When the conversation produced a Dream
     // signal, create-or-reuse that Dream and set it as the new Journey's PRIMARY — no user-approval
     // gate. No signal ⇒ the Journey stays UNLINKED (linking is not a hard gate). The Dream text is
@@ -849,6 +1079,36 @@ export class AppCore {
       if (dream) this.journeyEngine.linkJourneyToDream(journey.id, dream.id, { primary: true });
     }
     return journey;
+  }
+
+  // ── Future Journeys (Future Journey Management) ─────────────────────────────
+  // Thin facades over the JourneyEngine (the only writer) + the pure selectors. A Future Journey is
+  // a complete, approved plan that is simply inactive: no Home Steps, no reminders, no progress, and
+  // no overdue language — every one of those is already excluded by the `isRunning` gates.
+
+  /**
+   * START a Future Journey NOW — the detail screen's "Start Journey" action, and the only path for a
+   * manual-start Journey (§9). Rebases every dated Step by the difference between the recorded
+   * intention and the real start, so an early start keeps the plan's order, spacing and content.
+   * Delegates to the single idempotent transition: a second tap returns null and changes nothing.
+   */
+  startJourneyNow(journeyId: string): Journey | null {
+    return this.journeyEngine.activateJourney(journeyId, Date.now(), { rebase: true });
+  }
+
+  /**
+   * Move a Future Journey's planned start (§8) — editing NEVER activates it. Pass no `at` to drop the
+   * date and make it a manual-start ("start when ready") Journey. Returns null when the id is unknown
+   * or the Journey is no longer Future. The engine emits `JourneyUpdated`, which already persists +
+   * re-plans reminders.
+   */
+  rescheduleFutureJourney(journeyId: string, at?: number, timeZone?: string): Journey | null {
+    return this.journeyEngine.setJourneyStart(journeyId, at, timeZone);
+  }
+
+  /** How full the Future list is + whether the Coach may offer a relevance review (§10). PURE read. */
+  getFutureCapacity(): FutureCapacity {
+    return futureCapacity(this.state.journeys);
   }
 
   // ── Parked/deferred goals (L1) ──────────────────────────────────────────────
@@ -955,6 +1215,77 @@ export class AppCore {
     return this.journeyEngine.resumeJourney(journeyId);
   }
 
+  /**
+   * ABANDON a Journey — the user lets it go (internal status `abandoned`, shown as "canceled"). The
+   * Journey is KEPT: only its never-reported Steps are removed, every Step carrying a record survives,
+   * and it moves to the history surface. Distinct from {@link deleteJourney}, which still hard-removes
+   * everything; this is an additional path, not a replacement.
+   *
+   * Delegates to the JourneyEngine, which emits {@link JourneyAbandoned}: AppCore persists (onChanged)
+   * and re-plans reminders (onReconcile) so it stops nudging for good. Returns the mutated Journey, or
+   * null when the id is unknown, the Journey is already completed (completion is FINAL — D41), or it
+   * is already abandoned. Terminal: there is no un-abandon.
+   */
+  abandonJourney(journeyId: string): Journey | null {
+    // Step Postponement (D37): cancel every pending one-shot BEFORE the engine splices the
+    // never-reported Steps away — those Steps (and their stored OS ids) no longer exist by the time
+    // JourneyAbandoned fires, so the ids must be read here (same reason as deleteJourney). The
+    // surviving Steps' postpone FIELDS are then wiped by the JourneyAbandoned → onJourneyClearsPostpone
+    // hook, exactly like a freeze.
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (journey) {
+      for (const step of journey.steps) {
+        if (step.postponeNotificationId) void this.reminderEngine.cancel(step.postponeNotificationId);
+      }
+    }
+
+    const abandoned = this.journeyEngine.abandonJourney(journeyId);
+    if (abandoned) void this.closeCircleForCanceledJourney(journeyId);
+    return abandoned;
+  }
+
+  /**
+   * The Support-Circle side of a cancel (D2, founder decision 2026-08-14): tell the people who were
+   * supporting this Journey that it stopped, then close/revoke every live invite exactly like the
+   * delete path.
+   *
+   * ORDER MATTERS. `closeJourneyInvites` flips the accepted rows to `closed`, and `listJourneyAllies`
+   * hides closed rows — so the members are read FIRST. Reading afterwards would always find nobody
+   * and the notice would silently never be sent.
+   *
+   * Entirely best-effort: fire-and-forget, every step individually swallowed. The cancel is a LOCAL
+   * transition that has already committed by the time this runs and must complete offline (PRD §11) —
+   * the notice is a consequence of it, never a gate on it. With the pillar off (Null gateway) or
+   * signed out, this is inert.
+   *
+   * What the notice may say is fixed by {@link ./notify/circleNotice}: someone stopped a Journey,
+   * never WHICH Journey.
+   */
+  private async closeCircleForCanceledJourney(journeyId: string): Promise<void> {
+    const gateway = getSocialGateway();
+    const notice = await this.buildCanceledJourneyNotice(gateway, journeyId);
+    await gateway.closeJourneyInvites(journeyId).catch(() => {});
+    if (notice) await deliverCircleNotice(notice);
+  }
+
+  /** The notice for a just-canceled Journey, or null when it can't be built (offline, pillar off). */
+  private async buildCanceledJourneyNotice(
+    gateway: SocialGateway,
+    journeyId: string,
+  ): Promise<CircleNotice | null> {
+    if (!gateway.enabled) return null;
+    try {
+      const [members, owner] = await Promise.all([
+        gateway.listJourneyAllies(journeyId),
+        gateway.currentProfile(),
+      ]);
+      return buildJourneyClosedNotice(members, owner);
+    } catch {
+      // A failed social read costs the Circle a notice, never the user their cancel.
+      return null;
+    }
+  }
+
   // ── Account Inactivity Freeze (J5, LOCAL-FIRST POC) ─────────────────────────
   // The return experience after the local InactivityEngine froze the account's Journeys for a long
   // absence. Freezing reused the J3 path (provenance-tagged), so these methods only READ the marker
@@ -970,7 +1301,6 @@ export class AppCore {
   getInactivityReturn(): InactivityReturn | null {
     const marker = this.state.accountInactivity;
     if (!marker || marker.resolved) return null;
-    const now = Date.now();
     const frozenJourneyIds: string[] = [];
     const manualFrozenJourneyIds: string[] = [];
     const futureJourneyIds: string[] = [];
@@ -978,7 +1308,10 @@ export class AppCore {
       if (j.status === 'frozen') {
         if (j.freezeReason === 'account_inactivity') frozenJourneyIds.push(j.id);
         else manualFrozenJourneyIds.push(j.id);
-      } else if (resolveJourneyStatus(j) === 'active' && j.createdAt > now) {
+      } else if (isFuture(j)) {
+        // A Journey saved for later — including one whose scheduled start passed DURING the freeze
+        // (activation is blocked while the account is frozen, Inactivity PRD §3.3). Shown for
+        // context only; never in the resume set.
         futureJourneyIds.push(j.id);
       }
     }
@@ -1596,6 +1929,10 @@ export class AppCore {
     // Account Inactivity Freeze (J5): run the detector FIRST, so any Journey newly frozen for a long
     // absence is already `frozen` when the reconcile below cancels its reminders in the same beat.
     this.inactivity.tick(Date.now());
+    // Future Journey Management (§9): then start any scheduled Journey whose instant has arrived, so
+    // the reconcile below plans its reminders in this same beat. Order matters — a freeze detected
+    // just above blocks activation here (Inactivity PRD §3.3).
+    this.futureJourneys.tick(Date.now());
     this.missionEngine.refresh();
     // Re-plan reminders on the same lifecycle beat as the Mission rollover, so a
     // day/week change (and any Journey that lapsed) is reflected in what's pending.
@@ -2031,12 +2368,16 @@ export class AppCore {
       dreams: this.state.dreams,
       journeys: this.state.journeys,
       parkedGoals: this.state.parkedGoals ?? [],
+      futureCapacity: futureCapacity(this.state.journeys),
       todaySteps: this.journeyEngine.getTodaySteps(),
       weekSteps: this.journeyEngine.getWeekSteps(),
-      activeJourneyCount: this.state.journeys.filter((j) => !j.completedAt).length,
+      // RUNNING Journeys only (isRunning): a frozen, completed, or FUTURE Journey is not part of the
+      // user's current workload, so none of them inflate the count Home reads.
+      activeJourneyCount: this.state.journeys.filter(isRunning).length,
       claimableRewards: this.missionEngine.getClaimableCount(),
       streak: this.state.streak ?? 0,
       onboardingCompleted: this.state.onboardingCompletedAt != null,
+      dataRecovery: this.dataRecovery,
     };
   }
 

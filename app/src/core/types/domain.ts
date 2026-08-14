@@ -144,10 +144,30 @@ export interface Milestone {
  * Journeys screen and for freeze/resume (J3). `active` = in progress; `frozen` = paused by the
  * user without losing progress (resumable — J3); `completed` = every Step done; `abandoned` = let
  * go (reserved — deletion currently removes the Journey outright rather than soft-marking it).
- * The `future` display bucket (a Journey scheduled to begin later) is derived from `createdAt`, not
- * a stored status, so it transitions to `active` on its own when the start time passes.
+ *
+ * `future` (Future Journey Management) = a complete, APPROVED plan intentionally saved for later.
+ * It is a STORED status, no longer derived from `createdAt` (the old display hack overloaded the
+ * creation timestamp — PRD §3). A `future` Journey produces NO obligations: no Home Steps, no
+ * reminders, no reports, no progress, and it is never swept by the inactivity freeze. It becomes
+ * `active` through exactly one idempotent transition ({@link JourneyEngine.activateJourney}).
  */
-export type JourneyStatus = 'active' | 'frozen' | 'completed' | 'abandoned';
+export type JourneyStatus = 'active' | 'frozen' | 'completed' | 'abandoned' | 'future';
+
+/**
+ * The START MODE chosen at final approval of a Journey (Future Journey Management, §5) — exactly
+ * one per Journey, never two:
+ *  - `now` — Active immediately (today's only path; `createdAt` is also the start);
+ *  - `scheduled` — Future until the stored absolute instant `at`, then activated by the clock;
+ *  - `manual` — Future with no date until the user explicitly starts it.
+ *
+ * `at` is ABSOLUTE epoch ms so a DST shift or a device time-zone change can never move the user's
+ * chosen instant; `timeZone` is the IANA zone captured at approval as CONTEXT ONLY (display), never
+ * re-derived into an instant.
+ */
+export type JourneyStart =
+  | { mode: 'now' }
+  | { mode: 'scheduled'; at: number; timeZone?: string }
+  | { mode: 'manual' };
 
 /**
  * WHY a Journey is `frozen` (Account Inactivity Freeze, J5) — provenance on the SAME J3
@@ -176,9 +196,34 @@ export interface Journey {
    * Lifecycle status — the authoritative field the Journeys tabs bucket by. Optional for
    * backward-compat with Journeys persisted before this field existed: a missing status is
    * resolved to `completed` when `completedAt` is set, else `active` (see `resolveJourneyStatus`
-   * in `components/journey/journeyView.ts`). New Journeys carry it explicitly.
+   * in `components/journey/journeyView.ts`). New Journeys carry it explicitly. A snapshot persisted
+   * before `'future'` existed can therefore never RESOLVE to `future` — the Future bucket is only
+   * ever entered explicitly, at creation (Future Journey Management, §5).
    */
   status?: JourneyStatus;
+  /**
+   * The INTENDED start instant, absolute epoch ms (Future Journey Management, §5). Present on a
+   * SCHEDULED Journey; absent on a manual-start Future Journey (it has no date) and on a Journey
+   * that started now. IMMUTABLE once the plan is approved — it records the user's intention and is
+   * NOT rewritten when the Journey actually starts (that is {@link activatedAt}), except by an
+   * explicit reschedule while still `future` (§8). Every display/scheduling read goes through the
+   * single `effectiveStartAt()` helper, never straight at this field. ON-DEVICE ONLY.
+   */
+  startsAt?: number;
+  /**
+   * The IANA time zone captured at approval (e.g. `Europe/Berlin`) — CONTEXT ONLY, so the app can
+   * show the calendar meaning the user chose (Future Journey Management, §5/§13). {@link startsAt}
+   * is already absolute, so the instant is NEVER re-derived from this zone: a DST change or a trip
+   * cannot silently move the user's chosen start. Optional/additive.
+   */
+  startTimeZone?: string;
+  /**
+   * The ACTUAL activation instant, epoch ms (Future Journey Management, §9). Stamped ONCE by the
+   * single Future → Active transition and never rewritten, so an early manual start is honestly
+   * distinguishable from the recorded {@link startsAt} intention. Absent on a Journey that has not
+   * been activated through that transition (including every legacy Journey). ON-DEVICE ONLY.
+   */
+  activatedAt?: number;
   /**
    * WHY this Journey is currently `frozen` (Account Inactivity Freeze, J5) — provenance ONLY,
    * meaningful when {@link status} is `frozen`. Defaults to `'manual'` for a user-paused Journey
@@ -218,6 +263,28 @@ export interface Journey {
    * is safe to share; a manual Journey's user-typed titles must never reach Companion). ON-DEVICE marker.
    */
   createdVia?: 'coach' | 'manual';
+  /**
+   * How many Steps the Journey held at the moment it was ABANDONED (canceled) — snapshotted by
+   * {@link JourneyEngine.abandonJourney} BEFORE the never-lived Steps are removed, and never
+   * rewritten. It is the HONEST DENOMINATOR for a canceled Journey: without it, splicing the
+   * unlived Steps away would turn "3 of 12 done" into "3 of 3" and render a full progress bar — a
+   * Journey the user gave up on must never read as a success (Friend Profile PRD §4.2). Every
+   * progress read for an abandoned Journey goes through it (`journeyProgress`, `toJourneyView`).
+   * Optional/additive: absent on every Journey that was never abandoned. A plain count — no PII.
+   */
+  stepsAtAbandon?: number;
+  /**
+   * WHEN the Journey was ABANDONED (canceled), epoch ms — stamped ONCE by
+   * {@link JourneyEngine.abandonJourney} alongside {@link stepsAtAbandon} and never rewritten (the
+   * transition is terminal and idempotent, so there is no second write). It is the canceled
+   * Journey's own date: the History surface shows "Stopped <date>" from it and orders history by
+   * it, the way {@link completedAt} dates a finished Journey — and canceling deliberately never
+   * stamps `completedAt`, so the two stay honestly apart. Optional/additive: absent on every
+   * Journey that was never abandoned AND on one canceled before this field existed, which simply
+   * shows no date and sorts last (never a fabricated or "Invalid" one). A plain timestamp — no PII;
+   * it rides {@link AppState} for export/deletion and never enters a social payload.
+   */
+  abandonedAt?: number;
   /**
    * True once the Journey's COMPLETION reward has been granted (Daily Step Reporting, D36). Set the
    * first time every Step is done (in {@link JourneyEngine.checkInStep}) and never cleared — so a

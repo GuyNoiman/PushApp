@@ -8,7 +8,8 @@
  * Restyled to the mature language: elegant white/near-black cards separated by a
  * hairline + soft shadow, one turquoise accent for progress + state, tabular
  * numerals on every number, no gold/coral game chrome. Journeys are split into
- * **Active · Completed · Future** (founder decision 2026-07-14) via an underlined
+ * **Active · History · Future** (founder decision 2026-07-14; the middle tab renamed
+ * from "Completed" to "History" on 2026-08-14, when canceling landed) via an underlined
  * segmented control — label-only, no counts (founder direction 2026-08-07). Each
  * card leads with the Journey's Dream as a small uppercase eyebrow above the
  * Journey title, and a monochrome Ionicon in a teal tile (no emoji-as-UI). The old
@@ -28,20 +29,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
+  byMostRecentlyEnded,
   endsInLabel,
+  shortDate,
   toJourneyView,
   type JourneyBucket,
   type JourneyView,
 } from '@/components/journey/journeyView';
+import { CanceledPill } from '@/components/journeys/CanceledPill';
 import { ParkedGoalCard } from '@/components/journeys/ParkedGoalCard';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
-// Current · Completed · Future — the segmented tabs (founder decision 2026-07-14).
-// Current is the default landing tab. Future is the "For later" surface: the goals the coach
+// Active · History · Future — the segmented tabs (founder decision 2026-07-14).
+// Active is the default landing tab. Future is the "For later" surface: the goals the coach
 // detected but the user didn't build first (Parked/deferred goals, L1) wait here.
-type JourneyTab = 'active' | 'completed' | 'future';
+//
+// HISTORY was called "Completed" until canceling shipped (Journey Abandonment, 2026-08-14). A tab
+// named "Completed" that also holds canceled Journeys is a label that lies, so the tab is now
+// History and carries two labelled groups inside it: Completed, then Stopped. The `history` tab id
+// still maps onto the `completed` BUCKET (`bucketOf`), which is the history surface.
+type JourneyTab = 'active' | 'history' | 'future';
 
 // Numbers that change (counts, %) read as tabular figures — the mature
 // "dashboard" feel (mature_proposal.html key decision 4).
@@ -75,16 +84,26 @@ export default function JourneysScreen() {
       view: toJourneyView(j, now),
       dream: j.dreamId ? dreamNameById.get(j.dreamId) : undefined,
     }));
+    // History reads newest-first, by the ONE rule both its groups share: when the Journey actually
+    // ended (its stop date, or its completion date). Sorted once, before the split, so Completed and
+    // Stopped can never drift into two different orders. A Journey with no end stamp sorts last.
+    const history = cards
+      .filter((c) => c.view.bucket === 'completed')
+      .sort((a, b) => byMostRecentlyEnded(a.view, b.view));
     return {
       active: cards.filter((c) => c.view.bucket === 'active'),
-      completed: cards.filter((c) => c.view.bucket === 'completed'),
+      // The History tab's two groups. `bucket` says WHERE a Journey is listed; `status` says what it
+      // actually is — so a canceled (abandoned) Journey lands in History but never under Completed.
+      completed: history.filter((c) => c.view.status !== 'abandoned'),
+      stopped: history.filter((c) => c.view.status === 'abandoned'),
+      history,
     };
   }, [snapshot?.journeys, dreamNameById]);
 
   // Label-only segments — no counts (founder direction 2026-08-07).
   const journeyTabs: { id: JourneyTab; label: string }[] = [
     { id: 'active', label: t('tabs.active') },
-    { id: 'completed', label: t('tabs.completed') },
+    { id: 'history', label: t('tabs.history') },
     { id: 'future', label: t('tabs.future') },
   ];
 
@@ -164,19 +183,49 @@ export default function JourneysScreen() {
                 ))}
               </View>
             )
-          ) : activeTab === 'completed' ? (
-            buckets.completed.length === 0 ? (
-              <EmptyState title={t('completed.empty.title')} body={t('completed.empty.body')} />
+          ) : activeTab === 'history' ? (
+            buckets.history.length === 0 ? (
+              <EmptyState title={t('history.empty.title')} body={t('history.empty.body')} />
             ) : (
-              <View style={styles.list}>
-                {buckets.completed.map((card) => (
-                  <JourneyCard
-                    key={card.view.id}
-                    view={card.view}
-                    dream={card.dream}
-                    bucket="completed"
-                  />
-                ))}
+              <View style={styles.historyGroups}>
+                {/* Completed first, then Stopped — each group only renders when it has something,
+                    so a user who has never canceled anything never sees a "Stopped" header. */}
+                {buckets.completed.length > 0 && (
+                  <View style={styles.list}>
+                    <ThemedText
+                      type="smallBold"
+                      themeColor="textSecondary"
+                      style={styles.groupHeading}>
+                      {t('history.groups.completed')}
+                    </ThemedText>
+                    {buckets.completed.map((card) => (
+                      <JourneyCard
+                        key={card.view.id}
+                        view={card.view}
+                        dream={card.dream}
+                        bucket="completed"
+                      />
+                    ))}
+                  </View>
+                )}
+                {buckets.stopped.length > 0 && (
+                  <View style={styles.list}>
+                    <ThemedText
+                      type="smallBold"
+                      themeColor="textSecondary"
+                      style={styles.groupHeading}>
+                      {t('history.groups.stopped')}
+                    </ThemedText>
+                    {buckets.stopped.map((card) => (
+                      <JourneyCard
+                        key={card.view.id}
+                        view={card.view}
+                        dream={card.dream}
+                        bucket="completed"
+                      />
+                    ))}
+                  </View>
+                )}
               </View>
             )
           ) : buckets.active.length === 0 ? (
@@ -219,27 +268,42 @@ function JourneyCard({
   const router = useRouter();
   const { t } = useTranslation('journeys');
 
-  const completed = bucket === 'completed';
+  // A CANCELED Journey shares the History surface with completed ones, but it must never read as a
+  // success: no percentage, no progress bar, no DONE pill, no completion framing (Journey Abandonment
+  // PRD §8.2 / Friend Profile PRD §4.2). `status` is what it IS; `bucket` is only where it is listed.
+  const canceled = view.status === 'abandoned';
+  const completed = bucket === 'completed' && !canceled;
   const future = bucket === 'future';
   // A paused (frozen) Journey lives under the Active tab; a pill marks it so it reads apart from the
   // running ones (J3). `view.status` is the authoritative lifecycle field.
   const paused = view.status === 'frozen';
   const pct = Math.round(Math.max(0, Math.min(1, view.progress)) * 100);
 
-  const sub = completed
-    ? t('card.milestoneComplete', { phases: view.phases })
-    : t('card.milestone', { phase: view.phase, phases: view.phases });
+  // The canceled card's one honest line, straight from the snapshot the cancel latched: "3 of 12
+  // Steps done", never "Milestone 4 of 4" (which would read like an achievement).
+  const sub = canceled
+    ? t('card.stepsDone', { done: view.doneSteps, total: view.totalSteps })
+    : completed
+      ? t('card.milestoneComplete', { phases: view.phases })
+      : t('card.milestone', { phase: view.phase, phases: view.phases });
 
-  const foot = completed
-    ? t('card.completed')
-    : future
-      ? t('card.starts', {
-          date: new Date(view.startedAt).toLocaleDateString(undefined, {
-            month: 'short',
-            day: 'numeric',
-          }),
-        })
-      : endsInLabel(view.endsAt);
+  // A canceled Journey's footer is the day it was stopped — read from the stamp the cancel latched,
+  // never projected. One canceled before that stamp existed shows no footer at all rather than an
+  // invented date (undefined here = no footer row below).
+  const foot = canceled
+    ? view.endedAt != null
+      ? t('card.stopped', { date: shortDate(view.endedAt) })
+      : undefined
+    : completed
+      ? t('card.completed')
+      : future
+        ? t('card.starts', {
+            date: new Date(view.startedAt).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+            }),
+          })
+        : endsInLabel(view.endsAt);
 
   return (
     <Pressable
@@ -249,7 +313,11 @@ function JourneyCard({
       style={({ pressed }) => [pressed && styles.pressed]}>
       <ThemedView
         type="backgroundElement"
-        style={[styles.card, { borderColor: theme.hairline }, completed && styles.completedCard]}>
+        style={[
+          styles.card,
+          { borderColor: theme.hairline },
+          (completed || canceled) && styles.completedCard,
+        ]}>
         <View style={styles.cardTop}>
           {/* TODO(icon): expert-driven, user-editable icon — each domain expert
               will supply its own Ionicon and the user can override it. Neutral for now. */}
@@ -270,9 +338,13 @@ function JourneyCard({
               {view.title}
             </ThemedText>
           </View>
-          {/* State pill only where it adds info: DONE on Completed, SOON on Future, PAUSED on a
-              frozen Journey. A plain running Journey shows no pill (the Active tab already says so). */}
-          {completed || future || paused ? (
+          {/* State pill only where it adds info: DONE on Completed, CANCELED on a stopped Journey,
+              SOON on Future, PAUSED on a frozen Journey. A plain running Journey shows no pill (the
+              Active tab already says so). CANCELED comes from the shared {@link CanceledPill} — the
+              one definition of that tag, so it reads identically here and under the Journey's Dream. */}
+          {canceled ? (
+            <CanceledPill />
+          ) : completed || future || paused ? (
             <View
               style={[
                 styles.statePill,
@@ -304,7 +376,9 @@ function JourneyCard({
           {sub}
         </ThemedText>
 
-        {!future && (
+        {/* No bar and no percentage on a canceled Journey — the honest "N of M Steps done" line
+            above is the whole measure (PRD §4.5). A Future Journey has nothing to show yet. */}
+        {!future && !canceled && (
           <View style={styles.progressRow}>
             <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
               <View
@@ -317,11 +391,15 @@ function JourneyCard({
           </View>
         )}
 
-        <View style={[styles.foot, { borderTopColor: theme.hairline }]}>
-          <ThemedText type="small" themeColor="textMuted">
-            {foot}
-          </ThemedText>
-        </View>
+        {/* The footer carries a date or a projection. A canceled Journey gets its stop date and
+            never an "ends in…" projection — and nothing at all when that date is unknown. */}
+        {foot != null && (
+          <View style={[styles.foot, { borderTopColor: theme.hairline }]}>
+            <ThemedText type="small" themeColor="textMuted">
+              {foot}
+            </ThemedText>
+          </View>
+        )}
       </ThemedView>
     </Pressable>
   );
@@ -393,6 +471,13 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: Spacing.three,
+  },
+  historyGroups: {
+    gap: Spacing.four,
+  },
+  groupHeading: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   parkedHeading: {
     textTransform: 'uppercase',

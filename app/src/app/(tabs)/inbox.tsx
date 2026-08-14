@@ -21,6 +21,7 @@
  * no POC data and shows its own empty state.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import type { TFunction } from 'i18next';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,7 @@ function profileName(profile: SocialProfile): string {
 export default function InboxScreen() {
   const social = useSocial();
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation('inbox');
   const [selected, setSelected] = useState<InboxTabKey>('friends');
   const [query, setQuery] = useState('');
@@ -76,6 +78,9 @@ export default function InboxScreen() {
         preview: cheer.kind === 'nudge' ? t('preview.nudge') : t('preview.cheer'),
         timestamp: relativeTime(cheer.createdAt, t),
         unread: true,
+        // Only when the sender resolves to someone in the Support Circle — a cheer from an
+        // unknown/removed sender has no profile to open.
+        profileId: from?.status === 'accepted' ? from.profile.id : undefined,
       };
     });
 
@@ -83,6 +88,7 @@ export default function InboxScreen() {
       id: `friend:${f.profile.id}`,
       name: friendName(f),
       preview: t('preview.inCircle'),
+      profileId: f.profile.id,
     }));
 
     // Unread (cheers) sort to the top (Inbox_Screen.md).
@@ -249,8 +255,15 @@ export default function InboxScreen() {
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
+            {/* An accepted friend's row opens their Friend Profile (Friend_Profile_PRD §8
+                criterion 1). A pending REQUEST row carries no profileId, so it stays inert —
+                someone who hasn't accepted yet is not a friend whose profile may be opened. */}
             {visibleRows.map((row) => (
-              <InboxRow key={row.id} row={row} />
+              <InboxRow
+                key={row.id}
+                row={row}
+                onPress={row.profileId ? () => router.push(`/friend/${row.profileId}` as Href) : undefined}
+              />
             ))}
           </ScrollView>
         )}

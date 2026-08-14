@@ -14,6 +14,12 @@
  * are resolved by a conditional tie-break page (the UI's job); {@link breakTie} is the deterministic
  * fallback for when no tie-break runs (a skipped tie-break on a first run, or any headless resolution).
  *
+ * This module also holds the CURRENTLY-APPLIED style as a plain module value so the framework-free
+ * layer (the engines + notification copy adapters, which never call a React hook) can apply it too —
+ * exactly the arrangement {@link ../../i18n/addressForm} uses for the form of address. The unified
+ * {@link ../../state/ProfileProvider} (Own_Profile) is the source of truth and keeps this in sync via
+ * {@link setCommunicationProfile}; nothing else should mutate it.
+ *
  * Pure TypeScript — no React, no UI, no vendor imports, no I/O.
  */
 import type { CommunicationStyleId } from '../coach/communicationStyles';
@@ -38,6 +44,18 @@ export const DEFAULT_COMMUNICATION_PROFILE: CommunicationProfileId = 'warm';
 /** Type guard for a persisted/untrusted value. */
 export function isCommunicationProfileId(value: unknown): value is CommunicationProfileId {
   return typeof value === 'string' && (COMMUNICATION_PROFILE_IDS as readonly string[]).includes(value);
+}
+
+let current: CommunicationProfileId = DEFAULT_COMMUNICATION_PROFILE;
+
+/** The currently-applied communication style (what the framework-free layer reads). */
+export function getCommunicationProfile(): CommunicationProfileId {
+  return current;
+}
+
+/** Set the applied style. Called ONLY by the ProfileProvider to mirror `profile.communicationProfile` here. */
+export function setCommunicationProfile(id: CommunicationProfileId): void {
+  current = id;
 }
 
 /** Vote count per style. */

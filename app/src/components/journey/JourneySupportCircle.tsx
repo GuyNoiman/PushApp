@@ -11,6 +11,7 @@
  *
  * Renders nothing when the social pillar is off, so the four local pillars are untouched.
  */
+import { useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -196,6 +197,7 @@ function MemberRow({
   onSwitch: (bundle: AllyBundle) => void;
 }) {
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation('journey');
   const bundleLabel = t(`supportCircle.${member.bundle}`);
 
@@ -207,14 +209,25 @@ function MemberRow({
         name: memberName(member),
         status: t(`supportCircle.status.${member.status}`),
       })}>
-      <View style={styles.memberText}>
+      {/* The member's name opens their Friend Profile (Friend_Profile_PRD §8 criterion 1). Safe at
+          any invite status: the gate on that screen is the FRIENDSHIP, and only an accepted friend
+          can be listed here in the first place.
+          The label describes the ACTION rather than repeating the bare name: a screen reader should
+          hear "Open @bob's profile", not "@bob" twice (the row above already announces the name and
+          status). It also keeps this row distinguishable from the invite sheet's rows, which are
+          labelled with the bare name. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('supportCircle.openProfileA11y', { name: memberName(member) })}
+        onPress={() => router.push(`/friend/${member.profile.id}` as Href)}
+        style={({ pressed }) => [styles.memberText, pressed && styles.pressed]}>
         <ThemedText type="default" numberOfLines={1}>
           {memberName(member)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {bundleLabel} · {t(`supportCircle.status.${member.status}`)}
         </ThemedText>
-      </View>
+      </Pressable>
       <View style={styles.memberActions}>
         {member.status === 'requested' && (
           <MemberAction label={t('supportCircle.cancel')} onPress={onCancel} />

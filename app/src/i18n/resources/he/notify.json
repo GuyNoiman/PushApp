@@ -20,7 +20,14 @@
     "title_energizing": "מוכנים לצעד הבא?",
     "body_energizing": "הצעד שתכננת כאן. קדימה, מתחילים!",
     "body_energizing_masculine": "הצעד שתכננת כאן. קדימה, אתה יכול!",
-    "body_energizing_feminine": "הצעד שתכננת כאן. קדימה, את יכולה!"
+    "body_energizing_feminine": "הצעד שתכננת כאן. קדימה, את יכולה!",
+    "titleFor": "הגיע הזמן ל{{journeyTitle}}",
+    "titleFor_direct": "תזכורת: {{journeyTitle}}",
+    "titleFor_explanatory": "התזכורת שלך למסע {{journeyTitle}}",
+    "titleFor_warm": "תזכורת קטנה ל{{journeyTitle}}",
+    "titleFor_energizing": "מוכנים ל{{journeyTitle}}?",
+    "titleFor_energizing_masculine": "מוכן ל{{journeyTitle}}?",
+    "titleFor_energizing_feminine": "מוכנה ל{{journeyTitle}}?"
   },
   "allyRequest": {
     "title": "בקשה חדשה למעגל התמיכה",
@@ -55,7 +62,7 @@
     "body": "המסע של {{name}} הושלם."
   },
   "journeyClosed": {
-    "title": "מסע הסתיים",
-    "body": "המסע של {{name}} הגיע לסיומו."
+    "title": "מסע נעצר",
+    "body": "אחד המסעות של {{name}} נעצר."
   }
 }

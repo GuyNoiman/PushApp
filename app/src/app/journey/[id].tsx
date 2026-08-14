@@ -24,18 +24,28 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { StepStatusChip } from '@/components/home/StepStatusChip';
+import { CancelJourneySheet } from '@/components/journey/CancelJourneySheet';
 import { JourneyDreamLink } from '@/components/journey/JourneyDreamLink';
 import { JourneyReminderCard } from '@/components/journey/JourneyReminderCard';
 import { JourneySupportCircle } from '@/components/journey/JourneySupportCircle';
-import { computeWeekLayout, shortDate, stepsByWeek, toJourneyView } from '@/components/journey/journeyView';
+import {
+  computeWeekLayout,
+  historyStepStatus,
+  shortDate,
+  stepsByWeek,
+  toJourneyView,
+} from '@/components/journey/journeyView';
+import { OverflowMenu, type OverflowMenuItem } from '@/components/ui/OverflowMenu';
 import { featureFlags } from '@/core/config/featureFlags';
 import { dreamsForJourney } from '@/core/dreams/dreams';
+import { unlivedStepCount } from '@/core/status/stepHistory';
 import type { StepStatus } from '@/core/status/stepStatus';
 import { remainingDaysInWeek } from '@/core/util/week';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
+import { useSupportCircleImpact } from '@/hooks/useSupportCircleImpact';
 import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
@@ -57,6 +67,13 @@ export default function JourneyDetailScreen() {
   // asks a gentle confirmation only when this Step would complete the Journey (final, D41).
   const { confirmVisible, requestDone, confirm, cancel } = useFinalStepConfirm(core);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Journey Abandonment: the cancel confirmation. Canceling is FINAL and there is NO undo window
+  // (founder decision 2026-08-14), so this sheet is the last point the decision can be taken back.
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // The REAL Support-Circle consequence of that cancel, read only while the sheet is open. Null
+  // until it is known — the sheet then states nothing about the Circle rather than a guessed count,
+  // and a failed read never stands between the user and a local action (PRD §8.4.4).
+  const supportCircle = useSupportCircleImpact(id, confirmingCancel);
   // null = follow the current week; a number = the week the user paged to.
   const [weekIndex, setWeekIndex] = useState<number | null>(null);
 
@@ -85,7 +102,11 @@ export default function JourneyDetailScreen() {
   }
 
   const view = toJourneyView(journey);
-  const nextStep = journey.steps.find((s) => !s.done);
+  // A CANCELED Journey opens in a read-only history mode: what happened, and nothing that asks for
+  // more (Journey Abandonment PRD §8.2). Everything below gates on this, not on `completedAt` —
+  // canceling deliberately never stamps a completion date.
+  const isCanceled = view.status === 'abandoned';
+  const nextStep = isCanceled ? undefined : journey.steps.find((s) => !s.done);
 
   // Dream Management (D40 / F1): the private, coach-owned Dream(s) this Journey serves — resolved on
   // the owner's OWN Journey view only. Dream titles are private on-device data and never enter any
@@ -112,8 +133,8 @@ export default function JourneyDetailScreen() {
     remainingDaysInWeek(Date.now()) <= NUDGE_RUNWAY_DAYS;
 
   // Editing runs through the coach's understanding call, so it is gated on liveCoach; a completed
-  // Journey is never editable (its plan is finished).
-  const canEdit = !journey.completedAt && featureFlags.liveCoach;
+  // or canceled Journey is never editable (its plan is finished, or was let go).
+  const canEdit = !journey.completedAt && !isCanceled && featureFlags.liveCoach;
   const onEdit = canEdit
     ? () => router.push({ pathname: '/coach', params: { mode: 'edit', journeyId: journey.id } })
     : undefined;
@@ -121,11 +142,58 @@ export default function JourneyDetailScreen() {
   // Freeze/Resume (J3): a paused Journey keeps all its progress but fires no reminders and hides its
   // check-in CTA until resumed. Completed Journeys can't be paused.
   const isFrozen = view.status === 'frozen';
-  const canFreeze = !journey.completedAt;
+  const canFreeze = !journey.completedAt && !isCanceled;
   const onToggleFreeze = () => {
     if (isFrozen) core.resumeJourney(journey.id);
     else core.freezeJourney(journey.id);
   };
+
+  // CANCEL (Journey Abandonment) — offered for a Journey that is actually running or paused, and
+  // for nothing else:
+  //  · `completed` → never. Completion is FINAL (D41); a finished Journey can only be deleted.
+  //  · `future`    → never. A Journey that never started is DELETED, not canceled (founder decision
+  //                  2026-08-14): there is no history to preserve, so it simply disappears via the
+  //                  Delete row below.
+  //  · `abandoned` → never. It is already canceled; only Delete remains.
+  const canCancel = view.status === 'active' || view.status === 'frozen';
+  // The FACTUAL number of Steps the cancel will remove, from the same rule the engine applies a
+  // moment later — informed consent about data removal, never leverage (PRD §8.4.2 / §9.1).
+  const stepsToRemove = unlivedStepCount(journey, core.getReasonLog());
+  const onConfirmCancel = () => {
+    setConfirmingCancel(false);
+    // Terminal and local-first: the facade cancels the pending one-shots, snapshots the honest Step
+    // count, keeps every reported Step and closes any live invites best-effort. Nothing else to do
+    // here, and there is no undo to offer.
+    core.abandonJourney(journey.id);
+  };
+
+  // The ⋯ menu at the end of the action list. Cancel comes first and Delete last — ascending
+  // severity: Cancel keeps the record, Delete erases it. Only Delete is marked `destructive` (danger
+  // ink): it is the one that destroys data. Cancel is a legitimate choice about a life, not a data
+  // wipe, so it stays in neutral ink — the menu's own position already says it is weighty.
+  const journeyMenuItems: OverflowMenuItem[] = [
+    ...(canCancel
+      ? [
+          {
+            key: 'cancel',
+            label: t('detail.cancel'),
+            a11yLabel: t('detail.cancelA11y'),
+            hint: t('detail.cancelHint'),
+            icon: 'stop-circle-outline' as const,
+            onPress: () => setConfirmingCancel(true),
+          },
+        ]
+      : []),
+    {
+      key: 'delete',
+      label: t('detail.delete'),
+      a11yLabel: t('detail.deleteA11y'),
+      hint: t('detail.deleteHint'),
+      icon: 'trash-outline' as const,
+      destructive: true,
+      onPress: () => setConfirmingDelete(true),
+    },
+  ];
 
   const onConfirmDelete = () => {
     setConfirmingDelete(false);
@@ -153,24 +221,51 @@ export default function JourneyDetailScreen() {
           <ThemedView
             type="backgroundElement"
             style={[styles.phaseCard, { borderColor: theme.hairline }, CARD_SHADOW]}>
-            <ThemedText type="subtitle">
-              {t('detail.phase', { phase: view.phase, phases: view.phases })}
-            </ThemedText>
+            {/* A canceled Journey shows NO Phase, NO progress bar and NO percentage — only the
+                honest "N of M Steps done", counted against the Steps it held when it was stopped
+                (`stepsAtAbandon`). It must never read as a success (PRD §4.5 / §8.2). */}
+            {!isCanceled && (
+              <ThemedText type="subtitle">
+                {t('detail.phase', { phase: view.phase, phases: view.phases })}
+              </ThemedText>
+            )}
             <ThemedText type="small" themeColor="textSecondary">
               {t('detail.window', { start: shortDate(view.startedAt), end: shortDate(view.endsAt) })}
             </ThemedText>
-            <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
-              <View
-                style={[
-                  styles.fill,
-                  { backgroundColor: theme.teal, width: `${Math.round(view.progress * 100)}%` },
-                ]}
-              />
-            </View>
+            {!isCanceled && (
+              <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
+                <View
+                  style={[
+                    styles.fill,
+                    { backgroundColor: theme.teal, width: `${Math.round(view.progress * 100)}%` },
+                  ]}
+                />
+              </View>
+            )}
             <ThemedText type="small" themeColor="textSecondary">
               {t('detail.stepsDone', { done: view.doneSteps, total: view.totalSteps })}
             </ThemedText>
           </ThemedView>
+
+          {/* Canceled banner — matter-of-fact, neutral ink. Not a warning (nothing is wrong) and not
+              a celebration. No sad tone, no "we'll miss you" (PRD §9.1). */}
+          {isCanceled && (
+            <View
+              style={[
+                styles.canceledBanner,
+                { backgroundColor: theme.backgroundSelected, borderColor: theme.hairline },
+              ]}>
+              <Ionicons name="stop-circle-outline" size={18} color={theme.textMuted} />
+              <View style={styles.pausedText}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {t('detail.canceled')}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('detail.canceledBody')}
+                </ThemedText>
+              </View>
+            </View>
+          )}
 
           {/* Paused banner (J3) — makes the frozen state unmistakable and explains the muted reminders. */}
           {isFrozen && (
@@ -231,101 +326,137 @@ export default function JourneyDetailScreen() {
             />
           )}
 
-          {/* Steps by week — page through the plan one week at a time (founder design). */}
-          <View style={styles.block}>
-            <View style={styles.weekHeader}>
+          {/* What happened — the CANCELED Journey's read-only history, in place of the weekly pager.
+              Deliberate: the pager reads `stepsByWeek`, which filters DROPPED Steps out, and a cancel
+              marks every kept non-done Step `dropped` to shed it from scope. Left as-is, the pager
+              would show only the completed Steps and silently hide the partials and let-gos — the
+              exact record this feature exists to preserve. And a canceled Journey has no waiting or
+              stacked Steps by construction (PRD §4.3), so paging weeks buys nothing. So history gets
+              a flat list of every Step that survived, in plan order, each with its real outcome. */}
+          {isCanceled && (
+            <View style={styles.block}>
               <ThemedText type="smallBold" style={[styles.blockLabel, { color: theme.goldStrong }]}>
-                {t('detail.stepsByWeek')}
+                {t('detail.whatHappened')}
               </ThemedText>
-              <View style={styles.pager}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('detail.prevWeekA11y')}
-                  disabled={shownWeek <= 0}
-                  onPress={() => goWeek(-1)}
-                  hitSlop={8}
-                  style={({ pressed }) => [
-                    styles.pagerBtn,
-                    { backgroundColor: theme.backgroundSelected },
-                    (pressed || shownWeek <= 0) && styles.pagerBtnMuted,
-                  ]}>
-                  <Ionicons
-                    name={isRTL() ? 'chevron-forward' : 'chevron-back'}
-                    size={18}
-                    color={theme.textSecondary}
-                  />
-                </Pressable>
-                <ThemedText type="small" themeColor="textSecondary" style={styles.weekLabel}>
-                  {t('detail.weekOf', { week: shownWeek + 1, total: weekly.totalWeeks })}
+              {journey.steps.length === 0 ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('detail.whatHappenedEmpty')}
                 </ThemedText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('detail.nextWeekA11y')}
-                  disabled={shownWeek >= weekly.totalWeeks - 1}
-                  onPress={() => goWeek(1)}
-                  hitSlop={8}
-                  style={({ pressed }) => [
-                    styles.pagerBtn,
-                    { backgroundColor: theme.backgroundSelected },
-                    (pressed || shownWeek >= weekly.totalWeeks - 1) && styles.pagerBtnMuted,
-                  ]}>
-                  <Ionicons
-                    name={isRTL() ? 'chevron-back' : 'chevron-forward'}
-                    size={18}
-                    color={theme.textSecondary}
-                  />
-                </Pressable>
-              </View>
-            </View>
-            {layout.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('detail.emptyWeek')}
-              </ThemedText>
-            ) : (
-              <View style={styles.stepList}>
-                {layout.map((unit) =>
-                  unit.kind === 'step' ? (
+              ) : (
+                <View style={styles.stepList}>
+                  {journey.steps.map((step) => (
                     <StepRow
-                      key={unit.step.id}
-                      step={unit.step}
-                      isNext={!journey.completedAt && unit.step.id === nextStep?.id}
-                      reportStatus={core.getStepStatus(unit.step)}
+                      key={step.id}
+                      step={step}
+                      isNext={false}
+                      reportStatus={historyStepStatus(step, core.getReasonLog())}
                     />
-                  ) : (
-                    <StepStack
-                      key={unit.top.id}
-                      top={unit.top}
-                      depth={unit.depth}
-                      isNext={!journey.completedAt && unit.top.id === nextStep?.id}
-                      reportStatus={core.getStepStatus(unit.top)}
-                    />
-                  ),
-                )}
-              </View>
-            )}
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
 
-            {/* Slice 9 — a gentle, Buddy-voiced runway nudge under the week's Steps (title-free). */}
-            {showRunwayNudge && (
-              <View style={[styles.nudge, { backgroundColor: theme.tealTint, borderColor: theme.tint }]}>
-                <Ionicons
-                  name="sparkles-outline"
-                  size={16}
-                  color={theme.tealStrong}
-                  style={styles.nudgeIcon}
-                />
-                <ThemedText type="small" style={[styles.nudgeText, { color: theme.tealStrong }]}>
-                  {t('dependents.nudge.line')}
+          {/* Steps by week — page through the plan one week at a time (founder design). */}
+          {!isCanceled && (
+            <View style={styles.block}>
+              <View style={styles.weekHeader}>
+                <ThemedText type="smallBold" style={[styles.blockLabel, { color: theme.goldStrong }]}>
+                  {t('detail.stepsByWeek')}
                 </ThemedText>
+                <View style={styles.pager}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('detail.prevWeekA11y')}
+                    disabled={shownWeek <= 0}
+                    onPress={() => goWeek(-1)}
+                    hitSlop={8}
+                    style={({ pressed }) => [
+                      styles.pagerBtn,
+                      { backgroundColor: theme.backgroundSelected },
+                      (pressed || shownWeek <= 0) && styles.pagerBtnMuted,
+                    ]}>
+                    <Ionicons
+                      name={isRTL() ? 'chevron-forward' : 'chevron-back'}
+                      size={18}
+                      color={theme.textSecondary}
+                    />
+                  </Pressable>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.weekLabel}>
+                    {t('detail.weekOf', { week: shownWeek + 1, total: weekly.totalWeeks })}
+                  </ThemedText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('detail.nextWeekA11y')}
+                    disabled={shownWeek >= weekly.totalWeeks - 1}
+                    onPress={() => goWeek(1)}
+                    hitSlop={8}
+                    style={({ pressed }) => [
+                      styles.pagerBtn,
+                      { backgroundColor: theme.backgroundSelected },
+                      (pressed || shownWeek >= weekly.totalWeeks - 1) && styles.pagerBtnMuted,
+                    ]}>
+                    <Ionicons
+                      name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+                      size={18}
+                      color={theme.textSecondary}
+                    />
+                  </Pressable>
+                </View>
               </View>
-            )}
-          </View>
+              {layout.length === 0 ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('detail.emptyWeek')}
+                </ThemedText>
+              ) : (
+                <View style={styles.stepList}>
+                  {layout.map((unit) =>
+                    unit.kind === 'step' ? (
+                      <StepRow
+                        key={unit.step.id}
+                        step={unit.step}
+                        isNext={!journey.completedAt && unit.step.id === nextStep?.id}
+                        reportStatus={core.getStepStatus(unit.step)}
+                      />
+                    ) : (
+                      <StepStack
+                        key={unit.top.id}
+                        top={unit.top}
+                        depth={unit.depth}
+                        isNext={!journey.completedAt && unit.top.id === nextStep?.id}
+                        reportStatus={core.getStepStatus(unit.top)}
+                      />
+                    ),
+                  )}
+                </View>
+              )}
+  
+              {/* Slice 9 — a gentle, Buddy-voiced runway nudge under the week's Steps (title-free). */}
+              {showRunwayNudge && (
+                <View style={[styles.nudge, { backgroundColor: theme.tealTint, borderColor: theme.tint }]}>
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={16}
+                    color={theme.tealStrong}
+                    style={styles.nudgeIcon}
+                  />
+                  <ThemedText type="small" style={[styles.nudgeText, { color: theme.tealStrong }]}>
+                    {t('dependents.nudge.line')}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+          )}
 
-          {/* Managed Off/Fixed reminder (D40) — view, edit, or disable; Smart is deferred. */}
-          <JourneyReminderCard journey={journey} />
+          {/* Managed Off/Fixed reminder (D40) — view, edit, or disable; Smart is deferred. Hidden on
+              a canceled Journey: it fires nothing ever again, so offering a reminder editor would be
+              a control over a Journey that no longer runs. */}
+          {!isCanceled && <JourneyReminderCard journey={journey} />}
 
           {/* Support Circle (D2) — invite friends to support this Journey; renders only when the
-              social pillar is configured. Companion bundle is coach-Journeys-only. */}
-          <JourneySupportCircle journey={journey} journeyStatus={view.status} />
+              social pillar is configured. Companion bundle is coach-Journeys-only. Hidden once
+              canceled: the cancel already closed the live invites and withdrew what was published. */}
+          {!isCanceled && <JourneySupportCircle journey={journey} journeyStatus={view.status} />}
 
           {/* The user's "why" */}
           {journey.why.length > 0 && (
@@ -397,21 +528,21 @@ export default function JourneyDetailScreen() {
             </Pressable>
           )}
 
-          {/* Permanent, deliberate delete — visually separated, destructive ink. */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('detail.deleteA11y')}
-            onPress={() => setConfirmingDelete(true)}
-            style={({ pressed }) => [
-              styles.deleteRow,
-              { borderColor: theme.hairline },
-              pressed && styles.pressed,
-            ]}>
-            <Ionicons name="trash-outline" size={18} color={theme.coralStrong} />
-            <ThemedText type="smallBold" style={{ color: theme.coralStrong }}>
-              {t('detail.delete')}
-            </ThemedText>
-          </Pressable>
+          {/* The heavy actions live at the END of the list, behind a ⋯ (founder decision,
+              2026-08-14). Pause/Resume and Share completion stay VISIBLE — they are reversible,
+              everyday controls. Cancel and Delete are the two that end a Journey, so they sit one
+              tap deeper: de-emphasised by POSITION, not by warning iconography. No prohibition
+              symbol on either — stopping a Journey is a legitimate life choice, and a "not allowed"
+              glyph would say the opposite (the same reason the confirmation never lists what the
+              user is about to lose). */}
+          <View style={styles.overflowRow}>
+            <OverflowMenu
+              a11yLabel={t('detail.moreActionsA11y')}
+              size={44}
+              width={250}
+              items={journeyMenuItems}
+            />
+          </View>
         </ScrollView>
 
         {/* Check in on the next Step (matches the mockup's bottom CTA). Hidden while paused. */}
@@ -483,6 +614,22 @@ export default function JourneyDetailScreen() {
             </Pressable>
           </Pressable>
         </Modal>
+
+        {/* Cancel confirmation — the only gate, and the last chance: canceling is final, with no
+            undo window. It states the real Step count, what stays, and that it can't be undone; it
+            never shows what the user is about to lose, and no coach stands in front of it. */}
+        <CancelJourneySheet
+          visible={confirmingCancel}
+          stepsToRemove={stepsToRemove}
+          canPause={view.status === 'active'}
+          supportCircle={supportCircle}
+          onDismiss={() => setConfirmingCancel(false)}
+          onPauseInstead={() => {
+            setConfirmingCancel(false);
+            core.freezeJourney(journey.id);
+          }}
+          onConfirm={onConfirmCancel}
+        />
 
         {/* Gentle final-step confirmation — only when the check-in would complete the Journey (D41). */}
         <FinalStepConfirmSheet visible={confirmVisible} onConfirm={confirm} onCancel={cancel} />
@@ -974,13 +1121,17 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 1,
   },
-  deleteRow: {
-    flexDirection: 'row',
+  // The ⋯ that ends the action list: centred and on its own, so the heavy actions read as a quiet
+  // afterthought rather than as another button competing with Pause.
+  overflowRow: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
     marginTop: Spacing.two,
-    paddingVertical: Spacing.three,
+  },
+  canceledBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+    padding: Spacing.three,
     borderRadius: Radius.card,
     borderWidth: 1,
   },

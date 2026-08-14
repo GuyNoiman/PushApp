@@ -34,7 +34,7 @@ function memRepo(): Repository {
   let saved: AppState | null = null;
   return {
     async load() {
-      return saved;
+      return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
     },
     async save(state: AppState) {
       saved = state;

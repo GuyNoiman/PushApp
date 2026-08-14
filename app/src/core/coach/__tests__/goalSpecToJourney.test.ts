@@ -156,7 +156,7 @@ describe('createJourneyFromGoalSpec', () => {
     const state = freshState();
     const engine = new JourneyEngine(new EventBus(), () => state);
 
-    const journey = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW });
+    const journey = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW })!;
 
     expect(journey.title).toBe('Read before bed');
     expect(state.journeys).toHaveLength(1);
@@ -177,9 +177,46 @@ describe('createJourneyFromGoalSpec', () => {
     const state = freshState();
     const engine = new JourneyEngine(new EventBus(), () => state);
 
-    const journey = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW });
+    const journey = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW })!;
 
     expect(journey.createdVia).toBe('coach');
+  });
+
+  it('routes the chosen start mode: now → active, scheduled/manual → future (§5)', () => {
+    const spec: GoalSpec = {
+      title: 'Read before bed',
+      domain: 'general',
+      processType: 'fixed',
+      isHabit: true,
+      milestones: [],
+      failureRisks: [],
+      timing: { daypart: 'evening', sessionMinutes: 20, sessionsPerWeek: 7 },
+    };
+    const state = freshState();
+    const engine = new JourneyEngine(new EventBus(), () => state);
+    const at = NOW + 30 * 24 * 60 * 60 * 1000;
+
+    // The default is unchanged: no `start` argument still means "start now".
+    const now = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW })!;
+    const scheduled = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: at }, {
+      mode: 'scheduled',
+      at,
+      timeZone: 'Europe/Berlin',
+    })!;
+    const manual = createJourneyFromGoalSpec(engine, spec, GeneralExpert, { now: NOW }, {
+      mode: 'manual',
+    })!;
+
+    expect(now.status).toBe('active');
+    expect(now.startsAt).toBeUndefined();
+    expect(scheduled.status).toBe('future');
+    expect(scheduled.startsAt).toBe(at);
+    expect(scheduled.startTimeZone).toBe('Europe/Berlin');
+    expect(manual.status).toBe('future');
+    expect(manual.startsAt).toBeUndefined();
+    // All three are still coach-built and deterministic for a fixed clock.
+    expect([now, scheduled, manual].every((j) => j.createdVia === 'coach')).toBe(true);
+    expect(scheduled.steps.map((s) => s.title)).toEqual(now.steps.map((s) => s.title));
   });
 });
 
@@ -238,7 +275,7 @@ describe('domain routing (SX.2)', () => {
     const engine = new JourneyEngine(new EventBus(), () => state);
 
     // No explicit expert — createJourneyFromGoalSpec routes by domain too.
-    const journey = createJourneyFromGoalSpec(engine, spec, undefined, { now: NOW });
+    const journey = createJourneyFromGoalSpec(engine, spec, undefined, { now: NOW })!;
     expect(journey.milestones?.map((m) => m.title)).toEqual(BODY_IMAGE_ARC);
   });
 });

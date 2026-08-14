@@ -22,7 +22,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import type { Journey, ParkedGoal } from '../types/domain';
+import type { Journey, JourneyStart, ParkedGoal } from '../types/domain';
 import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
 import { getExpert } from '../learning/experts/registry';
@@ -110,17 +110,26 @@ export function buildJourneyInput(
  * Create a real {@link Journey} from a {@link GoalSpec} through the {@link JourneyEngine} — the
  * one-call path from a finished interview to a live Journey (emits `JourneyCreated`). Reuses the
  * deterministic Planner via {@link buildJourneyInput}; no planning logic lives here.
+ *
+ * `start` is the mode chosen at final approval (Future Journey Management, §5): the default
+ * `{ mode: 'now' }` creates it Active, while a `scheduled`/`manual` start routes to
+ * {@link JourneyEngine.createFutureJourney} — which returns null when the Future list is at its cap
+ * (§10). Routing only; the Planner's own timeline is decided by `options.now` (the caller passes the
+ * intended start there for a scheduled Journey, so the plan lands on the real timeline).
  */
 export function createJourneyFromGoalSpec(
   engine: JourneyEngine,
   spec: GoalSpec,
   expert: DomainExpert = getExpert(spec.domain),
   options?: PlanOptions,
-): Journey {
+  start: JourneyStart = { mode: 'now' },
+): Journey | null {
   // Journey Support Circle (D2): the coach path marks the Journey `createdVia: 'coach'`, so it may
   // later offer the Companion bundle — its Step titles are coach-generated template text, never user
   // free text. A manually-created Journey (the wizard) carries `'manual'` and stays Companion-ineligible.
-  return engine.createJourney({ ...buildJourneyInput(spec, expert, options), createdVia: 'coach' });
+  const input = { ...buildJourneyInput(spec, expert, options), createdVia: 'coach' as const };
+  if (start.mode === 'now') return engine.createJourney(input);
+  return engine.createFutureJourney(input, start);
 }
 
 /**

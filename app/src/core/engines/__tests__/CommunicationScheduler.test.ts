@@ -128,6 +128,22 @@ describe('planSchedule — aggregation', () => {
     const plan = scheduler.planSchedule(rules, journeys, permissivePrefs(), NOW);
     expect(plan.map((p) => p.ruleId)).toEqual(['r_active']);
   });
+
+  it('excludes a FUTURE Journey — an approved plan saved for later fires nothing before it starts', () => {
+    // Future Journey Management §5/§14.4: the reminders are already saved with the plan, but a
+    // Future Journey produces NO obligations until its one activation transition runs.
+    const { scheduler } = planner();
+    const journeys = [
+      journey({ id: 'j_active', createdAt: 1, status: 'active' }),
+      journey({ id: 'j_future', createdAt: 2, status: 'future', startsAt: NOW.getTime() + 86_400_000 }),
+    ];
+    const rules = [
+      rule({ id: 'r_active', journeyId: 'j_active' }),
+      rule({ id: 'r_future', journeyId: 'j_future' }),
+    ];
+    const plan = scheduler.planSchedule(rules, journeys, permissivePrefs(), NOW);
+    expect(plan.map((p) => p.ruleId)).toEqual(['r_active']);
+  });
 });
 
 describe('planSchedule — all-permissive default is a passthrough', () => {

@@ -1,0 +1,47 @@
+{
+  "eyebrow": "PROFILE",
+  "backA11y": "Back",
+  "loadingA11y": "Loading this profile",
+  "avatarA11y": "Profile image for {{name}}",
+  "error": {
+    "title": "We couldn't load this profile",
+    "body": "Check your connection and try again.",
+    "retry": "Try again"
+  },
+  "notConnected": {
+    "title": "You're not connected",
+    "body": "A profile opens only while you're both in each other's Support Circle."
+  },
+  "relationship": {
+    "title": "Between you two",
+    "theySupport": "Your Journeys {{name}} supports",
+    "youSupport": "{{name}}'s Journeys you support",
+    "total": "Shared Journeys in total",
+    "empty": "You haven't shared a Journey with each other yet."
+  },
+  "shared": {
+    "title": "Shared with you",
+    "empty": "Nothing shared with you right now.",
+    "aJourney": "a Journey",
+    "progressA11y": "{{title}}, {{pct}} percent",
+    "streak": "{{days}}-day streak"
+  },
+  "actions": {
+    "cheer": "Send a Cheer",
+    "remove": "Remove friend"
+  },
+  "remove": {
+    "title": "Remove {{name}}?",
+    "body": "You'll both leave each other's Support Circle, in both directions.",
+    "checking": "Checking what this affects…",
+    "checkError": "We couldn't check what this affects.",
+    "checkRetry": "Try again",
+    "summary": "This ends support on {{theirs}} of your Journeys and on {{yours}} of {{name}}'s.",
+    "none": "This won't affect any shared Journeys.",
+    "pending": "{{pending}} invitations still waiting between you are cancelled too.",
+    "acknowledge": "I understand this removes our Support Circle connection in both directions.",
+    "confirm": "Remove friend",
+    "cancel": "Cancel",
+    "errorGeneric": "Something went wrong. {{name}} is still in your circle. Please try again."
+  }
+}

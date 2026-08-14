@@ -20,6 +20,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import {
   DEFAULT_COMMUNICATION_PROFILE,
   isCommunicationProfileId,
+  setCommunicationProfile as syncCommunicationProfile,
   type CommunicationProfileId,
 } from '@/core/communication/communicationProfile';
 import { deviceCountry, weekStartForCountry, type CountryCode } from '@/core/profile/countries';
@@ -90,11 +91,18 @@ function normalize(raw: unknown): Profile {
 /** Mirror the engine-read fields into the framework-free modules so the coach/engines stay in sync. */
 function applyToModules(profile: Profile): void {
   syncAddressForm(profile.addressForm);
+  syncCommunicationProfile(profile.communicationProfile);
   syncWeekStart(profile.weekStartDay);
 }
 
 interface ProfileValue {
   profile: Profile;
+  /**
+   * False until the persisted profile has been read back and mirrored into the framework-free
+   * modules. Anything that reacts to a profile field (e.g. re-resolving notification copy) must wait
+   * for this, or it would act on the boot defaults and then again on the real values.
+   */
+  hydrated: boolean;
   setDisplayName: (name: string | null) => void;
   setBirthDate: (iso: string | null) => void;
   setAddressForm: (form: AddressForm) => void;
@@ -108,6 +116,7 @@ interface ProfileValue {
 
 const ProfileContext = createContext<ProfileValue>({
   profile: defaultProfile(),
+  hydrated: false,
   setDisplayName: () => {},
   setBirthDate: () => {},
   setAddressForm: () => {},
@@ -118,6 +127,7 @@ const ProfileContext = createContext<ProfileValue>({
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
+  const [hydrated, setHydrated] = useState(false);
 
   // Reconcile the persisted profile once (migrating the two legacy preference keys if this is the
   // first run after the unification), and mirror it into the framework-free modules.
@@ -146,8 +156,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         setProfile(resolved);
         applyToModules(resolved);
+        setHydrated(true);
       } catch {
-        if (mounted) applyToModules(defaultProfile());
+        // A read failure still settles the profile — on the defaults — so consumers must not keep waiting.
+        if (mounted) {
+          applyToModules(defaultProfile());
+          setHydrated(true);
+        }
       }
     })();
     return () => {
@@ -219,6 +234,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     <ProfileContext.Provider
       value={{
         profile,
+        hydrated,
         setDisplayName,
         setBirthDate,
         setAddressForm,

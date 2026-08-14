@@ -23,6 +23,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { Journey, Step } from '@/core/types/domain';
+import { isRunning } from '@/core/util/journeyStatus';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
@@ -65,19 +66,21 @@ export default function WeeklyPlanningScreen() {
 
   const journeys = snapshot?.journeys ?? [];
 
-  // Ground the week in the user's why — the first active Journey's why line, per
+  // Ground the week in the user's why — the first running Journey's why line, per
   // spec §A "pinned at top". Falls back to a sensible placeholder if none yet.
   const why = useMemo(() => {
-    const active = journeys.find((j) => !j.completedAt && j.why.length > 0);
+    const active = journeys.find((j) => isRunning(j) && j.why.length > 0);
     return active?.why[0] ?? 'Because your future self is counting on you.';
   }, [journeys]);
 
-  // The upcoming week's not-yet-done Steps across active Journeys, grouped by day
-  // (spec §B). Only days with Steps render (task requirement).
+  // The upcoming week's not-yet-done Steps across RUNNING Journeys, grouped by day
+  // (spec §B). Only days with Steps render (task requirement). Gated positively on
+  // `isRunning`, the same predicate the engines use: a frozen (paused) or Future
+  // Journey plans nothing, so its Steps must not surface in the week.
   const dayGroups = useMemo<DayGroup[]>(() => {
     const entries: { step: Step; journeyTitle: string }[] = [];
     for (const journey of journeys as Journey[]) {
-      if (journey.completedAt) continue;
+      if (!isRunning(journey)) continue;
       for (const step of journey.steps) {
         if (step.done) continue;
         entries.push({ step, journeyTitle: journey.title });

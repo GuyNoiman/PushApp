@@ -28,7 +28,7 @@ function capturingRepo(): { repo: Repository; lastSaved: () => AppState | null }
   return {
     repo: {
       async load() {
-        return saved;
+        return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
       },
       async save(state: AppState) {
         saved = state;

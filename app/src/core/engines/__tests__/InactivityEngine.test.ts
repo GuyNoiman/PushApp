@@ -139,6 +139,27 @@ describe('InactivityEngine.tick — status guards + provenance preserved', () =>
     expect(swept.status).toBe('frozen');
     expect(swept.freezeReason).toBe('account_inactivity');
   });
+
+  it('never sweeps a FUTURE Journey — it keeps its Future state and planned start (Inactivity PRD §4)', () => {
+    const { state, engine } = setup();
+    state.lastAuthenticatedActivityAt = T0;
+    const startsAt = OVER + INACTIVITY_POLICY.thresholdMs;
+    state.journeys.push(
+      { ...makeJourney('later', T0), status: 'future' as const, startsAt },
+      { ...makeJourney('manual_later', T0), status: 'future' as const }, // manual start: no date
+      makeJourney('go', T0),
+    );
+
+    engine.tick(OVER);
+
+    const scheduled = state.journeys.find((j) => j.id === 'later')!;
+    expect(scheduled.status).toBe('future');
+    expect(scheduled.startsAt).toBe(startsAt);
+    expect(scheduled.freezeReason).toBeUndefined();
+    expect(state.journeys.find((j) => j.id === 'manual_later')!.status).toBe('future');
+    // The running Journey is still swept, so the Future exemption is not a blanket skip.
+    expect(state.journeys.find((j) => j.id === 'go')!.status).toBe('frozen');
+  });
 });
 
 describe('InactivityEngine.tick — idempotence', () => {
@@ -181,13 +202,22 @@ describe('InactivityEngine.tick — nothing to review resolves immediately', () 
   it('resolves immediately when NOTHING was frozen even though a Future Journey exists (no lingering CTA)', () => {
     const { state, engine } = setup();
     state.lastAuthenticatedActivityAt = T0;
-    // Created in the future relative to `now` — the sweep leaves it. Nothing was actually frozen, so
-    // the cycle records already resolved (a Future Journey is surfaced elsewhere, not a return CTA).
-    state.journeys.push(makeJourney('future', OVER + INACTIVITY_POLICY.thresholdMs));
+    // A Journey saved for later (stored `future` status) — the sweep leaves it. Nothing was actually
+    // frozen, so the cycle records already resolved (a Future Journey is surfaced elsewhere, not a
+    // return CTA).
+    const later = {
+      ...makeJourney('future', T0),
+      status: 'future' as const,
+      startsAt: OVER + INACTIVITY_POLICY.thresholdMs,
+    };
+    state.journeys.push(later);
 
     engine.tick(OVER);
 
-    expect(state.journeys[0].status).toBe('active'); // untouched
+    // Inactivity PRD §4: a Future Journey keeps its Future state AND its planned start — it is never
+    // converted into a Frozen one.
+    expect(state.journeys[0].status).toBe('future');
+    expect(state.journeys[0].startsAt).toBe(OVER + INACTIVITY_POLICY.thresholdMs);
     expect(state.accountInactivity).toMatchObject({ frozenAt: OVER, resolved: true });
   });
 });
@@ -226,15 +256,23 @@ describe('InactivityEngine.tick — re-arms across cycles (per-absence, not once
   it('a RESOLVED zero-frozen cycle re-arms and freezes on a later real gap', () => {
     const { state, engine } = setup();
     state.lastAuthenticatedActivityAt = T0;
-    // No active Journey to freeze now, but a Future one exists ⇒ cycle records already resolved.
-    const future = makeJourney('later', OVER + INACTIVITY_POLICY.thresholdMs * 5);
+    // No running Journey to freeze now, but a Future one exists ⇒ cycle records already resolved.
+    const future = {
+      ...makeJourney('later', T0),
+      status: 'future' as const,
+      startsAt: OVER + INACTIVITY_POLICY.thresholdMs * 5,
+    };
     state.journeys.push(future);
 
     engine.tick(OVER);
     expect(state.accountInactivity?.resolved).toBe(true);
+    expect(state.journeys[0].status).toBe('future'); // never swept while it is still Future
 
-    // The Future Journey has since begun (its start is now in the past); a later ≥threshold gap must
-    // re-arm and freeze it — the resolved zero-frozen marker never blocks a future absence.
+    // The Future Journey has since ACTIVATED (its scheduled start arrived and the FutureJourneyEngine
+    // ran the transition); a later ≥threshold gap must re-arm and freeze it — the resolved zero-frozen
+    // marker never blocks a future absence.
+    state.journeys[0].status = 'active';
+    state.journeys[0].activatedAt = state.journeys[0].startsAt;
     const later = OVER + INACTIVITY_POLICY.thresholdMs * 6;
     engine.tick(later);
     expect(state.journeys[0].status).toBe('frozen');

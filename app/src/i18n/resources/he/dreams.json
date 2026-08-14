@@ -23,6 +23,7 @@
     "active": "פעיל",
     "frozen": "מושהה",
     "completed": "הושלם",
-    "future": "עתידי"
+    "future": "עתידי",
+    "canceled": "הופסק"
   }
 }

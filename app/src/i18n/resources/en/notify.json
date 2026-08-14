@@ -10,7 +10,12 @@
     "title_warm": "A little reminder for what matters to you",
     "body_warm": "It's time for the Step you planned. We're here when you're ready.",
     "title_energizing": "Ready for your next move?",
-    "body_energizing": "The Step you planned is here. Let's get started."
+    "body_energizing": "The Step you planned is here. Let's get started.",
+    "titleFor": "Time for {{journeyTitle}}",
+    "titleFor_direct": "{{journeyTitle}} is next",
+    "titleFor_explanatory": "Your reminder for {{journeyTitle}}",
+    "titleFor_warm": "A little reminder for {{journeyTitle}}",
+    "titleFor_energizing": "Ready for {{journeyTitle}}?"
   },
   "allyRequest": {
     "title": "New Support Circle request",
@@ -45,7 +50,7 @@
     "body": "{{name}} reached the end of a Journey."
   },
   "journeyClosed": {
-    "title": "A Journey has wrapped up",
-    "body": "{{name}}'s Journey came to an end."
+    "title": "A Journey has stopped",
+    "body": "One of {{name}}'s Journeys has stopped."
   }
 }

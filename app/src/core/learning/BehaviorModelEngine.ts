@@ -25,7 +25,7 @@
 import type { EventBus } from '../events/EventBus';
 import type { AppState, InsightModel, RawBehaviorRecord, Step } from '../types/domain';
 import { createId } from '../util/id';
-import { resolveJourneyStatus } from '../util/journeyStatus';
+import { isRunning } from '../util/journeyStatus';
 import { deriveInsights } from '../insights/deriveInsights';
 import { isStepLocked } from '../status/stepDependencies';
 
@@ -64,10 +64,11 @@ export class BehaviorModelEngine {
    */
   tick(now: number): void {
     for (const journey of this.getState().journeys) {
-      if (journey.completedAt) continue;
-      // A FROZEN Journey is paused — its elapsed occurrences are NEVER slips (Weekly Review §7:
-      // frozen days are never interpreted as non-completion). It resumes analysis when resumed.
-      if (resolveJourneyStatus(journey) === 'frozen') continue;
+      // Only a RUNNING Journey can slip. A FROZEN Journey is paused — its elapsed occurrences are
+      // NEVER slips (Weekly Review §7: frozen days are never interpreted as non-completion), and a
+      // FUTURE Journey has not started, so a `plannedFor` that already passed is not a miss either
+      // (Future Journey Management §9 — "no overdue/failure language before activation").
+      if (!isRunning(journey)) continue;
       for (const step of journey.steps) {
         if (step.done || step.dropped) continue; // a shed Step is out of scope — never slips.
         // A LOCKED Step (Step Dependencies) cannot be actioned yet — its predecessor is still open —

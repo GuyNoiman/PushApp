@@ -1,0 +1,19 @@
+{
+  "title": "We can't open your data",
+  "intro": {
+    "keyLost": "Your Journeys are still stored on this phone, but the key that unlocks them isn't here anymore. This usually happens after restoring a backup that didn't include the phone's secure storage.",
+    "corrupt": "Your Journeys are still stored on this phone, but the file wouldn't open. It may have been cut short while it was being saved.",
+    "malformed": "Your Journeys are still stored on this phone, and the app couldn't make sense of them. This one is on us, not on your phone."
+  },
+  "kept": "Nothing has been deleted. We've set the file aside exactly as it is, and the app won't write anything over it.",
+  "privacy": "Your data is encrypted so nobody else can read it, including us. That same protection is why we can't unlock it for you.",
+  "tryAgain": "Try again",
+  "tryAgainFailed": "Still no luck. If you've just restarted your phone, unlock it and try once more.",
+  "startFresh": "Start fresh",
+  "confirm": {
+    "title": "Start fresh?",
+    "body": "This deletes the data we couldn't open, including the copy we set aside. If you delete it, we can't bring it back.",
+    "cancel": "Keep it",
+    "confirm": "Delete and start fresh"
+  }
+}

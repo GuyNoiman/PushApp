@@ -11,20 +11,25 @@ import { supabase } from './supabaseClient';
 import {
   bundleFromVisibility,
   bundleToVisibility,
+  NotFriendsError,
   type AllyBundle,
   type AllyInvite,
   type AllyInviteStatus,
   type AllyMember,
   type AllyProgress,
+  type AllyRelationRow,
   type Cheer,
   type CheerKind,
   type CompanionStep,
   type CompanionStepInput,
   type Friend,
+  type FriendProfileView,
   type SocialGateway,
   type SocialProfile,
+  type UnfriendImpact,
   type Visibility,
 } from './SocialGateway';
+import { computeUnfriendImpact, sharedJourneysFrom, summarizeRelationship } from './friendProfile';
 import type { StepStatus } from '../status/stepStatus';
 
 type ProfileRow = { id: string; handle: string; buddy_summary: SocialProfile['buddySummary'] };
@@ -126,6 +131,109 @@ export class SupabaseSocialGateway implements SocialGateway {
         direction: outgoing ? 'outgoing' : 'incoming',
       };
     });
+  }
+
+  // ── Friend Profile (viewer-scoped, Friend_Profile_PRD.md) ──
+  async friendProfile(friendId: string): Promise<FriendProfileView> {
+    const me = await this.requireUid();
+    await this.assertFriends(friendId);
+    const c = this.client();
+    // PRD §4.1 / acceptance criterion 3 (no private field may ever ARRIVE in this payload) is
+    // satisfied STRUCTURALLY, not by this select list: `public.profiles` holds only
+    // (id, handle, buddy_summary, created_at), so email, age/birthday, country, gender/form of
+    // address and auth-provider data physically cannot come back. Adding ANY column to `profiles`
+    // means re-reviewing this read against §4.1.
+    const { data: prof, error: profErr } = await c
+      .from('profiles')
+      .select('id, handle, buddy_summary')
+      .eq('id', friendId)
+      .maybeSingle();
+    if (profErr) throw profErr;
+    // A friendship row with no profile behind it means the account is gone. Treat it exactly like
+    // "not connected" so a deleted user can never expose stale shared data (PRD §6).
+    if (!prof) throw new NotFriendsError();
+    const [rows, allShared] = await Promise.all([this.allyRowsWith(friendId), this.allyProgress()]);
+    return {
+      profile: toProfile(prof as ProfileRow),
+      relationship: summarizeRelationship(rows, me, friendId),
+      // Active-only (PRD §4.3) holds by construction: the owner withdraws the snapshot the moment
+      // a shared Journey stops being Active (see `withdrawProgress`), so `ally_snapshots()` serves
+      // Active Journeys only. `ally_snapshots()` also applies the per-viewer title mask server-side.
+      sharedActive: sharedJourneysFrom(allShared, friendId),
+      fetchedAt: Date.now(),
+    };
+  }
+
+  async unfriendImpact(friendId: string): Promise<UnfriendImpact> {
+    const me = await this.requireUid();
+    return computeUnfriendImpact(await this.allyRowsWith(friendId), me, friendId);
+  }
+
+  async removeFriend(friendId: string): Promise<void> {
+    const me = await this.requireUid();
+    const c = this.client();
+    // Delete the `friendships` row in BOTH orientations — either side may have sent the request,
+    // and `friendships_delete_own` permits both.
+    //
+    // Do NOT touch `journey_allies` here. The `trg_friendships_unfriend` trigger runs
+    // `cascade_unfriend()` as SECURITY DEFINER and removes every Ally row in BOTH directions —
+    // including still-pending invites — whichever side pressed the button. A client-side delete
+    // could only reach the rows this user's RLS lets them write, i.e. half the relationship.
+    const [outgoing, incoming] = await Promise.all([
+      c.from('friendships').delete().eq('requester_id', me).eq('addressee_id', friendId),
+      c.from('friendships').delete().eq('requester_id', friendId).eq('addressee_id', me),
+    ]);
+    if (outgoing.error) throw outgoing.error;
+    if (incoming.error) throw incoming.error;
+  }
+
+  /**
+   * Every `journey_allies` row between the current user and one friend, in both directions.
+   * Deliberately TWO plain queries rather than one PostgREST `.or('and(...),and(...)')` group:
+   * the nested-boolean syntax is easy to get subtly wrong, and two `.eq().eq()` reads are
+   * trivially correct and obviously RLS-clean.
+   */
+  private async allyRowsWith(friendId: string): Promise<AllyRelationRow[]> {
+    const me = await this.requireUid();
+    const c = this.client();
+    const cols = 'journey_id, owner_id, ally_id, status, visibility, decided_at';
+    const [mine, theirs] = await Promise.all([
+      c.from('journey_allies').select(cols).eq('owner_id', me).eq('ally_id', friendId),
+      c.from('journey_allies').select(cols).eq('owner_id', friendId).eq('ally_id', me),
+    ]);
+    if (mine.error) throw mine.error;
+    if (theirs.error) throw theirs.error;
+    return [...(mine.data ?? []), ...(theirs.data ?? [])].map((row: any): AllyRelationRow => ({
+      journeyId: row.journey_id,
+      ownerId: row.owner_id,
+      allyId: row.ally_id,
+      status: row.status as AllyInviteStatus,
+      bundle: bundleFromVisibility(row.visibility as Visibility),
+      decidedAt: row.decided_at ? new Date(row.decided_at).getTime() : null,
+    }));
+  }
+
+  /**
+   * Fail closed unless an ACCEPTED friendship exists in one orientation or the other. A missing row
+   * and a still-`pending` one are treated identically — nothing about a person is shown before the
+   * friendship is mutual. This is a client-side courtesy that produces the right SCREEN state; the
+   * real gate is `are_friends()` inside the SECURITY DEFINER reads.
+   */
+  private async assertFriends(friendId: string): Promise<void> {
+    const me = await this.requireUid();
+    const c = this.client();
+    const [outgoing, incoming] = await Promise.all([
+      c.from('friendships').select('status').eq('requester_id', me).eq('addressee_id', friendId).maybeSingle(),
+      c.from('friendships').select('status').eq('requester_id', friendId).eq('addressee_id', me).maybeSingle(),
+    ]);
+    // A transport/permission failure must surface as itself — an offline blip is not a broken
+    // friendship, and the two states get very different screens (PRD §6).
+    if (outgoing.error) throw outgoing.error;
+    if (incoming.error) throw incoming.error;
+    const accepted = [outgoing.data, incoming.data].some(
+      (row) => (row as { status?: string } | null)?.status === 'accepted',
+    );
+    if (!accepted) throw new NotFriendsError();
   }
 
   // ── Support Circle: per-Journey Ally invites (consent-gated, D2) ──
@@ -291,6 +399,19 @@ export class SupabaseSocialGateway implements SocialGateway {
       progress: summary.progress,
       streak: summary.streak,
     });
+    if (error) throw error;
+  }
+
+  async withdrawProgress(journeyId: string): Promise<void> {
+    const id = await this.requireUid();
+    // Delete the SNAPSHOT only (permitted by `snapshots_owner_all`) — never the `journey_allies`
+    // rows. The Support Circle stays intact and still `accepted`, so resuming a Frozen Journey
+    // republishes it and it reappears for the same Allies with the same bundle (PRD §4.3).
+    const { error } = await this.client()
+      .from('progress_snapshots')
+      .delete()
+      .eq('owner_id', id)
+      .eq('journey_id', journeyId);
     if (error) throw error;
   }
 

@@ -83,6 +83,41 @@ export interface JourneyResumed {
 }
 
 /**
+ * A Journey was ABANDONED by the user — the deliberate "let this go" path (internal status
+ * `abandoned`; the UI labels it "canceled"). Distinct from a DELETE ({@link JourneyDeleted}, which
+ * hard-removes everything): the Journey stays in state, keeps every Step that carries real history,
+ * and moves to the history surface. It is TERMINAL — there is no un-abandon transition.
+ *
+ * Carries the mutated {@link Journey} IN-PROCESS ONLY, exactly like {@link JourneyFrozen} /
+ * {@link JourneyResumed} / {@link JourneyActivated}: AppCore persists off it (onChanged) and re-plans
+ * reminders (onReconcile) so an abandoned Journey's on-device notifications stop for good. It never
+ * leaves the device (G1).
+ */
+export interface JourneyAbandoned {
+  type: 'JourneyAbandoned';
+  journey: Journey;
+}
+
+/**
+ * A Future Journey STARTED (Future Journey Management, §9) — the ONE transition from `future` to
+ * `active`, whether the clock reached its scheduled instant or the user tapped Start Journey. It is
+ * emitted exactly once per Journey: {@link JourneyEngine.activateJourney} is idempotent, so a
+ * duplicate tick (or a second device) produces no second event and no duplicated Steps/reminders.
+ *
+ * Carries the mutated {@link Journey} IN-PROCESS ONLY, exactly like {@link JourneyFrozen} /
+ * {@link JourneyResumed}: AppCore persists off it (onChanged) and re-plans reminders (onReconcile),
+ * so the plan's already-saved — until now inert — reminder rules begin scheduling. `startedAt` is
+ * the effective start instant and `early` is a plain boolean (a manual/early start, vs the scheduled
+ * instant arriving) — no free text. It never leaves the device (G1).
+ */
+export interface JourneyActivated {
+  type: 'JourneyActivated';
+  journey: Journey;
+  startedAt: number;
+  early: boolean;
+}
+
+/**
  * A Step's report was REVERSED — the open-week "un-report" path (Daily Step Reporting, D36). The
  * Step's completion was cleared (`done=false`, `lastCheckInAt` dropped) and {@link Step.lastReportClearedAt}
  * stamped so status derivation supersedes any earlier terminal reason row; prior CheckIn / reason rows
@@ -425,6 +460,8 @@ export type DomainEvent =
   | JourneyDeleted
   | JourneyFrozen
   | JourneyResumed
+  | JourneyAbandoned
+  | JourneyActivated
   | DreamCreated
   | JourneyDreamLinked
   | JourneyDreamUnlinked

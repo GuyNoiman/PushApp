@@ -36,6 +36,12 @@ export interface InboxRowData {
   timestamp?: string;
   /** Danger unread dot + bolder name/preview when true. */
   unread?: boolean;
+  /**
+   * The stable profile id of the person this row is about, when the row is about an ACCEPTED
+   * friend. The screen turns it into a tap-through to their Friend Profile. Absent for rows that
+   * are not (yet) a friend — an incoming request must not open a profile.
+   */
+  profileId?: string;
   /** Inline actions (e.g. Accept a connection request). Rendered under the preview. */
   actions?: InboxRowAction[];
 }

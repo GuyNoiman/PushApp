@@ -4,11 +4,13 @@
  * swapping providers touches this file alone.
  *
  * Talks to the v1beta `generateContent` REST endpoint directly (no SDK — one less dependency and
- * no bundle weight). Provider = Gemini on the founder's **billing-enabled (PAID) project**, capped
- * ~$10/mo (default model `gemini-2.5-flash`). This tier matters for privacy: on the paid/billed
- * Gemini API, prompt content is NOT used to train Google's models and retention is limited — the
- * basis for "the user's disclosures aren't used beyond serving them". (Earlier this key was on the
- * free tier, where prompts CAN be used to improve Google's products — do not regress to it.) Both
+ * no bundle weight). Provider = Gemini on the founder's **billing-enabled (PAID) project** — the
+ * founder pays for Gemini and this is the key in use — capped ~$10/mo (default model
+ * `gemini-2.5-flash`). The tier is a privacy property, not just a billing detail: what the provider
+ * may do with prompt content differs between the free and the paid tier, so our "the user's
+ * disclosures are used only to serve them" posture rests on staying PAID — do not move this key back
+ * to the free tier. Google's API terms are the authority on what each tier actually permits; check
+ * them there, not in this comment. Both
  * `x-goog-api-key` header and `?key=` query auth work; we use the HEADER so the key never lands in
  * a URL, a redirect, or a request log.
  *
@@ -33,7 +35,7 @@ import {
   type LlmResult,
 } from './LlmClient';
 
-/** A FREE-tier flash model confirmed reachable on this key (2026-08-04). */
+/** A flash model confirmed reachable on this (paid) key (2026-08-04). */
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 const DEFAULT_TIMEOUT_MS = 20000;
@@ -45,7 +47,7 @@ export interface GeminiClientOptions {
    * then `GEMINI_API_KEY` (Node / tests / harness). Never logged. Keep passing it in tests.
    */
   apiKey?: string;
-  /** Model id, e.g. `gemini-2.5-flash`; defaults to a confirmed free-tier flash model. */
+  /** Model id, e.g. `gemini-2.5-flash`; defaults to a flash model confirmed on the paid project. */
   model?: string;
   /** REST base URL; defaults to the public v1beta host. */
   baseUrl?: string;

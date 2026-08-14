@@ -78,7 +78,7 @@ function preloadedRepo(state: AppState | null): { repo: Repository; saved: () =>
   return {
     repo: {
       async load() {
-        return saved;
+        return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
       },
       async save(next: AppState) {
         saved = next;
@@ -161,7 +161,10 @@ describe('AppCore — getInactivityReturn groups by provenance', () => {
         journeys: [
           makeJourney('away', LONG_AGO),
           makeJourney('paused', LONG_AGO, { status: 'frozen', freezeReason: 'manual' }),
-          makeJourney('future', NOW + INACTIVITY_POLICY.thresholdMs),
+          makeJourney('future', LONG_AGO, {
+            status: 'future',
+            startsAt: NOW + INACTIVITY_POLICY.thresholdMs,
+          }),
         ],
       }),
     );
@@ -172,6 +175,32 @@ describe('AppCore — getInactivityReturn groups by provenance', () => {
     expect(ret.frozenJourneyIds).toEqual(['away']);
     expect(ret.manualFrozenJourneyIds).toEqual(['paused']);
     expect(ret.futureJourneyIds).toEqual(['future']);
+  });
+
+  it('keeps a Journey whose scheduled start passed DURING the freeze Future, listed for context', async () => {
+    // Future Journey Management §9 + Inactivity PRD §3.3/§4: activation is BLOCKED while the account
+    // is frozen away, so a returning user is never met by plans that quietly started without them.
+    // The Journey keeps its Future state AND its planned start; it is shown for context only.
+    jest.useFakeTimers();
+    jest.setSystemTime(NOW);
+    const elapsedStart = NOW - INACTIVITY_POLICY.thresholdMs;
+    const { repo } = preloadedRepo(
+      baseState({
+        lastAuthenticatedActivityAt: LONG_AGO,
+        journeys: [
+          makeJourney('away', LONG_AGO),
+          makeJourney('elapsed', LONG_AGO, { status: 'future', startsAt: elapsedStart }),
+        ],
+      }),
+    );
+    const core = new AppCore(repo, consumedFlag());
+    await core.start();
+
+    const elapsed = core.getSnapshot().journeys.find((j) => j.id === 'elapsed')!;
+    expect(elapsed.status).toBe('future');
+    expect(elapsed.startsAt).toBe(elapsedStart);
+    expect(elapsed.activatedAt).toBeUndefined();
+    expect(core.getInactivityReturn()!.futureJourneyIds).toEqual(['elapsed']);
   });
 });
 
@@ -252,15 +281,20 @@ describe('AppCore — zero-frozen cycle leaves no lingering CTA (Fix 2)', () => 
     const { repo } = preloadedRepo(
       baseState({
         lastAuthenticatedActivityAt: LONG_AGO,
-        // Nothing active to freeze on return, only a Future Journey that begins later.
-        journeys: [makeJourney('future', NOW + INACTIVITY_POLICY.thresholdMs)],
+        // Nothing running to freeze on return, only a Future Journey that begins later.
+        journeys: [
+          makeJourney('future', LONG_AGO, {
+            status: 'future',
+            startsAt: NOW + INACTIVITY_POLICY.thresholdMs,
+          }),
+        ],
       }),
     );
     const core = new AppCore(repo, consumedFlag());
     await core.start();
 
     // The Future Journey is untouched, and there is NO undismissable "welcome back" CTA.
-    expect(core.getSnapshot().journeys[0].status).toBe('active');
+    expect(core.getSnapshot().journeys[0].status).toBe('future');
     expect(core.getInactivityReturn()).toBeNull();
     expect(core.inactivityReturnNeedsAutoOpen()).toBe(false);
   });

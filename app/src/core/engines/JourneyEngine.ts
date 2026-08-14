@@ -18,6 +18,7 @@ import type {
   Dream,
   FreezeReason,
   Journey,
+  JourneyStart,
   Milestone,
   ReasonEntry,
   ReasonId,
@@ -25,6 +26,7 @@ import type {
   Step,
 } from '../types/domain';
 import { createId } from '../util/id';
+import { futureCapacity } from '../journeys/futureJourneys';
 import type { JourneyEdit } from '../coach/journeyEdit';
 import {
   findDreamByTitle,
@@ -32,7 +34,9 @@ import {
   normalizeDreamWhy,
   type NewDreamInput,
 } from '../dreams/dreams';
+import { stepHasHistory } from '../status/stepHistory';
 import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/stepStatus';
+import { isRunning, resolveJourneyStatus } from '../util/journeyStatus';
 import { isStepLocked, transitiveDependentsOf, validateDependency } from '../status/stepDependencies';
 import { buildCompletionCard } from '../celebration/completionCard';
 
@@ -129,7 +133,40 @@ export class JourneyEngine {
     private readonly getState: () => AppState,
   ) {}
 
+  /**
+   * Create a Journey that starts NOW — the immediate path every existing caller uses. Signature
+   * unchanged; a Journey saved for later goes through {@link createFutureJourney} instead (which can
+   * refuse at the cap, so the two entry points stay honest about their return types).
+   */
   createJourney(input: NewJourneyInput): Journey {
+    return this.buildJourney(input, { mode: 'now' });
+  }
+
+  /**
+   * Create a Journey saved for LATER (Future Journey Management, §5) — a complete, approved plan in
+   * the `future` status, holding the same structured information as an immediate one (Steps,
+   * Milestones, reminders are attached by the caller exactly as before). `start` is either a
+   * `scheduled` instant or `manual` (no date, started by hand).
+   *
+   * Returns null when the Future list is already at {@link FUTURE_JOURNEY_POLICY}.max (§10): at the
+   * cap the system CANNOT silently replace or evict one — the user starts, edits, reschedules, or
+   * removes one first. Nothing is pushed and no event is emitted on that path.
+   */
+  createFutureJourney(
+    input: NewJourneyInput,
+    start: Extract<JourneyStart, { mode: 'scheduled' | 'manual' }>,
+  ): Journey | null {
+    if (futureCapacity(this.getState().journeys).capReached) return null;
+    return this.buildJourney(input, start);
+  }
+
+  /**
+   * The SINGLE Journey-construction path, shared by {@link createJourney} and
+   * {@link createFutureJourney}. `createdAt` is ALWAYS `Date.now()` — it records creation and
+   * nothing else (§14.3); the chosen {@link JourneyStart} decides the `status` and, for a scheduled
+   * start, the intended {@link Journey.startsAt} + its time-zone context.
+   */
+  private buildJourney(input: NewJourneyInput, start: JourneyStart): Journey {
     const now = Date.now();
     const steps: Step[] = input.steps.map((s) => this.makeStep(s));
 
@@ -142,10 +179,17 @@ export class JourneyEngine {
       rhythm: input.rhythm,
       steps,
       createdAt: now,
-      // A new Journey starts in progress. `status` is authoritative for the Journeys-tab
-      // bucketing and for freeze/resume (J3); it is set explicitly from creation onward.
-      status: 'active',
+      // `status` is authoritative for the Journeys-tab bucketing and for freeze/resume (J3); it is
+      // set explicitly from creation onward. A "start now" Journey is in progress immediately; a
+      // scheduled/manual one is `future` — complete, approved, and producing no obligations yet.
+      status: start.mode === 'now' ? 'active' : 'future',
       dreamId: input.dreamId,
+      // The INTENDED instant + its zone context, on a scheduled start only. A manual-start Journey
+      // deliberately carries no date: it never activates from the clock (§5).
+      ...(start.mode === 'scheduled' ? { startsAt: start.at } : {}),
+      ...(start.mode === 'scheduled' && start.timeZone !== undefined
+        ? { startTimeZone: start.timeZone }
+        : {}),
       ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
       ...(input.createdVia !== undefined ? { createdVia: input.createdVia } : {}),
     };
@@ -333,6 +377,149 @@ export class JourneyEngine {
     return journey;
   }
 
+  /**
+   * ABANDON a Journey — the user deliberately lets it go (internal status `abandoned`; the UI labels
+   * it "canceled"). This is the FIRST writer of that status. It is NOT {@link deleteJourney}: nothing
+   * is hard-removed from AppState, the Journey keeps every Step that carries a real record, and it
+   * moves to the history surface instead of vanishing. Delete stays available and unchanged.
+   *
+   * REFUSES (returns null, emits nothing) for an unknown id, a `completed` Journey — completion is
+   * FINAL (D41): a celebrated, shareable achievement can never be turned into a cancellation — and an
+   * already-`abandoned` one. Allowed from `active`, `frozen` and `future`. Abandoning is TERMINAL:
+   * there is no un-abandon transition, so the guard also makes the path idempotent by construction
+   * (one transition, one {@link JourneyAbandoned}).
+   *
+   * FUTURE STEPS GO, HISTORY STAYS — the SAME drop-vs-splice rule {@link updateJourney} already uses
+   * for Step removal, through the SAME {@link stepHasHistory} helper (one definition of "this Step
+   * happened", never two): a Step with NO history is spliced out (there is nothing to remember about
+   * it), whatever week it sat in; every other Step is KEPT with its record intact and marked
+   * `dropped` so nothing stays actionable, waiting, or countable. A partial or a "couldn't" report is
+   * history and is never spliced.
+   *
+   * HONEST PROGRESS: the pre-splice Step count is snapshotted in {@link Journey.stepsAtAbandon}, so a
+   * canceled Journey still reads "3 of 12 done" instead of the "3 of 3" (a full bar!) the shortened
+   * array would otherwise produce, and the stop instant is stamped in {@link Journey.abandonedAt} so
+   * history can date and order it. `completedAt` is NEVER stamped either — an abandoned Journey shares
+   * the history surface with completed ones but must never read as a success.
+   *
+   * Emits {@link JourneyAbandoned}; AppCore persists off it (onChanged) and re-plans reminders
+   * (onReconcile), so it stops nudging for good (the scheduler gates positively on {@link isRunning},
+   * which `abandoned` fails).
+   */
+  abandonJourney(journeyId: string): Journey | null {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey) return null;
+    const status = resolveJourneyStatus(journey);
+    if (status === 'completed' || status === 'abandoned') return null;
+
+    journey.status = 'abandoned';
+    // Clear the freeze provenance (J5), exactly like resumeJourney: it is only meaningful while a
+    // Journey is `frozen`, and a stale marker would misreport a canceled Journey on the return screen.
+    journey.freezeReason = undefined;
+    // Snapshot the REAL denominator before anything is removed (latched, never rewritten), and date
+    // the stop itself — the History surface reads BOTH from here, so a canceled Journey shows its own
+    // honest count and its own date. The guard above makes this a one-time write: a second cancel
+    // returns null before reaching it.
+    journey.stepsAtAbandon = journey.steps.length;
+    journey.abandonedAt = Date.now();
+
+    // Splice out the Steps that never happened; keep — and shed from scope — the ones that did.
+    const removedStepIds = new Set<string>();
+    journey.steps = journey.steps.filter((step) => {
+      if (!this.stepHasHistory(step)) {
+        removedStepIds.add(step.id);
+        return false;
+      }
+      // Kept: shed it from scope so a canceled Journey asks nothing and nothing waits on it. A
+      // COMPLETED Step is deliberately left alone — `dropStep` never drops a done Step either, and
+      // `deriveStepStatus` reads a dropped Step as `unreported`, which would erase the very record
+      // this path exists to preserve. A done Step is already inert (never actionable, never locking).
+      if (!step.done) step.dropped = true;
+      return true;
+    });
+
+    // Unlink dangling dependents (Step Dependencies) — the SAME loop updateJourney runs after its
+    // `removeStepIds`: a Step that pointed at a removed predecessor clears its `dependsOnStepId` and
+    // becomes a normal Step. After a cancel, NO Step may be left waiting on anything: a spliced
+    // predecessor is unlinked here, and a KEPT one is `dropped` (or done), which isStepLocked already
+    // treats as unlocked. Note {@link deferDependents} deliberately does NOT run — there is no next
+    // week to defer a canceled Journey's chain into.
+    for (const step of journey.steps) {
+      if (step.dependsOnStepId && removedStepIds.has(step.dependsOnStepId)) {
+        delete step.dependsOnStepId;
+      }
+    }
+
+    this.bus.emit({ type: 'JourneyAbandoned', journey });
+    return journey;
+  }
+
+  /**
+   * START a Future Journey (Future Journey Management, §9) — the ONE transition from `future` to
+   * `active`, used by BOTH paths: the clock reaching a scheduled instant (the
+   * {@link FutureJourneyEngine}) and the user tapping Start Journey. Returns the mutated Journey, or
+   * null when it did nothing.
+   *
+   * IDEMPOTENT BY CONSTRUCTION (§5): it bails unless the Journey currently resolves to `future`, so
+   * a duplicate lifecycle tick, a double tap, or a second device is a no-op — one transition, one
+   * {@link JourneyActivated}, never a duplicated Step, reminder, or event. That guard is the single
+   * place this invariant is enforced; no caller repeats it.
+   *
+   * PRESERVES EVERYTHING (§9): every Step id, reminder rule id, Milestone and `createdAt` is left
+   * untouched, and the recorded intention {@link Journey.startsAt} is NOT rewritten — the actual
+   * start is stamped separately in {@link Journey.activatedAt}, so an early start stays honest.
+   *
+   * `opts.rebase` shifts every DATED Step forward/back by `at - startsAt` so a manual/early start
+   * re-anchors the plan from the real start without changing Step order, spacing, or content. Each
+   * move goes through the existing {@link rescheduleStep} seam (emitting `PlanAdapted` per Step),
+   * exactly like {@link deferDependents}; an undated Step is left alone. A SCHEDULED activation does
+   * NOT rebase — the approved start is the anchor, and the existing recovery rules handle genuinely
+   * elapsed Steps (§9).
+   */
+  activateJourney(journeyId: string, at: number, opts?: { rebase?: boolean }): Journey | null {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey || resolveJourneyStatus(journey) !== 'future') return null;
+
+    journey.status = 'active';
+    journey.activatedAt = at;
+
+    // "Early" = started before the instant the user recorded. A manual-start Journey has no recorded
+    // instant, so it is never early — there was no intention to be ahead of.
+    const early = journey.startsAt != null && at < journey.startsAt;
+
+    if (opts?.rebase && journey.startsAt != null) {
+      const shift = at - journey.startsAt;
+      if (shift !== 0) {
+        for (const step of journey.steps) {
+          if (step.plannedFor == null) continue; // nothing to move — an undated Step keeps its order
+          this.rescheduleStep(journey.id, step.id, step.plannedFor + shift);
+        }
+      }
+    }
+
+    this.bus.emit({ type: 'JourneyActivated', journey, startedAt: at, early });
+    return journey;
+  }
+
+  /**
+   * Rewrite a still-`future` Journey's intended start (Future Journey Management, §8) — the engine is
+   * the ONLY writer of {@link Journey.startsAt}. Rescheduling never activates: the Journey stays
+   * `future` and simply carries a new instant (or, with `at` omitted, becomes a manual-start Journey
+   * with no date). No-op (returns null) for an unknown id or a Journey that is not `future` — a
+   * running/completed Journey's start is history and is never edited. Emits {@link JourneyUpdated},
+   * which AppCore already persists + reconciles off.
+   */
+  setJourneyStart(journeyId: string, at?: number, timeZone?: string): Journey | null {
+    const journey = this.getState().journeys.find((j) => j.id === journeyId);
+    if (!journey || resolveJourneyStatus(journey) !== 'future') return null;
+
+    journey.startsAt = at;
+    journey.startTimeZone = at != null ? timeZone : undefined;
+
+    this.bus.emit({ type: 'JourneyUpdated', journey });
+    return journey;
+  }
+
   // ── Dreams (Dream Management, D40 — coach-owned Dream layer) ────────────────
   // The Journey↔Dream relationship is authoritative on the JOURNEY side (dreamId = primary +
   // secondaryDreamIds). A Dream holds no back-reference; its Journeys are derived on read
@@ -431,14 +618,13 @@ export class JourneyEngine {
   }
 
   /**
-   * Whether a Step carries HISTORY worth preserving on removal: it was completed, it was ever touched
-   * (a check-in / partial set `lastCheckInAt`), or it has entries in the reason log. Such a Step is
-   * dropped rather than spliced so its record survives.
+   * Whether a Step carries HISTORY worth preserving on removal — bound to the shared, pure
+   * {@link stepHasHistory} so the two removal paths (updateJourney's Step removal and
+   * abandonJourney's cancel) AND the cancel confirmation's "N Steps will be removed" count all read
+   * ONE definition of "this Step happened" and can never drift apart.
    */
   private stepHasHistory(step: Step): boolean {
-    if (step.done || step.lastCheckInAt !== undefined) return true;
-    const log = this.getState().reasonLog ?? [];
-    return log.some((e) => e.stepId === step.id);
+    return stepHasHistory(step, this.getState().reasonLog ?? []);
   }
 
   /**
@@ -543,6 +729,14 @@ export class JourneyEngine {
   journeyProgress(journeyId: string): number {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
     if (!journey) return 0;
+    // An ABANDONED Journey is measured against the Steps it had when the user gave up
+    // ({@link Journey.stepsAtAbandon}), never against what survived the cancel: its unlived Steps
+    // were spliced and its remaining ones shed, so the in-scope math below would read a full 100%
+    // for a Journey that was let go — a cancel must never read as a success.
+    const atAbandon = journey.stepsAtAbandon;
+    if (atAbandon !== undefined) {
+      return atAbandon === 0 ? 0 : journey.steps.filter((s) => s.done).length / atAbandon;
+    }
     // Dropped Steps are out of scope: they count toward neither the numerator nor denominator.
     const inScope = journey.steps.filter((s) => !s.dropped);
     const total = inScope.length;
@@ -762,16 +956,20 @@ export class JourneyEngine {
   }
 
   /**
-   * Steps the user can act on now: the not-yet-done Steps of active (incomplete) Journeys. A Step
-   * LOCKED by an unmet dependency (Step Dependencies) is EXCLUDED — the actionable "today" subset must
-   * never include a Step the user cannot do yet (its predecessor is still open).
+   * Steps the user can act on now: the not-yet-done Steps of RUNNING Journeys. A Step LOCKED by an
+   * unmet dependency (Step Dependencies) is EXCLUDED — the actionable "today" subset must never
+   * include a Step the user cannot do yet (its predecessor is still open).
+   *
+   * Gated positively on {@link isRunning}: a FROZEN Journey's Steps no longer surface here (a paused
+   * Journey must ask nothing of the user — J3 / Inactivity PRD §6; the old `completedAt`-only filter
+   * let them through), and a FUTURE Journey's Steps never surface before it starts (§14.4).
    */
   getTodaySteps(): TodayStep[] {
     const state = this.getState();
     const reasonLog = state.reasonLog ?? [];
     const today: TodayStep[] = [];
     for (const journey of state.journeys) {
-      if (journey.completedAt) continue;
+      if (!isRunning(journey)) continue;
       for (const step of journey.steps) {
         if (!step.done && !step.dropped && !isStepLocked(step, journey, reasonLog)) {
           today.push({
@@ -788,8 +986,9 @@ export class JourneyEngine {
   }
 
   /**
-   * Every Step of active (incomplete) Journeys — INCLUDING already-done ones —
-   * for Home's "Week's steps" list. This is the display SUPERSET of getTodaySteps:
+   * Every Step of RUNNING Journeys — INCLUDING already-done ones — for Home's "Week's steps" list
+   * (same {@link isRunning} gate as {@link getTodaySteps}, so a frozen or Future Journey contributes
+   * nothing here either). This is the display SUPERSET of getTodaySteps:
    * a checked-in Step stays in the list (the UI sinks it to the bottom, dimmed, with
    * a done indicator) instead of vanishing (Home_Screen.md: "Completed Steps move to
    * the bottom of the feed, shown disabled"). getTodaySteps() stays the "actionable"
@@ -801,7 +1000,7 @@ export class JourneyEngine {
     const reasonLog = state.reasonLog ?? [];
     const week: TodayStep[] = [];
     for (const journey of state.journeys) {
-      if (journey.completedAt) continue;
+      if (!isRunning(journey)) continue;
       for (const step of journey.steps) {
         if (step.dropped) continue; // shed from scope — not shown in the week's steps.
         // A locked Step (Step Dependencies) is KEPT here but flagged so the UI can render it disabled.

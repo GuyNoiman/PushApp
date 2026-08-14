@@ -4,7 +4,8 @@
  * tone seam is an accepted no-op, and — most importantly — the privacy invariant holds: a social-type
  * body carries ONLY a person's display name, never the owner's private free text.
  */
-import { changeLanguage } from '@/i18n';
+import i18n, { changeLanguage } from '@/i18n';
+import enNotify from '@/i18n/resources/en/notify.json';
 import { buildNotificationContent } from '@/core/notify/notificationContent';
 import {
   NOTIFICATION_TYPES,
@@ -72,13 +73,20 @@ describe('buildNotificationContent', () => {
   });
 
   describe('reminder is owner-content passthrough', () => {
-    it('uses the owner’s own Journey/Step text when present', () => {
+    it('wraps the owner’s Journey title in toned copy, and passes the Step text through', () => {
       const { title, body } = buildNotificationContent(
         'reminder',
         { journeyTitle: 'My Journey', stepTitle: 'My Step' },
         { addressForm: 'neutral' },
       );
-      expect(title).toBe('My Journey');
+      // The title is NO LONGER a raw passthrough. It used to be `title === 'My Journey'`, which
+      // short-circuited before the tone lookup — and since every real reminder carries a Journey
+      // title, that meant communication style never reached a single notification (the AC#4 gap).
+      // The title is now resolved through `reminder.titleFor`, so it carries the user's Journey
+      // title AND their chosen tone.
+      expect(title).toContain('My Journey');
+      expect(title).not.toBe('My Journey');
+      expect(title).not.toContain('{{');
       expect(body).toBe('My Step');
     });
 
@@ -120,6 +128,27 @@ describe('buildNotificationContent', () => {
       for (const styleId of ['direct', 'explanatory', 'warm', 'energizing'] as const) {
         const toned = buildNotificationContent('ally_request', { name: 'Dana' }, { addressForm: 'neutral', styleId });
         expect(toned).toEqual(base);
+      }
+    });
+
+    it('NEVER tones journey_closed, even when a toned variant EXISTS for it', () => {
+      // Telling someone a friend stopped a Journey must stay neutral and factual for every reader:
+      // a "warm" or "energizing" spin on another person's setback is forced positivity. The
+      // catalogue marks the type `neverToned`, so the style is dropped before the key lookup — the
+      // guarantee is structural, not "we just didn't write the variants". To prove that, a warm
+      // variant is authored here at runtime and must still be ignored.
+      expect(NOTIFICATION_TYPES.journey_closed.neverToned).toBe(true);
+      const base = buildNotificationContent('journey_closed', { name: 'Dana' }, { addressForm: 'neutral' });
+      i18n.addResource('en', 'notify', 'journeyClosed.body_warm', 'Chin up! {{name}} let one go.');
+      try {
+        for (const styleId of ['direct', 'explanatory', 'warm', 'energizing'] as const) {
+          expect(
+            buildNotificationContent('journey_closed', { name: 'Dana' }, { addressForm: 'neutral', styleId }),
+          ).toEqual(base);
+        }
+      } finally {
+        i18n.removeResourceBundle('en', 'notify');
+        i18n.addResourceBundle('en', 'notify', enNotify);
       }
     });
 

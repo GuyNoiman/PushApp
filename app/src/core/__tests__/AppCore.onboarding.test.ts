@@ -30,7 +30,7 @@ function memRepo(initial: AppState | null = null): { repo: Repository; saved: ()
   return {
     repo: {
       async load() {
-        return saved;
+        return saved ? { kind: 'loaded', state: saved } : { kind: 'first-run' };
       },
       async save(state: AppState) {
         saved = state;

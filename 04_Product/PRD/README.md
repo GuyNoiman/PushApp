@@ -70,6 +70,14 @@ error states.
   delete (both stay). Covers the no-guilt framing, the freeze/delete/cancel distinction, and the full
   lifecycle fan-out. **Stage: MVP · Status: founder-specified 2026-08-13, specification in progress — NOT
   ready to build; seven open questions in §12, reversibility is blocking.**
+- `Step_Postponement_02_PRD.md` — **continuation of the immutable `Done/Step_Postponement_PRD.md` (D37).**
+  Explicit, never-automatic Journey extension when an approved postponement lands past the Journey's last
+  day: the append-only extension ledger + one shared `journeyEndAt` helper (which also fixes the
+  `createdAt`-vs-`effectiveStartAt` drift in `AppCore.journeyEndsAt`), the exact trigger, and the
+  two-choice approval moment. **D51: a Journey always has an end date, the two-month window is planning
+  guidance rather than a cap, and there is no ceiling on extension — the invariant is that the end date
+  only ever moves because the user said so.** **Stage: MVP · Status: founder-decided 2026-08-14 (§4/§8);
+  contract in specification, eight open questions in §14, not ready to build.**
 - `Coach_Context_Summaries_PRD.md` — optional, minimal, end-to-end encrypted Dream/Journey context for
   the Coach. **Stage: MVP · Status: Approved; security/privacy release gate.**
 - `Account_Inactivity_Freeze_PRD.md` — server-authoritative 21-day inactivity freeze for Active/Future
@@ -79,8 +87,15 @@ error states.
 - `Invite_Friend_Acquisition_PRD.md` — Circle Invite share flow, verified HTTPS links for installed users,
   Android post-install attribution, cross-platform manual invitation-code fallback, and automatic pending
   friendship-request creation without automatic acceptance. **Stage: MVP foundation / Commercial completion ·
-  Status: draft after competitive research; founder decisions pending; blocked by real auth and store
-  distribution.**
+  Status: approved for staged implementation 2026-08-14; interim manual share may ship first, but full
+  automatic attribution remains a required follow-up; blocked by real auth, backend linking, a stable web
+  destination, and store distribution.**
+- `Weekly_Review_Contributions_02_PRD.md` — continuation of the immutable `Done/Weekly_Review_PRD.md`:
+  the **contribution socket** by which any domain expert or Journey may put information (and, bounded by
+  the same 48h explicit-approval gate, a proposed change) into the ONE Weekly Review instead of creating a
+  second one (D50). Defines the three contribution kinds, D30 re-voicing, volume caps, empty/degraded
+  states, privacy red lines, and the Smart-Notification-Timing cross-check. **Stage: Future · Status:
+  approved architecture (D50), interface NOT built, NOT scheduled; 7 open questions in §14.**
 - `Future/Recurring_Routine_PRD.md` — **Practice** object: **PARKED (D39, 2026-08-11).** We are not building a
   distinct recurring object now; small recurring tasks + small goals use the existing Dream/Journey/Step model,
   revisited after real usage. The analysis + product-guardian conditions are preserved in the file. **Stage: Future.**

@@ -676,6 +676,75 @@ partner content is wired — which, per the folder's standing rule, it is not.
 `10_Partner_Coaching_Content/PARTNER_FILE_MANIFEST.md` (second-pass note). `Weekly_Review_PRD.md` is in
 `04_Product/PRD/Done/` and is immutable — it was **not** edited; when the contribution slot is built it
 needs its own PRD delta.
+**Delta written (2026-08-14):** that PRD delta now exists as
+`04_Product/PRD/Weekly_Review_Contributions_02_PRD.md` — the contribution contract (three kinds:
+display-only `note`, verifiable `evidence`, and a `proposal` that inherits D43's single atomic 48h
+approval gate unchanged), D30 re-voicing through the meta-agent's own intent templates, volume caps,
+empty/degraded states, the on-device privacy red lines, and a cross-check confirming
+`Smart_Notification_Timing_PRD.md` §6 is a strict instance of this contract rather than a conflict.
+**Still Future — approved architecture, interface not built, not scheduled**, with 7 open founder
+questions in its §14 (the sharpest being whether the change vocabulary grows to cover the partner's
+`context`/`busyDayVersion`, without which `PROGRESS`-by-context is inexpressible).
+
+### D51 — A Journey always has an end date; it moves ONLY when the user explicitly says so (no automatic extension, and no ceiling)
+**Decision (founder, 2026-08-14, in two passes on the same day):**
+
+**Pass 1 — finiteness and explicit extension.** *"There is no need for a Journey without an end date. Every
+Journey is initially planned for up to two months and remains a finite process. If postponing a Step moves
+work past the end date, the Journey may be extended — but only following an explicit user action and
+approval. The extension is never automatic."*
+
+**Pass 2 — the ceiling question, resolved.** *"It's fine for a Journey to become infinite if the user
+**actively** extends it. The two-month decision is for their benefit, but if they choose to extend, that is
+their decision and we respect it."*
+
+**What is settled:** (1) a Journey always has an end date — there is no open-ended Journey; (2) the
+**two-month planning window is guidance, not a cap**, and its job is to stop people over-committing at the
+moment they plan, which is when over-committing happens; (3) **there is no hard ceiling on extension** — a
+Journey may be extended repeatedly and may in practice run indefinitely; (4) **every extension requires an
+explicit user action and approval**, from a real user-facing moment, with no automatic extension from any
+caller, ever.
+
+**The invariant, stated so nobody has to infer it:** *a Journey's end date only ever moves because the user
+said so.* What the design prevents is **drift without consent**, not length. That line is absolute: an end
+date that moves automatically, silently, or as a side effect of another action is forbidden — including
+from the inactivity freeze (J5), the Weekly Review, the `deferDependents` cascade and the adaptive planner.
+
+**Why, and why it is consistent with how we already work:** this is the same stance as **D46** (Journey
+cancellation is irreversible, with no undo). The app may make a heavy action quiet and deliberate, and may
+explain the consequences honestly, but once the person has understood and chosen, their decision is
+**respected, not fought**. The product's job is to inform the choice, never to overrule it. D46 and D51
+read as one stance, not two unrelated calls. A hard cap would have been the app deciding it knows a user's
+life better than they do, which is the paternalism the mission rejects. And "a Journey is a finite
+transformation" stays true: that is a claim about the object's *shape* — it always has a last day and a
+defined set of Steps, and it never becomes an open-ended recurring object (the deliberately parked Practice
+model, D39) — not a promise about the number 60.
+
+**Growth-before-engagement tension, recorded rather than hidden:** extension unbounded by consent could in
+principle prolong a Journey that should have been reshaped or let go. The safeguard chosen is
+**measurement, not a gate**: completion rate of extended vs non-extended Journeys, days past planned end at
+completion, and the "many extensions, never completes" pattern (`Step_Postponement_02_PRD.md` §12). If the
+data shows extending hurts real follow-through, the response is better planning up front and an earlier
+route to the coach-led Journey-edit conversation — never a cap imposed on the user.
+
+**Code truth this corrects (verified 2026-08-14, not assumed):** a postponement today writes only the four
+per-occurrence Step fields (`postponedUntil`, `postponedAt`, `postponeCount`, `postponeNotificationId`)
+plus one OS notification. **No path writes `Journey.durationDays` or any end date**, so a postponement past
+the last day currently strands work outside the Journey's window with nothing recorded anywhere. There is
+no extension mechanism to modify; it has to be built. The same work must fix `AppCore.journeyEndsAt`, which
+anchors on `createdAt` while `journeyView.endsAt` anchors on `effectiveStartAt` — so the two disagree for
+any Journey activated later than it was created, and the existing `crosses_journey_end` warning misfires
+for Future Journeys.
+
+**Categorization:** **Approved** (everything above) + **Open Question** (the eight items in
+`Step_Postponement_02_PRD.md` §14 — most notably what, if anything, is shown at the extension moment: the
+founder decided the rule, not that copy).
+**Reflected in:** `04_Product/PRD/Step_Postponement_02_PRD.md` (the continuation PRD: the model
+recommendation, the exact trigger, the approval moment, lifecycle interactions, metrics and open
+questions); `04_Product/PRD/README.md` (index); `04_Product/PRD/PRD_Coverage_Gaps.md` PC-26 (the gap this
+closes at the specification level; the implementation gap remains).
+`04_Product/PRD/Done/Step_Postponement_PRD.md` (D37) is immutable and was **not** edited; nothing in it is
+rescinded.
 
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 

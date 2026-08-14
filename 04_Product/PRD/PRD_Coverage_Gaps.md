@@ -68,7 +68,7 @@ and from a deliberate Future item. Those states require different work and must 
 | Weekly Review is not generated in production | The screen, week gate, proposal, 48-hour lifecycle and approval path are built, but `AppCore` runs them only when `adaptiveCoach` or its development-only sibling enables `adaptiveEnabled`; the production flag is off | **Implementation/release gap, not PRD coverage** | Decide which minimum evidence engine can safely be enabled for MVP, then remove the Weekly Review's accidental dependence on the whole experimental adaptive-Coach bundle or approve that bundle for production |
 | Experts cannot contribute to Weekly Review | D50 approves one shared Weekly Review with nested per-Journey/per-expert contributions, but explicitly records that no contribution interface exists | **Approved architecture + Future specification/implementation gap** | Write a continuation PRD outside `Done/` before wiring partner content; never edit the immutable completed Weekly Review PRD |
 | Three orphaned screens | `weekly-planning.tsx`, `missions.tsx`, and `achievements.tsx` are registered root routes with no entry point. Weekly Planning renders invented weekdays; Achievements renders placeholder data | **Product cleanup decision** | Archive/remove the routes from the shipping Stack for now. Their future product ideas remain preserved; only write a new surface PRD if one is deliberately revived |
-| Circle Invite button is empty and six Invite decisions remain | `Invite_Friend_Acquisition_PRD.md` contains researched flows, security rules and the recommended no-paid-provider baseline, but remains Draft pending the six confirmations in §14. The live Circle button still has an empty handler | **Open decisions, then implementation gap** | Resolve §14 as one founder approval pass; thereafter mark the PRD ready and implement in stages subject to authentication, backend, stable web destination and store availability |
+| Circle Invite button is empty | All six founder decisions in `Invite_Friend_Acquisition_PRD.md` §14 were approved on 2026-08-14. The live Circle button still has an empty handler | **Specification resolved; staged implementation gap** | Ship the truthful interim share when a stable destination exists, while retaining a required follow-up for full token/code redemption and automatic pending requests |
 | A Journey cannot continue indefinitely | Founder clarified that Journeys are planned for at most two months and remain finite. An approved manual Step postponement may extend the Journey's end date; the extension is never automatic | **Product question resolved; specification delta + implementation gap** | Create a numbered continuation to the immutable Step Postponement PRD, then update postponement code to extend the Journey only when the user explicitly approves the extension; see PC-26 |
 
 The immediate MVP blockers in this list are therefore narrower than the original wording suggests:
@@ -114,7 +114,7 @@ One line per gap. The substance — what each PRD must actually answer — is in
 |---|---|---|---|---|---|---|---|
 | Covered | PC-01 | **Coach screen** — `app/src/app/coach.tsx` (root Stack route) | A1 · A2 · J1 | Development implementations inspected and explicitly classified as non-final | Covered by `Coach_Conversation_PRD.md` | `Coach_Conversation_PRD.md` | Completed 2026-08-14; agent intelligence remains separately specified |
 | P1 | PC-02 | **Home** — `app/src/app/(tabs)/index.tsx` | H1 · C1 · I1 · J5 | ~700 lines: status strip, greeting, Coach hero, Weekly-Review card, inactivity CTA, Today's Focus, This Week (by Dream), Give Support board, report sheet, confetti, three-way auto-open priority | No PRD. Only a stale 2026-07-06 UX doc | `Home_Screen_PRD.md` | Must not restate C1/I1/J5 — it owns the **arbitration + hierarchy**, they own their own behaviour |
-| P1 | PC-03 | **Circle tab** — `app/src/app/(tabs)/friends.tsx` | D1 · D3 | Header (Invite + Add), add-by-`@username`, one "Your friends" list built from `allyProgress`, one Cheer per row, calm empty state | No PRD for the Circle surface. `Friend_Profile_PRD.md` covers the profile page only | `Support_Circle_Screen_PRD.md` | The `Invite` button is `onPress={() => {}}` — a live dead button; `Invite_Friend_Acquisition_PRD.md` is still draft |
+| P1 | PC-03 | **Circle tab** — `app/src/app/(tabs)/friends.tsx` | D1 · D3 | Header (Invite + Add), add-by-`@username`, one "Your friends" list built from `allyProgress`, one Cheer per row, calm empty state | No PRD for the Circle surface. `Friend_Profile_PRD.md` covers the profile page only | `Support_Circle_Screen_PRD.md` | The `Invite` button is `onPress={() => {}}` — a live dead button; `Invite_Friend_Acquisition_PRD.md` is approved and now awaits staged implementation |
 | P1 | PC-04 | **Inbox** — `app/src/app/(tabs)/inbox.tsx` | D2 · D3 | Four tabs (Friends · Allies · Groups · Requested), client-side name search, real friend requests **and** real Ally invites as Accept/Decline rows | No PRD. Ally invitations surface here but `Journey_Support_Circle_PRD.md` specs the invite, not the inbox | `Inbox_Screen_PRD.md` | The "New message" compose control is a plain `View`, not even pressable; Groups tab is empty by D29 |
 | P1 | PC-05 | **Journeys tab** — `app/src/app/(tabs)/journeys.tsx` | J-series · L1 | Active/Completed/Future segmented control, `journeyView` derivations, Paused pill, `ParkedGoalCard` for coach-detected deferred goals | No PRD for the list surface itself | `Journeys_Screen_PRD.md` | Lifecycle *behaviour* is covered by the Backfill PRD; this is the **surface**. Depends on PC-13 (parked goals) |
 | P1 | PC-06 | **Settings hub** — `app/src/app/(tabs)/settings.tsx` | E2 | Sectioned hub: Profile identity, Account (sign-in "coming soon"), App (notifications/appearance/language/about), Your data | No PRD for the hub. Every *sub-screen* is covered; the hub that composes them is not | `Settings_Hub_PRD.md` | Several rows are tap-to-cycle interim controls (appearance, form of address, week start) explicitly marked as moving into the P1 profile redesign |
@@ -380,6 +380,15 @@ Weekly Review treatment; Ally notices; time-zone boundaries; cancellation/revers
 
 This resolves the reported gap without an endless Journey and without reviving the parked Practice model.
 
+**Written (2026-08-14):** the continuation now exists as `Step_Postponement_02_PRD.md`, and the founder
+resolved the ceiling question the same day (**D51**): the two-month window is **planning guidance, not a
+cap**, there is **no ceiling on extension**, and the invariant is that *a Journey's end date only ever moves
+because the user said so* — same stance as D46. Verified code truth: a postponement writes only the four
+per-occurrence Step fields plus one OS notification and **never** touches `durationDays` or any end date, so
+work postponed past the last day is silently stranded outside the window today. **Specification gap closed;
+the implementation gap remains open**, and eight questions in that PRD's §14 (led by the extension-moment
+copy) are still the founder's.
+
 ### PC-27 · Weekly Review contribution contract
 
 D50 settles the top-level architecture: there is exactly one Weekly Review, and domain experts contribute
@@ -422,7 +431,7 @@ than writing a separate PRD.
 3. **PC-08 / PC-09** — the two social behaviours that ship today with no rules at all.
 4. **PC-03 / PC-04 / PC-05 / PC-06** — the remaining live tab surfaces.
 5. **PC-07 / PC-12** — the two composite Journey screens.
-6. **Invite §14** — close the six decisions in one pass, then hand the already-researched PRD to implementation.
+6. **Invite implementation** — ship the interim share, then complete the explicitly tracked full attribution and automatic-request connection.
 7. **PC-26** — write the postponement continuation, then implement explicit Journey extension.
 8. **PC-14 / PC-18 / PC-23** — decide fate first; archive entries are cheaper than PRDs.
 9. **PC-19 / PC-20** — housekeeping; do PC-19 in the stated order.
@@ -434,7 +443,7 @@ than writing a separate PRD.
 - **Future Vision**: PC-21 (Buddy), PC-22 (Shop/coins), PC-27 (Weekly Review contribution slot), PC-18 if
   Explore is specced rather than archived.
 - **Open Question**: PC-14 (does weekly planning survive?), PC-16 (Step-report photo), PC-17 (hide vs.
-  label deferred UI), PC-13's three D44 questions, Invite PRD §14, and **every
+  label deferred UI), PC-13's three D44 questions, and **every
   suggested PRD filename in §2** — those are proposals, not decisions.
 
 *Nothing in this document has been approved as a feature. It is an inventory of missing specifications.*

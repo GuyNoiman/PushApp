@@ -15,6 +15,7 @@
     "nextDreamAddressed": "Pick “{{dream}}” back up and start a fresh Journey toward it.",
     "nextDreamNew": "Ready for something new? “{{dream}}” is waiting for its first Journey.",
     "changesHeading": "A suggested change",
+    "noChangesHeading": "Your plan",
     "changesLead": "Looking at last week, here is what might work better:",
     "noChanges": "Your plan still fits well. Nothing to change for now.",
     "changeRescheduled": "Move a few Steps to days that suit you better",

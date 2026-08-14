@@ -231,4 +231,40 @@ describe('buildWeeklyReview', () => {
     expect(review.nextWeek.kind).toBe('steps');
     expect(review.proposals).toHaveLength(1);
   });
+
+  it('without a behaviour model still builds summary + next week, and proposes nothing', () => {
+    // The PRODUCTION shape: no `insight` / `constraintsFor` (the adaptive half is off). Both are
+    // needed to propose, so the review is real but carries an empty proposal list.
+    const j = journey({
+      id: 'j1',
+      steps: [step({ id: 's_done', done: true, plannedFor: IN_WINDOW }), step({ id: 's1' })],
+    });
+    const review = buildWeeklyReview(
+      {
+        journeys: [j],
+        dreams: [],
+        reasonLog: [],
+        id: 'review_2',
+        windowStart: WINDOW_START,
+        windowEnd: WINDOW_END,
+      },
+      WINDOW_END,
+    );
+
+    expect(review.proposals).toEqual([]);
+    expect(review.summary.completed).toBe(1);
+    expect(review.nextWeek).toEqual({ kind: 'steps', stepCount: 1 });
+  });
+
+  it('proposes nothing when only ONE of insight / constraintsFor is supplied', () => {
+    const j = journey({ id: 'j1', steps: [step({ id: 's1' })] });
+    const base = { journeys: [j], dreams: [], reasonLog: [], windowStart: WINDOW_START, windowEnd: WINDOW_END };
+
+    expect(
+      buildWeeklyReview({ ...base, id: 'r_a', insight: INSIGHT }, WINDOW_END).proposals,
+    ).toEqual([]);
+    expect(
+      buildWeeklyReview({ ...base, id: 'r_b', constraintsFor }, WINDOW_END).proposals,
+    ).toEqual([]);
+  });
 });

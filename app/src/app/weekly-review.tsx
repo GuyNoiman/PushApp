@@ -141,8 +141,9 @@ export default function WeeklyReviewScreen() {
             </ThemedText>
           </Section>
 
-          {/* ── Suggested change (optional) ── */}
-          <Section heading={t('screen.changesHeading')}>
+          {/* ── Suggested change (optional) — with no proposals the section reads as reassurance,
+              which is the normal state while the adaptive Step-plan half is off ── */}
+          <Section heading={hasChanges ? t('screen.changesHeading') : t('screen.noChangesHeading')}>
             {hasChanges ? (
               <>
                 <ThemedText type="small" themeColor="textSecondary">

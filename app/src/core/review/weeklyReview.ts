@@ -5,6 +5,12 @@
  * (the CoachNarrator seam is reserved for future narration); the proposal reuses the on-device
  * {@link replan} verbatim.
  *
+ * The review has TWO SEPARABLE HALVES. The summary + never-empty next week need nothing but state,
+ * so they run in PLAIN PRODUCTION. The Step-plan PROPOSAL needs the adaptive loop's derived
+ * {@link InsightModel} + planning constraints, so {@link WeeklyReviewInput.insight} and
+ * {@link WeeklyReviewInput.constraintsFor} are OPTIONAL: without them the review still builds, and
+ * simply carries `proposals: []`.
+ *
  * Three product rules are enforced here, straight from the PRD:
  *  - §7 frozen Journeys are NAMED in the summary but NEVER counted as non-completion and NEVER
  *    proposed changes; completed/abandoned Journeys are likewise excluded from next-week changes;
@@ -40,10 +46,16 @@ export interface WeeklyReviewInput {
   journeys: Journey[];
   dreams: Dream[];
   reasonLog: readonly ReasonEntry[];
-  /** The on-device derived model (drives the AdaptivePlanner). */
-  insight: InsightModel;
-  /** Per-Journey planning constraints — AppCore passes `deriveConstraints(j, schedulingPrefs)`. */
-  constraintsFor: (journey: Journey) => PlanConstraints;
+  /**
+   * The on-device derived model (drives the AdaptivePlanner). OPTIONAL — present only while the
+   * adaptive loop is on; absent ⇒ no Step-plan proposals are computed.
+   */
+  insight?: InsightModel;
+  /**
+   * Per-Journey planning constraints — AppCore passes `deriveConstraints(j, schedulingPrefs)`.
+   * OPTIONAL, and only meaningful alongside {@link insight}: BOTH are needed to propose changes.
+   */
+  constraintsFor?: (journey: Journey) => PlanConstraints;
   /** Immutable review-period id (AppCore mints it via createId). */
   id: string;
   /** Epoch ms of the start / exclusive end of the reviewed (closed) week (from the week gate). */
@@ -176,21 +188,23 @@ export function computeJourneyProposals(
   return proposals;
 }
 
-/** Build the full {@link WeeklyReview} for one closed week. Pure — no mutation, no side effects. */
+/**
+ * Build the full {@link WeeklyReview} for one closed week. Pure — no mutation, no side effects.
+ * The summary + next-week plan are ALWAYS built; the Step-plan proposal only when the caller
+ * supplied both `insight` and `constraintsFor` (adaptive loop on) — otherwise `proposals: []`.
+ */
 export function buildWeeklyReview(input: WeeklyReviewInput, now: number): WeeklyReview {
+  const { insight, constraintsFor } = input;
   return {
     id: input.id,
     weekKey: weekKey(input.windowStart),
     generatedAt: now,
     summary: summarizeWeek(input.journeys, input.reasonLog, input.windowStart, input.windowEnd),
     nextWeek: planNextWeek(input.journeys, input.dreams),
-    proposals: computeJourneyProposals(
-      input.journeys,
-      input.insight,
-      input.constraintsFor,
-      now,
-      input.policy,
-    ),
+    proposals:
+      insight && constraintsFor
+        ? computeJourneyProposals(input.journeys, insight, constraintsFor, now, input.policy)
+        : [],
     status: 'pending',
   };
 }

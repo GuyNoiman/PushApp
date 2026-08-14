@@ -2,7 +2,9 @@
  * AppCore Weekly Review wiring (Weekly_Review_PRD, D40/D41) — with the adaptive loop ON, a review is
  * generated for a closed week, held as ONE pending proposal (idempotent, superseding rather than
  * stacking), applied FORWARD-ONLY on approve, kept out on dismiss, and excludes frozen Journeys. The
- * flag is force-mocked ON here; production (flag off) generates nothing (covered by the OFF path).
+ * flag is force-mocked ON here; the last suite flips BOTH adaptive flags OFF to cover the PRODUCTION
+ * split — the review still generates (summary, never-empty next week, 48h lifecycle) but carries an
+ * empty proposal list, and the daily tactical auto-apply (D43) stays gated.
  */
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -45,7 +47,7 @@ function inMemoryRepo(): Repository {
 
 /** Like {@link inMemoryRepo} but exposes the last-saved snapshot, to inspect a NON-pending review
  *  (expired/superseded) that {@link AppCore.getPendingWeeklyReview} deliberately no longer returns. */
-function capturingCore(): { core: AppCore; saved: () => AppState | null } {
+function capturingRepo(): { repo: Repository; saved: () => AppState | null } {
   let saved: AppState | null = null;
   const repo: Repository = {
     async load() {
@@ -58,13 +60,51 @@ function capturingCore(): { core: AppCore; saved: () => AppState | null } {
       saved = null;
     },
   };
-  return { core: new AppCore(repo), saved: () => saved };
+  return { repo, saved: () => saved };
+}
+
+function capturingCore(): { core: AppCore; saved: () => AppState | null } {
+  const { repo, saved } = capturingRepo();
+  return { core: new AppCore(repo), saved };
 }
 
 async function startedCore(): Promise<AppCore> {
   const core = new AppCore(inMemoryRepo()); // first run seeds the demo Dreams/Journeys
   await core.start();
   return core;
+}
+
+/**
+ * Build a core with BOTH adaptive flags OFF — the PRODUCTION path. This suite force-mocks
+ * `adaptiveCoach` ON, and `adaptiveEnabled` is captured at construction, so flip → build → restore,
+ * leaving the flag ON for every other test in the file.
+ */
+function productionCore(repo: Repository): AppCore {
+  const flags = featureFlags as { adaptiveCoach: boolean; adaptiveCoachDev: boolean };
+  const prev = { adaptiveCoach: flags.adaptiveCoach, adaptiveCoachDev: flags.adaptiveCoachDev };
+  flags.adaptiveCoach = false;
+  flags.adaptiveCoachDev = false;
+  try {
+    return new AppCore(repo);
+  } finally {
+    Object.assign(flags, prev);
+  }
+}
+
+/** Every Step's identity-relevant plan fields, to assert nothing was touched. */
+function planOf(core: AppCore): string {
+  return JSON.stringify(
+    core.getSnapshot().journeys.map((j) => ({
+      id: j.id,
+      steps: j.steps.map((s) => ({
+        id: s.id,
+        done: s.done,
+        dropped: s.dropped ?? false,
+        plannedFor: s.plannedFor ?? null,
+        estimatedDuration: s.estimatedDuration ?? null,
+      })),
+    })),
+  );
 }
 
 // The authoritative week is Monday-start (DEFAULT_WEEK_START); Aug 3 & Aug 10 2026 are consecutive
@@ -193,33 +233,102 @@ describe('AppCore Weekly Review — auto-open one-shot', () => {
   });
 });
 
-describe('AppCore Weekly Review — flag OFF is fully inert', () => {
-  it('rolling a week boundary via syncTime builds NO review and the Home path stays dormant', async () => {
+describe('AppCore Weekly Review — adaptive flags OFF: the review runs in PLAIN PRODUCTION', () => {
+  // The two halves are split: the week-close summary + never-empty next week + the 48h approval
+  // lifecycle need no behaviour model and therefore ship; only the Step-plan PROPOSAL stays gated,
+  // so a production review carries `proposals: []` and the screen shows its no-changes branch.
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('a week rollover generates a real review with an EMPTY proposal list', async () => {
     jest.useFakeTimers();
     jest.setSystemTime(MON);
-
-    // This suite force-mocks `adaptiveCoach` ON; build ONE core with BOTH adaptive flags OFF to
-    // exercise the production path. `adaptiveEnabled` is captured at construction, so flip → build →
-    // restore, leaving the flag ON for every other test in the file.
-    const flags = featureFlags as { adaptiveCoach: boolean; adaptiveCoachDev: boolean };
-    const prev = { adaptiveCoach: flags.adaptiveCoach, adaptiveCoachDev: flags.adaptiveCoachDev };
-    flags.adaptiveCoach = false;
-    flags.adaptiveCoachDev = false;
-    let core: AppCore;
-    try {
-      core = new AppCore(inMemoryRepo());
-    } finally {
-      Object.assign(flags, prev);
-    }
+    const core = productionCore(inMemoryRepo());
     await core.start();
 
     core.syncTime(); // records the current week key (no week has closed yet)
-    jest.setSystemTime(NEXT_MON);
-    core.syncTime(); // a week closed — but the whole adaptive path is off, so nothing is generated
-
     expect(core.getPendingWeeklyReview()).toBeNull();
-    expect(core.weeklyReviewNeedsAutoOpen()).toBe(false);
-    jest.useRealTimers();
+
+    jest.setSystemTime(NEXT_MON);
+    core.syncTime(); // a week closed → a review IS generated, model or no model
+
+    const review = core.getPendingWeeklyReview();
+    expect(review).not.toBeNull();
+    expect(review!.status).toBe('pending');
+    expect(review!.proposals).toEqual([]); // the adaptive half stays gated
+    // The always-on halves are real: a summary and a never-empty next week.
+    expect(review!.summary.frozenJourneyTitles).toEqual([]);
+    expect(review!.nextWeek.kind).toBe('steps');
+    // …and the screen can actually open (the Home/auto-open path is live).
+    expect(core.weeklyReviewNeedsAutoOpen()).toBe(true);
+  });
+
+  it('never runs the DAILY tactical auto-apply — D43 stays behind the adaptive flags', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(MON);
+    const core = productionCore(inMemoryRepo());
+    await core.start();
+
+    let replanned = 0;
+    core.bus.on('WeekReplanned', () => (replanned += 1));
+    const planBefore = planOf(core);
+
+    core.syncTime();
+    jest.setSystemTime(NEXT_MON);
+    core.syncTime(); // week rollover — generates the review, must NOT adapt any plan
+    // Resolve the review: with the loop ON this is exactly when the daily loop resumes. OFF, it
+    // must stay silent on every later beat too.
+    expect(core.dismissWeeklyReview()).toBe(true);
+    core.syncTime();
+
+    expect(replanned).toBe(0);
+    expect(planOf(core)).toBe(planBefore);
+  });
+
+  it('approving resolves the review without touching a single Step', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(MON);
+    const core = productionCore(inMemoryRepo());
+    await core.start();
+
+    core.syncTime();
+    jest.setSystemTime(NEXT_MON);
+    core.syncTime();
+    expect(core.getPendingWeeklyReview()).not.toBeNull();
+
+    const planBefore = planOf(core);
+    expect(core.approveWeeklyReview()).toBe(true);
+
+    // Acknowledging a no-proposal review resolves it and leaves the plan exactly as it was.
+    expect(core.getPendingWeeklyReview()).toBeNull();
+    expect(planOf(core)).toBe(planBefore);
+    // A second approve is a no-op (nothing pending) — the review is not left dangling.
+    expect(core.approveWeeklyReview()).toBe(false);
+  });
+
+  it('still expires an unresolved review after the 48h window (§9)', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(MON);
+    const { repo, saved } = capturingRepo();
+    const core = productionCore(repo);
+    await core.start();
+
+    core.syncTime();
+    jest.setSystemTime(NEXT_MON);
+    core.syncTime();
+    expect(saved()!.weeklyReview!.status).toBe('pending');
+
+    const expiryNow = NEXT_MON.getTime() + WEEKLY_REVIEW_TTL_MS + 60 * 60 * 1000;
+    jest.setSystemTime(expiryNow);
+    // PURE read already reflects the passed window; the persisted status is NOT yet written.
+    expect(core.getPendingWeeklyReview()).toBeNull();
+    expect(saved()!.weeklyReview!.status).toBe('pending');
+
+    core.syncTime(); // the lifecycle beat flips it
+
+    expect(saved()!.weeklyReview!.status).toBe('expired');
+    expect(saved()!.weeklyReview!.resolvedAt).toBe(expiryNow);
   });
 });
 

@@ -6,8 +6,20 @@ the D40 batch (real week-boundary trigger `weekGate`, a real `weekly-review.tsx`
 with 4 coverage tests (flag-off inert, empty-week, 48h expiry, late-approval rebase). **Two-layer split is
 Decision Log D43:** the proposed plan applies only on **explicit user approval within its 48h window**,
 never silently/automatically — a pending weekly proposal owns the plan for that window, but daily/automatic
-apply never happens. **Gated:** the whole feature is `adaptiveEnabled`-gated, so it stays dormant in plain
-production until that flag is on. Prior state (2026-08-10): imported founder draft, Open Questions —
+apply never happens. **Gating — CORRECTED 2026-08-14.** This header previously read: *"the whole feature is
+`adaptiveEnabled`-gated, so it stays dormant in plain production until that flag is on."* That was true when
+written and is **no longer true**. The founder classified it as an implementation/activation gap rather than
+a specification gap and had the accidental dependency removed, so the review now runs in plain production:
+the week-close **summary**, the never-empty **next week**, and the **48h lifecycle** (generate → pending →
+expire/approve/dismiss) all run with **no flag and no behaviour model**. Only the **Step-plan proposals**
+(`computeJourneyProposals`) and the approval **rebase** still require a behaviour model, so on a plain build
+a review is generated with `proposals: []` and the screen renders its no-changes branch. The separate daily
+tactical auto-apply (D43) remains gated and did **not** change. Nothing about consent changed: the plan still
+applies only on explicit user approval inside the 48h window, never silently.
+*(Edited under a one-time founder authorization, 2026-08-14, expressly to correct a statement that had become
+factually false. Files in `Done/` remain immutable — this is not a precedent, and the superseded sentence is
+quoted above rather than deleted.)*
+Prior state (2026-08-10): imported founder draft, Open Questions —
 preserved in §13 alongside how each question was closed.
 Stage: **MVP**.
 Owner: founder + AI product team.

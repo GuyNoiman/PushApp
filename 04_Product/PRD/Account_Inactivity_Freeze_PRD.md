@@ -1,6 +1,20 @@
 # PRD — Account Inactivity Freeze and Return
 
-Status: **Ready for implementation** — founder-approved product behavior 2026-08-12.
+Status: **Ready for implementation — partially implemented, NOT moved to `Done/`.** Founder-approved product
+behavior 2026-08-12. **Built 2026-08-13 (local-first POC, see J5 in `MVP_Task_List.md`):** a pure
+`InactivityEngine` reusing the existing J3 frozen path via `Journey.freezeReason`; the 21-day threshold
+(`config/inactivityPolicy.ts`); a lazy foreground-evaluated tick (no background job); the return flow
+(`return.tsx` — Talk-to-coach / Choose-Journeys-to-resume / Not-now, never auto-resumes). Reviewed
+(code-reviewer + security-privacy); a HIGH bug (freeze re-armed across cycles) and a MEDIUM bug (a
+zero-frozen cycle left an undismissable CTA) were found and fixed. **NOT built — and this PRD's approved
+scope requires it, not as a peripheral deferral:** the **server-authoritative** enforcement this PRD
+specifies throughout (§2 "evaluated using authoritative server time," §3 "an idempotent SERVER-SIDE
+lifecycle process," §10 "server-authoritative `lastAuthenticatedActivityAt`," "idempotent scheduled
+evaluator," multi-device/cross-device consistency, and Ally lifecycle notices tied to the server-side
+freeze). The shipped POC is a client-only approximation (evaluated lazily on foreground, no server clock,
+no cross-device consistency) — a reasonable stopgap, but not this PRD's specified model. Needs the backend.
+Kept in the PRD root, not `Done/`, until the server-authoritative version ships — see
+`04_Product/PRD/README.md`'s Done-tracking rule.
 Stage: **MVP**.
 Owner: founder + AI product team.
 Related: J3 Journey Freeze/Resume, `Future_Journey_Management_PRD.md`,

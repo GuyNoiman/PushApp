@@ -1,8 +1,13 @@
 # PRD — Completion Celebration
 
-Status: **Implemented (MVP slice) — 2026-08-12 (Decision Log D42); green (jest 852/852), reviewed
-(code-reviewer + security-privacy).** Deferred: in-app Ally message (§5 → task I1-a) and device-verified
-image export (→ task I1-b). Awaiting the founder's on-device visual pass before moving to `Done/`.
+Status: **Implemented (MVP slice) — 2026-08-12 (Decision Log D42); green (jest 852/852 at ship, 969/969
+as of 2026-08-13), reviewed (code-reviewer + security-privacy).** Deferred: **I1-a** in-app Ally
+completion/thanks message (§5 — needs a notify/message backend, post-MVP per D29) and **I1-b**
+device-verified image export (needs the native build). Also deferred, cross-cutting to every new MVP
+screen (not unique to this PRD): the founder's on-device visual/RTL/gendered-address QA pass, gated on
+the Apple Developer account (E1). Moved to `Done/` 2026-08-13 — code-complete/green/reviewed is the
+Done-tracking bar; the on-device visual pass and I1-a/I1-b remain open follow-ups, tracked here and in
+`MVP_Task_List.md`.
 Stage: **MVP** (I1).
 Owner: founder + AI product team.
 Related: `Daily_Step_Reporting_PRD.md`, Journey completion D41, Friend Profile, Support Circle,

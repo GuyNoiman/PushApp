@@ -1,118 +1,327 @@
 # PRD — Communication Style Profile
 
-Status: **Open (selection gated on onboarding)** — direction resolved by the founder 2026-08-11 (Decision Log
-**D40**); prior: Approved 2026-08-10. **D40 resolution:** ONE **unified** preference drives **both** the coach
-tone and the notification copy, **selected via the (future) onboarding questionnaire** — so this feature's
-selection UI is gated on onboarding (parked). The name/terminology must **not** collide with the coach's
-existing `communicationStyles` (steady/direct/gentle/spark) — product-guardian to ratify. The real engineering
-weight is converting reminder copy from baked-literal to **resolve-at-reconcile** so language/gender/style
-actually apply to notifications.
-Stage: **MVP** (after basic reminder timing/control).
+Status: **Ready for MVP implementation — partially implemented, NOT moved to `Done/`.**
+Founder-approved mechanism consolidated 2026-08-12. **Built (commit `8313fc7`, D40):** the six-comparison
+quiz, the four styles, tie-break handling, the plain-language result/confirmation screen, Settings
+retake/reset, and account-level persistence (included in export/delete, an existing O1/GDPR gap fixed in
+the same commit). **NOT built — and this is this PRD's core purpose per §9 and Acceptance Criterion #4, not
+a peripheral deferral:** the saved style does not yet change anything the user sees. `profileToCoachStyle()`
+is an implemented-but-explicitly-"not-yet-wired" seam (see the code comment in
+`core/communication/communicationProfile.ts`) into the live Coach, and `CommunicationScheduler` does not yet
+call `buildNotificationContent` to apply style to notification copy (tracked in `Current_Context.md`'s
+▶ NEXT queue). Until one of those lands, selecting a style only changes a confirmation screen. Kept in the
+PRD root, not `Done/`, until at least one consumption path is wired — see `04_Product/PRD/README.md`'s
+Done-tracking rule. (Flagging this because this file was pointed to as a likely-Done candidate; verification
+against the code found the reverse — the visible artifact is built, but the feature's actual effect is not.)
+Stage: **MVP**, after the onboarding shell and core notification events exist.
 Owner: founder + AI product team.
-Related: `Smart_Notification_Timing_PRD.md`, `Weekly_Review_PRD.md`, Settings, notification content,
-and form-of-address preference.
+Related: `Onboarding_Questionnaire_PRD.md`, Settings, Coach voice, notification content,
+`Smart_Notification_Timing_PRD.md`, `Weekly_Review_PRD.md`, form of address, and Support Circle.
+Research: `../../05_Research/Communication_Style_Personalization_Research.md`.
 
 ---
 
 ## 1. Purpose
 
-Users differ in how they prefer PushApp to phrase reminders. A short scripted Settings experience lets
-the user choose between prewritten examples and creates one account-level notification style. The system
-does not infer or change tone automatically.
+Let each user choose how PushApp speaks to them. A short, scripted questionnaire shows realistic notification
+events in several safe writing styles. The user selects one preferred formulation per page; the most-selected
+style becomes the account's primary Communication Style.
 
-## 2. Entry points
+The selection adapts presentation, not truth or product behavior. Every style communicates the same event,
+urgency, action, and privacy-safe information. PushApp never infers personality, vulnerability, diagnosis, or
+persuadability from the result.
 
-- Settings → Communication Style;
-- optional Weekly Review suggestion when communication appears ineffective;
-- direct return to Settings at any time.
+## 2. Research foundation and product interpretation
 
-The Weekly Review never recommends a specific style. It only asks whether the user wants to review their
-preference and links to this screen.
+PushApp is not a therapist or medical provider. Research on clinician/patient and health-behavior
+communication is used only to derive broadly applicable supportive-language principles.
 
-## 3. Scripted comparison flow
+- [Self-Determination Theory meta-analysis](https://pubmed.ncbi.nlm.nih.gov/30295176/) found that combinations
+  of autonomy-, competence-, and relatedness-supportive techniques improve perceived support and motivation;
+  no single phrasing technique was universally sufficient.
+- [Motivational Interviewing overview](https://pmc.ncbi.nlm.nih.gov/articles/PMC3330017/) emphasizes empathy,
+  collaboration, shared decision-making, and eliciting the person's own motivation rather than imposing it.
+- [Autonomy-supportive digital-language experiment](https://journals.sagepub.com/doi/pdf/10.1177/2055207619832767?download=true)
+  explains why controlling “should/must” language can create reactance and why preferences differ between
+  people.
+- [Self-Determination Theory health meta-analysis](https://selfdeterminationtheory.org/SDT/documents/2012-NgNtoumanis_PPS.pdf)
+  supports autonomy, competence, and relatedness as useful foundations for sustained behavior.
+- [Cochrane framing review](https://pmc.ncbi.nlm.nih.gov/articles/PMC12926860/) found little consistent
+  behavioral advantage for positive versus negative framing across contexts. PushApp therefore does not claim
+  one “scientifically best” style and does not include a fear/loss style merely to test it.
 
-- Default profile exists before configuration.
-- Show six pairwise comparisons, each expressing the same underlying reminder in two approved ways.
-- The user selects the preferred version in each pair.
-- The user may skip/exit and retain the prior/default profile.
-- At completion, show a human-readable summary and Save.
-- The flow can be rerun; Reset restores the default.
+Binding principles across **every** style:
 
-## 4. Style dimensions
+- preserve autonomy and offer a clear next action;
+- support competence and acknowledge real progress;
+- use truthful, concrete, privacy-safe information;
+- never shame, guilt, threaten, diagnose, moralize, or fabricate urgency;
+- never imply that PushApp is providing treatment;
+- never make the user's worth depend on completion or consistency.
 
-The six comparisons derive account-level preferences for:
+## 3. Entry points
 
-- direct vs gentle;
-- brief vs explanatory;
-- matter-of-fact vs warm/supportive;
-- calm vs energetic;
-- no emoji vs light emoji;
-- factual progress summary vs encouraging framing.
+- **Onboarding:** after Personal Information and the six-question onboarding questionnaire, or at another K1
+  position that does not interrupt the first Coach conversation. The onboarding shell owns final placement.
+- **Settings → Communication Style:** view the current style and retake the questionnaire at any time.
+- **Weekly Review:** when communication appears ineffective, PushApp may ask whether the user wants to review
+  their style and link to Settings. It never selects or changes a style automatically.
 
-The exact scoring implementation is deterministic/config-driven. Do not use an LLM or raw free-text input.
+The questionnaire is skippable. Skip retains the default style. Retaking does not affect timing, permissions,
+or past messages.
 
-## 5. Copy catalog
+## 4. The four approved product styles
 
-- Notification variants are written, reviewed, localized, and tagged against style dimensions in advance.
-- The selected profile chooses the closest approved variant; it never generates free text.
-- Hebrew/English and every future language receive native-quality variants rather than mechanical tone
-  translation.
-- Form of address is an independent mandatory rule applied after style selection.
-- No guilt, threat, shame, fake urgency, fabricated friend activity, streak-loss pressure, or curiosity trap.
+These four styles are a product synthesis of researched communication dimensions; they are not a validated
+clinical taxonomy. The questionnaire measures contextual wording preference, not personality or treatment fit.
 
-## 6. Scope
+### 4.1 Direct
 
-In MVP the style affects notification copy only. It does not change:
+Short, concrete, action-first, low-emotion. It states what happened or what can be done next without extra
+explanation. Direct never becomes commanding, cold, or judgmental.
 
-- AI Coach personality/conversation;
-- messages written by friends;
-- permissions, safety, legal, destructive-action, or error copy;
-- Support Circle communication;
-- Journey content.
+### 4.2 Explanatory
 
-## 7. Change behavior
+Context-first and rationale-rich within notification-length limits. It explains why the message matters or
+what the relevant state means. Explanatory never becomes verbose, clinical, or patronizing.
 
-- One style profile applies across all Journeys and notifications.
-- Save affects future notifications only; reconcile scheduled notification content where the OS safely
-  permits, otherwise apply from the next scheduling cycle.
-- Timing and style are independent selections. Weekly Review may include a timing proposal and a link to
-  this screen in the same experience; the user may do either, both, or neither.
-- Style changes are manual and are never treated as an automated experiment.
+### 4.3 Warm
 
-## 8. Edge cases
+Human, caring, and relational. It emphasizes support and “we are here with you” without pretending the app has
+feelings, forming dependency, or using therapeutic claims.
 
-- exit after any comparison;
-- rerun produces different choices;
-- language changes after configuration;
-- missing localized variant;
-- address-form fallback;
-- notifications already scheduled;
-- offline configuration and later account sync;
-- conflicting edits on multiple devices;
-- legacy/default user;
-- accessibility, RTL, long text, and Dynamic Type.
+### 4.4 Energizing
 
-## 9. Technical requirements
+Upbeat, concise, and momentum-oriented. It highlights capability and the next positive action. Energizing never
+uses hype, excessive punctuation, streak panic, or forced positivity.
 
-- Store derived dimension values/profile version on the account with local cache; avoid retaining every
-  historical answer unless needed for an explicit product purpose.
-- Config-before-code variant catalog with stable IDs, locale, dimensions, content version, and safe fallback.
-- Missing/invalid variants fall back to the neutral default, never arbitrary AI output.
-- Include preference in export/deletion.
+These are delivery preferences, not user types. Internal identifiers must be namespaced to avoid collision
+with existing Coach implementation enums (for example `communication_profile.direct`).
 
-## 10. Acceptance criteria
+## 5. Questionnaire interaction
 
-1. Six pairwise scripted comparisons produce a clear summary and saved account preference.
-2. Skip, rerun, reset, offline cache, and multi-device synchronization behave safely.
-3. Every notification resolves to a preapproved localized variant or neutral fallback.
-4. Style applies globally to notification copy only and respects form of address.
-5. Forbidden persuasive patterns and sensitive-copy surfaces are excluded by tests/content review.
+- Standalone introduction: explain that six quick choices tailor how PushApp communicates.
+- Six pages, one notification event per page.
+- Four formulations per page, one for each style.
+- The user selects exactly one formulation, then continues.
+- Do not display style names, explanations, scores, or “correct” answers during selection.
+- Randomize answer order independently per page while keeping stable accessibility focus behavior.
+- Show **Question X of 6** and an overall progress bar.
+- Back permits changing an answer; only the latest choice counts.
+- Save after every page and resume after restart.
+- Allow Skip/exit and retain the previously saved/default style.
+- Target completion time: under two minutes.
 
-## 11. Out of scope
+Introduction copy:
 
-- AI-generated copy;
-- automatic style learning from opens;
-- per-Journey style;
-- Coach personality customization;
-- channel selection.
+> How should PushApp speak to you?
+>
+> You'll see 6 short messages, each written in a few different ways. Choose the version you would most like to
+> receive. There are no right or wrong answers.
 
+Primary action: **Start**. Secondary action: **Maybe later**.
+
+## 6. Six notification comparisons
+
+The exact localized copy must be authored natively in each supported language. The English catalog below is
+the semantic source and style reference, not a machine-translation instruction.
+
+### Q1 — friend request received
+
+Event truth: another user sent a friend request. Action opens the request.
+
+| Style | Title | Body |
+|---|---|---|
+| Direct | New friend request | Alex sent you a friend request. Review it now. |
+| Explanatory | A new friend request | Alex would like to connect with you. Open the request to accept or decline. |
+| Warm | Someone would like to join you | Alex sent you a friend request. Take a look and see if you'd like to connect. |
+| Energizing | Your circle may be growing | Alex wants to connect — open the request and choose what feels right. |
+
+### Q2 — a friend may need support
+
+Event truth: an authorized friend is eligible for the privacy-safe Home support prompt. Never name the Journey,
+Step, report, or reason.
+
+| Style | Title | Body |
+|---|---|---|
+| Direct | A friend may need support | Alex may need support. Send a message. |
+| Explanatory | A friend may need support | Alex may benefit from a check-in. You can open their profile and send a message. |
+| Warm | You could make Alex's day a little easier | Alex may need support. A personal message could mean a lot. |
+| Energizing | Your support can make a difference | Alex may need you today — send a quick message. |
+
+### Q3 — Steps remain today
+
+Event truth: one or more Steps in today's authorized set remain incomplete. Use count only when accurate; do not
+expose sensitive Step names on the lock screen.
+
+| Style | Title | Body |
+|---|---|---|
+| Direct | 2 Steps remain today | Open today's plan and choose your next Step. |
+| Explanatory | 2 Steps remain in today's plan | Completing them will finish the plan you set for today. Choose your next Step. |
+| Warm | You're still moving forward | Two Steps are waiting today. We're here when you're ready for the next one. |
+| Energizing | Two Steps between you and today's plan | Pick the next one and keep your momentum going. |
+
+### Q4 — Streak may be lost
+
+Event truth: an incomplete Step in today's derived daily set means the Streak will end at day close under the
+authoritative Streak policy. This is truthful urgency, never a threat.
+
+| Style | Title | Body |
+|---|---|---|
+| Direct | Your Streak needs one more Step | Complete today's remaining Step to keep your Streak. |
+| Explanatory | One Step remains to keep your Streak | Your Streak continues when today's full plan is completed. One Step is still open. |
+| Warm | Your progress is still yours | One Step remains to keep your Streak today. Whatever happens, you can keep moving forward. |
+| Energizing | Your Streak is within reach | One more Step today — you've still got time to keep it going. |
+
+### Q5 — positive progress
+
+Event truth: the user has made meaningful, verified progress. The copy must use the actual available measure
+rather than generic praise disconnected from behavior.
+
+| Style | Title | Body |
+|---|---|---|
+| Direct | Good progress this week | You completed 4 of your planned Steps. Keep going. |
+| Explanatory | You've completed 4 planned Steps | That is 4 completed Steps toward this week's plan. Review your progress or continue. |
+| Warm | Look at what you've already done | Four planned Steps completed this week — your effort is showing. |
+| Energizing | You're building real momentum | Four planned Steps are done this week. Keep it moving. |
+
+### Q6 — scheduled Step reminder
+
+Event truth: the user chose a reminder for a specific Step/Journey context. Sensitive content follows the
+notification privacy preference.
+
+| Style | Title | Body |
+|---|---|---|
+| Direct | Time for your next Step | Your planned Step is ready. Open it now. |
+| Explanatory | It's time for your planned Step | This reminder is arriving at the time you chose for this Step. Open it when you're ready. |
+| Warm | A little reminder for something that matters to you | It's time for the Step you planned. We're here when you're ready. |
+| Energizing | Ready for your next move? | The Step you planned is here — let's get started. |
+
+Names, counts, times, and safe context are dynamic tokens and must be accurate. Questionnaire previews use
+clearly fictional/example data and state that they are examples.
+
+## 7. Scoring and selection
+
+1. Every answer maps to exactly one of the four style IDs.
+2. Each selected answer gives that style one vote.
+3. After six questions, the style with the most votes becomes the primary Communication Style.
+4. Do not infer secondary traits or retain a personality label.
+5. Store the six current answers only as needed to explain/edit/retake the preference; privacy-minimizing
+   implementation may store the result plus questionnaire version and discard raw choices after save.
+
+### Ties
+
+With six questions and four styles, ties are possible. If two or more styles share the lead:
+
+- show one additional tie-break page containing a new neutral scheduled-reminder event;
+- present only one formulation for each tied style;
+- the selected formulation becomes the primary style;
+- if the tie-break page is skipped, retain the prior saved style; for a first-time user, use the default.
+
+The tie-break page is conditional and is not described as a seventh scored question. It resolves preference
+only; it does not add hidden weighting.
+
+### Default
+
+Default style: **Warm**. It best matches PushApp's established supportive product voice before the user
+expresses a preference. All default copy remains concise and autonomy-supportive. Safety/legal/error copy uses
+dedicated neutral wording regardless of style.
+
+## 8. Result and confirmation
+
+After selection, show a plain-language preview rather than a personality result:
+
+> Your Communication Style is set to Warm
+>
+> PushApp will use a more caring, human tone while still telling you clearly what matters. You can change this
+> anytime in Settings.
+
+Actions: **Save** and **Try again**. Settings also offers **Use default**.
+
+Style names may be shown on the result/settings page, but never framed as a diagnosis or permanent identity.
+
+## 9. Scope of application
+
+One account-level primary style applies to:
+
+- non-safety Coach wording and conversational delivery;
+- notification titles and bodies;
+- eligible in-app nudges authored in the same catalog.
+
+The style does **not** change:
+
+- facts, recommendation logic, Journey/Step content, or Coach decisions;
+- timing, channel, frequency, notification eligibility, or permission behavior;
+- user/friend messages;
+- legal, consent, privacy, security, crisis, safety, destructive-action, error, or store-compliance copy;
+- form of address, language, or accessibility rules.
+
+For the Coach, style changes phrasing only. Safety and domain boundaries always override it. For notifications,
+every event has reviewed variants with identical semantic meaning and action.
+
+## 10. Copy catalog and localization
+
+- Config-before-code catalog keyed by event, style, locale, and content version.
+- Every event has all four variants or falls back to the locale's neutral approved variant.
+- Resolve copy at send/reconciliation time so current language, form of address, privacy, and style apply.
+- Native authoring/review for Hebrew and every locale; do not mechanically translate tone.
+- Dynamic tokens have safe fallbacks and cannot expose unauthorized content.
+- Copy review verifies semantic parity, length, lock-screen truncation, gender/form-of-address, RTL, and
+  forbidden persuasion patterns.
+
+## 11. Change behavior
+
+- Retaking and saving applies immediately to future Coach messages and future/rescheduled notifications.
+- Already delivered messages never change.
+- Reconcile scheduled notification copy where the OS safely permits; otherwise apply at the next schedule.
+- Style never changes automatically based on opens, completion, or Weekly Review.
+- Weekly Review may recommend revisiting the questionnaire but cannot recommend or select a specific answer.
+- Offline changes save locally and sync through the account preference when available; deterministic conflict
+  policy is required for multi-device edits.
+
+## 12. Privacy and analytics
+
+- Communication Style is a private account adaptation preference and never appears on Friend Profile or in
+  Support Circle payloads.
+- Do not store or analyze which style “works” on a user's vulnerabilities or sensitive topics.
+- Product analytics may measure aggregate questionnaire completion and missing-copy failures, but must not
+  correlate style with raw Coach content, health domains, or private message text.
+- Include the preference in export and delete it with the account.
+
+## 13. Edge cases
+
+- skip before/after answering; tie and skipped tie-break;
+- retake with a different result; reset to default;
+- language or form-of-address changes after selection;
+- missing/invalid locale/style/event variant;
+- notification already scheduled or delivered;
+- Coach safety response overrides style;
+- dynamic count becomes stale before delivery;
+- privacy setting hides names/content;
+- offline, multiple devices, old questionnaire/catalog version;
+- very long translations, RTL/LTR, large text, screen reader, reduced motion;
+- user disables notifications but continues using Coach;
+- account deletion/export.
+
+## 14. Acceptance criteria
+
+1. Six single-choice pages show the same six event meanings in all four styles without labels or order bias.
+2. Vote counting selects the plurality style; a conditional tie-break resolves ties without hidden weighting.
+3. Skip preserves the previous/default style and never blocks onboarding or app use.
+4. The saved style affects both eligible Coach phrasing and notification copy, but never logic or protected copy.
+5. All four variants for an event preserve facts, urgency, action, privacy, and form-of-address semantics.
+6. Settings supports view, retake, save, cancel, and reset to the Warm default.
+7. Missing variants fall back safely; no AI generates notification copy in the MVP.
+8. English/Hebrew, RTL/LTR, accessibility, offline, scheduled-content reconciliation, privacy, and account
+   deletion/export pass verification.
+
+## 15. Out of scope
+
+- automatic experimentation or style optimization;
+- LLM-generated notification copy;
+- per-Journey or per-friend styles;
+- adapting timing, channel, or frequency from this questionnaire;
+- clinical/therapeutic personality assessment;
+- manipulative, loss/fear, shame, or guilt style;
+- changing safety, legal, consent, crisis, or error copy;
+- future Calendar/location/channel-selection engine.

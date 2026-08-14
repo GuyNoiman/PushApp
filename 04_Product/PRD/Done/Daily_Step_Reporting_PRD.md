@@ -1,7 +1,12 @@
 # PRD — Daily Step Reporting
 
-Status: **Ready for implementation** — blocking questions closed with the founder 2026-08-10
-(see §12, now "Resolved decisions"), grounded in the current codebase. Logged as Decision D35.
+Status: **Implemented** — blocking questions closed with the founder 2026-08-10 (see §12, "Resolved
+decisions"), Decision **D35**; built commit `9b56366` (derived statuses, optional Partial note, reversal,
+closed-week guard), implementation-approach note **D36** (status derived, not stored; reversal via an
+append-only marker); refined 2026-08-12 so a **completed** Journey's reports lock and reversal is refused
+(§12.2, D41/I1 — resolves the completion-celebration finality contradiction). **Deferred (§12.1, explicitly
+post-MVP):** a single "x/y this week" occurrence-counter row and a true recurrence/occurrence entity —
+flexible weekly targets ship today as multiple pre-created Steps, one row per Step on Home.
 Stage: **MVP**.
 Owner: founder + AI product team.
 Source: mobile-authored “Daily Step Reporting & Weekly Review” draft, 2026-08-10.

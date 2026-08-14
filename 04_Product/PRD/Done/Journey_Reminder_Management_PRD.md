@@ -1,11 +1,13 @@
 # PRD — Journey Reminder Management
 
-Status: **Ready (Off/Fixed slice)** — resolved by the founder 2026-08-11 (Decision Log **D40**); prior:
+Status: **Implemented (Off/Fixed slice)** — resolved by the founder 2026-08-11 (Decision Log **D40**); prior:
 Approved 2026-08-10. **D40 resolution:** the **Off/Fixed** per-Journey reminder view/edit is built (2026-08-12,
 commit `b2d4008`: `JourneyReminderCard` + `ReminderRule.mode` + the creation wizard now creates a **managed**
-Fixed rule). **Smart mode is DEFERRED** (needs Weekly Review + the `Smart_Notification_Timing` engine — a
-`'smart'` enum exists but is non-selectable). The Active-Hours "needs attention / disable-on-conflict" flow is
-**dropped**: account Active Hours now **clamps** a reminder into the window (D40), it does not disable it.
+Fixed rule) and this is this PRD's current shipped scope. **Smart mode is DEFERRED** as a distinct later
+phase — it needs Weekly Review + the separate `Smart_Notification_Timing_PRD.md` engine (not yet built; a
+`'smart'` enum exists but is non-selectable, shown "Coming soon"). The Active-Hours "needs attention /
+disable-on-conflict" flow is **dropped**: account Active Hours now **clamps** a reminder into the window
+(D40), it does not disable it.
 Stage: **MVP**.
 Owner: founder + AI product team.
 Related: `User_Active_Hours_PRD.md`, `Smart_Notification_Timing_PRD.md`,

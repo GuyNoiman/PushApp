@@ -1,7 +1,13 @@
 # PRD — Weekly Review
 
-Status: **Ready** — the §13 blocking questions were resolved by the founder 2026-08-11 (Decision Log
-**D40**); ready for implementation. Prior state (2026-08-10): imported founder draft, Open Questions —
+Status: **Implemented** — the §13 blocking questions were resolved by the founder 2026-08-11 (Decision Log
+**D40**: week-close proposal, never-empty next week, forward-only apply, 48h approval window); built inside
+the D40 batch (real week-boundary trigger `weekGate`, a real `weekly-review.tsx` screen); closed 2026-08-13
+with 4 coverage tests (flag-off inert, empty-week, 48h expiry, late-approval rebase). **Two-layer split is
+Decision Log D43:** the proposed plan applies only on **explicit user approval within its 48h window**,
+never silently/automatically — a pending weekly proposal owns the plan for that window, but daily/automatic
+apply never happens. **Gated:** the whole feature is `adaptiveEnabled`-gated, so it stays dormant in plain
+production until that flag is on. Prior state (2026-08-10): imported founder draft, Open Questions —
 preserved in §13 alongside how each question was closed.
 Stage: **MVP**.
 Owner: founder + AI product team.

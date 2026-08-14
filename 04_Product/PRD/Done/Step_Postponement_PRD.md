@@ -1,8 +1,12 @@
 # PRD — Step Postponement
 
-Status: **Ready for implementation** — blocking questions closed with the founder 2026-08-10 (see §11, now
-"Resolved decisions"), grounded in the current codebase. Logged as Decision D37. Carries a **required
-update to `../Miss_Recovery_PRD.md`** (§7) before or alongside build.
+Status: **Implemented** — blocking questions closed with the founder 2026-08-10 (see §11, "Resolved
+decisions"), Decision **D37**; built commit `11dd409` (per-occurrence one-shot postpone reminder, fast
+reason-free default path, day-crossing shorten rule down to a 30-minute floor). The **required update to
+`../Miss_Recovery_PRD.md`** (§7) is done — see the "[Superseded for MVP by D37 …]" annotations in that
+file. **Deferred (§5/§11.3, explicitly post-MVP):** the supportive AI-Coach intervention on repeated
+same-occurrence postponement — needs `featureFlags.intervention` + the Coach; `postponeCount` is persisted
+per occurrence now so the signal exists, but no threshold fires and no Coach prompt surfaces yet.
 Stage: **MVP**.
 Owner: founder + AI product team.
 Source: mobile-authored “Daily Step Reporting & Weekly Review” draft, 2026-08-10.

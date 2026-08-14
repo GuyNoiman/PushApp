@@ -4,6 +4,8 @@ Status: **Approved** — with a D40 clarification (founder, 2026-08-11). **D40 r
 **deferred post-MVP (honors D29)** — this resolves the earlier D29 contradiction — but must be **planned into
 the architecture now (keep a seam)** so it can land later without rework. The rest of the profile (header,
 relationship summary, shared-Journey list, Cheer) stays as specced; the Achievements entry soft-depends on B3.
+**Scope narrowed 2026-08-13 (founder): Level and the Achievements entry are deferred out of the MVP slice —
+see §4.6. The requirements themselves are preserved unchanged as the approved target.**
 Stage: **MVP**.
 Owner: founder + AI product team.
 Related: `Own_Profile_PRD.md`, `Journey_Support_Circle_PRD.md`, `Future/Accountability_Ally_PRD.md`,
@@ -52,7 +54,7 @@ Show:
 - profile photo; initials are the default when no photo exists;
 - display name;
 - `@username`;
-- Level and progress toward the next Level;
+- Level and progress toward the next Level — **DEFERRED out of the MVP slice, see §4.6**;
 - a compact relationship summary.
 
 Never show to friends:
@@ -93,6 +95,9 @@ The exact Journey card and Ally-detail presentation belong to `Journey_Support_C
 
 ### 4.4 Achievements entry
 
+**DEFERRED out of the MVP slice — see §4.6.** The requirement below is preserved unchanged as the
+approved target for when B3 exists.
+
 Provide a distinct action that opens a separate Achievements page showing:
 
 - every Achievement earned by the friend;
@@ -120,6 +125,27 @@ Removing a friend requires confirmation with real impact counts, for example: re
 will remove them from X Journeys they support for you and remove you from Y Journeys you support for
 them. On confirmation, friendship and all Ally relationships in both directions are removed. Removing
 one Ally relationship alone never removes the friendship.
+
+### 4.6 MVP scope narrowing — Level and Achievements deferred (founder, 2026-08-13)
+
+This PRD was approved **before** the founder's 2026-08-12 decision that moved **B1 Leveling** and
+**B3 Achievements** out of the MVP to Future (`MVP_Task_List.md` rows B1/B3;
+`Future/Points_and_Leveling_PRD.md`, `Future/Achievements_Engine_PRD.md`). Both surfaces this PRD
+asks for in §4.1 and §4.4 therefore have **no approved mechanism behind them** in the MVP.
+
+**Decision (founder, 2026-08-13): omit both from the shipped MVP profile.** The build keeps a clean
+seam — `SocialProfile.buddySummary.level` stays on the wire and the header/action layout leaves room —
+so each surface can be switched on when its engine is specified, with no rework of this screen.
+
+**Reasoning (why omit rather than show what exists):** the experimental XP/Level code still in the
+repo is explicitly *not* the approved future mechanism. Rendering a number from it would show friends
+a value that is guaranteed to change meaning later, which is worse than showing nothing — and the
+Achievements catalog this PRD depends on (§4.4: "must not be invented inside this feature") does not
+exist at all. Nothing in the vision shrinks here; both move later in the roadmap, per CLAUDE.md §3.3.
+
+**Consequence for acceptance:** criterion 2 in §8 is met **partially** in the MVP slice — identity,
+relationship summary, and viewer-authorized Active Journeys ship; Level and the Achievements entry do
+not. Criteria 1, 3, 4, 5, 6, 7 are unaffected and remain in full force.
 
 ## 5. Profile-photo display
 
@@ -156,7 +182,7 @@ Server authorization must prevent one user from mutating another user's profile 
 
 1. An accepted friend can open the profile from every supported friend entry point.
 2. The profile shows identity, Level, relationship summary, Achievements entry, and only viewer-authorized
-   Active Journeys.
+   Active Journeys. **(MVP slice: Level and the Achievements entry are deferred — see §4.6.)**
 3. Personal fields listed in §4.1 never appear or arrive in the friend-profile payload.
 4. Different friends can see different Journey sets and detail for the same profile owner.
 5. Freeze, resume, complete, abandon, permission change, friendship removal, and account deletion update

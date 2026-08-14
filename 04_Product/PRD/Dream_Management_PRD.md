@@ -1,8 +1,17 @@
 # PRD — Dream Management
 
-Status: **Ready (slice 1)** — product specification complete; founder-confirmed 2026-08-10; Coach-ownership
-model updated 2026-08-11 per Decision Log **D40** (see §0). First UI slice ships **single-primary**
-(one primary Dream per Journey); the full many-to-many-with-primary model is the target, not deferred.
+Status: **Ready (slice 1) — partially implemented, NOT moved to `Done/`.** Product specification complete;
+founder-confirmed 2026-08-10; Coach-ownership model updated 2026-08-11 per Decision Log **D40** (see §0).
+First UI slice ships **single-primary** (one primary Dream per Journey); the full many-to-many-with-primary
+model is the target, not deferred. **Built 2026-08-13 (surfacing cut only, see F1 in `MVP_Task_List.md`):**
+My Journeys → My Dreams nav entry, a read-only "Part of your Dream" card on the Journey detail screen, and a
+link-approval card for Journeys not yet linked to a Dream (reuses `linkJourneyToDream`). **NOT built — and
+this is this PRD's core mechanism, not a peripheral deferral:** the Coach-led Dream creation/rewording/merge
+conversation itself (§5, §7 — the Coach actually forming and persisting Dream wording from a conversation).
+Without it there is no way to create a first Dream or edit one; the shipped slice is read-only surfacing of
+data that must still be seeded another way. Needs a joint founder design session (open questions remain).
+Kept in the PRD root, not `Done/`, until that authoring flow ships — see `04_Product/PRD/README.md`'s
+Done-tracking rule (a file moves only once its approved/current scope is implemented).
 Stage: **MVP**.
 Owner: founder + AI product team.
 Related: F1 in `../MVP_Task_List.md`, `Onboarding_Questionnaire_PRD.md`, coach-led Journey creation and

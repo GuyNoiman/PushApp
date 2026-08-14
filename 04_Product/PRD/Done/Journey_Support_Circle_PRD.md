@@ -1,13 +1,18 @@
 # PRD — Journey Support Circle
 
-Status: **Ready** (pending a light security-privacy pass) — resolved by the founder 2026-08-11 (Decision Log
-**D40**); prior: Approved 2026-08-10. **D40 resolution:** add a **consent/acceptance gate** before any sharing
-(and fix, in the same slice, the current bug where a removed friend still sees shared snapshots). **Companion
-IS IN**, but MVP scope = **system-generated Step progress only (names + statuses)** — NO images, NO user
-free-text, no cloud image storage (proof images/text belong to `Future/Accountability_Ally`); access is
-**revocable at any time**. store-compliance/cost are **N/A** for this slice. Build against the real Supabase
-schema; validate with a seeded second account until general sign-up lands. Bundle names (Encourager/Companion)
-pending product-guardian.
+Status: **Implemented** — resolved by the founder 2026-08-11 (Decision Log **D40**); prior: Approved
+2026-08-10. **D40 resolution:** add a **consent/acceptance gate** before any sharing (and fix, in the same
+slice, the current bug where a removed friend still sees shared snapshots). **Companion IS IN**, but MVP
+scope = **system-generated Step progress only (names + statuses)** — NO images, NO user free-text, no cloud
+image storage (proof images/text belong to `Future/Accountability_Ally`); access is **revocable at any
+time**. store-compliance/cost are **N/A** for this slice. Built commit `b3a9ff5` (consent gate, Companion
+bundle, removed-friend security fix); **hardened 2026-08-13** (hid the invite CTA on completed/frozen
+Journeys, distinguished an offline-load-failure state from a genuinely-empty Support Circle, added missing
+UI tests) and reviewed then (code-reviewer + security-privacy) — the earlier "light security-privacy pass
+pending" note is resolved. The older dead `setAllies` write path (flagged LOW/latent during that hardening)
+was **removed outright** in the 2026-08-13 MVP-ready sweep. **Deferred:** the live-DB authorization-matrix
+QA with a 2nd account is a **founder action** (the Supabase migration was applied by the founder). Bundle
+names (Encourager/Companion) pending product-guardian.
 Stage: **MVP**.
 Owner: founder + AI product team.
 Related: `Friend_Profile_PRD.md`, `Future/Accountability_Ally_PRD.md`, Decision Log D29, Journey notifications, and the
@@ -17,12 +22,13 @@ separately specified Inbox / Direct Messaging feature.
 
 ## 1. Purpose and problem
 
-A Journey owner needs to choose specific friends who may support that Journey, control what each Ally
-can see, and revoke that access. The friend must knowingly accept the support relationship before any
+A Journey owner needs to choose specific people who may support that Journey, control what each Ally
+can see, and revoke that access. The invited person must knowingly accept the support relationship before any
 Journey information becomes visible.
 
-The feature turns existing friendship into consent-based, Journey-specific support without making a
-user's Journeys public.
+The feature creates a consent-based, Journey-specific relationship without requiring friendship and without
+making a user's Journeys public. This supports known friends, professional coaches, and a future matching
+system that may connect people with similar Dreams or Journeys across the world.
 
 ## 2. Product-philosophy fit
 
@@ -34,11 +40,14 @@ user's Journeys public.
 ## 3. Core model
 
 - Friendship and Ally status are separate relationships.
+- Neither relationship is a prerequisite for creating, viewing, accepting, declining, or retaining the other.
 - An Ally relationship belongs to exactly one Journey and references two users.
 - A Journey may have multiple Allies without a product-level quantity cap in MVP.
 - Each Ally has an independent permission bundle and invitation status.
 - Removing an Ally does not remove friendship.
-- Removing friendship removes every Ally relationship between the users in both directions.
+- Removing friendship does not automatically remove Ally relationships in either direction. Because unfriending
+  is an intentional negative boundary signal, the confirmation flow surfaces every active/requested Support
+  Circle relationship between the two users and lets the user remove those relationships in the same action.
 
 ### 3.1 Invitation statuses
 
@@ -96,7 +105,8 @@ From **My Journey**, the owner opens Support Circle and sees:
 
 The owner can:
 
-- invite an existing friend;
+- invite any eligible existing user, whether or not they are a friend;
+- invite a person who does not yet use PushApp through the shared Invite infrastructure;
 - select the permission bundle before sending;
 - cancel a Requested invitation;
 - explicitly resend after a Declined invitation;
@@ -117,13 +127,13 @@ The request shows before acceptance:
 - Accept and Decline actions.
 
 Accept creates the active Ally relationship and notifies the sender. Decline changes only this request
-and notifies the sender neutrally; it does not remove friendship and does not affect any score. The owner
+and notifies the sender neutrally; it does not alter friendship and does not affect any score. The owner
 may later send a new explicit request.
 
 ## 6. Friend-profile visibility
 
 After acceptance, the Journey appears under “Journeys shared with me” on the Ally's view of the owner's
-Friend Profile. It is rendered according to that Ally's permission bundle.
+social profile, whether or not they are friends. It is rendered according to that Ally's permission bundle.
 
 - Only Active Journeys appear.
 - When Frozen, it disappears from the active list and the Ally receives an informational notification.
@@ -159,7 +169,14 @@ guilt-inducing. Direct Messaging behavior belongs to the separate Inbox PRD.
 - simultaneous accept and owner cancellation: the latest authoritative request version wins;
 - simultaneous permission edits use optimistic concurrency/versioning and must not silently overwrite;
 - accepting a stale/closed request returns a clear explanation;
-- friendship removal immediately revokes all Journey access in both directions;
+- friendship removal shows a relationship-impact confirmation listing the number of the other user's Support
+  Circles the current user supports and the number of the current user's Support Circles the other user
+  supports;
+- the user may remove friendship only, or confirm removal of the listed Support Circle relationships as part
+  of the same action; the recommended option is to remove both-direction support, but the choice is explicit
+  and nothing is silently removed;
+- concurrent Support Circle changes require the confirmation to revalidate and show any changed impact before
+  destructive removal;
 - removing one Ally leaves friendship and other Journey-specific Ally relationships intact;
 - renamed users continue to resolve by stable ID;
 - deleted/blocked users cannot receive, accept, or retain access;
@@ -187,9 +204,14 @@ Notifications must be derived from idempotent domain events to avoid duplicates.
 exclude reasons, coach content, reflections, private profile fields, and any Step data not allowed by the
 current bundle. Store only the minimum information needed.
 
+The existing POC database currently gates Ally creation and reads on accepted friendship and cascades Ally
+deletion when friendship is removed. That implementation no longer represents the approved product model.
+Before this independence ships, a migration must remove those friendship prerequisites while preserving the
+accepted-relationship, Journey-status, permission-bundle, blocking, and server-side authorization gates.
+
 ## 10. Acceptance criteria
 
-1. A Journey owner can invite a friend with one of two permission bundles and manage the request from
+1. A Journey owner can invite any eligible person with one of two permission bundles and manage the request from
    My Journey → Support Circle.
 2. The recipient sees the Journey name and exact access before accepting.
 3. No Journey data is visible before acceptance.
@@ -198,8 +220,8 @@ current bundle. Store only the minimum information needed.
 6. Permission changes notify the Ally and take effect without renewed acceptance between the two MVP
    bundles. The notification opens the friend's Journey view, from which the Ally can remove themselves
    from that Journey's Support Circle.
-7. Cancellation, decline, reinvite, removal, freeze/resume, completion, abandonment, deletion, friendship
-   removal, and stale-request races behave as specified.
+7. Cancellation, decline, reinvite, removal, freeze/resume, completion, abandonment, deletion, independent
+   friendship removal, optional combined Support Circle cleanup, and stale-request races behave as specified.
 8. All access is enforced server-side and verified by authorization tests.
 9. The flow works in English/Hebrew, LTR/RTL, light/dark, and loading/empty/error states.
 

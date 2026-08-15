@@ -18,6 +18,13 @@ const mockGetPermissionsAsync = jest.fn(async () => ({ granted: true }));
 const mockRequestPermissionsAsync = jest.fn(async () => ({ granted: true }));
 const mockSetNotificationHandler = jest.fn();
 
+// The reconcile block exercises the REAL copy builder (style → i18n key → delivered content), and
+// i18n boots off expo-localization, which has no JS impl under jest. Pin it to English so the
+// asserted strings are deterministic. The planner tests below touch none of this.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'en', languageTag: 'en-US', textDirection: 'ltr' }],
+}));
+
 jest.mock('expo-notifications', () => ({
   __esModule: true,
   SchedulableTriggerInputTypes: { DAILY: 'daily', WEEKLY: 'weekly' },
@@ -31,10 +38,15 @@ jest.mock('expo-notifications', () => ({
 }));
 
 import { NullCalendarGateway } from '../../calendar/CalendarGateway';
+import {
+  DEFAULT_COMMUNICATION_PROFILE,
+  setCommunicationProfile,
+} from '../../communication/communicationProfile';
 import { MAX_PENDING } from '../../config/schedulerLimits';
 import { EventBus } from '../../events/EventBus';
 import type { EventOf } from '../../events/events';
 import { NullLocationGateway } from '../../location/LocationGateway';
+import { buildReminderCopy, type ReminderCopyBuilder } from '../../notify/reminderCopy';
 import type {
   ActiveHours,
   AllowedWindow,
@@ -542,5 +554,106 @@ describe('reconcile — apply through the ReminderEngine', () => {
     await scheduler.reconcile();
     expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledTimes(1);
     expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The copy seam (Communication_Style_Profile_PRD §10/AC#4). Copy is resolved HERE, at apply time,
+   * from an injected builder — never planned, never baked at rule-creation time — so a language,
+   * form-of-address or style change reaches reminders that are already scheduled.
+   */
+  describe('reminder copy resolution', () => {
+    /** A ready scheduler over one rule + its Journey, optionally given a copy builder. */
+    async function reconcilerWith(buildCopy?: ReminderCopyBuilder) {
+      const engine = new ReminderEngine();
+      await engine.init(); // permission granted via the mock
+      const state = stateWith([rule()], [journey()]);
+      const scheduler = new CommunicationScheduler(
+        new EventBus(),
+        () => state,
+        engine,
+        { location: NullLocationGateway, calendar: NullCalendarGateway },
+        () => NOW,
+        buildCopy,
+      );
+      return scheduler;
+    }
+
+    /** The `content` the SDK was asked to schedule on the Nth (default first) call. */
+    function scheduledContent(call = 0): { title: string; body: string } {
+      const arg = mockScheduleNotificationAsync.mock.calls[call][0] as {
+        content: { title: string; body: string };
+      };
+      return arg.content;
+    }
+
+    afterEach(() => setCommunicationProfile(DEFAULT_COMMUNICATION_PROFILE));
+
+    it('schedules the BUILDER’s copy, not the copy baked on the rule', async () => {
+      const scheduler = await reconcilerWith(({ journeyId, journeyTitle }) => ({
+        title: `resolved:${journeyTitle}`,
+        body: `resolved:${journeyId}`,
+      }));
+
+      await scheduler.reconcile();
+      expect(scheduledContent()).toEqual({
+        title: 'resolved:Run 5km',
+        body: 'resolved:journey_1',
+      });
+    });
+
+    it('falls back to the baked copy when no builder is injected (today’s behaviour)', async () => {
+      const scheduler = await reconcilerWith();
+      await scheduler.reconcile();
+      // Byte-identical to what the shipped app sends: the rule's own title/body.
+      expect(scheduledContent()).toEqual({
+        title: 'Time to move',
+        body: 'Your Journey is waiting.',
+      });
+    });
+
+    it('falls back to the baked copy when the builder returns null', async () => {
+      const scheduler = await reconcilerWith(() => null);
+      await expect(scheduler.reconcile()).resolves.toBeUndefined();
+      expect(scheduledContent()).toEqual({
+        title: 'Time to move',
+        body: 'Your Journey is waiting.',
+      });
+    });
+
+    it('falls back to the baked copy when the builder throws, without aborting reconcile', async () => {
+      const scheduler = await reconcilerWith(() => {
+        throw new Error('copy exploded');
+      });
+      await expect(scheduler.reconcile()).resolves.toBeUndefined();
+      expect(mockScheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      expect(scheduledContent()).toEqual({
+        title: 'Time to move',
+        body: 'Your Journey is waiting.',
+      });
+    });
+
+    it('delivers the Journey title through the REAL builder, styled by the current profile', async () => {
+      const scheduler = await reconcilerWith(buildReminderCopy);
+
+      setCommunicationProfile('direct');
+      await scheduler.reconcile();
+      const direct = scheduledContent();
+
+      // Same rule, same plan — only the module-level style changed between the two reconciles.
+      jest.clearAllMocks();
+      setCommunicationProfile('warm');
+      await scheduler.reconcile();
+      const warm = scheduledContent();
+
+      expect(direct.title).toBe('Run 5km is next');
+      expect(warm.title).toBe('A little reminder for Run 5km');
+      expect(direct.body).not.toBe(warm.body);
+      // The Journey title reaches the lock screen (as it always has); the Step title does not.
+      for (const content of [direct, warm]) {
+        expect(content.title).toContain('Run 5km');
+        expect(content.title).not.toContain('{{');
+        expect(content.body).not.toContain('{{');
+      }
+    });
   });
 });

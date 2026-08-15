@@ -38,6 +38,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Registered only after start() resolves, so a foreground event can never run
     // the rollover (and persist) over not-yet-loaded state.
     let appStateSub: { remove: () => void } | null = null;
+    // Smart Notification Timing: the notification-tap listener. Null when the feature is off —
+    // AppCore registers nothing at all in that case.
+    let notificationSub: (() => void) | null = null;
 
     core.start().then(() => {
       if (!mounted) return;
@@ -47,15 +50,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Run the authoritative day/week rollover whenever the app returns to the
       // foreground (outside render), so Missions/Login reconcile with the clock.
       const onAppStateChange = (status: AppStateStatus) => {
-        if (status === 'active') core.syncTime();
+        if (status !== 'active') return;
+        // Record the arrival BEFORE the rollover: syncTime is what persists the beat, so noting
+        // the foreground first means it is saved in the same write instead of one beat late.
+        core.noteForeground({ at: Date.now(), viaTap: false });
+        core.syncTime();
       };
       appStateSub = AppState.addEventListener('change', onAppStateChange);
+      notificationSub = core.onNotificationResponse();
     });
 
     return () => {
       mounted = false;
       unsubscribe();
       appStateSub?.remove();
+      notificationSub?.();
     };
   }, [core]);
 

@@ -10,6 +10,22 @@ import { NullLocationGateway, type LocationGateway } from '../location/LocationG
 import type { ReminderRule, ReminderTrigger } from '../types/domain';
 import * as Notifications from 'expo-notifications';
 
+/**
+ * The OPAQUE payload attached to a scheduled notification so a tap can be attributed back to what
+ * sent it (Smart Notification Timing, PRD §4). IDS ONLY — deliberately no title, no body, no Step
+ * or Journey name: a notification payload is readable by anything that can read the notification,
+ * so nothing that would identify the user's goals may go in it. The receiver resolves the ids
+ * against on-device state.
+ */
+export interface ReminderNotificationData {
+  /** The reminder rule that produced this send. */
+  ruleId: string;
+  /** The Journey the send belongs to. */
+  journeyId: string;
+  /** What kind of send this is — one Journey's reminder, or a multi-Journey adaptive aggregate. */
+  kind: 'reminder' | 'aggregate';
+}
+
 export interface DailyReminderInput {
   title: string;
   body: string;
@@ -17,12 +33,19 @@ export interface DailyReminderInput {
   hour: number;
   /** 0-59 */
   minute: number;
+  /** Optional attribution ids (see {@link ReminderNotificationData}); omitted ⇒ no payload at all. */
+  data?: ReminderNotificationData;
 }
 
 /** Optional gateways for the DORMANT calendar/location trigger kinds. */
 export interface ReminderGateways {
   location?: LocationGateway;
   calendar?: CalendarGateway;
+}
+
+/** A registered listener, mirroring expo's `EventSubscription`. Call {@link remove} to unsubscribe. */
+export interface ReminderSubscription {
+  remove: () => void;
 }
 
 export class ReminderEngine {
@@ -100,12 +123,40 @@ export class ReminderEngine {
     }
   }
 
+  /**
+   * Listen for the user INTERACTING with one of our notifications (a tap) — the only way to tell a
+   * tap-driven foreground from an organic one (Smart Notification Timing, PRD §4). The callback
+   * receives the opaque {@link ReminderNotificationData} we attached at schedule time, or `null`
+   * when the notification carried none (anything scheduled before this existed, or with the flag
+   * off) — so a caller never has to guess at an untyped payload.
+   *
+   * Guarded like every other call here: if the SDK cannot register a listener, this returns a
+   * subscription whose `remove` is a no-op rather than throwing at app start. Callers MUST call
+   * `remove()` on teardown.
+   */
+  onNotificationResponse(
+    callback: (data: ReminderNotificationData | null) => void,
+  ): ReminderSubscription {
+    try {
+      const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+        callback(readNotificationData(response?.notification?.request?.content?.data));
+      });
+      return { remove: () => subscription.remove() };
+    } catch {
+      return { remove: () => {} };
+    }
+  }
+
   /** Schedule a simple repeating daily reminder. Returns the id, or null if unavailable. */
   async scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
     if (!this.permissionGranted) return null;
     try {
       return await Notifications.scheduleNotificationAsync({
-        content: { title: input.title, body: input.body },
+        content: {
+          title: input.title,
+          body: input.body,
+          ...(input.data ? { data: toNotificationPayload(input.data) } : {}),
+        },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: input.hour,
@@ -152,13 +203,16 @@ export class ReminderEngine {
    *    when the gateway is Null/disabled — a graceful no-op.
    * Returns `[]` (schedules nothing) if the rule is disabled or permission is
    * missing. Never throws — a failure to schedule one id just drops that id.
+   *
+   * `data` is the OPTIONAL opaque attribution payload (ids only) the caller wants on the resulting
+   * notifications; omitted ⇒ the content is exactly what shipped before.
    */
-  async scheduleRule(rule: ReminderRule): Promise<string[]> {
+  async scheduleRule(rule: ReminderRule, data?: ReminderNotificationData): Promise<string[]> {
     if (!rule.enabled) return [];
     const t = rule.trigger;
     switch (t.kind) {
       case 'fixedTime':
-        return this.scheduleFixedTime(rule, t);
+        return this.scheduleFixedTime(rule, t, data);
       case 'location': {
         if (!this.location.enabled) return [];
         const id = await this.location.watchPlace({ id: rule.id, transition: t.transition ?? 'enter' });
@@ -181,6 +235,7 @@ export class ReminderEngine {
   private async scheduleFixedTime(
     rule: ReminderRule,
     t: Extract<ReminderTrigger, { kind: 'fixedTime' }>,
+    data?: ReminderNotificationData,
   ): Promise<string[]> {
     const days = t.weekdays ?? [];
     if (days.length === 0) {
@@ -189,6 +244,7 @@ export class ReminderEngine {
         body: rule.body,
         hour: t.hour,
         minute: t.minute,
+        ...(data ? { data } : {}),
       });
       return id ? [id] : [];
     }
@@ -197,7 +253,11 @@ export class ReminderEngine {
     for (const jsDay of days) {
       try {
         const id = await Notifications.scheduleNotificationAsync({
-          content: { title: rule.title, body: rule.body },
+          content: {
+            title: rule.title,
+            body: rule.body,
+            ...(data ? { data: toNotificationPayload(data) } : {}),
+          },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
             weekday: jsDay + 1, // JS 0=Sun → expo 1=Sun
@@ -237,4 +297,26 @@ export class ReminderEngine {
       // ignore
     }
   }
+}
+
+/**
+ * Narrow the untyped `content.data` an OS notification carries back to OUR payload, or `null` if it
+ * is anything else. Defensive on purpose: the payload survives app updates on the OS side, so a
+ * notification scheduled by an older build (no payload) or a foreign shape must read as "no
+ * attribution" rather than crash the listener or produce a half-built object.
+ */
+/**
+ * The exact record we put on a notification. Written out field by field rather than spread, so the
+ * three opaque ids are the ONLY thing that can ever reach the payload even if the type grows later.
+ */
+function toNotificationPayload(data: ReminderNotificationData): Record<string, unknown> {
+  return { ruleId: data.ruleId, journeyId: data.journeyId, kind: data.kind };
+}
+
+function readNotificationData(raw: unknown): ReminderNotificationData | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const { ruleId, journeyId, kind } = raw as Record<string, unknown>;
+  if (typeof ruleId !== 'string' || typeof journeyId !== 'string') return null;
+  if (kind !== 'reminder' && kind !== 'aggregate') return null;
+  return { ruleId, journeyId, kind };
 }

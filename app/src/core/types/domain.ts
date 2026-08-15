@@ -835,6 +835,127 @@ export interface WeeklyReview {
   resolvedAt?: number;
 }
 
+// ── Smart Notification Timing (Smart_Notification_Timing_PRD) ────────────────────────────────
+// The on-device evidence store behind the learned reminder time. Everything here is DERIVED
+// scheduling state — wall-clock times and small counters. There is no free text, no Step title,
+// no reason and no coach content, by construction.
+
+/** A local wall-clock time of day, in the same `{hour, minute}` convention as {@link AllowedWindow}. */
+export interface TimeOfDay {
+  /** 0-23 */
+  hour: number;
+  /** 0-59 */
+  minute: number;
+}
+
+/**
+ * Which window a {@link TimingModel} learns for: a single JS weekday (0=Sun … 6=Sat) when the
+ * reminder names its days, or `'*'` for a deliberately shared all-days window — PRD §5, "separate
+ * per-day windows learn independently; a deliberately shared all-days window shares one model".
+ */
+export type TimingDayKey = number | '*';
+
+/**
+ * The classified result of one send (PRD §4). Only `positive` and `negative` are EVIDENCE; the
+ * others deliberately never move the learned time:
+ *  - `pending`      — the day is not over and nothing conclusive has happened yet;
+ *  - `positive`     — the Journey was opened/viewed/acted on within the response window;
+ *  - `neutral`      — no timely interaction, but the relevant Step was Completed/Partial later that
+ *                     local day, which PRD §4 says PREVENTS a negative conclusion;
+ *  - `negative`     — no Journey interaction and no Completed/Partial outcome that local day;
+ *  - `contaminated` — another of OUR sends fell inside the window, or the app was already in the
+ *                     foreground, so the response cannot be attributed to this send.
+ */
+export type TimingOutcome = 'pending' | 'positive' | 'neutral' | 'negative' | 'contaminated';
+
+/**
+ * How the app came to the foreground for a trial (PRD §4: "record tap vs organic foreground
+ * separately; neither proves causality"). Recorded alongside the outcome, never folded into it.
+ */
+export type TimingResponseKind = 'tap' | 'organic' | 'none';
+
+/**
+ * A candidate time the user declined in Weekly Review, plus the size of the evidence set at the
+ * moment they declined. PRD §5: "the same proposal is not repeated without new evidence" — so the
+ * proposal engine skips this time until {@link TimingModel.eligibleCount} has moved on.
+ */
+export interface RejectedTimingCandidate extends TimeOfDay {
+  /** {@link TimingModel.eligibleCount} when the rejection was recorded. */
+  atEligibleCount: number;
+}
+
+/**
+ * The learned timing state for ONE Journey/day window — the MINIMAL derived shape PRD §7 names
+ * (eligible count, positive/negative aggregate, current/previous candidate, confidence, last
+ * update, model version), so it is sync-ready the day a backend exists with no reshaping.
+ *
+ * SECURITY-PRIVACY G1 — ON-DEVICE ONLY today. Times + counters only; no titles, no reasons, no
+ * coach content. WHITELIST-EXCLUDED from every sync/social path exactly like
+ * {@link AppState.reasonLog}, and in scope for account export + deletion.
+ */
+export interface TimingModel {
+  journeyId: string;
+  /** The window this model learns (one weekday, or `'*'` for a shared all-days window). */
+  dayKey: TimingDayKey;
+  /** The user's OWN time — the fixed point the three-hour cap is measured from (PRD §5). */
+  anchor: TimeOfDay;
+  /** The time currently being evaluated. Equals {@link anchor} until a proposal is approved. */
+  currentCandidate: TimeOfDay;
+  /** The previously-evaluated time, kept as history (PRD §5 "preserve old evidence as history"). */
+  previousCandidate?: TimeOfDay;
+  /** {@link positive} as it stood for {@link previousCandidate}, so a revert can be justified. */
+  previousPositive?: number;
+  /** {@link negative} as it stood for {@link previousCandidate}. */
+  previousNegative?: number;
+  /** How many EVIDENCE trials (positive or negative) the current candidate has accumulated. */
+  eligibleCount: number;
+  positive: number;
+  negative: number;
+  /** Display-only 0..1 reading of how much evidence there is. NEVER gates a proposal. */
+  confidence: number;
+  /** Which way the next exploration step moves (PRD §5 "explore alternately later / earlier"). */
+  exploreDirection: 'later' | 'earlier';
+  /** Times the user declined, with the evidence size at rejection (PRD §5). */
+  rejectedCandidates: RejectedTimingCandidate[];
+  /**
+   * IANA zone name the model was learned in (e.g. `Europe/Berlin`), when the device could report
+   * one. PRD §9 requires a time-zone change to invalidate the candidate, and only the zone NAME is
+   * unambiguous under DST. Coarse — treated as a location proxy and never leaves the device.
+   */
+  tzName?: string;
+  lastUpdatedAt: number;
+  /** Schema version of this model, so a future shape change can migrate rather than guess. */
+  modelVersion: number;
+}
+
+/**
+ * ONE send and what followed it — the raw operational evidence a {@link TimingModel} is derived
+ * from. PRD §7 gives these BOUNDED retention (config/timingPolicy: newest few per model, hard-
+ * dropped past four weeks) and keeps them out of social payloads and third-party analytics.
+ *
+ * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, and never sync-eligible even when the derived
+ * {@link TimingModel} becomes so. In scope for account export + deletion.
+ */
+export interface TimingTrial {
+  /** `journeyId|dayKey` — the model this trial belongs to (core/timing/timingModel.ts). */
+  modelKey: string;
+  /** Epoch ms the send was SCHEDULED for. The response window is measured from here… */
+  scheduledAt: number;
+  /**
+   * …unless the OS told us when it actually delivered. Local repeating triggers give no receipt,
+   * so this is ALWAYS absent in MVP (PRD §4 anticipates exactly that and says use the scheduled
+   * time); the field exists so a future delivery receipt needs no migration.
+   */
+  deliveredAt?: number;
+  outcome: TimingOutcome;
+  /** Tap vs organic foreground, kept SEPARATE from {@link outcome} (PRD §4). */
+  responseKind?: TimingResponseKind;
+  /** The Journeys this send covered (one today; an aggregate may cover several). */
+  journeyIds: string[];
+  /** IANA zone the trial was run in, when known — see {@link TimingModel.tzName}. */
+  tzName?: string;
+}
+
 /**
  * The record of ONE detected account-inactivity freeze cycle (Account Inactivity Freeze, J5,
  * LOCAL-FIRST POC). Present + `resolved` falsy ⇒ there is a pending "welcome back" return the UI
@@ -1016,4 +1137,34 @@ export interface AppState {
    * account deletion/export.
    */
   accountInactivity?: AccountInactivity;
+  /**
+   * The DERIVED learned reminder timing, one {@link TimingModel} per Journey/day window (Smart
+   * Notification Timing, PRD §7). Optional so an older snapshot loads without it (backfilled to
+   * `[]` in AppCore.migrateState). Only ever populated when the `smartTiming` flag is on.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. Times + counters, no free text. WHITELIST-EXCLUDED from
+   * every sync path — it must never enter a DomainEvent, a ProgressSummary, a social payload or a
+   * third-party analytics event (same footing as {@link reasonLog}). In scope for account
+   * export + deletion, which it gets by living here rather than in its own store.
+   */
+  timingModels?: TimingModel[];
+  /**
+   * The RAW timing trials the models above are derived from (PRD §7 "raw operational events have
+   * bounded retention"). Optional so an older snapshot loads without it (backfilled to `[]` in
+   * AppCore.migrateState). Pruned to the newest few per model and hard-dropped past four weeks
+   * (config/timingPolicy).
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, FOREVER: unlike the derived {@link timingModels} these
+   * are NEVER sync-eligible, not even once a backend exists. WHITELIST-EXCLUDED from every sync
+   * path; in scope for account export + deletion.
+   */
+  timingTrials?: TimingTrial[];
+  /**
+   * Epoch ms the app last entered the foreground (Smart Notification Timing, PRD §4 — the general
+   * communication-response signal). Absent until the first foreground under the `smartTiming` flag.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. A single local scheduling scalar; never copied into a
+   * DomainEvent, a ProgressSummary or any sync path. In scope for account export + deletion.
+   */
+  lastForegroundAt?: number;
 }

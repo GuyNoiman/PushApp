@@ -2,13 +2,14 @@
  * availability tests — the single Active-Hours resolver (D40). Cover: in/out of an
  * enabled window, cross-midnight windows, a disabled day (nothing allowed), all-day
  * (start === end), the legacy `window` fallback + single-source-of-truth precedence,
- * uniformity detection, and the UI materializer.
+ * uniformity detection, the shared schedule clamp, and the UI materializer.
  */
 import type { ActiveHours, AllowedWindow, SchedulingPrefs } from '../../types/domain';
 import {
   activeHoursShape,
   allDayWindow,
   allowedWindowFor,
+  clampScheduleMinute,
   dayAvailability,
   isAllowed,
   isDayUniform,
@@ -194,5 +195,33 @@ describe('resolveActiveHours (UI materializer)', () => {
     const ah = resolveActiveHours(prefs);
     expect(ah.days).toHaveLength(7);
     expect(ah.days[6].enabled).toBe(true);
+  });
+});
+
+describe('clampScheduleMinute — the ONE definition of when a reminder may fire', () => {
+  it('leaves an allowed time exactly where it is', () => {
+    const prefs = base({ activeHours: sharedHours(w(9, 0, 17, 0)) });
+    expect(clampScheduleMinute(10 * 60, 3, prefs)).toBe(10 * 60);
+  });
+
+  it('moves a time outside the window to the nearest allowed minute', () => {
+    const prefs = base({ activeHours: sharedHours(w(9, 0, 17, 0)) });
+    expect(clampScheduleMinute(8 * 60 + 45, 3, prefs)).toBe(9 * 60);
+  });
+
+  it('applies the day-part band before the window, so the window wins', () => {
+    const prefs = base({ dayPart: 'morning', activeHours: sharedHours(w(13, 0, 17, 0)) });
+    // 'morning' would pull 18:00 back to 11:59, then the window pushes it to 13:00.
+    expect(clampScheduleMinute(18 * 60, 3, prefs)).toBe(13 * 60);
+  });
+
+  it('returns null for a day the user disabled — nothing is allowed at all', () => {
+    const hours = sharedHours(w(9, 0, 17, 0), 'perDay');
+    hours.days[2] = { enabled: false, window: w(9, 0, 17, 0) };
+    expect(clampScheduleMinute(10 * 60, 2, base({ activeHours: hours }))).toBeNull();
+  });
+
+  it('leaves any minute untouched on an all-day, unconstrained account', () => {
+    expect(clampScheduleMinute(23 * 60 + 59, 0, base())).toBe(23 * 60 + 59);
   });
 });

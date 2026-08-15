@@ -18,7 +18,7 @@
  * helpers in `util/date` so there is one clamp/contains convention.
  */
 import type { ActiveHours, AllowedWindow, DayActiveHours, SchedulingPrefs } from '../types/domain';
-import { isMinuteInWindow, minuteOfDay } from './date';
+import { clampMinuteToWindow, dayPartBand, isMinuteInWindow, minuteOfDay } from './date';
 
 /**
  * The resolved availability of a single weekday:
@@ -84,6 +84,30 @@ export function isAllowed(weekday: number, minute: number, prefs: SchedulingPref
 export function allowedWindowFor(weekday: number, prefs: SchedulingPrefs): AllowedWindow | null {
   const a = dayAvailability(weekday, prefs);
   return a.kind === 'window' ? a.window : null;
+}
+
+/**
+ * Clamp a minute-of-day (0..1439) into what the prefs ALLOW on `weekday`: the day-part band first,
+ * then that weekday's Active-Hours window (D40) — so the account window is the FINAL, winning
+ * constraint. Returns the (possibly unchanged) allowed minute, or `null` for a DISABLED day, where
+ * nothing at all is allowed.
+ *
+ * The SINGLE definition of "when may this actually fire". The CommunicationScheduler clamps every
+ * planned reminder through it, and Smart Notification Timing validates every learned candidate
+ * through it — which is what stops the app proposing 08:15 and then sending at 09:00.
+ */
+export function clampScheduleMinute(
+  minute: number,
+  weekday: number,
+  prefs: SchedulingPrefs,
+): number | null {
+  const availability = dayAvailability(weekday, prefs);
+  if (availability.kind === 'none') return null;
+  let m = minute;
+  const band = dayPartBand(prefs.dayPart);
+  if (band) m = clampMinuteToWindow(m, band);
+  if (availability.kind === 'window') m = clampMinuteToWindow(m, availability.window);
+  return m;
 }
 
 /**

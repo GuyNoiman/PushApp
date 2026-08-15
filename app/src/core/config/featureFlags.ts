@@ -92,6 +92,24 @@ export const featureFlags = {
    */
   liveCoach: Boolean(process.env.EXPO_PUBLIC_GEMINI_API_KEY),
   /**
+   * Smart Notification Timing (Smart_Notification_Timing_PRD) — the on-device learning loop that
+   * proposes a better send time for a Journey's reminder in Weekly Review. OPT-IN and
+   * FOUNDER-DEVICE-ONLY: on only when `EXPO_PUBLIC_SMART_TIMING` is present, which lives solely in
+   * the founder's git-ignored `.env.local` and is never committed — so every other build (and CI)
+   * keeps it fully dormant. Literal `Boolean(process.env.…)` so Metro statically inlines it.
+   *
+   * Deliberately NOT `adaptiveCoach`: Smart Timing keeps its OWN evidence store and needs no
+   * BehaviorModelEngine, so coupling the two would drag the whole replan loop along and stop the
+   * founder trying timing on its own. Gated rather than shipped-on because it changes what lands on
+   * the lock screen and opens new OS surface (a notification `data` payload + a tap listener) that
+   * needs real-device QA first.
+   *
+   * OFF ⇒ no timing model or trial is ever written, the tap listener is never registered, and the
+   * scheduled notifications carry no `data` payload — production behaviour is bit-identical. The
+   * learned evidence is ON-DEVICE ONLY (G1).
+   */
+  smartTiming: Boolean(process.env.EXPO_PUBLIC_SMART_TIMING),
+  /**
    * DEV-ONLY (Miss-Recovery slice). Turns on the in-memory mock gateways that let
    * a developer/founder exercise the recovery loop end-to-end in Expo Go at $0:
    * a `home/away` location and a `busy/free` calendar the dev panel toggles. OFF in

@@ -19,16 +19,27 @@
  * the injected gateways and ONLY when a gateway is `enabled`. Both are Null/disabled
  * today, so those kinds produce nothing and NOTHING leaves the device. This file
  * imports no `expo-*` module.
+ *
+ * COPY (Communication_Style_Profile_PRD §10/AC#4): this file stays i18n-free. The words
+ * are resolved by an INJECTED {@link ReminderCopyBuilder} in `toRule()` — the thin apply
+ * layer — never inside the planner. Because copy is resolved at reconcile time rather
+ * than baked at rule-creation time, a language, form-of-address or communication-style
+ * change applies to reminders that were already scheduled. With no builder (or a builder
+ * that declines) the rule's own baked `title`/`body` are used, so behaviour degrades to
+ * exactly what shipped and a notification can never come out blank.
  */
+import { featureFlags } from '../config/featureFlags';
 import { MAX_PENDING } from '../config/schedulerLimits';
 import type { EventBus } from '../events/EventBus';
 import type { CalendarGateway } from '../calendar/CalendarGateway';
 import type { LocationGateway } from '../location/LocationGateway';
+import type { AggregateCopyBuilder } from '../notify/aggregateCopy';
+import type { ReminderCopyBuilder } from '../notify/reminderCopy';
 import type { AppState, Journey, ReminderRule, SchedulingPrefs } from '../types/domain';
-import { dayAvailability, isDayUniform } from '../util/availability';
-import { clampMinuteToWindow, dayPartBand, minuteOfDay } from '../util/date';
+import { clampScheduleMinute, dayAvailability, isDayUniform } from '../util/availability';
+import { minuteOfDay } from '../util/date';
 import { isRunning } from '../util/journeyStatus';
-import type { ReminderEngine } from './ReminderEngine';
+import type { ReminderNotificationData, ReminderEngine } from './ReminderEngine';
 
 /**
  * One resolved OS notification the scheduler wants pending. A `weekday` of
@@ -49,6 +60,14 @@ export interface PlannedNotification {
   weekday?: number;
   /** Higher = more important; the cap keeps the highest-priority entries. */
   priority: number;
+  /**
+   * OPAQUE ids attached to the OS notification so a TAP can be attributed back to the rule that
+   * sent it (Smart Notification Timing, PRD §4 "record tap vs organic foreground separately").
+   * Ids ONLY — never a title, never any user text; the payload is readable by anything that can
+   * read the notification. Present only while the `smartTiming` flag is on, so a build without it
+   * sends byte-identical notifications to what shipped.
+   */
+  data?: ReminderNotificationData;
 }
 
 /** Gateways for the DORMANT calendar/location trigger kinds (both Null today). */
@@ -88,6 +107,19 @@ export class CommunicationScheduler {
     private readonly gateways: SchedulerGateways,
     /** Injected clock (defaults to the real one) — overridden in tests. */
     private readonly now: () => Date = () => new Date(),
+    /**
+     * Optional copy resolver, asked once per planned notification at APPLY time (see
+     * `toRule`). Omitted here and in every planner-only test: without it the rule's
+     * baked copy is used unchanged. The composition root injects the real one.
+     */
+    private readonly buildCopy?: ReminderCopyBuilder,
+    /**
+     * Optional copy resolver for the low-frequency ADAPTIVE AGGREGATE (Smart Notification Timing
+     * PRD §3). Declared now so this constructor settles in one pass; UNUSED until the aggregate
+     * slice lands, and with no builder injected no aggregate is ever planned. Kept LAST so every
+     * existing caller and test is untouched.
+     */
+    private readonly buildAggregateCopy?: AggregateCopyBuilder,
   ) {}
 
   /**
@@ -135,6 +167,12 @@ export class CommunicationScheduler {
       minute: c.minute,
       weekday: c.weekday,
       priority: candidates.length - i,
+      // Attribution ids, and ONLY while Smart Timing is on — a build with the flag off puts nothing
+      // new on the lock screen. Building them here keeps the planner pure: they are copied from the
+      // rule, not read from anywhere.
+      ...(featureFlags.smartTiming
+        ? { data: { ruleId: c.ruleId, journeyId: c.journeyId, kind: 'reminder' as const } }
+        : {}),
     }));
 
     // Coalesce duplicates (same weekday+hour+minute → one), keeping the best (the
@@ -185,7 +223,9 @@ export class CommunicationScheduler {
     }
     this.ownedIds = [];
     for (const p of planned) {
-      const ids = await this.reminderEngine.scheduleRule(this.toRule(p));
+      // The attribution payload rides ALONGSIDE the synthesized rule rather than inside it: it is
+      // transport metadata for one send, not part of the rule the user configured and we persist.
+      const ids = await this.reminderEngine.scheduleRule(this.toRule(p), p.data);
       this.ownedIds.push(...ids);
     }
   }
@@ -194,8 +234,15 @@ export class CommunicationScheduler {
    * Synthesize the minimal ReminderRule the ReminderEngine needs to schedule one
    * planned notification: a plain daily when `weekday` is undefined, else a single
    * WEEKLY notification for that weekday. The engine owns the DAILY/WEEKLY mapping.
+   *
+   * This is also where the WORDS are resolved (never in the planner): the injected
+   * builder gets the Journey this notification belongs to and returns copy in the
+   * user's current language/form of address/communication style. Anything less than a
+   * clean answer — no builder, an unknown Journey, a `null`, or a throw — falls back to
+   * the copy baked on the plan, which is what the app sent before this seam existed.
    */
   private toRule(p: PlannedNotification): ReminderRule {
+    const resolved = this.resolveCopy(p);
     return {
       id: p.ruleId,
       journeyId: p.journeyId,
@@ -205,11 +252,27 @@ export class CommunicationScheduler {
         minute: p.minute,
         weekdays: p.weekday === undefined ? undefined : [p.weekday],
       },
-      title: p.title,
-      body: p.body,
+      title: resolved?.title ?? p.title,
+      body: resolved?.body ?? p.body,
       enabled: true,
       scheduledNotificationIds: [],
     };
+  }
+
+  /**
+   * Ask the injected builder for this notification's copy, or `null` to keep the baked
+   * copy. Never throws: a failing copy builder must degrade one notification's wording,
+   * not abort the whole reconcile and leave the user with no reminders at all.
+   */
+  private resolveCopy(p: PlannedNotification): { title: string; body: string } | null {
+    if (!this.buildCopy) return null;
+    try {
+      const journey = this.getState().journeys.find((j) => j.id === p.journeyId);
+      if (!journey) return null;
+      return this.buildCopy({ journeyId: journey.id, journeyTitle: journey.title });
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -338,10 +401,11 @@ export class CommunicationScheduler {
 
   /**
    * Clamp `hour:minute` into the day-part band first, then that WEEKDAY's Active-Hours
-   * window (D40), so the user's account window is the FINAL (winning) constraint. The
-   * window is resolved through the shared availability service, so the scheduler and the
-   * Miss-Recovery reschedule helper honour one definition. A day with no window (all-day)
-   * leaves the time unchanged; a disabled day is filtered out before this is reached.
+   * window (D40), so the user's account window is the FINAL (winning) constraint. Delegates to the
+   * shared {@link clampScheduleMinute}, so the scheduler, the Miss-Recovery reschedule helper and
+   * the Smart-Timing proposal engine honour ONE definition and can never drift apart. A day with
+   * no window (all-day) leaves the time unchanged; a disabled day is filtered out before this is
+   * reached (hence the non-null fallback).
    */
   private clampTime(
     hour: number,
@@ -349,11 +413,8 @@ export class CommunicationScheduler {
     prefs: SchedulingPrefs,
     weekday: number,
   ): { hour: number; minute: number } {
-    let m = hour * 60 + minute;
-    const band = dayPartBand(prefs.dayPart);
-    if (band) m = clampMinuteToWindow(m, band);
-    const av = dayAvailability(weekday, prefs);
-    if (av.kind === 'window') m = clampMinuteToWindow(m, av.window);
+    const requested = hour * 60 + minute;
+    const m = clampScheduleMinute(requested, weekday, prefs) ?? requested;
     return { hour: Math.floor(m / 60), minute: m % 60 };
   }
 

@@ -23,6 +23,7 @@ import { AuthProvider } from '@/state/AuthProvider';
 import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
+import { NotificationCopySync } from '@/state/NotificationCopySync';
 import { ProfileProvider } from '@/state/ProfileProvider';
 import { SocialProvider } from '@/state/SocialProvider';
 import { ThemePreferenceProvider } from '@/state/ThemePreference';
@@ -108,6 +109,10 @@ export default function RootLayout() {
                         adaptation fields. It mirrors form-of-address (D31) + week-start day (D33) into
                         the framework-free modules the engines read, so there is a single home. */}
                     <ProfileProvider>
+                      {/* Renders nothing: re-resolves pending reminder copy whenever the
+                          language, form of address or communication style changes (D40). It sits
+                          here because it needs the core, the language provider AND the profile. */}
+                      <NotificationCopySync />
                       <ThemedChrome />
                     </ProfileProvider>
                   </LanguagePreferenceProvider>

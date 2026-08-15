@@ -22,7 +22,11 @@ import {
 import { EntitlementEngine } from './engines/EntitlementEngine';
 import { InactivityEngine } from './engines/InactivityEngine';
 import { FutureJourneyEngine } from './engines/FutureJourneyEngine';
-import { ReminderEngine, type DailyReminderInput } from './engines/ReminderEngine';
+import {
+  ReminderEngine,
+  type DailyReminderInput,
+  type ReminderNotificationData,
+} from './engines/ReminderEngine';
 import { CommunicationScheduler } from './engines/CommunicationScheduler';
 import { RewardEngine } from './engines/RewardEngine';
 import { ShopEngine } from './engines/ShopEngine';
@@ -41,6 +45,7 @@ import {
   deliverCircleNotice,
   type CircleNotice,
 } from './notify/circleNotice';
+import { buildReminderCopy } from './notify/reminderCopy';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
 import { futureCapacity, type FutureCapacity } from './journeys/futureJourneys';
 import type { GoalSpec } from './coach/interviewPlaybook';
@@ -55,6 +60,9 @@ import { applyReplan } from './learning/applyReplan';
 import { deriveConstraints } from './learning/deriveConstraints';
 import { DeterministicNarrator } from './learning/CoachNarrator';
 import { buildWeeklyReview, computeJourneyProposals } from './review/weeklyReview';
+// Smart Notification Timing: the PURE §4 classifier + window helpers. AppCore only OBSERVES and
+// stores; every judgement about what a send meant is made in core/timing.
+import { classifyTrial, effectiveSendAt, withinResponseWindow } from './timing/outcome';
 import { evaluateWeekGate } from './review/weekGate';
 import { isFuture, isRunning, resolveJourneyStatus } from './util/journeyStatus';
 import { startOfWeek, weekKey } from './util/week';
@@ -281,6 +289,11 @@ function emptyState(): AppState {
     streak: 0,
     lastActiveDay: null,
     parkedGoals: [],
+    // Smart Notification Timing (PRD §7): the learned models + their raw trials live INSIDE
+    // AppState on purpose — that is what makes them part of the export and of the account wipe
+    // without a single extra line in either path. Empty until the `smartTiming` flag is on.
+    timingModels: [],
+    timingTrials: [],
     // First-run gate marker (K2): a genuine fresh run stamps the resume step BEFORE any state is
     // persisted (the demo seed in start() saves immediately). This makes a first-run snapshot
     // distinguishable from a legacy pre-onboarding snapshot — so a user who opens the app and leaves
@@ -372,6 +385,12 @@ function migrateState(state: AppState): AppState {
     // Adaptive report→replan cadence ledger — backfill to {} for a snapshot that predates it.
     // ON-DEVICE ONLY (G1); only written when the adaptive loop is enabled.
     weekReviewAt: state.weekReviewAt ?? {},
+    // Smart Notification Timing (PRD §7) — backfill both stores to [] for a snapshot that predates
+    // them, so the timing paths never dereference an absent field. Backfilled regardless of the
+    // `smartTiming` flag (exactly like behaviorLog) so toggling the flag never reshapes state; with
+    // the flag off they simply stay empty. ON-DEVICE ONLY (G1).
+    timingModels: state.timingModels ?? [],
+    timingTrials: state.timingTrials ?? [],
     // Streak (D26.4) — backfill for a snapshot that predates the StreakEngine: no counted
     // history yet, so start at 0 with no active day. On-device only, no PII.
     streak: state.streak ?? 0,
@@ -518,11 +537,16 @@ export class AppCore {
     // The central "Communication Scheduler" plans + applies the whole reminder set
     // through the ReminderEngine. The location/calendar gateways stay dormant (Null),
     // so those trigger kinds produce nothing and nothing leaves the device (R2).
+    // `buildReminderCopy` is the ONE impure adapter that gives the (i18n-free) scheduler
+    // its words at apply time, in the current language + form of address + communication
+    // style (D40) — this is the composition root's job, so the engine stays pure.
     this.communicationScheduler = new CommunicationScheduler(
       this.bus,
       getState,
       this.reminderEngine,
       { location, calendar },
+      undefined, // clock: the real one (only tests inject a fixed clock)
+      buildReminderCopy,
     );
     this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
     this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
@@ -1980,6 +2004,21 @@ export class AppCore {
     return this.reminderEngine.init();
   }
 
+  /**
+   * Re-resolve the words of every pending reminder against the CURRENT language, form of
+   * address and communication style (D40, Communication_Style_Profile_PRD §10/§11). A plain
+   * reconcile: the scheduler tears its notifications down and rebuilds them, asking the copy
+   * builder again — so a preference the user just changed reaches reminders that were already
+   * scheduled instead of waiting for the next rule edit. Fire-and-forget by design (nothing
+   * user-visible depends on it finishing) and never throws, so a caller in a React effect
+   * cannot produce an unhandled rejection.
+   */
+  reconcileNotificationCopy(): void {
+    void this.communicationScheduler.reconcile().catch(() => {
+      // Best-effort: a scheduling failure just leaves the previous copy pending.
+    });
+  }
+
   /** Schedule a simple time/day reminder. Returns the reminder id, or null if unavailable. */
   scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
     return this.reminderEngine.scheduleDailyReminder(input);
@@ -2140,6 +2179,108 @@ export class AppCore {
       (r) => r.journeyId === journeyId && r.trigger.kind === 'fixedTime',
     );
     if (existing) await this.updateReminderRule(existing.id, { enabled: false, mode: 'off' });
+  }
+
+  // ── Smart Notification Timing — signal capture (Smart_Notification_Timing_PRD §4) ────────
+  // The four hooks that let the app notice WHAT HAPPENED after a reminder. They are the whole
+  // observation surface, and every one of them is a hard no-op while `featureFlags.smartTiming` is
+  // off: no state is touched, no OS listener is registered, and no notification carries a payload —
+  // so a build without the flag behaves exactly as the shipped one does.
+  //
+  // The two measurements PRD §4 keeps apart are kept apart here too: a foreground records only HOW
+  // the app was opened (tap vs organic), while the verdict that can move a learned time needs a
+  // real interaction with that Journey. A tap is a response, not proof that the Journey was seen.
+
+  /**
+   * Whether the Smart Timing loop may observe or store anything. Single gate, read by every hook
+   * below, mirroring how {@link adaptiveEnabled} gates the coach.
+   */
+  private readonly smartTimingEnabled = featureFlags.smartTiming;
+
+  /**
+   * The app came to the foreground. Records the timestamp and, for any trial still inside its
+   * response window, HOW we got here (PRD §4 "record tap vs organic foreground separately").
+   *
+   * A tap always wins over an organic reading of the same window: the OS may bring the app to the
+   * foreground first and deliver the tap a beat later, and that is one arrival, not two.
+   *
+   * Persists without notifying — nothing here is on screen, so re-rendering every subscriber on
+   * every foreground would be pure cost.
+   */
+  noteForeground(input: { at: number; viaTap: boolean }): void {
+    if (!this.smartTimingEnabled) return;
+    this.state.lastForegroundAt = input.at;
+    for (const trial of this.state.timingTrials ?? []) {
+      if (trial.outcome !== 'pending') continue;
+      if (!withinResponseWindow(effectiveSendAt(trial), input.at)) continue;
+      if (input.viaTap || trial.responseKind == null || trial.responseKind === 'none') {
+        trial.responseKind = input.viaTap ? 'tap' : 'organic';
+      }
+    }
+    this.persist();
+  }
+
+  /**
+   * The user opened / viewed / acted on a Journey. PRD §4: doing that within the response window is
+   * POSITIVE timing evidence for every pending trial that covered this Journey. The verdict itself
+   * is computed by the pure classifier, so this facade holds no §4 logic of its own.
+   *
+   * Called from the Journey screen on mount. Safe to call for a Journey with no trials — which is
+   * every Journey until Smart mode is switched on for it.
+   */
+  noteJourneyViewed(journeyId: string): void {
+    if (!this.smartTimingEnabled) return;
+    const at = Date.now();
+    let changed = false;
+    for (const trial of this.state.timingTrials ?? []) {
+      if (trial.outcome !== 'pending') continue;
+      if (!trial.journeyIds.includes(journeyId)) continue;
+      const outcome = classifyTrial({
+        scheduledAt: trial.scheduledAt,
+        deliveredAt: trial.deliveredAt,
+        journeyInteractionAt: at,
+      });
+      if (outcome === trial.outcome) continue;
+      trial.outcome = outcome;
+      changed = true;
+    }
+    if (changed) this.persist();
+  }
+
+  /**
+   * Listen for the user TAPPING one of our notifications — the only signal that distinguishes a
+   * tap-driven foreground from an organic one. Records the tap itself and hands the opaque
+   * attribution ids to the optional `handler` (which is where a future deep-link would live).
+   *
+   * Returns an unsubscribe the caller MUST run on teardown. With the flag off nothing is registered
+   * at all and the returned function is a no-op, so the OS never even knows we would listen.
+   */
+  onNotificationResponse(handler?: (data: ReminderNotificationData) => void): () => void {
+    if (!this.smartTimingEnabled) return () => {};
+    const subscription = this.reminderEngine.onNotificationResponse((data) => {
+      this.noteForeground({ at: Date.now(), viaTap: true });
+      if (data) handler?.(data);
+    });
+    return () => subscription.remove();
+  }
+
+  /**
+   * The device's current IANA zone name (e.g. `Europe/Berlin`), or undefined when it cannot be
+   * read. PRD §9 requires a time-zone change to invalidate a learned candidate, and only the zone
+   * NAME is unambiguous — a UTC offset alone cannot tell travel from DST.
+   *
+   * Guarded twice over: `Intl` is present on Hermes for our SDK, but a stripped-ICU build would
+   * return an empty string rather than throw, and both cases must degrade to "unknown zone" rather
+   * than break app start. A zone name is a coarse location proxy, so it is only read while the flag
+   * is on and it never leaves the device.
+   */
+  currentTimezoneName(): string | undefined {
+    if (!this.smartTimingEnabled) return undefined;
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   /** Set a single communication preference and persist. */

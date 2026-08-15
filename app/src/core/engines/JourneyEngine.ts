@@ -352,10 +352,16 @@ export class JourneyEngine {
    * `reason` records PROVENANCE on the SAME frozen path (Account Inactivity Freeze, J5): the user
    * pause (task J3) passes the default `'manual'`; the {@link InactivityEngine} passes
    * `'account_inactivity'`. The default keeps every existing caller/test unchanged.
+   *
+   * The guard is the POSITIVE {@link isRunning} predicate, so ONLY a Journey that is actually running
+   * can be paused. Pausing anything else is meaningless and, for a Future Journey, actively wrong: it
+   * has not started, so it already produces nothing to pause, and freezing it would destroy the
+   * `future` lifecycle state the user's planned start depends on (Future Journey Management, §5). The
+   * detail screen hides Pause on a Future Journey; this refuses it even if some other path asks.
    */
   freezeJourney(journeyId: string, reason: FreezeReason = 'manual'): Journey | null {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
-    if (!journey || journey.completedAt || journey.status === 'frozen') return null;
+    if (!journey || !isRunning(journey)) return null;
     journey.status = 'frozen';
     journey.freezeReason = reason;
     this.bus.emit({ type: 'JourneyFrozen', journey });

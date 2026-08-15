@@ -25,11 +25,14 @@ import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
 import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { CoachInsight, CoachJourneyCard } from '@/components/coach/CoachJourneyCard';
 import { CoachOptions } from '@/components/coach/CoachOptions';
-import { buildCoachScript } from '@/components/coach/coachScript';
+import { buildCoachScript, type CoachOption } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { featureFlags } from '@/core/config/featureFlags';
+import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
+import { startInstantInDays } from '@/core/journeys/futureJourneys';
+import type { JourneyStart } from '@/core/types/domain';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
@@ -48,6 +51,12 @@ export default function CoachScreen() {
   return featureFlags.liveCoach ? <LiveCoachScreen /> : <ScriptedCoachScreen />;
 }
 
+/** The three start modes offered at final approval (Future Journey Management, §5). */
+type StartModeValue = 'now' | 'scheduled' | 'manual';
+const START_MODE_VALUES: StartModeValue[] = ['now', 'scheduled', 'manual'];
+/** Preset labels, positionally paired with {@link FUTURE_JOURNEY_POLICY.startPresetDays}. */
+const START_PRESET_KEYS = ['week', 'twoWeeks', 'month'] as const;
+
 /**
  * LiveCoachScreen — renders the REAL coach from {@link useLiveCoach}: the transcript, the current
  * question's option cards, a "thinking…" state during triage, and a CTA that either builds the
@@ -57,7 +66,7 @@ function LiveCoachScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
-  const { core } = useApp();
+  const { core, snapshot } = useApp();
   const coach = useLiveCoach();
   const { t } = useAddressedTranslation('coach');
 
@@ -67,6 +76,13 @@ function LiveCoachScreen() {
   const [draft, setDraft] = useState('');
   /** Local selection for the current multi-select question (single-select submits on tap). */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  /**
+   * WHEN the approved Journey begins (Future Journey Management, §5) — asked right where the proposal
+   * is approved, as ordinary option cards in the conversation rather than a modal on top of it.
+   * `now` is preselected, so the Build CTA is still one tap for the common case.
+   */
+  const [startMode, setStartMode] = useState<StartModeValue>('now');
+  const [startInDays, setStartInDays] = useState<number>(FUTURE_JOURNEY_POLICY.startPresetDays[0]);
 
   const scrollToEnd = useCallback(() => {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
@@ -111,11 +127,57 @@ function LiveCoachScreen() {
     [coach, scrollToEnd],
   );
 
+  // The Future list is capped (§10). At the cap the two "for later" cards stay on screen, dimmed,
+  // with the reason in their own supporting line — the conversation never raises an error, and
+  // "Start now" is always available so approval can always complete.
+  const futureFull = snapshot?.futureCapacity?.capReached ?? false;
+  const startOptions: CoachOption[] = useMemo(
+    () =>
+      START_MODE_VALUES.map((value) => ({
+        id: value,
+        title: t(`start.${value}`),
+        meta:
+          futureFull && value !== 'now'
+            ? t('start.full', { max: FUTURE_JOURNEY_POLICY.max })
+            : t(`start.${value}Meta`),
+        disabled: futureFull && value !== 'now',
+      })),
+    [t, futureFull],
+  );
+  const startPresetOptions: CoachOption[] = useMemo(
+    () =>
+      FUTURE_JOURNEY_POLICY.startPresetDays.map((days, index) => ({
+        id: String(days),
+        title: t(`start.presets.${START_PRESET_KEYS[index]}`),
+        meta: new Date(startInstantInDays(days, Date.now())).toLocaleDateString(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        }),
+      })),
+    [t],
+  );
+
   const handleBuild = useCallback(() => {
     if (!coach.goalSpec) return;
-    core.createJourneyFromGoalSpec(coach.goalSpec);
+    // One approved plan, one chosen start (§5). `now` goes down the unchanged immediate path; the two
+    // "for later" modes build a Future Journey, which the cap can decline — in which case nothing was
+    // created and the conversation stays put rather than navigating away from a Journey that isn't there.
+    const start: JourneyStart =
+      startMode === 'scheduled'
+        ? {
+            mode: 'scheduled',
+            at: startInstantInDays(startInDays, Date.now()),
+            // Zone context only; `at` is already an absolute instant and is never re-derived from it.
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }
+        : startMode === 'manual'
+          ? { mode: 'manual' }
+          : { mode: 'now' };
+    const journey = core.createJourneyFromGoalSpec(coach.goalSpec, start);
+    if (!journey) return;
     router.replace('/');
-  }, [coach.goalSpec, core]);
+  }, [coach.goalSpec, core, startMode, startInDays]);
 
   const headerBorder = useMemo(() => ({ borderBottomColor: theme.hairline }), [theme.hairline]);
 
@@ -182,6 +244,38 @@ function LiveCoachScreen() {
                 onAdvance={handleAdvance}
                 onSubmitOther={handleSubmitOther}
               />
+            )}
+
+            {/* WHEN IT STARTS (§5) — shown the moment there is a plan to approve, in the SAME option
+                cards the rest of the conversation uses. Picking a card only records the choice; the
+                Build CTA below is still what creates the Journey, so nothing here starts anything. */}
+            {coach.goalSpec && (
+              <>
+                <CoachOptions
+                  prompt={t('start.prompt')}
+                  options={startOptions}
+                  multiSelect={false}
+                  allowOther={false}
+                  selectedIds={[startMode]}
+                  disabled={false}
+                  onSelect={(id) => setStartMode(id as StartModeValue)}
+                  onAdvance={() => {}}
+                  onSubmitOther={() => {}}
+                />
+                {startMode === 'scheduled' && (
+                  <CoachOptions
+                    prompt={t('start.datePrompt')}
+                    options={startPresetOptions}
+                    multiSelect={false}
+                    allowOther={false}
+                    selectedIds={[String(startInDays)]}
+                    disabled={false}
+                    onSelect={(id) => setStartInDays(Number(id))}
+                    onAdvance={() => {}}
+                    onSubmitOther={() => {}}
+                  />
+                )}
+              </>
             )}
           </ScrollView>
 

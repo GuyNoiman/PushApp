@@ -91,6 +91,26 @@
     "resumeA11y": "Resume this journey",
     "paused": "Paused",
     "pausedBody": "This journey is paused. Reminders are off until you resume it.",
+    "future": "Saved for later",
+    "futureBody": "This Journey is ready and waiting. It starts on {{date}}, and until then it asks nothing of you.",
+    "futureReadyBody": "Its day has come around. It starts the moment you're ready.",
+    "futureManualBody": "There's no date on this one. You start it when you decide to.",
+    "futureWindow": "Planned for {{start}} through {{end}}",
+    "futureLength_one": "Planned as {{count}} day, counted from the day you start",
+    "futureLength_other": "Planned as {{count}} days, counted from the day you start",
+    "stepsPlanned_one": "{{count}} Step in the plan",
+    "stepsPlanned_other": "{{count}} Steps in the plan",
+    "startJourney": "Start Journey",
+    "startJourneyA11y": "Start this Journey now",
+    "startConfirm": {
+      "title": "Start this Journey today?",
+      "window": "It runs from {{start}} through {{end}}.",
+      "shift_one": "You had planned it for {{planned}}. Starting today moves every Step {{count}} day earlier, in the same order and with the same content.",
+      "shift_other": "You had planned it for {{planned}}. Starting today moves every Step {{count}} days earlier, in the same order and with the same content.",
+      "dismiss": "Not yet",
+      "confirm": "Start it",
+      "confirmA11y": "Yes, start this Journey today"
+    },
     "reminders": {
       "section": "Reminders",
       "off": "Off",
@@ -311,6 +331,22 @@
       "notificationTitle": "Time for {{title}}",
       "notificationBody": "Take your next Step."
     },
+    "start": {
+      "label": "When does it start?",
+      "now": "Start now",
+      "scheduled": "Pick a date",
+      "manual": "Start when I'm ready",
+      "on": "Starts {{date}}",
+      "earlierA11y": "Move the start one day earlier",
+      "laterA11y": "Move the start one day later",
+      "manualHint": "It waits in your Future list, fully planned, until you start it yourself.",
+      "full": "You already have {{max}} Journeys saved for later, which is the most the app holds at once. Start one or let one go from the Future tab and this choice comes back.",
+      "presets": {
+        "week": "In a week",
+        "twoWeeks": "In two weeks",
+        "month": "In a month"
+      }
+    },
     "summary": {
       "journey": "Journey",
       "duration": "Duration",
@@ -318,6 +354,7 @@
       "steps": "Steps",
       "why": "Your why",
       "reminder": "Reminder",
+      "start": "Start",
       "none": "—",
       "off": "Off",
       "noStepsYet": "None yet",

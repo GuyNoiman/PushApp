@@ -36,6 +36,12 @@ export interface CoachOption {
   /** When true, and another option is focused, this one shows a "Saved for later"
    * tag — the coach focuses one goal now and defers the rest. */
   canDefer?: boolean;
+  /**
+   * Offered but not currently choosable — dimmed and inert, with its `meta` carrying the plain
+   * reason. Used where an option is genuinely unavailable rather than wrong (the Future Journey cap,
+   * §10): the coach states the fact instead of hiding the choice or raising an error.
+   */
+  disabled?: boolean;
 }
 
 /** A single line the coach or user says, or a structured card the coach shows. */

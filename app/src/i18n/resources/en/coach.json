@@ -13,6 +13,22 @@
   "otherOption": "Other, type your own",
   "otherPlaceholder": "Type your own…",
   "savedForLater": "Saved for later",
+  "start": {
+    "prompt": "And when does this Journey begin?",
+    "datePrompt": "Which day?",
+    "now": "Start now",
+    "nowMeta": "Your first Step is ready today.",
+    "scheduled": "Pick a date",
+    "scheduledMeta": "It waits, fully planned, until that day.",
+    "manual": "Start when I'm ready",
+    "manualMeta": "No date. You start it yourself, whenever that is.",
+    "full": "You already have {{max}} Journeys saved for later, the most the app holds at once. Start one or let one go, and this comes back.",
+    "presets": {
+      "week": "In a week",
+      "twoWeeks": "In two weeks",
+      "month": "In a month"
+    }
+  },
   "sensitiveHandoff": "This is something that really deserves a person alongside you — not just an app. I don’t want to shape a plan here that a good professional should walk with you on. If it helps, you can still set up a Journey yourself, and I’ll be here to support you as you go.",
   "retry": "I didn’t quite catch that — my connection may have hiccuped. Mind telling me once more?",
   "journeyCard": {

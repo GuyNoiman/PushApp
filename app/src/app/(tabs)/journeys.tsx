@@ -39,12 +39,22 @@ import {
 import { CanceledPill } from '@/components/journeys/CanceledPill';
 import { ParkedGoalCard } from '@/components/journeys/ParkedGoalCard';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import {
+  futureStartState,
+  listFutureJourneys,
+  type FutureStartState,
+} from '@/core/journeys/futureJourneys';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
 
 // Active · History · Future — the segmented tabs (founder decision 2026-07-14).
-// Active is the default landing tab. Future is the "For later" surface: the goals the coach
-// detected but the user didn't build first (Parked/deferred goals, L1) wait here.
+// Active is the default landing tab. FUTURE is the "for later" surface, and it holds TWO different
+// things that are deliberately never conflated (Future Journey Management §12, approved for this
+// pass): real FUTURE JOURNEYS — complete, approved plans saved for later — as the primary content,
+// and BELOW them, under their own "Ideas for later" heading, the parked goals the coach detected but
+// the user didn't build (L1). A parked goal is an aspiration with no plan; a Future Journey is a
+// finished plan with no start yet. They look different, they are grouped apart, and neither is ever
+// presented as the other.
 //
 // HISTORY was called "Completed" until canceling shipped (Journey Abandonment, 2026-08-14). A tab
 // named "Completed" that also holds canceled Journeys is a label that lies, so the tab is now
@@ -61,6 +71,12 @@ interface JourneyCardData {
   view: JourneyView;
   /** The Dream this Journey serves, shown as an uppercase eyebrow. Absent when unlinked. */
   dream?: string;
+  /**
+   * For a FUTURE Journey only: which not-started-yet state it is in, resolved by the pure selector
+   * (scheduled for a day · its day has come around · no date at all). The card renders one calm start
+   * line from it and never a projection.
+   */
+  futureStart?: FutureStartState;
 }
 
 export default function JourneysScreen() {
@@ -90,6 +106,13 @@ export default function JourneysScreen() {
     const history = cards
       .filter((c) => c.view.bucket === 'completed')
       .sort((a, b) => byMostRecentlyEnded(a.view, b.view));
+    // The Future list's ORDER is owned by the pure selector (§7: scheduled by nearest start, then the
+    // manual-start ones) — the screen never re-sorts it, so the tab and the Coach can never disagree.
+    const future = listFutureJourneys(snapshot?.journeys ?? []).map((j) => ({
+      view: toJourneyView(j, now),
+      dream: j.dreamId ? dreamNameById.get(j.dreamId) : undefined,
+      futureStart: futureStartState(j, now),
+    }));
     return {
       active: cards.filter((c) => c.view.bucket === 'active'),
       // The History tab's two groups. `bucket` says WHERE a Journey is listed; `status` says what it
@@ -97,6 +120,7 @@ export default function JourneysScreen() {
       completed: history.filter((c) => c.view.status !== 'abandoned'),
       stopped: history.filter((c) => c.view.status === 'abandoned'),
       history,
+      future,
     };
   }, [snapshot?.journeys, dreamNameById]);
 
@@ -110,6 +134,15 @@ export default function JourneysScreen() {
   // The "For later" surface (L1): the real parked goals the coach detected but the user didn't build.
   // Read-only for now (founder decision 2026-08-13) — the coach will offer activate/dismiss in context.
   const parkedGoals = snapshot?.parkedGoals ?? [];
+  // How full the Future list is (§10). At the review threshold the tab shows ONE calm line, and at
+  // the cap it says so plainly. Neither ever blocks anything here: the cap is a focus mechanism, not
+  // an error, so there is no warning colour, no icon, and nothing to dismiss.
+  const capacity = snapshot?.futureCapacity;
+  const capacityLine = capacity?.capReached
+    ? t('future.capacity.full', { max: capacity.max })
+    : capacity?.offerReview
+      ? t('future.capacity.review', { count: capacity.count })
+      : undefined;
 
   return (
     <ThemedView style={styles.container}>
@@ -171,23 +204,53 @@ export default function JourneysScreen() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {activeTab === 'future' ? (
-            parkedGoals.length === 0 ? (
-              <EmptyState title={t('parked.empty.title')} body={t('parked.empty.body')} />
+            buckets.future.length === 0 && parkedGoals.length === 0 ? (
+              <EmptyState title={t('future.empty.title')} body={t('future.empty.body')} />
             ) : (
-              <View style={styles.list}>
-                <ThemedText type="smallBold" themeColor="textSecondary" style={styles.parkedHeading}>
-                  {t('parked.heading')}
-                </ThemedText>
-                {parkedGoals.map((goal) => (
-                  <ParkedGoalCard key={goal.id} goal={goal} />
-                ))}
+              <View style={styles.groups}>
+                {/* The Future Journeys themselves — the primary content, as full cards. Unheaded:
+                    the tab already says Future, and a second heading here would compete with the
+                    one below that keeps the parked ideas distinct. */}
+                {buckets.future.length > 0 && (
+                  <View style={styles.list}>
+                    {buckets.future.map((card) => (
+                      <JourneyCard
+                        key={card.view.id}
+                        view={card.view}
+                        dream={card.dream}
+                        bucket="future"
+                        futureStart={card.futureStart}
+                      />
+                    ))}
+                  </View>
+                )}
+                {capacityLine != null && buckets.future.length > 0 && (
+                  <ThemedText type="small" themeColor="textMuted" style={styles.capacityLine}>
+                    {capacityLine}
+                  </ThemedText>
+                )}
+                {/* Ideas for later — parked goals, under their own heading and their own card. An
+                    idea has no plan behind it; a Future Journey does. Never merged into one list. */}
+                {parkedGoals.length > 0 && (
+                  <View style={styles.list}>
+                    <ThemedText
+                      type="smallBold"
+                      themeColor="textSecondary"
+                      style={styles.parkedHeading}>
+                      {t('parked.heading')}
+                    </ThemedText>
+                    {parkedGoals.map((goal) => (
+                      <ParkedGoalCard key={goal.id} goal={goal} />
+                    ))}
+                  </View>
+                )}
               </View>
             )
           ) : activeTab === 'history' ? (
             buckets.history.length === 0 ? (
               <EmptyState title={t('history.empty.title')} body={t('history.empty.body')} />
             ) : (
-              <View style={styles.historyGroups}>
+              <View style={styles.groups}>
                 {/* Completed first, then Stopped — each group only renders when it has something,
                     so a user who has never canceled anything never sees a "Stopped" header. */}
                 {buckets.completed.length > 0 && (
@@ -259,10 +322,13 @@ function JourneyCard({
   view,
   dream,
   bucket,
+  futureStart,
 }: {
   view: JourneyView;
   dream?: string;
   bucket: JourneyBucket;
+  /** Present only on a Future card — which not-started-yet state to word the start line from. */
+  futureStart?: FutureStartState;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -281,28 +347,37 @@ function JourneyCard({
 
   // The canceled card's one honest line, straight from the snapshot the cancel latched: "3 of 12
   // Steps done", never "Milestone 4 of 4" (which would read like an achievement).
-  const sub = canceled
-    ? t('card.stepsDone', { done: view.doneSteps, total: view.totalSteps })
-    : completed
-      ? t('card.milestoneComplete', { phases: view.phases })
-      : t('card.milestone', { phase: view.phase, phases: view.phases });
+  //
+  // A FUTURE card's one line is its START instead: no Milestone count, because a Milestone count on
+  // a Journey that hasn't begun reads as position inside a plan already underway (§7 "no progress
+  // implying work has begun"). A scheduled start whose day has come around while activation was
+  // blocked says "ready when you are" — never late, never overdue (§7).
+  const sub = future
+    ? futureStart?.kind === 'scheduled'
+      ? t('card.starts', { date: shortDate(futureStart.at) })
+      : futureStart?.kind === 'ready'
+        ? t('card.readyWhenYouAre')
+        : t('card.startWhenReady')
+    : canceled
+      ? t('card.stepsDone', { done: view.doneSteps, total: view.totalSteps })
+      : completed
+        ? t('card.milestoneComplete', { phases: view.phases })
+        : t('card.milestone', { phase: view.phase, phases: view.phases });
 
   // A canceled Journey's footer is the day it was stopped — read from the stamp the cancel latched,
   // never projected. One canceled before that stamp existed shows no footer at all rather than an
   // invented date (undefined here = no footer row below).
-  const foot = canceled
-    ? view.endedAt != null
-      ? t('card.stopped', { date: shortDate(view.endedAt) })
-      : undefined
-    : completed
-      ? t('card.completed')
-      : future
-        ? t('card.starts', {
-            date: new Date(view.startedAt).toLocaleDateString(undefined, {
-              month: 'short',
-              day: 'numeric',
-            }),
-          })
+  //
+  // A FUTURE card has NO footer: its start already reads above, and an "ends in…" projection on a
+  // Journey that hasn't started would invent a deadline out of nothing.
+  const foot = future
+    ? undefined
+    : canceled
+      ? view.endedAt != null
+        ? t('card.stopped', { date: shortDate(view.endedAt) })
+        : undefined
+      : completed
+        ? t('card.completed')
         : endsInLabel(view.endsAt);
 
   return (
@@ -339,34 +414,34 @@ function JourneyCard({
             </ThemedText>
           </View>
           {/* State pill only where it adds info: DONE on Completed, CANCELED on a stopped Journey,
-              SOON on Future, PAUSED on a frozen Journey. A plain running Journey shows no pill (the
+              PLANNED on Future, PAUSED on a frozen Journey. A plain running Journey shows no pill (the
               Active tab already says so). CANCELED comes from the shared {@link CanceledPill} — the
-              one definition of that tag, so it reads identically here and under the Journey's Dream. */}
+              one definition of that tag, so it reads identically here and under the Journey's Dream.
+              The Future chip carries a calendar glyph in the calm teal tint (§7 "a calendar/state
+              indicator") — never the amber the app reserves for urgency: a plan saved for later is
+              the opposite of urgent. */}
           {canceled ? (
             <CanceledPill />
-          ) : completed || future || paused ? (
+          ) : future ? (
+            <View style={[styles.statePill, styles.futureChip, { backgroundColor: theme.tealTint }]}>
+              <Ionicons name="calendar-outline" size={11} color={theme.tealStrong} />
+              <ThemedText type="smallBold" style={{ color: theme.tealStrong, fontSize: 10 }}>
+                {t('card.planned')}
+              </ThemedText>
+            </View>
+          ) : completed || paused ? (
             <View
               style={[
                 styles.statePill,
-                {
-                  backgroundColor: completed
-                    ? theme.backgroundSelected
-                    : paused
-                      ? theme.goldTint
-                      : theme.tealTint,
-                },
+                { backgroundColor: completed ? theme.backgroundSelected : theme.goldTint },
               ]}>
               <ThemedText
                 type="smallBold"
                 style={{
-                  color: completed
-                    ? theme.textMuted
-                    : paused
-                      ? theme.goldStrong
-                      : theme.tealStrong,
+                  color: completed ? theme.textMuted : theme.goldStrong,
                   fontSize: 10,
                 }}>
-                {completed ? t('card.done') : paused ? t('card.paused') : t('card.soon')}
+                {completed ? t('card.done') : t('card.paused')}
               </ThemedText>
             </View>
           ) : null}
@@ -472,7 +547,9 @@ const styles = StyleSheet.create({
   list: {
     gap: Spacing.three,
   },
-  historyGroups: {
+  // A vertical stack of labelled groups — History's Completed/Stopped, and Future's Journeys +
+  // Ideas for later.
+  groups: {
     gap: Spacing.four,
   },
   groupHeading: {
@@ -523,6 +600,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
     flexShrink: 0,
+  },
+  futureChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+  },
+  capacityLine: {
+    paddingHorizontal: Spacing.one,
   },
   sub: {
     marginTop: Spacing.half,

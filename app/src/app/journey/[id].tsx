@@ -7,6 +7,11 @@
  * the hierarchy stays clear. Shows the current Phase + progress + start/end window,
  * the Steps list with per-Step status, and the user's "why" list.
  *
+ * FUTURE MODE (Future Journey Management, §7–§9): a Journey saved for later opens the same screen
+ * with its planned window in place of progress, a calm banner, its Steps read-only, and one
+ * "Start Journey" action behind a single confirmation. Pause is hidden (nothing is running yet);
+ * Edit and Delete stay, and editing never activates it.
+ *
  * Presentational only — reads the Journey from the snapshot by id and reports the
  * check-in intent upward; all rewards/Buddy logic runs in the engines (§19).
  *
@@ -14,7 +19,7 @@
  * every other id. If the id is unknown (stale deep-link), a gentle not-found shows.
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +43,7 @@ import {
 import { OverflowMenu, type OverflowMenuItem } from '@/components/ui/OverflowMenu';
 import { featureFlags } from '@/core/config/featureFlags';
 import { dreamsForJourney } from '@/core/dreams/dreams';
+import { futureStartState, previewStartNow } from '@/core/journeys/futureJourneys';
 import { unlivedStepCount } from '@/core/status/stepHistory';
 import type { StepStatus } from '@/core/status/stepStatus';
 import { remainingDaysInWeek } from '@/core/util/week';
@@ -70,12 +76,23 @@ export default function JourneyDetailScreen() {
   // Journey Abandonment: the cancel confirmation. Canceling is FINAL and there is NO undo window
   // (founder decision 2026-08-14), so this sheet is the last point the decision can be taken back.
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // Future Journey Management §9: starting a Future Journey takes ONE confirmation, which states the
+  // effective start and — when the user is starting a scheduled Journey ahead of its day — the plan
+  // shift they are agreeing to. Nothing activates until they confirm here.
+  const [confirmingStart, setConfirmingStart] = useState(false);
   // The REAL Support-Circle consequence of that cancel, read only while the sheet is open. Null
   // until it is known — the sheet then states nothing about the Circle rather than a guessed count,
   // and a failed read never stands between the user and a local action (PRD §8.4.4).
   const supportCircle = useSupportCircleImpact(id, confirmingCancel);
   // null = follow the current week; a number = the week the user paged to.
   const [weekIndex, setWeekIndex] = useState<number | null>(null);
+
+  // Smart Notification Timing (PRD §4): opening a Journey is positive timing evidence for any
+  // pending trial that covered it. A no-op when Smart timing is off, which is every build until the
+  // flag is on and every Journey until Smart mode is chosen for it — so this costs nothing here.
+  useEffect(() => {
+    if (id) core.noteJourneyViewed(id);
+  }, [core, id]);
 
   const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/journeys'));
 
@@ -106,7 +123,12 @@ export default function JourneyDetailScreen() {
   // more (Journey Abandonment PRD §8.2). Everything below gates on this, not on `completedAt` —
   // canceling deliberately never stamps a completion date.
   const isCanceled = view.status === 'abandoned';
-  const nextStep = isCanceled ? undefined : journey.steps.find((s) => !s.done);
+  // FUTURE MODE (Future Journey Management §7/§8): a complete, approved plan that has not started.
+  // It shows its planned window instead of progress, its Steps read-only, and one Start Journey CTA.
+  // It asks for nothing: no check-in, no "next" Step, no Phase, no percentage, no report.
+  const isFutureMode = view.status === 'future';
+  const futureStart = isFutureMode ? futureStartState(journey, Date.now()) : undefined;
+  const nextStep = isCanceled || isFutureMode ? undefined : journey.steps.find((s) => !s.done);
 
   // Dream Management (D40 / F1): the private, coach-owned Dream(s) this Journey serves — resolved on
   // the owner's OWN Journey view only. Dream titles are private on-device data and never enter any
@@ -127,7 +149,10 @@ export default function JourneyDetailScreen() {
   // Slice 9 — the calm "handle the gating Step early" nudge: only on the CURRENT week (never a
   // future/past page), only when a stack actually gates Steps this week, and only when the week's
   // runway is short. Title-free, Buddy-voiced, local UI copy (Step titles stay on-device, G1).
+  // Never on a FUTURE Journey: it has no current week to run out of, and nudging someone to "handle
+  // the gating Step early" on a plan that hasn't started is exactly the pressure this feature avoids.
   const showRunwayNudge =
+    !isFutureMode &&
     shownWeek === weekly.currentWeek &&
     layout.some((u) => u.kind === 'stack') &&
     remainingDaysInWeek(Date.now()) <= NUDGE_RUNWAY_DAYS;
@@ -140,12 +165,24 @@ export default function JourneyDetailScreen() {
     : undefined;
 
   // Freeze/Resume (J3): a paused Journey keeps all its progress but fires no reminders and hides its
-  // check-in CTA until resumed. Completed Journeys can't be paused.
+  // check-in CTA until resumed. Completed Journeys can't be paused — and neither can a FUTURE one:
+  // it hasn't started, so it is already producing nothing to pause, and freezing it would overwrite
+  // the very `future` state its planned start lives in (the engine refuses it too).
   const isFrozen = view.status === 'frozen';
-  const canFreeze = !journey.completedAt && !isCanceled;
+  const canFreeze = !journey.completedAt && !isCanceled && !isFutureMode;
   const onToggleFreeze = () => {
     if (isFrozen) core.resumeJourney(journey.id);
     else core.freezeJourney(journey.id);
+  };
+
+  // START JOURNEY (§9) — the manual/early path: the one transition from Future to Active, behind one
+  // confirmation. The preview is pure display math; nothing changes until `onConfirmStart` runs.
+  const startPreview = isFutureMode ? previewStartNow(journey, Date.now()) : undefined;
+  const onConfirmStart = () => {
+    setConfirmingStart(false);
+    // Idempotent in the engine: a second tap (or a scheduled activation that landed first) is a
+    // no-op, so there is nothing to guard here.
+    core.startJourneyNow(journey.id);
   };
 
   // CANCEL (Journey Abandonment) — offered for a Journey that is actually running or paused, and
@@ -224,15 +261,28 @@ export default function JourneyDetailScreen() {
             {/* A canceled Journey shows NO Phase, NO progress bar and NO percentage — only the
                 honest "N of M Steps done", counted against the Steps it held when it was stopped
                 (`stepsAtAbandon`). It must never read as a success (PRD §4.5 / §8.2). */}
-            {!isCanceled && (
+            {/* A FUTURE Journey shows NO Phase, NO bar and NO percentage either — there is no
+                progress to report before it starts (PRD §8). In their place: the PLANNED window it
+                would run over, and how many Steps are waiting in the plan. */}
+            {!isCanceled && !isFutureMode && (
               <ThemedText type="subtitle">
                 {t('detail.phase', { phase: view.phase, phases: view.phases })}
               </ThemedText>
             )}
             <ThemedText type="small" themeColor="textSecondary">
-              {t('detail.window', { start: shortDate(view.startedAt), end: shortDate(view.endsAt) })}
+              {isFutureMode
+                ? futureStart?.kind === 'manual'
+                  ? t('detail.futureLength', { count: journey.durationDays })
+                  : t('detail.futureWindow', {
+                      start: shortDate(view.startedAt),
+                      end: shortDate(view.endsAt),
+                    })
+                : t('detail.window', {
+                    start: shortDate(view.startedAt),
+                    end: shortDate(view.endsAt),
+                  })}
             </ThemedText>
-            {!isCanceled && (
+            {!isCanceled && !isFutureMode && (
               <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
                 <View
                   style={[
@@ -243,7 +293,9 @@ export default function JourneyDetailScreen() {
               </View>
             )}
             <ThemedText type="small" themeColor="textSecondary">
-              {t('detail.stepsDone', { done: view.doneSteps, total: view.totalSteps })}
+              {isFutureMode
+                ? t('detail.stepsPlanned', { count: view.totalSteps })
+                : t('detail.stepsDone', { done: view.doneSteps, total: view.totalSteps })}
             </ThemedText>
           </ThemedView>
 
@@ -262,6 +314,29 @@ export default function JourneyDetailScreen() {
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {t('detail.canceledBody')}
+                </ThemedText>
+              </View>
+            </View>
+          )}
+
+          {/* Future banner — says plainly that this plan hasn't started, in the calm teal tint. NOT
+              amber: amber is the app's urgency colour, and a Journey saved for later is the exact
+              opposite of urgent. A scheduled Journey whose day has already come around gets the
+              neutral "ready when you are" wording — never late, never overdue, never behind. */}
+          {isFutureMode && (
+            <View
+              style={[styles.futureBanner, { backgroundColor: theme.tealTint, borderColor: theme.teal }]}>
+              <Ionicons name="calendar-outline" size={18} color={theme.tealStrong} />
+              <View style={styles.pausedText}>
+                <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                  {t('detail.future')}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {futureStart?.kind === 'ready'
+                    ? t('detail.futureReadyBody')
+                    : futureStart?.kind === 'manual'
+                      ? t('detail.futureManualBody')
+                      : t('detail.futureBody', { date: shortDate(futureStart?.at ?? view.startedAt) })}
                 </ThemedText>
               </View>
             </View>
@@ -545,6 +620,27 @@ export default function JourneyDetailScreen() {
           </View>
         </ScrollView>
 
+        {/* Start Journey (§9) — the Future Journey's one action, in place of the check-in CTA. It is
+            the ONLY way a manual-start Journey ever begins, and the early-start path for a scheduled
+            one. Turquoise, not coral: this is an invitation, not a deadline. */}
+        {isFutureMode && (
+          <View style={styles.footer}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('detail.startJourneyA11y')}
+              onPress={() => setConfirmingStart(true)}
+              style={({ pressed }) => [
+                styles.cta,
+                { backgroundColor: theme.teal },
+                pressed && styles.pressed,
+              ]}>
+              <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
+                {t('detail.startJourney')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
+
         {/* Check in on the next Step (matches the mockup's bottom CTA). Hidden while paused. */}
         {nextStep && !journey.completedAt && !isFrozen && (
           <View style={styles.footer}>
@@ -565,6 +661,69 @@ export default function JourneyDetailScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* Start confirmation (§9) — states the EFFECTIVE start, and, when the user is starting a
+            scheduled Journey ahead of its day, exactly what happens to the plan: every Step moves by
+            the same number of days, in the same order, with the same content. No warning tone: this
+            is a good thing happening early, and nothing here is irreversible in the way a delete is. */}
+        <Modal
+          visible={confirmingStart}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setConfirmingStart(false)}>
+          <Pressable style={styles.modalScrim} onPress={() => setConfirmingStart(false)}>
+            <Pressable
+              style={[
+                styles.modalCard,
+                { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+                CARD_SHADOW,
+              ]}>
+              <ThemedText type="subtitle">{t('detail.startConfirm.title')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('detail.startConfirm.window', {
+                  start: shortDate(startPreview?.startsAt ?? Date.now()),
+                  end: shortDate(startPreview?.endsAt ?? Date.now()),
+                })}
+              </ThemedText>
+              {startPreview != null && startPreview.earlyByDays > 0 && futureStart?.kind === 'scheduled' && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('detail.startConfirm.shift', {
+                    count: startPreview.earlyByDays,
+                    planned: shortDate(futureStart.at),
+                  })}
+                </ThemedText>
+              )}
+              <View style={styles.modalActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('detail.startConfirm.dismiss')}
+                  onPress={() => setConfirmingStart(false)}
+                  style={({ pressed }) => [
+                    styles.modalBtn,
+                    { backgroundColor: theme.backgroundSelected },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    {t('detail.startConfirm.dismiss')}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('detail.startConfirm.confirmA11y')}
+                  onPress={onConfirmStart}
+                  style={({ pressed }) => [
+                    styles.modalBtn,
+                    { backgroundColor: theme.teal },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
+                    {t('detail.startConfirm.confirm')}
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {/* Destructive confirmation — nothing is removed until the user confirms here. */}
         <Modal
@@ -1128,6 +1287,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   canceledBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+  },
+  futureBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.two,

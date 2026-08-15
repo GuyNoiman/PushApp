@@ -64,3 +64,75 @@ export function futureCapacity(journeys: readonly Journey[]): FutureCapacity {
     offerReview: count >= reviewThreshold,
   };
 }
+
+/**
+ * WHICH of the three "not started yet" states a Future Journey is in, for display only (§7).
+ *
+ * `ready` is the deliberate third state: a scheduled Journey whose instant has passed but which has
+ * not been activated yet — the app was closed, or the account was inside an inactivity freeze that
+ * blocks activation. It is NOT late and NOT overdue; the plan is simply waiting. Nothing in this
+ * module derives urgency, and no surface built on it may add any.
+ */
+export type FutureStartState =
+  | { kind: 'scheduled'; at: number }
+  | { kind: 'ready'; at: number }
+  | { kind: 'manual' };
+
+export function futureStartState(journey: Journey, now: number): FutureStartState {
+  if (journey.startsAt == null) return { kind: 'manual' };
+  return journey.startsAt > now
+    ? { kind: 'scheduled', at: journey.startsAt }
+    : { kind: 'ready', at: journey.startsAt };
+}
+
+/**
+ * The absolute instant `days` from `now`, at {@link FUTURE_JOURNEY_POLICY.defaultStartHour} local
+ * time — what the creation surfaces store as {@link Journey.startsAt} for a scheduled start.
+ *
+ * Days are added on the CALENDAR (via the Date constructor), never as milliseconds, so a start that
+ * crosses a DST boundary still lands on the day the user picked. The result is an absolute epoch
+ * instant from then on: the stored `startTimeZone` is context only and is never used to re-derive it.
+ */
+export function startInstantInDays(days: number, now: number): number {
+  const today = new Date(now);
+  return new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + days,
+    FUTURE_JOURNEY_POLICY.defaultStartHour,
+    0,
+    0,
+    0,
+  ).getTime();
+}
+
+/** What starting a Future Journey RIGHT NOW would mean — the confirmation's facts (§9). */
+export interface StartNowPreview {
+  /** The instant it would actually begin (the effective start). */
+  startsAt: number;
+  /** Where its window would then end, by the same rule the Journey card and detail already use. */
+  endsAt: number;
+  /**
+   * How many whole days EARLIER than the recorded intention this start is. 0 when the Journey has no
+   * date, or when its instant has already passed — starting a Journey whose day has come around is
+   * not early, and nothing about it shifts.
+   */
+  earlyByDays: number;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Preview the "Start Journey" action (§9) so the confirmation can state the effective start and, for
+ * a scheduled Journey started early, the plan shift the user is agreeing to. Pure: it computes, it
+ * never activates — {@link JourneyEngine.activateJourney} is still the only writer.
+ */
+export function previewStartNow(journey: Journey, now: number): StartNowPreview {
+  const aheadMs = journey.startsAt != null ? journey.startsAt - now : 0;
+  return {
+    startsAt: now,
+    endsAt: now + journey.durationDays * DAY_MS,
+    // At least a whole day whenever the start really is ahead, so a few hours early never reads "0".
+    earlyByDays: aheadMs > 0 ? Math.max(1, Math.round(aheadMs / DAY_MS)) : 0,
+  };
+}

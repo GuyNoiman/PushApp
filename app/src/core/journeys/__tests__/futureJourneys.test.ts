@@ -4,7 +4,13 @@
  */
 import { FUTURE_JOURNEY_POLICY } from '../../config/futureJourneys';
 import type { Journey, JourneyStatus } from '../../types/domain';
-import { futureCapacity, listFutureJourneys } from '../futureJourneys';
+import {
+  futureCapacity,
+  futureStartState,
+  listFutureJourneys,
+  previewStartNow,
+  startInstantInDays,
+} from '../futureJourneys';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = 1_800_000_000_000;
@@ -92,5 +98,89 @@ describe('futureCapacity — the focus cap (§10)', () => {
       ...futures(2),
     ];
     expect(futureCapacity(journeys).count).toBe(2);
+  });
+});
+
+describe('futureStartState — which not-started-yet state a Future Journey is in (§7)', () => {
+  it('is `scheduled` while its instant is still ahead', () => {
+    expect(futureStartState(journey('j', { status: 'future', startsAt: NOW + DAY }), NOW)).toEqual({
+      kind: 'scheduled',
+      at: NOW + DAY,
+    });
+  });
+
+  it('is `ready` once the instant has passed — never late, never overdue', () => {
+    // The activation may have been blocked (app closed, account inside an inactivity freeze). The
+    // plan is simply waiting, and the state carries no urgency of any kind.
+    expect(futureStartState(journey('j', { status: 'future', startsAt: NOW - 9 * DAY }), NOW)).toEqual({
+      kind: 'ready',
+      at: NOW - 9 * DAY,
+    });
+  });
+
+  it('is `ready` exactly at the instant (the same boundary the clock reconciler uses)', () => {
+    expect(futureStartState(journey('j', { status: 'future', startsAt: NOW }), NOW).kind).toBe('ready');
+  });
+
+  it('is `manual` when there is no date at all', () => {
+    expect(futureStartState(journey('j', { status: 'future' }), NOW)).toEqual({ kind: 'manual' });
+  });
+});
+
+describe('startInstantInDays — a date chosen without a native picker', () => {
+  it('lands on the calendar day `days` from now, at the policy hour', () => {
+    const at = new Date(startInstantInDays(7, NOW));
+    const today = new Date(NOW);
+    const expected = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+    expect(at.getFullYear()).toBe(expected.getFullYear());
+    expect(at.getMonth()).toBe(expected.getMonth());
+    expect(at.getDate()).toBe(expected.getDate());
+    expect(at.getHours()).toBe(FUTURE_JOURNEY_POLICY.defaultStartHour);
+    expect(at.getMinutes()).toBe(0);
+  });
+
+  it('adds days on the CALENDAR, so a month-end rollover still lands on a real day', () => {
+    // Jan 30 + 30 days rolls through a 28-day February: Mar 1, 2026. The Date constructor does the
+    // carrying, which is why days are never added as milliseconds here (that is also what keeps a
+    // start that crosses a DST boundary on the day the user picked).
+    const at = new Date(startInstantInDays(30, new Date(2026, 0, 30, 15, 0, 0).getTime()));
+    expect(at.getMonth()).toBe(2); // March
+    expect(at.getDate()).toBe(1);
+  });
+
+  it('is strictly increasing in `days`', () => {
+    expect(startInstantInDays(14, NOW)).toBeGreaterThan(startInstantInDays(7, NOW));
+    expect(startInstantInDays(30, NOW)).toBeGreaterThan(startInstantInDays(14, NOW));
+  });
+});
+
+describe('previewStartNow — what "Start Journey" would mean (§9)', () => {
+  it('reports today as the effective start and the window that follows', () => {
+    const preview = previewStartNow(journey('j', { status: 'future', durationDays: 30 }), NOW);
+    expect(preview.startsAt).toBe(NOW);
+    expect(preview.endsAt).toBe(NOW + 30 * DAY);
+  });
+
+  it('reports how many whole days EARLY a scheduled start would be', () => {
+    const preview = previewStartNow(
+      journey('j', { status: 'future', startsAt: NOW + 10 * DAY }),
+      NOW,
+    );
+    expect(preview.earlyByDays).toBe(10);
+  });
+
+  it('never reports a bare zero for a start that really is ahead', () => {
+    const preview = previewStartNow(
+      journey('j', { status: 'future', startsAt: NOW + 3 * 60 * 60 * 1000 }),
+      NOW,
+    );
+    expect(preview.earlyByDays).toBe(1);
+  });
+
+  it('is NOT early for a manual-start Journey, or for one whose day has passed', () => {
+    expect(previewStartNow(journey('j', { status: 'future' }), NOW).earlyByDays).toBe(0);
+    expect(
+      previewStartNow(journey('j', { status: 'future', startsAt: NOW - 5 * DAY }), NOW).earlyByDays,
+    ).toBe(0);
   });
 });

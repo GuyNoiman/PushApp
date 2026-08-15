@@ -50,8 +50,8 @@ export function CoachOptions({
   const [otherText, setOtherText] = useState('');
   const hasSelection = selectedIds.length > 0;
 
-  const pickOption = (id: string) => {
-    if (disabled) return;
+  const pickOption = (id: string, optionDisabled: boolean) => {
+    if (disabled || optionDisabled) return;
     onSelect(id);
     // Single-focus: choosing a card is the answer, so advance straight away.
     if (!multiSelect) onAdvance();
@@ -72,19 +72,23 @@ export function CoachOptions({
       {options.map((opt) => {
         const selected = selectedIds.includes(opt.id);
         const deferred = !!opt.canDefer && !selected && hasSelection;
+        // A single option may be unavailable while the block as a whole is live (e.g. the Future
+        // Journey cap). It stays on screen, dimmed, with its `meta` explaining why.
+        const optionDisabled = disabled || !!opt.disabled;
         return (
           <Pressable
             key={opt.id}
             accessibilityRole="button"
-            accessibilityState={{ selected, disabled }}
+            accessibilityState={{ selected, disabled: optionDisabled }}
             accessibilityLabel={opt.title}
-            disabled={disabled}
-            onPress={() => pickOption(opt.id)}
+            disabled={optionDisabled}
+            onPress={() => pickOption(opt.id, !!opt.disabled)}
             style={({ pressed }) => [
               styles.card,
               { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
               selected && { borderColor: theme.teal, backgroundColor: theme.tealTint },
-              pressed && !disabled && styles.pressed,
+              !!opt.disabled && styles.dim,
+              pressed && !optionDisabled && styles.pressed,
             ]}>
             <View
               style={[

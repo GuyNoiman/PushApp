@@ -136,6 +136,8 @@ beforeEach(() => setSocial());
 function setApp(j: Journey) {
   const core = {
     getReasonLog: () => [],
+    // Smart Notification Timing: the screen notes the view on mount; a no-op when the flag is off.
+    noteJourneyViewed: jest.fn(),
     getStepStatus: () => 'unreported',
     willCompleteJourney: () => false,
     abandonJourney: jest.fn(() => j),

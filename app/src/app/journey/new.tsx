@@ -36,8 +36,10 @@ import { ChoiceChips } from '@/components/journey/ChoiceChips';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
 import type { NewStepInput } from '@/core/engines/JourneyEngine';
-import type { Cadence, Rhythm } from '@/core/types/domain';
+import { startInstantInDays } from '@/core/journeys/futureJourneys';
+import type { Cadence, Journey, Rhythm } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
@@ -69,6 +71,23 @@ const REMINDER_SLOTS = [
   { hour: 19, minute: 0, key: 'evening' },
 ] as const;
 
+/**
+ * The three start modes offered at final approval (Future Journey Management, §5). `now` is the
+ * DEFAULT, so a user who never touches this row gets exactly today's behaviour: a Journey that starts
+ * immediately, created through the unchanged {@link AppCore.createJourney}.
+ */
+const START_MODE_VALUES = ['now', 'scheduled', 'manual'] as const;
+type StartModeValue = (typeof START_MODE_VALUES)[number];
+
+/**
+ * Date selection WITHOUT a native picker, on purpose: the app ships no date-picker dependency, and
+ * adding one would break the Expo Go / web preview this is tested in. So a scheduled start is chosen
+ * as a day OFFSET — one tap for the common answers ({@link FUTURE_JOURNEY_POLICY.startPresetDays}),
+ * then a day at a time in either direction for anything else. The resolved calendar date is always
+ * shown in full, so the user is choosing a date, not an abstraction.
+ */
+const START_PRESET_KEYS = ['week', 'twoWeeks', 'month'] as const;
+
 let draftCounter = 0;
 function newDraftStep(): DraftStep {
   draftCounter += 1;
@@ -76,7 +95,7 @@ function newDraftStep(): DraftStep {
 }
 
 export default function NewJourneyScreen() {
-  const { core } = useApp();
+  const { core, snapshot } = useApp();
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('journey');
@@ -110,6 +129,11 @@ export default function NewJourneyScreen() {
   const [remindEnabled, setRemindEnabled] = useState(false);
   const [remindTimeIndex, setRemindTimeIndex] = useState(0);
 
+  // Stage 6 — the start mode (Future Journey Management §5), chosen at FINAL APPROVAL. Defaults to
+  // `now`: leaving this row alone creates the Journey exactly as it always has.
+  const [startMode, setStartMode] = useState<StartModeValue>('now');
+  const [startInDays, setStartInDays] = useState<number>(FUTURE_JOURNEY_POLICY.startPresetDays[0]);
+
   const [creating, setCreating] = useState(false);
 
   const canContinue = stage !== 0 || title.trim().length > 0;
@@ -132,6 +156,45 @@ export default function NewJourneyScreen() {
     value: index,
     label: t(`new.reminders.${slot.key}`),
   }));
+
+  // The Future list is capped (§10). At the cap the two "for later" modes are shown DIMMED with a
+  // plain explanation beside them — never hidden, never an error dialog, and never a silent failure
+  // at Create. Start now is always available, so the wizard can never dead-end.
+  const futureFull = snapshot?.futureCapacity?.capReached ?? false;
+  const startModeOptions = useMemo(
+    () =>
+      START_MODE_VALUES.map((value) => ({
+        value,
+        label: t(`new.start.${value}`),
+        disabled: futureFull && value !== 'now',
+      })),
+    [t, futureFull],
+  );
+  const startPresetOptions = useMemo(
+    () =>
+      FUTURE_JOURNEY_POLICY.startPresetDays.map((days, index) => ({
+        value: days,
+        label: t(`new.start.presets.${START_PRESET_KEYS[index]}`),
+      })),
+    [t],
+  );
+
+  // The chosen day, resolved through the pure helper so the wizard, the summary and the stored
+  // instant can never disagree. Recomputed per render (it depends on today) — cheap, and always
+  // right if the screen is left open across midnight.
+  const startsAt = startInstantInDays(startInDays, Date.now());
+  const startDateLabel = new Date(startsAt).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const nudgeStartDay = (delta: number) =>
+    setStartInDays((days) =>
+      Math.min(
+        FUTURE_JOURNEY_POLICY.maxScheduleDays,
+        Math.max(FUTURE_JOURNEY_POLICY.minScheduleDays, days + delta),
+      ),
+    );
 
   const why = useMemo(
     () => [whyStart.trim(), whyKeepGoing.trim(), ...hardMoments].filter(Boolean),
@@ -189,7 +252,7 @@ export default function NewJourneyScreen() {
     if (creating || !title.trim()) return;
     setCreating(true);
     try {
-      const journey = core.createJourney({
+      const input = {
         title: title.trim(),
         why,
         durationDays,
@@ -197,8 +260,27 @@ export default function NewJourneyScreen() {
         steps: stepInputs,
         // Journey Support Circle (D2): a wizard-built Journey has user-typed Step titles, so it is
         // Companion-INELIGIBLE — it may only ever offer the Encourager bundle.
-        createdVia: 'manual',
-      });
+        createdVia: 'manual' as const,
+      };
+
+      // The start mode chosen at final approval (§5). `now` keeps the original call untouched; the
+      // two "for later" modes go through the Future facade, which can decline at the cap — in which
+      // case nothing was created, so the wizard stays open rather than dismissing onto nothing.
+      let journey: Journey | null;
+      if (startMode === 'now') {
+        journey = core.createJourney(input);
+      } else if (startMode === 'scheduled') {
+        journey = core.createFutureJourney(input, {
+          mode: 'scheduled',
+          at: startsAt,
+          // The user's zone at approval, stored as CONTEXT only — `startsAt` is already absolute and
+          // is never re-derived from it.
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+      } else {
+        journey = core.createFutureJourney(input, { mode: 'manual' });
+      }
+      if (!journey) return;
 
       if (remindEnabled) {
         // Ask for notification permission only now, in context (never at launch).
@@ -649,6 +731,83 @@ export default function NewJourneyScreen() {
                         : t('new.summary.off')
                     }
                   />
+                  <SummaryRow
+                    label={t('new.summary.start')}
+                    value={
+                      startMode === 'scheduled'
+                        ? startDateLabel
+                        : t(`new.start.${startMode}`)
+                    }
+                  />
+
+                  {/* WHEN DOES IT START (Future Journey Management §5) — the last question before
+                      Create, because that is the moment the plan is approved. Three chips, with
+                      "Start now" preselected: doing nothing here behaves exactly as it always has. */}
+                  <View style={[styles.field, styles.startBlock]}>
+                    <ThemedText type="smallBold">{t('new.start.label')}</ThemedText>
+                    <ChoiceChips
+                      options={startModeOptions}
+                      value={startMode}
+                      onChange={setStartMode}
+                    />
+                    {futureFull && (
+                      <ThemedText type="small" themeColor="textMuted">
+                        {t('new.start.full', { max: FUTURE_JOURNEY_POLICY.max })}
+                      </ThemedText>
+                    )}
+
+                    {/* No native date picker on purpose: presets for the common answers, then a day
+                        at a time either way. The resolved date reads in full above the nudges. */}
+                    {startMode === 'scheduled' && !futureFull && (
+                      <View style={styles.field}>
+                        <ChoiceChips
+                          options={startPresetOptions}
+                          value={startInDays}
+                          onChange={setStartInDays}
+                        />
+                        <View style={[styles.dateRow, { borderColor: theme.hairline }]}>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={t('new.start.earlierA11y')}
+                            disabled={startInDays <= FUTURE_JOURNEY_POLICY.minScheduleDays}
+                            onPress={() => nudgeStartDay(-1)}
+                            style={[
+                              styles.dateNudge,
+                              { backgroundColor: theme.tealTint },
+                              startInDays <= FUTURE_JOURNEY_POLICY.minScheduleDays && styles.disabled,
+                            ]}>
+                            <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                              −
+                            </ThemedText>
+                          </Pressable>
+                          <ThemedText type="smallBold" style={styles.dateValue}>
+                            {t('new.start.on', { date: startDateLabel })}
+                          </ThemedText>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={t('new.start.laterA11y')}
+                            disabled={startInDays >= FUTURE_JOURNEY_POLICY.maxScheduleDays}
+                            onPress={() => nudgeStartDay(1)}
+                            style={[
+                              styles.dateNudge,
+                              { backgroundColor: theme.tealTint },
+                              startInDays >= FUTURE_JOURNEY_POLICY.maxScheduleDays && styles.disabled,
+                            ]}>
+                            <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+                              +
+                            </ThemedText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )}
+
+                    {startMode === 'manual' && !futureFull && (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t('new.start.manualHint')}
+                      </ThemedText>
+                    )}
+                  </View>
+
                   <ThemedText type="small" themeColor="textSecondary" style={styles.summaryNote}>
                     {t('new.summary.note')}
                   </ThemedText>
@@ -1067,6 +1226,30 @@ const styles = StyleSheet.create({
   },
   summaryNote: {
     marginTop: Spacing.two,
+  },
+  startBlock: {
+    marginTop: Spacing.two,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderWidth: 1,
+    borderRadius: Radius.card,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+  },
+  // ≥44pt touch targets on both nudges (a11y), with the date reading between them.
+  dateNudge: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.iconButton,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateValue: {
+    flex: 1,
+    textAlign: 'center',
   },
 
   // ── Footer ──

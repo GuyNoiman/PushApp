@@ -159,3 +159,69 @@ describe('createFutureJourney — the capacity cap (§10)', () => {
     expect(engine.createFutureJourney(input(), { mode: 'manual' })).not.toBeNull();
   });
 });
+
+describe('a Future Journey stays Future until it is deliberately started (§8)', () => {
+  it('REFUSES to freeze one — pausing a Journey that never started is meaningless', () => {
+    // A Future Journey already produces nothing to pause, and freezing it would overwrite the very
+    // `future` state its planned start lives in (Inactivity PRD §4 says to preserve it, not convert
+    // it). The detail screen hides Pause; the engine refuses it whoever asks.
+    const { engine, state } = setup();
+    const journey = engine.createFutureJourney(input(), { mode: 'scheduled', at: Date.now() + 7 * DAY });
+
+    expect(engine.freezeJourney(journey!.id)).toBeNull();
+    expect(state.journeys[0].status).toBe('future');
+    expect(state.journeys[0].startsAt).toBeDefined();
+  });
+
+  it('REFUSES to freeze a completed or canceled Journey too (the same positive gate)', () => {
+    const { engine, state } = setup();
+    const done = engine.createJourney(input());
+    done.status = 'completed';
+    done.completedAt = Date.now();
+    const stopped = engine.createJourney(input());
+    stopped.status = 'abandoned';
+
+    expect(engine.freezeJourney(done.id)).toBeNull();
+    expect(engine.freezeJourney(stopped.id)).toBeNull();
+    expect(state.journeys.map((j) => j.status)).toEqual(['completed', 'abandoned']);
+  });
+
+  it('EDITING a Future Journey never activates it (§8)', () => {
+    const { engine, state } = setup();
+    const at = Date.now() + 21 * DAY;
+    const journey = engine.createFutureJourney(input(), { mode: 'scheduled', at })!;
+
+    engine.updateJourney(journey.id, {
+      title: 'Run 10km',
+      durationDays: 60,
+      addSteps: [{ title: 'Sprint' }],
+    });
+
+    const saved = state.journeys[0];
+    expect(saved.status).toBe('future');
+    expect(saved.startsAt).toBe(at);
+    expect(saved.activatedAt).toBeUndefined();
+    expect(saved.title).toBe('Run 10km');
+  });
+
+  it('RESCHEDULING never activates it either, and dropping the date makes it manual-start', () => {
+    const { engine, state } = setup();
+    const journey = engine.createFutureJourney(input(), {
+      mode: 'scheduled',
+      at: Date.now() + 7 * DAY,
+    })!;
+    const moved = Date.now() + 40 * DAY;
+
+    expect(engine.setJourneyStart(journey.id, moved, 'Asia/Jerusalem')).not.toBeNull();
+    expect(state.journeys[0]).toMatchObject({
+      status: 'future',
+      startsAt: moved,
+      startTimeZone: 'Asia/Jerusalem',
+    });
+
+    engine.setJourneyStart(journey.id, undefined);
+    expect(state.journeys[0].status).toBe('future');
+    expect(state.journeys[0].startsAt).toBeUndefined();
+    expect(state.journeys[0].startTimeZone).toBeUndefined();
+  });
+});

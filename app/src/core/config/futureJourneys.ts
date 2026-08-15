@@ -19,4 +19,20 @@ export const FUTURE_JOURNEY_POLICY = {
   max: 10,
   /** Count at which the Coach may offer an OPTIONAL relevance review (§10). */
   reviewThreshold: 5,
+  /**
+   * The day offsets the creation surfaces offer as one-tap start presets. Deliberately COARSE — the
+   * question at final approval is "roughly when", not "at what minute". A user who wants a different
+   * day nudges from a preset a day at a time; the app ships no native date picker, so every surface
+   * is built from ordinary chips and buttons and keeps working in Expo Go and the web preview.
+   */
+  startPresetDays: [7, 14, 30],
+  /**
+   * The local hour a scheduled start lands on. A calm morning start rather than "the same minute of
+   * the day you happened to approve the plan". The stored {@link Journey.startsAt} is an absolute
+   * instant derived from this on the chosen calendar day, so DST can never move it afterwards.
+   */
+  defaultStartHour: 9,
+  /** The window a start may be scheduled into, in days from today. */
+  minScheduleDays: 1,
+  maxScheduleDays: 365,
 } as const;

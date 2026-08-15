@@ -28,8 +28,10 @@
     "completed": "Completed",
     "stopped": "Stopped {{date}}",
     "starts": "Starts {{date}}",
+    "planned": "PLANNED",
+    "startWhenReady": "Start when you're ready",
+    "readyWhenYouAre": "Ready when you are",
     "done": "DONE",
-    "soon": "SOON",
     "paused": "PAUSED",
     "canceled": "CANCELED",
     "stepsDone": "{{done}} of {{total}} Steps done",
@@ -40,6 +42,16 @@
     "thisWeek": "ends this week",
     "inWeeks_one": "ends in {{count}} wk",
     "inWeeks_other": "ends in {{count}} wks"
+  },
+  "future": {
+    "empty": {
+      "title": "Nothing saved for later yet",
+      "body": "When a Journey feels right but the timing doesn't, save it here. It waits, fully planned, until you're ready for it."
+    },
+    "capacity": {
+      "review": "You have {{count}} Journeys waiting here. Worth a look now and then, to see they are all still ones you want.",
+      "full": "This is as many Journeys as you can keep for later at once ({{max}}). Start one, or let one go, whenever you like."
+    }
   },
   "parked": {
     "heading": "Ideas for later",
@@ -61,10 +73,6 @@
       "body": "\"{{title}}\" will leave your Ideas for later list. You can always mention it to the coach again.",
       "cancel": "Keep",
       "confirm": "Remove"
-    },
-    "empty": {
-      "title": "No ideas saved yet",
-      "body": "When you tell the coach about more than one goal, the ones you're saving for later show up here."
     }
   }
 }

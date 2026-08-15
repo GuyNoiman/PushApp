@@ -4,6 +4,123 @@ Status: Living Document
 
 ---
 
+# 2026-08-14 (product-manager pass) — A paused Journey is RE-PLANNED on resume, not compensated (D51, fourth pass)
+
+**This corrects the entry immediately below.** A founder correction, same day, supersedes the freeze-credit
+design that entry recorded. Docs only; no code changed.
+
+**The correction.** Resuming a paused Journey is **not** compensated by adding the paused days to its end
+date. It is a **re-plan of the remainder, anchored at the resume instant**: *"the restart point becomes the
+start point for the remaining part of the Journey"*, every unlived Step is recalculated, the Journey's
+structure is unchanged, and the end date moves only as a **consequence** of the rebuild.
+
+**Why the old design was wrong, kept because it is the point.** Adding days to the end date leaves every
+Step exactly where it was. A Journey paused on a Sunday and resumed a month later on a Thursday keeps its
+Steps planned for Sundays — dates now in the past, on a weekday the person did not choose to restart on.
+The window would be honest and the plan would be fiction: a plan that no longer fits the life, just with a
+later finish. The superseded design is **preserved in place**, marked superseded, in
+`Step_Postponement_02_PRD.md` §14 Q5.0.a and in the D51 addendum — including the part of its reasoning that
+survives (the consent argument, which is why a rebuild needs no *new* approval for the window moving).
+
+**The mechanism, specified.** Which Steps move — unreported, undropped, dated ones, using
+**`deriveStepStatus`** and explicitly **not** `stepHasHistory`, because a merely-postponed Step reads as
+"history" to the cancel rule while still being work that is owed (both predicates already exist in
+`core/status/`; the finding is that they are not interchangeable). What is preserved — order, spacing,
+Milestones, the "why", the Support Circle, reminder rules, dependencies, content, and every id; a rebuild
+writes `plannedFor` and nothing else. **Rhythm re-anchoring**, the sharp part: `Step` has **no weekday
+field**, and `cadence`/`rhythm` carry pace but not days — weekday meaning lives only in account-level
+`SchedulingPrefs.preferredDays`, `ActiveHours` and `ReminderRule.trigger.weekdays`. So a plan's weekday
+pattern is an emergent artifact, not stored data (the same gap as PC-25, and why `weekly-planning.tsx` was
+archived for hashing a fake weekday). The recommended rule is **shift, then snap**: shift by the paused
+interval, then snap onto the account's preferred days using the helpers `Planner.ts` already has
+(`firstPreferredOnOrAfter`, `nextPreferred`, `atDaypart`), preserving order with a strict gap. The app must
+not claim to preserve weekday *meaning* it never captured. **Reuse:**
+`activateJourney(id, at, { rebase: true })` is the **floor, not the operation** — resume is a strict
+superset (different guard, a history filter, the snap, and an explicit window move); recommendation is to
+extract one shared `rebasePlan(...)` both callers use, keeping the `rescheduleStep` seam and its per-Step
+`PlanAdapted` event, adding one Journey-level `JourneyReplanned` event.
+
+**The resume conversation.** An optional, always-skippable "what made you stop, anything I should know"
+moment before the rebuild, sited on the **existing** `return.tsx` between the resume tap and the rebuild —
+**no new coach flow**; the existing *Talk to the Coach* button stays the route to a conversation. It reuses
+the Miss-Recovery reason vocabulary and UI (`core/config/reasons.ts`, the caring never-accusatory prompt,
+the `other`-only free-text field, D31 gender-aware copy), offering a subset of the same closed list rather
+than inventing reason ids. Free text is **G1 on-device-only, forever** and barred from every sync path. In
+this slice the answer is context (it routes an offer, e.g. toward the coach-led Journey-edit flow), not an
+input to the arithmetic; letting it actually reshape the rebuild is Future Vision, stated as such.
+
+**Three more questions closed.** **Q9** — the automatic J5 inactivity freeze gets the **same** treatment as
+J3, because under the re-plan model the consent moment moves from the freeze to the **resume**, and
+`return.tsx` never auto-resumes (each Journey is picked back up by its own tap). One code path, not two.
+**Q7** — Allies see a **paused/running status tag and nothing about the window**; the real finding is that
+this is **not expressible today**: `ProgressSummary` is a strict four-field whitelist with no status field,
+and `SocialProvider.publishAll` *withdraws* a paused Journey entirely, so a paused Journey currently
+disappears from an Ally's view rather than reading as paused. Widening it needs a narrowly-projected
+`'active' | 'paused'` field (never raw `JourneyStatus`, which would leak `completed`/`abandoned`) and a
+security-privacy review. **Q8** — an extension is **not reversible** (*"the Step is the thing that was
+postponed and therefore the Journey was extended"*), so the confirmation copy must state finality as a
+plain fact, never as a warning.
+
+**Consequences recorded:** `Journey.frozenAt` is still needed — more than before — now as the anchor the
+remainder is measured from rather than the input to a credit; the extension ledger keeps **two** causes
+(`postponement_extension` and the renamed `resume_replan`), because deriving the end date from Step dates
+instead was considered and **rejected** — `deferDependents` already moves `plannedFor` automatically and
+would thereby move the end date automatically, violating D51's own invariant; and the Resume control must
+stop being a silent toggle (today `journey/[id].tsx` calls `resumeJourney` with no confirmation at all,
+which is fine for a status flip and not fine for a rebuild).
+
+**Files changed:** `04_Product/PRD/Step_Postponement_02_PRD.md` (§14 Q5 rewritten as the re-plan model with
+the superseded credit design preserved in Q5.0.a; Q7/Q8/Q9 decided in place; Q8b opened; §5 reconciled with
+the ledger's second cause; §9's J3/J5 rows, §11's privacy rules, §16's acceptance direction, §17's
+categorization, the status header and the §14 intro updated; fourth-pass code grounding listed);
+`06_Decisions/Decision_Log.md` (**D51 amended in place** — no new number: the third-pass addendum's point 1
+marked superseded with its reason, a fourth-pass addendum added); `04_Product/PRD/PRD_Coverage_Gaps.md`
+(PC-26 row + detail section). `04_Product/PRD/Done/` untouched. Four questions remain open and are the
+founder's: §14 Q1, Q2, Q3, Q6.
+
+---
+
+# 2026-08-14 (repo-steward pass) — Step Postponement extension PRD: freeze compensation and the last-day question decided (D51 addendum)
+
+> **PARTLY SUPERSEDED, same day — see the entry above.** The freeze-**compensation** half of this entry no
+> longer describes the design: a paused Journey's remainder is **re-planned** on resume, not credited with
+> the paused days, and the J5 question it left open is now resolved. The last-day answer below still stands.
+> This entry is kept unedited as the record of what was decided and then corrected.
+
+Closed two of the eight open questions in `04_Product/PRD/Step_Postponement_02_PRD.md` §14 from a third
+founder pass, same day as D51 itself. Docs only; no code changed.
+
+**A manual Pause/Resume freeze (J3) DOES give the time back.** On resume, the Journey's end date moves out
+by the whole days it was frozen. This does not contradict D51's invariant ("a Journey's end date only ever
+moves because the user said so") — it is the same invariant applied correctly: an extension-after-
+postponement adds time *beyond* the approved plan and needs its own consent (the existing §7 sheet); freeze
+compensation adds nothing beyond the plan, it only restores the length already approved, and the consent
+moment for it is the **Pause tap itself**. Without compensation, pausing would silently shorten the approved
+plan — the exact drift the invariant exists to stop. **Scoped to J3 only** — the automatic 21-day account
+inactivity freeze (J5) has no equivalent user-initiated consent moment, so whether it also compensates is a
+new, deliberately unanswered question (§14 Q9), cross-referenced from §9's lifecycle table and from the
+`deferDependents` question (§14 Q6), which the same reasoning now sharpens.
+
+**Freeze-credit mechanics specified** (§14 Q5): the interval measured is `JourneyFrozen` → `JourneyResumed`;
+a new `Journey.frozenAt` field is needed (none exists today — `freezeJourney` only flips `status`); the
+credit is a new `cause: 'freeze_credit'` entry in the same append-only extension ledger §5 already proposes,
+generalized with a `cause` field so there is one auditable history of every reason a Journey's end date has
+moved; repeated freeze/resume cycles each add their own entry; an unresumed freeze credits nothing until it
+resolves; the credit stacks additively with any prior postponement extension; and the user-facing copy is
+proposed but marked as needing the founder's confirmation, same status as the existing §7 copy.
+
+**Nothing needs to happen on a Journey's last day beyond the existing celebration.** The completion ceremony
+(I1/D42) stays the only end-of-Journey moment; a pre-end nudge, countdown, and plan-review prompt were each
+considered in the PRD and are declined, not merely left unbuilt.
+
+**Files changed:** `04_Product/PRD/Step_Postponement_02_PRD.md` (§14 Q4/Q5 moved from open to decided in
+place, preserving the original recommendation and rejected alternatives; new §14 Q9; §9's J3/J5 lifecycle
+rows updated to match; §17 categorization updated; status header and §14 intro corrected); `06_Decisions/
+Decision_Log.md` (D51 addendum — surgical insert, no new decision number); `04_Product/PRD/
+PRD_Coverage_Gaps.md` (PC-26 row + detail section updated to match).
+
+---
+
 # 2026-08-14 — Partner content, second terminology pass: `Meta-Coach` resolved, `intervention` split, ONE Weekly Review (D48–D50)
 
 Second editing pass over `10_Partner_Coaching_Content/` (the external coaching partner's v1.1 package),

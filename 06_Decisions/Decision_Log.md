@@ -736,13 +736,99 @@ anchors on `createdAt` while `journeyView.endsAt` anchors on `effectiveStartAt` 
 any Journey activated later than it was created, and the existing `crosses_journey_end` warning misfires
 for Future Journeys.
 
-**Categorization:** **Approved** (everything above) + **Open Question** (the eight items in
-`Step_Postponement_02_PRD.md` §14 — most notably what, if anything, is shown at the extension moment: the
-founder decided the rule, not that copy).
+**Addendum — third pass, same day (2026-08-14): two of the original eight §14 questions answered.**
+
+1. **~~A manual Pause/Resume freeze (J3) gives the time back by extending the end date.~~ SUPERSEDED the
+   same day by the fourth pass below — see "Addendum — fourth pass".** Recorded here rather than deleted,
+   because the reasoning is still load-bearing. **The superseded answer:** *"Yes, a freeze should also
+   extend the remaining time. On resume we calculate how long the Journey was frozen and add it to the end
+   date."* — implemented as a `cause: 'freeze_credit'` entry on the append-only extension ledger, computed
+   automatically inside `resumeJourney`, with no separate approval sheet, scoped to J3 only because J5 has
+   no Pause-tap consent moment. **Why it was superseded:** adding days to the end date leaves **every Step
+   exactly where it was**, so a Journey paused on a Sunday and resumed a month later on a Thursday keeps
+   Steps planned for Sundays — dates now in the past, on a weekday the person did not choose. The window
+   became honest and the plan became fiction. **What survives intact and is carried forward:** the consent
+   reconciliation this pass established — the invariant is about **consent**, not about which caller writes
+   a field; an extension-after-postponement adds time *beyond* the approved plan and needs its own consent
+   (the §7 sheet), whereas restoring the working length of a plan the user already approved adds nothing
+   beyond it, and failing to give the time back would *itself* be the drift the invariant exists to
+   prevent. That argument is why the fourth pass's rebuild needs no *new* approval for the window moving.
+2. **Nothing needs to happen on a Journey's last day beyond the existing celebration.** *"Nothing needs to
+   happen on the last day. After a Journey ends there is a celebration, and that is enough."* The completion
+   ceremony (**I1/D42**) stays the only end-of-Journey moment; a pre-end nudge, a countdown and a plan-review
+   prompt were each considered and are declined, not merely unbuilt. **This answer stands, unaffected by the
+   fourth pass.**
+
+**Addendum — fourth pass, same day (2026-08-14): the founder corrects the third pass and closes three more
+questions.** This addendum **supersedes point 1 above**. It does not take a new decision number: it is the
+same decision, corrected.
+
+1. **A pause is not compensated — the remainder is RE-PLANNED.** The founder's correction:
+
+   > "I don't see this as compensation. It is simply continuing the plan (the Journey) from the point where
+   > we stopped, without changing the Journey's structure. **The restart point becomes the start point for
+   > the remaining part of the Journey.** And yes, all the Steps should also be recalculated accordingly. In
+   > practice, if the user stopped the plan on a Sunday and restarted it a month later on a Thursday, the
+   > remaining part of the Journey has to be **re-planned** — so what is needed here is a rebuild process
+   > that essentially keeps the same plan and adapts it to the restart time.
+   >
+   > Also, at restart we could **ask the user what caused them to stop and whether they have any notes** they
+   > want to give before the plan is rebuilt — and then take what they say into account and rebuild it better."
+
+   **What this settles.** The operation is a **rebuild of the remainder anchored at the resume instant**, not
+   arithmetic on an end date. Every unreported, undropped, dated Step is recalculated; the Journey's
+   *structure* is untouched (order, spacing, Milestones, the "why", the Support Circle, reminder rules and
+   every id are preserved); and **the end date moves only as a consequence of the rebuild, never as the
+   operation itself**. At the resume the user may optionally be asked what made them stop, with the answer
+   used as context for the rebuild. Full mechanics — scope rule, weekday re-anchoring, reuse of the existing
+   rebase, the resume conversation, the ledger consequence, events and edge cases — are in
+   `04_Product/PRD/Step_Postponement_02_PRD.md` §14 Q5.1–Q5.7.
+
+   **Why the correction matters beyond this feature:** it distinguishes *bookkeeping* from *the plan*. An app
+   that gives back the days but not the fit has satisfied its own ledger and not the person — which is
+   exactly the growth-before-engagement test in `CLAUDE.md` §3.4.
+
+2. **The automatic J5 inactivity freeze gets the same treatment as J3 — Q9 resolved.** The third pass left
+   this open because J5 has no Pause tap to point at as consent. Under the re-plan model the consent moment
+   is no longer the *freeze* but the **resume**, and a resume is an explicit user action in both cases:
+   `app/src/app/return.tsx` **never auto-resumes** — it offers Talk to the Coach / Choose Journeys to resume
+   / Not now, and each Journey is picked back up by its own tap, with Keep it paused and Cancel it as equal
+   alternatives. One code path, not two; the only surviving difference is `freezeReason` provenance.
+
+3. **Allies see a status tag, and nothing about the window.** *Allies "should see a tag of the Journey's
+   status (changed to paused or resumed), but for now there is no display beyond that."* **Approved as a
+   rule; not expressible in today's code** — a real finding, not a detail: `ProgressSummary`
+   (`app/src/core/social/SocialGateway.ts`) is a strict four-field whitelist (`journeyId`, `title`,
+   `progress`, `streak`) with **no status field**, and `SocialProvider.publishAll` gates on the positive
+   `isRunning` predicate and **withdraws** a paused Journey's summary entirely — so today a paused Journey
+   *disappears* from an Ally's view rather than showing as paused. Expressing the tag requires adding one
+   narrowly-projected `status: 'active' | 'paused'` field (never the raw `JourneyStatus`, which would leak
+   `completed`/`abandoned`) and changing the publish gate to a two-branch rule that still withdraws
+   everything else. That widens a whitelist whose own comment forbids widening it without review, so it is
+   **Proposed, pending a security-privacy review**.
+
+4. **An extension is NOT reversible.** *"the Step is the thing that was postponed and therefore the Journey
+   was extended, so this action cannot really be undone."* The extension is the *consequence* of an event
+   that already happened; undoing it would strand the postponed Step outside the window again, which is the
+   failure the feature exists to fix. Same stance as **D46**. **Consequence:** the §7 confirmation copy must
+   be honest about finality — as a stated fact, never as a warning, and with none of §7's forbidden
+   vocabulary (no icon, no red, no "Are you sure?").
+
+**Categorization:** **Approved** — the fourth pass's four answers, plus the third pass's last-day answer.
+**Superseded** — the third pass's freeze-credit model (preserved above and in `Step_Postponement_02_PRD.md`
+§14 Q5.0.a with the reason). **Proposed, pending security-privacy review** — the Ally status-tag mechanism.
+**Open Question** — four items remain in `Step_Postponement_02_PRD.md` §14: **Q1** (what is shown at the
+extension moment — the founder decided the rule, not the copy), **Q2** (the wizard's 90-day option), **Q3**
+(whether an extension also moves `plannedFor`), **Q6** (the `deferDependents` cascade); plus **Q8b** (what
+the completion card shows), which is a design question for ux-designer + content-writer rather than a
+founder ruling, and whether Journey-level pause reasons should be added to the closed reason list.
 **Reflected in:** `04_Product/PRD/Step_Postponement_02_PRD.md` (the continuation PRD: the model
 recommendation, the exact trigger, the approval moment, lifecycle interactions, metrics and open
-questions); `04_Product/PRD/README.md` (index); `04_Product/PRD/PRD_Coverage_Gaps.md` PC-26 (the gap this
-closes at the specification level; the implementation gap remains).
+questions — §14 Q4 decided in place; §14 Q5 **rewritten** as the re-plan model with the superseded credit
+design preserved in Q5.0.a; Q7/Q8/Q9 decided in place; Q8b opened; §5 reconciled with the ledger's second
+cause; §9's J3/J5 rows, §11's privacy rules, §16's acceptance direction and §17's categorization updated to
+match); `04_Product/PRD/README.md` (index); `04_Product/PRD/PRD_Coverage_Gaps.md` PC-26 (the gap this closes
+at the specification level; the implementation gap remains).
 `04_Product/PRD/Done/Step_Postponement_PRD.md` (D37) is immutable and was **not** edited; nothing in it is
 rescinded.
 

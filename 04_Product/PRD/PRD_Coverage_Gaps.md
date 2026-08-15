@@ -67,7 +67,7 @@ and from a deliberate Future item. Those states require different work and must 
 | Coach has no specification | `Coach_Conversation_PRD.md` now covers the surface, entry contexts, one rolling conversation, retention/reset, development-only scripted mode, and the boundary with the separate agent-intelligence workstream | **Resolved documentation gap** | Implement against that PRD when the production Coach architecture is ready; do not write another screen PRD |
 | Weekly Review is not generated in production | The screen, week gate, proposal, 48-hour lifecycle and approval path are built, but `AppCore` runs them only when `adaptiveCoach` or its development-only sibling enables `adaptiveEnabled`; the production flag is off | **Implementation/release gap, not PRD coverage** | Decide which minimum evidence engine can safely be enabled for MVP, then remove the Weekly Review's accidental dependence on the whole experimental adaptive-Coach bundle or approve that bundle for production |
 | Experts cannot contribute to Weekly Review | D50 approves one shared Weekly Review with nested per-Journey/per-expert contributions, but explicitly records that no contribution interface exists | **Approved architecture + Future specification/implementation gap** | Write a continuation PRD outside `Done/` before wiring partner content; never edit the immutable completed Weekly Review PRD |
-| Three orphaned screens | `weekly-planning.tsx`, `missions.tsx`, and `achievements.tsx` are registered root routes with no entry point. Weekly Planning renders invented weekdays; Achievements renders placeholder data | **Product cleanup decision** | Archive/remove the routes from the shipping Stack for now. Their future product ideas remain preserved; only write a new surface PRD if one is deliberately revived |
+| Three orphaned screens | Founder approved hiding all three. `weekly-planning.tsx`, `missions.tsx`, and `achievements.tsx` have been moved out of the router tree into `app/src/archive/screens/`; their Stack registrations were removed | **Resolved cleanup gap** | Keep their Future concepts and restoration instructions preserved in `UX/Archived_Screens.md`; require a deliberate scope decision and real entry point before restoring any route |
 | Circle Invite button is empty | All six founder decisions in `Invite_Friend_Acquisition_PRD.md` §14 were approved on 2026-08-14. The live Circle button still has an empty handler | **Specification resolved; staged implementation gap** | Ship the truthful interim share when a stable destination exists, while retaining a required follow-up for full token/code redemption and automatic pending requests |
 | A Journey cannot continue indefinitely | Founder clarified that Journeys are planned for at most two months and remain finite. An approved manual Step postponement may extend the Journey's end date; the extension is never automatic | **Product question resolved; specification delta + implementation gap** | Create a numbered continuation to the immutable Step Postponement PRD, then update postponement code to extend the Journey only when the user explicitly approves the extension; see PC-26 |
 
@@ -125,7 +125,7 @@ One line per gap. The substance — what each PRD must actually answer — is in
 | P2 | PC-11 | **Onboarding shell (around K2)** | K1 | One `onboarding.tsx` route; root `_layout` first-run gate; resume from persisted answers; notification pre-prompt added 2026-08-13 | The shell's own rules: gate, resume, skip-all, re-onboarding after account delete | extend `Onboarding_Questionnaire_PRD.md` (new section) | The PRD names K1 as owner of the shell but does not spec it. Prefer a section over a new file |
 | P2 | PC-12 | **Journey detail** — `app/src/app/journey/[id].tsx` | J1–J4 | Composite screen: weekly Step pager, why list, Dream link card, reminder card, Support Circle card, dependency deck, final-step confirm | No PRD for the composition/hierarchy of the screen | `Journey_Detail_Screen_PRD.md` | Each *component's* behaviour is covered elsewhere; this is about what belongs on the screen and in what order |
 | P2 | PC-13 | **Parked goals / "For later"** | L1 | `AppState.parkedGoals` persists coach-detected extra goals; the Journeys "Future" tab activates or dismisses them; sensitive domains filtered at capture **and** at activation | Spec for label, cap, and activation semantics — all three are explicitly open per D44 | `Parked_Goals_PRD.md` | D44 lists the open founder questions verbatim; the PRD should resolve them, not restate them |
-| P2 | PC-14 | **Weekly planning** — `app/src/app/weekly-planning.tsx` | — | Registered as a modal in the root Stack, but **no code anywhere navigates to it**. Its own header declares a DATA GAP: `Step` has no per-weekday field, so weekdays are hashed from the Step id | A decision on its fate, then either a PRD or an archive entry | `Weekly_Planning_PRD.md` *(only if kept)* | Overlaps `Weekly_Review_PRD.md` + D43's two-layer split. **Do not spec before deciding whether it survives** |
+| Resolved | PC-14 | **Weekly planning** | — | Removed from the router tree and preserved under `app/src/archive/screens/`; its invented weekday fallback is not user-reachable | Archived with restoration conditions | — | `UX/Archived_Screens.md` is authoritative; a real weekday model and surface PRD are required before revival |
 | P2 | PC-15 | **Authentication & account model** | E1 · K1 | `core/profile/simulatedUser` is a dev stand-in; Settings shows "Coming soon" for Apple and a simulated Google row; social auth is anonymous | No PRD for sign-in, identity linking, or what happens to local data on first real sign-in | `Account_and_Sign_In_PRD.md` | 🔒 Apple Developer account. Data-migration-on-sign-in is the risky part; loop in **security-privacy** |
 | P2 | PC-16 | **Photo attached to a Step report** | open (2026-08-09) | Nothing. `StepReportSheet` has no attachment path | Whole feature. **Open Question**, not approved | `Step_Report_Photo_PRD.md` | Founder-raised. On-device-first per G1; upload path is a privacy decision, not an implementation detail |
 | P2 | PC-17 | **Messaging + Groups (deferred, but shipping dead UI)** | D29 | Inbox has a non-functional compose control and a permanently empty Groups tab | Either a spec or an explicit UI removal decision | — (fold into PC-04) | D29 defers both post-MVP. The gap is that **deferred features still render controls** |
@@ -134,10 +134,10 @@ One line per gap. The substance — what each PRD must actually answer — is in
 | P3 | PC-20 | **Housekeeping — README index holes** | — | `Future/User_Learning_PRD.md` is not indexed; `Personal_Growth_Style_Assessment_Form.md` (reference material, not a PRD) is not indexed either | Two index lines, plus a note that the assessment form is reference input | — | Purely additive edits to `README.md` |
 | P3 | PC-21 | **Buddy screen** — `app/src/app/(tabs)/buddy.tsx` | B1 | Route alive behind `href: null`; `BuddyScene`, inventory and `EvolveReveal` intact | No PRD for Buddy as a surface | `Future/Buddy_Companion_PRD.md` | D45: deferred to Future, **vision preserved, terminology unchanged**. `Future/Points_and_Leveling_PRD.md` covers Buddy Level only |
 | P3 | PC-22 | **Shop / coin economy** — `app/src/app/shop.tsx` | D29 | Route alive; reachable only from the archived Buddy screen. Coins still accrue in the engine but are hidden | No PRD anywhere for the shop or the coin sink | `Future/Shop_and_Coin_Economy_PRD.md` | D29 hid Coins with no sink. Flag the growth-before-engagement tension before reviving |
-| P3 | PC-23 | **Orphaned routes** — `missions.tsx`, `achievements.tsx` | B3 · B4 | Registered in the root Stack, **no entry point anywhere**; `achievements.tsx` renders placeholder sample data | An `Archived_Screens.md` entry each (their Future PRDs already exist) | — | `Future/Missions_PRD.md` and `Future/Achievements_Engine_PRD.md` cover the *features*; the orphaned routes are undocumented |
+| Resolved | PC-23 | **Archived Missions and Achievements routes** | B3 · B4 | Both screens and the Achievements placeholder data were moved out of the router tree; Stack registrations and shipping i18n namespaces were removed | Nothing for MVP | — | Future PRDs and restoration instructions remain preserved; neither feature is deleted |
 | P3 | PC-24 | **UX specs are stale, not coverage** | G1 | Every file in `04_Product/UX/` is dated 2026-07-06/07 | Re-spec after the PRDs land — **not** Codex work | — | See §4. These predate D23 (pivot) and the 2026-08-07 redesign |
 | P3 | PC-25 | **Home's stand-in data heuristics** | H1 | `urgencyForHour` fakes time pressure from the clock; "today" = first pending Step per active Journey; `weekdayForStep` hashes ids | A model decision on per-Step due times/weekdays | — (fold into PC-02 + PC-14) | Every one is marked `TODO(data)` in code. The **model** gap is the real item; the screens just cope |
-| P2 | PC-26 | **Manual postponement extends a finite Journey** | — | Every Journey has a planned duration of at most two months. Postponement currently changes only the Step occurrence/reminder and does not extend `durationDays` or the effective end date | Exact extension transaction, user confirmation, date calculation, limits, repeated postponements and downstream scheduling are not yet specified or built | `Step_Postponement_02_PRD.md` outside `Done/` | **Approved direction:** extension is manual, never automatic. The original PRD is immutable. This is not an endless-Journey model and does not revive the parked Practice object |
+| P2 | PC-26 | **Manual postponement extends a finite Journey; and a paused Journey is re-planned on resume** | — | Every Journey has a planned duration of at most two months. Postponement currently changes only the Step occurrence/reminder and does not extend `durationDays` or the effective end date. A paused Journey, on resume, keeps every Step on its old (now past) dates | Exact extension transaction, user confirmation, date calculation, limits, repeated postponements and downstream scheduling are specified (D51 + its 2026-08-14 addenda); **plus** the resume re-plan of the remainder; **not yet built** | `Step_Postponement_02_PRD.md` outside `Done/` | **Approved direction:** extension is manual, never automatic. **Approved (2026-08-14 fourth-pass addendum to D51, superseding the third pass):** resuming a paused Journey **re-plans its remainder** from the resume instant — the restart point becomes the start point for the rest of the Journey and every unlived Step is recalculated; the end date moves only as a consequence. The earlier "freeze credit" (add the paused days to the end date) is **superseded and preserved** in §14 Q5.0.a. The automatic J5 inactivity freeze gets the same treatment (§14 Q9 resolved). Allies see a paused/running status tag only — **not expressible in today's `ProgressSummary` whitelist** (§14 Q7). An extension is **not reversible** (§14 Q8). The original PRD is immutable. This is not an endless-Journey model and does not revive the parked Practice object |
 | P2 | PC-27 | **Weekly Review contribution contract** | D50 | One Weekly Review exists; experts have no typed way to contribute a nested per-Journey block, evidence, recommendation or display content | A continuation PRD defining the contract, trust boundary, priority/conflict rules, safety, rendering, persistence and approval semantics | `Weekly_Review_Contributions_02_PRD.md` | `Done/Weekly_Review_PRD.md` is immutable. D50 stages the slot as Future even though the architecture is Approved |
 
 ---
@@ -281,15 +281,11 @@ directly or re-runs the interview. The PRD should close those three, plus expiry
 January is still sitting there in June), and whether a dismissed goal can return if the user mentions it
 again. Keep the terminology decision honest: "For later" is a UI label, not a new object in the model.
 
-### PC-14 · Weekly planning — **decide before speccing**
+### PC-14 · Weekly planning — **resolved for MVP**
 
-This route is orphaned: it is registered as a modal in the root Stack and **nothing in the app navigates
-to it**. It also carries a self-declared data gap — the domain `Step` has no per-weekday field, so
-`weekdayForStep` hashes the Step id into a biased Mon/Wed/Fri spread purely so the layout has something
-to render. Since D43 established the two-layer split (strategic Weekly Review vs. tactical per-occurrence
-recovery), the honest first question is whether weekly planning still exists as a distinct product idea
-at all. If it is cut, it needs an `Archived_Screens.md` entry, not a PRD; if it is kept, the PRD is
-blocked on a model decision about per-Step scheduling.
+The route is no longer part of the shipping router. Its source and test are preserved under the archive,
+with the real weekday-model dependency and restoration conditions documented in `UX/Archived_Screens.md`.
+It must not return merely because the old screen still exists on disk.
 
 ### PC-15 · Authentication & account model
 
@@ -359,10 +355,10 @@ feature, not on the objection.
 
 ### PC-23 · Orphaned routes
 
-`missions.tsx` and `achievements.tsx` are registered in the root Stack with no entry point anywhere, and
-`achievements.tsx` renders placeholder sample data. Their features are already Future-specced; what is
-missing is an `Archived_Screens.md` row for each so a future reader knows they are intentionally
-unreachable rather than accidentally orphaned. Same treatment as PC-14 if weekly planning is cut.
+Resolved for MVP. Missions and Achievements were moved out of the router tree and documented in
+`UX/Archived_Screens.md`. Their Future PRDs and dormant concepts remain preserved, but neither surface is
+deep-linkable or visible in the MVP. Restoring either requires an approved surface specification, real data
+and a deliberate entry point.
 
 ### PC-26 · Manual postponement extends a finite Journey
 
@@ -377,6 +373,38 @@ the detailed contract belongs in `Step_Postponement_02_PRD.md` outside `Done/`. 
 the confirmation moment and copy; whether extension equals the exact overflow or a whole day/week; repeated
 postponements; the maximum permitted extended duration; what happens to other scheduled Steps and reminders;
 Weekly Review treatment; Ally notices; time-zone boundaries; cancellation/reversal; and atomic persistence.
+As of 2026-08-14 that PRD also settles: nothing happens on a Journey's last day beyond the existing
+completion ceremony (§14 Q4).
+
+**Corrected the same day (fourth founder pass) — a paused Journey is RE-PLANNED, not compensated.** An
+earlier version of this section recorded that a manual Pause/Resume (J3) freeze *compensates* the end date
+on resume via a `freeze_credit` ledger entry. **That design is superseded.** The founder's correction: it is
+not compensation, it is *continuing the Journey from where it stopped* — the restart point becomes the start
+point for the remaining part, and every unlived Step is recalculated, keeping the same plan and adapting it
+to the restart time. The end date moves only as a **consequence** of the rebuild.
+
+The superseded design failed for a concrete reason worth keeping: adding days to the end date leaves every
+Step where it was, so a Journey paused on a Sunday and resumed a month later on a Thursday keeps Steps
+planned for Sundays. The user gets a plan that no longer fits their life, just with a later finish. The full
+design — which Steps move (`deriveStepStatus`, **not** `stepHasHistory`), what is preserved, the
+preferred-day re-anchoring and its honest limits, reuse of `activateJourney`'s existing rebase seam, the
+optional "what made you stop" moment on `return.tsx`, and the window consequence — is in
+`Step_Postponement_02_PRD.md` §14 Q5, with the superseded credit model preserved in §14 Q5.0.a.
+
+**Also settled in that pass:** the automatic J5 inactivity freeze gets the **same** treatment as J3 (§14 Q9
+resolved — the consent moment moves from the freeze to the resume, and `return.tsx` never auto-resumes);
+Allies see a **paused/running status tag and nothing about the window** (§14 Q7); and an extension is **not
+reversible** (§14 Q8).
+
+**Two implementation gaps this surfaces beyond the PRD's own scope**, both verified in code on 2026-08-14:
+
+- **An Ally status tag is not expressible today.** `ProgressSummary` is a strict four-field whitelist with
+  no status field, and `SocialProvider.publishAll` **withdraws** a paused Journey's summary entirely rather
+  than tagging it — so a paused Journey currently *disappears* from an Ally's view. Widening the whitelist
+  needs a security-privacy review (its own comment says so).
+- **A per-Step weekday/due-time model does not exist** (`Step` has no weekday field; weekday meaning lives
+  only in account-level `SchedulingPrefs.preferredDays` / `ActiveHours` / `ReminderRule.trigger.weekdays`).
+  This is the same model gap as **PC-25**, and it bounds how faithfully any rebuild can re-anchor a rhythm.
 
 This resolves the reported gap without an endless Journey and without reviving the parked Practice model.
 
@@ -386,8 +414,9 @@ cap**, there is **no ceiling on extension**, and the invariant is that *a Journe
 because the user said so* — same stance as D46. Verified code truth: a postponement writes only the four
 per-occurrence Step fields plus one OS notification and **never** touches `durationDays` or any end date, so
 work postponed past the last day is silently stranded outside the window today. **Specification gap closed;
-the implementation gap remains open**, and eight questions in that PRD's §14 (led by the extension-moment
-copy) are still the founder's.
+the implementation gap remains open**, and after the 2026-08-14 fourth pass **four** questions in that PRD's
+§14 are still the founder's — Q1 (the extension-moment copy), Q2 (the wizard's 90-day option), Q3 (whether
+an extension also moves `plannedFor`) and Q6 (the `deferDependents` cascade). Q1–Q3 gate implementation.
 
 ### PC-27 · Weekly Review contribution contract
 

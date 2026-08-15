@@ -9,7 +9,10 @@
  *   (c) the Companion option is disabled on a manual Journey, enabled on a coach Journey;
  *   (d) picking a friend + the default (Encourager) bundle calls `inviteAlly(journeyId, id, 'encourager')`;
  *   (e) the Invite CTA is hidden on a completed AND on a frozen Journey (members still render);
- *   (f) a failed load shows the retry line, never the empty "no members yet" state.
+ *   (f) a failed load shows the retry line, never the empty "no members yet" state;
+ *   (g) removing one Ally calls `removeAlly` and NEVER `removeFriend` — the per-Journey and the
+ *       per-person relationships are separate, and only the gateway/provider suites guarded that
+ *       before this one (Friend_Profile_PRD §4.5).
  *
  * The Companion gate + `resolveJourneyStatus` are the REAL pure helpers; only the provider and
  * theme are mocked. `t` is stubbed to echo its key so labels are asserted by i18n key.
@@ -86,6 +89,7 @@ function setSocial(overrides: Record<string, unknown> = {}) {
     inviteAlly: jest.fn(async () => {}),
     cancelInvite: jest.fn(async () => {}),
     removeAlly: jest.fn(async () => {}),
+    removeFriend: jest.fn(async () => {}),
     changeAllyBundle: jest.fn(async () => {}),
     ...overrides,
   };
@@ -207,5 +211,22 @@ describe('JourneySupportCircle — members + invite surface (D2)', () => {
     expect(has(r, 'supportCircle.retry')).toBe(true);
     expect(json(r)).toContain('supportCircle.loadError');
     expect(json(r)).not.toContain('supportCircle.empty');
+  });
+
+  it('(g) never-regress: removing one Ally removes the ALLY, never the friendship', async () => {
+    const removeAlly = jest.fn(async () => {});
+    const removeFriend = jest.fn(async () => {});
+    setSocial({
+      listJourneyAllies: jest.fn(async () => [member('a1', 'alice', 'encourager', 'accepted')]),
+      removeAlly,
+      removeFriend,
+    });
+    const r = await mount(journey());
+
+    await press(r, 'supportCircle.remove');
+    // Per-Journey and per-person are two different relationships (Friend_Profile_PRD §4.5): ending
+    // support on one Journey must leave alice in the Support Circle.
+    expect(removeAlly).toHaveBeenCalledWith('j1', 'a1');
+    expect(removeFriend).not.toHaveBeenCalled();
   });
 });

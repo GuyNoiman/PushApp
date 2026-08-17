@@ -649,12 +649,14 @@ liability, mental-health-adjacent — gated, §4/§6**)
   treatment; **Body image** must never prescribe calories/macros/therapeutic diets or coach through
   pain; **Relationships/Loneliness** must never push overwhelming exposure or diagnose; **Career**
   must never guarantee outcomes or give financial/legal advice. Internalize your domain's list.
-- **The sensitive domains are GATED — author, but do not expose.** **Addiction** and
+- **The sensitive domains are GATED — author, but do not expose (D24/D53).** **Addiction** and
   **Relationships/Loneliness** are mental-health-adjacent and **must NOT reach a single real user**
   until: (1) the **crisis-detection / escalation seam** exists (blueprint §6 gap #2 — it does **not**
   today), (2) disclaimers + no-treatment-claims copy exist, and (3) a **formal clinical/safety
   review** has passed. You may author these as **internal/shadow** experts in parallel, but they stay
-  behind that gate. **Career** is lowest-liability and can reach users soonest; **Body image** is
+  behind that gate — this is a **release** gate, not a block on authoring/dev work (D53, 2026-08-18,
+  corrected the Decision Log's earlier D24 wording to make that explicit). **Career** is lowest-liability
+  and can reach users soonest; **Body image** is
   moderate (readiness/ED screening + medical disclaimers). Build liability-ascending
   (Career → Body image → Relationships/Loneliness → Addiction), per blueprint §7 (reordered for the
   new domain set).

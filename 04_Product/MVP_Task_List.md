@@ -48,8 +48,10 @@ session). Full narrative: `Current_Context.md` → "⭐ HANDOFF SNAPSHOT — 202
   **REMAINING:** Batch 3 — the 4 domain experts' Hebrew content (Addiction / Relationships /
   BodyImage / Career) — **NOT NEEDED NOW; folded into the future expert spec (founder direction,
   2026-08-09).** The 4 domain experts are **empty foundation scaffolding, not yet specced**, and are
-  **dev-only / gated** (D24 — Addiction & Relationships need a safety floor + clinical review; none
-  are in the shipping MVP path). Founder's architectural direction: the experts are **internal tools**
+  **dev-only for now** (not yet built out for release; none are in the shipping MVP path). **Addiction
+  and Relationships & Loneliness additionally require expert review before release** (D24, mechanism
+  corrected by **D53**, 2026-08-18 — this is a release gate, not a block on development work).
+  Founder's architectural direction: the experts are **internal tools**
   — the meta-agent ("Steady") is the layer that talks to the user and speaks their language, so the
   experts themselves need no user-facing translation. When the experts are actually specced they will
   be built i18n-aware from the start (or, cleaner, kept as pure internal tools with the meta-agent

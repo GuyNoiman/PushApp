@@ -1,7 +1,23 @@
 # Reply to the coaching partner — terminology alignment and model decisions (v1.1 package)
 
-Status: **Draft for the founder's review and sending.** Prepared 2026-08-13 after the full terminology
-audit of `PushApp_Guy_Content_Evaluation_v1.1`. Not yet sent.
+> **SUPERSEDED 2026-08-18 by `04_Product/Partner_Letter_2026-08-18.md`. Never sent.**
+>
+> This draft was scoped as a terminology reply. After the v1.3 review and the founder's articulation of
+> the three-layer architecture on 2026-08-17/18, that scope was too narrow: what the partner needs is an
+> architecture briefing, an honest account of what does not work in our product today, and the definition
+> of how we will know it works.
+>
+> **Nothing here has been deleted, and everything still true has been carried forward** into the new
+> letter (its §7 carries the full terminology record below; its §7.3 carries the model decisions in §3;
+> its §7.3 also carries §4's Grace Tokens and Step Postponement point; its §10 carries §6's open
+> questions; its §11 carries §7's housekeeping).
+>
+> This file is retained because it is the **place each terminology decision was first reasoned out**, at
+> the level of individual occurrence counts and the judgement calls behind them. Read it when you need to
+> know *why* a specific edit was made. Read the 2026-08-18 letter for what we are actually sending.
+
+Status: **Draft for the founder's review and sending. Superseded, do not send.** Prepared 2026-08-13
+after the full terminology audit of `PushApp_Guy_Content_Evaluation_v1.1`. Not yet sent.
 
 Purpose: a single message the partner can work from, so the next version of their content lands aligned
 with PushApp's product model instead of needing another editing pass on our side.

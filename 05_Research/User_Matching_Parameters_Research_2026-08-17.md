@@ -622,12 +622,19 @@ After roughly a hundred users it replaces a guess with a number. Wire it first.
 
 ---
 
-## 11. The sensitive-domain question (D24) — recommendation, not decision
+## 11. The sensitive-domain question (D24/D53) — recommendation, not decision
 
-**The question:** addiction and body image are gated behind a safety floor (D24, flag/dev-only until
-bilingual crisis detection, disclaimers, a hardened `SafetyLayer` and clinical review exist). Should
-domain itself be a matching parameter for those, given what "this user is in the addiction cohort"
-reveals?
+**The question:** addiction and relationships (see correction below re: body image) require expert
+review before release (D24; mechanism corrected by **D53**, 2026-08-18 — the requirement is expert
+review before shipping to a real user, not a block on building the domain out). Should domain itself
+be a matching parameter for those, given what "this user is in the addiction cohort" reveals?
+
+**Correction (D53, 2026-08-18):** this section was written when D24 was read as also blocking
+*development* of these domains ("flag/dev-only"). The founder has since clarified he never made that
+ruling; D24's dev-stage-gate wording is rescinded and replaced by expert-review-before-release, which
+was already the operative constraint in practice (nothing has shipped to a real user in any domain).
+The sensitivity analysis and recommendation below are unaffected — they were always about the
+*outbound learning* question, which remains gated on review regardless of build status.
 
 **The legal fact, first, because it removes some of the discretion.** Under UK/EU GDPR, **inference is
 enough**: if our processing is intended to make an inference linked to a special category, we are
@@ -649,9 +656,10 @@ is in practice diagnostic.
    inference.
 3. **Cost of this recommendation, stated honestly:** we learn nothing at the population level from
    precisely the users who might benefit most from good matching. That is a real loss and the founder
-   should weigh it, not have it hidden. Two things reduce the sting: (a) under D24 these domains are
-   flag/dev-only today, so the loss is currently zero and this is a cheap decision to make *now* rather
-   than later under pressure; (b) tier-A behavioural parameters still work fully on device, so the
+   should weigh it, not have it hidden. Two things reduce the sting: (a) nothing ships to a real user in
+   any domain yet (there is no release path today, and these two domains additionally require expert
+   review before release — D24/D53), so the loss is currently zero and this is a cheap decision to make
+   *now* rather than later under pressure; (b) tier-A behavioural parameters still work fully on device, so the
    *user's own* adaptation is unaffected — only the cross-user learning is.
 4. **Also worth deciding at the same time:** whether sensitive-domain Journeys should be excluded from
    the Completion Card / share surfaces and from any Support Circle default. That is adjacent, already

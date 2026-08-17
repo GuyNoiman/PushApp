@@ -4,6 +4,40 @@ Status: Living Document
 
 ---
 
+# 2026-08-18 (repo-steward pass) — D24's development-stage safety gate corrected: expert review before release replaces it (D53)
+
+Docs only; no code. **The requirement does not change — only where a misattribution is corrected.**
+
+D24 (2026-08-06) recorded, inside its "Safety implication" paragraph, that Addiction and Relationships
+& Loneliness "must stay flag/dev-only — never reachable by a real user" until a safety floor and a
+clinical review existed, calling it "a hard gate, not a soft target." **The founder states he never made
+that ruling** — it was written into the Decision Log as though it were his decision and was treated as
+approved for weeks, shaping `MVP_Task_List.md`, being cited by D44/D47/D52, and shaping an outbound
+letter to an external partner that was about to be sent.
+
+**Founder, 2026-08-18, verbatim in substance:** *"I'm cancelling it. Right now nothing goes out to
+customers, and later everything will go through expert approval. So there's no point in these gates at
+this stage."* New Decision Log entry **D53** rescinds only the development-stage mechanism and replaces
+it with the real control: **expert review before release**, covering every domain, with Addiction and
+Relationships & Loneliness held to the same bar the original gate intended. **What is unchanged:**
+unreviewed sensitive-domain content still may never reach a real user — nothing about that requirement
+moved.
+
+**Updated:** `06_Decisions/Decision_Log.md` (new **D53**; D24 annotated in place, original text
+preserved, not rewritten); `04_Product/Partner_Letter_2026-08-18.md` §8 (corrected before sending, since
+it stated the old framing as settled founder policy to an outside party); `04_Product/MVP_Task_List.md`;
+`04_Product/PRD/Weekly_Review_Contributions_02_PRD.md`; `04_Product/PRD/Plan_Library_and_Learning_PRD.md`;
+`04_Product/Domain_Expert_Authoring_Guide.md`; `05_Research/User_Matching_Parameters_Research_2026-08-17.md`
+(§11, which had also mis-cited Body Image as gated instead of Relationships & Loneliness — corrected in
+passing).
+
+**Also this session:** an audit of every entry in `06_Decisions/Decision_Log.md` for the same failure
+mode (an agent's recommendation recorded as a founder ruling). Finding, reported to the founder rather
+than acted on: D24 appears to be an isolated case, not a pattern — see the session report for the full
+entry-by-entry review.
+
+---
+
 # 2026-08-18 (product-manager pass) — D52 widened: the three-layer architecture is the product, not a feature
 
 Docs only; no code. **Extends the entry below rather than replacing it** — everything there still holds;

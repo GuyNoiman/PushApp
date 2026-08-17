@@ -37,8 +37,9 @@ end-of-Journey feedback — §9.6), `Journey_Abandonment_PRD.md` (the *other*, m
 `Future/Creator_Journey_Authoring_Platform_PRD.md` (V4 — what the marketplace layer becomes),
 `Weekly_Review_Contributions_02_PRD.md` (D50), `Backfill/Account_Deletion_and_Data_Export_PRD.md`.
 
-Related Decision Log: **D52** (this decision), **D24** (the four domains; Addiction and
-Relationships & Loneliness gated behind a safety floor), **D25** (framework-not-content), **D30**
+Related Decision Log: **D52** (this decision), **D24/D53** (the four domains; Addiction and
+Relationships & Loneliness gated behind expert review before release — D53, 2026-08-18, corrects D24's
+mechanism from a development-stage gate to a release-stage review), **D25** (framework-not-content), **D30**
 (experts are internal tools; the coach is the only user-facing voice), **D40** (on-device red lines),
 **D42/I1** (the completion ceremony), **D46** (cancellation is irreversible), **D51** (measurement, not a
 gate, as the response to a growth-before-engagement tension).
@@ -529,8 +530,9 @@ which is nearly free today and expensive to retrofit:
    that is genuinely urgent rather than merely cheap; Open Question 10 is its content.
 3. **Fitness is per-template and portable.** Because §7.1 forbids a global leaderboard, a third-party
    template slots into the same conditional structure with no special case.
-4. **Safety review status is a first-class field on the template**, not an out-of-band spreadsheet. D24
-   gates two domains from real users; a marketplace makes that gate a schema field or it makes it a leak.
+4. **Safety review status is a first-class field on the template**, not an out-of-band spreadsheet. D24/D53
+   require expert review before release for two domains; a marketplace makes that gate a schema field or
+   it makes it a leak.
 5. **Whatever outcome data a third party may see is the k-gated cohort aggregate and nothing else**
    (§12.1) — never rows, never their own users' records. Deciding this later, after coaches expect
    analytics, is a much worse conversation.
@@ -1070,7 +1072,8 @@ pipeline is a sync path with a friendlier name**, and the §11.3 allowlist gover
    Recommendation: a global ceiling the loop may only lower, plus a user-facing "fewer messages" control
    that lowers it further and can never raise it.
 3. **Which domains participate in the outbound record at v1?** Recommendation: `career` and `general`
-   only. `addiction` and `relationships` are D24-gated regardless; `body_image` pulls in the Play Health
+   only. `addiction` and `relationships` require expert review before release regardless (D24/D53);
+   `body_image` pulls in the Play Health
    declaration and a probable Art. 9 analysis.
 4. **Opt-in or opt-out?** Recommendation: opt-in, default off, accepting a materially slower corpus.
 5. **The k threshold.** Recommendation: a floor of **k ≥ 20**, targeting **50** as we grow (§12.2). A

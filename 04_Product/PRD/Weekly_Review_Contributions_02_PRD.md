@@ -28,8 +28,10 @@ Related PRDs: `Smart_Notification_Timing_PRD.md` (§6 — the first, already-spe
 Related Decision Log: **D50** (one Weekly Review; contributions nest inside it — the decision this PRD
 specifies), **D43** (apply-on-approval, never silently), **D40** (week-close proposal, forward-only apply,
 48h window), **D30** (domain experts are internal tools; the meta-agent is the sole user-facing voice),
-**D24** (the four domains are gated; Addiction and Relationships & Loneliness cannot reach real users
-until the safety floor and clinical review exist), **D25** (framework-not-content), **D31** (form of
+**D24/D53** (the four domains; Addiction and Relationships & Loneliness cannot reach real users until
+expert review before release has happened — D53, 2026-08-18, corrects D24's mechanism from a
+development-stage gate to a release-stage review; the requirement that they may not ship unreviewed is
+unchanged), **D25** (framework-not-content), **D31** (form of
 address), **D49** (the partner's "Meta-Coach" is our coach / meta-agent).
 
 Grounding — read, not assumed: `Done/Weekly_Review_PRD.md` §§5–11 and its resolved §13;
@@ -170,7 +172,7 @@ fallback, because a fallback that shows unvalidated content is how a single voic
 
 **Who.** Any first-party engine PushApp owns (Smart Notification Timing is one today), and — once they are
 specified and un-gated — the domain experts. This PRD deliberately does **not** design the experts; they
-are unspecced and gated (D24), and D25 keeps them framework-not-content. This is the socket, not the plug.
+are unspecced and gated (D24/D53), and D25 keeps them framework-not-content. This is the socket, not the plug.
 Whether a contributor may ever run off-device is §14.4, and is not assumed here.
 
 **Attribution, and the D30 rule.** D30 is not negotiable and this interface does not bend it: the
@@ -438,7 +440,7 @@ None of these is decided. Each is a founder call, not an AI call.
 
 ## 15. Out of scope
 
-- **The domain experts themselves.** Unspecced and gated (D24/D30). This is the socket, not the plug.
+- **The domain experts themselves.** Unspecced and gated (D24/D53/D30). This is the socket, not the plug.
 - **Wiring any partner content into the app.** The `10_Partner_Coaching_Content/` folder's standing rule
   holds: nothing there is wired in, and PushApp's code is not changed to accommodate it.
 - Any change to `Done/Weekly_Review_PRD.md`, its screen, its 48-hour window, its week boundary, or its

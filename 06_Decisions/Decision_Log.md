@@ -1014,6 +1014,55 @@ designed against but not designed** — the coach marketplace. **Open Question**
 §17, five blocking Stage 3 and one (terminology) blocking Stage 1, plus the three non-overlapping
 questions in the research's §13.
 
+### D53 — D24's development-stage safety gate is rescinded; the control moves to expert review before release
+**Decision (founder, 2026-08-18, verbatim in substance):**
+
+> "I'm cancelling it. Right now nothing goes out to customers, and later everything will go through
+> expert approval. So there's no point in these gates at this stage."
+
+**What prompted this:** D24's "Safety implication" paragraph stated that Addiction and Relationships &
+Loneliness "must stay flag/dev-only — never reachable by a real user" until a safety floor was built and
+a clinical review had happened, and called this "a hard gate, not a soft target." **The founder says he
+never made that ruling.** It was written into the Decision Log as though it were his decision, and it has
+since been treated as approved throughout the repository — it shaped work priorities (`MVP_Task_List.md`),
+was cited by later decisions (D44, D47, D52) as settled founder policy, and shaped an outbound letter to an
+external partner (`04_Product/Partner_Letter_2026-08-18.md` §8, "Safety: the gate has not moved") that was
+about to be sent stating D24 as the founder's own ruling. See the Decision Log audit this same session for
+the finding that D24 is, so far, the **only** entry in this log showing this failure mode (an agent's
+safety recommendation recorded as a founder decision) — recorded here, not fixed silently elsewhere.
+
+**What is rescinded, precisely:** only the part of D24 that made the gate a **development-stage**
+constraint — i.e., that Addiction and Relationships & Loneliness must not even be built out or reached in
+a dev/flag-gated build until the safety floor + clinical review exist. That specific mechanism (bilingual
+crisis detection, disclaimers/consent, a hardened `SafetyLayer`, substance-use gating, as a precondition on
+*build-out*) is cancelled as a precondition on development work.
+
+**What is NOT rescinded, and must never be read as rescinded:** whether unreviewed sensitive-domain content
+may reach a real user. It may not, and this decision does not weaken that in any way. The founder's own
+reasoning: right now nothing goes out to customers at all — there is no release path today — so a gate that
+blocks *development* protects nobody; it only slows work while nothing ships. The real, ongoing control is
+procedural and sits at the **release boundary**: **everything goes through expert review/approval before it
+reaches a real user** — not only Addiction and Relationships & Loneliness, but every domain, every time. The
+requirement does not disappear; it moves from "must not be built or reached even in dev" to "must not
+release without expert review."
+
+**Why the distinction matters, stated so it cannot be misread in six months:** this is a narrowing of
+*where the mechanism sits*, not a narrowing of *what is required*. A development-stage gate constrains
+internal work while nothing ships; it protects no actual user. The safety boundary the founder holds — and
+restates here — is expert review before release, covering the sensitive domains (and, per his own framing,
+every domain going forward). No sensitive-domain content — Addiction or Relationships & Loneliness above
+all — may ship to a real user without that review having happened. Anything that reads this decision as
+"the safety requirement was dropped" has misread it.
+**Categorization:** **Approved** (the development-stage gate is rescinded) + **Approved** (the replacement
+control: expert review before release, for every domain, with Addiction and Relationships & Loneliness held
+to the same standard the original gate intended).
+**Reflected in:** D24 above (annotated in place, original text preserved — not rewritten or deleted);
+`04_Product/Partner_Letter_2026-08-18.md` §8 (corrected before sending); `04_Product/MVP_Task_List.md`;
+`04_Product/PRD/Weekly_Review_Contributions_02_PRD.md`; `04_Product/PRD/Plan_Library_and_Learning_PRD.md`;
+`09_Product_Philosophy/Product_Terminology.md`; `04_Product/Domain_Expert_Authoring_Guide.md`;
+`05_Research/User_Matching_Parameters_Research_2026-08-17.md`;
+`04_Product/Strategy_WIP_2026-07/08_domain_experts_deepening.md`.
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the
@@ -1041,9 +1090,19 @@ happened. This is a hard gate, not a soft target.
 **Open Question / gated** (Addiction and Relationships & Loneliness cannot ship to real users until
 the safety floor + clinical review above are satisfied — do not treat their current dev-only
 buildout as launch-ready).
+**Correction (D53, 2026-08-18) — read this before relying on the "Safety implication" paragraph
+above.** The founder states he never made the ruling above that Addiction and Relationships &
+Loneliness "must stay flag/dev-only" as a **development-stage** precondition — it was written into
+this entry as though it were his decision and was never actually his call. **D53 rescinds only that
+part** (the dev-stage gate) and replaces it with **expert review before release**, covering the
+sensitive domains, as the live control. The original paragraph above is left completely intact,
+unedited and unrescinded-in-place — including the part that turned out to be misattributed — because
+how it got here is itself worth keeping on record; see D53 for the full reasoning and for the audit
+finding on how this happened. **Do not read the original paragraph above as current policy on its
+own** — read it together with D53.
 **Reflected in:** `app/src/core/learning/experts/AddictionExpert.ts`, `RelationshipsExpert.ts`,
 `BodyImageExpert.ts`, `CareerExpert.ts`, `registry.ts`; `Current_Context.md`;
-`00_Foundation/CHANGELOG.md` (2026-08-06 entry).
+`00_Foundation/CHANGELOG.md` (2026-08-06 entry); **D53** (2026-08-18, the correction above).
 
 ### D25 — Framework-not-content philosophy for domain experts
 **Decision:** The coach and its domain experts are explicitly a **framework, not content**. The

@@ -191,10 +191,9 @@ function ThemedChrome() {
         <Stack.Screen name="dream/[id]" />
         {/* My Journeys is now a first-class TAB ((tabs)/journeys.tsx),
             not a pushed modal (mature redesign 2026-08-07). */}
-        <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
-        {/* Missions, Achievements and Weekly Planning were entry-point-less routes and are
-            ARCHIVED (2026-08-14) — their screens now live in src/archive/screens/, outside the
-            router tree. See 04_Product/UX/Archived_Screens.md before reviving one. */}
+        {/* Shop, Missions, Achievements and Weekly Planning were entry-point-less routes and are
+            ARCHIVED — their screens now live outside app/ entirely, in 12_Future_Assets/.
+            See 04_Product/UX/Archived_Screens.md before reviving one. */}
         {/* Weekly Review — the one user-level review after a week closes (D40). A modal so it
             opens over the tabs on the first app entry after week close, minimizable but not
             dismissible without choosing an outcome. */}

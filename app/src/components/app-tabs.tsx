@@ -7,6 +7,13 @@
  * icon (the mature nav shows labels). Icons are Ionicons; each swaps
  * outline→filled when focused.
  *
+ * Tapping the tab you are ALREADY on returns that page to the top (founder device
+ * pass 2026-08-17). That doesn't live here: the bar can't reach a screen's scroll
+ * position, so each tab screen scrolls itself through TabScrollView, which listens
+ * for this navigator's `tabPress`. A tab screen gets the behaviour by using
+ * `<TabScrollView>` instead of a bare `<ScrollView>` — see
+ * `components/ui/TabScrollView.tsx`.
+ *
  * Inbox was re-added to the bar (founder feedback 2026-08-07); Settings is back
  * as the 5th tab (founder feedback 2026-08-07) and now hosts the user's identity.
  * Coach, Explore and Buddy remain ARCHIVED out of the bar (`href: null`) — their
@@ -97,13 +104,13 @@ export default function AppTabs() {
           ),
         }}
       />
-      {/* ARCHIVED / off-bar. `href: null` keeps the routes reachable directly but
-          hides them from the tab bar. (Coach is NOT here: it's a root Stack route
+      {/* ARCHIVED / off-bar. `href: null` keeps the route reachable directly but
+          hides it from the tab bar. (Coach is NOT here: it's a root Stack route
           `app/coach.tsx`, opened from the Home hero — a tab's `href:null` route is
           not navigable via router.push, which is why it lives outside the group.)
-          Explore + Buddy stay archived. See 04_Product/UX/Archived_Screens.md. */}
+          Explore stays archived. Buddy left the tree entirely — its route file now
+          lives in 12_Future_Assets/. See 04_Product/UX/Archived_Screens.md. */}
       <Tabs.Screen name="explore" options={{ href: null }} />
-      <Tabs.Screen name="buddy" options={{ href: null }} />
     </Tabs>
   );
 }

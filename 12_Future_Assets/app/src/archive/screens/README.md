@@ -8,6 +8,15 @@ imports — that is what an archive is.
 
 The running index of every archived surface is `04_Product/UX/Archived_Screens.md`. Read it first.
 
+> **Moved on 2026-08-17 — this folder is no longer inside `app/`.** It now lives at
+> `12_Future_Assets/app/src/archive/screens/`, at the repository root. EAS uploads `app/`, and the
+> founder's rule is that nothing staged Future may take up space in the build — being outside the
+> router tree was not enough, the files were still being uploaded. Because nothing in `app/` matches
+> them any more, the three exclusions described above (`tsconfig.json` › `exclude`,
+> `eslint.config.js` › `ignores`, `package.json` › `jest.testPathIgnorePatterns`) were **removed**.
+> **Moving this folder back means putting all three back**, or these screens will fail the
+> type-check and the lint. Full context and the restore procedure: `12_Future_Assets/README.md`.
+
 ---
 
 ## Archived on 2026-08-14 — three entry-point-less routes

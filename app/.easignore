@@ -1,0 +1,46 @@
+# What EAS must NOT upload when it archives this project.
+#
+# IMPORTANT: when this file exists, EAS uses it INSTEAD of .gitignore — not in addition to it.
+# So it has to repeat everything in .gitignore that must stay out of the archive, and then add
+# the extra backstops. If you add a rule to .gitignore that matters for the build, mirror it here.
+
+# --- dependencies & build output (EAS installs and builds these itself) ---
+node_modules/
+.expo/
+dist/
+web-build/
+.metro-health-check*
+*.tsbuildinfo
+
+# --- generated native folders (EAS prebuilds them) ---
+/ios
+/android
+.kotlin/
+
+# --- signing material & local env: must never leave this machine ---
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+.env*.local
+
+# --- size backstop -------------------------------------------------------------------
+# Founder rule, 2026-08-17: nothing staged Future may take up space in the build. The Buddy
+# 3D assets that made the first archive huge now live in 12_Future_Assets/, outside app/.
+# These patterns stop a stray heavy 3D/art source file from silently re-inflating the upload.
+# If the shipping app ever genuinely needs one of these formats, delete its line deliberately
+# rather than working around it.
+*.glb
+*.gltf
+*.fbx
+*.blend
+*.psd
+
+# --- noise ---
+.DS_Store
+*.orig.*
+npm-debug.*
+yarn-debug.*
+yarn-error.*

@@ -43,5 +43,39 @@ its `README.md` carries the full detail.
 ### Notes
 - **Coins / XP / Grace-Token chips** on Home are also slated to be replaced by a single **streak**
   indicator (mature direction). Tracked with the Home rebuild, not yet done here.
-- Nothing above was deleted; every file is still in `app/src/`. This index must be updated whenever a
-  surface is archived or restored.
+- Nothing above was deleted. ⚠️ The 2026-08-17 pass below **moved several of these files out of
+  `app/` entirely** — see the new paths there. This index must be updated whenever a surface is
+  archived or restored.
+
+---
+
+## Archived on 2026-08-17 (moved out of the build — `12_Future_Assets/`)
+
+The first EAS build uploaded a **258 MB** project archive; `app/assets/` alone was **63 MB**, nearly
+all of it Buddy 3D creature assets. Founder rule: *"Anything Future should not be part of the project
+and therefore not part of the build. It should live in a different, external folder. From the next
+build onward, nothing Future should take up space."*
+
+Unlike the two passes above — which moved files **within** `app/` — this pass moves them to
+**`12_Future_Assets/`** at the **repository root**. EAS uploads `app/`, so anything outside it is not
+uploaded, bundled, type-checked, linted or tested, while git still preserves every byte. The tree
+under `12_Future_Assets/app/` mirrors `app/` one-for-one, so restoring is a straight reverse `git mv`.
+**Read `12_Future_Assets/README.md` first — it carries the full restore procedure.**
+
+| Surface | Why archived | How it's hidden (code) | How to restore |
+|---|---|---|---|
+| **Buddy** (`/buddy`) | Staged **Future** by **D45** (the coach, not an avatar, is the MVP's central entity). Hidden from the tab bar since 2026-08-07, but a file under `src/app/` is a live deep-linkable route however it is hidden — and its 3D assets were the bulk of the upload. | Route → `12_Future_Assets/app/src/app/(tabs)/buddy.tsx`; `<Tabs.Screen name="buddy">` removed from `app/src/components/app-tabs.tsx`; the `buddy` i18n namespace removed from `app/src/i18n/index.ts`. | Reverse the moves per `12_Future_Assets/README.md`, reinstall the five 3D packages, restore the namespace and the tab, and **remove `*.glb` from `app/.easignore`**. |
+| **Buddy 3D assets + renderer + pipeline** | ≈62 MB of GLB models and PNG textures for 20 creature species, reachable only from the Buddy screen. | `assets/buddies/`, `src/components/buddy3d/`, `src/core/buddies/registry.generated.ts`, `src/components/buddy/` (except `BuddyAvatar.tsx`) and `tools/ingest_creature.py` + `tools/optimize_buddy.py` all moved under `12_Future_Assets/app/`. `@react-three/fiber`, `three`, `@types/three`, `expo-gl` and `upng-js` removed from `app/package.json`. | As above. The ingest pipeline moved intact, so new species can still be processed from the archived folder. |
+| **Shop** (`/shop`) | No coins / faux-currency in the mature coach direction (already off-nav since 2026-08-07), and it had no entry point. | Route → `12_Future_Assets/app/src/app/shop.tsx`; `<Stack.Screen name="shop">` removed from `app/src/app/_layout.tsx`; the `shop` i18n namespace removed. **`ShopEngine` + `config/shopItems.ts` stay live in the core** — only the screen moved. | Needs a **surface PRD** first (2026-08-14 founder decision), then reverse the move and restore the namespace + `Stack.Screen`. |
+| **The 2026-08-14 archive folder** | `app/src/archive/screens/` was already outside the router tree and excluded from tsc/eslint/jest — but still inside `app/`, so it was still being uploaded. | Whole folder → `12_Future_Assets/app/src/archive/`. Its three exclusions (`tsconfig.json` `exclude`, `eslint.config.js` `ignores`, `package.json` `jest.testPathIgnorePatterns`) were removed, since nothing in `app/` matches them any more. | Move the folder back **and re-add those three exclusions**, or the archived screens will fail the type-check and lint. |
+
+### Notes
+- **`BuddyAvatar.tsx` deliberately stayed** in `app/src/components/buddy/`:
+  `components/explore/ExploreCards.tsx` still imports it for the marketplace cards. It is pure
+  `react-native-svg` with no image assets, so it costs the build nothing.
+- **Engines were not touched.** `BuddyEngine`, `ShopEngine` and `MissionEngine` — with their configs
+  and state — remain wired into `AppCore`; Home reads Missions for collectable rewards. Only
+  *surfaces and assets* moved.
+- A new **`app/.easignore`** is the backstop: it keeps `node_modules/`, build output and signing
+  material out of the archive, and blocks `*.glb` / `*.gltf` / `*.fbx` / `*.blend` / `*.psd` so a
+  stray heavy asset cannot silently re-inflate the upload.

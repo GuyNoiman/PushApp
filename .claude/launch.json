@@ -4,7 +4,33 @@
     {
       "name": "pushapp-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "app",
+      "port": 8081
+    },
+    {
+      "name": "pushapp-device",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--dev-client"
+      ],
+      "cwd": "app",
+      "port": 8081
+    },
+    {
+      "name": "pushapp-device-tunnel",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--dev-client",
+        "--tunnel"
+      ],
       "cwd": "app",
       "port": 8081
     }

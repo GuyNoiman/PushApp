@@ -203,6 +203,7 @@
   },
   "reasonHistory": {
     "title": "Looking back",
+    "open": "What came up before?",
     "empty": "Nothing here yet — this is where we'll gently notice what tends to get in the way.",
     "lead": "A few times it didn't happen — no judgement, just what came up:",
     "fallbackReason": "Something came up",

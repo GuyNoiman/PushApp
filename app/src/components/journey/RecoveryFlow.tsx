@@ -17,6 +17,7 @@ import { Linking } from 'react-native';
 
 import { PostponeSheet } from '@/components/journey/PostponeSheet';
 import { interpretPostponeResult } from '@/components/journey/postponeResult';
+import { ReasonHistorySheet } from '@/components/journey/ReasonHistorySheet';
 import { ReasonSheet } from '@/components/journey/ReasonSheet';
 import { RescheduleModal } from '@/components/journey/RescheduleModal';
 import type { AppCore, PostponeReminderResult } from '@/core/AppCore';
@@ -26,7 +27,7 @@ import type { ReasonId } from '@/core/types/domain';
 import type { Candidate } from '@/core/util/reschedule';
 import { useTranslation } from 'react-i18next';
 
-type Stage = 'postpone' | 'reason' | 'times';
+type Stage = 'postpone' | 'reason' | 'times' | 'history';
 
 export function RecoveryFlow({
   step,
@@ -43,6 +44,10 @@ export function RecoveryFlow({
   const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   const { journeyId, step: s } = step;
+
+  // This Step's on-device reason history (G1 — it never leaves the device). Read here so the
+  // sheet below and the link that opens it agree on whether there is anything to look back at.
+  const pastReasons = core.getReasonHistory(s.id);
 
   // Interpret a postpone result through the SHARED reading (identical to Home's StepReportFlow):
   // close on a clean success, else keep the fast sheet open with an honest notice the user can read
@@ -117,7 +122,22 @@ export function RecoveryFlow({
         }}
         onClose={onClose}
       />
-      <ReasonSheet visible={stage === 'reason'} onSubmit={onReason} onBack={onClose} />
+      <ReasonSheet
+        visible={stage === 'reason'}
+        onSubmit={onReason}
+        onBack={onClose}
+        // Offered ONLY when this Step already has history — see the prop's contract. Read fresh on
+        // each render so a reason recorded in this very flow is there the next time round.
+        onSeePastReasons={pastReasons.length > 0 ? () => setStage('history') : undefined}
+      />
+      <ReasonHistorySheet
+        visible={stage === 'history'}
+        stepTitle={s.title}
+        entries={pastReasons}
+        // Back to the reason chips, not out of the flow: the user came here to remember something
+        // before answering, so closing must return them to the question they were answering.
+        onClose={() => setStage('reason')}
+      />
       <RescheduleModal
         visible={stage === 'times'}
         stepTitle={s.title}

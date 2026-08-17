@@ -26,6 +26,7 @@ jest.mock('expo-notifications', () => ({
 }));
 
 import { AppCore } from '../AppCore';
+import { useFixedClock } from './fixedClock';
 import type { AppState } from '../types/domain';
 import type { Repository } from '../persistence/Repository';
 import type { FirstRunFlag } from '../persistence/firstRunFlag';
@@ -95,8 +96,13 @@ function liveStep(core: AppCore, journeyId: string, stepId: string) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.useRealTimers();
 });
+
+// The default 2h path reads the REAL clock, and a 2-hour postpone started after 21:30 crosses
+// midnight — so this suite passed all day and failed for anyone running it at night. Pin `Date`
+// (timers stay real) at a mid-morning instant; the tests below that need a specific hour still
+// install their own full fake timers on top, and the afterEach here restores the real clock.
+useFixedClock();
 
 describe('AppCore.postponeStepReminder — default 2h path', () => {
   it('stamps the Step fields, schedules a DATE one-shot, and stores its id', async () => {

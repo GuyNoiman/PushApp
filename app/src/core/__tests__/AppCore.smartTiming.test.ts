@@ -35,6 +35,7 @@ jest.mock('../config/featureFlags', () => {
 });
 
 import { AppCore } from '../AppCore';
+import { useFixedClock } from './fixedClock';
 import { featureFlags } from '../config/featureFlags';
 import type { AppState, TimingTrial } from '../types/domain';
 import type { Repository } from '../persistence/Repository';
@@ -121,6 +122,11 @@ async function coreWithFlagOn(loaded?: unknown): Promise<{ core: AppCore; saved:
 beforeEach(() => {
   jest.clearAllMocks();
 });
+
+// Every test here derives `now` from the real clock while AppCore reads its own — and Smart Timing
+// buckets a trial by DAY PART, so a run just before midnight could file a response under a
+// different day than the one the test built. Pin `Date` (timers stay real).
+useFixedClock();
 
 describe('flag OFF — the feature is absent, not merely quiet', () => {
   it('writes nothing when the app comes to the foreground', async () => {

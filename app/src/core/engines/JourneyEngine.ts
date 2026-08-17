@@ -37,6 +37,7 @@ import {
 import { stepHasHistory } from '../status/stepHistory';
 import { deriveStepStatus, isTerminalReport, type StepStatus } from '../status/stepStatus';
 import { isRunning, resolveJourneyStatus } from '../util/journeyStatus';
+import { journeyStepCounts } from '../util/journeyProgress';
 import { isStepLocked, transitiveDependentsOf, validateDependency } from '../status/stepDependencies';
 import { buildCompletionCard } from '../celebration/completionCard';
 
@@ -735,20 +736,10 @@ export class JourneyEngine {
   journeyProgress(journeyId: string): number {
     const journey = this.getState().journeys.find((j) => j.id === journeyId);
     if (!journey) return 0;
-    // An ABANDONED Journey is measured against the Steps it had when the user gave up
-    // ({@link Journey.stepsAtAbandon}), never against what survived the cancel: its unlived Steps
-    // were spliced and its remaining ones shed, so the in-scope math below would read a full 100%
-    // for a Journey that was let go — a cancel must never read as a success.
-    const atAbandon = journey.stepsAtAbandon;
-    if (atAbandon !== undefined) {
-      return atAbandon === 0 ? 0 : journey.steps.filter((s) => s.done).length / atAbandon;
-    }
-    // Dropped Steps are out of scope: they count toward neither the numerator nor denominator.
-    const inScope = journey.steps.filter((s) => !s.dropped);
-    const total = inScope.length;
-    if (total === 0) return 0;
-    const done = inScope.filter((s) => s.done).length;
-    return done / total;
+    // Both rules — dropped Steps out of scope, a canceled Journey measured against
+    // `stepsAtAbandon` — live in the shared derivation, which the Journeys cluster and the
+    // completion card read too. This method is now only the id→Journey lookup.
+    return journeyStepCounts(journey).progress;
   }
 
   // ── Miss-Recovery (user-triggered) ───────────────────────────────────────

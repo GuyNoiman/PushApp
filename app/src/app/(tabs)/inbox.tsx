@@ -38,7 +38,7 @@ import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { AllyProgress, Cheer, Friend, SocialProfile } from '@/core/social';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 /** A friend's display name: their Buddy name if set, else their @handle. */
@@ -213,7 +213,7 @@ export default function InboxScreen() {
               autoCorrect={false}
               returnKeyType="search"
               accessibilityLabel={t('searchA11y')}
-              textAlign={isRTL() ? 'right' : 'left'}
+              textAlign={START_TEXT_ALIGN}
               style={[styles.searchInput, { color: theme.text }]}
             />
             {q ? (

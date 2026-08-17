@@ -25,11 +25,18 @@ export function ReasonSheet({
   visible,
   onSubmit,
   onBack,
+  onSeePastReasons,
 }: {
   visible: boolean;
   /** Report the chosen reason and, for "Something else", the on-device-only note. */
   onSubmit: (reasonId: ReasonId, note?: string) => void;
   onBack: () => void;
+  /**
+   * Open "see past reasons" for this Step. OMITTED when the Step has no history yet — a first
+   * miss must not be offered a look back at nothing, and an empty link reads as an accusation
+   * that there is something to look back at.
+   */
+  onSeePastReasons?: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('journey');
@@ -97,6 +104,21 @@ export function ReasonSheet({
               <ThemedText type="small" themeColor="textSecondary">
                 {caring}
               </ThemedText>
+            ) : null}
+
+            {/* The quiet way into "see past reasons" — a plain link, never a badge or a count.
+                It appears only once there IS history to look at (the parent omits the handler
+                otherwise), so it can never read as "here is your record of failures". */}
+            {onSeePastReasons ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('reasonHistory.title')}
+                onPress={onSeePastReasons}
+                style={({ pressed }) => [styles.historyLink, pressed && styles.pressed]}>
+                <ThemedText type="small" style={{ color: theme.tealStrong }}>
+                  {t('reasonHistory.open')}
+                </ThemedText>
+              </Pressable>
             ) : null}
 
             {capturesNote && (
@@ -203,5 +225,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  historyLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.one,
   },
 });

@@ -52,7 +52,7 @@ import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/th
 // the Supabase-backed gateway in with it.
 import { buildCircleRows, type CircleRow } from '@/core/social/circleRows';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 export default function FriendsScreen() {
@@ -310,7 +310,7 @@ function AddFriend({ onAdd, disabled }: { onAdd: (username: string) => void; dis
         autoCorrect={false}
         editable={!disabled}
         autoFocus
-        textAlign={isRTL() ? 'right' : 'left'}
+        textAlign={START_TEXT_ALIGN}
         style={[
           styles.input,
           { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.hairline },

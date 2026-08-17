@@ -2495,17 +2495,31 @@ export class AppCore {
   }
 
   /**
-   * On-device copy for a postpone one-shot. Uses the user's OWN Journey/Step text (no synthetic
-   * English body to translate), so the notification reads naturally in any language. On-device only
-   * — the string is captured at schedule time and never leaves the device (G1).
+   * On-device copy for a postpone one-shot, from the SAME builder every other reminder uses
+   * ({@link buildReminderCopy}) — so a postponed Step arrives in the user's language, form of
+   * address (D31) and communication style (D40), exactly like the reminder it replaces. It used to
+   * build its own `{ journey.title, step.title }` pair, which was the one reminder path in the app
+   * that ignored all three.
+   *
+   * A one-shot is scheduled once and never reconciled, so unlike a rule this copy CANNOT be
+   * re-resolved later: a language change after postponing reaches every other reminder and not this
+   * one. That is the accepted cost of a fire-once notification, and the reason the builder is called
+   * here at schedule time rather than baked earlier.
+   *
+   * PRIVACY: the Step title is deliberately NOT passed on (Reminders PRD §6 Q3 — no Step names on
+   * the lock screen); it used to be the body. The Journey title stays, as it does everywhere else.
+   * On-device only — the string never leaves the device (G1).
    */
   private postponeReminderCopy(journeyId: string, stepId: string): { title: string; body: string } {
     const journey = this.state.journeys.find((j) => j.id === journeyId);
+    const built = journey
+      ? buildReminderCopy({ journeyId, journeyTitle: journey.title })
+      : null;
+    if (built) return built;
+    // No usable Journey title (the builder returns null rather than sending something blank): fall
+    // back to the user's own Step text, still never a synthetic English sentence.
     const step = journey?.steps.find((s) => s.id === stepId);
-    return {
-      title: journey?.title ?? 'PushApp',
-      body: step?.title ?? '',
-    };
+    return { title: journey?.title ?? 'PushApp', body: step?.title ?? '' };
   }
 
   /** A Step's reason history, newest first — the "see past reasons" view. */

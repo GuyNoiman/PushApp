@@ -13,6 +13,7 @@ import type { Journey, JourneyStatus, ReasonEntry, Step } from '@/core/types/dom
 import { isStepLocked } from '@/core/status/stepDependencies';
 import { deriveStepStatus, type StepStatus } from '@/core/status/stepStatus';
 import { effectiveStartAt, resolveJourneyStatus } from '@/core/util/journeyStatus';
+import { journeyStepCounts } from '@/core/util/journeyProgress';
 import { currentMilestone, type MilestonePosition } from '@/core/util/milestones';
 import { weeksBetween } from '@/core/util/week';
 import i18n from '@/i18n';
@@ -88,12 +89,11 @@ function bucketOf(journey: Journey): JourneyBucket {
  * and {@link computeWeekLayout}, which genuinely do need it.
  */
 export function toJourneyView(journey: Journey, now: number = Date.now()): JourneyView {
-  // A CANCELED Journey is measured against the Steps it had when the user gave up: abandoning
-  // splices the never-lived Steps away, so counting the surviving array would turn "3 of 12 done"
-  // into "3 of 3" — a full progress bar on a Journey that was let go (Friend Profile PRD §4.2).
-  const totalSteps = journey.stepsAtAbandon ?? journey.steps.length;
-  const doneSteps = journey.steps.filter((s) => s.done).length;
-  const progress = totalSteps === 0 ? 0 : doneSteps / totalSteps;
+  // The SHARED count (`core/util/journeyProgress`) — the same derivation the engine publishes to
+  // Allies and the completion card is minted from. This surface used to count the raw Steps array,
+  // so a Journey with dropped Steps read a different percentage here than the engine reported
+  // (Friend Profile PRD §4.2 for the cancel rule; dropped-Step scope was the drift).
+  const { totalSteps, doneSteps, progress } = journeyStepCounts(journey);
 
   // The one instant history dates and orders by: the stop date of a canceled Journey, the
   // completion date of a finished one (a cancel never stamps `completedAt`, so they can't collide).

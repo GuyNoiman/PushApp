@@ -4,8 +4,9 @@
  *
  * Per the finalized mockup the Journey name reads as a SECONDARY title under a
  * small "JOURNEY" eyebrow — deliberately de-emphasized vs top-level tab titles so
- * the hierarchy stays clear. Shows the current Phase + progress + start/end window,
- * the Steps list with per-Step status, and the user's "why" list.
+ * the hierarchy stays clear. Shows the current Milestone (when the Journey has a real
+ * Milestone arc) + progress + start/end window, the Steps list with per-Step status, and
+ * the user's "why" list.
  *
  * FUTURE MODE (Future Journey Management, §7–§9): a Journey saved for later opens the same screen
  * with its planned window in place of progress, a calm banner, its Steps read-only, and one
@@ -40,7 +41,6 @@ import {
   stepsByWeek,
   toJourneyView,
 } from '@/components/journey/journeyView';
-import { OverflowMenu, type OverflowMenuItem } from '@/components/ui/OverflowMenu';
 import { featureFlags } from '@/core/config/featureFlags';
 import { dreamsForJourney } from '@/core/dreams/dreams';
 import { futureStartState, previewStartNow } from '@/core/journeys/futureJourneys';
@@ -52,7 +52,7 @@ import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { useSupportCircleImpact } from '@/hooks/useSupportCircleImpact';
-import { isRTL } from '@/i18n/rtl';
+import { isolate, isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 
@@ -125,7 +125,7 @@ export default function JourneyDetailScreen() {
   const isCanceled = view.status === 'abandoned';
   // FUTURE MODE (Future Journey Management §7/§8): a complete, approved plan that has not started.
   // It shows its planned window instead of progress, its Steps read-only, and one Start Journey CTA.
-  // It asks for nothing: no check-in, no "next" Step, no Phase, no percentage, no report.
+  // It asks for nothing: no check-in, no "next" Step, no Milestone, no percentage, no report.
   const isFutureMode = view.status === 'future';
   const futureStart = isFutureMode ? futureStartState(journey, Date.now()) : undefined;
   const nextStep = isCanceled || isFutureMode ? undefined : journey.steps.find((s) => !s.done);
@@ -204,34 +204,6 @@ export default function JourneyDetailScreen() {
     core.abandonJourney(journey.id);
   };
 
-  // The ⋯ menu at the end of the action list. Cancel comes first and Delete last — ascending
-  // severity: Cancel keeps the record, Delete erases it. Only Delete is marked `destructive` (danger
-  // ink): it is the one that destroys data. Cancel is a legitimate choice about a life, not a data
-  // wipe, so it stays in neutral ink — the menu's own position already says it is weighty.
-  const journeyMenuItems: OverflowMenuItem[] = [
-    ...(canCancel
-      ? [
-          {
-            key: 'cancel',
-            label: t('detail.cancel'),
-            a11yLabel: t('detail.cancelA11y'),
-            hint: t('detail.cancelHint'),
-            icon: 'stop-circle-outline' as const,
-            onPress: () => setConfirmingCancel(true),
-          },
-        ]
-      : []),
-    {
-      key: 'delete',
-      label: t('detail.delete'),
-      a11yLabel: t('detail.deleteA11y'),
-      hint: t('detail.deleteHint'),
-      icon: 'trash-outline' as const,
-      destructive: true,
-      onPress: () => setConfirmingDelete(true),
-    },
-  ];
-
   const onConfirmDelete = () => {
     setConfirmingDelete(false);
     // Support Circle (D2): a deleted Journey closes/revokes every live invite. Best-effort and
@@ -254,19 +226,25 @@ export default function JourneyDetailScreen() {
         />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Phase / progress card */}
+          {/* Milestone / progress card */}
           <ThemedView
             type="backgroundElement"
-            style={[styles.phaseCard, { borderColor: theme.hairline }, CARD_SHADOW]}>
-            {/* A canceled Journey shows NO Phase, NO progress bar and NO percentage — only the
+            style={[styles.progressCard, { borderColor: theme.hairline }, CARD_SHADOW]}>
+            {/* A canceled Journey shows NO Milestone, NO progress bar and NO percentage — only the
                 honest "N of M Steps done", counted against the Steps it held when it was stopped
                 (`stepsAtAbandon`). It must never read as a success (PRD §4.5 / §8.2). */}
-            {/* A FUTURE Journey shows NO Phase, NO bar and NO percentage either — there is no
+            {/* A FUTURE Journey shows NO Milestone, NO bar and NO percentage either — there is no
                 progress to report before it starts (PRD §8). In their place: the PLANNED window it
                 would run over, and how many Steps are waiting in the plan. */}
-            {!isCanceled && !isFutureMode && (
+            {/* The Milestone line is read from the Journey's REAL Milestones (shared with Home and
+                the Journeys card). A Journey with none says nothing here — it never had a Milestone
+                the user saw or approved (Device QA 2026-08-17, A1). */}
+            {!isCanceled && !isFutureMode && view.milestone && (
               <ThemedText type="subtitle">
-                {t('detail.phase', { phase: view.phase, phases: view.phases })}
+                {t('detail.milestone', {
+                  current: view.milestone.current,
+                  total: view.milestone.total,
+                })}
               </ThemedText>
             )}
             <ThemedText type="small" themeColor="textSecondary">
@@ -557,67 +535,60 @@ export default function JourneyDetailScreen() {
             </View>
           )}
 
-          {/* Pause / Resume (J3) — non-destructive, keeps all progress. Hidden once completed. */}
+          {/* The Journey's own actions, in one family at the END of the list (founder decision,
+              Device QA 2026-08-17 B3). This is the screen where a Journey is MANAGED, so nothing is
+              hidden behind a ⋯ here: the de-emphasis comes from POSITION (last, after everything the
+              Journey is) and from INK, which is the honest arrangement on a settings surface.
+              Ascending weight: Pause is reversible, Cancel stops the plan but keeps the record,
+              Delete erases it. */}
           {canFreeze && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isFrozen ? t('detail.resumeA11y') : t('detail.freezeA11y')}
+            <ActionRow
+              icon={isFrozen ? 'play-outline' : 'pause-outline'}
+              label={isFrozen ? t('detail.resume') : t('detail.freeze')}
+              a11yLabel={isFrozen ? t('detail.resumeA11y') : t('detail.freezeA11y')}
               onPress={onToggleFreeze}
-              style={({ pressed }) => [
-                styles.freezeRow,
-                { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
-                pressed && styles.pressed,
-              ]}>
-              <Ionicons
-                name={isFrozen ? 'play-outline' : 'pause-outline'}
-                size={18}
-                color={theme.tealStrong}
-              />
-              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                {isFrozen ? t('detail.resume') : t('detail.freeze')}
-              </ThemedText>
-            </Pressable>
+            />
           )}
 
           {/* Share completion (I1, Slice 6) — a completed Journey keeps a reusable "Share completion"
               action that reopens the card + share (no celebratory animation). PRD §6. */}
           {journey.status === 'completed' && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('detail.shareCompletion')}
+            <ActionRow
+              icon="share-outline"
+              label={t('detail.shareCompletion')}
+              a11yLabel={t('detail.shareCompletion')}
               onPress={() =>
                 router.push({
                   pathname: '/completion',
                   params: { journeyId: journey.id, mode: 'reopen' },
                 })
               }
-              style={({ pressed }) => [
-                styles.shareCompletionRow,
-                { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
-                pressed && styles.pressed,
-              ]}>
-              <Ionicons name="share-outline" size={18} color={theme.tealStrong} />
-              <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-                {t('detail.shareCompletion')}
-              </ThemedText>
-            </Pressable>
+            />
           )}
 
-          {/* The heavy actions live at the END of the list, behind a ⋯ (founder decision,
-              2026-08-14). Pause/Resume and Share completion stay VISIBLE — they are reversible,
-              everyday controls. Cancel and Delete are the two that end a Journey, so they sit one
-              tap deeper: de-emphasised by POSITION, not by warning iconography. No prohibition
-              symbol on either — stopping a Journey is a legitimate life choice, and a "not allowed"
-              glyph would say the opposite (the same reason the confirmation never lists what the
-              user is about to lose). */}
-          <View style={styles.overflowRow}>
-            <OverflowMenu
-              a11yLabel={t('detail.moreActionsA11y')}
-              size={44}
-              width={250}
-              items={journeyMenuItems}
+          {/* Cancel — NEUTRAL ink, and no prohibition glyph. Stopping a Journey is a legitimate
+              choice about a life, not a data wipe; colouring it as a warning would put judgement on
+              it, which is the same thing the confirmation copy refuses to do. */}
+          {canCancel && (
+            <ActionRow
+              icon="stop-circle-outline"
+              label={t('detail.cancel')}
+              hint={t('detail.cancelHint')}
+              a11yLabel={t('detail.cancelA11y')}
+              tone="neutral"
+              onPress={() => setConfirmingCancel(true)}
             />
-          </View>
+          )}
+
+          {/* Delete — the one action that ERASES data, so it is the one that carries the danger ink. */}
+          <ActionRow
+            icon="trash-outline"
+            label={t('detail.delete')}
+            hint={t('detail.deleteHint')}
+            a11yLabel={t('detail.deleteA11y')}
+            tone="danger"
+            onPress={() => setConfirmingDelete(true)}
+          />
         </ScrollView>
 
         {/* Start Journey (§9) — the Future Journey's one action, in place of the check-in CTA. It is
@@ -800,7 +771,8 @@ export default function JourneyDetailScreen() {
 /**
  * Back chip + a small "JOURNEY" eyebrow over a SECONDARY (de-emphasized) title. When `onEdit` is
  * provided a pencil trailing action opens the coach-led edit flow; it is omitted (hidden) for a
- * completed Journey or when the live coach is unavailable.
+ * completed Journey or when the live coach is unavailable. Back and Edit are the only controls up
+ * here — the Journey's own actions live at the end of its list, where they can be read in context.
  */
 function Header({
   onBack,
@@ -829,13 +801,14 @@ function Header({
           { backgroundColor: theme.backgroundSelected },
           pressed && styles.pressed,
         ]}>
-        {/* '›' flipped to a back-pointing chevron: mirror in LTR (points left), leave
-            upright in RTL (points right) so "back" always points to where we came from. */}
+        {/* '›' is a Bidi-MIRRORED character, so inside an RTL paragraph the renderer would
+            flip it a second time; isolating pins it to its own run and the scaleX below is
+            the only mirror. "Back" then always points to where we came from. */}
         <ThemedText
           type="subtitle"
           themeColor="textSecondary"
           style={[styles.backGlyph, { transform: [{ scaleX: isRTL() ? 1 : -1 }] }]}>
-          ›
+          {isolate('›')}
         </ThemedText>
       </Pressable>
       <View style={styles.headerText}>
@@ -861,6 +834,63 @@ function Header({
         </Pressable>
       )}
     </View>
+  );
+}
+
+/**
+ * One full-width action at the END of the Journey's action list — the shared shell behind
+ * Pause/Resume, Share completion, Cancel and Delete, so the four read as ONE family (founder
+ * decision, Device QA 2026-08-17 B3). They were briefly hidden behind a ⋯; on a screen whose whole
+ * job is managing a Journey, concealing two of its actions was the wrong kind of quiet.
+ *
+ * `tone` sets the ink and nothing else:
+ *  · `accent`  — the reversible, everyday controls (Pause / Resume, Share completion);
+ *  · `neutral` — Cancel. A legitimate choice about a life, never coloured as a warning;
+ *  · `danger`  — Delete, the ONE action that erases data (the documented meaning of danger ink).
+ *
+ * `hint` adds the plain second line for the two actions that end a Journey, so what happens is
+ * readable BEFORE the confirmation rather than only inside it.
+ */
+function ActionRow({
+  icon,
+  label,
+  hint,
+  a11yLabel,
+  tone = 'accent',
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  hint?: string;
+  a11yLabel: string;
+  tone?: 'accent' | 'neutral' | 'danger';
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  const ink = tone === 'danger' ? theme.danger : tone === 'neutral' ? theme.textSecondary : theme.tealStrong;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.actionRow,
+        { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+        pressed && styles.pressed,
+      ]}>
+      <View style={styles.actionRowMain}>
+        <Ionicons name={icon} size={18} color={ink} />
+        <ThemedText type="smallBold" style={{ color: ink }}>
+          {label}
+        </ThemedText>
+      </View>
+      {hint ? (
+        <ThemedText type="small" themeColor="textMuted" style={styles.actionRowHint}>
+          {hint}
+        </ThemedText>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -1061,7 +1091,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
     gap: Spacing.four,
   },
-  phaseCard: {
+  progressCard: {
     borderRadius: Radius.card,
     borderWidth: 1,
     padding: Spacing.three,
@@ -1248,25 +1278,24 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-  freezeRow: {
-    flexDirection: 'row',
+  // The shared shell for every end-of-list action (Pause/Resume, Share completion, Cancel, Delete) —
+  // the same card the rest of the screen uses, so weight is carried by ink and order, not by shape.
+  actionRow: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
+    gap: Spacing.one,
     marginTop: Spacing.two,
     paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
     borderRadius: Radius.card,
     borderWidth: 1,
   },
-  shareCompletionRow: {
+  actionRowMain: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: Spacing.two,
-    marginTop: Spacing.two,
-    paddingVertical: Spacing.three,
-    borderRadius: Radius.card,
-    borderWidth: 1,
+  },
+  actionRowHint: {
+    textAlign: 'center',
   },
   pausedBanner: {
     flexDirection: 'row',
@@ -1279,12 +1308,6 @@ const styles = StyleSheet.create({
   pausedText: {
     flex: 1,
     gap: 1,
-  },
-  // The ⋯ that ends the action list: centred and on its own, so the heavy actions read as a quiet
-  // afterthought rather than as another button competing with Pause.
-  overflowRow: {
-    alignItems: 'center',
-    marginTop: Spacing.two,
   },
   canceledBanner: {
     flexDirection: 'row',

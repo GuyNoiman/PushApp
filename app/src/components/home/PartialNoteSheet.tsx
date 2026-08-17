@@ -9,7 +9,7 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
@@ -49,70 +49,78 @@ export function PartialNoteSheet({
         close();
         onBack();
       }}>
-      <Pressable
-        accessibilityLabel={t('dismiss', { ns: 'common' })}
-        style={styles.backdrop}
-        onPress={() => {
-          close();
-          onBack();
-        }}>
-        <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
-          <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
-            {stepTitle}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('report.partialNote.title')}
-          </ThemedText>
+      {/* The sheet sits on the bottom edge, so the keyboard would cover the note field outright —
+          lift the whole sheet above it (Device QA A3). A ScrollView's keyboard inset can't help
+          here: there is no scroll body, so KeyboardAvoidingView is the right tool. */}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable
+          accessibilityLabel={t('dismiss', { ns: 'common' })}
+          style={styles.backdrop}
+          onPress={() => {
+            close();
+            onBack();
+          }}>
+          <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
+            <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
+              {stepTitle}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('report.partialNote.title')}
+            </ThemedText>
 
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            placeholder={t('report.partialNote.placeholder')}
-            placeholderTextColor={theme.textMuted}
-            multiline
-            style={[
-              styles.input,
-              { borderColor: theme.hairline, color: theme.text, backgroundColor: theme.background },
-            ]}
-          />
-          <ThemedText type="small" themeColor="textMuted">
-            {t('report.partialNote.optional')}
-          </ThemedText>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder={t('report.partialNote.placeholder')}
+              placeholderTextColor={theme.textMuted}
+              multiline
+              style={[
+                styles.input,
+                { borderColor: theme.hairline, color: theme.text, backgroundColor: theme.background },
+              ]}
+            />
+            <ThemedText type="small" themeColor="textMuted">
+              {t('report.partialNote.optional')}
+            </ThemedText>
 
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('back', { ns: 'common' })}
-              onPress={() => {
-                close();
-                onBack();
-              }}
-              style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                {t('back', { ns: 'common' })}
-              </ThemedText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('report.partialNote.save')}
-              onPress={save}
-              style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: theme.tint },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold" style={{ color: onAccent }}>
-                {t('report.partialNote.save')}
-              </ThemedText>
-            </Pressable>
-          </View>
+            <View style={styles.actions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('back', { ns: 'common' })}
+                onPress={() => {
+                  close();
+                  onBack();
+                }}
+                style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {t('back', { ns: 'common' })}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('report.partialNote.save')}
+                onPress={save}
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: theme.tint },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold" style={{ color: onAccent }}>
+                  {t('report.partialNote.save')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',

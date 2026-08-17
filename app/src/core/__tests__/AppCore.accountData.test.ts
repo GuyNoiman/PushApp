@@ -65,8 +65,11 @@ function memFlag(initial = false): FirstRunFlag {
 describe('AppCore.exportStateJson', () => {
   it('stamps a header and carries the on-device data', async () => {
     const { repo } = capturingRepo();
-    const core = new AppCore(repo, memFlag()); // first run seeds demo Journeys
+    const core = new AppCore(repo, memFlag());
     await core.start();
+    // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty); the
+    // export must carry whatever IS on device, so this test puts something there first.
+    core.seedDemoJourney();
 
     const raw = core.exportStateJson({ appVersion: '9.9.9', exportedAt: 1234, uid: 'u1', handle: 'pip' });
     const parsed = JSON.parse(raw);
@@ -129,7 +132,8 @@ describe('AppCore.resetToFirstRun', () => {
     const flag = memFlag();
     const core = new AppCore(repo, flag);
     await core.start();
-    expect(core.getSnapshot().journeys.length).toBeGreaterThan(0); // seeded
+    core.seedDemoJourney(); // dev-only seed (B2) — something to wipe
+    expect(core.getSnapshot().journeys.length).toBeGreaterThan(0);
 
     let notified = 0;
     core.subscribe(() => {

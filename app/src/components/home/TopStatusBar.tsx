@@ -22,6 +22,7 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { isolate } from '@/i18n/rtl';
 
 /** A compact icon + number stat (coins, streak) — no caption. */
 function Stat({
@@ -86,8 +87,10 @@ export function TopStatusBar({
               style={[styles.fill, { backgroundColor: theme.tint, width: `${pct * 100}%` }]}
             />
           </View>
+          {/* Isolated: two number runs around a NEUTRAL "/" swap places under RTL, so a Hebrew
+              reader would see "250 / 120" and think they had overshot the level (RTL sweep). */}
           <ThemedText style={[styles.xpText, { color: theme.textMuted }]}>
-            {xpIntoLevel} / {xpForNextLevel}
+            {isolate(`${xpIntoLevel} / ${xpForNextLevel}`)}
           </ThemedText>
         </View>
       </View>
@@ -130,10 +133,12 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     minWidth: 0,
   },
-  // A compact meter (~a quarter of its old full-width self, per founder) — a fixed,
-  // short track rather than one that stretches across the level cluster's free space.
+  // A compact meter: still a FIXED short track rather than one that stretches across the
+  // level cluster's free space, but twice the width it was shrunk to on 2026-08-09 (founder,
+  // device pass 2026-08-17) — enough to read progress at a glance while the streak and level
+  // keep their room and the strip keeps its calm proportions.
   track: {
-    width: 40,
+    width: 80,
     height: 5,
     borderRadius: Radius.pill,
     overflow: 'hidden',

@@ -1,7 +1,8 @@
 /**
  * Inbox — the messages surface, an Instagram-DM layout with our category tabs
  * restored (founder feedback 2026-08-07, reversing the previous Primary/Requested
- * split). A header ("Inbox" + a clearly-labelled compose button), a rounded
+ * split). A header ("Inbox" + a "New message" pill that is honest about messaging
+ * still being deferred, see ComposeButton below), a rounded
  * search field, and a four-tab switch:
  *   · FRIENDS   — accepted friends + received cheers / nudges (the conversations).
  *   · ALLIES    — Journeys the user is an Ally of (a friend's shared progress).
@@ -25,7 +26,7 @@ import { useRouter, type Href } from 'expo-router';
 import type { TFunction } from 'i18next';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { InboxEmpty } from '@/components/inbox/InboxEmpty';
@@ -33,6 +34,7 @@ import { InboxRow, type InboxRowData } from '@/components/inbox/InboxRow';
 import { InboxTabs, type InboxTab, type InboxTabKey } from '@/components/inbox/InboxTabs';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { AllyProgress, Cheer, Friend, SocialProfile } from '@/core/social';
 import { useTheme } from '@/hooks/use-theme';
@@ -187,14 +189,16 @@ export default function InboxScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <ThemedText type="title">{t('title')}</ThemedText>
-          <View style={styles.compose}>
-            <View style={[styles.composeButton, { backgroundColor: theme.tealTint }]}>
-              <Ionicons name="create-outline" size={20} color={theme.tint} />
-            </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('newMessage')}
-            </ThemedText>
-          </View>
+          <ComposeButton
+            onPress={() =>
+              // Honest, not dead: it says what it can't do yet and offers the thing that DOES
+              // exist today (a Cheer, from Circle).
+              Alert.alert(t('comingSoon.title'), t('comingSoon.body'), [
+                { text: t('comingSoon.openCircle'), onPress: () => router.push('/friends' as Href) },
+                { text: t('close', { ns: 'common' }), style: 'cancel' },
+              ])
+            }
+          />
         </View>
 
         <View style={styles.searchWrap}>
@@ -251,9 +255,10 @@ export default function InboxScreen() {
             />
           )
         ) : (
-          <ScrollView
+          // Keyboard-safe: search filters this list, so the rows under the keyboard stay
+          // reachable and a row opens on the first tap (Device QA A3).
+          <TabScrollView
             contentContainerStyle={styles.list}
-            keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
             {/* An accepted friend's row opens their Friend Profile (Friend_Profile_PRD §8
                 criterion 1). A pending REQUEST row carries no profileId, so it stays inert —
@@ -265,10 +270,42 @@ export default function InboxScreen() {
                 onPress={row.profileId ? () => router.push(`/friend/${row.profileId}` as Href) : undefined}
               />
             ))}
-          </ScrollView>
+          </TabScrollView>
         )}
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+/**
+ * "New message" — one pill, icon AND label inside it, the same shape as Circle's Invite / Add
+ * buttons (founder device pass 2026-08-17: the label used to sit outside a button that wasn't even
+ * pressable).
+ *
+ * Direct messaging is deferred post-MVP (D29 / D40) and the Friend Profile PRD is explicit that we
+ * must not ship a dead or misleading message action. So this is a REAL button that does a real
+ * thing: it says plainly that messages aren't here yet and points at the way you can reach someone
+ * today (a Cheer, from Circle). The a11y label carries "coming later" too, so a screen-reader user
+ * knows BEFORE they press, not after.
+ */
+function ComposeButton({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
+  const { t } = useTranslation('inbox');
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('newMessageA11y')}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.composeButton,
+        { backgroundColor: theme.tealTint },
+        pressed && styles.pressed,
+      ]}>
+      <Ionicons name="create-outline" size={16} color={theme.tealStrong} />
+      <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+        {t('newMessage')}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -331,17 +368,19 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
   },
-  compose: {
+  // Same pill as Circle's header buttons: icon + label inside one 44pt-tall target.
+  composeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-  },
-  composeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.iconButton,
-    alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.one,
+    minHeight: 44,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+  },
+  pressed: {
+    opacity: 0.6,
   },
   searchWrap: {
     paddingHorizontal: Spacing.four,

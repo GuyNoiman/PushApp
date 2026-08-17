@@ -2,7 +2,8 @@
  * Onboarding — the first-run flow (K2, Onboarding_Questionnaire_PRD). ONE route that walks the user
  * through: language → Personal Information → questionnaire intro → the six questions → completion.
  * The root layout's first-run gate ({@link '@/app/_layout'}) routes here until onboarding is complete,
- * then never again; completion opens the first Coach conversation.
+ * then never again; completion lands the user on HOME (founder decision, Device QA 2026-08-17 B1),
+ * with the first Coach conversation one tap away on Home's hero card.
  *
  * The container owns the flow: local `step` + `answers` state (seeded from AppCore so an interrupted
  * flow RESUMES where it left off — PRD §8), the pure answer logic (`core/onboarding`), and persistence
@@ -110,9 +111,13 @@ export default function OnboardingScreen() {
 
   const finish = useCallback(() => {
     core.completeOnboarding(answers);
-    // Defer navigation until the gate flips (onboarding done → main stack available), so the /coach
+    // LAND ON HOME, not the Coach (founder decision, Device QA 2026-08-17 B1). Onboarding used to
+    // hand straight over to the first Coach conversation (PRD §7/§9); on a real device that meant
+    // the app opened on a conversation before the user had seen their own app. Home is the anchor,
+    // and the Coach is one tap away on Home's hero card — the hand-off still happens, the user just
+    // chooses when. Deferred until the gate flips (onboarding done → main stack available), so the
     // route is reachable rather than being redirected back into the (now-removed) onboarding group.
-    requestAnimationFrame(() => router.replace('/coach'));
+    requestAnimationFrame(() => router.replace('/'));
   }, [answers, core]);
 
   // K1 — the final soft pre-prompt: ask for notification permission in context, then finish. The
@@ -190,7 +195,7 @@ export default function OnboardingScreen() {
     return <CompletionStep skippedAll={skippedAll} onStart={() => go('notifications')} />;
   }
 
-  // notifications — the final soft pre-prompt; both actions finish onboarding and open the Coach.
+  // notifications — the final soft pre-prompt; both actions finish onboarding and open Home.
   return <NotificationsStep onTurnOn={enableReminders} onNotNow={finish} />;
 }
 
@@ -388,7 +393,8 @@ function IntroStep({
   );
 }
 
-/** §7 — completion: opens the first Coach conversation, with an optional Communication Style seam.
+/** §7 — completion: ends the questionnaire and (after the reminders pre-prompt) opens Home, with an
+ *  optional Communication Style seam.
  *  Communication Style (D40) is offered here as a NON-BLOCKING secondary action — the onboarding shell
  *  owns final placement; it can also be set later in Settings. */
 function CompletionStep({ skippedAll, onStart }: { skippedAll: boolean; onStart: () => void }) {
@@ -415,7 +421,7 @@ function CompletionStep({ skippedAll, onStart }: { skippedAll: boolean; onStart:
   );
 }
 
-/** K1 — final soft pre-prompt: a value-framed reminders ask AFTER completion, right before the Coach
+/** K1 — final soft pre-prompt: a value-framed reminders ask AFTER completion, right before Home
  *  opens. "Turn on reminders" requests OS permission in context; "Not now" declines. Either action
  *  finishes onboarding — permission denial or declining must NEVER block completion. */
 function NotificationsStep({ onTurnOn, onNotNow }: { onTurnOn: () => void; onNotNow: () => void }) {

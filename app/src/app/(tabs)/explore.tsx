@@ -21,9 +21,10 @@ import { BrandCard, CreatorCard, JourneyCard } from '@/components/explore/Explor
 import { forYou, fromBrands, topCreators } from '@/components/explore/sampleContent';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { START_TEXT_ALIGN } from '@/i18n/rtl';
 import type { ThemeColor } from '@/constants/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
@@ -91,7 +92,9 @@ export default function ExploreScreen() {
           <ThemedText type="title">{t('title')}</ThemedText>
         </View>
 
-        <ScrollView
+        {/* Keyboard-safe: the search field is the first row of this list, so a result must be
+            tappable on the first tap while the keyboard is up (Device QA A3). */}
+        <KeyboardSafeScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
           {/* Search prompt — a real TextInput so tapping it focuses and raises the
@@ -114,7 +117,7 @@ export default function ExploreScreen() {
                 placeholder={t('searchPlaceholder')}
                 placeholderTextColor={theme.textMuted}
                 returnKeyType="search"
-                textAlign={isRTL() ? 'right' : 'left'}
+                textAlign={START_TEXT_ALIGN}
                 style={[styles.searchText, styles.searchInput, { color: theme.text }]}
               />
               {/* Clear (X) — appears only with text; clears the query, keeps focus. */}
@@ -176,7 +179,7 @@ export default function ExploreScreen() {
               </ThemedText>
             </View>
           )}
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

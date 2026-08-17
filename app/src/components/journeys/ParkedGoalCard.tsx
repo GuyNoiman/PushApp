@@ -16,12 +16,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import type { ParkedGoal } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
 
 export function ParkedGoalCard({ goal }: { goal: ParkedGoal }) {
   const theme = useTheme();
   const { t } = useTranslation('journeys');
-  const align = isRTL() ? 'right' : 'left';
 
   return (
     <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.hairline }]}>
@@ -30,17 +28,17 @@ export function ParkedGoalCard({ goal }: { goal: ParkedGoal }) {
           type="small"
           themeColor="textMuted"
           numberOfLines={1}
-          style={[styles.eyebrow, { textAlign: align }]}>
+          style={styles.eyebrow}>
           {t(`parked.domain.${goal.domain}`)}
         </ThemedText>
-        <ThemedText type="subtitle" numberOfLines={2} style={{ textAlign: align }}>
+        <ThemedText type="subtitle" numberOfLines={2}>
           {goal.title}
         </ThemedText>
         <ThemedText
           type="small"
           themeColor="textSecondary"
           numberOfLines={1}
-          style={[styles.sub, { textAlign: align }]}>
+          style={styles.sub}>
           {t(`parked.kind.${goal.processType}`)}
         </ThemedText>
       </View>

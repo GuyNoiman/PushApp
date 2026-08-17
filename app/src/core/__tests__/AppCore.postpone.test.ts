@@ -71,7 +71,21 @@ async function coreWithStep(
     rhythm,
     steps: [{ title: 'Jog 15 minutes', cadence }],
   });
+  // A new Journey now arrives with its own default DAILY reminder (founder, 2026-08-17), which
+  // schedules through the same mocked SDK. Let that settle and reset the counters, so what each test
+  // below counts is exactly what the POSTPONE one-shot did — the subject of this suite.
+  await flushMicrotasks();
+  mockSchedule.mockClear();
+  mockCancel.mockClear();
   return { core, journey, stepId: journey.steps[0].id };
+}
+
+/**
+ * Drain the fire-and-forget promise chain WITHOUT touching timers: several tests below install fake
+ * timers before building their core, so anything timer-based here would hang.
+ */
+async function flushMicrotasks() {
+  for (let i = 0; i < 30; i += 1) await Promise.resolve();
 }
 
 /** The Step as currently held in the core's snapshot. */

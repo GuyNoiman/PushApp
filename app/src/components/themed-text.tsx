@@ -3,6 +3,7 @@ import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { FontFamily, Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { START_TEXT_ALIGN, writingDirection } from '@/i18n/rtl';
 
 export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
@@ -16,7 +17,13 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
   return (
     <Text
       style={[
+        // Direction FIRST, so every line follows the app's language: an explicit
+        // alignment (never natural — see START_TEXT_ALIGN) plus a base writing
+        // direction that keeps Hebrew-with-Latin copy in reading order. A caller's
+        // own `style` still wins, so 'center' and the bilingual RestartPrompt are
+        // untouched.
         { color: theme[themeColor ?? 'text'] },
+        { textAlign: START_TEXT_ALIGN, writingDirection: writingDirection() },
         type === 'default' && styles.default,
         type === 'title' && styles.title,
         type === 'small' && styles.small,

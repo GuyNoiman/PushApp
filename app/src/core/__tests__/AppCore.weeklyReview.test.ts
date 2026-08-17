@@ -69,8 +69,11 @@ function capturingCore(): { core: AppCore; saved: () => AppState | null } {
 }
 
 async function startedCore(): Promise<AppCore> {
-  const core = new AppCore(inMemoryRepo()); // first run seeds the demo Dreams/Journeys
+  const core = new AppCore(inMemoryRepo());
   await core.start();
+  // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty), so this
+  // suite — which reviews a realistic multi-Journey week — asks for the seed explicitly.
+  core.seedDemoJourney();
   return core;
 }
 
@@ -246,6 +249,8 @@ describe('AppCore Weekly Review — adaptive flags OFF: the review runs in PLAIN
     jest.setSystemTime(MON);
     const core = productionCore(inMemoryRepo());
     await core.start();
+    // Dev-only demo data since Device QA 2026-08-17 B2 — asked for explicitly.
+    core.seedDemoJourney();
 
     core.syncTime(); // records the current week key (no week has closed yet)
     expect(core.getPendingWeeklyReview()).toBeNull();
@@ -365,6 +370,8 @@ describe('AppCore Weekly Review — 48h expiry (§9)', () => {
     jest.setSystemTime(MON);
     const { core, saved } = capturingCore();
     await core.start();
+    // Dev-only demo data since Device QA 2026-08-17 B2 — asked for explicitly.
+    core.seedDemoJourney();
 
     // Report one Step Done — a closed occurrence expiry must never rewrite.
     const run = core.getSnapshot().journeys.find((j) => j.title === 'Run 5km')!;

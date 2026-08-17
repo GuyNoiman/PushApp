@@ -92,7 +92,10 @@ describe('AppCore adaptive coach — reviewWeek report→replan loop (flag on)',
   async function coreWithRunJourney() {
     const { repo } = capturingRepo();
     const core = new AppCore(repo);
-    await core.start(); // first run seeds the demo Dreams/Journeys
+    await core.start();
+    // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty), so a
+    // test that works on a realistic plan asks for the seed explicitly.
+    core.seedDemoJourney();
     const run = core.getSnapshot().journeys.find((j) => j.title === 'Run 5km')!;
     return { core, run };
   }

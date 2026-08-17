@@ -25,7 +25,7 @@ import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DeleteAccountSheet } from '@/components/settings/DeleteAccountSheet';
@@ -34,6 +34,7 @@ import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
@@ -147,7 +148,8 @@ export default function SettingsScreen() {
           <ThemedText type="title">{t('title')}</ThemedText>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Tab-aware: tapping this tab while already on it returns the page to the top. */}
+        <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Profile — the username lives here now (moved out of Circle). */}
           <ProfileIdentity />
 
@@ -274,7 +276,7 @@ export default function SettingsScreen() {
               />
             </SettingsSection>
           ) : null}
-        </ScrollView>
+        </TabScrollView>
 
         <DeleteAccountSheet
           visible={deleteSheetVisible}

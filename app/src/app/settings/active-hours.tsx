@@ -16,11 +16,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { allDayWindow, resolveActiveHours, type Weekday } from '@/core/util/availability';
 import type { ActiveHours, AllowedWindow, DayActiveHours } from '@/core/types/domain';
@@ -123,7 +124,9 @@ export default function ActiveHoursScreen() {
           <ThemedText type="title">{t('activeHours.title')}</ThemedText>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Keyboard-safe: in per-day mode the last weekday's time fields sit at the very bottom, so
+            they need the keyboard inset + scroll-to-focused-field (Device QA A3). */}
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <ThemedText type="small" themeColor="textMuted">
             {t('activeHours.intro')}
           </ThemedText>
@@ -217,7 +220,7 @@ export default function ActiveHoursScreen() {
           <ThemedText type="small" themeColor="textSecondary" style={styles.summary}>
             {summary}
           </ThemedText>
-        </ScrollView>
+        </KeyboardSafeScrollView>
 
         {/* Save / Cancel footer. */}
         <View style={[styles.footer, { borderTopColor: theme.hairline }]}>

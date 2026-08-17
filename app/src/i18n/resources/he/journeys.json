@@ -23,8 +23,8 @@
     }
   },
   "card": {
-    "milestone": "אבן דרך {{phase}} מתוך {{phases}}",
-    "milestoneComplete": "אבן דרך {{phases}} מתוך {{phases}}, הושלם",
+    "milestone": "אבן דרך {{current}} מתוך {{total}}",
+    "milestoneComplete": "אבן דרך {{total}} מתוך {{total}}, הושלם",
     "completed": "הושלם",
     "stopped": "נעצר ב-{{date}}",
     "starts": "מתחיל ב-{{date}}",

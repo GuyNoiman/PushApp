@@ -119,6 +119,24 @@ export const featureFlags = {
    * `enabled: false`); it only feeds the transient, gating-only device reads.
    */
   devMockRecovery: false,
+  /**
+   * DEV-ONLY. Seeds the demo Dreams/Journeys/Steps on a genuine first run
+   * ({@link ../AppCore.seedDemoJourney}). OFF for every real user by decision: a fresh install must
+   * open EMPTY, with nothing the user did not create (founder decision, Device QA 2026-08-17 B2) —
+   * a first-run user meeting three Journeys they never chose is the opposite of what this app is.
+   *
+   * Kept (rather than deleted) because the seed is still the fastest way to bring a device up with
+   * a realistic plan: its Steps carry `plannedFor` dates and constraints, which is what the adaptive
+   * replan loop and the Miss-Recovery gates need to be exercised at all. On only when
+   * `EXPO_PUBLIC_DEMO_SEED` is present, which lives solely in the founder's git-ignored `.env.local`
+   * and is never committed — so store builds and CI never seed. Literal `Boolean(process.env.…)` so
+   * Metro statically inlines it at build time.
+   *
+   * Deliberately its OWN flag rather than riding `adaptiveCoachDev`: the founder needs to test the
+   * adaptive loop and the genuinely-empty first run independently, and coupling them would mean
+   * turning one on silently re-seeds the other's device.
+   */
+  devSeedDemoData: Boolean(process.env.EXPO_PUBLIC_DEMO_SEED),
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

@@ -41,7 +41,7 @@ import type { NewStepInput } from '@/core/engines/JourneyEngine';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
 import type { Cadence, Journey, Rhythm } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { isolate, isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -125,8 +125,11 @@ export default function NewJourneyScreen() {
   const [starterOpen, setStarterOpen] = useState(false);
   const [steps, setSteps] = useState<DraftStep[]>([]);
 
-  // Stage 5 — Reminders (opt-in; permission requested in-context on create).
-  const [remindEnabled, setRemindEnabled] = useState(false);
+  // Stage 5 — Reminders. ON by default, matching the app-wide default a Journey now arrives with
+  // (founder, 2026-08-17): a plan you are never reminded of is a plan you will not do. The toggle is
+  // the one-tap opt-out, and switching it off is written back as an explicit Off on create, so what
+  // this screen shows is what the Journey actually gets. Permission is still requested in-context.
+  const [remindEnabled, setRemindEnabled] = useState(true);
   const [remindTimeIndex, setRemindTimeIndex] = useState(0);
 
   // Stage 6 — the start mode (Future Journey Management §5), chosen at FINAL APPROVAL. Defaults to
@@ -298,6 +301,11 @@ export default function NewJourneyScreen() {
             body: starterTitle.trim() || t('new.reminders.notificationBody'),
           },
         );
+      } else {
+        // The user deliberately turned the reminder off in the wizard. A Journey now arrives with a
+        // default reminder ON, so that choice has to be written back — otherwise the app would nudge
+        // someone who just told it not to. The rule keeps its time for an easy switch back on.
+        await core.setJourneyReminderOff(journey.id);
       }
 
       dismiss();
@@ -330,8 +338,10 @@ export default function NewJourneyScreen() {
             <ThemedText type="subtitle" style={styles.topTitle}>
               {stage === 1 ? t('new.stages.why') : t('new.header')}
             </ThemedText>
+            {/* "3 / 6" is two numbers around a neutral separator: left to the RTL paragraph
+                it would swap into "6 / 3". Isolated, the counter keeps its own order. */}
             <ThemedText type="small" themeColor="textMuted">
-              {t('new.progress', { current: stage + 1, total: STAGE_KEYS.length })}
+              {isolate(t('new.progress', { current: stage + 1, total: STAGE_KEYS.length }))}
             </ThemedText>
           </View>
 
@@ -818,13 +828,16 @@ export default function NewJourneyScreen() {
             <View style={styles.footer}>
               <View style={styles.navlbl}>
                 <ThemedText type="small" themeColor="textMuted">
+                  {/* The guillemets are Bidi-MIRRORED characters, so inside Hebrew copy the
+                      renderer would flip them a second time and undo the choice below. Isolating
+                      each glyph pins it to its own (LTR) run, so what we pick is what is drawn. */}
                   {stage > 0
-                    ? `${isRTL() ? '›' : '‹'} ${t(`new.stages.${STAGE_KEYS[stage - 1]}`)}`
+                    ? `${isolate(isRTL() ? '›' : '‹')} ${t(`new.stages.${STAGE_KEYS[stage - 1]}`)}`
                     : ''}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textMuted">
                   {!isLast
-                    ? `${t(`new.stages.${STAGE_KEYS[stage + 1]}`)} ${isRTL() ? '‹' : '›'}`
+                    ? `${t(`new.stages.${STAGE_KEYS[stage + 1]}`)} ${isolate(isRTL() ? '‹' : '›')}`
                     : ''}
                 </ThemedText>
               </View>
@@ -940,9 +953,14 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 // ── Inline icons (Design System: no icon-font CDN; small hand-drawn SVGs) ──
 
+/**
+ * The wizard's back chevron. An SVG path is drawn in absolute coordinates and is NOT
+ * mirrored by the layout, so "back" has to be flipped by hand to keep pointing at
+ * where the user came from — the right-hand side under RTL.
+ */
 function ChevronIcon({ color }: { color: string }) {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" style={isRTL() ? styles.mirrored : undefined}>
       <Path
         d="M15 6l-6 6 6 6"
         stroke={color}
@@ -1282,5 +1300,9 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.35,
+  },
+  // Hand-mirror for artwork the layout can't flip for us (SVG paths).
+  mirrored: {
+    transform: [{ scaleX: -1 }],
   },
 });

@@ -135,13 +135,16 @@ async function startCore(
 }
 
 describe('a genuine first run still behaves exactly as before', () => {
-  it('seeds the demo data and reports no recovery state', async () => {
+  it('opens EMPTY and reports no recovery state', async () => {
     const { kv } = fakeKv();
     const { secure } = fakeSecure();
 
     const core = await startCore(kv, secure);
 
-    expect(core.getSnapshot().journeys.length).toBeGreaterThan(0); // demo seed ran
+    // A brand-new install has nothing on it — the demo data is dev-only now (founder decision,
+    // Device QA 2026-08-17 B2). An empty first run is the NORMAL state, and must never be confused
+    // with the unreadable-store state the rest of this suite is about.
+    expect(core.getSnapshot().journeys).toHaveLength(0);
     expect(core.getDataRecovery()).toBeNull();
     expect(core.getSnapshot().dataRecovery).toBeNull();
   });

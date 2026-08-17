@@ -12,13 +12,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { countryName } from '@/core/profile/countries';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
@@ -26,7 +27,7 @@ import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } fr
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import type { AddressForm } from '@/i18n/addressForm';
-import { isRTL } from '@/i18n/rtl';
+import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useProfile } from '@/state/ProfileProvider';
 import { useSocial } from '@/state/SocialProvider';
@@ -86,7 +87,9 @@ export default function MyProfileScreen() {
           <ThemedText type="title">{t('profile.title')}</ThemedText>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Keyboard-safe: the birth-date editor is the LAST row, so it needs the keyboard inset +
+            scroll-to-focused-field to be typed into at all (Device QA A3). */}
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Avatar (photo = Phase 2 → initials for now) + the private-scope note. */}
           <View style={styles.avatarWrap}>
             <View style={[styles.avatar, { backgroundColor: theme.tealTint }]}>
@@ -143,7 +146,7 @@ export default function MyProfileScreen() {
               onPress={cycleAddressForm}
             />
           </SettingsSection>
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -178,7 +181,7 @@ function NameField({
         onSubmitEditing={commit}
         placeholder={fallback ?? placeholder}
         placeholderTextColor={theme.textMuted}
-        textAlign={isRTL() ? 'right' : 'left'}
+        textAlign={START_TEXT_ALIGN}
         style={[styles.fieldInput, { color: theme.text, borderColor: theme.hairline, backgroundColor: theme.background }]}
       />
     </View>
@@ -219,7 +222,7 @@ function UsernameField({
           onChangeText={setDraft}
           autoCapitalize="none"
           autoCorrect={false}
-          textAlign={isRTL() ? 'right' : 'left'}
+          textAlign={START_TEXT_ALIGN}
           style={[
             styles.fieldInput,
             styles.usernameInput,
@@ -296,7 +299,7 @@ function BirthDateRow({
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="numbers-and-punctuation"
-            textAlign={isRTL() ? 'right' : 'left'}
+            textAlign={START_TEXT_ALIGN}
             style={[styles.fieldInput, { flex: 1, color: theme.text, backgroundColor: theme.background, borderColor: invalid ? theme.danger : theme.hairline }]}
           />
           <Pressable

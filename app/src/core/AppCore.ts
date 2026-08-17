@@ -74,6 +74,7 @@ import { EventBus } from './events/EventBus';
 import type {
   JourneyAbandoned,
   JourneyCompleted,
+  JourneyCreated,
   JourneyFrozen,
   StepCancelled,
   StepCheckedIn,
@@ -109,7 +110,12 @@ import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { directDependentsOf } from './status/stepDependencies';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
 import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
-import { resolveReminderRule, type JourneyReminder } from './util/reminderView';
+import {
+  DEFAULT_REMINDER_HOUR,
+  DEFAULT_REMINDER_MINUTE,
+  resolveReminderRule,
+  type JourneyReminder,
+} from './util/reminderView';
 import type { Candidate } from './util/reschedule';
 import {
   isPostponeError,
@@ -155,7 +161,11 @@ export interface BuddyView extends Buddy {
   xpForNextLevel: number;
 }
 
-/** An immutable read-model the UI renders. Recomputed on every change. */
+/**
+ * An immutable read-model the UI renders. Recomputed on every change — and every list on it is a
+ * NEW array each time, so a React memo keyed on one of them always recomputes after the engines
+ * mutate a Journey/Step in place (Device QA 2026-08-17, A2). Treat it as read-only.
+ */
 export interface Snapshot {
   buddy: BuddyView;
   /** Long-term Dreams — Home groups the week's Steps by the Dream their Journey serves. */
@@ -714,17 +724,27 @@ export class AppCore {
     // A started Journey's reminders must BEGIN: its rules were saved with the plan but planned
     // nothing while it was Future (the scheduler gates on isRunning), so re-plan the whole set now.
     this.bus.on('JourneyActivated', this.onReconcile);
+    // EVERY new Journey arrives with a reminder, ON (founder, 2026-08-17). Wired to the event rather
+    // than to a facade on purpose: `JourneyCreated` is emitted by the ONE construction path in the
+    // JourneyEngine, so the wizard, the coach and any future creation route all get it and no caller
+    // can forget (Engineering Bible §19 — this belongs to the engine layer, not to a screen).
+    this.bus.on('JourneyCreated', this.onJourneyDefaultReminder);
 
     // start() runs the authoritative day/week rollover once on launch.
     this.missionEngine.start();
 
-    // Seed the demo data ONLY on a genuine first run — never after an account
-    // deletion, and never over a store we could not open. resetToFirstRun clears the
-    // repo (so load() reports a first run again) but marks the first-run flag
-    // consumed, so a post-deletion relaunch stays clean (O1 adopted decision). A
-    // brand-new install has no flag ⇒ seeds as before. An `unreadable` result seeds
-    // nothing: the user has data, we just cannot read it yet.
-    if (loaded.kind === 'first-run' && !(await this.firstRunFlag.isConsumed())) {
+    // A FRESH INSTALL OPENS EMPTY (founder decision, Device QA 2026-08-17 B2): the demo data is now
+    // dev-only, behind `devSeedDemoData` — a first-run user must never meet Journeys and Steps they
+    // did not choose. The rest of the guard is unchanged and still matters for the dev build: seed
+    // only on a genuine first run, never after an account deletion (resetToFirstRun clears the repo
+    // — so load() reports a first run again — but marks the first-run flag consumed, O1), and never
+    // over a store we could not open (an `unreadable` result: the user has data, we just cannot read
+    // it yet).
+    if (
+      featureFlags.devSeedDemoData &&
+      loaded.kind === 'first-run' &&
+      !(await this.firstRunFlag.isConsumed())
+    ) {
       this.seedDemoJourney();
     }
 
@@ -798,6 +818,60 @@ export class AppCore {
   };
 
   /**
+   * Give every newly created Journey its reminder, ON, at the shared default time (founder,
+   * 2026-08-17: "by default I should be receiving notifications, not have it be off"). A plan you are
+   * never reminded of is a plan you will not do — so the reminder is part of creating a Journey, not a
+   * step a caller has to remember. Turning it off stays ONE tap on the Journey screen; nothing here
+   * nags beyond the single daily reminder the user can retime or silence.
+   *
+   * IDEMPOTENT: a Journey that already has a managed `fixedTime` rule is left alone, so a caller that
+   * sets its own time (the wizard's picker) wins and a re-emitted event can never mint a second rule.
+   *
+   * FUTURE JOURNEYS STAY SILENT: the rule is saved with the plan, but the scheduler's positive
+   * `isRunning` gate plans nothing for a `future` (or frozen) Journey — its reminders begin at the
+   * `JourneyActivated` reconcile above. This method deliberately does not look at status: the rule
+   * belongs to the plan; whether it FIRES is the scheduler's single decision.
+   *
+   * Fire-and-forget: {@link addReminderRule} persists + reconciles, and a scheduling failure (no
+   * permission yet) still leaves the rule saved, ready to be scheduled once permission is granted.
+   */
+  private readonly onJourneyDefaultReminder = (event: JourneyCreated): void => {
+    const journey = event.journey;
+    const existing = this.state.reminderRules.some(
+      (r) => r.journeyId === journey.id && r.trigger.kind === 'fixedTime',
+    );
+    if (existing) return;
+    void this.addReminderRule({
+      journeyId: journey.id,
+      trigger: {
+        kind: 'fixedTime',
+        hour: DEFAULT_REMINDER_HOUR,
+        minute: DEFAULT_REMINDER_MINUTE,
+      },
+      ...this.defaultReminderCopy(journey),
+      enabled: true,
+      mode: 'fixed',
+    });
+  };
+
+  /**
+   * The copy BAKED onto a default reminder rule. Only ever a fallback: the scheduler re-resolves the
+   * words at every reconcile through the injected {@link buildReminderCopy}, so a language, form of
+   * address or communication-style change reaches reminders that are already scheduled. We bake the
+   * same builder's answer here (this is the composition root, the one place allowed to know about
+   * copy) and fall back to the Journey's own title, so a reminder can never go out blank.
+   */
+  private defaultReminderCopy(journey: Journey): { title: string; body: string } {
+    try {
+      const copy = buildReminderCopy({ journeyId: journey.id, journeyTitle: journey.title });
+      if (copy) return copy;
+    } catch {
+      // A copy failure must not stop a Journey from having a reminder at all.
+    }
+    return { title: journey.title, body: '' };
+  }
+
+  /**
    * Daily Step Reporting reversal (D36): when an un-report REOPENED an auto-completed Journey, its
    * reminders must resume — re-plan the whole set. A plain report change (the Journey stayed active)
    * needs no reminder change, so we reconcile only on `reopenedJourney`.
@@ -864,12 +938,15 @@ export class AppCore {
   };
 
   /**
-   * Seed demo data so Home / Journeys aren't empty AND the Dream connection is
-   * visible: TWO Dreams, each grouping related Journeys. Home groups the week's
-   * Steps by the Dream their Journey serves; the Journeys tab shows the Dream as an
-   * eyebrow. (Dev seed only — real data replaces this once the coach creates plans.)
+   * DEV-ONLY seed ({@link featureFlags.devSeedDemoData}) — NOT part of a real first run, which opens
+   * empty (Device QA 2026-08-17 B2). It brings a development device up with a realistic plan so the
+   * surfaces have something to show: TWO Dreams, each grouping related Journeys. Home groups the
+   * week's Steps by the Dream their Journey serves; the Journeys tab shows the Dream as an eyebrow.
+   *
+   * Public so a development build (and the tests that need a realistic plan to work on) can ask for
+   * it explicitly. `start()` calls it only behind the flag, so no real user ever reaches it.
    */
-  private seedDemoJourney(): void {
+  seedDemoJourney(): void {
     // A Dream holds no back-reference to its Journeys (Dream Management, D40): the link is
     // authoritative on the Journey side (dreamId = primary), and a Dream's Journeys are derived
     // on read (core/dreams). So the seed simply sets each Journey's dreamId below.
@@ -1999,9 +2076,18 @@ export class AppCore {
     this.onChanged();
   }
 
-  /** Request notification permission for on-device reminders. Returns whether granted. */
-  initReminders(): Promise<boolean> {
-    return this.reminderEngine.init();
+  /**
+   * Request notification permission for on-device reminders. Returns whether granted.
+   *
+   * A GRANT immediately re-plans the whole set: every rule saved before permission existed (a Journey
+   * created during onboarding, or before the user said yes) scheduled nothing at the time, and a rule
+   * that was never scheduled is — to the user — no reminder at all (device QA 2026-08-17: no
+   * notification had ever arrived).
+   */
+  async initReminders(): Promise<boolean> {
+    const granted = await this.reminderEngine.init();
+    if (granted) await this.communicationScheduler.reconcile();
+    return granted;
   }
 
   /**
@@ -2520,9 +2606,15 @@ export class AppCore {
     };
     return {
       buddy,
-      dreams: this.state.dreams,
-      journeys: this.state.journeys,
-      parkedGoals: this.state.parkedGoals ?? [],
+      // The list fields are handed out as FRESH arrays, never the live `state` ones. The engines
+      // mutate Journeys and Steps IN PLACE, so a snapshot that re-exported the same array reference
+      // left every `useMemo([snapshot.journeys])` reader frozen on a stale derivation: reporting a
+      // Step done on Home left the Journeys card reading 0% until the screen remounted (Device QA
+      // 2026-08-17, A2). A new array identity per snapshot is what makes "recomputed on every
+      // change" true. Shallow by design — the entries are still the live domain objects.
+      dreams: [...this.state.dreams],
+      journeys: [...this.state.journeys],
+      parkedGoals: [...(this.state.parkedGoals ?? [])],
       futureCapacity: futureCapacity(this.state.journeys),
       todaySteps: this.journeyEngine.getTodaySteps(),
       weekSteps: this.journeyEngine.getWeekSteps(),

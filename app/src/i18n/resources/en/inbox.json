@@ -1,6 +1,12 @@
 {
   "title": "Inbox",
   "newMessage": "New message",
+  "newMessageA11y": "New message. Coming later.",
+  "comingSoon": {
+    "title": "Messages are coming later",
+    "body": "You can't write to someone here yet. Until then, a Cheer from Circle is the quickest way to let a friend know you're with them.",
+    "openCircle": "Open Circle"
+  },
   "searchA11y": "Search messages by name",
   "aBuddy": "A Buddy",
   "accept": "Accept",

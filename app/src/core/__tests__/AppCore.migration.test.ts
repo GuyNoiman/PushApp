@@ -175,9 +175,17 @@ describe('AppCore migration — old snapshot', () => {
 
 describe('AppCore reminders facade', () => {
   it('adds, lists (filtered by Journey), and removes a reminder rule', async () => {
-    const core = new AppCore(repoWith(null)); // first run (seeds a demo Journey)
+    const core = new AppCore(repoWith(null));
     await core.start();
+    // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty), so a
+    // test that works on a realistic plan asks for the seed explicitly.
+    core.seedDemoJourney();
     const journeyId = core.getSnapshot().journeys[0].id;
+
+    // Every created Journey now arrives with its own default reminder (founder, 2026-08-17), so the
+    // seed's three Journeys already own one rule each — this test measures the DELTA the facade adds.
+    const seeded = core.listReminderRules().length;
+    expect(core.listReminderRules(journeyId)).toHaveLength(1);
 
     const rule = await core.addReminderRule({
       journeyId,
@@ -186,12 +194,12 @@ describe('AppCore reminders facade', () => {
       body: 'Your Journey is waiting.',
     });
 
-    expect(core.listReminderRules()).toHaveLength(1);
-    expect(core.listReminderRules(journeyId)).toHaveLength(1);
+    expect(core.listReminderRules()).toHaveLength(seeded + 1);
+    expect(core.listReminderRules(journeyId)).toHaveLength(2);
     expect(core.listReminderRules('other')).toHaveLength(0);
 
     expect(await core.removeReminderRule(rule.id)).toBe(true);
-    expect(core.listReminderRules()).toHaveLength(0);
+    expect(core.listReminderRules()).toHaveLength(seeded);
     expect(await core.removeReminderRule('missing')).toBe(false);
   });
 

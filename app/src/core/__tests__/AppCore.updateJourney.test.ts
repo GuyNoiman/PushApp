@@ -44,8 +44,11 @@ function capturingRepo(): { repo: Repository; lastSaved: () => AppState | null }
 describe('AppCore.updateJourney (flag-independent)', () => {
   it('applies an edit in place, persists it, and notifies subscribers', async () => {
     const { repo, lastSaved } = capturingRepo();
-    const core = new AppCore(repo); // first run seeds demo Journeys
+    const core = new AppCore(repo);
     await core.start();
+    // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty), so a
+    // test that edits an existing plan asks for the seed explicitly.
+    core.seedDemoJourney();
 
     const target = core.getSnapshot().journeys[0];
     const originalStepId = target.steps[0].id;

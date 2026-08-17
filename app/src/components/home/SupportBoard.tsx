@@ -12,6 +12,10 @@
  * a round monogram avatar + name + the WHY/status line (surfaced, never hidden) + a
  * single action button. Presentational only — the caller supplies both people lists
  * and their press handlers; the only state here is which tab is open.
+ *
+ * The per-tab empty state means "nobody in THIS tab right now" and assumes you have
+ * friends at all: Home hides the whole section, heading included, until you have at
+ * least one accepted friend (founder, device pass 2026-08-17).
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';

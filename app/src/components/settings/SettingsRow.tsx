@@ -13,6 +13,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { chevronName } from '@/i18n/rtl';
 
 export function SettingsRow({
   icon,
@@ -79,7 +80,8 @@ export function SettingsRow({
         </ThemedText>
       ) : null}
 
-      {onPress ? <Ionicons name="chevron-forward" size={18} color={theme.textMuted} /> : null}
+      {/* The "go here" affordance points the way the language reads — left in Hebrew. */}
+      {onPress ? <Ionicons name={chevronName()} size={18} color={theme.textMuted} /> : null}
     </>
   );
 

@@ -21,7 +21,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +38,7 @@ import {
 } from '@/components/journey/journeyView';
 import { CanceledPill } from '@/components/journeys/CanceledPill';
 import { ParkedGoalCard } from '@/components/journeys/ParkedGoalCard';
+import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import {
   futureStartState,
@@ -202,7 +203,8 @@ export default function JourneysScreen() {
           })}
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Tab-aware: tapping this tab while already on it returns the page to the top. */}
+        <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {activeTab === 'future' ? (
             buckets.future.length === 0 && parkedGoals.length === 0 ? (
               <EmptyState title={t('future.empty.title')} body={t('future.empty.body')} />
@@ -300,7 +302,7 @@ export default function JourneysScreen() {
               ))}
             </View>
           )}
-        </ScrollView>
+        </TabScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -352,6 +354,11 @@ function JourneyCard({
   // a Journey that hasn't begun reads as position inside a plan already underway (§7 "no progress
   // implying work has begun"). A scheduled start whose day has come around while activation was
   // blocked says "ready when you are" — never late, never overdue (§7).
+  //
+  // A running/completed card reads its position from the Journey's REAL Milestones (`view.milestone`,
+  // shared with Home). A Journey that HAS no Milestones gets no line at all — `undefined` here, and
+  // the row below is skipped — rather than a Milestone count conjured out of its Step count (A1).
+  const milestone = view.milestone;
   const sub = future
     ? futureStart?.kind === 'scheduled'
       ? t('card.starts', { date: shortDate(futureStart.at) })
@@ -360,9 +367,11 @@ function JourneyCard({
         : t('card.startWhenReady')
     : canceled
       ? t('card.stepsDone', { done: view.doneSteps, total: view.totalSteps })
-      : completed
-        ? t('card.milestoneComplete', { phases: view.phases })
-        : t('card.milestone', { phase: view.phase, phases: view.phases });
+      : milestone === undefined
+        ? undefined
+        : completed
+          ? t('card.milestoneComplete', { total: milestone.total })
+          : t('card.milestone', { current: milestone.current, total: milestone.total });
 
   // A canceled Journey's footer is the day it was stopped — read from the stamp the cancel latched,
   // never projected. One canceled before that stamp existed shows no footer at all rather than an
@@ -447,9 +456,12 @@ function JourneyCard({
           ) : null}
         </View>
 
-        <ThemedText type="small" themeColor="textSecondary" style={styles.sub}>
-          {sub}
-        </ThemedText>
+        {/* Nothing to say — a Journey with no Milestones — shows nothing here. */}
+        {sub != null && (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.sub}>
+            {sub}
+          </ThemedText>
+        )}
 
         {/* No bar and no percentage on a canceled Journey — the honest "N of M Steps done" line
             above is the whole measure (PRD §4.5). A Future Journey has nothing to show yet. */}

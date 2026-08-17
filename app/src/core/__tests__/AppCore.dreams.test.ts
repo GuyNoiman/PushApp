@@ -63,6 +63,9 @@ describe('AppCore Dreams facade + persistence', () => {
     const first = repoWith(null);
     const core = new AppCore(first.repo);
     await core.start();
+    // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty), so a
+    // test that works on a realistic plan asks for the seed explicitly.
+    core.seedDemoJourney();
     const journeyId = core.getSnapshot().journeys[0].id;
 
     const dream = core.createDream({ title: 'Be a runner', why: 'clear head' });
@@ -84,6 +87,9 @@ describe('AppCore Dreams facade + persistence', () => {
   it('derives journeysForDream across lifecycle states (primary + secondary links)', async () => {
     const core = new AppCore(repoWith(null).repo);
     await core.start();
+    // The demo data is DEV-ONLY since Device QA 2026-08-17 B2 (a fresh install opens empty), so a
+    // test that works on a realistic plan asks for the seed explicitly.
+    core.seedDemoJourney();
     const journeys = core.getSnapshot().journeys;
     const primaryJourney = journeys[0].id;
     const secondaryJourney = journeys[1].id;

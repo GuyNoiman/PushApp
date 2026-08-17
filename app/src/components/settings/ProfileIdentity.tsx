@@ -35,7 +35,7 @@ import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } fr
 import { Radius, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { chevronName, isolate } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 /** 1–2 letter monogram from a username (skips a leading @). */
@@ -123,8 +123,10 @@ export function ProfileIdentity() {
               </ThemedText>
             )}
             <View style={styles.usernameRow}>
+              {/* Isolated: the handle is Latin, and inside RTL copy an un-isolated leading
+                  "@" drifts to the far side of the name ("sunny-otter-1234@"). */}
               <ThemedText type="smallBold" numberOfLines={1} style={styles.username}>
-                @{username}
+                {isolate(`@${username}`)}
               </ThemedText>
               {!editing && (
                 <Pressable
@@ -143,7 +145,7 @@ export function ProfileIdentity() {
             </View>
           </View>
           {/* Chevron — the card opens the full My Profile screen (Own_Profile). */}
-          <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.textMuted} />
+          <Ionicons name={chevronName()} size={18} color={theme.textMuted} />
         </Pressable>
 
         {editing && <UsernameEditor current={username} taken={takenUsernames} onSave={save} />}

@@ -126,6 +126,38 @@ describe('ReminderEngine.scheduleRule — fixedTime', () => {
   });
 });
 
+describe('ReminderEngine — permission survives a cold start (device QA 2026-08-17)', () => {
+  it('schedules on a FRESH engine that was never init()ed, reading the OS once without prompting', async () => {
+    // The engine is rebuilt on every launch, so its cached permission starts false even for a user
+    // who granted it long ago. Before the lazy check, a launch where nothing happened to call init()
+    // silently scheduled nothing all session — which is exactly "no notification ever arrived".
+    const engine = new ReminderEngine();
+
+    const ids = await engine.scheduleRule(makeRule());
+
+    expect(ids).toHaveLength(1);
+    expect(mockGetPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(mockRequestPermissionsAsync).not.toHaveBeenCalled(); // never prompts outside init()
+  });
+
+  it('asks the OS at most once per run, even across several schedules', async () => {
+    const engine = new ReminderEngine();
+    await engine.scheduleRule(makeRule());
+    await engine.scheduleRule(makeRule({ id: 'reminder_2' }));
+    expect(mockGetPermissionsAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('a DENIED answer is remembered — it does not re-ask the OS on every schedule', async () => {
+    mockGetPermissionsAsync.mockResolvedValueOnce({ granted: false });
+    const engine = new ReminderEngine();
+
+    expect(await engine.scheduleRule(makeRule())).toEqual([]);
+    expect(await engine.scheduleRule(makeRule())).toEqual([]);
+    expect(mockGetPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+});
+
 describe('ReminderEngine.scheduleOneShot — DATE trigger (Step Postponement, D37)', () => {
   it('schedules ONE date-triggered notification at the target instant', async () => {
     const engine = await grantedEngine();

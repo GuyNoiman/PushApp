@@ -18,6 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 import type { StepStatus } from '@/core/status/stepStatus';
 
 export type ReportChoice =
@@ -137,7 +138,13 @@ export function StepReportSheet({
                   accessibilityLabel={t('report.notReportedYet')}
                   onPress={() => onChoose('notReportedYet')}
                   style={({ pressed }) => [styles.reverse, pressed && styles.pressed]}>
-                  <Ionicons name="arrow-undo-outline" size={16} color={theme.textSecondary} />
+                  {/* "Undo" curls back toward the start of the line, so it becomes the redo glyph
+                      under RTL rather than pointing out of the reading flow. */}
+                  <Ionicons
+                    name={isRTL() ? 'arrow-redo-outline' : 'arrow-undo-outline'}
+                    size={16}
+                    color={theme.textSecondary}
+                  />
                   <ThemedText type="small" themeColor="textSecondary">
                     {t('report.notReportedYet')}
                   </ThemedText>

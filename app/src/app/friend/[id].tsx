@@ -44,7 +44,7 @@ import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/th
 import { friendActions } from '@/core/social/friendProfile';
 import { NotFriendsError, type FriendProfileView } from '@/core/social/SocialGateway';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { isolate, isRTL } from '@/i18n/rtl';
 import { useSocial } from '@/state/SocialProvider';
 
 type LoadState = 'loading' | 'loaded' | 'notConnected' | 'error';
@@ -231,12 +231,14 @@ function Header({
           { backgroundColor: theme.backgroundSelected },
           pressed && styles.pressed,
         ]}>
-        {/* '›' mirrored so "back" always points where we came from (LTR: left, RTL: right). */}
+        {/* '›' is a Bidi-MIRRORED character, so inside an RTL paragraph the renderer would
+            flip it a second time; isolating pins it to its own run and the scaleX below is
+            the only mirror. "Back" then always points to where we came from. */}
         <ThemedText
           type="subtitle"
           themeColor="textSecondary"
           style={[styles.backGlyph, { transform: [{ scaleX: isRTL() ? 1 : -1 }] }]}>
-          ›
+          {isolate('›')}
         </ThemedText>
       </Pressable>
       <View style={styles.headerText}>

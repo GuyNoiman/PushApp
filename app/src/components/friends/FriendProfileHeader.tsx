@@ -23,6 +23,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { SocialProfile } from '@/core/social';
 import { useTheme } from '@/hooks/use-theme';
+import { isolate } from '@/i18n/rtl';
 
 export function FriendProfileHeader({ profile }: { profile: SocialProfile }) {
   const theme = useTheme();
@@ -48,8 +49,9 @@ export function FriendProfileHeader({ profile }: { profile: SocialProfile }) {
         <ThemedText type="title" numberOfLines={2} style={styles.name}>
           {name}
         </ThemedText>
+        {/* Isolated so the leading "@" stays glued to a Latin handle inside RTL copy. */}
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          @{profile.handle}
+          {isolate(`@${profile.handle}`)}
         </ThemedText>
       </View>
     </View>

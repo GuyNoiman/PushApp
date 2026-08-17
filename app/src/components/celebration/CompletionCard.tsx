@@ -9,7 +9,8 @@
  * keep it private (`variant.revealsJourneyName`).
  *
  * Presentational only (Engineering Bible §19): every value arrives via props. Theme tokens (light +
- * dark), RTL-aware layout (`isRTL()`), safe wrap/truncation for very long names, and non-colour-only
+ * dark), direction-aware layout (Yoga mirrors rows under RTL), safe wrap/truncation for very long
+ * names, and non-colour-only
  * cues (icon + label, not colour alone). The forwarded `ref` targets the OUTER capturable frame.
  */
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +22,6 @@ import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { cardCopyKey, type CardTemplateVariant } from '@/core/celebration/cardTemplates';
 import type { CompletionCard as CompletionCardData } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 
 export const CompletionCard = forwardRef<View, { card: CompletionCardData; variant: CardTemplateVariant }>(
@@ -29,7 +29,6 @@ export const CompletionCard = forwardRef<View, { card: CompletionCardData; varia
     const theme = useTheme();
     // Card copy addresses the user (form-of-address aware — Hebrew gendered variants resolve).
     const { t } = useAddressedTranslation('celebration');
-    const rtl = isRTL();
 
     const stepsStat = t('card.stepsStat', { count: card.totalSteps });
     const daysStat = t('card.daysStat', { count: card.durationDays });
@@ -47,7 +46,7 @@ export const CompletionCard = forwardRef<View, { card: CompletionCardData; varia
           { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
         ]}>
         {/* Brand mark — icon + wordmark (never colour alone). */}
-        <View style={[styles.brandRow, rtl && styles.rowRTL]}>
+        <View style={styles.brandRow}>
           <Ionicons name="flag" size={16} color={theme.tint} />
           <ThemedText type="smallBold" style={{ color: theme.tint }}>
             {t('card.brand')}
@@ -80,7 +79,7 @@ export const CompletionCard = forwardRef<View, { card: CompletionCardData; varia
         </View>
 
         {/* Non-sensitive stat chips — icon + label so meaning never rests on colour alone. */}
-        <View style={[styles.statRow, rtl && styles.rowRTL]}>
+        <View style={styles.statRow}>
           <View style={[styles.chip, { backgroundColor: theme.backgroundSelected }]}>
             <Ionicons name="footsteps" size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
@@ -109,14 +108,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     overflow: 'hidden',
   },
+  // `row` is already mirrored by Yoga under RTL — the old 'row-reverse' override on
+  // top of it undid the flip and put the brand glyph back on the left.
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
-  },
-  // Under RTL, lay rows right-to-left so glyphs sit on the correct side.
-  rowRTL: {
-    flexDirection: 'row-reverse',
   },
   center: {
     flex: 1,

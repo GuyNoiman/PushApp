@@ -118,10 +118,11 @@ const json = (r: TestRoot) => JSON.stringify(r.toJSON());
 /** The same string as it appears inside the stringified tree (quotes escaped once more). */
 const tKey = (k: string, opts?: Record<string, unknown>) => JSON.stringify(echo(k, opts)).slice(1, -1);
 /**
- * The @handle as it lands in the tree. The header renders `@{profile.handle}`, which React keeps as
- * TWO text children, so the visible "@sam" is never one contiguous string in the JSON.
+ * The @handle as it lands in the tree. The header renders it through `isolate()`, which wraps the
+ * whole "@sam" in Unicode isolate marks so a Latin handle can't be reordered by RTL copy around it —
+ * so it arrives as ONE contiguous string, bracketed by FSI…PDI.
  */
-const HANDLE = '["@","sam"]';
+const HANDLE = '⁨@sam⁩';
 // findAllByProps returns each Pressable's composite + forwarded host View; the composite carries a
 // function `onPress`. Filter to it so a match is one logical element (and pressable).
 const byLabel = (r: TestRoot, a11yLabel: string) =>

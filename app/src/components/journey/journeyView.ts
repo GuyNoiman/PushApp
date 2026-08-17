@@ -1,16 +1,19 @@
 /**
  * journeyView — presentational derivations for the Journeys cluster.
  *
- * The domain `Journey` (core/types/domain.ts) has no explicit Phases in the POC;
- * the mockups speak in "Phase X / Y". We derive a light, honest Phase read-out from
- * Steps (done Steps → current Phase) plus progress and a start/end window from the Journey's
- * effective start (`effectiveStartAt`) + durationDays. This is DISPLAY math only — no
- * rewards/Buddy logic (Engineering Bible §19). When real Phases land, replace these derivations.
+ * Progress and the start/end window are derived here from the Journey's Steps and its effective
+ * start (`effectiveStartAt`) + durationDays. The Milestone position is NOT derived here: it is read
+ * from the real {@link Journey.milestones} through the shared `core/util/milestones`, the one
+ * derivation Home, this list and the detail screen all share. It used to be invented from the Step
+ * count on this surface alone, which is how the same Journey reported two different Milestone
+ * counts (Device QA 2026-08-17, A1). This is DISPLAY math only — no rewards/Buddy logic
+ * (Engineering Bible §19).
  */
 import type { Journey, JourneyStatus, ReasonEntry, Step } from '@/core/types/domain';
 import { isStepLocked } from '@/core/status/stepDependencies';
 import { deriveStepStatus, type StepStatus } from '@/core/status/stepStatus';
 import { effectiveStartAt, resolveJourneyStatus } from '@/core/util/journeyStatus';
+import { currentMilestone, type MilestonePosition } from '@/core/util/milestones';
 import { weeksBetween } from '@/core/util/week';
 import i18n from '@/i18n';
 
@@ -31,9 +34,12 @@ export interface JourneyView {
    * that survived the cancel — so the honest "3 of 12" is what the UI reads.
    */
   totalSteps: number;
-  /** Derived current Phase (1-based) and total Phases. */
-  phase: number;
-  phases: number;
+  /**
+   * Where the Journey stands in its REAL Milestone arc ({@link currentMilestone}). Undefined when
+   * the Journey has no Milestones — such a card shows no Milestone line at all rather than an
+   * invented "1 of 1" (Device QA 2026-08-17, A1).
+   */
+  milestone?: MilestonePosition;
   /** Epoch ms the Journey began / is expected to end. */
   startedAt: number;
   endsAt: number;
@@ -97,13 +103,6 @@ export function toJourneyView(journey: Journey, now: number = Date.now()): Journ
   const endedRaw = journey.abandonedAt ?? journey.completedAt;
   const endedAt = typeof endedRaw === 'number' && Number.isFinite(endedRaw) ? endedRaw : undefined;
 
-  // Derive Phases from Steps: one Phase per Step feels too granular, so we group
-  // into a small number of Phases (min 1). The current Phase advances with progress.
-  const phases = Math.max(1, Math.min(4, totalSteps || 1));
-  const phase = journey.completedAt
-    ? phases
-    : Math.min(phases, Math.floor(progress * phases) + 1);
-
   return {
     id: journey.id,
     title: journey.title,
@@ -112,8 +111,9 @@ export function toJourneyView(journey: Journey, now: number = Date.now()): Journ
     progress,
     doneSteps,
     totalSteps,
-    phase,
-    phases,
+    // Read from the Journey's real Milestones — the SAME call Home makes for the Step it shows, so
+    // the two surfaces cannot report different positions. Absent when there are no Milestones.
+    milestone: currentMilestone(journey),
     // Anchored on the Journey's REAL start (activation → intended start → creation), never on
     // `createdAt` alone: a Future Journey's window must read from its planned start, and a Journey
     // started early from the day it actually began (Future Journey Management, §5).

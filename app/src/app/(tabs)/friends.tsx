@@ -11,8 +11,10 @@
  *   · A SINGLE "Your friends" list — the Support Circle. Each person is a row
  *     (monogram avatar, name, a human status line, and ONE Cheer action), and the
  *     whole row opens that friend's profile (Friend_Profile_PRD §8 criterion 1).
- *     Populated from the real social lists; a calm empty state shows until the
- *     user has friends.
+ *     Populated from the real social lists; until the user has friends the list
+ *     is replaced by an INVITING empty state (founder device pass 2026-08-17) —
+ *     an SVG of two figures standing together, the reason a circle helps, and one
+ *     way in. It never implies the user is failing on their own.
  *
  * The list is a list of PEOPLE, one row per ACCEPTED friend (`buildCircleRows`) —
  * not one row per shared Journey, which used to hide a friend who shared nothing
@@ -37,12 +39,14 @@ import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { displayName, initialsFor, tintFor } from '@/components/friends/avatar';
+import { TogetherIllustration } from '@/components/friends/TogetherIllustration';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 // From the module, not the `@/core/social` barrel: this is a runtime VALUE, and the barrel pulls
 // the Supabase-backed gateway in with it.
@@ -80,7 +84,10 @@ export default function FriendsScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Keyboard-safe: the Add-a-friend field lives INSIDE this list, so Add must be tappable
+            on the first tap and the rows under the keyboard must stay reachable (Device QA A3).
+            Tab-aware: tapping the Circle tab while already on it returns this list to the top. */}
+        <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Surface only GENUINE errors. The backend "Not signed in." is the
               expected guest/POC state (no auth wired yet), not an error the user
               should see — filter it out so it doesn't read as something broken. */}
@@ -108,7 +115,12 @@ export default function FriendsScreen() {
           </ThemedText>
 
           {rows.length === 0 ? (
-            <EmptyState title={t('empty.title')} body={t('empty.body')} />
+            <EmptyState
+              title={t('empty.title')}
+              body={t('empty.body')}
+              cta={t('empty.cta')}
+              onCta={() => setShowAdd(true)}
+            />
           ) : (
             <View style={styles.list}>
               {rows.map((row) => {
@@ -124,7 +136,7 @@ export default function FriendsScreen() {
               })}
             </View>
           )}
-        </ScrollView>
+        </TabScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -244,15 +256,36 @@ function statusLine(row: CircleRow, t: TFunction<'circle'>): string {
     : t('progressStatusMulti', { pct: row.status.pct, title, journeys: row.status.count });
 }
 
-// A calm empty state for an empty Support Circle — same card language as the other tabs.
-function EmptyState({ title, body }: { title: string; body: string }) {
+/**
+ * The empty Support Circle. It INVITES rather than reports (founder device pass 2026-08-17): a small
+ * drawing of two figures standing together, the honest reason a circle helps (people keep going more
+ * often when a friend knows what they're working on), and one way in. It says nothing about how the
+ * user is doing on their own — nobody is failing here, they just haven't added anyone yet.
+ */
+function EmptyState({
+  title,
+  body,
+  cta,
+  onCta,
+}: {
+  title: string;
+  body: string;
+  cta: string;
+  onCta: () => void;
+}) {
   const theme = useTheme();
   return (
     <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.hairline }]}>
-      <ThemedText type="default">{title}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
-        {body}
-      </ThemedText>
+      <TogetherIllustration />
+      <View style={styles.emptyCopy}>
+        <ThemedText type="default" style={styles.emptyText}>
+          {title}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+          {body}
+        </ThemedText>
+      </View>
+      <PrimaryButton label={cta} onPress={onCta} />
     </ThemedView>
   );
 }
@@ -373,7 +406,12 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     borderRadius: Radius.card,
     borderWidth: 1,
-    padding: Spacing.four,
+    paddingVertical: Spacing.five,
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.three,
+    alignItems: 'center',
+  },
+  emptyCopy: {
     gap: Spacing.two,
     alignItems: 'center',
   },

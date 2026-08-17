@@ -15,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
 
 export function ShareActionRow({
   imageAvailable,
@@ -30,7 +29,6 @@ export function ShareActionRow({
 }) {
   const theme = useTheme();
   const { t } = useTranslation('celebration');
-  const rtl = isRTL();
 
   return (
     <View style={styles.wrap}>
@@ -44,7 +42,7 @@ export function ShareActionRow({
           { backgroundColor: theme.tint },
           (pressed || busy) && styles.pressed,
         ]}>
-        <View style={[styles.inner, rtl && styles.innerRTL]}>
+        <View style={styles.inner}>
           <Ionicons name="share-outline" size={18} color={theme.background} />
           <ThemedText type="smallBold" style={{ color: theme.background }}>
             {t('ceremony.share')}
@@ -63,7 +61,7 @@ export function ShareActionRow({
             { borderColor: theme.hairline },
             (pressed || busy) && styles.pressed,
           ]}>
-          <View style={[styles.inner, rtl && styles.innerRTL]}>
+          <View style={styles.inner}>
             <Ionicons name="download-outline" size={18} color={theme.text} />
             <ThemedText type="smallBold" style={{ color: theme.text }}>
               {t('ceremony.saveImage')}
@@ -92,13 +90,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // `row` already lays out right-to-left under RTL; forcing 'row-reverse' on top of
+  // that flipped the icon back to the left of the label. Let Yoga do the mirroring.
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  innerRTL: {
-    flexDirection: 'row-reverse',
   },
   pressed: {
     opacity: 0.7,

@@ -16,12 +16,13 @@
  * snapshot / social hook, and check-ins call the facade — no business logic here. A
  * row's ⋯ menu opens the report sheet (Done · Partial · Couldn't · Postpone ·
  * Reschedule); a Done fires a brief confetti burst. Empty data degrades gently — the
- * support board shows a calm empty state per tab until the social backend fills.
+ * support board shows a calm empty state per tab once you have friends, and the whole
+ * GIVE SUPPORT area (heading included) stays hidden until you have at least one.
  */
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppState, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SupportBoard, type SupportPerson } from '@/components/home/SupportBoard';
@@ -37,12 +38,15 @@ import { WeekDreamGroup, type WeekStepView } from '@/components/home/WeekDreamGr
 import { TodayFocusCard, type StepUrgency } from '@/components/home/TodayFocusCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TabScrollView } from '@/components/ui/TabScrollView';
 import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
+import { startOfLocalDay } from '@/core/util/date';
+import { milestoneOfStep } from '@/core/util/milestones';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
-import type { Dream, Journey, Step } from '@/core/types/domain';
+import type { Dream, Journey } from '@/core/types/domain';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { useTheme } from '@/hooks/use-theme';
 import { useApp } from '@/state/AppProvider';
@@ -97,18 +101,6 @@ function urgencyForHour(hour: number): StepUrgency {
   if (hour >= 20) return 'urgent';
   if (hour >= 16) return 'warn';
   return 'calm';
-}
-
-/** The "current of total" Milestone position when the Step belongs to one, else null. */
-function milestonePosition(
-  journey: Journey | undefined,
-  step: Step,
-): { current: number; total: number } | null {
-  const milestones = journey?.milestones;
-  if (!milestones?.length || !step.milestoneId) return null;
-  const m = milestones.find((x) => x.id === step.milestoneId);
-  if (!m) return null;
-  return { current: m.order + 1, total: milestones.length };
 }
 
 /** Up to two initials from a handle/name, for a monogram avatar. */
@@ -294,11 +286,13 @@ export default function HomeScreen() {
     return map;
   }, [snapshot?.dreams]);
 
-  // Build a short meta line ("Journey · Milestone N of M") for a Step.
+  // Build a short meta line ("Journey · Milestone N of M") for a Step. The position comes from the
+  // SHARED derivation (`core/util/milestones`) the Journeys card and the Journey detail also read,
+  // so no two surfaces can report a different Milestone for the same Journey (Device QA A1).
   const metaFor = useMemo(
     () => (item: TodayStep): string => {
       const journey = journeyById.get(item.journeyId);
-      const pos = milestonePosition(journey, item.step);
+      const pos = milestoneOfStep(journey, item.step);
       const ms = pos ? t('milestone', { current: pos.current, total: pos.total }) : null;
       return [item.journeyTitle, ms].filter(Boolean).join(' · ');
     },
@@ -372,6 +366,22 @@ export default function HomeScreen() {
     }
     return out;
   }, [todaySteps]);
+  // …plus the Steps ALREADY REPORTED DONE TODAY, kept on the board beneath them (device QA
+  // 2026-08-17). A Step that was just completed must not vanish: the day's honest picture is what
+  // you finished sitting beside what is still open, and the evidence is quietly the reward. They
+  // come from `weekSteps` (the display superset that keeps done Steps) and are bounded to TODAY's
+  // check-ins, so yesterday's work doesn't pile up on today's focus.
+  const completedToday = useMemo(() => {
+    const dayStart = startOfLocalDay(Date.now());
+    return (snapshot?.weekSteps ?? []).filter(
+      (s) => s.step.done && (s.step.lastCheckInAt ?? 0) >= dayStart,
+    );
+  }, [snapshot?.weekSteps]);
+  // What the stack renders: still-open first, settled below.
+  const focusRows = useMemo(
+    () => [...focusSteps, ...completedToday],
+    [focusSteps, completedToday],
+  );
   const focusStepIds = useMemo(
     () => new Set(focusSteps.map((s) => s.step.id)),
     [focusSteps],
@@ -458,6 +468,16 @@ export default function HomeScreen() {
       });
   }, [social, t]);
 
+  // A brand-new account has nobody to support, and a section about nobody is worse than no
+  // section: the whole "Give support" area — heading included — stays away until there is at
+  // least one ACCEPTED friend (founder, device pass 2026-08-17). A pending invite doesn't count;
+  // you can't cheer someone who hasn't accepted yet. Once there IS a friend the board keeps its
+  // per-tab empty states, which then say something true ("nobody needs a nudge right now").
+  const hasFriends = useMemo(
+    () => social.friends.some((f) => f.status === 'accepted'),
+    [social.friends],
+  );
+
   const realCheer: SupportPerson[] = useMemo(() => {
     const now = Date.now();
     return social.allyProgress
@@ -506,7 +526,9 @@ export default function HomeScreen() {
           streak={snapshot.streak}
         />
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Tapping the Home tab while already on Home returns this (the app's longest) scroll to
+            the top — the standard iOS gesture, owned by TabScrollView so it cannot be half-wired. */}
+        <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* ── Greeting ── */}
           <View style={styles.header}>
             <ThemedText style={[styles.hi, { color: theme.text }]}>
@@ -560,9 +582,21 @@ export default function HomeScreen() {
 
           {/* ── Today's focus — a small stack, one card per active Journey ── */}
           <SectionHeader title={t('sections.todayFocus')} count={focusSteps.length} tone={headerTone} />
-          {focusSteps.length > 0 ? (
+          {/* Nothing OPEN left → the caught-up note; anything reported today still shows below it,
+              so the day reads as finished rather than as empty. */}
+          {focusSteps.length === 0 && (
+            <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+              <ThemedText type="smallBold" style={{ color: theme.text }}>
+                {t('caughtUp.title')}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                {t('caughtUp.body')}
+              </ThemedText>
+            </View>
+          )}
+          {focusRows.length > 0 && (
             <View style={styles.focusStack}>
-              {focusSteps.map((item) => (
+              {focusRows.map((item) => (
                 <TodayFocusCard
                   key={item.step.id}
                   icon={iconForJourney(item.journeyId)}
@@ -578,15 +612,6 @@ export default function HomeScreen() {
                   onLetGo={() => reportLetGo(item)}
                 />
               ))}
-            </View>
-          ) : (
-            <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
-              <ThemedText type="smallBold" style={{ color: theme.text }}>
-                {t('caughtUp.title')}
-              </ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {t('caughtUp.body')}
-              </ThemedText>
             </View>
           )}
 
@@ -609,20 +634,25 @@ export default function HomeScreen() {
             ))
           )}
 
-          {/* ── Give support — two switchable tabs, each row shows the person + WHY ── */}
-          <SectionHeader
-            title={t('sections.giveSupport')}
-            right={
-              <ThemedText
-                type="smallBold"
-                onPress={() => router.push('/friends')}
-                style={{ color: theme.tint }}>
-                {t('sections.seeAll')}
-              </ThemedText>
-            }
-          />
-          <SupportBoard needSupport={realNudge} deservePraise={realCheer} />
-        </ScrollView>
+          {/* ── Give support — two switchable tabs, each row shows the person + WHY.
+                 Hidden entirely (heading included) until there is someone to support. ── */}
+          {hasFriends && (
+            <>
+              <SectionHeader
+                title={t('sections.giveSupport')}
+                right={
+                  <ThemedText
+                    type="smallBold"
+                    onPress={() => router.push('/friends')}
+                    style={{ color: theme.tint }}>
+                    {t('sections.seeAll')}
+                  </ThemedText>
+                }
+              />
+              <SupportBoard needSupport={realNudge} deservePraise={realCheer} />
+            </>
+          )}
+        </TabScrollView>
 
         {/* Report menu (⋯) + reused Miss-Recovery sheets. */}
         <StepReportFlow

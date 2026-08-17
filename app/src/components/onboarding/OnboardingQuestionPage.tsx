@@ -13,7 +13,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import type { OnboardingQuestion } from '@/core/onboarding/questions';
 
@@ -63,7 +63,7 @@ export function OnboardingQuestionPage({
             multiline
             placeholder={t(`${base}.placeholder`)}
             placeholderTextColor={theme.textMuted}
-            textAlign={isRTL() ? 'right' : 'left'}
+            textAlign={START_TEXT_ALIGN}
             style={[
               styles.multiline,
               { color: theme.text, borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
@@ -122,7 +122,7 @@ export function OnboardingQuestionPage({
             multiline
             placeholder={t(`${base}.otherReveal`)}
             placeholderTextColor={theme.textMuted}
-            textAlign={isRTL() ? 'right' : 'left'}
+            textAlign={START_TEXT_ALIGN}
             style={[
               styles.multiline,
               { color: theme.text, borderColor: theme.teal, backgroundColor: theme.backgroundElement },
@@ -146,7 +146,7 @@ export function OnboardingQuestionPage({
             multiline
             placeholder={t(`${base}.freeTextPlaceholder`)}
             placeholderTextColor={theme.textMuted}
-            textAlign={isRTL() ? 'right' : 'left'}
+            textAlign={START_TEXT_ALIGN}
             style={[
               styles.multiline,
               { color: theme.text, borderColor: theme.hairline, backgroundColor: theme.backgroundElement },

@@ -1,6 +1,6 @@
 /**
  * StepCard — a single Step card for Home's "Week's steps" panel (v14 mockup
- * screen-01): a coloured icon tile, the Step name, a "{Journey} · Phase x/y"
+ * screen-01): a coloured icon tile, the Step name, a "{Journey} · Milestone x/y"
  * line, a thin progress bar, and a ⋯ (three-dots) menu affordance. Supports the
  * mockup's visual states where the data allows: an "Ends today" floating badge, a
  * green sealed/done wash for completed Steps, and a coral "Missed" tint.
@@ -39,6 +39,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
+import type { MilestonePosition } from '@/core/util/milestones';
 import { useTheme } from '@/hooks/use-theme';
 
 export type StepCardStatus = 'pending' | 'done' | 'missed';
@@ -68,8 +69,7 @@ export function StepCard({
   item,
   onCheckIn,
   onReschedule,
-  phase,
-  phases,
+  milestone,
   progress,
   endsToday,
   status = 'pending',
@@ -79,10 +79,12 @@ export function StepCard({
   onCheckIn: (journeyId: string, stepId: string) => void;
   /** Swipe-left result — opens the "Reschedule / defer this Step" modal (founder decision 2026-07-14). Omit to disable the left-swipe (card springs back instead). */
   onReschedule?: (journeyId: string, stepId: string) => void;
-  /** Current Phase (1-based), if known — shown as "Journey · Phase x/y". */
-  phase?: number;
-  /** Total Phases in the Step's Journey, if known. */
-  phases?: number;
+  /**
+   * Where the Step sits in its Journey's REAL Milestone arc (`core/util/milestones`), if it sits in
+   * one — shown as "Journey · Milestone x/y". Omitted for a Journey with no Milestones, which then
+   * reads as just the Journey name.
+   */
+  milestone?: MilestonePosition;
   /** 0..1 share of the Step's Journey complete — drives the thin progress bar. */
   progress?: number;
   /** Whether this Step's window ends today — shows the floating "Ends today" badge. */
@@ -107,10 +109,13 @@ export function StepCard({
   const textColor = done ? theme.tealStrong : missed ? theme.danger : theme.text;
   const subColor = done ? theme.tealStrong : missed ? theme.danger : theme.textSecondary;
 
-  const metaLine =
-    phase !== undefined && phases !== undefined
-      ? t('stepCard.phaseMeta', { title: item.journeyTitle, phase, phases })
-      : item.journeyTitle;
+  const metaLine = milestone
+    ? t('stepCard.milestoneMeta', {
+        title: item.journeyTitle,
+        current: milestone.current,
+        total: milestone.total,
+      })
+    : item.journeyTitle;
 
   // "Postponed to <time>" affordance (Step Postponement, D37.1): a lightweight cue that a pending
   // one-shot exists — the Step itself stays `unreported` (postpone is an ACTION, not a status).

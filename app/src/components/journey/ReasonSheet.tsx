@@ -13,7 +13,7 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
@@ -53,95 +53,103 @@ export function ReasonSheet({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onBack}>
-      <Pressable
-        accessibilityLabel={t('dismiss', { ns: 'common' })}
-        style={styles.backdrop}
-        onPress={() => {
-          reset();
-          onBack();
-        }}>
-        <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
-          <ThemedText type="subtitle" style={styles.title}>
-            {reasonPrompt()}
-          </ThemedText>
-
-          <View style={styles.chips}>
-            {REASONS.map((r) => {
-              const isSel = selected === r.id;
-              return (
-                <Pressable
-                  key={r.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSel }}
-                  onPress={() => setSelected(r.id)}
-                  style={[
-                    styles.chip,
-                    { borderColor: isSel ? theme.teal : theme.hairline },
-                    isSel && { backgroundColor: theme.tealTint },
-                  ]}>
-                  <ThemedText type="smallBold" style={{ color: isSel ? theme.tealStrong : theme.textSecondary }}>
-                    {reasonLabel(r.id)}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {caring ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              {caring}
+      {/* The sheet sits on the bottom edge, so the keyboard would cover the note field outright —
+          lift the whole sheet above it (Device QA A3). There is no scroll body here, so
+          KeyboardAvoidingView (not a scroll inset) is the right tool. */}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable
+          accessibilityLabel={t('dismiss', { ns: 'common' })}
+          style={styles.backdrop}
+          onPress={() => {
+            reset();
+            onBack();
+          }}>
+          <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
+            <ThemedText type="subtitle" style={styles.title}>
+              {reasonPrompt()}
             </ThemedText>
-          ) : null}
 
-          {capturesNote && (
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('reason.notePlaceholder')}
-              placeholderTextColor={theme.textMuted}
-              multiline
-              style={[
-                styles.input,
-                { borderColor: theme.hairline, color: theme.text, backgroundColor: theme.background },
-              ]}
-            />
-          )}
+            <View style={styles.chips}>
+              {REASONS.map((r) => {
+                const isSel = selected === r.id;
+                return (
+                  <Pressable
+                    key={r.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSel }}
+                    onPress={() => setSelected(r.id)}
+                    style={[
+                      styles.chip,
+                      { borderColor: isSel ? theme.teal : theme.hairline },
+                      isSel && { backgroundColor: theme.tealTint },
+                    ]}>
+                    <ThemedText type="smallBold" style={{ color: isSel ? theme.tealStrong : theme.textSecondary }}>
+                      {reasonLabel(r.id)}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('back', { ns: 'common' })}
-              onPress={() => {
-                reset();
-                onBack();
-              }}
-              style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                {t('back', { ns: 'common' })}
+            {caring ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                {caring}
               </ThemedText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('continue', { ns: 'common' })}
-              disabled={!selected}
-              onPress={submit}
-              style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: !selected ? theme.backgroundSelected : theme.coral },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold" style={{ color: !selected ? theme.textMuted : theme.text }}>
-                {t('continue', { ns: 'common' })}
-              </ThemedText>
-            </Pressable>
-          </View>
+            ) : null}
+
+            {capturesNote && (
+              <TextInput
+                value={note}
+                onChangeText={setNote}
+                placeholder={t('reason.notePlaceholder')}
+                placeholderTextColor={theme.textMuted}
+                multiline
+                style={[
+                  styles.input,
+                  { borderColor: theme.hairline, color: theme.text, backgroundColor: theme.background },
+                ]}
+              />
+            )}
+
+            <View style={styles.actions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('back', { ns: 'common' })}
+                onPress={() => {
+                  reset();
+                  onBack();
+                }}
+                style={({ pressed }) => [styles.button, styles.ghost, pressed && styles.pressed]}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {t('back', { ns: 'common' })}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('continue', { ns: 'common' })}
+                disabled={!selected}
+                onPress={submit}
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: !selected ? theme.backgroundSelected : theme.coral },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold" style={{ color: !selected ? theme.textMuted : theme.text }}>
+                  {t('continue', { ns: 'common' })}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',

@@ -105,6 +105,42 @@ describe('toJourneyView bucketing', () => {
   });
 });
 
+describe('toJourneyView — the Milestone position is READ, never invented (Device QA A1)', () => {
+  const now = 100_000;
+
+  /** A Journey with 3 real Milestones and more Steps than Milestones. */
+  function withMilestones(doneCount = 0): Journey {
+    const placement = ['m1', 'm1', 'm1', 'm2', 'm2', 'm2', 'm3', 'm3'];
+    return journey({
+      milestones: [
+        { id: 'm1', title: 'Get moving', order: 0 },
+        { id: 'm2', title: 'Build the habit', order: 1 },
+        { id: 'm3', title: 'Go the distance', order: 2 },
+      ],
+      steps: placement.map((milestoneId, i) => ({
+        id: `s${i + 1}`,
+        title: `Step ${i + 1}`,
+        isStarterStep: false,
+        cadence: 'daily' as const,
+        done: i < doneCount,
+        milestoneId,
+      })),
+    });
+  }
+
+  it('reports the Journey\'s real Milestone arc, not a count derived from its Steps', () => {
+    // The old derivation capped the STEP count at 4 and called it Milestones: 8 Steps read
+    // "1 of 4" here while Home read "1 of 3" from the same Journey.
+    const view = toJourneyView(withMilestones(4), now);
+    expect(view.milestone).toEqual({ current: 2, total: 3 });
+  });
+
+  it('leaves the Milestone undefined for a Journey that has none', () => {
+    expect(toJourneyView(journey(), now).milestone).toBeUndefined();
+    expect(toJourneyView(journey({ milestones: [] }), now).milestone).toBeUndefined();
+  });
+});
+
 describe('toJourneyView — when a Journey ended (the History date + order)', () => {
   const now = 100_000;
 

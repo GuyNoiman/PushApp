@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
 
 export function CoachInputBar({
   value,
@@ -70,7 +71,14 @@ export function CoachInputBar({
         accessibilityLabel={t('send')}
         onPress={onSend}
         style={({ pressed }) => [styles.round, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
-        <Ionicons name="send" size={17} color={theme.backgroundElement} />
+        {/* The paper plane flies the way the language reads — mirrored under RTL.
+            Ionicons has no mirrored variant, so flip the glyph itself. */}
+        <Ionicons
+          name="send"
+          size={17}
+          color={theme.backgroundElement}
+          style={isRTL() ? styles.mirrored : undefined}
+        />
       </Pressable>
     </View>
   );
@@ -105,6 +113,9 @@ const styles = StyleSheet.create({
     borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  mirrored: {
+    transform: [{ scaleX: -1 }],
   },
   pressed: {
     opacity: 0.7,

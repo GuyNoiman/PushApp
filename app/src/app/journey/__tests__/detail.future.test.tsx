@@ -148,7 +148,7 @@ describe('Journey detail — a Future Journey shows its plan, never progress', (
       }),
     );
     expect(shown).toContain(tKey('detail.stepsPlanned', { count: 3 }));
-    expect(shown).not.toContain('detail.phase');
+    expect(shown).not.toContain('detail.milestone');
     expect(shown).not.toContain('detail.stepsDone');
     expect(shown).not.toContain('%');
   });
@@ -193,9 +193,8 @@ describe('Journey detail — a Future Journey shows its plan, never progress', (
     expect(byLabel(r, 'detail.freezeA11y')).toHaveLength(0);
     expect(byLabel(r, 'detail.resumeA11y')).toHaveLength(0);
 
-    await act(async () => {
-      byLabel(r, 'detail.moreActionsA11y')[0].props.onPress();
-    });
+    // Delete is a VISIBLE action at the end of the list (founder decision, Device QA 2026-08-17 B3);
+    // it used to sit one tap inside a ⋯, which this test had to open first.
     expect(byLabel(r, 'detail.deleteA11y').length).toBeGreaterThan(0);
   });
 });
@@ -254,10 +253,18 @@ describe('Journey detail — Start Journey (§9)', () => {
   });
 
   it('offers no Start action on a Journey that is already running', async () => {
-    setApp(futureJourney({ status: 'active' }));
+    // Given its REAL Milestone arc, the running screen reads its position from that — the line the
+    // Future mode withholds. A Journey with no Milestones shows none at all (Device QA A1).
+    setApp(
+      futureJourney({
+        status: 'active',
+        milestones: [{ id: 'm1', title: 'Get moving', order: 0 }],
+        steps: [step('s1', { milestoneId: 'm1' }), step('s2', { milestoneId: 'm1' })],
+      }),
+    );
     const r = await render();
 
     expect(byLabel(r, 'detail.startJourneyA11y')).toHaveLength(0);
-    expect(json(r)).toContain('detail.phase');
+    expect(json(r)).toContain('detail.milestone');
   });
 });

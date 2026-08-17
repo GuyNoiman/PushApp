@@ -168,14 +168,17 @@ describe('AppCore onboarding facade (K2)', () => {
     expect(core.getSnapshot().onboardingCompleted).toBe(true);
   });
 
-  // Regression (code review #1, HIGH): start() seeds + PERSISTS demo data BEFORE the user advances
-  // past the language step. That persisted first-run snapshot must NOT be mistaken for a legacy
-  // (already-onboarded) one — the fresh-run onboardingStep marker keeps it distinguishable.
+  // Regression (code review #1, HIGH): a first run that PERSISTS a snapshot before the user advances
+  // past the language step must NOT be mistaken for a legacy (already-onboarded) one — the fresh-run
+  // onboardingStep marker keeps it distinguishable. The demo seed is the dev path that writes such a
+  // snapshot (it is no longer part of a real first run — founder decision, Device QA 2026-08-17 B2),
+  // so it is asked for explicitly here and the regression stays covered.
   it('a genuine first-run user who leaves before advancing STILL gets onboarding on relaunch (demo-seed path)', async () => {
     const store = memRepo();
     const flag = freshFlag();
     const first = new AppCore(store.repo, flag);
-    await first.start(); // seeds demo Journeys and persists — the user has NOT pressed Continue yet
+    await first.start();
+    first.seedDemoJourney(); // persists — the user has NOT pressed Continue yet
 
     expect(first.getSnapshot().onboardingCompleted).toBe(false);
     expect((store.saved()?.journeys.length ?? 0)).toBeGreaterThan(0); // seed really persisted

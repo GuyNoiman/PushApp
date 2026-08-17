@@ -83,6 +83,9 @@ export function EditCoachScreen() {
             style={styles.flex}
             contentContainerStyle={styles.chat}
             showsVerticalScrollIndicator={false}
+            // An option chip / CTA inside the conversation must react to the FIRST tap while the
+            // composer keyboard is up, instead of only dismissing it (Device QA A3).
+            keyboardShouldPersistTaps="handled"
             onContentSizeChange={scrollToEnd}>
             {coach.items.map((item, i) =>
               item.kind === 'coach' ? (

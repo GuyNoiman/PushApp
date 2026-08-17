@@ -8,6 +8,8 @@
  *   - Swipe RIGHT → a calm green/teal "Done" wash with a checkmark slides in from the
  *     left; releasing past the threshold (or a full swipe) reports the Step DONE via
  *     `onDone` — the SAME path the ⋯ menu's Done uses, so the screen's confetti fires.
+ *     This is the ONLY gesture that reports anything; the other direction decides nothing
+ *     on its own (device QA 2026-08-17 — see `doneSwipeDirection`).
  *   - Swipe LEFT → two round action buttons appear (like the iOS Messages screenshot):
  *       · Postpone — a round amber button (clock) → `onPostpone`
  *       · Let go   — a round red button (a gentle heart-off) → `onLetGo`, framed as a
@@ -47,7 +49,31 @@ const ROUND_BTN = 46;
 // A near-white glyph reads cleanly on the saturated round buttons in both themes.
 const ON_ACCENT = '#FFFFFF';
 
-/** The green/teal "Done" wash revealed while swiping right; the check pops with drag. */
+/**
+ * The drag direction whose release COMMITS Done, for the active layout direction.
+ *
+ * `ReanimatedSwipeable` reports the direction the ROW MOVED — not which panel appeared.
+ * Dragging RIGHT is exactly what uncovers `renderLeftActions`, and dragging LEFT uncovers
+ * `renderRightActions` (gesture-handler 2.28, `dispatchImmediateEvents`:
+ * `toValue > 0 ? SwipeDirection.RIGHT : SwipeDirection.LEFT`). We put the Done wash on the
+ * LEFT panel in LTR and on the RIGHT panel under RTL, so the drag that commits Done is
+ * RIGHT in LTR and LEFT under RTL.
+ *
+ * Reading that backwards is what made a swipe toward the Postpone / Let-go buttons report a
+ * Step DONE while the green wash committed nothing (device QA 2026-08-17). Exported so the
+ * mapping is pinned by a test in BOTH directions rather than re-derived by eye.
+ */
+export function doneSwipeDirection(rtl: boolean): SwipeDirection {
+  return rtl ? SwipeDirection.LEFT : SwipeDirection.RIGHT;
+}
+
+/**
+ * The green/teal "Done" wash revealed while swiping right; the check pops with drag. It exists ONLY
+ * for the duration of the gesture — it is a preview of the commit, never the resting state of a
+ * completed Step. Once the report lands the caller renders the row non-swipeable (`enabled={false}`),
+ * which unmounts this panel entirely and leaves the Step's own card — title, Journey, Milestone —
+ * on screen with its completed chip (device QA 2026-08-17).
+ */
 function DoneReveal({
   progress,
   borderRadius,
@@ -162,14 +188,18 @@ export function SwipeableStepRow({
   const theme = useTheme();
   const ref = useRef<SwipeableMethods | null>(null);
 
-  if (!enabled) return <>{children}</>;
+  // A non-swipeable row (already reported, or a closed week) still renders inside the SAME
+  // container the swipeable would have used, so it keeps the card's margins and comes out
+  // exactly as wide as every other row. Returning the children bare dropped `containerStyle`
+  // and let a completed card grow to full bleed (device QA 2026-08-17).
+  if (!enabled) return <View style={containerStyle}>{children}</View>;
 
   // RTL-aware direction: the gesture encodes "swipe toward completion = Done". In LTR
   // the Done wash sits on the START (left) side and is revealed by dragging the card
   // toward the END (a swipe right, which opens the LEFT panel); the round Postpone /
   // Let-go buttons sit on the END (right) side. Under RTL the whole axis mirrors, so we
   // SWAP which physical side renders which panel (and the matching thresholds + the
-  // open-direction that commits Done) to keep "swipe toward the start edge = Done"
+  // drag direction that commits Done) to keep "swipe toward the start edge = Done"
   // consistent. NOTE: I18nManager.forceRTL is a no-op on web, so this mirroring is
   // code-level and must be device-verified by the founder.
   const rtl = isRTL();
@@ -197,8 +227,9 @@ export function SwipeableStepRow({
     />
   );
 
-  // The side that opening commits Done: the Done wash is on LEFT in LTR, RIGHT in RTL.
-  const doneOpenDirection = rtl ? SwipeDirection.RIGHT : SwipeDirection.LEFT;
+  // The drag whose release commits Done — see `doneSwipeDirection` for why it is the drag
+  // direction and not the panel side. Every OTHER direction must leave the Step untouched.
+  const doneDirection = doneSwipeDirection(rtl);
 
   return (
     <ReanimatedSwipeable
@@ -215,11 +246,18 @@ export function SwipeableStepRow({
       renderLeftActions={rtl ? renderButtons : renderDone}
       renderRightActions={rtl ? renderDone : renderButtons}
       onSwipeableWillOpen={(direction) => {
-        // The Done wash opening is the Done commit: fire the shared Done path (confetti
-        // pops on Home) and settle the row back to rest.
-        if (direction === doneOpenDirection) {
+        // ONLY the Done wash's own drag commits: the opposite drag reveals the round
+        // Postpone / Let-go buttons and must never report a Step done — the user is
+        // reaching for a button there, and nothing is decided until they press one.
+        if (direction === doneDirection) {
           onDone();
+          // Ask twice, deliberately. A `close()` issued WHILE the open animation is being
+          // started can be swallowed by it on device, which leaves the card parked off to
+          // the side and only the green wash on screen (device QA 2026-08-17). Repeating on
+          // the next frame guarantees the row returns to rest even then. Harmless when the
+          // first close already took, and a no-op once the row has unmounted.
           ref.current?.close();
+          requestAnimationFrame(() => ref.current?.close());
         }
       }}>
       {children}

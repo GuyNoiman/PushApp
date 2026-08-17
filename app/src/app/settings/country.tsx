@@ -11,15 +11,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { COUNTRY_CODES, countryName, type CountryCode } from '@/core/profile/countries';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useProfile } from '@/state/ProfileProvider';
 
 export default function CountryPickerScreen() {
@@ -69,13 +70,15 @@ export default function CountryPickerScreen() {
               placeholderTextColor={theme.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
-              textAlign={isRTL() ? 'right' : 'left'}
+              textAlign={START_TEXT_ALIGN}
               style={[styles.searchInput, { color: theme.text }]}
             />
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Keyboard-safe: the search field stays up while the list is tapped, and the rows below
+            the keyboard stay reachable (Device QA A3). */}
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
             {results.map((row, i) => {
               const selected = row.code === profile.country;
@@ -98,7 +101,7 @@ export default function CountryPickerScreen() {
               );
             })}
           </View>
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

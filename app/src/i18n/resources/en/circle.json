@@ -13,7 +13,8 @@
   "openProfileA11y": "Open {{name}}'s profile",
   "moreActionsA11y": "More actions for {{name}}",
   "empty": {
-    "title": "Your circle is just getting started",
-    "body": "Add a friend by username to start cheering each other on."
+    "title": "It's easier when someone knows",
+    "body": "When a friend knows what you're working on, it's easier to keep going on the harder days. Add someone you trust, and you decide what they get to see.",
+    "cta": "Add your first friend"
   }
 }

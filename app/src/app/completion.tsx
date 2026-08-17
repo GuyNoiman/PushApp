@@ -17,7 +17,7 @@
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigCelebration } from '@/components/celebration/BigCelebration';
@@ -27,6 +27,7 @@ import { PrivacyPreview } from '@/components/celebration/PrivacyPreview';
 import { ShareActionRow } from '@/components/celebration/ShareActionRow';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { CARD_TEMPLATE_VARIANTS, cardCopyKey } from '@/core/celebration/cardTemplates';
 import { getCardShareGateway } from '@/core/share';
@@ -163,7 +164,9 @@ export default function CompletionScreen() {
           </Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Keyboard-safe: the caption field sits near the bottom, above the share actions
+            (Device QA A3). */}
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Browse the fixed card variants (name-revealing + name-omitting). */}
           <CardSwiper
             card={card}
@@ -186,7 +189,7 @@ export default function CompletionScreen() {
             onShare={() => void onShare()}
             onSave={() => void onSave()}
           />
-        </ScrollView>
+        </KeyboardSafeScrollView>
 
         {/* The big celebration burst — fresh path only; reduce-motion softens it (PRD §2.2). */}
         <BigCelebration play={!reopen} />

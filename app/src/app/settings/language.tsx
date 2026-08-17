@@ -4,7 +4,13 @@
  * the endonym (the language's own name) and its English name, so it's findable in
  * either language. The list is sorted by English name via `localeCompare`; the
  * current language shows a checkmark. Tapping applies the choice through
- * LanguagePreference, and if that flips text direction the RestartPrompt appears.
+ * LanguagePreference.
+ *
+ * A choice that flips text direction (LTR ↔ RTL) can only finish on a fresh
+ * launch, so we ASK — a restart is a real interruption and never happens behind
+ * the user's back (founder device pass 2026-08-17). Saying no is fine and leaves
+ * the state we shipped before: the new language applied, the layout not yet
+ * flipped, and the RestartPrompt banner still offering the restart.
  *
  * Presentational + a little local search state (Engineering Bible §19): the one
  * durable choice lives in LanguagePreference; i18n side-effects live in `@/i18n`.
@@ -12,17 +18,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { RestartPrompt } from '@/components/settings/RestartPrompt';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LANGUAGES, type LanguageCode } from '@/i18n/languages';
-import { isRTL } from '@/i18n/rtl';
+import { confirmAndRestartApp } from '@/i18n/restart';
+import { isRTL, isRTLLocale } from '@/i18n/rtl';
 import { useLanguagePreference } from '@/state/LanguagePreference';
 
 export default function LanguagePickerScreen() {
@@ -46,7 +54,13 @@ export default function LanguagePickerScreen() {
       );
   }, [query]);
 
-  const select = (code: LanguageCode) => setLanguage(code);
+  const select = (code: LanguageCode) => {
+    // Read the flip BEFORE applying it: `setLanguage` forces the new direction for the
+    // next launch, so afterwards there is nothing left to compare against.
+    const flipsDirection = isRTLLocale(code) !== isRTL();
+    setLanguage(code);
+    if (flipsDirection) confirmAndRestartApp();
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -82,7 +96,9 @@ export default function LanguagePickerScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Keyboard-safe: the search field stays up while the list is tapped, and the rows below
+            the keyboard stay reachable (Device QA A3). */}
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <RestartPrompt visible={pendingRestart} />
 
           <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
@@ -116,7 +132,7 @@ export default function LanguagePickerScreen() {
               );
             })}
           </View>
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

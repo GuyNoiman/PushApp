@@ -216,6 +216,18 @@ describe('Circle — empty and error states', () => {
     expect(json(r)).not.toContain('Run 5km');
   });
 
+  it('the empty state INVITES: it offers a way in, and that way in actually opens', async () => {
+    setSocial({ friends: [] });
+    const r = await render();
+
+    expect(json(r)).toContain(tKey('empty.cta'));
+    await act(async () => {
+      byLabel(r, label('empty.cta'))[0].props.onPress();
+    });
+    // The invitation leads somewhere — the add-a-friend field, not a dead end.
+    expect(json(r)).toContain(tKey('addPlaceholder'));
+  });
+
   it('surfaces a genuine failure in the banner, and never as an empty circle', async () => {
     setSocial({ error: 'Network request failed', friends: [friend('f1', 'dan')] });
     const r = await render();

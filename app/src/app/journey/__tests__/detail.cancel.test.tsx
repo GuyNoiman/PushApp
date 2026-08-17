@@ -4,8 +4,9 @@
  * Renders the REAL detail screen with the REAL confirmation sheet over a mock AppCore
  * (react-test-renderer) to pin the consent surface and the lifecycle gating:
  *
- *  · Cancel lives behind the ⋯ overflow at the END of the action list, never as a visible row
- *    (founder decision 2026-08-14) — so every path here opens the menu first;
+ *  · Cancel and Delete are VISIBLE actions at the END of the action list, after everything the
+ *    Journey is (founder decision, Device QA 2026-08-17 B3) — de-emphasised by position and ink,
+ *    not hidden behind a ⋯;
  *  · the confirmation opens and states the FACTUAL number of never-reported Steps it will remove;
  *  · confirming calls `AppCore.abandonJourney` (and only then — opening it changes nothing);
  *  · a COMPLETED Journey never offers Cancel (D41: completion is final);
@@ -159,20 +160,8 @@ async function render(): Promise<TestRoot> {
   return r;
 }
 
-/**
- * Open the ⋯ overflow at the end of the action list. Cancel and Delete live in there (founder
- * decision 2026-08-14), so every test that reaches one of them opens this first — and until it is
- * opened, neither action is in the tree at all, which is exactly the de-emphasis that was asked for.
- */
-async function openMenu(r: TestRoot) {
-  await act(async () => {
-    byLabel(r, 'detail.moreActionsA11y')[0].props.onPress();
-  });
-}
-
-/** Render, open the ⋯, and tap one of its items by accessibility label. */
-async function tapMenuItem(r: TestRoot, label: string) {
-  await openMenu(r);
+/** Tap one of the end-of-list actions by accessibility label. */
+async function tapAction(r: TestRoot, label: string) {
   await act(async () => {
     byLabel(r, label)[0].props.onPress();
   });
@@ -183,11 +172,11 @@ describe('Journey detail — cancel', () => {
     const core = setApp(journey());
     const r = await render();
 
-    // Nothing is confirmed before the user opens it — and Cancel isn't even on screen until the ⋯ is.
+    // The action is on screen, but nothing is confirmed until the user asks for it.
     expect(json(r)).not.toContain('detail.cancelConfirm.title');
-    expect(byLabel(r, 'detail.cancelA11y')).toHaveLength(0);
+    expect(byLabel(r, 'detail.cancelA11y').length).toBeGreaterThan(0);
 
-    await tapMenuItem(r, 'detail.cancelA11y');
+    await tapAction(r, 'detail.cancelA11y');
 
     const shown = json(r);
     expect(shown).toContain('detail.cancelConfirm.title');
@@ -202,7 +191,7 @@ describe('Journey detail — cancel', () => {
     setApp(journey({ steps: [step('s1', { done: true })] }));
     const r = await render();
 
-    await tapMenuItem(r, 'detail.cancelA11y');
+    await tapAction(r, 'detail.cancelA11y');
 
     expect(json(r)).toContain('detail.cancelConfirm.removesNone');
     expect(json(r)).not.toContain('detail.cancelConfirm.removes|');
@@ -212,7 +201,7 @@ describe('Journey detail — cancel', () => {
     const core = setApp(journey());
     const r = await render();
 
-    await tapMenuItem(r, 'detail.cancelA11y');
+    await tapAction(r, 'detail.cancelA11y');
     await act(async () => {
       byLabel(r, 'detail.cancelConfirm.confirmA11y')[0].props.onPress();
     });
@@ -225,7 +214,7 @@ describe('Journey detail — cancel', () => {
     const core = setApp(journey());
     const r = await render();
 
-    await tapMenuItem(r, 'detail.cancelA11y');
+    await tapAction(r, 'detail.cancelA11y');
     await act(async () => {
       byLabel(r, 'detail.cancelConfirm.pauseInsteadA11y')[0].props.onPress();
     });
@@ -237,7 +226,6 @@ describe('Journey detail — cancel', () => {
   it('never offers Cancel on a completed Journey (completion is final), only Delete', async () => {
     setApp(journey({ status: 'completed', completedAt: 5_000 }));
     const r = await render();
-    await openMenu(r);
 
     expect(byLabel(r, 'detail.cancelA11y')).toHaveLength(0);
     expect(byLabel(r, 'detail.deleteA11y').length).toBeGreaterThan(0);
@@ -246,7 +234,6 @@ describe('Journey detail — cancel', () => {
   it('never offers Cancel on an already-canceled Journey, only Delete', async () => {
     setApp(journey({ status: 'abandoned', stepsAtAbandon: 12 }));
     const r = await render();
-    await openMenu(r);
 
     expect(byLabel(r, 'detail.cancelA11y')).toHaveLength(0);
     expect(byLabel(r, 'detail.deleteA11y').length).toBeGreaterThan(0);
@@ -255,7 +242,6 @@ describe('Journey detail — cancel', () => {
   it('offers Delete and NOT Cancel on a Future Journey — it never ran, so it disappears', async () => {
     setApp(journey({ status: 'future', startsAt: Date.now() + 7 * 24 * 3600 * 1000 }));
     const r = await render();
-    await openMenu(r);
 
     expect(byLabel(r, 'detail.cancelA11y')).toHaveLength(0);
     expect(byLabel(r, 'detail.deleteA11y').length).toBeGreaterThan(0);
@@ -283,52 +269,61 @@ describe('Journey detail — cancel', () => {
     // Nothing asks for more work, and there is no Phase read-out to imply progress.
     expect(byLabel(r, 'detail.freezeA11y')).toHaveLength(0);
     expect(byLabel(r, 'detail.resumeA11y')).toHaveLength(0);
-    expect(shown).not.toContain('detail.phase');
+    expect(shown).not.toContain('detail.milestone');
     expect(shown).not.toContain('detail.checkIn');
   });
 });
 
 /**
- * The ⋯ overflow at the end of the action list (founder decision, 2026-08-14). Cancel is a heavy
- * action, so it is de-emphasised by POSITION — last in the list, one tap deeper — and never by
- * warning iconography: a prohibition symbol on a legitimate life choice would tell the user they are
- * not allowed to stop, which is the same thing the confirmation copy refuses to do.
+ * The end-of-list actions (founder decision, Device QA 2026-08-17 B3). This is the screen where a
+ * Journey is MANAGED, so its heavy actions are visible buttons here rather than items inside a ⋯:
+ * de-emphasised by POSITION — last, after everything the Journey is — and by INK, never by warning
+ * iconography. A prohibition symbol on a legitimate life choice would tell the user they are not
+ * allowed to stop, which is the same thing the confirmation copy refuses to do.
  */
-describe('Journey detail — the ⋯ overflow menu', () => {
+describe('Journey detail — the actions at the end of the list', () => {
   /**
-   * Every action item currently in the open menu, in render order. `findAllByProps` returns the
+   * The two heavy actions currently on screen, in render order. `findAllByProps` returns the
    * composite AND the host node for the same Pressable, so consecutive repeats are collapsed.
    */
-  const menuItems = (r: TestRoot) =>
+  const heavyActions = (r: TestRoot) =>
     r.root
       .findAllByProps({ accessibilityRole: 'button' })
       .map((n) => n.props.accessibilityLabel as string)
       .filter((l) => l === 'detail.cancelA11y' || l === 'detail.deleteA11y')
       .filter((l, i, all) => l !== all[i - 1]);
 
-  it('keeps Cancel and Delete off the screen until the ⋯ is opened', async () => {
+  it('shows Cancel and Delete on the screen, alongside Pause', async () => {
     setApp(journey());
     const r = await render();
 
-    expect(byLabel(r, 'detail.moreActionsA11y').length).toBeGreaterThan(0);
-    expect(byLabel(r, 'detail.cancelA11y')).toHaveLength(0);
-    expect(byLabel(r, 'detail.deleteA11y')).toHaveLength(0);
-    // Pause stays VISIBLE — it is reversible and everyday, so it never moves into the overflow.
+    expect(byLabel(r, 'detail.cancelA11y').length).toBeGreaterThan(0);
+    expect(byLabel(r, 'detail.deleteA11y').length).toBeGreaterThan(0);
+    // Pause is the nearest reference: the same shell, in the reversible-and-everyday accent ink.
     expect(byLabel(r, 'detail.freezeA11y').length).toBeGreaterThan(0);
+    // …and nothing is hidden behind an overflow control any more.
+    expect(json(r)).not.toContain('detail.moreActionsA11y');
   });
 
   it('lists Cancel before Delete — the record-keeping exit ahead of the erase', async () => {
     setApp(journey());
     const r = await render();
-    await openMenu(r);
 
-    expect(menuItems(r)).toEqual(['detail.cancelA11y', 'detail.deleteA11y']);
+    expect(heavyActions(r)).toEqual(['detail.cancelA11y', 'detail.deleteA11y']);
+  });
+
+  it('says plainly what each one does, before any confirmation', async () => {
+    setApp(journey());
+    const r = await render();
+
+    const shown = json(r);
+    expect(shown).toContain('detail.cancelHint');
+    expect(shown).toContain('detail.deleteHint');
   });
 
   it('uses no prohibition icon on either action', async () => {
     setApp(journey());
     const r = await render();
-    await openMenu(r);
 
     // Ordinary destructive-action iconography only: a stop glyph and a trash can. Anything from the
     // "ban / close-circle / remove-circle" family would put judgement on the choice.
@@ -343,7 +338,7 @@ describe('Journey detail — the ⋯ overflow menu', () => {
     const core = setApp(journey());
     const r = await render();
 
-    await tapMenuItem(r, 'detail.deleteA11y');
+    await tapAction(r, 'detail.deleteA11y');
     expect(json(r)).toContain('detail.deleteConfirmTitle');
     expect(core.deleteJourney).not.toHaveBeenCalled();
   });
@@ -357,7 +352,7 @@ describe('Journey detail — the ⋯ overflow menu', () => {
 describe('Journey detail — cancel: who else is affected', () => {
   const open = async () => {
     const r = await render();
-    await tapMenuItem(r, 'detail.cancelA11y');
+    await tapAction(r, 'detail.cancelA11y');
     return r;
   };
 

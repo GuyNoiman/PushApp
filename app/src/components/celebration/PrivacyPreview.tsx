@@ -14,16 +14,16 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
 
 export function PrivacyPreview({ revealsJourneyName }: { revealsJourneyName: boolean }) {
   const theme = useTheme();
   const { t } = useTranslation('celebration');
-  const rtl = isRTL();
 
   return (
     <View style={[styles.wrap, { backgroundColor: theme.backgroundSelected, borderColor: theme.hairline }]}>
-      <View style={[styles.row, rtl && styles.rowRTL]}>
+      {/* `row` already lays out right-to-left under RTL — adding 'row-reverse' on top
+          flipped it back to left-to-right, so the lock icon sat on the wrong side. */}
+      <View style={styles.row}>
         <Ionicons
           name={revealsJourneyName ? 'eye-outline' : 'lock-closed'}
           size={16}
@@ -54,9 +54,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  rowRTL: {
-    flexDirection: 'row-reverse',
   },
   heading: {
     textTransform: 'uppercase',

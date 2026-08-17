@@ -50,6 +50,15 @@ export interface ReminderSubscription {
 
 export class ReminderEngine {
   private permissionGranted = false;
+  /**
+   * Whether the OS has been asked about permission AT ALL in this app run. The engine is rebuilt on
+   * every cold start, so `permissionGranted` starts `false` even for a user who granted permission
+   * months ago — and before this flag existed, a launch where nothing happened to call
+   * {@link init}/{@link refreshPermission} scheduled NOTHING, silently, for the whole session (device
+   * QA 2026-08-17: no notification ever arrived). Now the first schedule attempt reads the OS once —
+   * WITHOUT prompting — so a granted permission is honoured whatever route the user took into the app.
+   */
+  private permissionChecked = false;
   private readonly location: LocationGateway;
   private readonly calendar: CalendarGateway;
 
@@ -91,6 +100,7 @@ export class ReminderEngine {
         granted = request.granted;
       }
       this.permissionGranted = granted;
+      this.permissionChecked = true;
       return granted;
     } catch {
       this.permissionGranted = false;
@@ -117,10 +127,22 @@ export class ReminderEngine {
     try {
       const settings = await Notifications.getPermissionsAsync();
       this.permissionGranted = settings.granted;
+      this.permissionChecked = true;
       return settings.granted;
     } catch {
       return this.permissionGranted;
     }
+  }
+
+  /**
+   * The permission answer to schedule against, reading the OS ONCE per app run if nobody has asked
+   * yet. Never prompts (that stays {@link init}'s job, in context) and never re-reads once an answer
+   * is known — so this cannot turn into a per-notification OS call. Exists so a reminder the user
+   * configured in an earlier session still schedules after a restart; see {@link permissionChecked}.
+   */
+  private async ensurePermission(): Promise<boolean> {
+    if (this.permissionGranted || this.permissionChecked) return this.permissionGranted;
+    return this.refreshPermission();
   }
 
   /**
@@ -149,7 +171,7 @@ export class ReminderEngine {
 
   /** Schedule a simple repeating daily reminder. Returns the id, or null if unavailable. */
   async scheduleDailyReminder(input: DailyReminderInput): Promise<string | null> {
-    if (!this.permissionGranted) return null;
+    if (!(await this.ensurePermission())) return null;
     try {
       return await Notifications.scheduleNotificationAsync({
         content: {
@@ -177,7 +199,7 @@ export class ReminderEngine {
    * in the past (a postpone still succeeds — it just fires no notification). Never throws.
    */
   async scheduleOneShot(input: { title: string; body: string; at: number }): Promise<string | null> {
-    if (!this.permissionGranted) return null;
+    if (!(await this.ensurePermission())) return null;
     if (input.at <= Date.now()) return null;
     try {
       return await Notifications.scheduleNotificationAsync({
@@ -248,7 +270,7 @@ export class ReminderEngine {
       });
       return id ? [id] : [];
     }
-    if (!this.permissionGranted) return [];
+    if (!(await this.ensurePermission())) return [];
     const ids: string[] = [];
     for (const jsDay of days) {
       try {

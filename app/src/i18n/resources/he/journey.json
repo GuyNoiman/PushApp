@@ -38,7 +38,7 @@
     "backA11y": "חזרה",
     "notFoundTitle": "לא נמצא",
     "notFoundBody": "המסע הזה אינו זמין. ייתכן שהוסר.",
-    "phase": "שלב {{phase}} מתוך {{phases}}",
+    "milestone": "אבן דרך {{current}} מתוך {{total}}",
     "window": "התחיל ב-{{start}} · מסתיים ב-{{end}}",
     "stepsDone": "{{done}} מתוך {{total}} צעדים הושלמו",
     "steps": "צעדים",
@@ -79,7 +79,6 @@
       "confirm": "לבטל את המסע",
       "confirmA11y": "כן, לבטל את המסע הזה"
     },
-    "moreActionsA11y": "פעולות נוספות למסע הזה",
     "delete": "מחיקת המסע",
     "deleteHint": "למחוק אותו ואת כל מה שבו",
     "deleteConfirmTitle": "למחוק את המסע הזה?",
@@ -142,7 +141,7 @@
   "stepCard": {
     "missed": "הוחמץ · עוד יש זמן להשלים",
     "completed": "הושלם · עבודה יפה",
-    "phaseMeta": "{{title}} · שלב {{phase}}/{{phases}}",
+    "milestoneMeta": "{{title}} · אבן דרך {{current}}/{{total}}",
     "endsToday": "מסתיים היום",
     "moreActions": "עוד פעולות עבור {{title}}"
   },

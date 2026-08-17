@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { START_TEXT_ALIGN } from '@/i18n/rtl';
 
 /** A short cap so the transient caption stays a caption (and can't grow into stored-looking content). */
 const MAX_CAPTION = 200;
@@ -40,7 +40,7 @@ export function CaptionInput({ value, onChange }: { value: string; onChange: (ne
             backgroundColor: theme.backgroundElement,
             borderColor: theme.hairline,
             color: theme.text,
-            textAlign: isRTL() ? 'right' : 'left',
+            textAlign: START_TEXT_ALIGN,
           },
         ]}
       />

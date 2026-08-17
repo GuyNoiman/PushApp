@@ -23,8 +23,8 @@
     }
   },
   "card": {
-    "milestone": "Milestone {{phase}} of {{phases}}",
-    "milestoneComplete": "Milestone {{phases}} of {{phases}} — complete",
+    "milestone": "Milestone {{current}} of {{total}}",
+    "milestoneComplete": "Milestone {{total}} of {{total}} — complete",
     "completed": "Completed",
     "stopped": "Stopped {{date}}",
     "starts": "Starts {{date}}",

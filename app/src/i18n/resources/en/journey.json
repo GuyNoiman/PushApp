@@ -38,7 +38,7 @@
     "backA11y": "Back",
     "notFoundTitle": "Not found",
     "notFoundBody": "This Journey isn't available. It may have been removed.",
-    "phase": "Phase {{phase}} of {{phases}}",
+    "milestone": "Milestone {{current}} of {{total}}",
     "window": "Started {{start}} · ends {{end}}",
     "stepsDone": "{{done}} of {{total}} Steps done",
     "steps": "Steps",
@@ -79,7 +79,6 @@
       "confirm": "Cancel this Journey",
       "confirmA11y": "Yes, cancel this Journey"
     },
-    "moreActionsA11y": "More actions for this Journey",
     "delete": "Delete journey",
     "deleteHint": "Erase it and everything on it",
     "deleteConfirmTitle": "Delete this journey?",
@@ -142,7 +141,7 @@
   "stepCard": {
     "missed": "Missed · still time to catch it",
     "completed": "Completed · nice work",
-    "phaseMeta": "{{title}} · Phase {{phase}}/{{phases}}",
+    "milestoneMeta": "{{title}} · Milestone {{current}}/{{total}}",
     "endsToday": "Ends today",
     "moreActions": "More actions for {{title}}"
   },

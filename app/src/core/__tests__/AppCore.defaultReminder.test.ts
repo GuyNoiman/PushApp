@@ -120,6 +120,26 @@ describe('AppCore — a new Journey arrives with its reminder ON', () => {
     expect(mockSchedule).toHaveBeenCalled();
   });
 
+  it('reminds at the hour the PLAN says the user does this, not at a fixed default', async () => {
+    // The interview captured "evenings", so the Planner schedules every Step in the evening. A
+    // reminder at any other hour would be the app disagreeing with a plan the user just approved —
+    // which is exactly what the old fixed 09:00 (and the wizard's fixed 08:00) did.
+    const core = await grantedCore();
+
+    const journey = core.createJourneyFromGoalSpec({
+      ...SPEC,
+      timing: { ...SPEC.timing, preferredDays: [1, 2, 3, 4, 5] },
+    });
+    await settle();
+
+    const firstStepHour = new Date(journey.steps[0].plannedFor!).getHours();
+    expect(core.listReminderRules(journey.id)[0].trigger).toMatchObject({
+      kind: 'fixedTime',
+      hour: firstStepHour,
+    });
+    expect(firstStepHour).not.toBe(DEFAULT_REMINDER_HOUR);
+  });
+
   it('the COACH path: the same reminder, without the screen having to ask for it', async () => {
     const core = await grantedCore();
 

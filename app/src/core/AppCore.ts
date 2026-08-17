@@ -113,6 +113,7 @@ import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from '
 import {
   DEFAULT_REMINDER_HOUR,
   DEFAULT_REMINDER_MINUTE,
+  defaultReminderTimeFor,
   resolveReminderRule,
   type JourneyReminder,
 } from './util/reminderView';
@@ -841,12 +842,16 @@ export class AppCore {
       (r) => r.journeyId === journey.id && r.trigger.kind === 'fixedTime',
     );
     if (existing) return;
+    // WHEN, derived rather than assumed: the first scheduled Step is the user's own answer to when
+    // this is happening, and the account's Active Hours are the fallback. The old fixed 09:00 here
+    // disagreed with the wizard's fixed 08:00 and with the user's stated availability alike.
+    const { hour, minute } = defaultReminderTimeFor(journey, this.state.schedulingPrefs);
     void this.addReminderRule({
       journeyId: journey.id,
       trigger: {
         kind: 'fixedTime',
-        hour: DEFAULT_REMINDER_HOUR,
-        minute: DEFAULT_REMINDER_MINUTE,
+        hour,
+        minute,
       },
       ...this.defaultReminderCopy(journey),
       enabled: true,

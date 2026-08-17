@@ -39,7 +39,8 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
 import type { NewStepInput } from '@/core/engines/JourneyEngine';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
-import type { Cadence, Journey, Rhythm } from '@/core/types/domain';
+import type { Cadence, Journey, Rhythm, SchedulingPrefs } from '@/core/types/domain';
+import { defaultReminderTimeFor } from '@/core/util/reminderView';
 import { useTheme } from '@/hooks/use-theme';
 import { isolate, isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
@@ -70,6 +71,24 @@ const REMINDER_SLOTS = [
   { hour: 12, minute: 0, key: 'midday' },
   { hour: 19, minute: 0, key: 'evening' },
 ] as const;
+
+/**
+ * The slot to pre-select: the one closest to when the user has told us they are available
+ * ({@link defaultReminderTimeFor} with no Journey yet, so it reads Active Hours). Falls out as
+ * "midday" for an account with no preference, which is the least likely of the three to land
+ * somewhere the user is asleep.
+ */
+function nearestReminderSlot(prefs: SchedulingPrefs): number {
+  const { hour, minute } = defaultReminderTimeFor({ steps: [] }, prefs);
+  const target = hour * 60 + minute;
+  let best = 0;
+  for (let i = 1; i < REMINDER_SLOTS.length; i++) {
+    const here = Math.abs(REMINDER_SLOTS[i].hour * 60 + REMINDER_SLOTS[i].minute - target);
+    const bestSoFar = Math.abs(REMINDER_SLOTS[best].hour * 60 + REMINDER_SLOTS[best].minute - target);
+    if (here < bestSoFar) best = i;
+  }
+  return best;
+}
 
 /**
  * The three start modes offered at final approval (Future Journey Management, §5). `now` is the
@@ -130,7 +149,13 @@ export default function NewJourneyScreen() {
   // the one-tap opt-out, and switching it off is written back as an explicit Off on create, so what
   // this screen shows is what the Journey actually gets. Permission is still requested in-context.
   const [remindEnabled, setRemindEnabled] = useState(true);
-  const [remindTimeIndex, setRemindTimeIndex] = useState(0);
+  // The pre-selected slot is the one nearest the user's OWN Active Hours, not a fixed "morning".
+  // This screen used to offer 08:00 by default while the engine's default rule used 09:00, so the
+  // same Journey was reminded at a different time depending on which screen created it — and 08:00
+  // can sit outside the window the user told us they are available in.
+  const [remindTimeIndex, setRemindTimeIndex] = useState(() =>
+    nearestReminderSlot(core.getSchedulingPrefs()),
+  );
 
   // Stage 6 — the start mode (Future Journey Management §5), chosen at FINAL APPROVAL. Defaults to
   // `now`: leaving this row alone creates the Journey exactly as it always has.

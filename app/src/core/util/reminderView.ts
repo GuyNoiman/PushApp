@@ -9,7 +9,8 @@
  * `'smart'` is only ever produced when it was explicitly stored (a reserved value; not
  * selectable in the current UI). Pure TS — no clock read, no vendor imports.
  */
-import type { ReminderRule } from '../types/domain';
+import type { Journey, ReminderRule, SchedulingPrefs } from '../types/domain';
+import { minuteOfDay } from './date';
 
 export type ReminderMode = 'off' | 'fixed' | 'smart';
 
@@ -26,9 +27,68 @@ export interface JourneyReminder {
   weekdays: number[];
 }
 
-/** The default Fixed time offered when a Journey has no reminder yet. */
+/**
+ * The last-resort Fixed time, used ONLY when a Journey carries no schedule and the account has no
+ * Active Hours — i.e. when the app genuinely knows nothing about when this person is available.
+ * Prefer {@link defaultReminderTimeFor}, which asks the plan and the account first.
+ */
 export const DEFAULT_REMINDER_HOUR = 9;
 export const DEFAULT_REMINDER_MINUTE = 0;
+
+/** A wall-clock time of day, local. */
+export interface TimeOfDay {
+  hour: number;
+  minute: number;
+}
+
+/**
+ * WHEN a Journey's default reminder should fire — derived, never a constant.
+ *
+ * The app used to answer this in two places with two different numbers: the creation wizard
+ * pre-selected 08:00 and the engine's default rule used 09:00, so the same Journey was reminded at
+ * a different time depending on which screen it was born on. Worse, both were fixed hours that
+ * ignored the user's own Active Hours entirely — 08:00 can sit outside the window someone told us
+ * they are available in, which is the one thing the setting exists to prevent.
+ *
+ * The order below is "ask the most specific thing that knows":
+ *
+ *  1. **The plan itself.** The interview already asks when the user can do this, and the Planner
+ *     schedules every Step at that hour. So the first scheduled Step IS the user's answer to "when
+ *     is this happening" — reminding at any other time would be the app disagreeing with a plan the
+ *     user just approved.
+ *  2. **The account's Active Hours**, when the plan carries no dates (a frequency-based plan): the
+ *     start of the shared window, which is the earliest moment the user has said they are reachable.
+ *  3. **{@link DEFAULT_REMINDER_HOUR}**, only when neither exists.
+ *
+ * Per-day Active Hours are deliberately NOT resolved here: this returns one time for the whole
+ * rule, and the scheduler already clamps each firing into that specific day's window at send time
+ * (D40 — enforcement is clamp, not disable). Duplicating the per-day clamp here would be a second
+ * definition of the same rule, which is how the two defaults drifted apart in the first place.
+ *
+ * Pure — no clock read.
+ */
+export function defaultReminderTimeFor(
+  journey: Pick<Journey, 'steps'>,
+  prefs: SchedulingPrefs | undefined,
+): TimeOfDay {
+  const planned = journey.steps
+    .filter((s) => !s.dropped && typeof s.plannedFor === 'number')
+    .map((s) => s.plannedFor!)
+    .sort((a, b) => a - b);
+
+  if (planned.length > 0) {
+    const at = new Date(planned[0]);
+    return { hour: at.getHours(), minute: at.getMinutes() };
+  }
+
+  const shared = prefs?.activeHours?.days.find((d) => d.enabled)?.window ?? prefs?.window;
+  if (shared && shared.start !== shared.end) {
+    const minutes = minuteOfDay(shared.start);
+    return { hour: Math.floor(minutes / 60), minute: minutes % 60 };
+  }
+
+  return { hour: DEFAULT_REMINDER_HOUR, minute: DEFAULT_REMINDER_MINUTE };
+}
 
 /**
  * Resolve a Journey's managed reminder rule (or none) into a {@link JourneyReminder}. A

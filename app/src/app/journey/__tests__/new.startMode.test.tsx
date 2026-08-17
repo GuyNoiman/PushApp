@@ -82,6 +82,9 @@ function setApp(capReached = false) {
     })),
     initReminders: jest.fn(async () => {}),
     setJourneyReminderFixed: jest.fn(async () => {}),
+    // The wizard pre-selects its reminder slot from the account's Active Hours; an account with no
+    // preference set is the default this fixture models.
+    getSchedulingPrefs: jest.fn(() => ({ preferredDays: [], dayPart: 'either' as const })),
   };
   mockApp.current = {
     core,

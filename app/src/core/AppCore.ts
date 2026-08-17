@@ -53,6 +53,7 @@ import type { JourneyEdit } from './coach/journeyEdit';
 import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
 import { setMockBusy, setMockLocation, type MockPlace } from './recovery/mockEnv';
 import { BehaviorModelEngine } from './learning/BehaviorModelEngine';
+import { chooseRecurringApproach } from './learning/library/matchApproach';
 import { planJourney } from './learning/Planner';
 import { GeneralExpert } from './learning/DomainExpert';
 import { replan } from './learning/AdaptivePlanner';
@@ -1170,8 +1171,17 @@ export class AppCore {
     // JourneyCreated save. Sensitive-domain goals are filtered out at capture and never parked.
     if (spec.deferredGoals?.length) this.parkDeferredGoals(spec);
 
+    // MATCH the plan to what the user already told us about themselves. Onboarding asks what tends
+    // to help them and what tends to get in their way; until now those answers were collected,
+    // summarised for the coach, and read by nothing. A spec that already names an approach (the
+    // user picked one of the other ways) is left exactly as it is — the match is a starting point,
+    // never an override of a choice the user made.
+    const matched: GoalSpec = spec.approach
+      ? spec
+      : { ...spec, approach: chooseRecurringApproach(this.getOnboardingCoachSummary()).approach };
+
     const options = start.mode === 'scheduled' ? { now: start.at } : undefined;
-    const journey = createJourneyFromGoalSpec(this.journeyEngine, spec, undefined, options, start);
+    const journey = createJourneyFromGoalSpec(this.journeyEngine, matched, undefined, options, start);
     // At the Future cap nothing was created — return null untouched (no Dream is minted for a
     // Journey that does not exist).
     if (!journey) return null;

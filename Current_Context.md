@@ -32,7 +32,48 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — read these three before anything else (2026-08-18)
+# ⛳ START HERE — the 2026-08-18 build session (read this block, then the three docs below it)
+
+The architecture described further down was **built, in its first slice**. What changed, and what the
+next session must know before touching the plan path:
+
+**1. A plan now has a SHAPE (D54), and this is the fix for "the plan didn't help me at all".**
+A `recurring` goal — the shake, the pillowcases, reading, shaving — gets **no Milestone arc**: two setup
+Steps carrying the user's own sentence, then that sentence repeated on every active day. A `process` goal
+keeps the arc. Four of the founder's five real goals are the first kind, and the app previously knew only
+the second. `app/src/core/learning/library/` is the new home; `JourneyShape` lives in `learning/types.ts`.
+
+**2. The onboarding answers reach the plan for the first time.** `getOnboardingCoachSummary()` was called
+by nothing. Two users who answered differently received identical plans. `library/matchApproach.ts` now
+maps a stated obstacle onto the approach designed for it.
+
+**3. The end-of-Journey label exists (D57/D58)** — asked at completion, cancellation AND quiet death, as
+a request, never by notification. Without it the library can only compare on completion rate, which is
+how a learning loop starts recommending whatever is easiest to finish.
+
+**Read `00_Foundation/CHANGELOG.md`'s 2026-08-18 build-session entry** for the full list, including the
+six device-QA defects closed and the reminder-time fix (D59).
+
+### What is NOT built, and must not be mistaken for done
+- **The translation cache (D55).** Templates are authored in English and keep their `{ACTION}` slot so
+  the frame can be translated once per language and cached — the ORDER is in place, the cache is not.
+  Until it exists, a Hebrew user sees English Step titles.
+- **The "two other ways" surface and the process-shape variants (D56).** The three recurring approaches
+  and the matcher exist; nothing yet lets the user switch, and a `process` goal still gets the expert's
+  hardcoded arc. The founder's one process goal (*confidence to approach strangers*) is still generic.
+- **The per-topic questionnaires** the founder approved (what makes me abandon · what motivates me ·
+  journeys and tools tried before), modelled on the communication-style quiz.
+
+### One caution for whoever picks this up
+`Step.cadence` is stored and read only as a reminder heuristic — **nothing in the app generates repeat
+occurrences from it**. A recurring Journey works today because the Planner MATERIALIZES one Step per
+active day. That is deliberate and it fits the existing model, but it means a 56-day daily Journey is 54
+Step rows, and progress reads "12 of 54". A true recurring-Step model with an occurrence log is the
+cleaner design and would touch every surface; it is a decision, not an oversight.
+
+---
+
+# ⛳ Previous START HERE — read these three before anything else (2026-08-18, earlier)
 
 The 2026-08-17/18 session did two things: it put the app on a **real device for the first time**, and the
 founder articulated **the product's core architecture**. The second reframes most of what is still

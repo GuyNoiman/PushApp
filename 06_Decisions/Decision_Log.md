@@ -10,6 +10,130 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-18 — Plan shapes, the library's first slice, and the end-of-Journey label
+
+> Working session with the founder, on branch `feat/buddy-3d-and-reminders`. It began as a review of
+> the 2026-08-17/18 handoff's defect list and turned into the first real build of the architecture in
+> D52. Engineering detail is in `00_Foundation/CHANGELOG.md`; this log records the founder decisions.
+
+### D54 — A plan has a SHAPE: a repeated action is not a staged process, and must not be given an arc
+**Decision (founder, 2026-08-18).** Asked for the goals he actually wants, the founder named two kinds:
+
+> "פעולות פשוטות שצריכות לחזור באופן קבוע (החלפת ציפות אחת לשבועיים, קריאה בספר פעמיים בשבוע, גילוח
+> זקן פעמיים ביום, שייק חלבון כל יום) ופעולה אחת תהליכית - לצבור בטחון לפנות לאנשים זרים"
+
+Four of his five real goals are **repeated actions with no stages**, and the app knew only one shape —
+the staged Milestone arc — and forced it onto both. This is the mechanism behind his verdict that the
+plan built for him "didn't help me at all": there is no second phase of changing the pillowcases.
+
+**What is approved:** two plan shapes. A `recurring` goal gets NO Milestone arc — a few setup Steps that
+carry the user's own sentence, then that sentence repeated on every active day. A `process` goal keeps
+the arc, where stages are real and the domain expert's staged content earns its place.
+
+**The related mechanism the founder approved, in his words "היברידי נשמע נכון":** the library supplies
+the SCAFFOLD and the user supplies the CONTENT. Templates carry an `{ACTION}` hole filled with what the
+user actually wrote. No model call, no cost, works offline.
+
+**Categorization:** **Approved.**
+**Reflected in:** `app/src/core/learning/types.ts` (`JourneyShape`), `app/src/core/learning/library/`,
+`app/src/core/learning/Planner.ts`, `04_Product/PRD/Plan_Library_and_Learning_PRD.md` §15 Stage 0–1.
+
+### D55 — Plan content is authored in English; the meta-agent translates it to the user's language
+**Decision (founder, 2026-08-18):**
+
+> "תוכן התוכניות תמיד יהיה באנגלית בלבד - זוהי שפתם של המומחים. אבל סוכן העל הוא זה שצריך לדעת לתרגם
+> את התשובה לשפה של המשתמש לא משנה מה היא השפה (גם ספרדית לצורך הדוגמה)"
+
+**Consequence recorded at the time, and the agreed implementation:** if translation is a live model call,
+a user with no network or no key sees English. Because the templates are a CLOSED set we author, each is
+translated ONCE per language and cached, so cost approaches zero and offline works. **The user's own
+words are inserted AFTER translation and never pass through it** — filling first would send "שייק חלבון"
+through a translator and hand it back as "protein shake".
+
+**Categorization:** **Approved** (the rule) + the caching implementation. **NOT YET BUILT** — the slot
+order is in place; the translation cache is not.
+**Reflected in:** `app/src/core/learning/library/slots.ts`; open in `04_Product/Open_Questions_For_Founder.md`.
+
+### D56 — Three variants per goal, differing in METHOD; offered quietly, never as a menu
+**Decision (founder, 2026-08-18).** Three variants confirmed ("שלושה וריאנטים זה לחלוטין מספיק"). On
+presentation he judged a chooser clumsy and asked what could even be shown; the agreed answer is **not a
+menu**: the coach picks one, shows the plan, and offers one quiet line — "there are two other ways to do
+this". Whoever taps and switches gives the strongest learning signal available, and whoever does not is
+not interrupted.
+
+**Why method and not intensity:** variants that differ only in how much work they ask teach us nothing
+except that some people prefer less. The three recurring approaches are *attach it to an existing
+routine* · *start smaller than feels worth it* · *prepare the environment so the moment needs no
+decision*.
+
+**Also decided:** the **experts** own the variants ("המומחים הם אלה שבונים את המסעות והוריאנטים שלהם").
+The shared scaffold holds only the shape, which is not domain knowledge.
+
+**Categorization:** **Approved.** Variants and the matcher exist for the recurring shape; **the "two
+other ways" surface and the process-shape variants are NOT yet built.**
+**Reflected in:** `app/src/core/learning/library/recurringApproaches.ts`, `.../matchApproach.ts`.
+
+### D57 — What counts as "the plan worked": finishing is the evidence, unless the user says otherwise
+**Decision (founder, 2026-08-18):**
+
+> "אם משתמש סיים את התוכנית אפשר להניח שהיא עבדה, אלא אם הוא דירג אותה לבסוף בציון נמוך"
+
+This is the objective function the library learns against, and it was the first of the blocking questions.
+
+**Two consequences written into the code, both of which change what the loop can learn:** `partly` is NOT
+counted as a failure — treating the honest middle answer as negative would teach the library to avoid
+every Journey people found genuinely mixed — and **"we don't know" stays distinguishable from "no"**, so
+an unlabelled Journey is missing data rather than a silent negative.
+
+**Categorization:** **Approved.**
+**Reflected in:** `app/src/core/celebration/journeyFeedback.ts` (`journeyWorked`).
+
+### D58 — The end-of-Journey question is asked at three endings, as a request, and never by notification
+**Decision (founder, 2026-08-18):**
+
+> "כרגע נסתפק במשוב בסוף התהליך בדיוק בנקודות שציינת. המשוב צריך להיות מנוסח בצורה של בקשה … בה אנחנו
+> מסבירים למשתמש כי דעתו עשויה לעזור לנו להשתפר עבורו ועבור משתמשים אחרים"
+
+**The three points** are completion, cancellation, and quiet death — the survivorship guard from the
+library PRD §6.4: ask only the people who finished and every training label is a success, so the library
+learns that everything works, invisibly, from data that looks clean.
+
+**Never by push.** The quiet host waits for the user to open the app themselves, asks once, and a
+dismissal is recorded as a real answer so it never asks twice. Asking "why did you stop?" by notification
+spends the user's attention on OUR data, in a product whose objective is fewer interruptions that matter
+more (D52 §8).
+
+**Categorization:** **Approved.**
+**Reflected in:** `app/src/core/celebration/journeyFeedback.ts`,
+`app/src/components/celebration/JourneyFeedbackSheet.tsx`, `app/src/app/(tabs)/index.tsx`.
+
+### D59 — A reminder fires when the PLAN says the user does this, never at a fixed hour
+**Decision (founder, 2026-08-18).** On being shown that the wizard offered 08:00 while the engine
+defaulted to 09:00:
+
+> "כל משתמש מגדיר לעצמו את זמני הפעילות ולכן ייתכן כי השעה 8:00 בכלל לא בחלון הזמינות של המשתמש -
+> אנחנו צריכים להבין מהמשתמש מתי הכי נוח לו שנתריע לו"
+
+Also decided: **existing Journeys are not backfilled** with reminders; the new default applies only to
+Journeys created from now on.
+
+**Categorization:** **Approved.**
+**Reflected in:** `app/src/core/util/reminderView.ts` (`defaultReminderTimeFor`), `app/src/core/AppCore.ts`.
+
+### D60 — The app does not show the user what it has concluded about them
+**Decision (founder, 2026-08-18), answering a proposal for a "what we know about you" screen:**
+
+> "אנחנו לא נציג למשתמש את מה שאנחנו חושבים עליו."
+
+**Recorded because the proposal argued the opposite** (that visibility is honest and a differentiator).
+The founder's call stands; anything built later that surfaces a derived profile needs this reopened
+first, not merely designed around.
+
+**Categorization:** **Approved.**
+**Reflected in:** this log (no screen exists; none is to be built).
+
+---
+
 ## 2026-08-08 — Initial-version (MVP) task list + scope decisions
 
 > Working session with the founder to define the concrete initial-version scope, on branch

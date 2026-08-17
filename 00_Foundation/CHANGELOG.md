@@ -4,6 +4,67 @@ Status: Living Document
 
 ---
 
+# 2026-08-18 (build session) — plan shapes, the library's first slice, the end-of-Journey label, and six device-QA defects closed
+
+Branch `feat/buddy-3d-and-reminders`, six topic commits, **not pushed**. `tsc` clean · `eslint` 0 errors ·
+**jest 1544 passing / 150 suites** (from 1502 / 145 at session start). Decisions **D54–D60**.
+
+## The headline: a repeated goal is now the user's own words, repeated
+
+The founder's verdict on the app — *"the plan that was built for me didn't help me at all"* — came from
+asking for *drink a protein shake daily* and receiving Steps about walking at a comfortable pace. The
+cause was not bad content: his words picked a DOMAIN and were then discarded, and everything after came
+from a four-Milestone table written in advance. Asked for his real goals, four of the five he named are
+**repeated actions with no stages** (pillowcases fortnightly, reading twice a week, shaving, the shake).
+
+- **`JourneyShape`** (D54): `recurring` gets no Milestone arc — two setup Steps carrying the user's own
+  sentence inside an authored frame, then that sentence on every active day. `process` keeps the arc.
+- **Slot-filled templates** (D54/D55): templates hold an `{ACTION}` hole, so the frame can be translated
+  once per language while the user's words are inserted after and never translated.
+- **Three approaches, differing in METHOD** (D56): attach to an existing routine · start smaller than
+  feels worth it · prepare the environment. Variants that differ only in intensity teach nothing.
+- **Recurring plans are dated by cadence, not by minute budget** — the budget packer would have stacked a
+  week of five-minute repetitions onto one afternoon.
+- Three existing tests asserted the old habit arc; they were **pinning the defect as though it were the
+  spec** and now assert the user's own words.
+
+## The onboarding answers finally reach the plan
+
+`getOnboardingCoachSummary()` existed, built a summary of what helps the user and what gets in their way
+— and **was called by nothing**. Two users who answered differently got byte-identical plans. The matcher
+now maps a stated obstacle onto the approach designed for it, friction outranking help (what breaks
+someone is answered from experience; what helps is answered from preference), and returns the answer that
+decided it so the choice can be checked. Only coarse option ids are read — the free-text answers stay on
+the device, pinned by a test.
+
+## The end-of-Journey question, at three endings (D57/D58)
+
+The label the library learns from did not exist. It is now asked at **completion, cancellation, and quiet
+death** (no report for 21 days) — the survivorship guard: ask only the people who finished and every
+label is a success. **Never by push**; the quiet host waits for the user to open the app, asks once, and
+a dismissal is recorded as a real answer. `partly` is not scored as a failure, and "we don't know" stays
+distinguishable from "no".
+
+## Six defects closed
+
+One shared Step count (the engine, the Journeys card and the completion card disagreed — a Journey could
+read 80% while minting a card from another denominator) · the last two double-flipped RTL inputs · a
+postponed Step's notification now goes through the shared copy builder, so it carries language, form of
+address and style, and stops putting the Step title on the lock screen · **"see past reasons" was built,
+translated in both languages, and opened by nothing** — now offered from the reason sheet, and only once
+there is history to look at · six orphan components deleted · two suites that read the real clock and
+**failed after 21:30**, verified by pinning them to 23:55 where four postpone tests fail outright.
+
+**Reminders** (D59): the wizard offered 08:00 while the engine defaulted to 09:00, and both ignored the
+user's Active Hours. The time is now derived from the first scheduled Step — the interview already asks
+when the user can do this — then Active Hours, then the old constant only when nothing is known.
+
+## Not built, and named so it is not mistaken for done
+The translation cache (D55) · the "two other ways" surface and process-shape variants (D56) · the
+per-topic questionnaires the founder approved (abandonment · motivation · prior experience).
+
+---
+
 # 2026-08-18 (repo-steward pass) — D24's development-stage safety gate corrected: expert review before release replaces it (D53)
 
 Docs only; no code. **The requirement does not change — only where a misattribution is corrected.**

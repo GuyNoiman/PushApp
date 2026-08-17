@@ -62,6 +62,8 @@ HabitBull
 
 Loop Habit Tracker
 
+SoloUno Habit
+
 Strengths
 
 Simple
@@ -81,6 +83,137 @@ Limited long-term planning
 Usually no social support
 
 No adaptive AI
+
+---
+
+### SoloUno Habit — focused behavior-change reference
+
+SoloUno is a narrow behavior-change product designed around gaining control over one difficult habit,
+especially body-focused repetitive behaviors and other unwanted habits. Its core loop combines:
+
+- a daily challenge to extend the time without performing the habit;
+- reporting after the habit occurs rather than treating the lapse as the end of the process;
+- in-the-moment resistance practice when an urge appears;
+- reminders, journaling, streaks, rewards, and pattern insights;
+- a paid four-week self-guided or facilitated group program.
+
+Why it belongs in the landscape:
+
+- it translates one difficult real-world behavior into a small number of concrete interaction modes;
+- it treats reporting a lapse as useful awareness data, not only as failure;
+- it supports repeated recovery and gradual reduction rather than demanding immediate perfection;
+- its combination of tracking, real-time intervention, and optional human group support overlaps with
+  several parts of PushApp's long-term behavioral-support vision.
+
+What PushApp should learn:
+
+- a Journey can benefit from different action modes: planned action, an in-the-moment intervention, and a
+  retrospective report;
+- honest reporting should produce insight and adaptation instead of shame;
+- the product should make the next useful action obvious during a difficult moment;
+- structured human support can complement—not replace—the self-guided product loop.
+
+Important boundary:
+
+SoloUno focuses on controlling one unwanted habit. PushApp must not adopt medical or treatment claims, and
+must not collapse its broader Dream → Journey → Step model into an abstinence or habit-tracking model.
+
+Sources:
+
+- [SoloUno Habit — Apple App Store](https://apps.apple.com/il/app/solouno-habit/id6472174465)
+- [SoloUno Habit — Google Play](https://play.google.com/store/apps/details?id=com.ktzSihapYQXY.natively)
+- [SoloUno company overview](https://www.linkedin.com/company/solounoapp)
+
+#### Founder screen-recording review — 2026-08-13
+
+Three recordings of real iPhone use were reviewed after the initial store research. The following points were
+observed directly in the product rather than inferred from marketing copy.
+
+**Product scope and object model**
+
+- onboarding selects one behavior to work on, such as cigarette smoking;
+- after selection, the entire application is organized around that behavior;
+- no visible Journey list, concurrent-program selector, or way to switch to a second behavior was found;
+- changing the behavior appears to be an account/program-level change rather than starting another parallel
+  process;
+- no progressive curriculum or sequence of newly unlocked behavioral Steps was visible during the recordings.
+
+**The three repeated action modes**
+
+1. **Start a timed challenge** — the user commits to avoid the behavior until a countdown ends. The product
+   offers preset durations, including short challenges, and can offer a multiplier/reward for a highlighted
+   option.
+2. **Add a report** — the user records that the behavior occurred and supplies structured details. The form
+   uses chips, sliders, optional free text, and situational questions to capture context around the event.
+3. **High urge / urge help** — the user opens an in-the-moment exercise and moves through a short, bounded
+   resistance sequence. The interaction uses a timer/counter and encouraging scripted prompts rather than a
+   visible open conversation.
+
+These modes appear as persistent home actions. SoloUno therefore behaves less like a plan that unfolds and
+more like an on-call toolkit repeatedly applied to the same behavioral target.
+
+**Observed supporting mechanics**
+
+- an active challenge replaces the normal home state with a prominent countdown;
+- the challenge can remain active while the user leaves the app, and a notification can surface its state;
+- the user can report success or that the behavior occurred during the challenge;
+- reporting asks for contextual data and may include a personal note;
+- the app surfaces progress through creature/egg evolution, streak-like counters, points/currency,
+  achievements, milestones, and rewards;
+- the product gives four activity families their own named creature and progression score: the Awareness Fox
+  for reporting, the Attention Panda for urge work, the Freedom Phoenix for the abstinence streak, and the
+  Willpower Dragon for timed challenges;
+- each creature can progress through visible material/status tiers, creating a domain-specific mastery signal
+  rather than only one global level;
+- the product displays a cumulative money-saved total for cigarette reduction/avoidance. The reviewed
+  onboarding did not ask the user for baseline consumption, pack price, or daily spend, so the displayed value
+  is either based on an undisclosed default estimate or incomplete configuration. The motivational concept is
+  strong, but an unexplained financial number weakens trust;
+- the interface presents repeated encouragement after an exercise or challenge rather than introducing a new
+  plan;
+- a pattern/insight area summarizes accumulated reports once enough data exists;
+- notification and challenge timing can be configured around the chosen behavior.
+
+**What was not established by the recordings**
+
+- whether the app later unlocks a staged curriculum after several days or sufficient reports;
+- whether recommendations adapt materially from user data or only select from fixed templates;
+- whether the urge exercise varies by selected behavior;
+- whether the structured report taxonomy differs substantially across behaviors;
+- whether a paid program adds a real content sequence beyond the repeated core loop.
+
+**Revised PushApp implication**
+
+SoloUno validates a product capability that is separate from Journey planning: a fast, context-specific
+intervention invoked while the user is struggling. PushApp's current Step model already supports positively
+phrased reduction outcomes—for example, succeeding in smoking no more than four cigarettes today—so no new
+negative-habit Step type is required based on this evidence.
+
+The more relevant opportunity is a future **on-call intervention specialist** behind the Coach's single
+user-facing voice. It could provide a short, bounded response without rebuilding the weekly plan. A cost- and
+safety-controlled implementation can use a tiered route:
+
+1. deterministic selection from approved intervention cards;
+2. a small classifier/model that returns only an intervention identifier;
+3. a short specialist exchange with limited context and turns;
+4. escalation to the full Coach only when interpretation or a plan change is required.
+
+This remains a product hypothesis, not an approved feature or PRD requirement.
+
+**Additional product hypotheses from the observed reward and savings surfaces**
+
+- A Journey may optionally surface a real-world outcome metric that matters to the user—money saved, time
+  reclaimed, distance completed, pages written, or another domain-appropriate measure. It must be based on a
+  user-confirmed baseline/formula, disclose that it is an estimate, and remain separate from XP or Coins.
+- SoloUno's four evolving creatures are analogous to a tiered Achievement family: repeated meaningful actions
+  build bronze/silver/gold/diamond-style mastery in a predefined domain. This supports PushApp's future global
+  Achievement catalog, but should not automatically award value for app taps or encourage empty activity.
+- An on-call layer need not be only conversational. A curated library of short in-app regulation and coping
+  tools can serve immediate moments without an AI call. The Coach can recommend or route to a tool, while the
+  tool itself remains deterministic, brief, and safety-reviewed.
+
+These hypotheses affect separate future features—outcome metrics, Achievements, and on-call tools—and should
+not be bundled into one PRD.
 
 ---
 

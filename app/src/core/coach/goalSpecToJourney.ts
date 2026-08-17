@@ -26,8 +26,15 @@ import type { Journey, JourneyStart, ParkedGoal } from '../types/domain';
 import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
 import { getExpert } from '../learning/experts/registry';
-import { planJourney, planJourneyFromStructure, type PlanOptions } from '../learning/Planner';
-import type { GoalInput, PlanConstraints } from '../learning/types';
+import {
+  planJourney,
+  planJourneyFromStructure,
+  RECURRING_DEFAULT_DAYS,
+  type PlanOptions,
+} from '../learning/Planner';
+import { buildRecurringStructure, recurringOccurrences } from '../learning/library/buildRecurring';
+import { recurringSetupCount } from '../learning/library/recurringApproaches';
+import type { GoalInput, JourneyShape, PlanConstraints } from '../learning/types';
 import type { JourneyEngine, NewJourneyInput } from '../engines/JourneyEngine';
 import type { GoalSpec } from './interviewPlaybook';
 
@@ -60,9 +67,32 @@ function goalInputFrom(spec: GoalSpec): GoalInput {
   return {
     title: spec.title,
     isHabit,
+    shape: shapeFrom(spec),
     ...(spec.description ? { description: spec.description } : {}),
     ...(spec.cadence ? { cadence: spec.cadence } : {}),
   };
+}
+
+/**
+ * The plan {@link JourneyShape} for a spec — the single most consequential derivation in this file,
+ * because it decides whether the user gets a Milestone arc or their own action repeated.
+ *
+ * The coach's understanding step already classifies the goal as a `recurring` habit or a staged
+ * `process`, so this reads that classification rather than guessing from the text. The reason it
+ * exists as its own function is the FALLBACK, which is where the judgement lives:
+ *
+ *  - `fixed` / `recurring` → recurring. Unambiguous.
+ *  - `progressive` / `process` → process. Unambiguous.
+ *  - `unknown` / `other` → the `cadence` hint decides: a goal the user gave a `daily` or `weekly`
+ *    rhythm to is a repeated action whatever else went unsaid. With no cadence either, `process` —
+ *    the conservative answer, because a staged plan for a repeated goal is merely wrong, while
+ *    repeating a single Step for a goal that genuinely has stages would strand the user on the
+ *    first one for two months.
+ */
+function shapeFrom(spec: GoalSpec): JourneyShape {
+  if (spec.processType === 'fixed' || spec.processType === 'recurring') return 'recurring';
+  if (spec.processType === 'progressive' || spec.processType === 'process') return 'process';
+  return spec.cadence === 'daily' || spec.cadence === 'weekly' ? 'recurring' : 'process';
 }
 
 /**
@@ -99,11 +129,45 @@ export function buildJourneyInput(
   const goal = goalInputFrom(spec);
   const constraints = deriveConstraints(spec, expert, goal);
 
+  // A RECURRING goal takes the shape path, BEFORE any expert is consulted for structure. This is
+  // the protein-shake fix: the expert's staged content is the wrong answer for "drink a protein
+  // shake daily" no matter how good the content is, because the goal has no stages. The expert
+  // still routed the domain, still ran its interview, and still shaped the constraints above — it
+  // is only the ARC that a recurring goal does not want.
+  if (goal.shape === 'recurring') {
+    const structure = buildRecurringStructure({
+      goal,
+      approach: spec.approach,
+      occurrences: recurringOccurrences({
+        durationDays: recurringLengthDays(constraints, options),
+        preferredDays: constraints.preferredDays,
+        // Read off the approach, never assumed: one added later with three setup Steps stays
+        // correct without touching this call.
+        setupStepCount: recurringSetupCount(spec.approach),
+      }),
+    });
+    return planJourneyFromStructure(goal, constraints, structure, options);
+  }
+
   if (hasAnswers(spec.answers) && expert.buildStructure) {
     const structure = expert.buildStructure(goal, spec.answers, constraints);
     return planJourneyFromStructure(goal, constraints, structure, options);
   }
   return planJourney(goal, constraints, expert, options);
+}
+
+/**
+ * The length a recurring Journey is being planned for, used ONLY to decide how many repetitions to
+ * mint. The Planner computes the Journey's real `durationDays` from the same two inputs, so the two
+ * cannot disagree.
+ */
+function recurringLengthDays(constraints: PlanConstraints, options?: PlanOptions): number {
+  if (constraints.targetDate != null) {
+    const now = options?.now ?? Date.now();
+    const days = Math.ceil((constraints.targetDate - now) / (24 * 60 * 60 * 1000)) + 1;
+    return Math.max(1, days);
+  }
+  return options?.durationDays ?? RECURRING_DEFAULT_DAYS;
 }
 
 /**

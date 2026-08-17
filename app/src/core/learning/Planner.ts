@@ -27,11 +27,29 @@ export interface PlanOptions {
   now?: number;
   /** Milestone id factory (0-based index). Defaults to a stable `m1`, `m2`, … scheme. */
   milestoneId?: (index: number) => string;
+  /**
+   * How long a RECURRING Journey runs, in days. Ignored for a `process` shape, whose length falls
+   * out of its Steps and any deadline. Defaults to {@link RECURRING_DEFAULT_DAYS}.
+   */
+  durationDays?: number;
 }
 
-/** One scheduled unit: a Step template paired with its owning (materialized) Milestone. */
+/**
+ * The default length of a recurring Journey when the user named no deadline: eight weeks. Long
+ * enough for a repeated action to stop feeling like a project, short enough to stay a commitment
+ * somebody can actually see the end of.
+ */
+export const RECURRING_DEFAULT_DAYS = 56;
+
+/**
+ * One scheduled unit: a Step template and the Milestone that owns it — `undefined` for an
+ * UNSTAGED Step, which is every Step of a recurring Journey. A recurring Journey has no Milestone
+ * arc at all (there is no "second phase" of changing the pillowcases), and inventing a single
+ * wrapper Milestone so the data shape stays uniform would put a stage on the user's screen that
+ * they never agreed to — the exact defect Device QA A1 found.
+ */
 interface Entry {
-  milestone: Milestone;
+  milestone?: Milestone;
   template: StepTemplate;
 }
 
@@ -85,19 +103,33 @@ function layoutStructure(
     ...(m.weight !== undefined ? { weight: m.weight } : {}),
   }));
 
-  // 2. Flatten the Step templates in Milestone order, each paired with its owning Milestone.
+  // 2. Flatten the Step templates in Milestone order, each paired with its owning Milestone, then
+  //    append the UNSTAGED Steps (a recurring Journey's entire plan) which own no Milestone.
   const entries: Entry[] = [];
   milestones.forEach((milestone, i) => {
     for (const template of structure.stepsByMilestone[i] ?? []) {
       entries.push({ milestone, template });
     }
   });
+  for (const template of structure.unstagedSteps ?? []) {
+    entries.push({ template });
+  }
 
-  // 3. Schedule. When the user named NO specific days and set NO deadline, the plan is
-  //    FREQUENCY-BASED: we do NOT pin Steps to specific calendar dates (they may act on any
-  //    day) — we express a weekly session target instead. Otherwise we lay Steps on real dates.
-  const flexible = constraints.preferredDays.length === 0 && constraints.targetDate == null;
-  const plannedFor = flexible ? [] : schedule(entries, constraints, now);
+  // 3. Schedule.
+  //    A RECURRING Journey is dated by CADENCE, never by minute budget: the whole point is that the
+  //    same action comes round again on the next active day. Packing it by available minutes would
+  //    stack a week of five-minute repetitions onto one afternoon, which is not what "daily" means.
+  //    Otherwise: when the user named NO specific days and set NO deadline, the plan is
+  //    FREQUENCY-BASED — we do NOT pin Steps to calendar dates (they may act on any day) and
+  //    express a weekly session target instead. Failing both, we lay Steps on real dates by budget.
+  const recurring = goal.shape === 'recurring';
+  const flexible =
+    !recurring && constraints.preferredDays.length === 0 && constraints.targetDate == null;
+  const plannedFor = recurring
+    ? scheduleOnePerActiveDay(entries, constraints, now)
+    : flexible
+      ? []
+      : schedule(entries, constraints, now);
   const sessionsPerWeek = flexible ? deriveSessionsPerWeek(constraints, entries) : undefined;
 
   // 4. Emit NewStepInputs. The first Step is the deliberately-easy Starter Step.
@@ -108,14 +140,18 @@ function layoutStructure(
     cadence: stepCadence,
     estimatedDuration: e.template.estimatedMinutes,
     difficulty: e.template.difficulty,
-    milestoneId: e.milestone.id,
+    // Omitted entirely for an unstaged Step — it belongs to no Milestone, and an empty string
+    // would read as a Milestone the surfaces then try to resolve.
+    ...(e.milestone ? { milestoneId: e.milestone.id } : {}),
     // Frequency-based plans carry no fixed date — the user acts on whatever days they choose.
     ...(flexible ? {} : { plannedFor: plannedFor[i] }),
   }));
 
-  const durationDays = flexible
-    ? REVIEW_WINDOW_DAYS
-    : computeDurationDays(constraints, plannedFor, now);
+  const durationDays = recurring
+    ? recurringDurationDays(constraints, options, now)
+    : flexible
+      ? REVIEW_WINDOW_DAYS
+      : computeDurationDays(constraints, plannedFor, now);
 
   return {
     title: goal.title,
@@ -148,6 +184,56 @@ function schedule(entries: Entry[], constraints: PlanConstraints, now: number): 
   if (lastDay <= targetDay) return budget; // the natural cadence already fits.
 
   return packToDeadline(entries, constraints, now, constraints.targetDate);
+}
+
+/**
+ * RECURRING dating: one Step per active day, in order, starting today.
+ *
+ * This is the whole difference between "drink a protein shake daily" and what the app used to
+ * produce. The budget packer asks "how many minutes fit in a day" and would put Monday through
+ * Friday's five-minute repetitions on Monday afternoon; this asks "when does it come round again"
+ * and answers with the next day the user is available. Setup Steps come first in the entry list, so
+ * they take the first active days and the repetitions follow — which is also the honest order.
+ *
+ * Preferred days are respected: someone who reads twice a week gets their two days, not a daily
+ * plan they will miss five times a week. An empty preference means every day (see
+ * {@link normalizedPreferredDays}).
+ */
+function scheduleOnePerActiveDay(
+  entries: Entry[],
+  constraints: PlanConstraints,
+  now: number,
+): number[] {
+  if (entries.length === 0) return [];
+  const preferred = normalizedPreferredDays(constraints.preferredDays);
+
+  let cursor = firstPreferredOnOrAfter(startOfDay(now), preferred);
+  const planned: number[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    planned.push(atDaypart(cursor, constraints.daypart));
+    cursor = nextPreferred(cursor, preferred);
+  }
+  return planned;
+}
+
+/**
+ * How long a recurring Journey runs: the user's own deadline when they gave one, else the caller's
+ * explicit length, else {@link RECURRING_DEFAULT_DAYS}. Deliberately NOT derived from the last
+ * scheduled Step the way a staged plan's is — a recurring Journey's length is a commitment the user
+ * makes, and the repetitions are laid inside it. Reading it back off the Steps would let the number
+ * of occurrences silently redefine what the user agreed to.
+ */
+function recurringDurationDays(
+  constraints: PlanConstraints,
+  options: PlanOptions,
+  now: number,
+): number {
+  if (constraints.targetDate != null) {
+    const days =
+      Math.ceil((startOfDay(constraints.targetDate).getTime() - startOfDay(now).getTime()) / MS_PER_DAY) + 1;
+    return Math.max(1, days);
+  }
+  return Math.max(1, Math.round(options.durationDays ?? RECURRING_DEFAULT_DAYS));
 }
 
 /**

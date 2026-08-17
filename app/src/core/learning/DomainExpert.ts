@@ -160,6 +160,15 @@ export interface PlanStructure {
   milestones: ProposedMilestone[];
   /** Step templates per Milestone, aligned by index to `milestones` (same length). */
   stepsByMilestone: StepTemplate[][];
+  /**
+   * Steps that belong to NO Milestone. This is the ENTIRE plan of a `recurring` Journey (see
+   * {@link JourneyShape}), which has an empty `milestones` arc: a few setup Steps, then the user's
+   * own action repeated on every active day. A staged plan leaves this absent.
+   *
+   * They are appended AFTER the staged Steps, so a structure that somehow carries both keeps the
+   * arc's order intact.
+   */
+  unstagedSteps?: StepTemplate[];
 }
 
 /**

@@ -28,7 +28,27 @@ export interface GoalInput {
   description?: string;
   /** Optional pace hint (once/daily/weekly). Reuses the domain {@link Cadence} union. */
   cadence?: Cadence;
+  /** The plan's SHAPE. Absent means `process` — see {@link JourneyShape}. */
+  shape?: JourneyShape;
 }
+
+/**
+ * The SHAPE of a plan, which decides its whole structure — a distinct question from `isHabit`
+ * (open-ended vs deadline-able) and from the domain (what the goal is about).
+ *
+ *  - `recurring` — ONE action, repeated. "Drink a protein shake daily", "change the pillowcases
+ *    every fortnight", "read twice a week". There are no stages: there is no second phase of
+ *    changing the pillowcases. The plan is a few setup Steps and then the user's own action, laid
+ *    on every active day.
+ *  - `process` — a progression, where later work genuinely differs from earlier work. "Build the
+ *    confidence to approach strangers." Here a Milestone arc earns its place, and the domain
+ *    expert's staged content is what the user is paying attention for.
+ *
+ * WHY THIS EXISTS: the app knew only the second shape and forced it onto both. Four of the five
+ * real goals the founder brought are the first kind, which is why the plans it produced read as
+ * though they had been written for somebody else — because they had been.
+ */
+export type JourneyShape = 'recurring' | 'process';
 
 /**
  * The real-world limits the Planner lays Steps out within. All time fields are minutes /

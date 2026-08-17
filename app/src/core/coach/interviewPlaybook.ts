@@ -26,6 +26,7 @@ import i18n from '../../i18n';
 import { addressContext } from '../../i18n/addressForm';
 import type { FeasibilityAssessment, InterviewAnswers } from '../learning/DomainExpert';
 import type { DomainId } from '../learning/experts/registry';
+import type { RecurringApproachId } from '../learning/library/recurringApproaches';
 import type { Cadence, DayPart } from '../types/domain';
 
 /** Resolve a `coachContent` string in the user's ACTIVE language + form of address (i18next core — no React, D31). */
@@ -305,6 +306,16 @@ export interface GoalSpec {
   calendarRelevant?: boolean;
   /** Optional pace hint → GoalInput.cadence. */
   cadence?: Cadence;
+  /**
+   * Which of the library's approaches to build for a RECURRING goal — attach it to an existing
+   * routine, start tiny and grow, or prepare the environment (`../learning/library/
+   * recurringApproaches`). Absent means the safe default; the matcher fills it once there is
+   * something known about the user to match on.
+   *
+   * A coarse enum, never free text: this is the field the library learns "which approach suits
+   * whom" from, so it is the one part of a recurring plan that may ever travel outward.
+   */
+  approach?: RecurringApproachId;
   /** Whether the user accepted the closing Support-Circle recommendation. */
   wantsSupportCircle?: boolean;
 

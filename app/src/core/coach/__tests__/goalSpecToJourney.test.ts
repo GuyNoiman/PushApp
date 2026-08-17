@@ -59,10 +59,42 @@ describe('goalSpecToPlan', () => {
     expect(JSON.stringify({ goal, constraints })).not.toContain('rushed');
 
     const plan = buildJourneyInput(spec, GeneralExpert, { now: NOW });
-    expect(plan.milestones?.map((m) => m.title)).toEqual(HABIT_ARC);
-    expect(plan.steps.length).toBeGreaterThan(0);
+    // A `fixed` habit is a RECURRING shape: NO Milestone arc, and the user's own sentence as the
+    // repeated Step. This test used to assert the generic three-Milestone habit arc — that was the
+    // protein-shake defect, pinned as though it were the specification.
+    expect(plan.milestones).toEqual([]);
+    expect(plan.steps.some((s) => s.title === 'Meditate every morning')).toBe(true);
+    expect(plan.steps.every((s) => s.milestoneId === undefined)).toBe(true);
     expect(plan.steps.every((s) => s.cadence === 'daily')).toBe(true); // open-ended habit → daily Steps
     expect(plan.steps[0].isStarterStep).toBe(true);
+  });
+
+  it('repeats the user’s OWN words on every active day, and sets up before it repeats', () => {
+    const spec: GoalSpec = {
+      title: 'Drink a protein shake',
+      domain: 'body_image',
+      processType: 'recurring',
+      isHabit: true,
+      milestones: [],
+      failureRisks: [],
+      timing: { preferredDays: [1, 3, 5] },
+    };
+
+    const plan = buildJourneyInput(spec, GeneralExpert, { now: NOW, durationDays: 14 });
+
+    // The spine: the user's sentence, verbatim, once per active day (3 days/week × 2 weeks = 6
+    // active days, less the 2 setup Steps).
+    const spine = plan.steps.filter((s) => s.title === 'Drink a protein shake');
+    expect(spine).toHaveLength(4);
+    // The setup Steps carry the user's words INSIDE an authored frame — never a generic sentence
+    // about somebody else, and never a translated version of what they wrote.
+    expect(plan.steps[0].title).toContain('Drink a protein shake');
+    expect(plan.steps[0].title).not.toBe('Drink a protein shake');
+    // One per active day, in order, on the preferred weekdays only — never two on one day, which is
+    // what the minute-budget packer would have done with a repetition this short. NOW is a Tuesday,
+    // so the first active day is the Wednesday.
+    const days = plan.steps.map((s) => new Date(s.plannedFor!).getDay());
+    expect(days).toEqual([3, 5, 1, 3, 5, 1]);
   });
 
   it('maps a progressive spec to a Milestone-shaped, deadline-bound plan', () => {
@@ -161,7 +193,9 @@ describe('createJourneyFromGoalSpec', () => {
     expect(journey.title).toBe('Read before bed');
     expect(state.journeys).toHaveLength(1);
     expect(journey.steps.length).toBeGreaterThan(0);
-    expect(journey.milestones?.map((m) => m.title)).toEqual(HABIT_ARC);
+    // Recurring shape: no arc, and the Steps are the user's own sentence (see the habit test above).
+    expect(journey.milestones).toEqual([]);
+    expect(journey.steps.some((s) => s.title === 'Read before bed')).toBe(true);
   });
 
   it('marks the Journey createdVia "coach" so it may offer the Companion bundle (D2)', () => {
@@ -293,9 +327,11 @@ describe('parkedGoalToSpec (Parked/deferred goals, L1)', () => {
     expect(spec.failureRisks).toEqual([]);
     expect(spec.timing).toEqual({});
 
-    // No interview answers ⇒ the generic planJourney path lays the habit arc (not an answer-aware one).
+    // A parked RECURRING goal takes the recurring shape when it is finally built — the same plan it
+    // would have got had it been built the day it was parked, arc-free and in the user's own words.
     const plan = buildJourneyInput(spec, GeneralExpert, { now: NOW });
-    expect(plan.milestones?.map((m) => m.title)).toEqual(HABIT_ARC);
+    expect(plan.milestones).toEqual([]);
+    expect(plan.steps.some((s) => s.title === 'Stretch every day')).toBe(true);
   });
 
   it('plans a process parked goal via the generic finite-goal path (isHabit false)', () => {

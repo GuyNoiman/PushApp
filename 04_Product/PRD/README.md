@@ -96,19 +96,27 @@ error states.
   second one (D50). Defines the three contribution kinds, D30 re-voicing, volume caps, empty/degraded
   states, privacy red lines, and the Smart-Notification-Timing cross-check. **Stage: Future · Status:
   approved architecture (D50), interface NOT built, NOT scheduled; 7 open questions in §14.**
-- `Plan_Library_and_Learning_PRD.md` — the shared **Plan Library** (a versioned corpus of authored Plan
-  Templates, which is *our* content) plus **cross-user learning** from a minimal, strictly-allowlisted
-  outcome record, in the Spotify model but with a stricter allowlist (**D52**). Exists because the four
-  `DomainExpert`s emit one hardcoded arc per domain, so a request to drink a protein shake daily returns
-  Steps about walking and stretching. Specifies the three-way separation (library / on-device-forever /
-  outbound record), the twenty-field outbound contract and its negative space, the identity trade
-  (per-instance pseudonym, no stable user id), the re-identification analysis, the recommendation to
-  **learn centrally but match on device**, the disclosure/consent model, and what the loop must never
-  optimise for. **Stage: MVP (library as local content, Stage 0 buildable now with zero privacy change) →
-  Commercial (the outbound record and the learning loop) · Status: founder-decided in principle
-  2026-08-17, specification in progress, NOT ready to build; §§7–9 blocked on security-privacy AND
-  store-compliance sign-off and on a privacy policy that does not exist; nine open questions in §14, four
-  of them blocking.**
+- `Plan_Library_and_Learning_PRD.md` — **the three-layer architecture the founder calls "the essence of
+  the app"** (**D52**, decided 2026-08-17, widened 2026-08-18). *File name predates the widened scope;
+  the subject is the architecture, not one feature.* **Layer 1 — the user profile**: how to address
+  someone, what motivates them, and what makes them abandon (the last already exists as the unused
+  `ReasonId`/`LeverId` taxonomy). **Layer 2 — the Journey Library**: several Journeys per goal, judged on
+  persistence, the **stage reached before dropping**, completion, and **end-of-Journey feedback, which is
+  the label on the training data and does not exist today**. **Layer 3 — matching**: a Journey's fitness
+  is *conditional* on user attributes, discovered from outcomes rather than declared. Exists because the
+  four `DomainExpert`s are the opposite of this — one fixed arc per domain, so a request to drink a
+  protein shake daily returns Steps about walking and stretching, and there is nothing to compare and so
+  nothing to learn from. Also specifies the outbound allowlist (hard-capped at four cohort fields, with a
+  rotating condition slot) and its negative space, per-instance pseudonymity, the re-identification
+  analysis, **learn centrally but match on device**, the disclosure/consent model, the marketplace seam
+  as a future constraint only, and **the objective function: maximise "did it help", then minimise
+  interruptions, never the reverse** — so that sending less and achieving more is a win by construction.
+  Companion research owning the *parameters*: `../../05_Research/User_Matching_Parameters_Research_2026-08-17.md`.
+  **Stage: MVP (Layers 1–2 as local capability — Stages 0–2 buildable now with zero privacy change) →
+  Commercial (the outbound record and the learning loop) · Status: founder-decided in principle, NOT
+  ready to build; §§11–13 blocked on security-privacy AND store-compliance sign-off and on a privacy
+  policy that does not exist; eleven open questions in §17, five blocking Stage 3 and one blocking
+  Stage 1.**
 - `Future/Recurring_Routine_PRD.md` — **Practice** object: **PARKED (D39, 2026-08-11).** We are not building a
   distinct recurring object now; small recurring tasks + small goals use the existing Dream/Journey/Step model,
   revisited after real usage. The analysis + product-guardian conditions are preserved in the file. **Stage: Future.**

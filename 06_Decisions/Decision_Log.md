@@ -924,12 +924,95 @@ participate; (3) opt-in vs opt-out; (4) the k threshold. Plus terminology ratifi
 (blocking Stage 0, product-guardian's call), whether cross-Journey longitudinal learning is ever wanted,
 hosting cost (cost-guardian, before anything is provisioned), partner content licensing terms, and the
 content-safety escalation path.
-**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (the full specification: the
-three-way separation, the field-by-field outbound allowlist and its negative space, the identity trade,
-the re-identification analysis, the matching recommendation, the disclosure and consent model, the
-required reviews, and the five-stage sequencing); `04_Product/PRD/README.md` (index).
-`Future/User_Learning_PRD.md` is a **different** thing (a within-user, on-device model) and is **not**
-edited, merged, or superseded by this decision.
+**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (the full specification);
+`05_Research/User_Matching_Parameters_Research_2026-08-17.md` (the companion parameter research);
+`04_Product/PRD/README.md` (index). `Future/User_Learning_PRD.md` is a **different** thing (a
+within-user, on-device model) and is **not** edited, merged, or superseded by this decision.
+
+**Addendum — second pass, 2026-08-18: the founder widens the scope from a feature to the product.** This
+does not take a new decision number; it is the same decision, at its full size. The framing that governs
+everything above:
+
+> "The app must produce an accurate user profile that knows how to address the user, what motivates them
+> most, **what makes them abandon plans**, and more […] Another layer is the **Journey library** — for
+> every goal or Dream we will have **several Journeys**, and we need to understand which work better and
+> which work worse […] Another layer is the **matching layer** — a Journey may be good for one type of
+> person and not another […] **This is the essence of the app. This is its uniqueness.** We need to know
+> the user well enough to send **few** notifications but ones that actually move them to action."
+
+And the sentence that should govern how urgently this is treated, about the Journey the app built for him:
+**"So far the plan that was built for me didn't help me at all."**
+
+**What the widening settles.** (1) The architecture is **three layers**, not one feature: the **user
+profile** (how to address them, what motivates them, what makes them abandon), the **Journey Library**
+(several Journeys per goal, not one arc per domain), and the **matching layer** (which Journey suits
+which kind of person). (2) A Journey's quality is measured by **persistence, the stage reached before
+dropping (a drop-off curve, not a binary), completion, and end-of-Journey feedback — did it help, and a
+rating**. (3) **That feedback is the label on the training data**: without a human verdict the corpus has
+outcomes and no ground truth, and "which Journey is better" is unanswerable. It does not exist in the
+product today. (4) Journey fitness is **conditional on user attributes**, and the conditions are
+**discovered from outcomes**, not declared by an author. (5) A future **marketplace** of coach-uploaded
+workshops is designed *against* but not designed — chiefly, template provenance, licence terms and
+version must be modelled from the start, and the licence field must exist before the partner's content
+ships to devices.
+
+**The objective, which is where growth-before-engagement becomes operational.** The founder's goal —
+*fewer notifications that actually move someone to action* — inverts every standard metric, because open
+rate, sessions, retention and send volume all improve when you interrupt people more. The objective is
+therefore a **constrained optimisation, never a weighted sum** (a weighted sum always has an exchange
+rate at which more notifications buy more completions, and the loop will find it): **maximise "did it
+help"; subject to that, minimise interruptions; never trade the second against the first in the other
+direction.** Zero interruptions with a helped Journey is the **maximum** score, not a null result. And
+the rule that makes it real: **the loop is allowed to discover that nagging works, and is forbidden from
+acting on it** — each user has an interruption ceiling the loop may lower and may never raise. A
+mandatory drift detector (median Step difficulty and weekly minutes of recommended Journeys; if it
+trends down while retention trends up, the matcher is gaming us) sits on the same dashboard as the
+primary metric.
+
+**Two corrections the companion research forced, recorded because the reasoning matters more than the
+conclusion.** (a) The outbound cohort vector was **cut from nine flat fields to a hard cap of four** —
+three fixed slots plus one rotating condition slot assigned per instance — because nine coarse
+categoricals produce ~15,000 cells, at which point a vector of individually-harmless fields is a unique
+identifier with a description of someone's struggles attached. Conditional discovery survives the cut
+because finding an interaction needs a stable base plus **one** candidate at a time, not every attribute
+in one key; the cost is that each condition is sampled on about one record in eight, which makes Layer 3
+later still. (b) The k-threshold moved from a judgement-based 25 to an evidence-based **floor of 20,
+targeting 50**. Also adopted: **no sentinel for an excluded domain** — where a domain does not
+participate the record is not sent at all, because in a population where only two domains are
+withholding-eligible, `domain: 'withheld'` *is* the disclosure.
+
+**What must not enter matching, decided now so it is not argued later.** Demographics (age, gender,
+country) are weak predictors and our strongest re-identifiers. **Delivery parameters** (communication
+style, Active Hours, language, form of address) change how and when we speak, never what plan we build —
+otherwise "Direct-style users get harder Journeys" becomes a defensible-sounding sentence with no
+evidence behind it. A **personality inventory** and a **readiness/stage-of-change classifier** are both
+refused, the first because revealed adherence measures the same construct from behaviour for free and a
+trait label invites fatalistic matching, the second because the evidence says stage-matched
+interventions do not beat well-designed unmatched ones.
+
+**The gap this names, plainly:** the four `DomainExpert`s are the **opposite** of this architecture — one
+fixed arc per domain, no variants, no outcome capture, no feedback, no matching. **There is nothing to
+compare, so there is nothing to learn from.** The library therefore **replaces** the template model
+rather than sitting beside it; each expert's fixed arc is preserved as template #1 for its domain and
+demoted from "the answer" to "one candidate", and the expert becomes the interviewer, router and safety
+authority rather than a content source.
+
+**Sequencing unchanged in spirit, sharper in fact:** Stages 0–2 are buildable now with **no backend, no
+privacy policy, no consent and no review beyond product-guardian** — wire the reason log and the dormant
+communication style into planning (the abandonment taxonomy already exists in `ReasonId`/`LeverId` and
+nothing consumes it), turn the fixed arcs into a local library, and build the feedback moment plus local
+outcome capture. Only Stage 3 changes the privacy posture. **The library is valuable long before the
+learning is.**
+
+**Categorization (widened):** **Approved** — the three-layer architecture; several Journeys per goal; the
+four quality signals including end-of-Journey feedback; conditional matching discovered from outcomes;
+the on-device profile boundary. **Recommended, awaiting founder confirmation** — the four-field capped
+allowlist with the rotating condition slot, per-instance pseudonymity, hybrid learn-centrally/
+match-locally, the constrained objective and the interruption ceiling, opt-in consent, `career` +
+`general` at v1, k ≥ 20, and the three feedback hosts owned by one continuation PRD. **Future Vision,
+designed against but not designed** — the coach marketplace. **Open Question** — eleven items in the PRD
+§17, five blocking Stage 3 and one (terminology) blocking Stage 1, plus the three non-overlapping
+questions in the research's §13.
 
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 

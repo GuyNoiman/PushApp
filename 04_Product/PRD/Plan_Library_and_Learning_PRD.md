@@ -248,8 +248,9 @@ protein shake daily", "get back to running", "leave this job well"), not the dom
 dozens of goals; a goal holds several templates that differ in ambition, structure, pace and emphasis.
 
 Each Journey Template carries: the Milestone arc and its Step templates; an **authored ambition level**
-(§8.3 depends on it); the conditions its author believes it suits; provenance (who wrote it) and version;
-locale/translations; and its safety-review status. It carries **nothing about any person**.
+(§8.3 depends on it); the conditions its author believes it suits; **provenance (who wrote it), licence
+terms, and version** (§9.2 — all three from day one, not retrofitted); locale/translations; and its
+safety-review status. It carries **nothing about any person**.
 
 The partner's Golden Journeys in `10_Partner_Coaching_Content/Journeys/` are exactly this content and
 are the seed corpus.
@@ -519,8 +520,13 @@ which is nearly free today and expensive to retrofit:
 
 1. **Journey Templates are data with a published schema, not code.** A third party must be able to author
    one without a release. This is already the direction of §15 Stage 1.
-2. **`templateId` lives in a namespace that can hold third-party ids**, with an author/provenance field
-   and a version from day one. Retrofitting provenance onto an id space is painful.
+2. **`templateId` lives in a namespace that can hold third-party ids**, with an author/provenance field,
+   a **licence/terms field**, and a version from day one. Retrofitting provenance onto an id space is
+   painful; retrofitting *licensing* onto content already shipped to devices is worse, because the
+   answer may be that we were not entitled to ship it. The partner's Golden Journeys are the first
+   third-party content and they arrive in Stage 1, so **the licence field must exist before Stage 1
+   ships, even if every value in it is "first-party" at first.** This is the one marketplace constraint
+   that is genuinely urgent rather than merely cheap; Open Question 10 is its content.
 3. **Fitness is per-template and portable.** Because §7.1 forbids a global leaderboard, a third-party
    template slots into the same conditional structure with no special case.
 4. **Safety review status is a first-class field on the template**, not an out-of-band spreadsheet. D24
@@ -626,7 +632,7 @@ computed once.
 
 **What it costs, stated honestly:** each candidate condition is measured on roughly one eighth of the
 records, so reaching the k-floor for any single condition takes about eight times as long as it would
-with a flat vector. Layer 3 was already the last layer to become real (§7.3); this makes it later still.
+with a flat vector. Layer 3 was already the last layer to become real (§7.5); this makes it later still.
 That is the correct trade — it buys a row-level cardinality that stays inside the reviewable cap
 permanently, and there is no version of this feature worth a re-identifiable corpus.
 
@@ -638,7 +644,7 @@ of birth + sex uniquely identifies 87% of the US population), and the research i
 profile into a person. **A real cost, stated rather than hidden:** we cannot learn that a template works
 better in one country or one age group. Revisit only with a fresh review and a raised k.
 
-**No sentinel for an excluded domain.** Where a domain does not participate (§17.3), the record is **not
+**No sentinel for an excluded domain.** Where a domain does not participate (§17, Q3), the record is **not
 sent at all**. It must never be sent with `domain: 'withheld'` or any equivalent — in a population where
 only two domains are withholding-eligible, the sentinel *is* the disclosure. This is the research's
 point and it is the kind of mistake that looks like a privacy feature while being the opposite.
@@ -693,11 +699,6 @@ The two changes are not in tension; they act on different things. **Section B is
 has to bite, and that is exactly where the record got smaller.**
 
 The negative space in §11.3 did not move.
-
-**A structural point that dissolves the obvious worry:** the k-anonymity cell key is **section B only**.
-Section C fields are the *measured values inside* a cell, not part of its key. Adding outcome fields
-therefore does **not** increase cell sparsity or re-identification risk. Only section B does, which is
-why exactly two fields were added there and both are single closed codes rather than distributions.
 
 ### 11.3 The negative space, as a prohibition
 
@@ -766,7 +767,7 @@ cannot say "songs like this" without enumerating the crowd
 
 **Recommendation: hybrid.** The server publishes a **Match Manifest** — the corpus plus, per cohort
 cell, the conditional ranking with support counts. The device computes its own cell locally, reads the
-ranking, re-ranks with the local profile (§5.3), and picks. **Nothing about the user is sent in order to
+ranking, re-ranks with the local profile (§5.4), and picks. **Nothing about the user is sent in order to
 receive a recommendation.** This is the product analogue of the pattern Google and Apple settled on for
 on-device suggestions: aggregate centrally, personalise on device
 ([Gboard federated learning](https://arxiv.org/pdf/2305.18465)).
@@ -881,8 +882,9 @@ encounter; because Apple's privacy label and Google Play's Data safety form requ
 (§14.2), so nothing is saved by making it a default; and above all because §12.1 makes an honest opt-in
 **cheap** — declining costs the user nothing at all.
 
-**The trade, plainly:** opt-in participation is a fraction of opt-out participation. With k = 25 that
-directly delays the point at which any cell produces usable signal, possibly by a year or more. The
+**The trade, plainly:** opt-in participation is a fraction of opt-out participation. With a k-floor of
+20 and a rotating condition slot, that directly delays the point at which any cell produces usable
+signal, possibly by a year or more. The
 founder should decide knowing that cost, which is why it is an open question and not a settled
 recommendation.
 
@@ -921,11 +923,11 @@ Neither is advisory. Nothing in §§11–13 may be built before both have signed
 ### 14.1 security-privacy must approve
 
 1. The §11.2 field list **and its negative space in §11.3**, field by field, with a written
-   re-identification assessment at the realistic corpus size — including the two new section-B fields
-   (`motivationOrientation`, `dominantLever`) and the §11.2.1 claim that section-C additions do not
-   affect cell sparsity.
-2. The confirmation that `dominantLever` as a **mode** is acceptable where a distribution would not be,
-   and that no reason count, sequence or note can reach it.
+   re-identification assessment at the realistic corpus size — specifically including the **four-field
+   cap and the rotating condition slot** (§11.2.1), the claim that per-instance random slot assignment
+   does not itself leak, and the §11.2.2 claim that section-C additions do not affect cell sparsity.
+2. The confirmation that the `lever` condition value as a **mode** is acceptable where a distribution
+   would not be, and that no reason count, sequence or note can reach it.
 3. The identity model (§11.4 option C), the on-device `instanceId → journeyId` map, and its behaviour
    under export and account deletion.
 4. The k-threshold and the quarantine → generalise → discard behaviour (§12.2), including retention for
@@ -942,7 +944,7 @@ Neither is advisory. Nothing in §§11–13 may be built before both have signed
     the only consumer, `NullJourneyLearningGateway` the default, and a test that fails if any other call
     site constructs the type.
 11. Confirmation that no red line in `Sync_Manifest.md` §4 is weakened, moved or reinterpreted, and
-    specifically that the on-device `UserProfile` (§5.3) has no sync path.
+    specifically that the on-device `UserProfile` (§5.4) has no sync path.
 
 ### 14.2 store-compliance must approve
 
@@ -980,10 +982,11 @@ Arranged so that **all the immediate product value lands before any privacy post
 protein-shake failure, they make "the plan didn't help me" a *measured* fact instead of a chat message,
 and they need no backend, no policy, no consent and no review beyond product-guardian.
 
-**The honest arithmetic in Stage 4:** with opt-in consent and k = 25, meaningful conditional signal needs
-on the order of thousands of participating users, and interaction effects (§7.3) need more than main
-effects do. Expect the learning loop to be a second-year capability. **The library is valuable long
-before the learning is**, and nothing about that expectation should delay Stage 0 by a day.
+**The honest arithmetic in Stage 4:** with opt-in consent, a k-floor of 20, and a rotating condition slot
+that samples each candidate on about one record in eight, meaningful conditional signal needs on the
+order of thousands of participating users — and interaction effects (§7.5) need more than main effects
+do. Expect the learning loop to be a second-year capability at the earliest. **The library is valuable
+long before the learning is**, and nothing about that expectation should delay Stage 0 by a day.
 
 ---
 
@@ -1029,7 +1032,26 @@ before the learning is**, and nothing about that expectation should delay Stage 
 - `reminders_disabled_by_user` / `notification_permission_revoked` — the §8.2 harm constraint
 
 **Server-side, learning store only:** `record_quarantined` · `record_generalised` ·
-`record_discarded_below_k` · `cell_admitted` · `condition_discovered`.
+`record_discarded_below_k` · `cell_admitted` · `condition_proposed` · `condition_confirmed_on_holdout`
+· `condition_failed_holdout` (this one must be *reported*, not silently dropped — a high failure rate
+means §7.3's gates are finding noise and the discovery pass needs tightening).
+
+**The drift detector (§8.4.1), which is not optional:** `recommended_journey_shape` — median Step
+difficulty and median weekly minutes of what the matcher recommends, sampled per period. It goes on the
+same dashboard as the primary metric. A sustained downward trend while retention rises stops the loop.
+
+**The first hypothesis test.** §5.3 flags reason→lever matching (`dominantLever`) as our most attractive
+*untested* idea, whose closest analogue in the literature was tested and failed. It should be the first
+thing we ever A/B, and the events above already carry what that needs: `plan_shaped_by_profile` records
+whether the lever changed the plan, and the §16.1 Stage-0 signal measures whether it changed anything
+that mattered. Wire it so the hypothesis can be *disconfirmed* cheaply, and treat a null result as a
+finding rather than a failure.
+
+The companion research's §10 has its own event table (`plan_matched`, `capacity_calibration`,
+`restart_after_miss`, and others) covering the *matching-quality* side. It is not restated here.
+**`capacity_calibration` is the one it singles out to wire first**, because it replaces the invented
+60–70% first-week discount with a measured constant after roughly a hundred users. Nothing in this PRD
+competes with that ordering.
 
 No event here may carry a goal title, a Step title, free text, or a user identifier. **An analytics
 pipeline is a sync path with a friendlier name**, and the §11.3 allowlist governs it identically.
@@ -1051,8 +1073,8 @@ pipeline is a sync path with a friendlier name**, and the §11.3 allowlist gover
    only. `addiction` and `relationships` are D24-gated regardless; `body_image` pulls in the Play Health
    declaration and a probable Art. 9 analysis.
 4. **Opt-in or opt-out?** Recommendation: opt-in, default off, accepting a materially slower corpus.
-5. **The k threshold.** Recommendation: 25. A product trade between learning speed and safety, not an
-   engineering constant.
+5. **The k threshold.** Recommendation: a floor of **k ≥ 20**, targeting **50** as we grow (§12.2). A
+   product trade between learning speed and safety, not an engineering constant.
 
 **Blocking Stage 1:**
 
@@ -1075,6 +1097,22 @@ pipeline is a sync path with a friendlier name**, and the §11.3 allowlist gover
     Needs an answer before Stage 3 ships their content to devices, and it interacts with §9.
 11. **Content-safety escalation.** If a template is found harmful for a cohort, who pulls it and how
     fast? §8.6 says editorial override outranks the score; it does not say who holds the pen.
+
+### 17.1 Overlap with the companion research's questions — one list, not two
+
+`User_Matching_Parameters_Research_2026-08-17.md` §13 asks six questions of its own. Three are the same
+decision seen from the other side and should be answered once:
+
+| Research question | Here | Note |
+|---|---|---|
+| Its Q1 — is the composite target metric right? | **Q1 above** | Its proposal (still going at day 14 **and** one Milestone completed **and** not shrunk twice) is a *matching-quality* metric; §8's is a *template-quality* metric. They are compatible and both are needed: the first judges the match, the second judges the content. Answer them together so the two do not drift apart. |
+| Its Q2 — does an outbound loop exist in the POC at all? | **§15 Stage 3** | Its recommendation is **no**, and this PRD agrees: the loop is Stage 3–4, gated on a privacy policy that does not exist. Nothing in Stages 0–2 depends on the answer. |
+| Its Q3 — sensitive domains excluded from the loop? | **Q3 above** | Same question. Its §11 adds the reasoning this PRD adopts, including the no-sentinel rule (§11.2.1). |
+
+Its remaining three (reframing onboarding Q3 as a per-Journey prior-attempt question; full birth date
+vs. month + year; which hypothesis to test first) are **parameter and onboarding decisions, not
+architecture decisions**, and stay in that document rather than being restated here. They should be
+answered — the birth-date one is a free privacy reduction — but they do not block anything in this PRD.
 
 ---
 
@@ -1109,8 +1147,8 @@ pipeline is a sync path with a friendlier name**, and the §11.3 allowlist gover
   device; that all raw profile material and the derived profile stay on device.
 - **Recommended, awaiting founder confirmation:** the §11.2 allowlist; per-instance pseudonymity;
   hybrid learn-centrally/match-locally; the §8 constrained objective and the §8.4 ceiling rule; opt-in
-  consent; `career` + `general` at v1; k = 25; the three feedback hosts and the continuation PRD that
-  owns them.
+  consent; `career` + `general` at v1; a k-floor of 20 targeting 50; the three feedback hosts and the
+  continuation PRD that owns them.
 - **Open Question:** all of §17. None may be treated as decided.
 - **Future Vision, designed against but not designed:** the coach marketplace (§9).
 - **Not approved for implementation:** all of §§11–13. Stages 0–2 (§15) are implementable once Open

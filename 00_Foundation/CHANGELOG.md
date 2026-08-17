@@ -4,6 +4,70 @@ Status: Living Document
 
 ---
 
+# 2026-08-18 (product-manager pass) — D52 widened: the three-layer architecture is the product, not a feature
+
+Docs only; no code. **Extends the entry below rather than replacing it** — everything there still holds;
+this is the same decision at its full size.
+
+**The founder's re-scope.** *"The app must produce an accurate user profile that knows how to address the
+user, what motivates them most, **what makes them abandon plans** […] Another layer is the **Journey
+library** — for every goal or Dream we will have **several Journeys** […] Another layer is the **matching
+layer** — a Journey may be good for one type of person and not another. **This is the essence of the app.
+This is its uniqueness.**"* And, about the Journey the app built for him: **"So far the plan that was
+built for me didn't help me at all."**
+
+**The PRD is now organised by his three layers.** **Layer 1, the user profile** — the abandonment
+faculty already exists and is unused: `ReasonId` (8 closed reasons) mapped to `LeverId` (8 levers),
+persisted as structured `ReasonEntry` rows, whose own type comment calls it *"the seed of the 'learn the
+user' data"*. Nothing consumes it for planning, so a person whose last six misses were `no_time` and one
+whose were `lost_motivation` get the same next Journey. **Layer 2, the Journey Library** — several
+Journeys per goal, judged on persistence, **the stage reached before dropping (a drop-off curve, not a
+binary)**, completion, and **end-of-Journey feedback, which is the label on the training data**. Without
+a human verdict the corpus has outcomes and no ground truth and "which Journey is better" is
+unanswerable. **Layer 3, matching** — fitness is *conditional* on user attributes and the conditions are
+**discovered from outcomes**, not declared, with four gates (support both sides, effect size,
+multiple-comparison correction, holdout confirmation) before one is trusted.
+
+**The survivorship trap, found while specifying the feedback moment.** The completion ceremony only ever
+meets people who finished. Asking there alone means every label comes from a success and the library
+learns that everything works. **The most valuable feedback comes from the people who quit.** So the
+moment needs three hosts — completion, cancellation, and quiet death (the largest group, with no natural
+moment) — and `feedbackHost` is in the record so the bias is visible rather than invisible. Structural
+consequence flagged: `Done/Completion_Celebration_PRD.md` is immutable, so this needs a
+`Completion_Celebration_02_PRD.md` continuation owning all three hosts, not an edit.
+
+**The objective function, worked out properly.** *Fewer notifications that actually move someone to
+action* inverts every standard metric. It is a **constrained optimisation, never a weighted sum** — a
+weighted sum always has an exchange rate at which more notifications buy more completions, and the loop
+will find it. **Maximise "did it help"; subject to that, minimise interruptions; never the reverse.**
+Zero interruptions with a helped Journey is the **maximum** score, not a null result. **The loop is
+allowed to discover that nagging works and is forbidden from acting on it**: an interruption ceiling the
+loop may lower and never raise. Plus a mandatory drift detector — median Step difficulty and weekly
+minutes of recommended Journeys; **if that trends down while retention trends up, the matcher is gaming
+us**.
+
+**Two corrections forced by the companion research** (`05_Research/User_Matching_Parameters_Research_2026-08-17.md`,
+written in parallel and now the authority on *parameters*). The outbound cohort vector was **cut from
+nine flat fields to a hard cap of four** — three fixed slots plus one rotating condition slot — because
+nine coarse categoricals give ~15,000 cells, at which point individually-harmless fields become a unique
+identifier with a description of someone's struggles attached. Conditional discovery survives, because
+finding an interaction needs a stable base plus **one** candidate at a time, not every attribute in one
+key; the cost is roughly an eightfold slowdown, stated rather than hidden. And k moved from a
+judgement-based 25 to an evidence-based **floor of 20, targeting 50**. Also adopted: **no sentinel for an
+excluded domain**, since `domain: 'withheld'` in a population where only two domains may withhold *is*
+the disclosure.
+
+**Also settled:** demographics, communication style, personality inventories and readiness-stage
+classifiers all stay **out of matching**, each for a stated reason. The marketplace is designed against,
+not designed — with one genuinely urgent constraint: a template's **licence field must exist before the
+partner's content ships to devices** in Stage 1.
+
+**Files:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (restructured around the three layers;
+§§11–13 privacy work preserved intact and tightened); `06_Decisions/Decision_Log.md` (**D52** second-pass
+addendum, appended, nothing rescinded); `04_Product/PRD/README.md` (index entry rewritten).
+
+---
+
 # 2026-08-17 (product-manager pass) — The Plan Library and cross-user learning: the Spotify model, with a stricter allowlist (D52)
 
 Docs only; no code written or changed. The most consequential architectural decision taken so far, and the

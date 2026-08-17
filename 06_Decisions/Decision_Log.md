@@ -832,6 +832,105 @@ at the specification level; the implementation gap remains).
 `04_Product/PRD/Done/Step_Postponement_PRD.md` (D37) is immutable and was **not** edited; nothing in it is
 rescinded.
 
+### D52 — A shared Plan Library is OUR data; a minimal, non-personal outcome record may leave the device (the Spotify model, with a stricter allowlist)
+**Decision (founder, 2026-08-17), in two passes in the same conversation.**
+
+**Pass 1 — the boundary, drawn by the founder himself:**
+
+> "The whole idea of the app is that we succeed in learning which plans are better. We want to learn how
+> to best help the user — and to do that we must understand which plans are good in which cases and for
+> which users. **We must manage this database.** There is no problem storing a plan library on our side —
+> it is not sensitive client data, in fact it is not client data at all, **it is our data**. The client's
+> progress, or personal details they gave us, we will not store and will not take off their device. But we
+> do want to build **some profile** of each client so we know how to match the right plans to them."
+
+**Pass 2 — after the team compared the idea to Spotify's server-side collaborative filtering:**
+
+> "That is exactly what I mean. We will define exactly the structure of the information that goes from the
+> device to us. That structure will not include sensitive information, only parameters that are essential
+> for us in order to learn and improve. We will also do our best to encrypt the information properly. **So
+> in summary, I am in favour of working like Spotify.**"
+
+**What is settled.** (1) PushApp maintains a **Plan Library** — a versioned corpus of authored Plan
+Templates — on our side. It is our content, not client data, and holding it raises no privacy question.
+(2) A **minimal, strictly-allowlisted outcome record** may leave the device to tell us how a template
+performed. (3) The **structure of what leaves is defined by us in advance and is closed**, never
+open-ended and never a general telemetry stream. (4) The founder's own line stands as the design rule:
+**outcome and category, never story** — *plan of type X, given to a user in category Y, reached 70%
+completion, broke in week 3*; never why they wanted it, never anything they typed.
+
+**The boundary the founder drew, restated so nobody has to infer it:** progress, personal details, and
+everything the user wrote **stay on the device**. What may leave describes **the plan's performance**, in
+buckets, attached to a coarse category of user rather than to a user. Every existing red line in
+`11_Engineering_Bible/Sync_Manifest.md` §4 and every G1/G2 comment in `SocialGateway.ts` /
+`domain.ts` survives this decision **unweakened**; this opens a new, narrow path and reinterprets none of
+the old ones.
+
+**Why the comparison to Spotify produced this, and where we deliberately diverge.** Spotify does
+collaborative filtering server-side because taste has no describable features: you cannot say "songs like
+this" without enumerating the crowd, so the full user × item matrix has to sit in one place. **Our problem
+is different in a way that matters.** A person's fit to a plan *is* describable — baseline, available
+time, cadence, feasibility, primary obstacle — and those are exactly the small categorical values the
+interview already computes on device. That means **cohort-level aggregates are sufficient and a user × item
+matrix is not needed**, which in turn means the outbound record does not need to be linked to a person at
+all. The team's recommendation, therefore, is a **hybrid: learn centrally, match locally** — the server
+publishes a template corpus plus cohort-conditioned scores, and the device does the matching using the
+rich local signals (the free-text goal, "Other" answers, reason log, behaviour log) that must never leave.
+Two consequences worth recording: a user who contributes nothing receives **exactly the same product
+quality**, which is what makes an honest opt-in affordable rather than coercive; and the manifest must be
+fetched **whole from an unauthenticated URL identical for every user**, because slicing it by domain would
+leak the user's domain through ordinary request logs.
+
+**The sensitivity asymmetry, recorded because it is the reason the allowlist is stricter than Spotify's,
+not looser.** Spotify's worst case is a leaked listening history. Ours would be a leaked record of **what
+people are trying to change about their lives**, in a product whose four domains (D24) include addiction
+and relationships/loneliness. The FTC has treated app-collected mental-health questionnaire data as
+sensitive health information (BetterHelp, $7.8M, 2023; a $7M settlement proposed against Cerebral), and
+under GDPR Art. 9 health data is a special category for which pseudonymisation is not a defence where
+re-identification is reasonably possible. Also recorded honestly: **small categorical vectors are far more
+identifying than they look** (Sweeney: ZIP + date of birth + sex uniquely identifies 87% of the US
+population), so the specified mitigations — coarse buckets, no demographics at all, at most one obstacle
+code, a server-side k-anonymity gate, no row-level ingestion timestamp, randomised delayed batched upload,
+and physical separation from the social backend — are load-bearing rather than decorative. And encryption,
+which the founder rightly asked for, protects transit and a stolen disk; it does **not** protect the data
+from us, our provider, or a lawful demand, because we hold the keys. **The only real protection for a
+corpus we operate is that it is minimal and unlinkable.**
+
+**The growth-before-engagement tension, named rather than hidden (CLAUDE.md §3.4).** A learning loop needs
+an objective function, and whatever we score templates on is what the product becomes. Scoring on
+completion rate would reliably teach the system to recommend the plans that ask for the least — engagement
+optimisation wearing the costume of outcomes. **Forbidden as an objective, permanently:** time in app,
+sessions, notification open rate, retention/DAU, Journeys started, streak length as a terminal goal,
+subscription conversion. **Structural guardrail:** the loop may *downrank* a template for a cohort but may
+never *remove* one, and never the ambitious end of the corpus (CLAUDE.md §3.3 — the vision never shrinks).
+
+**Sequencing — nothing here ships soon, and the first stage needs none of it.** There is no content
+backend and no privacy policy. **Stage 0, buildable today with zero privacy change**, is to turn the
+hardcoded arcs into data: extract `MILESTONES`/`STEP_TITLES` out of the four experts into versioned
+templates, ingest the partner's Golden Journeys, and give `buildStructure` a local matcher. That alone
+fixes the failure that triggered this decision (a user who asked for help drinking a protein shake daily
+received Steps about walking, stretching and eating meals at regular times, because `BodyImageExpert` has
+one fixed twelve-string menu for everyone). The outbound half is Stage 2 and is blocked on a privacy
+policy that does not exist, on **security-privacy and store-compliance sign-off (both required, scoped in
+the PRD §12)**, and on the four founder questions below. **The library is valuable long before the learning
+is.**
+
+**Categorization:** **Approved** — the four settled points above. **Recommended, awaiting founder
+confirmation** — the twenty-field allowlist, per-instance pseudonymity (no stable user id), the hybrid
+matching model, opt-in consent, `career` + `general` domains only at v1, and k = 25. **Open Question** —
+nine items in the PRD §14, four of them blocking Stage 2: (1) what counts as "the plan worked", which is
+the single most consequential choice because the objective function becomes the product; (2) which domains
+participate; (3) opt-in vs opt-out; (4) the k threshold. Plus terminology ratification of **Plan Template**
+(blocking Stage 0, product-guardian's call), whether cross-Journey longitudinal learning is ever wanted,
+hosting cost (cost-guardian, before anything is provisioned), partner content licensing terms, and the
+content-safety escalation path.
+**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (the full specification: the
+three-way separation, the field-by-field outbound allowlist and its negative space, the identity trade,
+the re-identification analysis, the matching recommendation, the disclosure and consent model, the
+required reviews, and the five-stage sequencing); `04_Product/PRD/README.md` (index).
+`Future/User_Learning_PRD.md` is a **different** thing (a within-user, on-device model) and is **not**
+edited, merged, or superseded by this decision.
+
 ## 2026-08-06 — Coach build-out: domain realignment, framework-not-content philosophy, UX/design bundle, paid Gemini tier, single-user auth
 
 > Continues the D23 pivot on branch `feat/buddy-3d-and-reminders` (unmerged), behind the

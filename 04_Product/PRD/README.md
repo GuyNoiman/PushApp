@@ -96,6 +96,19 @@ error states.
   second one (D50). Defines the three contribution kinds, D30 re-voicing, volume caps, empty/degraded
   states, privacy red lines, and the Smart-Notification-Timing cross-check. **Stage: Future · Status:
   approved architecture (D50), interface NOT built, NOT scheduled; 7 open questions in §14.**
+- `Plan_Library_and_Learning_PRD.md` — the shared **Plan Library** (a versioned corpus of authored Plan
+  Templates, which is *our* content) plus **cross-user learning** from a minimal, strictly-allowlisted
+  outcome record, in the Spotify model but with a stricter allowlist (**D52**). Exists because the four
+  `DomainExpert`s emit one hardcoded arc per domain, so a request to drink a protein shake daily returns
+  Steps about walking and stretching. Specifies the three-way separation (library / on-device-forever /
+  outbound record), the twenty-field outbound contract and its negative space, the identity trade
+  (per-instance pseudonym, no stable user id), the re-identification analysis, the recommendation to
+  **learn centrally but match on device**, the disclosure/consent model, and what the loop must never
+  optimise for. **Stage: MVP (library as local content, Stage 0 buildable now with zero privacy change) →
+  Commercial (the outbound record and the learning loop) · Status: founder-decided in principle
+  2026-08-17, specification in progress, NOT ready to build; §§7–9 blocked on security-privacy AND
+  store-compliance sign-off and on a privacy policy that does not exist; nine open questions in §14, four
+  of them blocking.**
 - `Future/Recurring_Routine_PRD.md` — **Practice** object: **PARKED (D39, 2026-08-11).** We are not building a
   distinct recurring object now; small recurring tasks + small goals use the existing Dream/Journey/Step model,
   revisited after real usage. The analysis + product-guardian conditions are preserved in the file. **Stage: Future.**

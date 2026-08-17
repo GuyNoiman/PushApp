@@ -4,6 +4,73 @@ Status: Living Document
 
 ---
 
+# 2026-08-17 (product-manager pass) — The Plan Library and cross-user learning: the Spotify model, with a stricter allowlist (D52)
+
+Docs only; no code written or changed. The most consequential architectural decision taken so far, and the
+first one that puts anything about a user's behaviour on a server.
+
+**Why it exists.** The four `DomainExpert`s emit **hardcoded template arcs**. A user who asked for help
+drinking a protein shake daily received Steps about walking, stretching and eating meals at regular times,
+because the request routed to `BodyImageExpert` and that expert has one fixed twelve-string menu.
+`MILESTONES` is a four-entry `const`; `buildStructure` has three levers (a 0/1/2 baseline, a minutes
+figure, a staged boolean) and discards everything else about the person. The partner's own QA rule — *if
+you can swap the user's name and the Journey barely changes, it is too generic* — is not merely failed by
+our code, it is **identical for every user in a domain, by construction**.
+
+**The founder's decision (2026-08-17, D52), in his words:** the plan library is *"not client data at all,
+**it is our data**"*; progress and personal details *"we will not store and will not take off their
+device"*; and after the team compared the idea to Spotify's server-side collaborative filtering, *"I am in
+favour of working like Spotify."* The design rule that follows from his framing: **outcome and category,
+never story.**
+
+**Where we deliberately diverge from Spotify.** Spotify needs a full user × item matrix because taste has
+no describable features. A person's fit to a plan **is** describable — baseline, time, cadence,
+feasibility, primary obstacle — so cohort-level aggregates suffice and the outbound record needs no user
+link at all. Recommendation: **hybrid — learn centrally, match locally.** The device matches using the
+rich local signals (free-text goal, "Other" answers, reason log, behaviour log) that must never leave, so
+**a user who contributes nothing gets exactly the same product quality**, which is what makes an honest
+opt-in affordable rather than coercive. One trap found and specified out: the manifest must be fetched
+whole from an unauthenticated URL identical for everyone, because slicing it by domain would leak the
+user's domain through request logs.
+
+**The outbound contract**, written as a strict allowlist in the style and with the force of
+`ProgressSummary`: twenty fields, all enums, buckets, booleans, our own content ids, and one **per-instance
+random pseudonym** — no stable user id, so no longitudinal dossier can accumulate. Demographics (age,
+gender, country, language) are barred **even though they would help learning**, because they are the
+classic quasi-identifiers. The negative space is written as an explicit prohibition, including the clause
+that a hash or embedding of a barred item is the barred item.
+
+**Honest about the risk.** Small categorical vectors are far more identifying than they look (Sweeney:
+ZIP + DOB + sex identifies 87% of the US population); the §7.2 vector has ~15,000 cells, so at small N a
+"cohort" is a person. Mitigations are load-bearing, not decorative: a server-side k-anonymity gate with
+quarantine → generalise → discard, at most one obstacle code, no row-level ingestion timestamp, no client
+IP, randomised 3-to-14-day batched upload, and physical separation from the social backend. And
+encryption, which the founder rightly asked for, protects transit and a stolen disk but **not** against us,
+our provider, or a subpoena — the only real protection for a corpus we operate is that it is minimal and
+unlinkable. The **sensitivity asymmetry** is recorded as the reason the allowlist is stricter than
+Spotify's, not looser: their worst case is a listening history, ours is what people are trying to change
+about their lives, in a product two of whose domains are addiction and loneliness.
+
+**The growth-before-engagement tension, named.** Whatever we score templates on is what the product
+becomes; scoring on completion rate teaches the system to recommend the plans that ask for the least.
+Time in app, sessions, open rate, retention, Journeys started and conversion are **forbidden as objectives
+permanently**, and the loop may downrank a template but never remove one, and never the ambitious end of
+the corpus.
+
+**Sequencing.** Nothing outbound ships soon (no content backend, no privacy policy). **Stage 0 is
+buildable today with zero privacy change** and is the recommendation: turn the hardcoded arcs into
+versioned Plan Templates, ingest the partner's Golden Journeys, and give `buildStructure` a local matcher.
+That alone fixes the protein-shake failure. The outbound half is Stage 2, blocked on **security-privacy and
+store-compliance sign-off (both required, scoped field by field)** and on four founder questions. **The
+library is valuable long before the learning is.**
+
+**Files:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (new); `06_Decisions/Decision_Log.md` (**D52**,
+surgical insert after D51, preserving the whole file); `04_Product/PRD/README.md` (one index entry).
+`Future/User_Learning_PRD.md` is a **different** thing (a within-user, on-device model) and was not edited,
+merged, or superseded.
+
+---
+
 # 2026-08-14 (product-manager pass) — A paused Journey is RE-PLANNED on resume, not compensated (D51, fourth pass)
 
 **This corrects the entry immediately below.** A founder correction, same day, supersedes the freeze-credit

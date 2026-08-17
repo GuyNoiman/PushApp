@@ -28,6 +28,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SupportBoard, type SupportPerson } from '@/components/home/SupportBoard';
 import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { CoachButton } from '@/components/home/CoachButton';
+import { JourneyFeedbackSheet } from '@/components/celebration/JourneyFeedbackSheet';
 import { Confetti } from '@/components/home/Confetti';
 import { SectionHeader } from '@/components/home/SectionHeader';
 import { StepReportFlow } from '@/components/home/StepReportFlow';
@@ -151,6 +152,9 @@ export default function HomeScreen() {
   // full screen ONCE on the first app entry after week close (§9). Null when none is pending or the
   // adaptive loop is off, so production Home is unchanged. Reading is a PURE getter (no state write).
   const pendingReview = ready && snapshot ? core.getPendingWeeklyReview() : null;
+  // The Journey (finished, canceled, or quietly dead) whose verdict we still owe ourselves. A pure
+  // read, and at most one at a time — see `core/celebration/journeyFeedback` for the three hosts.
+  const pendingFeedbackAsk = ready && snapshot ? core.pendingJourneyFeedback() : null;
   // Auto-open is keyed to the REVIEW id, not the Home mount: a review generated while Home is
   // already open (app left running across the week boundary) still opens once. The persisted
   // `openedAt` (weeklyReviewNeedsAutoOpen) is the source of truth; the ref just dedupes within the
@@ -187,6 +191,9 @@ export default function HomeScreen() {
   // one (the inactivity return) stack behind it. It gates ONLY the inactivity auto-open below; the
   // ceremony-wins-over-review priority stays governed by its own latches. Reset on the next foreground.
   const majorOpenedThisForegroundRef = useRef(false);
+  // Asked at most once per foreground, on top of the never-twice-per-Journey rule in the core.
+  const askedFeedbackThisForegroundRef = useRef(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // Reset the per-foreground latches when the app returns to the foreground, so the "one major event
   // per foreground" budget refreshes each entry (a resident app across a week boundary still opens the
@@ -202,6 +209,7 @@ export default function HomeScreen() {
         autoOpenedIdRef.current = null;
         autoOpenedInactivityRef.current = false;
         majorOpenedThisForegroundRef.current = false;
+        askedFeedbackThisForegroundRef.current = false;
       }
     });
     return () => sub.remove();
@@ -262,6 +270,27 @@ export default function HomeScreen() {
       router.push('/return' as Href);
     }
   }, [pendingInactivity, pendingCeremony, pendingReview, core, router]);
+
+  // The end-of-Journey question sits at the BOTTOM of the priority chain, behind every other major
+  // event — it is a favour we are asking, and a favour never interrupts something the user came for.
+  // It is also the only host the quietly-dead Journey ever gets: asking that by push notification
+  // would spend the user's attention on OUR data, in a product whose objective is fewer
+  // interruptions that matter more.
+  useEffect(() => {
+    if (
+      pendingFeedbackAsk &&
+      pendingCeremony == null &&
+      pendingReview == null &&
+      pendingInactivity == null &&
+      !majorOpenedThisForegroundRef.current &&
+      !ceremonyOpenedThisForegroundRef.current &&
+      !askedFeedbackThisForegroundRef.current
+    ) {
+      askedFeedbackThisForegroundRef.current = true;
+      majorOpenedThisForegroundRef.current = true;
+      setFeedbackOpen(true);
+    }
+  }, [pendingFeedbackAsk, pendingCeremony, pendingReview, pendingInactivity]);
 
   const hour = new Date().getHours();
   const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
@@ -665,6 +694,24 @@ export default function HomeScreen() {
 
         {/* Gentle final-step confirmation — shown only when a Done would complete the Journey (D41). */}
         <FinalStepConfirmSheet visible={confirmVisible} onConfirm={confirm} onCancel={cancel} />
+
+        {/* The end-of-Journey question. Dismissing it is a real answer — it records the ask, so
+            this Journey is never raised again (see core/celebration/journeyFeedback). */}
+        {pendingFeedbackAsk ? (
+          <JourneyFeedbackSheet
+            visible={feedbackOpen}
+            journeyTitle={pendingFeedbackAsk.journeyTitle}
+            host={pendingFeedbackAsk.host}
+            onSubmit={(input) => {
+              core.submitJourneyFeedback(pendingFeedbackAsk.journeyId, input);
+              setFeedbackOpen(false);
+            }}
+            onDismiss={() => {
+              core.submitJourneyFeedback(pendingFeedbackAsk.journeyId);
+              setFeedbackOpen(false);
+            }}
+          />
+        ) : null}
 
         {/* Celebration overlay — never intercepts touches. */}
         <Confetti fireKey={confettiKey} />

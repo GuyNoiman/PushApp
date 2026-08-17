@@ -107,6 +107,12 @@ import type {
   WeeklyReview,
 } from './types/domain';
 import { buildCompletionCard } from './celebration/completionCard';
+import {
+  buildJourneyFeedback,
+  pendingFeedback,
+  type Helped,
+  type PendingFeedback,
+} from './celebration/journeyFeedback';
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { directDependentsOf } from './status/stepDependencies';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
@@ -1772,6 +1778,46 @@ export class AppCore {
    */
   willCompleteJourney(journeyId: string, stepId: string): boolean {
     return this.journeyEngine.willCompleteJourney(journeyId, stepId);
+  }
+
+  // ── End-of-Journey feedback (the label on the library's training data) ──────
+
+  /**
+   * The Journey that should be asked for its verdict now, or null. PURE READ — safe during render.
+   *
+   * Read at every foreground and after the completion ceremony. The THREE hosts and the reason
+   * there are three of them are in {@link ../celebration/journeyFeedback}: asking only the people
+   * who finished would make every training label a success and teach the library that everything
+   * works.
+   */
+  pendingJourneyFeedback(now: number = Date.now()): PendingFeedback | null {
+    return pendingFeedback(this.state.journeys, this.getReasonLog(), now);
+  }
+
+  /**
+   * Record the verdict — or the fact that the user declined to give one. Both mark the Journey as
+   * ASKED, so no Journey is ever asked twice; declining is an answer, and re-asking would make the
+   * question a nag rather than a request.
+   *
+   * G1: `note` stays on the device. Nothing here transmits anything; the library's outbound record
+   * is Stage 3 of its PRD and is gated behind consent that does not exist yet.
+   */
+  submitJourneyFeedback(
+    journeyId: string,
+    input: { helped?: Helped; reasonId?: string; note?: string } = {},
+  ): boolean {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey || journey.feedback) return false;
+    const pending = this.pendingJourneyFeedback();
+    journey.feedback = buildJourneyFeedback({
+      // The host the question was actually asked from; `quiet` is the honest fallback for a
+      // Journey whose state moved on between the ask and the answer.
+      host: pending?.journeyId === journeyId ? pending.host : 'quiet',
+      ...input,
+      now: Date.now(),
+    });
+    this.onChanged();
+    return true;
   }
 
   /** The durable completion card attached to a Journey, or undefined (unknown / not yet completed). */

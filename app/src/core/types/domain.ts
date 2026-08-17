@@ -301,6 +301,18 @@ export interface Journey {
    * Holds SAFE FIELDS ONLY (see {@link CompletionCard}).
    */
   completionCard?: CompletionCard;
+  /**
+   * The user's verdict on this Journey, captured once at its end (see
+   * {@link ../celebration/journeyFeedback}). PRESENT means they have been asked — whether they
+   * answered or dismissed the question — so it is also the "never ask again" marker.
+   *
+   * This is the LABEL on the library's training data: without it we can see that someone stopped
+   * in week three but not whether the Journey was wrong for them or whether life intervened.
+   *
+   * G1: `note` is the user's own words and is ON-DEVICE-ONLY. It is whitelist-excluded from every
+   * social/sync path, exactly like {@link AppState.reasonLog}.
+   */
+  feedback?: JourneyFeedback;
 }
 
 /**
@@ -315,6 +327,28 @@ export interface Journey {
  * export/deletion (cascades with the Journey), and WHITELIST-EXCLUDED from any social/sync payload.
  * Adding any field carrying raw content needs a fresh security-privacy review.
  */
+/**
+ * The user's own verdict on a finished, canceled or quietly-dead Journey — the ground truth the
+ * plan library learns from. Written once, never rewritten (a later change of heart is a new
+ * Journey's story, not a rewrite of this one's).
+ *
+ * Every field is optional except the two provenance ones, because SKIPPING IS ALWAYS ALLOWED: a
+ * record with only `host` and `at` means "asked, declined to answer", which is itself the answer to
+ * whether we may ask again.
+ */
+export interface JourneyFeedback {
+  /** Which of the three moments asked: finished, canceled, or quietly died. */
+  host: 'completed' | 'canceled' | 'quiet';
+  /** When it was asked/answered, epoch ms. */
+  at: number;
+  /** Did it help? Absent when the user skipped — never read as a "no". */
+  helped?: 'yes' | 'partly' | 'no';
+  /** What got in the way, from the SAME closed reason vocabulary the miss-recovery loop uses. */
+  reasonId?: string;
+  /** The user's own words. ON-DEVICE-ONLY (G1) — never in any event, summary or sync path. */
+  note?: string;
+}
+
 export interface CompletionCard {
   /** The completed Journey this card belongs to. */
   journeyId: string;

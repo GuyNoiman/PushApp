@@ -201,6 +201,24 @@
       }
     }
   },
+  "feedback": {
+    "title": {
+      "completed": "You finished it",
+      "canceled": "You stopped this one",
+      "quiet": "This one went quiet"
+    },
+    "ask": "Could we ask you something? What you say here shapes the plans we build for you next, and for other people trying the same thing. Anything you skip is fine.",
+    "helpedQuestion": "Did this plan actually help you?",
+    "helped": {
+      "yes": "It helped",
+      "partly": "Partly",
+      "no": "Not really"
+    },
+    "whatQuestion": "What got in the way most?",
+    "notePlaceholder": "Anything you'd want the plan to have done differently? Stays on your device.",
+    "skip": "Not now",
+    "send": "Send"
+  },
   "reasonHistory": {
     "title": "Looking back",
     "open": "What came up before?",

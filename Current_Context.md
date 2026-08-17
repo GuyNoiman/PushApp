@@ -1,7 +1,10 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
+Last updated: **2026-08-18** — start at the **"⛳ START HERE"** block below, which names the three
+documents to read first. Everything under it is accurate history, kept in full, but superseded as the
+starting point. Previous top entry follows.
+Prior: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
 (SESSION — MVP-ready sweep)" just below (most current and authoritative). It supersedes — but does not
 replace — the same-day "⭐ HANDOFF SNAPSHOT — 2026-08-13 (overnight autonomous session)" underneath it,
 which is kept in full as accurate history of that earlier batch. Prior top snapshot before that:
@@ -24,7 +27,58 @@ added to capture the AI-adaptive-coach repositioning (Decision Log D23) — no c
 engineering snapshots below (2026-07-20 and earlier) are untouched.
 
 ## How to resume
-Read `AI_Start_Here.md` → this file → the memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+Read `AI_Start_Here.md` → this file → **the three documents in "START HERE" immediately below** → the
+memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+---
+
+# ⛳ START HERE — read these three before anything else (2026-08-18)
+
+The 2026-08-17/18 session did two things: it put the app on a **real device for the first time**, and the
+founder articulated **the product's core architecture**. The second reframes most of what is still
+unbuilt, so the snapshots further down this file are accurate history but no longer the best starting
+point.
+
+**1. `04_Product/Session_Handoff_2026-08-17_18.md` — read this first, in full.**
+The architecture in the founder's own words, every defect found and fixed, the first-device build setup,
+and everything still open. It was written to stand alone when session memory ran out.
+
+**2. `04_Product/PRD/Plan_Library_and_Learning_PRD.md` — the architecture itself (Decision Log D52).**
+Three layers: a user profile that knows how to address someone, what motivates them and **what makes them
+abandon**; a **Journey library with several Journeys per goal** (without variants there is nothing to
+compare, and without comparison there is no learning); and a matching layer that discovers from outcomes
+which Journey suits whom. Stages 0–2 need no backend, no privacy policy and no consent.
+Companion research: `05_Research/User_Matching_Parameters_Research_2026-08-17.md`.
+
+**3. `04_Product/Open_Questions_For_Founder.md` — every pending founder decision, in one place.**
+Ordered so the ones that actually block code sit at the top.
+
+### The single most important fact to carry into the next session
+The founder's verdict on the app as it stands: **"So far the plan that was built for me didn't help me at
+all."** He asked for *drink a protein shake daily* and got Steps about walking and stretching, because
+`BodyImageExpert` holds a hardcoded table of four Milestones × three Steps. The domain experts run an
+interview and assess feasibility, but they **select from a closed menu and never author** — answers change
+*how many* and *how intense*, never *what*. The partner's own QA rule (swap the user's name and see if the
+Journey changes) is one our code fails absolutely: it is identical for every user in a domain.
+
+**Stage 0 of the library PRD fixes this, today, with no backend and no privacy change.** It is the highest-
+value work available.
+
+### Two traps recorded there, worth knowing before designing anything
+- **Survivorship.** The completion ceremony only meets people who finished. Collect feedback only there and
+  every training label comes from a success — the library learns that everything works, invisibly. The
+  feedback moment needs three hosts: completion, cancellation, and quiet death.
+- **The objective.** "Few notifications that actually move someone to action" inverts the usual metric:
+  judge on **action per interruption**, never engagement or send volume. The loop is allowed to *discover*
+  that nagging works and is **forbidden from acting on it**.
+
+### One process lesson, and it matters
+Decision Log **D24** phrased an *agent's safety recommendation* as a **founder ruling**, and it went
+unchallenged for weeks — shaping priorities and nearly shaping a letter to an external partner. The
+founder rescinded it on 2026-08-18. An audit of the whole Decision Log for the same failure mode was in
+progress at session end; **check its result before treating any un-sourced "decision" as approved.**
+
+---
 
 ## ⭐ HANDOFF SNAPSHOT — 2026-08-13 (SESSION — MVP-ready sweep — supersedes the same-day "overnight autonomous session" snapshot below as "most current"; that snapshot and everything under it is kept in full as accurate history)
 

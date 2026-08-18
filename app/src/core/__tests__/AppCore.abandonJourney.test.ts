@@ -49,6 +49,7 @@ jest.mock('../social', () => ({
 }));
 
 import { AppCore } from '../AppCore';
+import { useFixedClock } from './fixedClock';
 import { setCircleNoticeSink, type CircleNotice } from '../notify/circleNotice';
 import type { AppState } from '../types/domain';
 import type { Repository } from '../persistence/Repository';
@@ -111,6 +112,11 @@ beforeEach(() => {
   socialEnabled.current = true;
   setCircleNoticeSink(null);
 });
+
+// A 2-hour postpone started after 21:30 crosses midnight and returns `no_slot_today`, so this suite
+// passed all day and failed at night — the same defect proved and pinned in the postpone/smartTiming
+// suites, in a file that was missed. `Date` is fixed; the timers stay real.
+useFixedClock();
 
 describe('AppCore.abandonJourney — state + persistence', () => {
   it('flips the status to abandoned, keeps the Journey, and persists it', async () => {

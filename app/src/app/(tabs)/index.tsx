@@ -19,6 +19,7 @@
  * support board shows a calm empty state per tab once you have friends, and the whole
  * GIVE SUPPORT area (heading included) stays hidden until you have at least one.
  */
+import { useIsFocused } from '@react-navigation/native';
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -126,6 +127,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('home');
+  // Whether Home is the screen the user is actually looking at — see the feedback gate below.
+  const isFocused = useIsFocused();
 
   // Confetti fires on the pending→done moment (bumped by the report flow's Done),
   // unless the user turned SMALL celebrations off in Settings (the big Journey
@@ -278,6 +281,14 @@ export default function HomeScreen() {
   // interruptions that matter more.
   useEffect(() => {
     if (
+      // FOCUS IS THE FIRST CONDITION, and it is why this modal froze the app once. The completion
+      // ceremony is a pushed ROUTE, not a modal on Home. Once its `ceremonyShownAt` was stamped,
+      // `pendingCeremony` flipped to null while the user was still standing on the ceremony/share
+      // screen — so this sheet opened on the Home screen UNDERNEATH them. Nothing was visible, and
+      // when they navigated back, an invisible modal was swallowing every touch: no scrolling, no
+      // horizontal paging, no ⋯ button. Killing the app and reopening surfaced the sheet, and
+      // answering it released the freeze. A modal must never open on a screen the user is not on.
+      isFocused &&
       pendingFeedbackAsk &&
       pendingCeremony == null &&
       pendingReview == null &&
@@ -290,7 +301,7 @@ export default function HomeScreen() {
       majorOpenedThisForegroundRef.current = true;
       setFeedbackOpen(true);
     }
-  }, [pendingFeedbackAsk, pendingCeremony, pendingReview, pendingInactivity]);
+  }, [isFocused, pendingFeedbackAsk, pendingCeremony, pendingReview, pendingInactivity]);
 
   const hour = new Date().getHours();
   const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
@@ -697,7 +708,7 @@ export default function HomeScreen() {
 
         {/* The end-of-Journey question. Dismissing it is a real answer — it records the ask, so
             this Journey is never raised again (see core/celebration/journeyFeedback). */}
-        {pendingFeedbackAsk ? (
+        {feedbackOpen && pendingFeedbackAsk ? (
           <JourneyFeedbackSheet
             visible={feedbackOpen}
             journeyTitle={pendingFeedbackAsk.journeyTitle}

@@ -108,7 +108,11 @@ export function JourneySupportCircle({
         {t('supportCircle.subtitle')}
       </ThemedText>
 
-      {loadFailed ? (
+      {/* The retry line is shown only to a user who HAS a profile. On a fresh install the load
+          fails because there is nothing to load yet, and the first thing a new user was told about
+          a feature they had not reached was that it was broken (Device QA 2026-08-17, A7). The load
+          itself still runs and still records the failure — this hides the message, not the fact. */}
+      {loadFailed && social.profile ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('supportCircle.retry')}

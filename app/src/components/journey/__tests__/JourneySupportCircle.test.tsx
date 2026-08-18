@@ -84,6 +84,9 @@ function journey(overrides: Partial<Journey> = {}): Journey {
 function setSocial(overrides: Record<string, unknown> = {}) {
   mockSocial.current = {
     enabled: true,
+    // A SET-UP user: the retry line is deliberately shown only to someone who has a profile, so a
+    // fresh install never meets an error about a feature it has not reached (Device QA A7).
+    profile: profile('me', 'me'),
     friends: [],
     listJourneyAllies: jest.fn(async () => []),
     inviteAlly: jest.fn(async () => {}),
@@ -229,4 +232,20 @@ describe('JourneySupportCircle — members + invite surface (D2)', () => {
     expect(removeAlly).toHaveBeenCalledWith('j1', 'a1');
     expect(removeFriend).not.toHaveBeenCalled();
   });
+});
+
+it('(h) says NOTHING about a failed load to a user who has no profile yet (Device QA A7)', async () => {
+  // A fresh install has no Support Circle to load, so the load "fails" — and the first thing the
+  // new user was told about a feature they had not reached was that it was broken. The load still
+  // runs and still records the failure; only the message is withheld.
+  setSocial({
+    profile: null,
+    listJourneyAllies: jest.fn(async () => {
+      throw new Error('no session');
+    }),
+  });
+
+  const r = await mount(journey());
+
+  expect(json(r)).not.toContain('supportCircle.loadError');
 });

@@ -1,0 +1,20 @@
+{
+  "_comment": "The Journey Library's authored templates, keyed by template id. THIS FILE IS THE TRANSLATION CACHE (D55): content is authored in English — the experts' language — and each template is rendered once per language and stored here, so a Hebrew or Spanish user reads their own language with no model call, no cost and no network. {ACTION} is the user's own words and is inserted AFTER this lookup; it must never be translated.",
+  "recurring": {
+    "anchor": {
+      "essence": "Attach it to something you already do every day.",
+      "pick": "Pick something you already do every day, and decide to do {ACTION} right after it",
+      "rehearse": "Do {ACTION} straight after that thing once, just to see how it fits"
+    },
+    "tiny": {
+      "essence": "Start smaller than feels worth it, then grow from there.",
+      "define": "Decide the smallest version of {ACTION} that you could not fail to do",
+      "first": "Do that smallest version of {ACTION} today"
+    },
+    "prepare": {
+      "essence": "Do most of the work in advance, so the moment itself needs no decision.",
+      "gather": "Get everything {ACTION} needs, and put it where you will see it",
+      "place": "Set up the spot where {ACTION} is going to happen"
+    }
+  }
+}

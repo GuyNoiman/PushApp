@@ -19,7 +19,8 @@
  * SECURITY-PRIVACY G1: every title produced here contains the user's raw goal text and is
  * ON-DEVICE-ONLY. The approach ID is the only part that may ever travel outward.
  *
- * Pure TypeScript — no React, no i18n, no vendor imports, no clock reads.
+ * Framework-free: no React, no native modules, no clock reads. Copy resolves through the shared
+ * i18next core instance (see `templateCopy`), the same seam `DomainExpert` uses.
  */
 import type { PlanStructure, StepTemplate } from '../DomainExpert';
 import type { GoalInput } from '../types';
@@ -27,6 +28,7 @@ import { fillSlots } from './slots';
 import {
   DEFAULT_RECURRING_APPROACH,
   recurringApproach,
+  templateCopy,
   toStepTemplate,
   type RecurringApproachId,
 } from './recurringApproaches';
@@ -68,8 +70,9 @@ export function buildRecurringStructure(input: RecurringPlanInput): PlanStructur
     ?? recurringApproach(DEFAULT_RECURRING_APPROACH)!;
   const slots = { action: input.goal.title };
 
+  // TRANSLATE THE FRAME FIRST, then insert the user's own words — never the other way round.
   const setup: StepTemplate[] = approach.setupSteps.map((authored) =>
-    toStepTemplate(authored, fillSlots(authored.title, slots)),
+    toStepTemplate(authored, fillSlots(templateCopy(authored), slots)),
   );
 
   // The spine: the user's own sentence, unchanged, once per active day. It is NOT built from a

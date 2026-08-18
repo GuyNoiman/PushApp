@@ -22,9 +22,11 @@
  * 2026-08-18). It is translated once per language and cached; the user's own words are inserted
  * after translation and never go through it (see `./slots`).
  *
- * Pure TypeScript — no React, no i18n, no vendor imports. CONFIG-BEFORE-CODE: adding an approach
- * means adding an entry here, not editing an algorithm.
+ * Framework-free (no React, no native modules): it resolves copy through the shared i18next core
+ * instance, the same way `DomainExpert` does. CONFIG-BEFORE-CODE: adding an approach means adding
+ * an entry here plus its rendered strings in `i18n/resources/<lang>/library.json`.
  */
+import i18n from '../../../i18n';
 import type { StepTemplate } from '../DomainExpert';
 
 /** The three established ways a repeated action takes hold. A stable enum — extend, never repurpose. */
@@ -33,11 +35,18 @@ export type RecurringApproachId = 'anchor' | 'tiny_start' | 'prepare';
 /** One authored template: a sentence with an optional `{ACTION}` hole, plus its Step sizing. */
 export interface AuthoredStepTemplate {
   /**
-   * Stable id, unique across the library. It is the TRANSLATION CACHE KEY and the only part of a
-   * Step that may ever be reported outward — the filled title never can (G1).
+   * Stable id, unique across the library. It is the TRANSLATION CACHE KEY (it names the entry in
+   * the `library` i18n namespace) and the only part of a Step that may ever be reported outward —
+   * the filled title never can (G1).
    */
   id: string;
-  /** The sentence, authored in English, with `{ACTION}` where the user's own words belong. */
+  /**
+   * The sentence, authored in English, with `{ACTION}` where the user's own words belong.
+   *
+   * This is the AUTHORED ORIGINAL and also the fallback: {@link approachCopy} looks the id up in
+   * the translation cache first, and lands here when a language has not been rendered yet. A user
+   * in an unsupported language therefore reads English rather than a missing-key placeholder.
+   */
   title: string;
   estimatedMinutes: number;
   /** Relative difficulty 1..5. Setup Steps are deliberately easy; the action itself is the work. */
@@ -50,8 +59,13 @@ export interface RecurringApproach {
   /**
    * The one line shown when the user is offered the other ways of doing this ("there are two other
    * ways"). It must describe the METHOD, never promise an outcome and never rank the options.
+   *
+   * This is the authored English, used as the fallback; {@link approachEssence} reads the
+   * translated one from {@link essenceKey} first.
    */
   essence: string;
+  /** This approach's entry in the `library` translation cache. */
+  essenceKey: string;
   /**
    * The Steps that happen ONCE, at the start, to make the repetition possible. Kept short on
    * purpose: a plan whose first week is all preparation is a plan the user never starts.
@@ -63,6 +77,7 @@ export const RECURRING_APPROACHES: readonly RecurringApproach[] = [
   {
     id: 'anchor',
     essence: 'Attach it to something you already do every day.',
+    essenceKey: 'recurring.anchor.essence',
     setupSteps: [
       {
         id: 'recurring.anchor.pick',
@@ -81,6 +96,7 @@ export const RECURRING_APPROACHES: readonly RecurringApproach[] = [
   {
     id: 'tiny_start',
     essence: 'Start smaller than feels worth it, then grow from there.',
+    essenceKey: 'recurring.tiny.essence',
     setupSteps: [
       {
         id: 'recurring.tiny.define',
@@ -99,6 +115,7 @@ export const RECURRING_APPROACHES: readonly RecurringApproach[] = [
   {
     id: 'prepare',
     essence: 'Do most of the work in advance, so the moment itself needs no decision.',
+    essenceKey: 'recurring.prepare.essence',
     setupSteps: [
       {
         id: 'recurring.prepare.gather',
@@ -137,6 +154,32 @@ export function recurringSetupCount(id: string | undefined): number {
  * user might get wrong — the safest thing to hand someone we have not learned anything about.
  */
 export const DEFAULT_RECURRING_APPROACH: RecurringApproachId = 'anchor';
+
+/**
+ * The user-facing sentence for one authored template, in the ACTIVE language.
+ *
+ * Content is authored in English — the experts' language (D55) — and each template is rendered once
+ * per language into `i18n/resources/<lang>/library.json`. That file IS the translation cache: the
+ * templates are a closed set we write, so a language is paid for once and then served to every user
+ * of it forever, with no model call, no cost and no network. A live per-user translation would put
+ * the coach's own words behind a network round-trip and leave an offline user reading English.
+ *
+ * The slot is still in the string when this returns. That order is the whole design: the FRAME is
+ * translated, then the user's own words are inserted. Translating after filling would send
+ * "שייק חלבון" through a translator and hand it back as "protein shake" — no longer theirs.
+ */
+export function templateCopy(authored: AuthoredStepTemplate): string {
+  // The id IS the cache key: template ids are written as the dotted path into the `library`
+  // namespace, so the two can never drift out of step through a mapping function.
+  const translated = i18n.t(authored.id, { ns: 'library', defaultValue: '' });
+  return translated || authored.title;
+}
+
+/** The one-line "what makes this different", in the active language (same cache, same fallback). */
+export function approachEssence(approach: RecurringApproach): string {
+  const translated = i18n.t(approach.essenceKey, { ns: 'library', defaultValue: '' });
+  return translated || approach.essence;
+}
 
 /** Convert an authored template into the Planner's {@link StepTemplate} (id dropped — see below). */
 export function toStepTemplate(authored: AuthoredStepTemplate, title: string): StepTemplate {

@@ -7,6 +7,7 @@
  * his words were used only to pick a domain. These tests pin the two properties that make that
  * impossible now: the user's own sentence IS the plan, and a repeated action gets no Milestone arc.
  */
+import i18n from '../../../../i18n';
 import { buildRecurringStructure, recurringOccurrences } from '../buildRecurring';
 import { RECURRING_APPROACHES, recurringSetupCount } from '../recurringApproaches';
 import { fillSlots } from '../slots';
@@ -101,5 +102,39 @@ describe('slot filling', () => {
 
   it('fills every occurrence of the slot', () => {
     expect(fillSlots('{ACTION} then {ACTION}', { action: 'read' })).toBe('read then read');
+  });
+});
+
+describe('the translation cache (D55)', () => {
+  it('renders the FRAME in the user’s language and leaves their words untouched', async () => {
+    const previous = i18n.language;
+    await i18n.changeLanguage('he');
+    try {
+      const hebrewGoal = { title: 'שייק חלבון', isHabit: true, shape: 'recurring' as const };
+      const setup = buildRecurringStructure({ goal: hebrewGoal, approach: 'prepare', occurrences: 1 })
+        .unstagedSteps!.slice(0, recurringSetupCount('prepare'));
+
+      // The authored English frame is gone…
+      expect(setup.every((s) => !s.title.includes('Get everything'))).toBe(true);
+      // …and the user's own words survived it verbatim. Translating AFTER filling would have sent
+      // "שייק חלבון" through a translator and handed it back as "protein shake".
+      expect(setup.every((s) => s.title.includes('שייק חלבון'))).toBe(true);
+    } finally {
+      await i18n.changeLanguage(previous);
+    }
+  });
+
+  it('falls back to the authored English when a language has not been rendered yet', async () => {
+    const previous = i18n.language;
+    await i18n.changeLanguage('es');
+    try {
+      const setup = buildRecurringStructure({ goal: SHAKE, approach: 'prepare', occurrences: 1 })
+        .unstagedSteps![0];
+
+      // English, never a missing-key placeholder.
+      expect(setup.title).toContain('Get everything');
+    } finally {
+      await i18n.changeLanguage(previous);
+    }
   });
 });

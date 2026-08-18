@@ -123,6 +123,11 @@ export function toCoachSummary(answers: OnboardingAnswers): CoachOnboardingSumma
     ...(freeText.q5 ? { frictionOther: freeText.q5 } : {}),
     ...(selections.q6?.[0] ? { capacity: selections.q6[0] } : {}),
     ...(freeText.q6 ? { capacityConstraints: freeText.q6 } : {}),
+    // Q7–Q9 (D62): how this person likes to work. Single-select, so the one chosen id maps across;
+    // "I'm not sure" maps across too, as an id that argues for nothing rather than as an absence.
+    ...(selections.q7?.[0] ? { startingMode: selections.q7[0] } : {}),
+    ...(selections.q8?.[0] ? { structure: selections.q8[0] } : {}),
+    ...(selections.q9?.[0] ? { challenge: selections.q9[0] } : {}),
     skipped: [...answers.skipped],
   };
 }

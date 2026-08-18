@@ -67,7 +67,9 @@ function LiveCoachScreen() {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const { core, snapshot } = useApp();
-  const coach = useLiveCoach();
+  // The onboarding profile goes IN to the interview: a Journey's own variant question (D62) is
+  // skipped when the user already answered it in onboarding.
+  const coach = useLiveCoach({ profile: core.getOnboardingCoachSummary() });
   const { t } = useAddressedTranslation('coach');
 
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);

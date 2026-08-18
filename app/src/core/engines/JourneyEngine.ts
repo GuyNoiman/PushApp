@@ -28,6 +28,7 @@ import type {
 import { createId } from '../util/id';
 import { futureCapacity } from '../journeys/futureJourneys';
 import type { JourneyEdit } from '../coach/journeyEdit';
+import type { LibraryRef } from '../learning/library/journeyDefinition';
 import {
   findDreamByTitle,
   normalizeDreamTitle,
@@ -110,6 +111,12 @@ export interface NewJourneyInput {
    * Journey carries no marker and is treated as `'manual'` (Companion-ineligible).
    */
   createdVia?: 'coach' | 'manual';
+  /**
+   * WHICH library Journey + version built this plan (D62) — stamped onto the created Journey so its
+   * end-of-Journey verdict can be counted for the version that produced it. Absent for a manual
+   * plan and for anything the library did not build; absent means UNATTRIBUTED, never "the default".
+   */
+  libraryRef?: LibraryRef;
 }
 
 /** A Step surfaced for action, paired with its Journey for display/context. */
@@ -193,6 +200,7 @@ export class JourneyEngine {
         : {}),
       ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
       ...(input.createdVia !== undefined ? { createdVia: input.createdVia } : {}),
+      ...(input.libraryRef !== undefined ? { libraryRef: input.libraryRef } : {}),
     };
 
     this.resolveDependencies(steps, input.steps, journey);

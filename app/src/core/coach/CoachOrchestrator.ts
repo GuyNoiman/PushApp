@@ -66,7 +66,11 @@ import {
 } from './coachPrompts';
 import { DEFAULT_STYLE_ID, getStyle } from './communicationStyles';
 import { horizonQuestion } from './horizonQuestion';
-import { deriveConstraints } from './goalSpecToJourney';
+import { deriveConstraints, journeyShapeFor } from './goalSpecToJourney';
+import { variantInterviewQuestions } from './variantQuestions';
+import { journeyDefinitionsFor } from '../learning/library/definitions';
+import { profileSignals } from '../learning/library/matchApproach';
+import type { CoachOnboardingSummary } from '../onboarding/model';
 import {
   INTERVIEW_PLAYBOOK,
   type DeferredGoal,
@@ -250,6 +254,13 @@ export interface CoachOrchestratorOptions {
    * classifying `domain`/`kind` into the fixed English enum tokens. Absent/`en` ⇒ default English.
    */
   locale?: string;
+  /**
+   * What onboarding already learned about this person, used for ONE thing here: to skip a chosen
+   * Journey's variant question when the profile has already answered it (D62 §2). Absent ⇒ nothing
+   * is known and the question is asked, which is the correct behaviour at cold start rather than a
+   * degraded one.
+   */
+  profile?: CoachOnboardingSummary | null;
 }
 
 // ── The orchestrator ────────────────────────────────────────────────────────────
@@ -265,6 +276,8 @@ export class CoachOrchestrator {
   private readonly guard?: CoachMessageGuard;
   /** The user's active language code, threaded into the understanding call's locale directive. */
   private readonly locale?: string;
+  /** The onboarding profile, read only to decide which variant questions still need asking. */
+  private readonly profile?: CoachOnboardingSummary | null;
   /** The steady meta-agent tone, composed onto the coach persona for triage. */
   private readonly styleFragment: string;
 
@@ -300,6 +313,7 @@ export class CoachOrchestrator {
     this.playbook = options.playbook ?? INTERVIEW_PLAYBOOK;
     this.guard = options.guard;
     this.locale = options.locale;
+    this.profile = options.profile;
     this.styleFragment = getStyle(DEFAULT_STYLE_ID).systemPromptFragment ?? '';
   }
 
@@ -460,12 +474,38 @@ export class CoachOrchestrator {
     this.goal = { title: this.spec.title, isHabit: this.spec.isHabit };
     // The expert's own questions, plus the ONE question that is not domain knowledge: how long the
     // user wants to give this. It used to be assumed (eight weeks, silently) rather than asked.
-    const all = [...(this.expert.interviewQuestions?.(this.goal) ?? []), horizonQuestion()];
+    // Then, LAST, whatever the chosen Journey says it needs in order to pick between its own
+    // versions (D62 §2) — asked here because this is the first moment the Journey is known, and
+    // asked only when the profile has not already answered it.
+    const all = [
+      ...(this.expert.interviewQuestions?.(this.goal) ?? []),
+      horizonQuestion(),
+      ...this.journeyVariantQuestions(),
+    ];
     this.questions = questionsForProcessType(all, this.spec.processType);
     this.questionIndex = 0;
     this.phase = 'questions';
 
     return this.questions.length > 0 ? this.askCurrentQuestion() : this.askSchedulingQuestion();
+  }
+
+  /**
+   * The questions the chosen Journey declares it needs, in order to build the right VERSION of
+   * itself for this person (D62 §2).
+   *
+   * It returns nothing at all in the ordinary case, and that is the design working: a user whose
+   * onboarding answers already place them on the Journey's axis is not asked again, and neither is
+   * anyone whose remaining versions no longer differ. The question exists for the people we know
+   * nothing about — who, at cold start, are most people.
+   *
+   * There is one candidate Journey per shape today, so it reads the first; when several Journeys
+   * per goal land, the professional choice happens before this line and this code does not change.
+   */
+  private journeyVariantQuestions(): DomainQuestion[] {
+    const shape = journeyShapeFor(this.spec.processType, this.spec.cadence);
+    const definition = journeyDefinitionsFor(shape, this.spec.domain)[0];
+    if (!definition) return [];
+    return variantInterviewQuestions(definition, { signals: profileSignals(this.profile) });
   }
 
   /**

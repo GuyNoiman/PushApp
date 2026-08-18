@@ -9,8 +9,11 @@
  */
 import type { OnboardingQuestionId, OnboardingStep } from './model';
 
-/** The two on-screen sections (PRD §8): Q1–Q4 vs Q5–Q6. */
-export type OnboardingSection = 'help' | 'friction';
+/**
+ * The three on-screen sections: Q1–Q4 (what you want), Q5–Q6 (what holds you back), and Q7–Q9 (how
+ * you like to work — added 2026-08-18 alongside D62).
+ */
+export type OnboardingSection = 'help' | 'friction' | 'approach';
 
 /** How a question is answered: pick one, pick up to a limit, or free text only (Q2). */
 export type OnboardingSelect = 'single' | 'multi' | 'text';
@@ -41,13 +44,23 @@ export interface OnboardingQuestion {
   freeText?: OnboardingFreeText;
 }
 
-/** Bump when the question SET changes, so a rebuilt Coach summary carries correct provenance (PRD §9). */
-export const ONBOARDING_VERSION = 1;
+/**
+ * Bump when the question SET changes, so a rebuilt Coach summary carries correct provenance (PRD §9).
+ * v2 (2026-08-18): Q7–Q9 added — starting mode, how much structure helps, how much challenge is
+ * wanted now (approved alongside D62). A v1 answer set stays valid and simply carries none of them.
+ */
+export const ONBOARDING_VERSION = 2;
 
 /**
- * The six questions (PRD §6). Option ids are semantic and stable; their copy is in i18n
- * (`onboarding:questions.<id>.options.<optionId>`). "Other" reveals free text; Q2 is text-only; Q6
- * carries an optional free-text add-on rather than an "Other" option.
+ * The nine questions (PRD §6, extended 2026-08-18). Option ids are semantic and stable; their copy
+ * is in i18n (`onboarding:questions.<id>.options.<optionId>`). "Other" reveals free text; Q2 is
+ * text-only; Q6 carries an optional free-text add-on rather than an "Other" option.
+ *
+ * Q7–Q9 ask how the person likes to WORK, and they exist because the matching layer had no way to
+ * separate two people who want the same thing and need opposite plans. Each is single-select with a
+ * real "I'm not sure" — an answer we can act on is worth more than a guess we cannot tell apart
+ * from one. None of them offers free text: they are ranking signals that must stay coarse ids (G1),
+ * and a free-text answer here could not reach a plan anyway.
  */
 export const ONBOARDING_QUESTIONS: readonly OnboardingQuestion[] = [
   {
@@ -139,6 +152,42 @@ export const ONBOARDING_QUESTIONS: readonly OnboardingQuestion[] = [
       { id: 'dontKnow' },
     ],
   },
+  {
+    id: 'q7',
+    section: 'approach',
+    select: 'single',
+    maxSelect: 1,
+    options: [
+      { id: 'clarityFirst' },
+      { id: 'actionFirst' },
+      { id: 'dependsGoal' },
+      { id: 'dontKnow' },
+    ],
+  },
+  {
+    id: 'q8',
+    section: 'approach',
+    select: 'single',
+    maxSelect: 1,
+    options: [
+      { id: 'detailedStructure' },
+      { id: 'lightStructure' },
+      { id: 'firmThenLoose' },
+      { id: 'dontKnow' },
+    ],
+  },
+  {
+    id: 'q9',
+    section: 'approach',
+    select: 'single',
+    maxSelect: 1,
+    options: [
+      { id: 'gentleNow' },
+      { id: 'meaningfulPush' },
+      { id: 'hardPush' },
+      { id: 'dontKnow' },
+    ],
+  },
 ] as const;
 
 /** The question ids in order (PRD §6). */
@@ -164,6 +213,9 @@ export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'q4',
   'q5',
   'q6',
+  'q7',
+  'q8',
+  'q9',
   'completion',
   'notifications',
 ];

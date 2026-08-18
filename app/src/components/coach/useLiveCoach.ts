@@ -29,6 +29,7 @@ import { SafetyLayer } from '@/core/coach/SafetyLayer';
 import type { DomainQuestion } from '@/core/learning/DomainExpert';
 import { SENSITIVE_DOMAINS } from '@/core/coach/sensitiveDomains';
 import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
+import type { CoachOnboardingSummary } from '@/core/onboarding/model';
 
 /**
  * The calm, always-safe hand-off shown when the goal routes to a sensitive domain, and the soft retry
@@ -81,6 +82,16 @@ export interface UseLiveCoach {
 export interface UseLiveCoachOptions {
   /** Inject a pre-built orchestrator (tests). Production omits it and builds the live one. */
   orchestrator?: CoachOrchestrator;
+  /**
+   * What onboarding already learned about this person, supplied by the screen (which owns the core).
+   * The orchestrator reads it for ONE thing: to skip a chosen Journey's variant question when the
+   * profile has already answered it (D62). Absent ⇒ the question is asked, which is the right
+   * behaviour for someone we know nothing about.
+   *
+   * It is passed IN rather than read here so this hook keeps working without an AppProvider, which
+   * is how every test drives it.
+   */
+  profile?: CoachOnboardingSummary | null;
 }
 
 /** Map an expert {@link DomainQuestion} onto the option-card view (index → id). */
@@ -120,6 +131,10 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         llm: makeCoachLlm(),
         guard: new SafetyLayer().messageGuard(),
         locale: i18n.language,
+        // What onboarding already learned, so the chosen Journey does not ask a question the user
+        // has answered (D62). Read once, at construction: an interview is one conversation, and a
+        // profile edited mid-interview must not change the questions under the user.
+        profile: options?.profile,
       });
   }
 

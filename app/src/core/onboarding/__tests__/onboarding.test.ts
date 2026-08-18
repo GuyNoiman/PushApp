@@ -28,15 +28,25 @@ import {
 const q = (id: string) => questionById(id)!;
 
 describe('onboarding config (PRD §6)', () => {
-  it('exposes exactly six questions with the documented select limits', () => {
-    expect(ONBOARDING_QUESTION_COUNT).toBe(6);
-    expect(ONBOARDING_QUESTION_IDS).toEqual(['q1', 'q2', 'q3', 'q4', 'q5', 'q6']);
+  it('exposes exactly nine questions with the documented select limits', () => {
+    // Nine since 2026-08-18: Q7–Q9 (starting mode, structure, challenge) were added alongside D62,
+    // because the matching layer had no way to separate two people who want the same thing and need
+    // opposite plans.
+    expect(ONBOARDING_QUESTION_COUNT).toBe(9);
+    expect(ONBOARDING_QUESTION_IDS).toEqual(['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9']);
     expect(q('q1').maxSelect).toBe(2); // up to two
     expect(q('q3').select).toBe('single');
     expect(q('q4').maxSelect).toBe(2);
     expect(q('q5').maxSelect).toBe(2);
     expect(q('q6').select).toBe('single');
     expect(q('q2').select).toBe('text');
+    // Q7–Q9 are single-select with no free text: they are ranking signals that must stay coarse
+    // ids (G1), and a sentence typed here could not reach a plan anyway.
+    for (const id of ['q7', 'q8', 'q9']) {
+      expect(q(id).select).toBe('single');
+      expect(q(id).freeText).toBeUndefined();
+      expect(q(id).options.some((o) => o.isOther)).toBe(false);
+    }
   });
 
   it('marks the correct sections and the terminal "Other" option', () => {
@@ -48,6 +58,10 @@ describe('onboarding config (PRD §6)', () => {
     // Q6 has no "Other" but an optional free-text add-on.
     expect(q('q6').options.some((o) => o.isOther)).toBe(false);
     expect(q('q6').freeText).toBe('optional');
+    // The third section: how this person likes to WORK, as opposed to what they want or what has
+    // broken them before.
+    expect(q('q7').section).toBe('approach');
+    expect(q('q9').section).toBe('approach');
   });
 
   it('numbers questions for progress and recognises question steps', () => {
@@ -55,6 +69,7 @@ describe('onboarding config (PRD §6)', () => {
     expect(isQuestionStep('intro')).toBe(false);
     expect(questionNumber('q1')).toBe(1);
     expect(questionNumber('q6')).toBe(6);
+    expect(questionNumber('q9')).toBe(9);
     expect(questionNumber('completion')).toBe(0);
   });
 
@@ -179,6 +194,9 @@ describe('toCoachSummary (PRD §9 handoff)', () => {
     expect(s.help).toEqual([]);
     expect(s.friction).toEqual([]);
     expect(s.outcome).toBeUndefined();
-    expect(s.skipped).toEqual(['q1', 'q2', 'q3', 'q4', 'q5', 'q6']);
+    expect(s.skipped).toEqual(['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9']);
+    expect(s.startingMode).toBeUndefined();
+    expect(s.structure).toBeUndefined();
+    expect(s.challenge).toBeUndefined();
   });
 });

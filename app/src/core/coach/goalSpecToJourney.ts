@@ -22,7 +22,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import type { Journey, JourneyStart, ParkedGoal } from '../types/domain';
+import type { Cadence, Journey, JourneyStart, ParkedGoal } from '../types/domain';
 import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
 import { getExpert } from '../learning/experts/registry';
@@ -33,10 +33,15 @@ import {
   type PlanOptions,
 } from '../learning/Planner';
 import { buildRecurringStructure, recurringOccurrences } from '../learning/library/buildRecurring';
-import { recurringSetupCount } from '../learning/library/recurringApproaches';
+import {
+  DEFAULT_RECURRING_APPROACH,
+  recurringSetupCount,
+} from '../learning/library/recurringApproaches';
+import { RECURRING_GENERIC } from '../learning/library/definitions';
+import type { LibraryRef } from '../learning/library/journeyDefinition';
 import type { GoalInput, JourneyShape, PlanConstraints } from '../learning/types';
 import type { JourneyEngine, NewJourneyInput } from '../engines/JourneyEngine';
-import type { GoalSpec } from './interviewPlaybook';
+import type { GoalSpec, ProcessType } from './interviewPlaybook';
 import { horizonDays, HORIZON_QUESTION_ID } from './horizonQuestion';
 
 /** The deterministic Planner's two inputs, produced from one {@link GoalSpec}. */
@@ -91,9 +96,20 @@ function goalInputFrom(spec: GoalSpec): GoalInput {
  *    first one for two months.
  */
 function shapeFrom(spec: GoalSpec): JourneyShape {
-  if (spec.processType === 'fixed' || spec.processType === 'recurring') return 'recurring';
-  if (spec.processType === 'progressive' || spec.processType === 'process') return 'process';
-  return spec.cadence === 'daily' || spec.cadence === 'weekly' ? 'recurring' : 'process';
+  return journeyShapeFor(spec.processType, spec.cadence);
+}
+
+/**
+ * The same derivation, from the two fields it actually depends on — exported so the INTERVIEW can
+ * know the shape at the moment the goal is understood, and ask the chosen Journey's own variant
+ * question there (D62 §2). One derivation, two callers: a second copy would eventually disagree
+ * about which shape a goal has, and the user would be asked a question about a Journey they were
+ * not going to get.
+ */
+export function journeyShapeFor(processType: ProcessType, cadence?: Cadence): JourneyShape {
+  if (processType === 'fixed' || processType === 'recurring') return 'recurring';
+  if (processType === 'progressive' || processType === 'process') return 'process';
+  return cadence === 'daily' || cadence === 'weekly' ? 'recurring' : 'process';
 }
 
 /**
@@ -151,7 +167,15 @@ export function buildJourneyInput(
         setupStepCount: recurringSetupCount(spec.approach),
       }),
     });
-    return planJourneyFromStructure(goal, constraints, structure, { ...options, durationDays: lengthDays });
+    // PROVENANCE (D62): which Journey and which of its versions this plan came from. The matcher
+    // fills it when it chooses; a spec that arrived with only an approach (or with none) is resolved
+    // here, so every library-built plan is attributable and the version's rating is counted from the
+    // same fact the plan was built from.
+    const libraryRef = libraryRefFor(spec);
+    return {
+      ...planJourneyFromStructure(goal, constraints, structure, { ...options, durationDays: lengthDays }),
+      ...(libraryRef ? { libraryRef } : {}),
+    };
   }
 
   if (hasAnswers(spec.answers) && expert.buildStructure) {
@@ -159,6 +183,24 @@ export function buildJourneyInput(
     return planJourneyFromStructure(goal, constraints, structure, options);
   }
   return planJourney(goal, constraints, expert, options);
+}
+
+/**
+ * The {@link LibraryRef} to stamp on a recurring plan: what the matcher chose, or — for a spec built
+ * without it — the version whose content is the approach the spec names. Resolved through the
+ * Journey's declared variants rather than by assuming a variant id equals an approach id, so the two
+ * may be renamed independently. Undefined when the approach matches no version, which is the honest
+ * answer: an unattributable plan must not be credited to a version we did not build.
+ */
+function libraryRefFor(spec: GoalSpec): LibraryRef | undefined {
+  if (spec.libraryRef) return spec.libraryRef;
+  const approach = spec.approach ?? DEFAULT_RECURRING_APPROACH;
+  const variant = RECURRING_GENERIC.variants.find(
+    (v) => v.build.kind === 'recurring' && v.build.approach === approach,
+  );
+  return variant
+    ? { definitionId: RECURRING_GENERIC.id, variantId: variant.id, version: RECURRING_GENERIC.version }
+    : undefined;
 }
 
 /**

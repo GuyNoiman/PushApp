@@ -1,30 +1,39 @@
 /**
- * matchApproach — which of the three recurring approaches to build for THIS person.
+ * matchApproach — the PROFILE half of choosing which version of a Journey this person gets.
  *
- * This is the matching layer's cold start (Plan_Library_and_Learning_PRD §7.5), and it is the first
- * thing in the app that has ever read the onboarding answers. Onboarding asks, in the user's own
- * first minutes, what tends to help them and what tends to get in their way; the answers were
- * stored, a summary was built for the coach, and `getOnboardingCoachSummary()` was then called by
- * nothing at all. Every plan the app has ever produced ignored them.
+ * This is the matching layer's cold start (Plan_Library_and_Learning_PRD §7.5), and it was the first
+ * thing in the app that ever read the onboarding answers: they were collected, summarised for the
+ * coach, and `getOnboardingCoachSummary()` was then called by nothing at all.
  *
- * WHAT IT IS NOT: a personality label, a score, or a prediction. It maps a stated obstacle onto the
- * approach designed for that obstacle, which is a hypothesis the user can overrule in one tap. The
- * moment there are real outcomes to learn from, this becomes the prior rather than the answer
- * (§7.2), and nothing here should ever grow into a classification of the user.
+ * WHAT CHANGED WITH D62. The mapping "this answer means that approach" used to live here, in code,
+ * as a table this file owned. It now lives in the JOURNEY that depends on it (`./definitions`),
+ * because nothing about what separates two versions is fixed in advance — one Journey's versions
+ * differ on friction, another's on certainty, another's on urgency, and a table here would have to
+ * know all of them. What is left in this file is the one thing that is genuinely about the USER and
+ * not about any Journey: **the order in which their answers are trusted.**
  *
- * WHY IT IS DETERMINISTIC AND EXPLAINS ITSELF: the `signal` it returns is the onboarding answer
- * that decided it. It exists so that the choice can be shown, questioned and — when the learning
- * loop eventually contradicts it — measured. A matcher that cannot say why it chose cannot be
- * checked, and one that cannot be checked will quietly drift toward recommending whatever is easy.
+ * FRICTION OUTRANKS HELP, deliberately: what breaks someone is a better predictor than what they
+ * believe helps them, and it is the thing they answered from experience rather than from preference.
+ * Within each group the user's own answer order is respected — the first one they picked is the one
+ * they thought of first. That ordering is what {@link ./selectVariant} reads as priority, so a
+ * Journey never has to re-state it.
+ *
+ * WHAT IT IS NOT: a personality label, a score, or a prediction. It hands a Journey the ids the user
+ * gave us, in order; the Journey decides what, if anything, they mean to it. The moment there are
+ * real outcomes to learn from, the rating becomes the tie-break (§7.2) — and never more than that,
+ * so a thin sample can never overrule something the user actually said.
  *
  * SECURITY-PRIVACY G1: reads only the coarse option IDs. The free-text fields (`helpOther`,
  * `frictionOther`, `outcome`, `capacityConstraints`) are ON-DEVICE-ONLY raw signal and are
- * deliberately NOT read here — the returned approach travels outward eventually, and nothing that
- * reaches it may derive from the user's own words.
+ * deliberately NOT read — the chosen variant travels outward eventually, and nothing that reaches it
+ * may derive from the user's own words.
  *
  * Pure TypeScript — no React, no i18n, no clock reads, no vendor imports.
  */
 import type { CoachOnboardingSummary } from '../../onboarding/model';
+import { RECURRING_GENERIC } from './definitions';
+import type { ProfileSignalId } from './journeyDefinition';
+import { selectVariant, type VariantChoice, type VariantContext } from './selectVariant';
 import { DEFAULT_RECURRING_APPROACH, type RecurringApproachId } from './recurringApproaches';
 
 /** The chosen approach, and the onboarding answer that chose it. */
@@ -39,55 +48,62 @@ export interface ApproachMatch {
 }
 
 /**
- * Which approach each onboarding answer argues for. CONFIG-BEFORE-CODE: this table IS the
- * hypothesis, written where it can be read and argued with rather than buried in branches.
+ * The profile as an ORDERED bag of ids, most telling first — the only shape the selector accepts,
+ * and the reason it needs no taxonomy of signal types (D62 §3).
  *
- *  - `tooMuchAtOnce` / `smallSteps` → start smaller than feels worth it. The user has told us that
- *    scale is what breaks them; the other two approaches do not change scale at all.
- *  - `lifeBusy` / `excitementFades` → attach it to an existing routine. Both are failures of
- *    OCCASION rather than of will: the action never found a moment in the day, or the moment
- *    stopped being motivating. An anchor supplies the occasion.
- *  - `noClearPlan` / `clearPlan` → prepare in advance. The user is telling us the friction is the
- *    deciding, not the doing; this approach moves all the deciding to the start.
+ * The order IS the priority: what breaks them, then what helps them, then the three matching
+ * questions that describe how they like to work (Q7 starting mode, Q8 structure, Q9 challenge).
+ * The last three are ranking signals rather than lived failures, which is why they sit at the end
+ * and can only decide a question the first two left open.
  *
- * Answers with no entry (`seeProgress`, `supportClose`, `flexibility`, `dontKnow` …) genuinely do
- * not discriminate between these three, and are left out rather than assigned somewhere plausible.
+ * Q1 (areas), Q2/Q3 (the goal itself and where they stand) and Q6 (capacity) are deliberately
+ * absent: the first two are about WHAT they want rather than how they work, and capacity already
+ * reaches the plan as real scheduling constraints rather than as a hint.
  */
-const SIGNAL_TO_APPROACH: Readonly<Record<string, RecurringApproachId>> = {
-  // Q5 — what tends to get in the way.
-  tooMuchAtOnce: 'tiny_start',
-  lifeBusy: 'anchor',
-  excitementFades: 'anchor',
-  noClearPlan: 'prepare',
-  // Q4 — what tends to help.
-  smallSteps: 'tiny_start',
-  clearPlan: 'prepare',
-};
+export function profileSignals(
+  profile: CoachOnboardingSummary | null | undefined,
+): ProfileSignalId[] {
+  if (!profile) return [];
+  return [
+    ...(profile.friction ?? []),
+    ...(profile.help ?? []),
+    ...(profile.startingMode ? [profile.startingMode] : []),
+    ...(profile.structure ? [profile.structure] : []),
+    ...(profile.challenge ? [profile.challenge] : []),
+  ];
+}
 
 /**
- * Choose an approach from the onboarding profile.
+ * Choose the version of the generic recurring Journey for this person — the full choice, with the
+ * Journey + version ids and the reason.
  *
- * FRICTION OUTRANKS HELP, deliberately: what breaks someone is a better predictor than what they
- * believe helps them, and it is the thing they answered from experience rather than from
- * preference. Within each group the user's own answer order is respected — the first one they
- * picked is the one they thought of first.
- *
- * A null/empty profile returns the safe default with `signal: 'default'`. That is not a failure
- * case: most users at cold start are exactly this, and a plan built on no information must not
- * pretend otherwise.
+ * `answers` are the user's own answers to THIS Journey's declared questions and outrank the profile;
+ * `ratings` are observed outcomes and are the weakest rung. A null/empty profile with nothing asked
+ * returns the declared default, reported as `'default'`: most users at cold start are exactly this,
+ * and a plan built on no information must not pretend otherwise.
+ */
+export function chooseRecurringVariant(
+  profile: CoachOnboardingSummary | null | undefined,
+  context: Omit<VariantContext, 'signals'> = {},
+): VariantChoice {
+  return selectVariant(RECURRING_GENERIC, { ...context, signals: profileSignals(profile) });
+}
+
+/**
+ * The same choice, reduced to the approach the plan builder needs. Kept as its own export because
+ * most callers want only "which of the three do I build", and because it is the signature every
+ * existing caller already uses.
  */
 export function chooseRecurringApproach(
   profile: CoachOnboardingSummary | null | undefined,
+  context: Omit<VariantContext, 'signals'> = {},
 ): ApproachMatch {
-  if (!profile) return { approach: DEFAULT_RECURRING_APPROACH, signal: 'default' };
-
-  for (const id of profile.friction ?? []) {
-    const approach = SIGNAL_TO_APPROACH[id];
-    if (approach) return { approach, signal: id };
-  }
-  for (const id of profile.help ?? []) {
-    const approach = SIGNAL_TO_APPROACH[id];
-    if (approach) return { approach, signal: id };
-  }
-  return { approach: DEFAULT_RECURRING_APPROACH, signal: 'default' };
+  const choice = chooseRecurringVariant(profile, context);
+  return {
+    approach:
+      choice.variant.build.kind === 'recurring'
+        ? choice.variant.build.approach
+        : DEFAULT_RECURRING_APPROACH,
+    signal: choice.signal,
+  };
 }

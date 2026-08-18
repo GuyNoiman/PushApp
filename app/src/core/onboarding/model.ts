@@ -27,11 +27,17 @@ export type OnboardingStep =
   | 'q4'
   | 'q5'
   | 'q6'
+  | 'q7'
+  | 'q8'
+  | 'q9'
   | 'completion'
   | 'notifications';
 
-/** The six questions (PRD §6). Every question is skippable; none is a diagnosis or score. */
-export type OnboardingQuestionId = 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'q6';
+/**
+ * The nine questions (PRD §6; Q7–Q9 added 2026-08-18 alongside D62). Every question is skippable;
+ * none is a diagnosis or score.
+ */
+export type OnboardingQuestionId = 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'q6' | 'q7' | 'q8' | 'q9';
 
 /**
  * The user's answers, stored ON DEVICE (PRD §9/§10). Keyed generically by question id so the flow
@@ -74,6 +80,23 @@ export interface CoachOnboardingSummary {
   /** Q6 — realistic-capacity category + optional constraints the Coach should account for. */
   capacity?: string;
   capacityConstraints?: string;
+  /**
+   * Q7–Q9 — how this person likes to WORK, as opposed to what they want (Q1–Q3) or what has broken
+   * them before (Q5). Added with D62, and each earns its place by the partner's own rule: if
+   * changing the answer would not change which Journey or which of its versions we build, the
+   * question does not belong in core onboarding.
+   *
+   *  - `startingMode` — clarity first, or action first.
+   *  - `structure`    — how much structure actually helps them.
+   *  - `challenge`    — how much of a push they want RIGHT NOW (a statement about this season of
+   *    their life, never a trait, and never carried forward as one).
+   *
+   * They reach a plan as ranking signals in an OPEN set (D62 §3): a Journey declares which of them
+   * it reads, and one that reads none of them is unaffected.
+   */
+  startingMode?: string;
+  structure?: string;
+  challenge?: string;
   /** Questions the user skipped (PRD §9 skipped/unknown markers). */
   skipped: OnboardingQuestionId[];
 }

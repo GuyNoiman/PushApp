@@ -55,6 +55,21 @@ describe('choosing an approach from what the user told us about themselves', () 
     expect(match.signal).toBe('default');
   });
 
+  it('reads the new "how do you like to work" answers when the friction answers are silent', () => {
+    // Q7–Q9 were added alongside D62 to separate two people who want the same thing and need
+    // opposite plans. They rank versions; they never place anyone on the friction axis.
+    expect(chooseRecurringApproach(profile({ startingMode: 'actionFirst' })).approach).toBe('tiny_start');
+    expect(chooseRecurringApproach(profile({ startingMode: 'clarityFirst' })).approach).toBe('prepare');
+    expect(chooseRecurringApproach(profile({ structure: 'lightStructure' })).approach).toBe('anchor');
+  });
+
+  it('still lets a lived failure outrank a stated working style', () => {
+    // Friction is answered from experience; how someone likes to work is answered from preference.
+    const conflicted = profile({ friction: ['tooMuchAtOnce'], startingMode: 'clarityFirst' });
+
+    expect(chooseRecurringApproach(conflicted).approach).toBe('tiny_start');
+  });
+
   it('says "default" out loud for a user who skipped onboarding', () => {
     expect(chooseRecurringApproach(null).signal).toBe('default');
     expect(chooseRecurringApproach(profile()).signal).toBe('default');

@@ -15,6 +15,9 @@ import type { ReplanAdjustment, StepAdjustment } from '../learning/types';
 // Type-only cross-import (erased at runtime — no cycle): the classified goal domain, so a parked
 // goal can be routed back to the right expert on activation. Same source the coach's DeferredGoal uses.
 import type { DomainId } from '../learning/experts/registry';
+// Type-only cross-import (erased at runtime — no cycle): which authored Journey + version built a
+// plan (D62). Authored ids only — the definitions live under core/learning/library.
+import type { LibraryRef } from '../learning/library/journeyDefinition';
 
 /** How often a Step is meant to recur. A Step may be one-time or repeating. */
 export type Cadence = 'once' | 'daily' | 'weekly';
@@ -313,6 +316,24 @@ export interface Journey {
    * social/sync path, exactly like {@link AppState.reasonLog}.
    */
   feedback?: JourneyFeedback;
+  /**
+   * WHICH Journey in the library, and WHICH of its versions, produced this plan (D62).
+   *
+   * Without it the whole learning layer is unbuildable: a verdict at the end of a Journey can only
+   * be counted for a version if we recorded which version was built. "Every variant is a separate
+   * entity holding a rating, and a variant's rating also feeds its Journey's" (founder, 2026-08-18)
+   * is a sentence about this field.
+   *
+   * Optional/additive: absent on every manually-built Journey, on every Journey created before the
+   * library existed, and on any plan the library did not produce. Absent means UNATTRIBUTED, never
+   * "the default variant" — counting an unattributed Journey toward a version would put outcomes we
+   * cannot explain into the evidence for a version we did not build.
+   *
+   * Ids and a version number only — coarse, authored, never derived from the user's words (G1), so
+   * this is the one part of a matched plan that may ever travel outward under the library PRD's
+   * Stage 3 consent gate.
+   */
+  libraryRef?: LibraryRef;
 }
 
 /**

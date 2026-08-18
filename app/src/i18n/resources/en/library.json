@@ -15,6 +15,14 @@
       "essence": "Do most of the work in advance, so the moment itself needs no decision.",
       "gather": "Get everything {ACTION} needs, and put it where you will see it",
       "place": "Set up the spot where {ACTION} is going to happen"
+    },
+    "axis": {
+      "friction": {
+        "question": "When you have tried to keep something up before, what usually got in the way?",
+        "noOccasion": "It never found a place in my day.",
+        "tooBig": "I took on more than I could keep up.",
+        "deciding": "Having to decide each time was the hard part."
+      }
     }
   }
 }

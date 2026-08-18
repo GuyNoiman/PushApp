@@ -36,6 +36,9 @@ const INTENT_RANK: Record<QuestionIntent, number> = {
   obstacles: 3,
   motivation: 4,
   milestones: 5,
+  // A Journey's own variant question is asked AFTER every expert question (D62), so it ranks last.
+  // No expert owns one: it belongs to the Journey, not to the domain.
+  variant: 6,
 };
 
 const EXPERTS: ReadonlyArray<readonly [string, DomainExpert]> = [

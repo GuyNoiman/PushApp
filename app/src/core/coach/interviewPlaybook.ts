@@ -27,6 +27,7 @@ import { addressContext } from '../../i18n/addressForm';
 import type { FeasibilityAssessment, InterviewAnswers } from '../learning/DomainExpert';
 import type { DomainId } from '../learning/experts/registry';
 import type { RecurringApproachId } from '../learning/library/recurringApproaches';
+import type { LibraryRef } from '../learning/library/journeyDefinition';
 import type { Cadence, DayPart } from '../types/domain';
 
 /** Resolve a `coachContent` string in the user's ACTIVE language + form of address (i18next core — no React, D31). */
@@ -316,6 +317,14 @@ export interface GoalSpec {
    * whom" from, so it is the one part of a recurring plan that may ever travel outward.
    */
   approach?: RecurringApproachId;
+  /**
+   * WHICH Journey in the library, and WHICH of its versions, this plan is being built from (D62).
+   * Filled by the matcher at build time alongside {@link approach}; it is what gets stamped on the
+   * created Journey so the user's verdict at the end can be counted for the version that produced
+   * it. Absent ⇒ the builder derives it from {@link approach}, and a plan the library did not build
+   * carries none at all.
+   */
+  libraryRef?: LibraryRef;
   /** Whether the user accepted the closing Support-Circle recommendation. */
   wantsSupportCircle?: boolean;
 

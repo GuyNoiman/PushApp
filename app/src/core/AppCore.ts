@@ -34,6 +34,7 @@ import { StreakEngine } from './engines/StreakEngine';
 import {
   createJourneyFromGoalSpec,
   dreamSignalFromSpec,
+  journeyShapeFor,
   parkedGoalToSpec,
 } from './coach/goalSpecToJourney';
 import { isSensitiveDomain } from './coach/sensitiveDomains';
@@ -53,7 +54,11 @@ import type { JourneyEdit } from './coach/journeyEdit';
 import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngine';
 import { setMockBusy, setMockLocation, type MockPlace } from './recovery/mockEnv';
 import { BehaviorModelEngine } from './learning/BehaviorModelEngine';
-import { chooseRecurringApproach } from './learning/library/matchApproach';
+import { profileSignals } from './learning/library/matchApproach';
+import { journeyDefinitionsFor } from './learning/library/definitions';
+import { selectVariant } from './learning/library/selectVariant';
+import { rateLibrary, variantScores } from './learning/library/variantRatings';
+import { axisAnswersFrom } from './coach/variantQuestions';
 import { planJourney } from './learning/Planner';
 import { GeneralExpert } from './learning/DomainExpert';
 import { replan } from './learning/AdaptivePlanner';
@@ -1177,14 +1182,16 @@ export class AppCore {
     // JourneyCreated save. Sensitive-domain goals are filtered out at capture and never parked.
     if (spec.deferredGoals?.length) this.parkDeferredGoals(spec);
 
-    // MATCH the plan to what the user already told us about themselves. Onboarding asks what tends
-    // to help them and what tends to get in their way; until now those answers were collected,
-    // summarised for the coach, and read by nothing. A spec that already names an approach (the
-    // user picked one of the other ways) is left exactly as it is — the match is a starting point,
-    // never an override of a choice the user made.
-    const matched: GoalSpec = spec.approach
-      ? spec
-      : { ...spec, approach: chooseRecurringApproach(this.getOnboardingCoachSummary()).approach };
+    // MATCH the plan to what the user already told us about themselves, and to what they told this
+    // Journey. Onboarding asks what tends to help them and what tends to get in their way; the
+    // chosen Journey then asks whatever IT declares it needs to pick between its own versions (D62),
+    // and those answers outrank the profile because they were given about this Journey, now. Where
+    // both are silent, the versions' own ratings break the tie, and failing that the Journey's
+    // declared default is used and reported as a default rather than dressed up as a match.
+    //
+    // A spec that already names an approach (the user picked one of the other ways) is left exactly
+    // as it is — the match is a starting point, never an override of a choice the user made.
+    const matched: GoalSpec = spec.approach ? spec : this.matchVariant(spec);
 
     const options = start.mode === 'scheduled' ? { now: start.at } : undefined;
     const journey = createJourneyFromGoalSpec(this.journeyEngine, matched, undefined, options, start);
@@ -1201,6 +1208,33 @@ export class AppCore {
       if (dream) this.journeyEngine.linkJourneyToDream(journey.id, dream.id, { primary: true });
     }
     return journey;
+  }
+
+  /**
+   * Choose WHICH VERSION of the chosen library Journey to build for this person, and stamp both the
+   * content it builds (`approach`) and its provenance (`libraryRef`) onto the spec (D62).
+   *
+   * The provenance is not bookkeeping: it is what makes a version a rated entity. Without it the end
+   * of this Journey produces a verdict that cannot be counted for anything, and the library can only
+   * ever compare on completion rate — which is how a learning loop starts recommending whatever is
+   * easiest to finish.
+   *
+   * Only the recurring Journey has versions today, so a `process` goal simply comes back unchanged.
+   */
+  private matchVariant(spec: GoalSpec): GoalSpec {
+    const shape = journeyShapeFor(spec.processType, spec.cadence);
+    const definition = journeyDefinitionsFor(shape, spec.domain)[0];
+    if (!definition) return spec;
+
+    const choice = selectVariant(definition, {
+      answers: axisAnswersFrom(definition, spec.answers),
+      signals: profileSignals(this.getOnboardingCoachSummary()),
+      ratings: variantScores(rateLibrary(this.state.journeys), definition.id),
+    });
+    const libraryRef = { definitionId: choice.definitionId, variantId: choice.variantId, version: choice.version };
+    return choice.variant.build.kind === 'recurring'
+      ? { ...spec, approach: choice.variant.build.approach, libraryRef }
+      : { ...spec, libraryRef };
   }
 
   // ── Future Journeys (Future Journey Management) ─────────────────────────────

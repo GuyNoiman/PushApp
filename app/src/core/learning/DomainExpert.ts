@@ -88,7 +88,8 @@ export type QuestionIntent =
   | 'time' // how much time you can allocate
   | 'obstacles' // what has gotten in the way before
   | 'motivation' // what keeps you going when it is hard
-  | 'milestones'; // whether to break the goal into intermediate Milestones
+  | 'milestones' // whether to break the goal into intermediate Milestones
+  | 'variant'; // which VERSION of the chosen Journey to build (D62) — declared by the Journey itself
 
 /**
  * One interview question an expert OWNS. Presents common CLOSED `options` (stable categories,

@@ -25,16 +25,17 @@
   },
   "intro": {
     "title": "Let's get to know you a little better",
-    "p1": "The next 6 short questions will help us understand what matters to you, what may hold you back, and what kind of approach could suit you.",
+    "p1": "The next 9 short questions will help us understand what matters to you, what may hold you back, and what kind of approach could suit you.",
     "p2": "The more accurately you answer, the better we can tailor your guidance and plan to your life.",
     "p3": "There are no right or wrong answers, and you can skip any question.",
-    "time": "Estimated time: about two minutes.",
+    "time": "Estimated time: about three minutes.",
     "start": "Start",
     "later": "Maybe later"
   },
   "sections": {
     "help": "How can we help you?",
-    "friction": "What holds you back?"
+    "friction": "What holds you back?",
+    "approach": "How do you like to work?"
   },
   "progress": "Question {{current}} of {{total}}",
   "other": "Something else",
@@ -123,6 +124,36 @@
         "moreWhenNeeded": "I can invest more when needed.",
         "changesWeekly": "It changes a lot from week to week.",
         "dontKnow": "I do not know yet."
+      }
+    },
+    "q7": {
+      "title": "When you start something new, what do you need first?",
+      "hint": "Select one.",
+      "options": {
+        "clarityFirst": "To see the whole picture clearly before I begin.",
+        "actionFirst": "To start with something small, and get clear as I go.",
+        "dependsGoal": "It depends what it is.",
+        "dontKnow": "I am not sure."
+      }
+    },
+    "q8": {
+      "title": "How much structure actually helps you?",
+      "hint": "Select one.",
+      "options": {
+        "detailedStructure": "A detailed plan. I want to know what to do and when.",
+        "lightStructure": "A light frame. A direction, and room to decide as I go.",
+        "firmThenLoose": "Firm at the start, looser once it becomes routine.",
+        "dontKnow": "I am not sure."
+      }
+    },
+    "q9": {
+      "title": "How much of a challenge do you want right now?",
+      "hint": "Select one.",
+      "options": {
+        "gentleNow": "Something gentle. This is not the season to push.",
+        "meaningfulPush": "A real push, but one I can keep up.",
+        "hardPush": "As demanding as I can take.",
+        "dontKnow": "I am not sure."
       }
     }
   },

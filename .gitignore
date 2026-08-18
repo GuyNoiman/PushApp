@@ -30,3 +30,6 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+
+# Supabase CLI scratch state (project ref cache) — never useful in git.
+app/supabase/.temp/

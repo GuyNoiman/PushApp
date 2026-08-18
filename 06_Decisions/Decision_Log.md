@@ -16,6 +16,40 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > the 2026-08-17/18 handoff's defect list and turned into the first real build of the architecture in
 > D52. Engineering detail is in `00_Foundation/CHANGELOG.md`; this log records the founder decisions.
 
+### D61 — The meta-agent is a router, a summariser and a translator; the experts hold a real dialogue
+**Decision (founder, 2026-08-18), clarifying the coach architecture:**
+
+> "סוכן העל מבין לאן להפנות את הפנייה של המשתמש, ייתכן והוא גם יתמצת וימקד את מה שאמר המשתמש ואז את
+> הסיכום הוא מעביר למומחים הרלוונטים, יחד עם המידע על המשתמש וכל מה שצריך כדי שהמומחה יוכל לבנות
+> תהליך כמו שצריך (או להחזיר שאלות רלוונטיות) … יש פינג פונג בין המשתמש למומחה כשבאמצע נמצא סוכן העל
+> שמתרגם את ההודעות לנוסח שמתאים למשתמש ולבסוף התוכנית נבנית."
+
+**The standard he set:** *"התהליך הזה חייב להיות מצוין, שאלות רלוונטיות, מקיפות, יסודיות, שבסופן
+נבחרת התוכנית הכי מתאימה עבור המשתמש."*
+
+**What already matches.** The two-layer model is the shipped shape: the meta-agent understands the
+opening, routes to a `DomainExpert` by domain, and is the SOLE user-facing voice — the expert is an
+internal tool that never speaks to the user (`CoachOrchestrator`).
+
+**The four gaps this decision opens, stated precisely so they are not mistaken for done:**
+
+1. **The summary is a title.** Understanding extracts `{ title, kind, domain }` and discards
+   everything else the user said. The *why*, the constraint, the history in the same sentence never
+   reach the expert. "A summary passed to the expert" does not exist yet — a label does.
+2. **The expert never sees the user.** `buildStructure(goal, answers, constraints)` takes no profile.
+   What the user told onboarding about what helps them and what defeats them reaches the approach
+   matcher (D54/D56) and nothing else.
+3. **There is no ping-pong.** The expert's questions are a fixed ordered list from config; it cannot
+   ask a follow-up in response to an answer. The interview is a questionnaire, not a dialogue, and
+   "comprehensive, thorough questions" is not reachable without the expert being able to ask again.
+4. **Re-voicing is a template lookup, not translation.** `metaVoiced` resolves a per-intent string,
+   so the question the user reads is generic — it does not reflect what they just said. Deliberate
+   (it keeps LLM usage to one call) and now insufficient against the standard above.
+
+**Categorization:** **Approved** as the architecture. **Gaps 1–4 are open work**, sequenced after the
+Journey Library and before Apple/Google sign-in per the founder's ordering, 2026-08-18.
+**Reflected in:** `app/src/core/coach/CoachOrchestrator.ts`, `app/src/core/learning/DomainExpert.ts`.
+
 ### D54 — A plan has a SHAPE: a repeated action is not a staged process, and must not be given an arc
 **Decision (founder, 2026-08-18).** Asked for the goals he actually wants, the founder named two kinds:
 

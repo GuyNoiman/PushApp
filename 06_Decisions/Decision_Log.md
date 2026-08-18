@@ -16,6 +16,65 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > the 2026-08-17/18 handoff's defect list and turned into the first real build of the architecture in
 > D52. Engineering detail is in `00_Foundation/CHANGELOG.md`; this log records the founder decisions.
 
+### D62 — A Journey declares what its own variants differ on; every variant is a rated entity
+**Decision (founder, 2026-08-18),** arrived at across one conversation while reviewing the partner's
+matching-profile and Career-variant files.
+
+**1. Nothing about the difference between variants is fixed in advance.**
+
+> "לא נקבע מראש מה הפרמטרים שיכולים להשתנות בין הוריאנטים, כל מסע יגדיר בעצמו מה ההבדל בין הגרסאות
+> השונות … במקרה אחד זה יכול להיות רמת וודאות, במקרה אחר זמן פנוי, במקרה אחר כמה דחיפות יש למשתמש"
+
+One Journey's versions may differ on how much certainty the user wants before the first real-world
+test; another's on available time; another's on urgency. The engine knows no closed list of possible
+differences — it reads what each Journey declares about itself. **Adding a new kind of difference is
+CONTENT, not code.**
+
+**2. Variant-selection questions come AFTER the Journey is chosen, and only what that Journey needs.**
+The expert first decides which Journey fits professionally; then it asks the questions that *this*
+Journey declared it needs in order to pick between its own versions. Nobody is asked a question that
+cannot change their answer — which is the partner's own rule ("if changing the answer would not
+change the Journey we choose, the question should not be in core onboarding") applied one level down.
+
+**3. There is no fixed taxonomy of signal types.** The partner's file sorts onboarding signals into
+three jobs (rank a variant / veto a family / reveal a missing comparison). The founder accepted the
+*structure* and rejected the *closed set*:
+
+> "אין שלושה סוגי אותות אלה יותר סוגי אותות ובהמשך לכל מידע בפרופיל תהיה השפעה על בחירת המסע והוריאנט"
+
+So the profile is an OPEN set of fields, and a field's job is whatever the Journey or variant that
+reads it says it is — not a category we assigned it up front.
+
+**4. Every variant is a separate entity that holds its own rating, and a variant's rating also feeds
+its Journey's.** Raised against the objection that per-Journey axes would make cross-Journey learning
+impossible:
+
+> "אין סיבה שלא נתייחס לכל וריאנט של מסע כאובייקט נפרד, ישות נפרדת, המחזיקה דירוג (כלומר כל דירוג של
+> וריאנט משפיע גם על המסע וגם על הוריאנט)"
+
+This dissolves the objection: we can always say which Journey ranked well AND which of its versions
+did, because both carry a rating and the rollup is defined.
+
+**Two things this decision settles that were open:**
+- **Terminology.** Same Milestones, different pace or path ⇒ the same Journey in another version.
+  Different Milestones ⇒ **a different Journey for the same goal** (the founder's own rule, this
+  session). The partner's v0.3 file calls the latter "variants"; **their vocabulary must be aligned
+  to ours before that content is ingested**, or the term forks again.
+- **Language.** The partner's `02_Career_Direction_3_Variants_v0.3.json` is authored in Hebrew, which
+  contradicts D55 (content authored in English, the meta-agent translates). The founder's ruling is
+  to align to the rule he set — so partner content is authored in English from here.
+
+**Approved alongside:** add the three matching questions we do not ask (starting mode — clarity
+first vs action first; how much structure helps; how much challenge is wanted now), and improve the
+wording of the ones we do ask where the partner's is better. `realisticCapacity` and
+`abandonmentPattern` already exist and already reach planning; `previousSuccessPattern` exists in a
+weaker form (what helps you in general, rather than what kept a change you actually sustained).
+
+**Categorization:** **Approved.** **NOT YET BUILT** — this is the specification the next build works
+from.
+**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (to be widened),
+`app/src/core/learning/library/`, `app/src/core/onboarding/questions.ts`.
+
 ### D61 — The meta-agent is a router, a summariser and a translator; the experts hold a real dialogue
 **Decision (founder, 2026-08-18), clarifying the coach architecture:**
 

@@ -8,6 +8,12 @@
  *   • the error path: a throwing triage surfaces a calm retry line and leaves the opening reopened,
  *     never crashing.
  */
+// `makeCoachLlm` now reaches the shared Supabase client (to authenticate the coach against our
+// key-holding proxy instead of shipping the API key in the bundle), which pulls in AsyncStorage.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 import { createElement, type ReactElement } from 'react';
 
 import { CoachOrchestrator } from '@/core/coach/CoachOrchestrator';

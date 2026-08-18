@@ -55,6 +55,23 @@ export interface GeminiClientOptions {
   timeoutMs?: number;
   /** Injectable fetch, so tests never touch the network. Defaults to global `fetch`. */
   fetchImpl?: typeof fetch;
+  /**
+   * PROXY MODE. When set, the request goes to THIS url (our `gemini-proxy` Edge Function) instead
+   * of to Google, carrying the user's Supabase session instead of an API key — and the key is not
+   * in the app at all.
+   *
+   * This is the mode a shipped build must use. Direct mode reads the key from
+   * `EXPO_PUBLIC_GEMINI_API_KEY`, which Metro INLINES into the JavaScript bundle: anyone who
+   * installs the app can extract it and bill the founder's card, with no ceiling. Direct mode
+   * survives only for Node, tests and the dev harness, where there is no session to authenticate.
+   */
+  proxyUrl?: string;
+  /**
+   * Supplies the caller's Supabase access token for proxy mode. Async because the session may need
+   * refreshing. Returning null means "not signed in" and the call fails cleanly rather than being
+   * sent unauthenticated.
+   */
+  getAccessToken?: () => Promise<string | null>;
 }
 
 /** The minimal slice of the Gemini `generateContent` response we read. */
@@ -73,6 +90,8 @@ export class GeminiClient implements LlmClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly proxyUrl?: string;
+  private readonly getAccessToken?: () => Promise<string | null>;
 
   constructor(options: GeminiClientOptions = {}) {
     // The `process.env.EXPO_PUBLIC_GEMINI_API_KEY` literal MUST stay verbatim so Metro inlines it
@@ -87,15 +106,33 @@ export class GeminiClient implements LlmClient {
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
+    this.proxyUrl = options.proxyUrl?.trim() || undefined;
+    this.getAccessToken = options.getAccessToken;
+  }
+
+  /** True when this client routes through our own proxy and therefore holds no API key. */
+  private get usesProxy(): boolean {
+    return this.proxyUrl !== undefined;
   }
 
   async complete(request: LlmRequest): Promise<LlmResult> {
-    if (!this.apiKey) {
+    // In proxy mode there is deliberately no key to check — that is the whole point.
+    if (!this.usesProxy && !this.apiKey) {
       // Fail with a clear, secret-free reason rather than sending an unauthenticated call.
       throw new LlmError('GEMINI_API_KEY is not set', undefined, 'config');
     }
 
-    const url = `${this.baseUrl}/models/${encodeURIComponent(this.model)}:generateContent`;
+    // Proxy mode authenticates as the USER; a missing session must fail here rather than reach the
+    // function and be rejected there, so the reason the user sees is the true one.
+    let accessToken: string | null = null;
+    if (this.usesProxy) {
+      accessToken = (await this.getAccessToken?.()) ?? null;
+      if (!accessToken) throw new LlmError('No signed-in session for the coach', undefined, 'config');
+    }
+
+    const url = this.usesProxy
+      ? this.proxyUrl!
+      : `${this.baseUrl}/models/${encodeURIComponent(this.model)}:generateContent`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -105,10 +142,19 @@ export class GeminiClient implements LlmClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Header auth keeps the key out of the URL / any redirect or access log.
-          'x-goog-api-key': this.apiKey,
+          // Proxy: the caller's own session. Direct: header auth, which keeps the key out of the
+          // URL and therefore out of any redirect or access log.
+          ...(this.usesProxy
+            ? { Authorization: `Bearer ${accessToken}` }
+            : { 'x-goog-api-key': this.apiKey }),
         },
-        body: JSON.stringify(buildRequestBody(request)),
+        // The proxy takes the model as data (it allowlists it) and passes the body through
+        // verbatim, so the response shape parsed below is identical in both modes.
+        body: JSON.stringify(
+          this.usesProxy
+            ? { model: this.model, body: buildRequestBody(request) }
+            : buildRequestBody(request),
+        ),
         signal: controller.signal,
       });
     } catch (err) {

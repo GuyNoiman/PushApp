@@ -84,13 +84,20 @@ export const featureFlags = {
   adaptiveCoachDev: Boolean(process.env.EXPO_PUBLIC_ADAPTIVE_COACH),
   /**
    * LIVE conversational coach — routes the Coach tab through the REAL {@link CoachOrchestrator}
-   * over live Gemini (behind the LlmClient seam) instead of the scripted UI prototype. OPT-IN and
-   * FOUNDER-DEVICE-ONLY: on only when `EXPO_PUBLIC_GEMINI_API_KEY` is present, which lives solely in
-   * the founder's git-ignored `.env.local` and is never committed — so every other build (and CI)
-   * keeps the free, offline scripted prototype with zero behaviour change. Outbound text is redacted
-   * ({@link ../llm/RedactingLlmClient}) before it crosses the cloud boundary (G1).
+   * over live Gemini (behind the LlmClient seam) instead of the scripted UI prototype. Outbound
+   * text is redacted ({@link ../llm/RedactingLlmClient}) before it crosses the cloud boundary (G1).
+   *
+   * ON when the coach can REACH a provider, by either route:
+   *  · through our `gemini-proxy` Edge Function, which needs only the Supabase env — the key is on
+   *    the server, so this is the route every shipped build takes; or
+   *  · directly, when `EXPO_PUBLIC_GEMINI_API_KEY` is present (Node, tests, the dev harness).
+   *
+   * This used to be gated on the API key alone, which was correct while the key had to be in the
+   * bundle for the coach to work at all. Moving the key to the server INVERTED that: keeping the
+   * old condition would have turned the live coach off in exactly the builds that can now use it
+   * safely, and left it on only where the key is still exposed.
    */
-  liveCoach: Boolean(process.env.EXPO_PUBLIC_GEMINI_API_KEY),
+  liveCoach: Boolean(process.env.EXPO_PUBLIC_GEMINI_API_KEY || (url && key)),
   /**
    * Smart Notification Timing (Smart_Notification_Timing_PRD) — the on-device learning loop that
    * proposes a better send time for a Journey's reminder in Weekly Review. OPT-IN and

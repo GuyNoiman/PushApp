@@ -14,6 +14,12 @@
  * `t` is stubbed to echo its key; theme, safe-area and the live orchestrator are stubbed so the
  * screen renders without a network call or a provider tree.
  */
+// `makeCoachLlm` now reaches the shared Supabase client (to authenticate the coach against our
+// key-holding proxy instead of shipping the API key in the bundle), which pulls in AsyncStorage.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 import { createElement, type ReactElement } from 'react';
 
 import CoachScreen from '../coach';

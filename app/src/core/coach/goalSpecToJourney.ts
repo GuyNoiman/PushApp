@@ -37,6 +37,7 @@ import { recurringSetupCount } from '../learning/library/recurringApproaches';
 import type { GoalInput, JourneyShape, PlanConstraints } from '../learning/types';
 import type { JourneyEngine, NewJourneyInput } from '../engines/JourneyEngine';
 import type { GoalSpec } from './interviewPlaybook';
+import { horizonDays, HORIZON_QUESTION_ID } from './horizonQuestion';
 
 /** The deterministic Planner's two inputs, produced from one {@link GoalSpec}. */
 export interface GoalPlanInputs {
@@ -135,18 +136,22 @@ export function buildJourneyInput(
   // still routed the domain, still ran its interview, and still shaped the constraints above — it
   // is only the ARC that a recurring goal does not want.
   if (goal.shape === 'recurring') {
+    // ONE length, used for both the number of repetitions and the Journey's own duration. Computing
+    // it here and passing it down is what keeps them agreeing: the Planner would otherwise fall back
+    // to its standing default and lay 30 days of Steps inside a 56-day Journey.
+    const lengthDays = recurringLengthDays(spec, constraints, options);
     const structure = buildRecurringStructure({
       goal,
       approach: spec.approach,
       occurrences: recurringOccurrences({
-        durationDays: recurringLengthDays(constraints, options),
+        durationDays: lengthDays,
         preferredDays: constraints.preferredDays,
         // Read off the approach, never assumed: one added later with three setup Steps stays
         // correct without touching this call.
         setupStepCount: recurringSetupCount(spec.approach),
       }),
     });
-    return planJourneyFromStructure(goal, constraints, structure, options);
+    return planJourneyFromStructure(goal, constraints, structure, { ...options, durationDays: lengthDays });
   }
 
   if (hasAnswers(spec.answers) && expert.buildStructure) {
@@ -161,7 +166,16 @@ export function buildJourneyInput(
  * mint. The Planner computes the Journey's real `durationDays` from the same two inputs, so the two
  * cannot disagree.
  */
-function recurringLengthDays(constraints: PlanConstraints, options?: PlanOptions): number {
+function recurringLengthDays(
+  spec: GoalSpec,
+  constraints: PlanConstraints,
+  options?: PlanOptions,
+): number {
+  // The user's OWN answer first. The coach now asks how long they want to give this, so the old
+  // eight-week fallback is reached only by someone who chose "no fixed end" or skipped the
+  // question — never by someone who was simply never asked (founder, 2026-08-18).
+  const chosen = horizonDays(spec.answers?.[HORIZON_QUESTION_ID]);
+  if (chosen != null) return chosen;
   if (constraints.targetDate != null) {
     const now = options?.now ?? Date.now();
     const days = Math.ceil((constraints.targetDate - now) / (24 * 60 * 60 * 1000)) + 1;

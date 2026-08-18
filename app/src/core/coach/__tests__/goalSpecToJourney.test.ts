@@ -4,6 +4,7 @@
  * habit-shaped Journey while a progressive spec plans a Milestone-shaped one, that missing/edge
  * timing degrades safely, and that ON-DEVICE-ONLY motivation/failureRisks never leak into the plan.
  */
+import { horizonQuestion, HORIZON_QUESTION_ID } from '../horizonQuestion';
 import { EventBus } from '../../events/EventBus';
 import { JourneyEngine } from '../../engines/JourneyEngine';
 import { GeneralExpert } from '../../learning/DomainExpert';
@@ -412,5 +413,43 @@ describe('answer-aware build path (buildStructure)', () => {
     );
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+});
+
+describe('the Journey length is asked, not assumed', () => {
+  it('honours the length the user chose over the standing default', () => {
+    // The founder's objection: "a protein shake could be just a month". A default nobody was ever
+    // asked about is not a default — it is a decision the app made and never mentioned.
+    const oneMonth = horizonQuestion().options[0];
+    const spec: GoalSpec = {
+      title: 'Drink a protein shake',
+      domain: 'body_image',
+      processType: 'recurring',
+      isHabit: true,
+      milestones: [],
+      failureRisks: [],
+      timing: {},
+      answers: { [HORIZON_QUESTION_ID]: oneMonth },
+    };
+
+    expect(buildJourneyInput(spec, GeneralExpert, { now: NOW }).durationDays).toBe(30);
+  });
+
+  it('keeps the standing default for someone who chose no fixed end', () => {
+    const openEnded = horizonQuestion().options[3];
+    const spec: GoalSpec = {
+      title: 'Drink a protein shake',
+      domain: 'body_image',
+      processType: 'recurring',
+      isHabit: true,
+      milestones: [],
+      failureRisks: [],
+      timing: {},
+      answers: { [HORIZON_QUESTION_ID]: openEnded },
+    };
+
+    // "No fixed end" is a real answer, not a polite way of saying eight weeks — but the plan still
+    // needs a length to lay Steps inside, so it falls to the standing default.
+    expect(buildJourneyInput(spec, GeneralExpert, { now: NOW }).durationDays).toBe(56);
   });
 });

@@ -65,6 +65,7 @@ import {
   buildTriageDirective,
 } from './coachPrompts';
 import { DEFAULT_STYLE_ID, getStyle } from './communicationStyles';
+import { horizonQuestion } from './horizonQuestion';
 import { deriveConstraints } from './goalSpecToJourney';
 import {
   INTERVIEW_PLAYBOOK,
@@ -457,7 +458,9 @@ export class CoachOrchestrator {
     this.spec.activeExpertDisplayName = this.activeExpert.displayName;
 
     this.goal = { title: this.spec.title, isHabit: this.spec.isHabit };
-    const all = this.expert.interviewQuestions?.(this.goal) ?? [];
+    // The expert's own questions, plus the ONE question that is not domain knowledge: how long the
+    // user wants to give this. It used to be assumed (eight weeks, silently) rather than asked.
+    const all = [...(this.expert.interviewQuestions?.(this.goal) ?? []), horizonQuestion()];
     this.questions = questionsForProcessType(all, this.spec.processType);
     this.questionIndex = 0;
     this.phase = 'questions';

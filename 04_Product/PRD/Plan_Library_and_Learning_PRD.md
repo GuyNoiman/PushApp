@@ -9,6 +9,13 @@ build.** The founder set the direction on 2026-08-17 and widened it on 2026-08-1
 data boundary. What is **not** decided is the objective function's final form, the participating domains,
 the consent model, and the k-threshold — §17's blocking questions, which are the founder's.
 
+**Build status (added 2026-08-18, later session — the header above is kept as written):** Stage 0–1 is no
+longer only a specification. The recurring plan shape, the slot-filled templates and the end-of-Journey
+label shipped earlier the same day; **§6.5–§6.6 (D62) shipped in the later session** — a Journey declares
+its own variant axis, its question is asked only when it can change the answer, and every variant is a
+rated entity with provenance on the Journey. §§7, 11–13 (conditional discovery, the outbound record, the
+central loop) remain unbuilt and still require the reviewers named below.
+
 Stage: **MVP** for Layers 1–2 as local, on-device capability (§15 Stages 0–1, buildable now with no
 backend and no privacy change) → **Commercial** for the outbound record and the central learning loop
 (§15 Stages 3–4). The marketplace layer (§10) is **Future** and is only designed *against*, not designed.
@@ -138,6 +145,8 @@ signatures and are re-implemented to select from the library rather than to hard
 | **Journey** | One person's live, personal, finite transformation. Unchanged, canonical. | — |
 | **Journey Template** | An authored, inert, reusable structure in the library: a Milestone arc, its Step templates, the conditions it suits, its ambition level, its provenance and version. A Journey is *instantiated from* a Journey Template. | A Journey. A template is nobody's; a Journey is somebody's. |
 | **Journey Library** | The versioned corpus of Journey Templates. Our content. | The user's list of Journeys. |
+| **Variant** | One VERSION of a Journey Template: same Milestones, different pace or path. It is a separately addressable entity that holds its own rating (§6.6, D62). | A different Journey. **Different Milestones ⇒ a different Journey for the same goal**, not a variant — the founder's own rule, 2026-08-18. |
+| **Variant axis** | The dimension a Journey's own versions differ on, DECLARED BY THAT JOURNEY (§6.5, D62). Certainty, available time, urgency, friction — an open set. | A global taxonomy. There is none, deliberately. |
 | **User Profile** | The on-device operational model of one person (§5). | The `pushapp.profile` identity blob (name, country, birth date), which is a different, existing thing and is **not** this. |
 | **Cohort** | A coarse bucket of user attributes, used only for aggregate learning. Never an individual. | A segment for messaging. It is never used to address anyone. |
 
@@ -321,6 +330,82 @@ cancellation and quiet-death hosts belong to `Journey_Abandonment_PRD.md` (still
 open questions) and to a surface that does not exist yet. **Recommendation:** one continuation PRD
 owning all three hosts as a single feedback moment with three entry points, so the copy and the data
 shape cannot drift apart. Sited here as a dependency; not written by this document.
+
+### 6.5 A Journey declares what its OWN versions differ on (D62)
+
+**Decision, founder 2026-08-18. BUILT.** Nothing about the difference between two versions of a Journey
+is fixed in advance:
+
+> "לא נקבע מראש מה הפרמטרים שיכולים להשתנות בין הוריאנטים, כל מסע יגדיר בעצמו מה ההבדל בין הגרסאות
+> השונות … במקרה אחד זה יכול להיות רמת וודאות, במקרה אחר זמן פנוי, במקרה אחר כמה דחיפות יש למשתמש"
+
+One Journey's versions differ on how much certainty the user wants before the first real-world test;
+another's on available time; another's on urgency. **The engine holds no list of possible differences.**
+A Journey Template carries its own *axes* — the dimensions its versions differ on — each with the
+question that places a user on it, and each version says where it sits. Adding a new kind of difference
+is **content**: a definition entry plus its copy in the translation cache.
+
+Three consequences, all load-bearing:
+
+1. **The variant question comes AFTER the Journey is chosen, and is only what that Journey asks.** The
+   expert decides which Journey fits professionally; then the chosen Journey asks what *it* needs. This
+   is the partner's own onboarding rule ("if changing the answer would not change the Journey we choose,
+   the question should not be there") applied one level down, and it is enforced mechanically: an axis
+   the profile already answers is not asked, and an axis whose surviving versions no longer differ is
+   not asked.
+2. **There is no fixed taxonomy of signal types.** The partner's file sorts onboarding signals into three
+   jobs (rank a variant / veto a family / reveal a missing comparison). The structure was accepted and
+   the closed set rejected — *"אין שלושה סוגי אותות אלה יותר סוגי אותות ובהמשך לכל מידע בפרופיל תהיה
+   השפעה על בחירת המסע והוריאנט"*. The profile is an OPEN set of ids, and a field's job is whatever the
+   Journey reading it says it is: either it places the user on a declared axis, or it ranks versions.
+3. **The order of evidence is fixed even though the content is not.** What the user told *this* Journey,
+   then what the profile argues, then what outcomes say, then the Journey's declared default — reported
+   honestly as a default rather than dressed up as a match.
+
+### 6.6 Every variant is a rated entity, and its rating also feeds its Journey's (D62)
+
+Per-Journey axes raise an obvious objection: if the axes do not line up across Journeys, cross-Journey
+learning looks impossible. The founder's answer removes the trade rather than accepting it:
+
+> "אין סיבה שלא נתייחס לכל וריאנט של מסע כאובייקט נפרד, ישות נפרדת, המחזיקה דירוג (כלומר כל דירוג של
+> וריאנט משפיע גם על המסע וגם על הוריאנט)"
+
+So one outcome is counted for **both** objects, and both questions stay answerable: which Journey ranked
+well, and which of its versions did. §6.2's four quality signals are per-variant measures that roll up;
+the roll-up never replaces the breakdown.
+
+Three rules the implementation holds to, each of them a way an honest aggregate is normally lost:
+
+- **A Journey we cannot attribute is not evidence.** Provenance (`Journey.libraryRef`: definition id,
+  variant id, content version) is stamped when the plan is built. A Journey without it is ignored, never
+  credited to the default version.
+- **A version below the support floor has NO score, not a zero.** Missing data is not a negative
+  (§7.3's "support on both sides", applied locally).
+- **Downranking is allowed; deletion is not** (§8.6). A low rating changes an order, never the set of
+  things a user can be offered.
+
+**The user is not shown the alternatives (D63, founder, same day).** The app asks the Journey's guiding
+question and picks the version itself; there is no screen offering three plans side by side. Putting the
+choice in front of someone at the moment they have least information about themselves invites picking the
+easiest-looking one, which is the failure §8.3 exists to block. This is a decision about the SURFACE
+only — every version remains a separately addressable, rated entity, and the choice still explains itself
+by the answer that produced it.
+
+**What is built and what is not (2026-08-18):** the declaration model, the selection ladder, the asked-
+only-when-it-matters rule, the ratings and their roll-up, and provenance — all on device, for the
+RECURRING shape, whose three approaches (§6.1's seed content) are now that Journey's three declared
+versions. **Variants for a PROCESS goal are still open** and are a founder decision (whether authored
+arcs replace a domain expert's arc or shape movement through it); nothing substitutes one in the
+meantime. No rating leaves the device: the outbound loop remains §15 Stage 3+.
+
+### 6.7 Two things D62 settles about the partner's content
+
+- **Terminology.** Their v0.3 file calls journeys-with-different-Milestones "variants"; by the founder's
+  own rule those are **different Journeys for the same goal**. Their vocabulary must be aligned to ours
+  **before that content is ingested**, or the term forks again.
+- **Language.** `02_Career_Direction_3_Variants_v0.3.json` is authored in Hebrew, which contradicts D55
+  (authored in English, translated once per language into the cache). Partner content is authored in
+  English from here.
 
 ---
 

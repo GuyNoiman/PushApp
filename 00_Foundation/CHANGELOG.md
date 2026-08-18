@@ -4,6 +4,67 @@ Status: Living Document
 
 ---
 
+# 2026-08-18 (later) — a Journey declares its own variant axis, and every variant is a rated entity (D62/D63)
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` unchanged (3 pre-existing errors in two test
+files, none from this work) · **jest 1589 passing / 155 suites** (from 1550 / 150 at session start; five
+new suites, 37 new tests, two existing suites extended). Builds Decision **D62**, which was recorded the
+same day as a specification and is marked here as the build that implements it. **D63** was decided while reviewing this build and is
+recorded below.
+
+## What was fixed in the architecture, not in a screen
+
+Before this, "which of three approaches suits you" was a table in the matcher's own code. That table
+could only ever hold ONE kind of difference, and the founder's ruling is that there is no such thing:
+*"nothing is fixed in advance about which parameters may vary between the variants; every Journey defines
+for itself what the difference between its versions is … in one case it can be the level of certainty, in
+another free time, in another how urgent it is."*
+
+- **A Journey declares its own axes** (`learning/library/journeyDefinition.ts` + `definitions.ts`). Axis
+  ids, axis values and profile-field ids are OPEN strings. The engine reads ids and knows what none of
+  them mean, which is what makes a new kind of difference **content, not code** — a test proves it by
+  selecting on a `certainty` axis that exists only inside the test file.
+- **The variant question is asked AFTER the Journey is chosen, and only when it can change the answer**
+  (`selectVariant.ts`, `coach/variantQuestions.ts`). An axis the profile already answers is not asked;
+  an axis whose surviving versions no longer differ is not asked. The interview appends it after the
+  expert's questions and the horizon question, because that is the first moment the Journey is known.
+- **No fixed taxonomy of signal types.** The profile reaches the selector as an ORDERED list of ids,
+  most telling first, and a Journey decides which of them it reads and what job each one does — either it
+  places the user on a declared axis or it ranks the versions. `matchApproach.ts` keeps exactly one
+  responsibility now: the ORDER (friction, then help, then working style), which is about the user and
+  not about any Journey.
+- **Every variant is a rated entity, and its rating also feeds its Journey's** (`variantRatings.ts`).
+  One outcome, counted for both objects, so "which Journey ranked well AND which of its versions did"
+  stays answerable across Journeys whose axes do not line up. Unattributed Journeys are ignored rather
+  than credited to the default; a version below three labels has NO score rather than a zero.
+- **Provenance now exists** (`Journey.libraryRef`, stamped through `goalSpecToJourney` → `JourneyEngine`).
+  Without it the end-of-Journey verdict built last session could be counted for nothing at all.
+
+## The three matching questions we did not ask (onboarding v2)
+
+Approved alongside D62: **Q7 starting mode** (clarity first vs action first) · **Q8 how much structure
+helps** · **Q9 how much challenge is wanted now**. Single-select, no free text (they are ranking signals
+and must stay coarse ids), in a new third section, "How do you like to work?". Both languages shipped.
+They already change a plan on their own: two users whose friction answers are silent and who answered Q7
+differently now get different Journeys, pinned end to end.
+
+`ONBOARDING_VERSION` → 2; a v1 answer set stays valid and simply carries none of them.
+
+## What this deliberately does NOT do
+
+- **No variants for a PROCESS goal.** Whether the library's authored arcs replace a domain expert's arc
+  or shape how the user moves through it is still the founder's open decision, and it touches the
+  sensitive domains. `journeyDefinitionsFor('process')` returns nothing, and a test pins that it
+  substitutes nothing in the meantime.
+- **No "two other ways" surface — and after this session that is a DECISION, not a gap (D63).**
+  Reviewing the build, the founder ruled that at this stage the user is not asked to choose a plan: the
+  app asks the Journey's guiding question and picks the version itself, without showing the
+  alternatives. The versions stay separately addressable and rated.
+- **No outbound learning.** Every rating computed here is an on-device aggregate over the user's own
+  Journeys. The central loop is still Stage 3+ of the library PRD, behind consent that does not exist.
+
+---
+
 # 2026-08-18 (build session) — plan shapes, the library's first slice, the end-of-Journey label, and six device-QA defects closed
 
 Branch `feat/buddy-3d-and-reminders`, six topic commits, **not pushed**. `tsc` clean · `eslint` 0 errors ·

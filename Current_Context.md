@@ -1,8 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-18** — start at the **"⛳ START HERE"** block below, which names the three
-documents to read first. Everything under it is accurate history, kept in full, but superseded as the
+Last updated: **2026-08-18 (later session)** — start at the **"⛳ START HERE — D62 is built"** block
+below; the "⛳ Previous START HERE" block under it is accurate about what shipped earlier the same day and
+names the three documents to read first. Everything under it is accurate history, kept in full, but superseded as the
 starting point. Previous top entry follows.
 Prior: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
 (SESSION — MVP-ready sweep)" just below (most current and authoritative). It supersedes — but does not
@@ -32,7 +33,47 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — the 2026-08-18 build session (read this block, then the three docs below it)
+# ⛳ START HERE — D62 is built (2026-08-18, later session)
+
+The block below this one is still accurate about what shipped earlier the same day; this is what changed
+after it, and it is the better starting point for anything touching the plan path.
+
+**A Journey now declares what its own versions differ on, and the engine knows what none of it means.**
+The matcher used to hold a table mapping an onboarding answer to one of three approaches. That table
+could hold exactly one kind of difference, and the founder's ruling (D62) is that there is no such thing:
+one Journey's versions differ on certainty, another's on available time, another's on urgency. So the
+axes, their questions, and which profile answers place a user on them all live in the Journey's own
+content (`app/src/core/learning/library/definitions.ts`). **Adding a new kind of difference is content.**
+
+**The variant question is asked after the Journey is chosen, and only when it can change the answer.**
+Not asked if onboarding already answered it; not asked if the surviving versions no longer differ. It is
+appended to the interview after the expert's questions and the horizon question, which is the first
+moment the Journey is known.
+
+**Every variant holds a rating, and it also feeds its Journey's.** That needed provenance, which did not
+exist: `Journey.libraryRef` is now stamped when a plan is built, so the end-of-Journey verdict built last
+session can finally be counted for the version that produced it. A Journey we cannot attribute is
+ignored, never credited to the default.
+
+**Onboarding is nine questions now (v2).** Q7 starting mode · Q8 how much structure helps · Q9 how much
+challenge is wanted now — approved alongside D62, both languages, and they already change a plan on their
+own.
+
+### What is still NOT built on this path, and must not be read as done
+- **Variants for a PROCESS goal.** Still the founder's open decision: do the library's authored arcs
+  REPLACE a domain expert's arc, or shape how the user moves through it? It touches the sensitive
+  domains. Nothing substitutes one in the meantime, and a test pins that.
+- **The "two other ways" surface — decided AWAY, not missing (D63).** The founder's ruling on reviewing
+  this build: at this stage the user is not asked to choose a plan. The app asks the Journey's guiding
+  question and picks the version itself, without showing the alternatives. Do not build a chooser.
+- **Any outbound learning.** Every rating is an on-device aggregate over the user's own Journeys.
+
+Full detail: `00_Foundation/CHANGELOG.md` (2026-08-18, later) · `06_Decisions/Decision_Log.md` D62 ·
+`04_Product/PRD/Plan_Library_and_Learning_PRD.md` §6.5–§6.7.
+
+---
+
+# ⛳ Previous START HERE — the 2026-08-18 build session (read this block, then the three docs below it)
 
 The architecture described further down was **built, in its first slice**. What changed, and what the
 next session must know before touching the plan path:

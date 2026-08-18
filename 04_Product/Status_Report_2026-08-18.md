@@ -47,7 +47,7 @@ confirms it. *Fixed, needs your eyes* means the code changed but nobody has seen
 | Onboarding answers collected and never used | **Fixed.** They choose the approach; two users who answer differently get different plans. |
 | No feedback at the end of a Journey | **Built.** Three hosts: completion, cancellation, quiet death. |
 | Plan content in English for a Hebrew user | **Fixed.** The translation cache (D55) ships Hebrew and English; the frame is translated and your own words are inserted after, never through the translator. |
-| "Two other ways" + variants for a process goal | **Open.** Your one process goal is still generic. |
+| "Two other ways" + variants for a process goal | **Split.** The "two other ways" screen is **decided away (D63, 2026-08-18 later)** — you ruled that a guiding question picks the version and the alternatives are not shown. Variants for a PROCESS goal stay **open**: your one process goal is still generic, and it is still your call whether the library's arcs replace the expert's or shape movement through it. |
 | Separate questionnaires (abandonment, motivation, prior experience) | **Open.** |
 | The coach assumed every Journey is two months | **Fixed.** It now asks, with "no fixed end" as a real answer rather than a polite way of saying eight weeks. |
 | The Gemini key was inlined into the app bundle | **Fixed in code, awaiting your deploy.** It lives in a Supabase Edge Function with a 2 MB per-user cap and no cap for you. Four commands in `app/supabase/functions/gemini-proxy/DEPLOY.md`. |

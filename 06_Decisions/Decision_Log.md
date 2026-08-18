@@ -16,6 +16,32 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > the 2026-08-17/18 handoff's defect list and turned into the first real build of the architecture in
 > D52. Engineering detail is in `00_Foundation/CHANGELOG.md`; this log records the founder decisions.
 
+### D63 — The user is not shown the alternatives; a guiding question picks the version for them
+**Decision (founder, 2026-08-18, later session),** on reviewing the D62 build:
+
+> "אני חושב שבשלב זה לא צריך לאפשר למשתמש לבחור תוכנית, אלא מספיק לשאול אותו שאלה מנחה ועל פי תשובתו
+> לבחור את המסלול הכי מתאים בעצמנו (מבלי להראות לו את האפשרויות השונות)"
+
+**What this settles.** The "two other ways" surface — a screen offering the user the alternative
+versions of their Journey to switch between — is **not built now, and is not a gap.** The app asks the
+Journey's own guiding question (D62 §2) and chooses the version itself. The user meets one plan, which
+is the plan chosen for the answer they gave.
+
+**Why it is the right call at this stage, recorded so the reasoning survives:** offering three plans
+side by side moves the professional judgement onto the user at the exact moment they have least
+information about themselves, and it invites choosing the easiest-looking one — the failure the whole
+objective function is built to avoid (`Plan_Library_and_Learning_PRD` §8.3). A question they can answer
+from experience is a better instrument than a menu they must evaluate.
+
+**What it does NOT settle, and must not be read as settling:** every version remains a separately
+addressable, rated entity (D62 §4). The choice is still explained by the answer that produced it, and
+the surface stays designable later — the founder's words are "at this stage". The user's ability to
+overrule a matched approach when one is offered to them stays intact where it already exists.
+
+**Categorization:** **Approved.**
+**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` §6.6,
+`04_Product/Status_Report_2026-08-18.md` (the "two other ways" row), `Current_Context.md`.
+
 ### D62 — A Journey declares what its own variants differ on; every variant is a rated entity
 **Decision (founder, 2026-08-18),** arrived at across one conversation while reviewing the partner's
 matching-profile and Career-variant files.
@@ -70,10 +96,30 @@ wording of the ones we do ask where the partner's is better. `realisticCapacity`
 `abandonmentPattern` already exist and already reach planning; `previousSuccessPattern` exists in a
 weaker form (what helps you in general, rather than what kept a change you actually sustained).
 
-**Categorization:** **Approved.** **NOT YET BUILT** — this is the specification the next build works
-from.
-**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` (to be widened),
-`app/src/core/learning/library/`, `app/src/core/onboarding/questions.ts`.
+**Categorization:** **Approved.** **BUILT 2026-08-18 (later session)** — the entry above is unchanged and
+remains the specification; this line records what now exists against it.
+
+- A Journey declares its own axes in content (`app/src/core/learning/library/journeyDefinition.ts`,
+  `definitions.ts`); axis ids, values and profile-field ids are open strings and the engine knows what
+  none of them mean. A test selects on a `certainty` axis that exists only inside the test file.
+- The variant question is asked after the Journey is chosen and only when it can still change the answer
+  (`selectVariant.ts`, `app/src/core/coach/variantQuestions.ts`, appended in the interview after the
+  expert's questions and the horizon question).
+- The profile reaches selection as an ORDERED list of ids with no taxonomy; `matchApproach.ts` now owns
+  only that order.
+- Every variant is a rated entity whose rating rolls up to its Journey (`variantRatings.ts`), made
+  possible by new provenance on the Journey itself (`Journey.libraryRef`).
+- Q7–Q9 shipped in onboarding (starting mode · structure · challenge), `ONBOARDING_VERSION` → 2, both
+  languages.
+
+**Still not built, and not decided:** variants for a PROCESS goal (whether authored arcs replace the
+expert's arc or shape movement through it remains the founder's open decision), the "two other ways"
+switching surface, and any outbound learning — every rating today is an on-device aggregate over the
+user's own Journeys.
+
+**Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` §6.5–§6.6,
+`app/src/core/learning/library/`, `app/src/core/onboarding/questions.ts`,
+`00_Foundation/CHANGELOG.md` (2026-08-18 later).
 
 ### D61 — The meta-agent is a router, a summariser and a translator; the experts hold a real dialogue
 **Decision (founder, 2026-08-18), clarifying the coach architecture:**

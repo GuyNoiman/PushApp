@@ -112,10 +112,21 @@ remains the specification; this line records what now exists against it.
 - Q7–Q9 shipped in onboarding (starting mode · structure · challenge), `ONBOARDING_VERSION` → 2, both
   languages.
 
-**Still not built, and not decided:** variants for a PROCESS goal (whether authored arcs replace the
-expert's arc or shape movement through it remains the founder's open decision), the "two other ways"
-switching surface, and any outbound learning — every rating today is an on-device aggregate over the
-user's own Journeys.
+**Still not built:** a library Journey for a PROCESS goal, the "two other ways" switching surface, and
+any outbound learning — every rating today is an on-device aggregate over the user's own Journeys.
+
+**One framing corrected the same day.** An earlier version of this note called the process case an open
+founder decision ("do authored arcs replace the expert's arc or shape movement through it"). The founder
+rejected the question rather than answering it, because his own rule already settles it:
+
+> "כל סט של אבני דרך מגדיר מסע. ישנם הרבה מסעות שונים עבור אותה מטרה. לכל מסע יש כמה וריאנטים (אותם
+> אבני דרך אבל הבדלים כאלה ואחרים) … ישאל המומחה שאלה מכווינה … ועל פי תשובתו או הפרופיל שלו יבחר את
+> הוריאנט הכי מתאים לו"
+
+So an arc that differs is a different **Journey**, never a variant, and a domain expert's hardcoded arc
+is Journey #1 for its goals. The process case is missing CONTENT — authored process Journeys, plus the
+expert selecting from the library instead of returning its one arc — gated on the partner's content being
+ingested under our terminology and language rules. It is a build, not a call to make.
 
 **Reflected in:** `04_Product/PRD/Plan_Library_and_Learning_PRD.md` §6.5–§6.6,
 `app/src/core/learning/library/`, `app/src/core/onboarding/questions.ts`,

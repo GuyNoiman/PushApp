@@ -18,11 +18,14 @@
  * writing it once per domain would be the same content four times, drifting apart on the fifth
  * (the same argument that keeps the horizon question out of the experts).
  *
- * WHAT IS NOT HERE, deliberately: variants for a PROCESS goal. Whether the library's authored arcs
- * replace a domain expert's arc or shape how the user moves through it is an open founder decision
- * (Status_Report_2026-08-18 §3), and it touches the sensitive domains. The model above is ready for
- * it — a process Journey is a definition with `shape: 'process'` — and this file stays honest about
- * not having made that call.
+ * WHAT IS NOT HERE, and why it is missing CONTENT rather than a decision: there is no Journey for a
+ * PROCESS goal yet. The founder's rule settles the architecture — **a set of Milestones IS a Journey**,
+ * several Journeys exist for the same goal, and a variant NEVER changes Milestones — so an arc that
+ * differs is simply another definition here, and a domain expert's hardcoded arc is Journey #1 for its
+ * goals. What is missing is the authored Journeys themselves (gated on the partner's content being
+ * ingested under our terminology and language rules) and the expert selecting from them instead of
+ * returning its one arc. A process Journey is a definition with `shape: 'process'`; nothing in the
+ * model below needs to change to hold one.
  *
  * Pure TypeScript — no React, no i18n at module level, no clock reads.
  */

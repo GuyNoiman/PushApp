@@ -47,7 +47,7 @@ confirms it. *Fixed, needs your eyes* means the code changed but nobody has seen
 | Onboarding answers collected and never used | **Fixed.** They choose the approach; two users who answer differently get different plans. |
 | No feedback at the end of a Journey | **Built.** Three hosts: completion, cancellation, quiet death. |
 | Plan content in English for a Hebrew user | **Fixed.** The translation cache (D55) ships Hebrew and English; the frame is translated and your own words are inserted after, never through the translator. |
-| "Two other ways" + variants for a process goal | **Split.** The "two other ways" screen is **decided away (D63, 2026-08-18 later)** — you ruled that a guiding question picks the version and the alternatives are not shown. Variants for a PROCESS goal stay **open**: your one process goal is still generic, and it is still your call whether the library's arcs replace the expert's or shape movement through it. |
+| "Two other ways" + variants for a process goal | **Split.** The "two other ways" screen is **decided away (D63, 2026-08-18 later)** — you ruled that a guiding question picks the version and the alternatives are not shown. Variants for a PROCESS goal: your one process goal is still generic, but this is **no longer a decision waiting on you** — your own rule settles it (a set of Milestones IS a Journey; a variant never changes Milestones), so a different arc is simply another Journey in the library. What is left is authoring those Journeys. |
 | Separate questionnaires (abandonment, motivation, prior experience) | **Open.** |
 | The coach assumed every Journey is two months | **Fixed.** It now asks, with "no fixed end" as a real answer rather than a polite way of saying eight weeks. |
 | The Gemini key was inlined into the app bundle | **Fixed in code, awaiting your deploy.** It lives in a Supabase Edge Function with a 2 MB per-user cap and no cap for you. Four commands in `app/supabase/functions/gemini-proxy/DEPLOY.md`. |
@@ -60,10 +60,13 @@ confirms it. *Fixed, needs your eyes* means the code changed but nobody has seen
 **Closed on 2026-08-18:** the three definitions of total steps · the last double-flipped inputs ·
 `AppCore.postponeReminderCopy()` · the two clock-dependent suites · the orphan components.
 
-**Blocked on one decision from you:** the three variants for a PROCESS goal. Either the library's
-authored arcs replace the expert's, or they shape how the user moves through the expert's arc. It
-touches addiction and loneliness too, not only your confidence goal, so it is not a decision to make
-quietly. Recommendation: shape, do not replace.
+**~~Blocked on one decision from you:~~ NO LONGER BLOCKED (2026-08-18, later).** This paragraph asked
+whether the library's authored arcs replace the expert's or shape movement through the expert's arc.
+The founder rejected the question rather than answering it, and he was right to: by his own rule a set
+of Milestones IS a Journey, so an arc that differs is a different **Journey**, never a variant. The
+expert's hardcoded arc is Journey #1 for its goals. What remains is content — authoring several process
+Journeys per goal and having the expert select from the library — plus ingesting the partner's content
+under our terminology and language rules first.
 
 **Still open:** Home's scroll-to-top is unverified on device · an Ally sees a paused Journey **silently
 vanish** instead of a status (needs a privacy decision — `Open_Questions_For_Founder.md` §3.1).

@@ -394,9 +394,16 @@ by the answer that produced it.
 **What is built and what is not (2026-08-18):** the declaration model, the selection ladder, the asked-
 only-when-it-matters rule, the ratings and their roll-up, and provenance — all on device, for the
 RECURRING shape, whose three approaches (§6.1's seed content) are now that Journey's three declared
-versions. **Variants for a PROCESS goal are still open** and are a founder decision (whether authored
-arcs replace a domain expert's arc or shape movement through it); nothing substitutes one in the
-meantime. No rating leaves the device: the outbound loop remains §15 Stage 3+.
+versions. **A PROCESS goal has no library Journey yet — and that is missing CONTENT, not a missing
+decision.** An earlier draft of this section framed it as an open founder call ("do authored arcs replace
+a domain expert's arc, or shape movement through it"); the founder rejected the framing on 2026-08-18,
+because his own rule already answers it: **a set of Milestones IS a Journey**, several Journeys exist for
+the same goal, and a variant never changes Milestones. So a different arc is simply a different Journey
+in the library, and a domain expert's single hardcoded arc is Journey #1 for its goals (§3). What is
+missing is authored process Journeys and the expert selecting from them instead of returning its one
+arc — a build, gated on the partner content being ingested and aligned (§6.7), not on a decision.
+Nothing substitutes a Journey in the meantime. No rating leaves the device: the outbound loop remains
+§15 Stage 3+.
 
 ### 6.7 Two things D62 settles about the partner's content
 

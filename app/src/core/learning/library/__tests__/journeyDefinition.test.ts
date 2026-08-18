@@ -101,9 +101,9 @@ describe('finding the Journeys a goal is a candidate for', () => {
   });
 
   it('has no candidate for a process goal yet, and says so instead of substituting one', () => {
-    // Whether the library's authored arcs replace a domain expert's arc or shape how the user moves
-    // through it is an open founder decision. Handing a process goal a recurring Journey would be
-    // making that decision by accident.
+    // No process Journey has been AUTHORED yet (the architecture for one is settled: a set of
+    // Milestones is a Journey, and a variant never changes Milestones). Handing a process goal a
+    // recurring Journey would replace a staged plan with one repeated action.
     expect(journeyDefinitionsFor('process')).toEqual([]);
   });
 

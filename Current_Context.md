@@ -60,9 +60,12 @@ challenge is wanted now — approved alongside D62, both languages, and they alr
 own.
 
 ### What is still NOT built on this path, and must not be read as done
-- **Variants for a PROCESS goal.** Still the founder's open decision: do the library's authored arcs
-  REPLACE a domain expert's arc, or shape how the user moves through it? It touches the sensitive
-  domains. Nothing substitutes one in the meantime, and a test pins that.
+- **A library Journey for a PROCESS goal.** Missing CONTENT, not a missing decision — the founder threw
+  out the "replace the expert's arc or shape movement through it" framing on 2026-08-18: **a set of
+  Milestones IS a Journey**, several Journeys exist per goal, and a variant never changes Milestones. A
+  different arc is a different Journey; an expert's hardcoded arc is Journey #1. The work is authoring
+  process Journeys and having the expert select from them. Nothing is substituted today, and a test
+  pins that.
 - **The "two other ways" surface — decided AWAY, not missing (D63).** The founder's ruling on reviewing
   this build: at this stage the user is not asked to choose a plan. The app asks the Journey's guiding
   question and picks the version itself, without showing the alternatives. Do not build a chooser.

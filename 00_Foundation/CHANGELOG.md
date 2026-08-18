@@ -52,10 +52,13 @@ differently now get different Journeys, pinned end to end.
 
 ## What this deliberately does NOT do
 
-- **No variants for a PROCESS goal.** Whether the library's authored arcs replace a domain expert's arc
-  or shape how the user moves through it is still the founder's open decision, and it touches the
-  sensitive domains. `journeyDefinitionsFor('process')` returns nothing, and a test pins that it
-  substitutes nothing in the meantime.
+- **No library Journey for a PROCESS goal — missing content, not a missing decision.** This entry first
+  called it an open founder call ("do authored arcs replace the expert's arc or shape movement through
+  it"); the founder rejected the framing the same day, because his own rule answers it: **a set of
+  Milestones IS a Journey**, several Journeys exist per goal, and a variant never changes Milestones. A
+  different arc is a different Journey, and an expert's hardcoded arc is simply Journey #1. What is left
+  is authoring process Journeys and having the expert select from them.
+  `journeyDefinitionsFor('process')` returns nothing today, and a test pins that nothing is substituted.
 - **No "two other ways" surface — and after this session that is a DECISION, not a gap (D63).**
   Reviewing the build, the founder ruled that at this stage the user is not asked to choose a plan: the
   app asks the Journey's guiding question and picks the version itself, without showing the

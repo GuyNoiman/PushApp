@@ -71,7 +71,10 @@ export default function JourneyDetailScreen() {
   const { t } = useTranslation('journey');
   // Completion Celebration I1 (Slice 5): the SAME shared gate the Home paths use — the check-in CTA
   // asks a gentle confirmation only when this Step would complete the Journey (final, D41).
-  const { confirmVisible, requestDone, confirm, cancel } = useFinalStepConfirm(core);
+  // `requestDone` is deliberately not destructured: this screen no longer reports a Step (the
+  // pinned check-in CTA was removed — see the note further down), but the confirmation sheet stays
+  // mounted for the final-Step gate reached from the Step rows.
+  const { confirmVisible, confirm, cancel } = useFinalStepConfirm(core);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Journey Abandonment: the cancel confirmation. Canceling is FINAL and there is NO undo window
   // (founder decision 2026-08-14), so this sheet is the last point the decision can be taken back.
@@ -612,26 +615,12 @@ export default function JourneyDetailScreen() {
           </View>
         )}
 
-        {/* Check in on the next Step (matches the mockup's bottom CTA). Hidden while paused. */}
-        {nextStep && !journey.completedAt && !isFrozen && (
-          <View style={styles.footer}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('detail.checkInA11y', { title: nextStep.title })}
-              onPress={() =>
-                requestDone(journey.id, nextStep.id, () => core.checkInStep(journey.id, nextStep.id))
-              }
-              style={({ pressed }) => [
-                styles.cta,
-                { backgroundColor: theme.coral },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold" style={{ color: theme.text }}>
-                {t('detail.checkIn')}
-              </ThemedText>
-            </Pressable>
-          </View>
-        )}
+        {/* NO check-in CTA here, deliberately (founder, 2026-08-18). This screen MANAGES a
+            Journey; Home is where the day's work gets reported, and PushApp's Home has been
+            action-based rather than Journey-based since the Product Bible §11.2. A pinned reporting
+            button at the bottom of a management screen was a second front door to the same action,
+            and the founder read the screen's action list as overcrowded because of it. Reporting a
+            Step from here is still possible — the Step rows above take a swipe. */}
 
         {/* Start confirmation (§9) — states the EFFECTIVE start, and, when the user is starting a
             scheduled Journey ahead of its day, exactly what happens to the plan: every Step moves by

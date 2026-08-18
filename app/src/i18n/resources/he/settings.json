@@ -27,8 +27,6 @@
     "countrySearch": "חיפוש מדינות",
     "birthDate": "תאריך לידה",
     "birthDateNotSpecified": "לא צוין",
-    "birthDatePlaceholder": "YYYY-MM-DD",
-    "birthDateInvalid": "השתמש בפורמט YYYY-MM-DD",
     "addressForm": "כיצד לפנות אליך",
     "openProfile": "פתיחת הפרופיל שלי"
   },

@@ -25,8 +25,6 @@
     "countrySearch": "Search countries",
     "birthDate": "Birth date",
     "birthDateNotSpecified": "Not specified",
-    "birthDatePlaceholder": "YYYY-MM-DD",
-    "birthDateInvalid": "Use the format YYYY-MM-DD",
     "addressForm": "How we address you",
     "openProfile": "Open my profile"
   },

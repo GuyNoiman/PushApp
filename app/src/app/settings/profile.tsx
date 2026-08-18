@@ -27,19 +27,16 @@ import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } fr
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import type { AddressForm } from '@/i18n/addressForm';
+import { DateWheel, fromIsoDate, toIsoDate, type DateParts } from '@/components/DateWheel';
 import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useProfile } from '@/state/ProfileProvider';
 import { useSocial } from '@/state/SocialProvider';
 
 const ADDRESS_FORM_ORDER: readonly AddressForm[] = ['neutral', 'feminine', 'masculine'];
-/** Valid ISO `YYYY-MM-DD` (a real calendar date, not just the shape). */
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-function isValidBirthDate(v: string): boolean {
-  if (!ISO_DATE.test(v)) return false;
-  const d = new Date(`${v}T00:00:00`);
-  return !Number.isNaN(d.getTime()) && v === d.toISOString().slice(0, 10);
-}
+// The ISO-date validator that used to live here is gone with the text field: a wheel cannot produce
+// 31 February, because the day column is rebuilt from the chosen month and year (`DateWheel`). There
+// is no invalid state left to validate, and therefore no "that isn't a real date" hint to show.
 
 /** 1–2 letter monogram from a name/username (skips a leading @). */
 function initialsFor(name: string): string {
@@ -134,8 +131,6 @@ export default function MyProfileScreen() {
               label={t('profile.birthDate')}
               value={profile.birthDate}
               notSpecified={t('profile.birthDateNotSpecified')}
-              placeholder={t('profile.birthDatePlaceholder')}
-              invalidLabel={t('profile.birthDateInvalid')}
               onSave={setBirthDate}
             />
             <SettingsRow
@@ -257,27 +252,36 @@ function BirthDateRow({
   label,
   value,
   notSpecified,
-  placeholder,
-  invalidLabel,
   onSave,
 }: {
   label: string;
   value: string | null;
   notSpecified: string;
-  placeholder: string;
-  invalidLabel: string;
   onSave: (iso: string | null) => void;
 }) {
   const theme = useTheme();
-  const { t } = useTranslation('settings');
+  const { t, i18n } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value ?? '');
-  const invalid = draft.trim().length > 0 && !isValidBirthDate(draft.trim());
+  // The wheel opens on what is already stored, so reopening the editor shows the saved date rather
+  // than an arbitrary default. With nothing stored it opens on a plausible adult birth year — never
+  // on today, which would suggest the user was born this morning.
+  const stored = fromIsoDate(value);
+  const thisYear = new Date().getFullYear();
+  const [parts, setParts] = useState<DateParts>(
+    stored ?? { year: thisYear - 30, month: 1, day: 1 },
+  );
+
+  // Month names in the active language, from the platform rather than a translated list of twelve.
+  const monthNames = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) =>
+        new Date(2000, i, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+      ),
+    [i18n.language],
+  );
 
   const commit = () => {
-    const v = draft.trim();
-    if (v.length === 0) onSave(null);
-    else if (isValidBirthDate(v)) onSave(v);
+    onSave(toIsoDate(parts));
     setEditing(false);
   };
 
@@ -290,35 +294,35 @@ function BirthDateRow({
         onPress={() => setEditing((e) => !e)}
       />
       {editing && (
-        <View style={[styles.inlineEditor, { borderTopColor: theme.hairline }]}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={placeholder}
-            placeholderTextColor={theme.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="numbers-and-punctuation"
-            textAlign={START_TEXT_ALIGN}
-            style={[styles.fieldInput, { flex: 1, color: theme.text, backgroundColor: theme.background, borderColor: invalid ? theme.danger : theme.hairline }]}
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('save', { ns: 'common' })}
-            disabled={invalid}
-            onPress={commit}
-            style={({ pressed }) => [styles.saveButton, { backgroundColor: theme.teal }, invalid && styles.disabled, pressed && styles.pressed]}>
-            <ThemedText type="smallBold" style={{ color: theme.background }}>
-              {t('save', { ns: 'common' })}
-            </ThemedText>
-          </Pressable>
+        <View style={[styles.inlineEditor, { borderTopColor: theme.hairline, flexDirection: 'column', gap: Spacing.two }]}>
+          <DateWheel value={parts} monthNames={monthNames} thisYear={thisYear} onChange={setParts} />
+          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+            {/* Clearing stays possible: a birth date is optional, and a wheel with no empty row
+                would otherwise make "not specified" unreachable once a date had been set. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={notSpecified}
+              onPress={() => {
+                onSave(null);
+                setEditing(false);
+              }}
+              style={({ pressed }) => [styles.saveButton, { backgroundColor: theme.backgroundElement }, pressed && styles.pressed]}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {notSpecified}
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('save', { ns: 'common' })}
+              onPress={commit}
+              style={({ pressed }) => [styles.saveButton, { flex: 1, backgroundColor: theme.teal }, pressed && styles.pressed]}>
+              <ThemedText type="smallBold" style={{ color: theme.background }}>
+                {t('save', { ns: 'common' })}
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
       )}
-      {editing && invalid ? (
-        <ThemedText type="small" style={[styles.invalidHint, { color: theme.danger }]}>
-          {invalidLabel}
-        </ThemedText>
-      ) : null}
     </>
   );
 }

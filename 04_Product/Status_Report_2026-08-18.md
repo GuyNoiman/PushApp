@@ -1,6 +1,6 @@
 # Full status report — every issue raised, and where it stands
 
-Status: **Point-in-time report, 2026-08-18.** Compiled at the founder's request because the earlier
+Status: **Living report — last refreshed 2026-08-18, late session.** Compiled at the founder's request because the earlier
 in-chat table covered only the issues raised in that conversation and omitted the findings from his
 own device walkthrough on 2026-08-17.
 
@@ -22,13 +22,13 @@ confirms it. *Fixed, needs your eyes* means the code changed but nobody has seen
 | **A2** | Progress read 0% after a Step was reported done | **Fixed.** The cause was a mutated array re-exported by identity, so nothing recomputed. |
 | **A3** | The keyboard covered the field being typed into | **Fixed**, one shared approach across eight screens. |
 | **A4** | A Journey for "drink a protein shake daily" produced generic wellness Steps | **Fixed 2026-08-18** — the deepest fix in this report. Your words are the plan now. |
-| **A5** | One daily action produced many Steps you never asked for | **Changed — and you should decide whether it is right.** The Steps are now YOUR action instead of invented ones, but there are still many of them: one per active day. See §4. |
+| **A5** | One daily action produced many Steps you never asked for | **Closed.** The Steps are your own action now, and you confirmed that a repeated action repeating its name is right as long as the essence holds. The one-Step-per-active-day model stays; §4 is kept as background, not as an open question. |
 | **A6** | Odd visual state on a completed Step after swiping | **Fixed, needs your eyes.** Completed cards were reworked to keep their identity and width. No screenshot was ever attached, so nobody can confirm it is the same thing you saw. |
-| **A7** | "Couldn't load your Support Circle" on a fresh install | **Open.** The error row still renders whenever the load fails. Related polish landed (empty state rewritten, "Give support" hidden until there is a connection) but the first-run banner itself was never addressed. |
+| **A7** | "Couldn't load your Support Circle" on a fresh install | **Fixed.** The retry line is shown only to a user who has a profile — nothing had failed, there was simply nothing to load yet. The load still runs and still records a genuine failure. |
 | **B1** | Sign-in opened the Coach; you decided it should land on Home | **Done.** |
 | **B2** | A fresh install already had Journeys and Steps you never created | **Done.** The demo seed is off in every real build, so a new install is empty. **But** what is already stored on YOUR device stays until you delete it — per-Journey delete is on the Journey detail screen. |
 | **B3** | The ⋯ menu on Journey detail was in the wrong place; you said move it next to Edit | **Changed differently — please confirm.** The ⋯ was **removed entirely** rather than relocated: Pause/Resume, Share, Cancel and Delete are now four visible full-width buttons at the end of the list. The recorded reasoning was that hiding two actions on a screen whose whole job is managing a Journey is the wrong kind of quiet. **That is not what you asked for.** If you still want a ⋯ next to Edit, say so. |
-| **C1** | Birth date should be a picker, not typed | **Open — needs your decision.** A native picker means a new dependency (which breaks the Expo Go / web preview rule). One built from existing primitives is possible but is real work. |
+| **C1** | Birth date should be a picker, not typed | **Open — but NOT waiting on you.** You asked why it needed your approval; it did not. It will be built from existing primitives, with no new native dependency. |
 
 ---
 
@@ -46,9 +46,12 @@ confirms it. *Fixed, needs your eyes* means the code changed but nobody has seen
 | Wizard 08:00 vs engine 09:00 | **Fixed.** The time comes from the plan, then from your Active Hours. |
 | Onboarding answers collected and never used | **Fixed.** They choose the approach; two users who answer differently get different plans. |
 | No feedback at the end of a Journey | **Built.** Three hosts: completion, cancellation, quiet death. |
-| Plan content in English for a Hebrew user | **Open.** The translation cache (D55) is not built. The most visible remaining gap. |
+| Plan content in English for a Hebrew user | **Fixed.** The translation cache (D55) ships Hebrew and English; the frame is translated and your own words are inserted after, never through the translator. |
 | "Two other ways" + variants for a process goal | **Open.** Your one process goal is still generic. |
 | Separate questionnaires (abandonment, motivation, prior experience) | **Open.** |
+| The coach assumed every Journey is two months | **Fixed.** It now asks, with "no fixed end" as a real answer rather than a polite way of saying eight weeks. |
+| The Gemini key was inlined into the app bundle | **Fixed in code, awaiting your deploy.** It lives in a Supabase Edge Function with a 2 MB per-user cap and no cap for you. Four commands in `app/supabase/functions/gemini-proxy/DEPLOY.md`. |
+| The reporting button at the bottom of the Journey screen | **Removed.** Home is where the day's work is reported; this screen manages the Journey. Swiping a Step row still reports it. |
 
 ---
 
@@ -56,6 +59,11 @@ confirms it. *Fixed, needs your eyes* means the code changed but nobody has seen
 
 **Closed on 2026-08-18:** the three definitions of total steps · the last double-flipped inputs ·
 `AppCore.postponeReminderCopy()` · the two clock-dependent suites · the orphan components.
+
+**Blocked on one decision from you:** the three variants for a PROCESS goal. Either the library's
+authored arcs replace the expert's, or they shape how the user moves through the expert's arc. It
+touches addiction and loneliness too, not only your confidence goal, so it is not a decision to make
+quietly. Recommendation: shape, do not replace.
 
 **Still open:** Home's scroll-to-top is unverified on device · an Ally sees a paused Journey **silently
 vanish** instead of a status (needs a privacy decision — `Open_Questions_For_Founder.md` §3.1).

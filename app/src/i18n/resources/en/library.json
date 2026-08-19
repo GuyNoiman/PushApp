@@ -24,5 +24,734 @@
         "deciding": "Having to decide each time was the hard part."
       }
     }
+  },
+  "career": {
+    "nextStep": {
+      "goal": "Understand what my next step in my career is",
+      "axis": {
+        "question": "When you are weighing up a direction, what helps you more: understanding it first, or trying it and seeing?",
+        "clarityFirst": "Understand it first, and only then try.",
+        "actionFirst": "Try something small, and learn from it.",
+        "both": "A little clarity, then straight out into the real world."
+      },
+      "clarityFirst": {
+        "essence": "Build the criteria and the candidate directions first, and only then take them to the real world.",
+        "m0": "I know what my next direction has to give me, and what it has to respect",
+        "m1": "I have two plausible directions worth testing",
+        "m2": "I have compared both directions against real-world information",
+        "m3": "I have tested the leading direction through a small piece of real work",
+        "m4": "I have chosen my next move and started it",
+        "s0": {
+          "title": "Pick one task at work that gives you energy and one that drains you",
+          "description": "Two real examples from the past month are enough. Start from your own experience, not from job titles."
+        },
+        "s1": {
+          "title": "Turn those two examples into three criteria and two constraints",
+          "description": "For example: the kind of problems, learning, working across teams, income stability, or a limit on time for studying."
+        },
+        "s2": {
+          "title": "Choose two plausible directions that seem to fit those criteria",
+          "description": "These are hypotheses to test, not a decision. Do not sign up for a course and do not commit to a direction yet."
+        },
+        "s3": {
+          "title": "Look through a small sample of current roles in the first direction",
+          "description": "Check what repeats across the roles, what attracts you, what puts you off, and what is still unclear."
+        },
+        "s4": {
+          "title": "Do the same check for the second direction",
+          "description": "Use the same criteria, so you are not choosing by job title alone."
+        },
+        "s5": {
+          "title": "Talk to one person who knows the direction that looks strongest right now",
+          "description": "Come with two or three questions about the actual work, the hard parts, and what surprises people who enter the field."
+        },
+        "s6": {
+          "title": "Map one problem you already know that resembles the work in the leading direction",
+          "description": "For example: a problem that keeps coming back for customers, who it affects, and what you think causes it."
+        },
+        "s7": {
+          "title": "Write a short improvement proposal for the problem you mapped",
+          "description": "This is a cheap, reversible experiment that simulates part of the work without a long course."
+        },
+        "s8": {
+          "title": "Choose your next career move from the evidence you gathered",
+          "description": "For example: one more piece of proof, a defined skill gap, a focused search, or testing one more direction."
+        },
+        "s9": {
+          "title": "Take the first action of the move you chose",
+          "description": "Start the move with one real action."
+        }
+      },
+      "actionFirst": {
+        "essence": "Start with one small experiment inside work you already know, and let it narrow the directions.",
+        "m0": "I have tried a small piece of work built on what already gives me energy",
+        "m1": "I have turned what I learned into two plausible directions",
+        "m2": "I have checked whether those directions really contain the work I am looking for",
+        "m3": "I know what my next direction has to give me, and what it has to respect",
+        "m4": "I have chosen my next move and started it",
+        "s0": {
+          "title": "Pick one problem that keeps coming back at work and that you would like to solve differently",
+          "description": "Choose a problem you already know. You do not need to know which job title it \"belongs\" to yet."
+        },
+        "s1": {
+          "title": "Map briefly who the problem affects and what seems to cause it",
+          "description": "The aim is to have material for an experiment, not a perfect document."
+        },
+        "s2": {
+          "title": "Write a short improvement proposal, or another way of handling the problem",
+          "description": "This is a first experiment, and it produces information about which kind of work gives you energy."
+        },
+        "s3": {
+          "title": "Write down what in the experiment gave you energy and what did not",
+          "description": "Focus on what you actually did: analysing, coordinating, writing, solving a problem, working with people."
+        },
+        "s4": {
+          "title": "Turn what you learned into two plausible career directions",
+          "description": "The coach can suggest possibilities, but they stay hypotheses to test."
+        },
+        "s5": {
+          "title": "Look through a small sample of current roles in both directions",
+          "description": "Look for the overlap between what you enjoyed in the experiment and what the roles actually ask for."
+        },
+        "s6": {
+          "title": "Talk to one person who knows the leading direction",
+          "description": "Ask whether the kind of work you tried really appears in the role, and what it looks like day to day."
+        },
+        "s7": {
+          "title": "Write three criteria and two constraints for the final choice",
+          "description": "By now the criteria rest on something you have done, not only on a guess."
+        },
+        "s8": {
+          "title": "Choose your next career move from the evidence you gathered",
+          "description": "Choose one move, not a career for life."
+        },
+        "s9": {
+          "title": "Take the first action of the move you chose",
+          "description": "Start for real: a piece of proof, a conversation, a defined skill gap, or a focused search."
+        }
+      },
+      "hybrid": {
+        "essence": "A little clarity, then a fast real-world test, and narrowing only from what it taught you.",
+        "m0": "I have one hypothesis good enough to test without committing to it",
+        "m1": "I have tested that hypothesis both in information and in a small action",
+        "m2": "I know what got stronger, what got weaker, and what I still need to find out",
+        "m3": "I have closed the last information gap that was blocking a decision",
+        "m4": "I have chosen my next move and started it",
+        "s0": {
+          "title": "Write in one sentence what you want more of in your next job, and what you want less of",
+          "description": "No long list. One sentence, based on how the work feels to you today."
+        },
+        "s1": {
+          "title": "Choose one direction that looks plausible enough to test right now",
+          "description": "This is a temporary hypothesis. You do not have to be sure."
+        },
+        "s2": {
+          "title": "Read two current role descriptions in that direction",
+          "description": "Look for three things only: what attracts you, what puts you off, and what is still unclear."
+        },
+        "s3": {
+          "title": "Run one micro-experiment that simulates part of the work in that direction",
+          "description": "Choose a small, cheap action you can do out of the experience you already have."
+        },
+        "s4": {
+          "title": "Write down what became clearer after the reading and the experiment",
+          "description": "What got stronger, what is off the table, and what still needs checking."
+        },
+        "s5": {
+          "title": "Add a second direction only if real doubt is left",
+          "description": "If the first direction looks promising enough, there is no need to add an option just to have something to compare against."
+        },
+        "s6": {
+          "title": "Talk to one person who knows the direction that is leading now",
+          "description": "Use the conversation to close the gaps you have left, not to start the research over."
+        },
+        "s7": {
+          "title": "Write three criteria and two constraints for the decision",
+          "description": "Build them out of what you have already learned, not before any contact with reality."
+        },
+        "s8": {
+          "title": "Choose your next career move",
+          "description": "Choose the most reasonable next step, not a career for life."
+        },
+        "s9": {
+          "title": "Take the first action of the move you chose",
+          "description": "Move from a decision to something you actually did."
+        }
+      }
+    },
+    "twoOptions": {
+      "goal": "Decide between two concrete career options",
+      "axis": {
+        "question": "When you settle between two options, what convinces you in the end?",
+        "criteria": "Clear criteria and an orderly comparison.",
+        "experience": "Trying each one and seeing how it feels.",
+        "people": "Hearing it from people who actually live it."
+      },
+      "criteriaFirst": {
+        "essence": "Decide what matters first, measure both options by it, and close only the gaps that could change the answer.",
+        "m0": "I know what I am really choosing by",
+        "m1": "I have compared both options on the same measuring stick",
+        "m2": "I have closed the main information gap that was blocking the decision",
+        "m3": "I have chosen an option and started the next move",
+        "s0": {
+          "title": "Write three things the choice has to give you and two it has to respect",
+          "description": "Use what you have already said matters to you. Do not build a list of ten criteria."
+        },
+        "s1": {
+          "title": "Define what would count as a strong sign for each of those criteria",
+          "description": "For example: if working across teams matters, what would you expect to see in the role itself?"
+        },
+        "s2": {
+          "title": "Check the first option against those criteria",
+          "description": "Use current information about real roles, and write down: evidence for, evidence against, and what is still unknown."
+        },
+        "s3": {
+          "title": "Check the second option against exactly the same criteria",
+          "description": "Use the same criteria, so the comparison is a fair one."
+        },
+        "s4": {
+          "title": "Pick the two unknowns that could genuinely change the decision",
+          "description": "Do not research everything that interests you. Only what would change your choice if the answer came back different."
+        },
+        "s5": {
+          "title": "Close one of them through a conversation or a reliable source",
+          "description": "Choose the shortest route to real evidence on the most important question."
+        },
+        "s6": {
+          "title": "Choose the option that wins on your evidence and your constraints",
+          "description": "If neither wins, name one last unknown and stop there. The aim is a good enough decision, not certainty."
+        },
+        "s7": {
+          "title": "Take a first step in the direction you chose",
+          "description": "A follow-up conversation, a small piece of proof, or checking one skill gap. Keep it cheap and reversible."
+        }
+      },
+      "testFirst": {
+        "essence": "Live a short piece of each option before deciding, then check the winner against your constraints.",
+        "m0": "I have lived a small piece of each of the two options",
+        "m1": "I know which one felt more like me, and which less",
+        "m2": "I have checked that the leading option also fits my constraints",
+        "m3": "I have chosen an option and started the next move",
+        "s0": {
+          "title": "Choose a small task that simulates part of the first option",
+          "description": "Something you can do with material already available to you: no course, and no asking to change roles."
+        },
+        "s1": {
+          "title": "Run that micro-experiment for the first option",
+          "description": "The point is to feel the kind of work — analysing, coordinating, improving something — not to prove you are already good at it."
+        },
+        "s2": {
+          "title": "Choose a small task that simulates part of the second option",
+          "description": "Keep it about the same size in time and effort, so the comparison is not tilted."
+        },
+        "s3": {
+          "title": "Run that micro-experiment for the second option",
+          "description": "Test the kind of work itself, not only whether the result came out well."
+        },
+        "s4": {
+          "title": "Write what each experiment gave you, what took too much out of you, and what you would do again",
+          "description": "Use the experience as evidence, not as a single gut feeling."
+        },
+        "s5": {
+          "title": "Check two critical constraints against both options",
+          "description": "For example pay or stability, or something the role must include. Use current information where you need it."
+        },
+        "s6": {
+          "title": "Choose the option with the better combination of fit and constraints right now",
+          "description": "If doubt is left, write one single question that could turn the decision around."
+        },
+        "s7": {
+          "title": "Take a first step in the direction you chose",
+          "description": "Start something small and reversible that goes deeper: a piece of proof, a conversation, or mapping a gap."
+        }
+      },
+      "conversationFirst": {
+        "essence": "Learn from people inside both options, verify what you heard, and test the choice before committing.",
+        "m0": "I have heard what both options actually look like",
+        "m1": "I have verified the differences that matter to me against other evidence",
+        "m2": "I have chosen an option and tested it before committing",
+        "m3": "I have started the next move in the direction I chose",
+        "s0": {
+          "title": "Write two questions you would ask someone who lives one of these options day to day",
+          "description": "Questions about the actual work: what eats the time, what is hard, and what people outside it do not understand."
+        },
+        "s1": {
+          "title": "Have one reality conversation with someone who knows the first option",
+          "description": "The aim is to understand the work, not to ask for a job or to impress anyone."
+        },
+        "s2": {
+          "title": "Have one reality conversation with someone who knows the second option",
+          "description": "Use the same two base questions, so you can actually compare the answers."
+        },
+        "s3": {
+          "title": "Write down three meaningful differences you heard between the options",
+          "description": "Focus on what affects your own fit: the kind of problems, the collaboration, the pace, the stability, the learning."
+        },
+        "s4": {
+          "title": "Check against current information whether the two most important things you heard show up in real roles",
+          "description": "A conversation is evidence, not the whole truth. Look for corroboration."
+        },
+        "s5": {
+          "title": "Choose the option that fits better right now, and say why",
+          "description": "Write the decision in one sentence, including the trade-off you are willing to accept."
+        },
+        "s6": {
+          "title": "Run one small reality check on the option you chose",
+          "description": "Before any big commitment, do one small thing that makes sure the decision does not rest on a conversation alone."
+        },
+        "s7": {
+          "title": "Start the next career move in the direction you chose",
+          "description": "Choose a reversible step: a piece of proof, a focused skill gap, or a follow-up conversation."
+        }
+      }
+    },
+    "fitTest": {
+      "goal": "Check whether a direction that interests me really fits, before committing to it",
+      "axis": {
+        "question": "How would you rather test whether a direction suits you?",
+        "work": "Doing a small piece of the work myself.",
+        "people": "Talking to people who live it.",
+        "realContext": "Doing a small task for a real need."
+      },
+      "workSample": {
+        "essence": "Do a small piece of the work itself, and tell a skill gap apart from a bad fit.",
+        "m0": "I have lived a small stretch of work like the direction that interests me",
+        "m1": "I know what drew me in and what did not",
+        "m2": "I have compared my experience with what real roles actually involve",
+        "m3": "I have decided whether to go deeper, and taken the next step",
+        "s0": {
+          "title": "Choose one small question from work or from life that this kind of work could answer",
+          "description": "Choose a question that genuinely interests you. It does not need to be an impressive project."
+        },
+        "s1": {
+          "title": "Find the smallest material you need to answer it",
+          "description": "Use what you are already allowed to work with, or what is public. Do not let the search become a project of its own."
+        },
+        "s2": {
+          "title": "Do the small piece of work that tries to answer the question",
+          "description": "The aim is to live the sequence — understand a question, work through it, reach a conclusion, say it clearly — not to meet a professional standard."
+        },
+        "s3": {
+          "title": "Write three lines: what you enjoyed, what drained you, and what you would be willing to learn",
+          "description": "Separate \"I do not know how yet\" from \"I do not like this kind of work\"."
+        },
+        "s4": {
+          "title": "Read two current role descriptions in the direction you are testing",
+          "description": "Look for whether the kind of work you just did appears in real roles, and what is still missing from the picture."
+        },
+        "s5": {
+          "title": "Decide whether to go deeper, to stop, or to run one more check",
+          "description": "Choose by fit, not by how well the first attempt went."
+        },
+        "s6": {
+          "title": "Take a small step in line with that decision",
+          "description": "Going deeper: pick one skill or piece of proof to build. Stopping: write down what you learned about what to look for next."
+        }
+      },
+      "conversation": {
+        "essence": "Learn it from two people who live the work, then feel the one part you cannot take on trust.",
+        "m0": "I have heard what the work looks like from two real points of view",
+        "m1": "I have verified what actually repeats in real roles, not just in one conversation",
+        "m2": "I have felt for myself the one part that mattered most to test",
+        "m3": "I have decided whether to go deeper in this direction",
+        "s0": {
+          "title": "Write three questions that would show you what the work is like day to day",
+          "description": "Ask about the kind of tasks, the draining parts, and what surprises people who move into it."
+        },
+        "s1": {
+          "title": "Talk to one person doing this work about a real working day",
+          "description": "The aim is to understand the work, not to be told whether you should switch."
+        },
+        "s2": {
+          "title": "Talk to one more person, in a different setting or at a different level of experience",
+          "description": "The second conversation is what stops one person’s experience from becoming the truth about a whole profession."
+        },
+        "s3": {
+          "title": "Write down three things that came up in both conversations, and one that differed",
+          "description": "Look for patterns in the work itself, not only for career advice."
+        },
+        "s4": {
+          "title": "Check two current role descriptions against what you heard",
+          "description": "Verify that the main tasks they described also show up in the roles that are actually out there."
+        },
+        "s5": {
+          "title": "Choose the one part of the work you still need to feel for yourself",
+          "description": "A conversation can teach a great deal, but it cannot fully replace doing it."
+        },
+        "s6": {
+          "title": "Run a micro-test of the part you chose",
+          "description": "A short piece of work that lets you feel the kind of work without committing to any training."
+        },
+        "s7": {
+          "title": "Decide whether to go deeper, to stop, or to look at another direction",
+          "description": "Sum up the decision from what the people, the market and your own micro-test told you."
+        }
+      },
+      "realContext": {
+        "essence": "Do one small real task for someone who needs the answer, and test the context as well as the work.",
+        "m0": "I have worked on a small question with a real need behind it",
+        "m1": "I got feedback, and I know how the real context felt",
+        "m2": "I have checked how much of that experience represents the wider role",
+        "m3": "I have decided whether to go deeper, and taken the next step",
+        "s0": {
+          "title": "Find one small real problem where this kind of work would help someone decide something",
+          "description": "Best from a context already open to you: work, a personal project, a community. Do not invent a large project."
+        },
+        "s1": {
+          "title": "Agree with that person, or that context, on the question you are answering",
+          "description": "Keep the scope small: one question, not a whole system."
+        },
+        "s2": {
+          "title": "Do the small piece of work and give back an answer they can use",
+          "description": "The aim is to feel what it is like to work with real context and real responsibility to someone, not to build a perfect portfolio."
+        },
+        "s3": {
+          "title": "Ask for one piece of feedback on what was useful and what was missing",
+          "description": "This is feedback on the work, not a grade on whether the career suits you."
+        },
+        "s4": {
+          "title": "Write down what changed when the work was for a real need rather than an exercise",
+          "description": "Check whether you enjoyed clarifying the question, doing the work, explaining it, and the back-and-forth around the result."
+        },
+        "s5": {
+          "title": "Read two current role descriptions to see how much of this represents the direction",
+          "description": "Separate this particular experience from the wider role."
+        },
+        "s6": {
+          "title": "Decide whether to go deeper, to stop, or to test one more part",
+          "description": "Choose on fit, not on one successful attempt."
+        },
+        "s7": {
+          "title": "Take a small step in line with that decision",
+          "description": "Going deeper: choose one focused skill or piece of proof. If not: write down what you learned about the kind of work you do want."
+        }
+      }
+    },
+    "jobTarget": {
+      "goal": "Find a new job when it is not yet clear which roles to aim at",
+      "axis": {
+        "question": "Where would you rather start narrowing the search from?",
+        "criteria": "From what I want in my next role.",
+        "market": "From the openings themselves, and what repeats in them.",
+        "people": "From people who know the market."
+      },
+      "criteriaFirst": {
+        "essence": "Say what the next role has to give you, and narrow the market down to it.",
+        "m0": "I know what I am looking for in my next role",
+        "m1": "I have narrowed it down to two plausible targets",
+        "m2": "I have chosen a main target and a backup",
+        "m3": "I have started a focused search for the main target",
+        "s0": {
+          "title": "Pick two tasks from your current work you would want more of, and less of",
+          "description": "Real examples from the past month are enough."
+        },
+        "s1": {
+          "title": "Turn those examples into three criteria for the next role",
+          "description": "For example: the kind of problems, working with people, depth of analysis, or how much is yours to own."
+        },
+        "s2": {
+          "title": "Choose no more than three possible target roles",
+          "description": "These are hypotheses to test."
+        },
+        "s3": {
+          "title": "Compare a small sample of openings from each target against those criteria",
+          "description": "Look for patterns, not for one perfect opening."
+        },
+        "s4": {
+          "title": "Drop the one target that does not hold up well enough against them",
+          "description": "Write down why it is going."
+        },
+        "s5": {
+          "title": "Choose a main target and a backup",
+          "description": "The main target has to be clear enough to focus a search around."
+        },
+        "s6": {
+          "title": "Take one search action for the main target only",
+          "description": "For example a focused search, or adjusting how you show the evidence for it."
+        }
+      },
+      "postingsFirst": {
+        "essence": "Start from the roles that already appeal to you, and read the pattern in them.",
+        "m0": "I can see what repeats in the roles that attract me",
+        "m1": "I have narrowed the market to two families of roles",
+        "m2": "I have chosen a clear search target",
+        "m3": "I have tested that target through a focused search",
+        "s0": {
+          "title": "Collect five openings that made you stop and think \"this is interesting\"",
+          "description": "Even if the job titles are completely different from one another."
+        },
+        "s1": {
+          "title": "Mark what repeats across those five",
+          "description": "Look for tasks, problems and working environments that come up more than once."
+        },
+        "s2": {
+          "title": "Group them into two families of roles",
+          "description": "Group by the actual work, not by the job title."
+        },
+        "s3": {
+          "title": "Check three more openings from each family",
+          "description": "See whether the pattern holds."
+        },
+        "s4": {
+          "title": "Choose the family that fits your experience and your constraints better",
+          "description": "This is choosing a search target, not a professional identity."
+        },
+        "s5": {
+          "title": "Write your search target as one sentence",
+          "description": "A sentence that names the role, the kind of work, and the kind of place."
+        },
+        "s6": {
+          "title": "Run one focused search using that new sentence",
+          "description": "Check whether the results come back more relevant than before."
+        }
+      },
+      "conversationFirst": {
+        "essence": "Get two realistic directions from people who know the market, then verify them against real openings.",
+        "m0": "I have two realistic directions out of real conversations",
+        "m1": "I have verified that those directions exist and suit me in the market",
+        "m2": "I have chosen a main target",
+        "m3": "I have started a focused search for it",
+        "s0": {
+          "title": "Choose two people who can show you roles close to what you already do",
+          "description": "Ideally people who see several functions, not only their own."
+        },
+        "s1": {
+          "title": "Have one conversation aimed at naming two or three realistic directions",
+          "description": "Ask for examples of roles, not for advice about your career."
+        },
+        "s2": {
+          "title": "Have a second conversation and see whether the same directions come up",
+          "description": "The second conversation is what verifies the first."
+        },
+        "s3": {
+          "title": "Check a small sample of openings in the two directions that repeated",
+          "description": "Look for whether the actual work matches what you were told."
+        },
+        "s4": {
+          "title": "Choose a main target on fit, experience and constraints",
+          "description": "Keep the second one as a backup only."
+        },
+        "s5": {
+          "title": "Take a first search action for the main target",
+          "description": "For example one more focused conversation, or adjusting how you show the evidence for it."
+        }
+      }
+    },
+    "proof": {
+      "goal": "Present my experience so that more of my applications get an answer",
+      "axis": {
+        "question": "Where should the proof that you fit come from?",
+        "existing": "From the experience I already have.",
+        "build": "Building something small that shows the capability.",
+        "story": "Telling what I have already done differently."
+      },
+      "extractExisting": {
+        "essence": "Turn experience you already have into clear proof, without inventing anything.",
+        "m0": "I have mapped real experience of mine onto what the target asks for",
+        "m1": "I have written proof that is clear and believable",
+        "m2": "That proof is now part of how I present myself",
+        "m3": "I have tried the new version in a real search action",
+        "s0": {
+          "title": "Choose one target opening that represents well what you are looking for",
+          "description": "It will serve as your reference point."
+        },
+        "s1": {
+          "title": "Mark three central requirements you can already prove",
+          "description": "Real experience only."
+        },
+        "s2": {
+          "title": "For each requirement, find one real example from your past",
+          "description": "Write the situation, what you did, and what it changed."
+        },
+        "s3": {
+          "title": "Turn two of those examples into short lines of proof",
+          "description": "Without inflating anything and without inventing anything."
+        },
+        "s4": {
+          "title": "Put the proof into the document or profile that matters",
+          "description": "Update only what actually affects this target."
+        },
+        "s5": {
+          "title": "Use the new version in one real search action",
+          "description": "An application, an approach, or sharing it with someone."
+        }
+      },
+      "buildArtifact": {
+        "essence": "Make one small thing that shows the capability your existing experience cannot show.",
+        "m0": "I have chosen the one gap in my proof worth closing",
+        "m1": "I have made something that shows the capability",
+        "m2": "I have checked that it is understood and relevant",
+        "m3": "I have used it in a real search action",
+        "s0": {
+          "title": "Choose one requirement that keeps appearing in your target roles and is hard for you to prove today",
+          "description": "Choose a gap in the PROOF, not a skill you do not have."
+        },
+        "s1": {
+          "title": "Define one small thing you could make that would show that capability",
+          "description": "For example a map of a process, or a short piece of analysis."
+        },
+        "s2": {
+          "title": "Build a first version of it",
+          "description": "Use only material you are allowed to show."
+        },
+        "s3": {
+          "title": "Check whether someone who knows this work understands what it proves",
+          "description": "Ask them about relevance, not about how it looks."
+        },
+        "s4": {
+          "title": "Improve it once, from what they told you",
+          "description": "The aim is proof that is good enough to use, not a finished product."
+        },
+        "s5": {
+          "title": "Fold it into how you present yourself",
+          "description": "Tie it explicitly to the requirement it proves."
+        },
+        "s6": {
+          "title": "Use it in one real search action",
+          "description": "See whether explaining why you fit has become easier."
+        }
+      },
+      "roleStory": {
+        "essence": "Tell what you have already done in the language of value the target role is looking for.",
+        "m0": "I have connected my experience to the value the target is looking for",
+        "m1": "I have built proof stories that hold up",
+        "m2": "I have checked that they convey the right capability",
+        "m3": "I have used them in a real search action",
+        "s0": {
+          "title": "Choose a target opening and mark three kinds of value it is looking for",
+          "description": "For example: owning something end to end, coordinating between people, or improving how work gets done."
+        },
+        "s1": {
+          "title": "Choose three past experiences that show that value",
+          "description": "They do not have to come from the same job title."
+        },
+        "s2": {
+          "title": "Write each one as a short story: the problem, what you did, what changed",
+          "description": "If you do not have an exact number, do not invent one."
+        },
+        "s3": {
+          "title": "Turn one story into a written version and a spoken one",
+          "description": "The same evidence, in two forms: one for the page, one for a conversation."
+        },
+        "s4": {
+          "title": "Check with one person what they think the story proves",
+          "description": "Ask them to describe the capability they heard, in their own words."
+        },
+        "s5": {
+          "title": "Update the other two stories in the same way",
+          "description": "Keep them short."
+        },
+        "s6": {
+          "title": "Use one of the stories in a real search action",
+          "description": "An application, an approach, or preparing for an interview."
+        }
+      }
+    },
+    "access": {
+      "goal": "Reach more relevant opportunities and people in my job search",
+      "axis": {
+        "question": "Which route to people feels possible for you right now?",
+        "warm": "Through people who already know me.",
+        "community": "Through a professional place I keep coming back to.",
+        "targeted": "A focused approach to someone I have a reason to talk to."
+      },
+      "warmNetwork": {
+        "essence": "Use the ties you already have, naturally and with a clear reason.",
+        "m0": "I have found the existing ties that could open information or a way in",
+        "m1": "I have made two natural, focused approaches",
+        "m2": "I have turned a reply into information, a conversation or an introduction",
+        "m3": "I have a way of using this route again",
+        "s0": {
+          "title": "List five people who already know you and might be one connection away from the field",
+          "description": "They do not need to be important people."
+        },
+        "s1": {
+          "title": "Choose the two you have a natural reason to contact",
+          "description": "Ask for a perspective or an introduction, not for a job."
+        },
+        "s2": {
+          "title": "Send one approach that says clearly why you are writing",
+          "description": "Write what you are asking about and what would actually help."
+        },
+        "s3": {
+          "title": "Send the second one",
+          "description": "Improve the wording first if the first one taught you something."
+        },
+        "s4": {
+          "title": "Follow through on whatever conversation or introduction came out of it",
+          "description": "Write down what you learned and what the next step is."
+        },
+        "s5": {
+          "title": "Choose one way to use this route once a week",
+          "description": "A small, realistic minimum."
+        }
+      },
+      "repeatedCommunity": {
+        "essence": "Trade one-off networking for turning up again where connections form on their own.",
+        "m0": "I have found a relevant community and seen how it works",
+        "m1": "I have taken part in it more than once",
+        "m2": "One professional connection has formed naturally",
+        "m3": "I have decided whether this becomes a route I keep using",
+        "s0": {
+          "title": "Choose one professional community where people from the field keep meeting",
+          "description": "Somewhere that comes round again is better than a one-off event."
+        },
+        "s1": {
+          "title": "Turn up once, just to understand what happens there",
+          "description": "Notice who takes part and how connections actually form."
+        },
+        "s2": {
+          "title": "Next time, contribute one small thing",
+          "description": "A good question, an answer to someone, or one short conversation."
+        },
+        "s3": {
+          "title": "Come back to the same community one more time",
+          "description": "The point is that people start recognising you."
+        },
+        "s4": {
+          "title": "Open one conversation with the person the contact came most naturally with",
+          "description": "Ask about the work, out of the context you already share."
+        },
+        "s5": {
+          "title": "Decide whether this community is worth keeping as a route",
+          "description": "If it is, set the minimum you will keep up."
+        }
+      },
+      "targetedConversations": {
+        "essence": "Small, precise approaches to specific people who hold something worth knowing.",
+        "m0": "I have found specific people I have a real reason to talk to",
+        "m1": "I have sent focused approaches rather than generic ones",
+        "m2": "I have turned a reply into information, a conversation or a connection",
+        "m3": "I have set a small pace I can actually repeat",
+        "s0": {
+          "title": "Choose three companies or teams you would like to understand better",
+          "description": "Choose places that are relevant to your target."
+        },
+        "s1": {
+          "title": "In each one, find a person who could tell you something useful",
+          "description": "It does not have to be a recruiter."
+        },
+        "s2": {
+          "title": "Write one specific question for each of them",
+          "description": "Why this person in particular, and what you want to understand."
+        },
+        "s3": {
+          "title": "Send two focused approaches",
+          "description": "Ask for a short perspective, not for a job."
+        },
+        "s4": {
+          "title": "If someone replies, have a short conversation and take away one insight and one next step",
+          "description": "If nobody replies, learn from the wording and try the third person."
+        },
+        "s5": {
+          "title": "Send one follow-up that continues the contact naturally",
+          "description": "A thank you with a short update, or the question that came out of the conversation."
+        },
+        "s6": {
+          "title": "Decide whether this route is worth repeating weekly",
+          "description": "For example two good approaches a week."
+        }
+      }
+    }
   }
 }

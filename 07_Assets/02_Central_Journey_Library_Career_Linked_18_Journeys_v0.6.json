@@ -1,0 +1,2871 @@
+{
+  "release": "v0.6",
+  "architecture": {
+    "library": "one central Journey Library",
+    "expertRelationship": "Journeys are linked to one or more relevant Experts; Experts are aware of and can recommend relevant linked Journeys.",
+    "implementationNote": "linkedExpertIds is authoring/library metadata here, not asserted as an existing persisted Journey model field."
+  },
+  "artifactType": "central Journey Library authoring package; Journey objects are creation payloads, not persisted domain objects",
+  "linkedExpertSection": "career",
+  "goalFamilyCount": 6,
+  "journeyCount": 18,
+  "families": [
+    {
+      "goalId": "CAR_G01",
+      "goal": "להבין מה הצעד הבא שלי בקריירה",
+      "domain": "career",
+      "goalKind": "process",
+      "subtype": "FIND_DIRECTION",
+      "primaryBottleneck": "DIRECTION_EVIDENCE_GAP",
+      "variantAxis": "certainty_before_real_world_test",
+      "controlledConstants": {
+        "sameGoal": true,
+        "sameDream": true,
+        "sameDurationDays": 35,
+        "sameAmbitionLevel": "balanced",
+        "similarWeeklyEffort": "about 90–120 minutes",
+        "samePrimaryBottleneck": "DIRECTION_EVIDENCE_GAP",
+        "sameCompletionMeaning": "The user has chosen one evidence-backed next career move and has already started it; completion does not require perfect certainty, a course, or a job offer."
+      },
+      "persona": {
+        "name": "Dana",
+        "summary": "29, four years in customer support/operations at a software company. She wants to understand her next career direction without quitting first or paying for a long course before testing fit.",
+        "userSaid": [
+          "אני לא רוצה להישאר בתמיכה עוד שנים.",
+          "אני הכי נהנית כשאני מזהה בעיה שחוזרת אצל לקוחות ומצליחה לחבר בין אנשים כדי לפתור אותה.",
+          "אני רוצה להרגיש שאני מתפתחת ולומדת, לא רק סוגרת עוד טיקט.",
+          "אני לא רוצה להוציא עכשיו אלפי שקלים על קורס לפני שאני יודעת שהכיוון מתאים לי."
+        ],
+        "capacity": "about 2 hours/week"
+      },
+      "dream": {
+        "id": "dream_career_dana_01",
+        "title": "לבנות קריירה שבה אני ממשיכה ללמוד, פותרת בעיות ומשפיעה מעבר למשימה הבאה",
+        "description": "שאיפה ארוכת־טווח לקריירה מתפתחת שבה דנה משתמשת ביכולת שלה לזהות בעיות, לחבר בין אנשים ולהמשיך ללמוד."
+      },
+      "variants": [
+        {
+          "variantId": "career_direction_clarity_first",
+          "label": "Clarity-first",
+          "declaredFit": [
+            "User says they need to understand before acting",
+            "Past success came from planning/understanding first",
+            "User becomes anxious or disengaged when asked to test a direction before it makes sense to them"
+          ],
+          "journey": {
+            "title": "לצמצם את האפשרויות, לבדוק את המובילות ולצאת למהלך הבא",
+            "description": "מסלול שמייצר קודם קריטריונים וכיוונים סבירים, ורק אז עובר לבדיקה בעולם האמיתי.",
+            "why": [
+              "אני לא רוצה להישאר בתמיכה עוד שנים",
+              "אני רוצה להרגיש שאני מתפתחת ולומדת, לא רק סוגרת עוד טיקט",
+              "אני לא רוצה להשקיע בקורס ארוך לפני שאני יודעת שהכיוון מתאים לי"
+            ],
+            "dreamId": "dream_career_dana_01",
+            "durationDays": 35,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "ca_m0",
+                "title": "ברור לי מה הכיוון הבא חייב לתת לי ומה הוא חייב לכבד",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "ca_m1",
+                "title": "יש לי שני כיוונים סבירים ששווה לבדוק",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "ca_m2",
+                "title": "השוויתי את שני הכיוונים מול מידע מהעולם האמיתי",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "ca_m3",
+                "title": "בדקתי את הכיוון המוביל דרך עבודה קטנה שדומה למציאות",
+                "order": 3,
+                "weight": 2
+              },
+              {
+                "id": "ca_m4",
+                "title": "בחרתי מהלך הבא והתחלתי אותו",
+                "order": 4,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי משימת עבודה אחת שנותנת לך אנרגיה ואחת ששוחקת אותך",
+                "description": "שתי דוגמאות אמיתיות מהחודש האחרון מספיקות. המטרה היא להתחיל מהחוויה שלך, לא משמות תפקידים.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "הפכי את שתי הדוגמאות לשלושה קריטריונים ושני אילוצים",
+                "description": "לדוגמה: סוג הבעיות, למידה, עבודה בין־צוותית, יציבות הכנסה או מגבלת זמן ללמידה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בחרי שני כיוונים סבירים שנראים מתאימים לקריטריונים",
+                "description": "אלה השערות לבדיקה, לא החלטה. אל תירשמי לקורס ואל תתחייבי לכיוון עדיין.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "השווי מדגם קטן של תפקידים עדכניים בכיוון הראשון",
+                "description": "בדקי מה חוזר בתפקידים, מה מושך, מה מרתיע ומה לא ברור.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "עשי את אותה בדיקה לכיוון השני",
+                "description": "השתמשי באותם קריטריונים כדי לא לבחור לפי שם תפקיד בלבד.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "דברי עם אדם אחד שמכיר את הכיוון שנראה כרגע מוביל",
+                "description": "בואי עם 2–3 שאלות על העבודה בפועל, הקשיים ומה מפתיע אנשים שנכנסים לתחום.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "מפי בעיה אחת שאת כבר מכירה שדומה לעבודה בכיוון המוביל",
+                "description": "לדוגמה: בעיה חוזרת אצל לקוחות, מי מושפע ממנה ומה לדעתך גורם לה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "כתבי הצעת שיפור קצרה לבעיה שמיפית",
+                "description": "זהו ניסוי זול והפיך שמדמה חלק מהעבודה בלי קורס ארוך.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30,
+                "dependsOnStepIndex": 6
+              },
+              {
+                "title": "בחרי את מהלך הקריירה הבא לפי הראיות שאספת",
+                "description": "למשל proof נוסף, skill gap מוגדר, חיפוש ממוקד או בדיקת כיוון נוסף.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בצעי את הפעולה הראשונה של המהלך שבחרת",
+                "description": "התחילי את המהלך בפעולה ממשית אחת.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 8
+              }
+            ]
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        },
+        {
+          "variantId": "career_direction_action_first",
+          "label": "Action-first",
+          "declaredFit": [
+            "User says they learn best by trying",
+            "Past success came from jumping in and adjusting",
+            "User tends to get stuck in research or waits for certainty before moving"
+          ],
+          "journey": {
+            "title": "ללמוד מהתנסות קטנה ולתרגם אותה לכיוון קריירה הבא",
+            "description": "מסלול שמתחיל בניסוי קטן מתוך העבודה שכבר מוכרת למשתמשת, ואז משתמש במה שנלמד כדי לצמצם כיוונים.",
+            "why": [
+              "אני לא רוצה להישאר בתמיכה עוד שנים",
+              "אני הכי נהנית כשאני מזהה בעיה שחוזרת אצל לקוחות ומצליחה לחבר בין אנשים כדי לפתור אותה",
+              "אני רוצה להרגיש שאני מתפתחת ולומדת"
+            ],
+            "dreamId": "dream_career_dana_01",
+            "durationDays": 35,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "cb_m0",
+                "title": "ניסיתי סוג עבודה קטן שמבוסס על מה שכבר נותן לי אנרגיה",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "cb_m1",
+                "title": "הפכתי את מה שלמדתי לשני כיוונים סבירים",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "cb_m2",
+                "title": "בדקתי אם הכיוונים באמת מכילים את סוג העבודה שאני מחפשת",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "cb_m3",
+                "title": "ברור לי מה הכיוון הבא צריך לתת לי ומה הוא חייב לכבד",
+                "order": 3,
+                "weight": 1
+              },
+              {
+                "id": "cb_m4",
+                "title": "בחרתי מהלך הבא והתחלתי אותו",
+                "order": 4,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי בעיה אחת שחוזרת בעבודה ושמעניין אותך לפתור אחרת",
+                "description": "בחרי בעיה שכבר מוכרת לך. אין צורך לדעת עדיין איזה תפקיד היא 'שייכת' אליו.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 5
+              },
+              {
+                "title": "מפי בקצרה מי מושפע מהבעיה ומה נראה שגורם לה",
+                "description": "המטרה היא לייצר חומר לניסוי, לא מסמך מושלם.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "כתבי הצעת שיפור קצרה או דרך אחרת לטפל בבעיה",
+                "description": "זהו ניסוי ראשון שמייצר מידע על איזה סוג עבודה נותן לך אנרגיה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25,
+                "dependsOnStepIndex": 1
+              },
+              {
+                "title": "רשמי מה בניסוי נתן לך אנרגיה ומה פחות",
+                "description": "התמקדי במה עשית בפועל: ניתוח, תיאום, כתיבה, פתרון בעיה, עבודה עם אנשים וכו'.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "הפכי את מה שלמדת לשני כיווני קריירה סבירים",
+                "description": "המאמן יכול להציע השערות, אבל אלה נשארות לבדיקה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 3
+              },
+              {
+                "title": "בדקי מדגם קטן של תפקידים עדכניים בשני הכיוונים",
+                "description": "חפשי התאמה בין מה שנהנית לעשות בניסוי לבין מה שהתפקידים באמת דורשים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "דברי עם אדם אחד שמכיר את הכיוון המוביל",
+                "description": "שאלי האם סוג העבודה שבדקת באמת מופיע בתפקיד ואיך הוא נראה ביום־יום.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "כתבי שלושה קריטריונים ושני אילוצים לבחירה הסופית",
+                "description": "עכשיו הקריטריונים נשענים גם על ניסיון ולא רק על השערה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בחרי את מהלך הקריירה הבא לפי הראיות שאספת",
+                "description": "בחרי מהלך אחד, לא קריירה לכל החיים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בצעי את הפעולה הראשונה של המהלך שבחרת",
+                "description": "התחילי בפועל: artifact, שיחה, skill gap מוגדר או חיפוש ממוקד.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 8
+              }
+            ]
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        },
+        {
+          "variantId": "career_direction_hybrid",
+          "label": "Hybrid",
+          "declaredFit": [
+            "User wants a little clarity and then motion",
+            "Past success came from a mix of planning and adjustment",
+            "User dislikes both long analysis and jumping in completely blind"
+          ],
+          "journey": {
+            "title": "לקבל מספיק בהירות, לבדוק מהר, ולבחור את המהלך הבא",
+            "description": "מסלול שנותן מעט בהירות בהתחלה, עובר מהר לבדיקה בעולם האמיתי, וחוזר לצמצום רק לפי מה שנלמד.",
+            "why": [
+              "אני לא רוצה להישאר בתמיכה עוד שנים",
+              "אני רוצה להרגיש שאני מתפתחת ולומדת",
+              "אני לא רוצה להשקיע הרבה לפני שאני יודעת שהכיוון מתאים לי"
+            ],
+            "dreamId": "dream_career_dana_01",
+            "durationDays": 35,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "cc_m0",
+                "title": "יש לי השערה אחת מספיק טובה כדי לבדוק בלי להתחייב אליה",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "cc_m1",
+                "title": "בדקתי את ההשערה גם במידע וגם בפעולה קטנה",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "cc_m2",
+                "title": "ברור לי מה התחזק, מה נחלש ומה עוד חסר לי לדעת",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "cc_m3",
+                "title": "סגרתי את פער המידע האחרון שמנע החלטה",
+                "order": 3,
+                "weight": 2
+              },
+              {
+                "id": "cc_m4",
+                "title": "בחרתי מהלך הבא והתחלתי אותו",
+                "order": 4,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "כתבי במשפט אחד מה את רוצה יותר בעבודה הבאה ומה פחות",
+                "description": "בלי רשימה ארוכה. משפט אחד שמבוסס על החוויה שלך היום.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 5
+              },
+              {
+                "title": "בחרי כיוון אחד שנראה כרגע מספיק סביר לבדיקה",
+                "description": "זו השערה זמנית בלבד. לא צריך להיות בטוחה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בדקי שני תיאורי תפקיד עדכניים בכיוון הזה",
+                "description": "חפשי רק שלושה דברים: מה מושך, מה מרתיע, ומה עדיין לא ברור.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "בצעי מיקרו־ניסוי אחד שמדמה חלק מהעבודה בכיוון",
+                "description": "בחרי פעולה קטנה וזולה שאפשר לבצע מתוך ניסיון קיים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30,
+                "dependsOnStepIndex": 2
+              },
+              {
+                "title": "רשמי מה נהיה ברור יותר אחרי הבדיקה והניסוי",
+                "description": "מה קיבל חיזוק, מה ירד מהפרק, ומה עוד צריך לבדוק.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בחרי כיוון שני רק אם עדיין יש ספק משמעותי",
+                "description": "אם הכיוון הראשון נראה מספיק מבטיח, אין חובה להוסיף אפשרות רק כדי להשוות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "דברי עם אדם אחד שמכיר את הכיוון שמוביל עכשיו",
+                "description": "השתמשי בשיחה כדי לבדוק את הפערים שנשארו, לא כדי להתחיל מחקר מחדש.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "נסחי שלושה קריטריונים ושני אילוצים להחלטה",
+                "description": "בני אותם מתוך מה שכבר למדת, לא לפני כל מגע עם המציאות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בחרי את מהלך הקריירה הבא",
+                "description": "בחרי את הצעד הבא הסביר ביותר, לא את הקריירה לכל החיים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בצעי את הפעולה הראשונה של המהלך שבחרת",
+                "description": "עברי מהחלטה לפעולה ממשית.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 8
+              }
+            ]
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        }
+      ],
+      "matchingHypothesis": {
+        "primarySignal": "startingMode",
+        "rules": [
+          {
+            "signal": "startingMode=understand_first",
+            "initialRank": [
+              "career_direction_clarity_first",
+              "career_direction_hybrid",
+              "career_direction_action_first"
+            ],
+            "reason": "This family differs mainly in how much certainty is built before the first real-world test."
+          },
+          {
+            "signal": "startingMode=action_first",
+            "initialRank": [
+              "career_direction_action_first",
+              "career_direction_hybrid",
+              "career_direction_clarity_first"
+            ],
+            "reason": "The action-first variant creates evidence before doing broad comparison."
+          },
+          {
+            "signal": "startingMode=hybrid",
+            "initialRank": [
+              "career_direction_hybrid",
+              "career_direction_action_first",
+              "career_direction_clarity_first"
+            ],
+            "reason": "Hybrid gives one small clarity step and then moves to evidence quickly."
+          }
+        ],
+        "secondaryEvidence": [
+          {
+            "signal": "previousSuccessPattern",
+            "use": "Reinforces or weakens the startingMode ranking. Past success with planning favors Clarity-first; past success with experiments favors Action-first; mixed success favors Hybrid."
+          }
+        ],
+        "eligibilityOrVetoSignals": [
+          {
+            "signal": "realisticCapacity",
+            "use": "Does not meaningfully distinguish these three variants because weekly load is deliberately held similar. It decides whether this whole variant family is feasible or needs a lower-load family."
+          },
+          {
+            "signal": "abandonmentPattern",
+            "use": "Mostly a veto/adaptation signal here. For example, 'too many things to do' may require a lower-density family rather than choosing among these three."
+          },
+          {
+            "signal": "structurePreference",
+            "use": "Held intentionally similar across the three variants, so it should not decide this comparison. A separate structured-vs-flexible variant family is needed to test this signal."
+          },
+          {
+            "signal": "challengePreference",
+            "use": "Held at balanced ambition across all three. It should select an ambition family, not decide among these starting-mode variants."
+          }
+        ],
+        "goalSpecificSignals": [
+          {
+            "signal": "career direction bottleneck",
+            "use": "All three assume DIRECTION_EVIDENCE_GAP. If the Expert finds a different primary bottleneck, none of these variants should be selected."
+          },
+          {
+            "signal": "goal-specific social fit",
+            "use": "All three contain one information conversation. If involving another person is a major blocker, the selected variant should be adapted or a solo family should exist."
+          }
+        ]
+      },
+      "sourceLineage": "Imported unchanged from v0.3 except package-level canonicalization."
+    },
+    {
+      "goalId": "CAR_G02",
+      "goal": "להחליט בין שתי אפשרויות קריירה קונקרטיות",
+      "domain": "career",
+      "goalKind": "process",
+      "subtype": "FIND_DIRECTION",
+      "primaryBottleneck": "DIRECTION_GAP",
+      "variantAxis": "primary_decision_evidence",
+      "controlledConstants": {
+        "sameGoal": true,
+        "sameDream": true,
+        "samePersona": true,
+        "sameDurationDays": 28,
+        "sameAmbitionLevel": "balanced",
+        "similarWeeklyEffort": "about 90–120 minutes",
+        "samePrimaryBottleneck": "DIRECTION_GAP",
+        "sameCompletionMeaning": "Yael chooses one of the two options or identifies one final decisive evidence gap, then starts the next move. No perfect certainty is required."
+      },
+      "persona": {
+        "name": "Yael",
+        "summary": "32, works in marketing operations and is choosing between Product Operations and Customer Success Operations. She wants more cross-functional problem solving, cannot take a major pay cut, and does not want to commit to a course before deciding.",
+        "userSaid": [
+          "יש לי שתי אופציות שאני באמת שוקלת: Product Operations או Customer Success Operations.",
+          "אני אוהבת לפתור בעיות בין צוותים ולא להיות רק בתוך משימה אחת.",
+          "אני לא יכולה להרשות לעצמי ירידה גדולה בשכר.",
+          "אני לא רוצה להתחיל עוד קורס לפני שאני יודעת לאיזה כיוון אני הולכת."
+        ],
+        "capacity": "about 90–120 minutes/week"
+      },
+      "dream": {
+        "id": "dream_career_yael_01",
+        "title": "לבנות קריירה שבה אני פותרת בעיות רוחביות, מתפתחת ושומרת על יציבות",
+        "description": "שאיפה ארוכת־טווח לעבודה שמחברת פתרון בעיות, השפעה בין־צוותית והתפתחות בלי לוותר על יציבות בסיסית."
+      },
+      "variants": [
+        {
+          "variantId": "career_two_options_criteria_first",
+          "label": "Criteria-first comparison",
+          "axisValue": "criteria_first",
+          "declaredFit": [
+            "The user says a structured comparison reduces noise",
+            "Past good decisions came from explicit criteria",
+            "The two options are already concrete enough to compare"
+          ],
+          "journey": {
+            "title": "להכריע בין שתי האפשרויות דרך קריטריונים וראיות",
+            "description": "מסלול שמגדיר קודם מה באמת חשוב בהחלטה, משווה את שתי האפשרויות באותו סרגל, וסוגר רק את פערי המידע שיכולים לשנות את הבחירה.",
+            "why": [
+              "אני רוצה תפקיד עם יותר פתרון בעיות בין צוותים",
+              "אני רוצה להמשיך להתפתח",
+              "אני לא יכולה להרשות לעצמי ירידה גדולה בשכר"
+            ],
+            "dreamId": "dream_career_yael_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g02a_m0",
+                "title": "ברור לי לפי מה אני באמת בוחרת",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g02a_m1",
+                "title": "השוויתי את שתי האפשרויות באותו סרגל",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "g02a_m2",
+                "title": "סגרתי את פער המידע העיקרי שמנע החלטה",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "g02a_m3",
+                "title": "בחרתי אפשרות והתחלתי את המהלך הבא",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "כתבי שלושה דברים שהבחירה חייבת לתת לך ושני דברים שהיא חייבת לכבד",
+                "description": "השתמשי במה שכבר אמרת: פתרון בעיות רוחבי, התפתחות, ויציבות. אל תבני רשימה של עשרה קריטריונים.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "הגדירי מה ייחשב מבחינתך סימן חזק לכל קריטריון",
+                "description": "לדוגמה: אם 'עבודה בין־צוותית' חשובה, מה היית מצפה לראות בתפקיד בפועל?",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בדקי את Product Operations מול אותם קריטריונים",
+                "description": "השתמשי במידע עדכני על תפקידים אמיתיים ורשמי: evidence בעד, evidence נגד, ומה עדיין לא ידוע.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "בדקי את Customer Success Operations מול אותם קריטריונים",
+                "description": "השתמשי בדיוק באותם קריטריונים כדי שההשוואה תהיה הוגנת.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "בחרי את שני פערי המידע שבאמת יכולים לשנות את ההחלטה",
+                "description": "אל תחקור כל מה שמעניין. רק מידע שאם התשובה עליו תהיה שונה, הבחירה עשויה להשתנות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "סגרי פער מידע אחד דרך שיחה או מקור אמין",
+                "description": "בחרי את הדרך הקצרה ביותר לקבל evidence אמיתי על השאלה החשובה ביותר.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "בחרי את האפשרות שמנצחת לפי הראיות והאילוצים שלך",
+                "description": "אם אין מנצחת, הגדירי פער מידע אחד אחרון בלבד. המטרה היא החלטה מספקת, לא ודאות מוחלטת.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בצעי צעד ראשון בכיוון שבחרת",
+                "description": "למשל שיחת המשך, בניית proof קטן, או בדיקת skill gap. הצעד צריך להיות הפיך וזול.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 6
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              },
+              {
+                "stepIndex": 7,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Allocation is authoring metadata. The product owns minted milestoneId/step ids on creation."
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        },
+        {
+          "variantId": "career_two_options_test_first",
+          "label": "Real-world test-first comparison",
+          "axisValue": "real_world_test_first",
+          "declaredFit": [
+            "The user says they understand fit by doing",
+            "Past success came from trying before committing",
+            "The user tends to overthink abstract comparisons"
+          ],
+          "journey": {
+            "title": "להכריע בין שתי האפשרויות דרך שתי התנסויות קטנות",
+            "description": "מסלול שמייצר חוויה קצרה מכל אחת משתי האפשרויות לפני ההכרעה, ואז מוסיף רק את בדיקת האילוצים הדרושה.",
+            "why": [
+              "אני רוצה להבין איזה סוג עבודה באמת מתאים לי",
+              "אני רוצה יותר פתרון בעיות בין צוותים",
+              "אני לא רוצה להשקיע בקורס לפני שאני יודעת לאיזה כיוון אני הולכת"
+            ],
+            "dreamId": "dream_career_yael_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g02b_m0",
+                "title": "חוויתי חלק קטן מכל אחת משתי האפשרויות",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g02b_m1",
+                "title": "ברור לי מה הרגיש מתאים יותר ומה פחות",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g02b_m2",
+                "title": "בדקתי שהאפשרות המובילה גם עומדת באילוצים שלי",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "g02b_m3",
+                "title": "בחרתי אפשרות והתחלתי את המהלך הבא",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי משימה קטנה שמדמה חלק מ-Product Operations",
+                "description": "בחרי משהו שאפשר לבצע עם חומר שכבר נגיש לך, בלי קורס ובלי לבקש שינוי תפקיד.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "בצעי את המיקרו־ניסוי של Product Operations",
+                "description": "המטרה היא להרגיש את סוג העבודה: ניתוח בעיה, תיאום, תהליך או שיפור עבודה. לא להוכיח שאת כבר מומחית.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בחרי משימה קטנה שמדמה חלק מ-Customer Success Operations",
+                "description": "שמרי על סדר גודל דומה של זמן ומאמץ כדי שההשוואה לא תהיה מוטה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "בצעי את המיקרו־ניסוי של Customer Success Operations",
+                "description": "בדקי את סוג העבודה עצמו, לא רק אם הצלחת בתוצאה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30,
+                "dependsOnStepIndex": 2
+              },
+              {
+                "title": "רשמי מה בכל ניסוי נתן לך אנרגיה, מה דרש ממך יותר מדי ומה היית רוצה לעשות שוב",
+                "description": "השתמשי בחוויה שלך כראיה, לא כתחושת בטן יחידה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בדקי שני אילוצים קריטיים בשתי האפשרויות",
+                "description": "למשל רמת שכר/יציבות או מאפיין תפקיד שחייב להתקיים. השתמשי במידע עדכני כשצריך.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "בחרי את האפשרות שנותנת כרגע את השילוב הטוב יותר בין fit לאילוצים",
+                "description": "אם נותר ספק, נסחי שאלה אחת בלבד שיכולה להפוך את ההחלטה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בצעי צעד ראשון בכיוון שבחרת",
+                "description": "התחילי מהלך קטן והפיך שמעמיק בכיוון: proof, שיחה, או מיפוי gap.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 6
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              },
+              {
+                "stepIndex": 7,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Allocation is authoring metadata. The product owns minted milestoneId/step ids on creation."
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        },
+        {
+          "variantId": "career_two_options_conversation_first",
+          "label": "Conversation/evidence-first comparison",
+          "axisValue": "conversation_evidence_first",
+          "declaredFit": [
+            "The user learns well from other people's lived experience",
+            "The roles are hard to understand from titles/job descriptions alone",
+            "The user has reasonable access to people familiar with both options"
+          ],
+          "journey": {
+            "title": "להכריע בין שתי האפשרויות דרך שיחות מציאות וראיות",
+            "description": "מסלול שמתחיל בלמידה מאנשים שמכירים את שתי האפשרויות, מאמת את מה שנשמע מול המציאות, ואז עושה בדיקה קטנה לפני המהלך הבא.",
+            "why": [
+              "אני רוצה להבין איך העבודה באמת נראית לפני שאני בוחרת",
+              "אני רוצה יותר פתרון בעיות בין צוותים",
+              "אני רוצה לבחור בלי להתחייב קודם לקורס ארוך"
+            ],
+            "dreamId": "dream_career_yael_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g02c_m0",
+                "title": "שמעתי איך שתי האפשרויות נראות בפועל",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g02c_m1",
+                "title": "אימתתי את ההבדלים שחשובים לי מול ראיות נוספות",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g02c_m2",
+                "title": "בחרתי אפשרות ובדקתי אותה לפני התחייבות",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "g02c_m3",
+                "title": "התחלתי את המהלך הבא בכיוון שבחרתי",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "כתבי שתי שאלות שהיית רוצה לשאול מישהי שחיה את אחת האפשרויות ביום־יום",
+                "description": "שאלות על העבודה בפועל: מה תופס זמן, מה קשה, ומה אנשים מבחוץ לא מבינים.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 7
+              },
+              {
+                "title": "עשי שיחת מציאות אחת עם מישהו שמכיר Product Operations",
+                "description": "המטרה היא להבין את העבודה, לא לבקש עבודה או להרשים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "עשי שיחת מציאות אחת עם מישהו שמכיר Customer Success Operations",
+                "description": "השתמשי באותן שתי שאלות בסיס כדי שתוכלי להשוות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "רשמי שלושה הבדלים משמעותיים ששמעת בין האפשרויות",
+                "description": "התמקדי במה שמשפיע על fit שלך: סוג בעיות, שיתוף פעולה, קצב, יציבות או למידה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בדקי מול מידע עדכני אם שני הדברים החשובים ביותר ששמעת חוזרים גם בתפקידים אמיתיים",
+                "description": "השיחה היא evidence, לא אמת מוחלטת. חפשי corroboration.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "בחרי את האפשרות שנראית כרגע מתאימה יותר ולמה",
+                "description": "כתבי את ההחלטה במשפט אחד, כולל ה-tradeoff שאת מוכנה לקבל.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בצעי בדיקת מציאות קטנה אחת של האפשרות שבחרת",
+                "description": "לפני התחייבות גדולה, עשי פעולה קטנה שמוודאת שההחלטה לא נשענת רק על שיחה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "התחילי את מהלך הקריירה הבא בכיוון שבחרת",
+                "description": "בחרי צעד הפיך: proof, skill gap ממוקד או שיחת המשך.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 7,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Allocation is authoring metadata. The product owns minted milestoneId/step ids on creation."
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        }
+      ],
+      "matchingHypothesis": {
+        "criteria_first": [
+          "startingMode=understand_first",
+          "previousSuccessPattern=structured_decisions"
+        ],
+        "real_world_test_first": [
+          "startingMode=action_first",
+          "previousSuccessPattern=experimentation"
+        ],
+        "conversation_evidence_first": [
+          "goalSpecificSocialFit=helpful",
+          "previousSuccessPattern=learning_from_people"
+        ],
+        "vetoes": [
+          "No realistic access to people -> down-rank conversation-first",
+          "Very low capacity -> use a lower-load family rather than forcing these variants",
+          "If Expert finds a different primary bottleneck, do not select this family"
+        ]
+      }
+    },
+    {
+      "goalId": "CAR_G03",
+      "goal": "לבדוק אם כיוון קריירה שמעניין אותי באמת מתאים לפני שאני מתחייב",
+      "domain": "career",
+      "goalKind": "process",
+      "subtype": "FIND_DIRECTION",
+      "primaryBottleneck": "DIRECTION_GAP",
+      "variantAxis": "test_medium",
+      "controlledConstants": {
+        "sameGoal": true,
+        "sameDream": true,
+        "samePersona": true,
+        "sameDurationDays": 21,
+        "sameAmbitionLevel": "balanced",
+        "similarWeeklyEffort": "about 90–120 minutes",
+        "samePrimaryBottleneck": "DIRECTION_GAP",
+        "sameCompletionMeaning": "Amit has enough direct evidence about fit to decide whether to deepen, pause, or test another direction. No training commitment is required."
+      },
+      "persona": {
+        "name": "Amit",
+        "summary": "30, works in operations and is curious about moving toward data analysis. He likes solving operational problems with numbers, but has never worked as a data analyst and does not want to pay for a bootcamp before knowing whether the work itself fits.",
+        "userSaid": [
+          "אני חושב על Data Analysis כבר כמה חודשים.",
+          "אני אוהב כשאני מצליח להבין מה המספרים אומרים על בעיה אמיתית.",
+          "אני לא יודע אם אני אוהב את העבודה עצמה או רק את הרעיון של המקצוע.",
+          "אני לא רוצה לשלם עכשיו על bootcamp לפני שבדקתי התאמה."
+        ],
+        "capacity": "about 2 hours/week"
+      },
+      "dream": {
+        "id": "dream_career_amit_01",
+        "title": "לבנות קריירה שבה אני משתמש בחשיבה אנליטית כדי לפתור בעיות אמיתיות",
+        "description": "שאיפה ארוכת־טווח לעבודה שמשלבת למידה, ניתוח ובעיות מהעולם האמיתי."
+      },
+      "variants": [
+        {
+          "variantId": "career_fit_test_work_sample",
+          "label": "Work-sample test",
+          "axisValue": "work_sample",
+          "declaredFit": [
+            "User learns about fit by doing the work itself",
+            "A small simulation is possible without expensive tools or training",
+            "User wants direct evidence before talking broadly about the profession"
+          ],
+          "journey": {
+            "title": "לבדוק את הכיוון דרך דוגמת עבודה קטנה",
+            "description": "מסלול שמדמה חלק קטן מהעבודה עצמה ומפריד בין פער מיומנות לבין חוסר התאמה לסוג העבודה.",
+            "why": [
+              "אני אוהב להבין מה המספרים אומרים על בעיה אמיתית",
+              "אני רוצה לדעת אם אני אוהב את העבודה עצמה ולא רק את הרעיון של המקצוע",
+              "אני לא רוצה להתחייב ל-bootcamp לפני שבדקתי התאמה"
+            ],
+            "dreamId": "dream_career_amit_01",
+            "durationDays": 21,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g03a_m0",
+                "title": "חוויתי רצף עבודה קטן שדומה לכיוון שמעניין אותי",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g03a_m1",
+                "title": "ברור לי מה בעבודה משך אותי ומה פחות",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g03a_m2",
+                "title": "השוויתי את החוויה שלי למה שקורה בתפקידים אמיתיים",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g03a_m3",
+                "title": "החלטתי אם להעמיק והתחלתי את הצעד הבא",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחר שאלה קטנה מהעבודה או מהחיים שאפשר לענות עליה בעזרת נתונים",
+                "description": "בחר שאלה שמסקרנת אותך באמת. לא צריך פרויקט מרשים.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 5
+              },
+              {
+                "title": "מצא סט נתונים קטן ונגיש שמספיק כדי לבדוק את השאלה",
+                "description": "השתמש בחומר שכבר מותר לך לעבוד איתו או במידע ציבורי. אל תהפוך את החיפוש לפרויקט בפני עצמו.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בצע ניתוח קטן שמנסה לענות על השאלה",
+                "description": "המטרה היא לחוות את רצף העבודה: להבין שאלה, לעבוד עם מידע, להסיק ולנסח. לא לעמוד בסטנדרט של Analyst מקצועי.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 45,
+                "dependsOnStepIndex": 1
+              },
+              {
+                "title": "כתוב שלוש שורות: מה נהנית לעשות, מה היה מתיש, ומה היית מוכן ללמוד כדי להשתפר",
+                "description": "הפרד בין 'אני עדיין לא יודע' לבין 'אני לא אוהב את סוג העבודה'.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בדוק שני תיאורי תפקיד עדכניים של Data Analyst",
+                "description": "חפש האם סוג העבודה שחווית מופיע גם בתפקידים אמיתיים ומה עוד חסר בתמונה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "החליט אם להעמיק, לעצור או לעשות בדיקה נוספת אחת",
+                "description": "בחר לפי fit ולא לפי כמה הצלחת במשימה הראשונה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בצע צעד קטן בהתאם להחלטה",
+                "description": "אם מעמיקים: בחר skill/proof אחד לבדיקה. אם עוצרים: תעד מה למדת על מה כן לחפש בכיוון הבא.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 5
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 3
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Allocation is authoring metadata. The product owns minted milestoneId/step ids on creation."
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        },
+        {
+          "variantId": "career_fit_test_conversation",
+          "label": "Information-conversation test",
+          "axisValue": "information_conversation",
+          "declaredFit": [
+            "The profession is difficult to understand from a solo simulation alone",
+            "The user learns well from concrete stories and lived experience",
+            "The user has reasonable access to people in the field"
+          ],
+          "journey": {
+            "title": "לבדוק את הכיוון דרך שיחות עם אנשים שחיים את העבודה",
+            "description": "מסלול שמתחיל בשתי שיחות מציאות, מאמת אותן מול תפקידים אמיתיים, ואז מוסיף מיקרו־בדיקה אחת של החלק שהכי חשוב לחוות בעצמך.",
+            "why": [
+              "אני לא יודע אם אני אוהב את העבודה עצמה או רק את הרעיון שלה",
+              "אני רוצה להבין איך המקצוע נראה ביום־יום",
+              "אני לא רוצה לשלם על הכשרה לפני שיש לי evidence"
+            ],
+            "dreamId": "dream_career_amit_01",
+            "durationDays": 21,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g03b_m0",
+                "title": "שמעתי איך העבודה נראית משתי נקודות מבט אמיתיות",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g03b_m1",
+                "title": "אימתתי מה באמת חוזר בתפקידים ולא רק בשיחה אחת",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g03b_m2",
+                "title": "חוויתי בעצמי חלק אחד שהיה חשוב לבדוק",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g03b_m3",
+                "title": "החלטתי אם להעמיק בכיוון",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "כתוב שלוש שאלות שיעזרו לך להבין איך נראית העבודה ביום־יום",
+                "description": "שאל על סוג משימות, חלקים שוחקים, ומה מפתיע אנשים שנכנסים לתפקיד.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 7
+              },
+              {
+                "title": "דבר עם Data Analyst אחד על יום עבודה אמיתי",
+                "description": "המטרה היא להבין את העבודה, לא לקבל המלצה אם לעשות הסבה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "דבר עם Analyst נוסף בהקשר אחר או ברמת ניסיון אחרת",
+                "description": "השיחה השנייה עוזרת לא להפוך חוויה של אדם אחד לאמת על המקצוע.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "רשום שלושה דברים שחזרו בשתי השיחות ודבר אחד שהיה שונה",
+                "description": "חפש patterns של עבודה, לא רק עצות קריירה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בדוק שני תיאורי תפקיד עדכניים מול מה ששמעת",
+                "description": "אמת אם המשימות המרכזיות שהאנשים תיארו מופיעות גם בשוק הרלוונטי.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "בחר חלק אחד מהעבודה שאתה עדיין צריך לחוות בעצמך",
+                "description": "השיחה יכולה ללמד הרבה, אבל לא להחליף לחלוטין התנסות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "עשה מיקרו־בדיקה של החלק שבחרת",
+                "description": "פעולה קצרה שמאפשרת לך להרגיש את סוג העבודה בלי להתחייב להכשרה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30,
+                "dependsOnStepIndex": 5
+              },
+              {
+                "title": "החלט אם להעמיק, לעצור או לבדוק כיוון אחר",
+                "description": "סכם את ההחלטה לפי מה שלמדת מהאנשים, מהשוק ומהמיקרו־בדיקה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 7,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Allocation is authoring metadata. The product owns minted milestoneId/step ids on creation."
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        },
+        {
+          "variantId": "career_fit_test_real_context",
+          "label": "Mini-project / real-context exposure",
+          "axisValue": "mini_project_real_context",
+          "declaredFit": [
+            "The user learns best when work has a real purpose or stakeholder",
+            "A small real-context opportunity is available without high stakes",
+            "The user wants to test not only tasks but also the surrounding collaboration/context"
+          ],
+          "journey": {
+            "title": "לבדוק את הכיוון דרך משימה קטנה עם צורך אמיתי",
+            "description": "מסלול שמכניס את המשתמש להקשר אמיתי קטן, כדי לבדוק לא רק את המשימה אלא גם איך מרגיש לפתור בעיה עבור מישהו אחר.",
+            "why": [
+              "אני אוהב להבין מה המספרים אומרים על בעיה אמיתית",
+              "אני רוצה לחוות איך זה מרגיש כשמישהו באמת צריך את התוצאה",
+              "אני לא רוצה להתחייב להכשרה לפני שבדקתי התאמה"
+            ],
+            "dreamId": "dream_career_amit_01",
+            "durationDays": 21,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g03c_m0",
+                "title": "עבדתי על שאלה קטנה עם צורך אמיתי",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g03c_m1",
+                "title": "קיבלתי משוב והבנתי איך הרגיש ההקשר האמיתי",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g03c_m2",
+                "title": "בדקתי כמה מהחוויה מייצגת את התפקיד הרחב",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g03c_m3",
+                "title": "החלטתי אם להעמיק והתחלתי את הצעד הבא",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "מצא בעיה קטנה אמיתית שבה נתונים יכולים לעזור למישהו לקבל החלטה",
+                "description": "עדיף בעיה מהקשר שכבר נגיש לך: עבודה, פרויקט אישי או קהילה. אל תיצור פרויקט גדול.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "הגדר עם האדם או ההקשר מה השאלה שצריך לענות עליה",
+                "description": "שמור על scope קטן: שאלה אחת, לא מערכת שלמה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בצע את הניתוח הקטן והחזר תשובה שימושית",
+                "description": "המטרה היא לחוות עבודה עם context ואחריות למישהו אמיתי, לא לבנות portfolio מושלם.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 45,
+                "dependsOnStepIndex": 1
+              },
+              {
+                "title": "בקש משוב אחד על מה היה שימושי ומה היה חסר",
+                "description": "זהו feedback על העבודה, לא ציון על התאמה לקריירה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "רשום מה השתנה כשעבדת עבור צורך אמיתי ולא רק תרגיל",
+                "description": "בדוק האם נהנית מהבהרת השאלה, מהניתוח, מההסבר ומהאינטראקציה סביב התוצאה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בדוק שני תיאורי תפקיד עדכניים כדי לראות כמה מהחוויה הזאת באמת מייצגת את הכיוון",
+                "description": "הפרד בין החוויה הספציפית לבין התפקיד הרחב.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "החלט אם להעמיק, לעצור או לבדוק עוד חלק אחד",
+                "description": "בחר על בסיס fit, לא על בסיס הצלחה חד־פעמית.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בצע צעד קטן בהתאם להחלטה",
+                "description": "אם מעמיקים, בחר skill/proof ממוקד. אם לא, תעד מה למדת על סוג העבודה שאתה כן מחפש.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 6
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              },
+              {
+                "stepIndex": 7,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Allocation is authoring metadata. The product owns minted milestoneId/step ids on creation."
+          },
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          }
+        }
+      ],
+      "matchingHypothesis": {
+        "work_sample": [
+          "previousSuccessPattern=learning_by_doing",
+          "goalSpecificSocialFit=private_or_neutral"
+        ],
+        "information_conversation": [
+          "previousSuccessPattern=learning_from_people",
+          "goalSpecificSocialFit=helpful"
+        ],
+        "mini_project_real_context": [
+          "previousSuccessPattern=real_world_projects",
+          "resourcesAndAccess=small_real_context_available"
+        ],
+        "vetoes": [
+          "No access to people -> down-rank conversation variant",
+          "No safe/low-stakes real context -> down-rank mini-project variant",
+          "Very low capacity -> use a lighter family",
+          "If the Expert identifies capability rather than direction as the primary problem, route to a capability-building family instead"
+        ]
+      }
+    },
+    {
+      "goalId": "CAR_G08",
+      "goal": "למצוא עבודה חדשה כשעדיין לא ברור לי בדיוק לאילו תפקידים לכוון",
+      "domain": "career",
+      "goalKind": "process",
+      "subtype": "LAND_ROLE",
+      "primaryBottleneck": "DIRECTION_GAP",
+      "variantAxis": "target_narrowing_method",
+      "persona": {
+        "name": "Noa",
+        "summary": "31, wants a new job after five years in operations but is applying across too many unrelated titles.",
+        "userSaid": [
+          "אני רוצה לעזוב את התפקיד הנוכחי אבל אני שולחת לכל מיני תפקידים.",
+          "לפעמים אני רואה משרה ואומרת אולי גם זה.",
+          "אני לא יודעת אם הבעיה היא בקורות החיים או שפשוט אין לי יעד ברור."
+        ],
+        "capacity": "about 2 hours/week"
+      },
+      "dream": {
+        "id": "dream_career_noa_01",
+        "title": "לעבור לעבודה שמתאימה יותר לחוזקות שלי ונותנת לי מקום להתפתח",
+        "description": "שאיפה לקריירה ממוקדת יותר שבה הבחירות נעשות לפי fit אמיתי."
+      },
+      "variants": [
+        {
+          "variantId": "job_target_criteria_first",
+          "label": "Criteria-first target",
+          "axisValue": "criteria_first",
+          "declaredFit": [
+            "User wants a decision framework",
+            "Past good choices came from explicit criteria"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "לצמצם את חיפוש העבודה ליעד ברור בעזרת קריטריונים",
+            "description": "מגדיר מה התפקיד הבא צריך לתת ואז מצמצם את שוק האפשרויות.",
+            "why": [
+              "אני רוצה להבין למה אני מכוונת",
+              "יש לי זמן מוגבל לחיפוש"
+            ],
+            "dreamId": "dream_career_noa_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g08a_m0",
+                "title": "ברור לי מה אני מחפשת בתפקיד הבא",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g08a_m1",
+                "title": "צמצמתי את האפשרויות לשני יעדים סבירים",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "g08a_m2",
+                "title": "בחרתי יעד ראשי ויעד גיבוי",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g08a_m3",
+                "title": "התחלתי חיפוש ממוקד ליעד הראשי",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי שתי משימות מהעבודה הנוכחית שהיית רוצה לעשות יותר ופחות",
+                "description": "דוגמאות אמיתיות מהחודש האחרון מספיקות.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "הפכי את הדוגמאות לשלושה קריטריונים לתפקיד הבא",
+                "description": "למשל סוג בעיות, עבודה עם אנשים, עומק אנליטי או ownership.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בחרי שלושה תפקידי יעד אפשריים בלבד",
+                "description": "אלה השערות לבדיקה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "השווי מדגם קטן של משרות מכל יעד מול אותם קריטריונים",
+                "description": "חפשי patterns, לא משרה מושלמת.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 35
+              },
+              {
+                "title": "הורידי יעד אחד שלא עומד מספיק טוב בקריטריונים",
+                "description": "כתבי למה הוא יורד.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בחרי יעד ראשי ויעד גיבוי",
+                "description": "היעד הראשי צריך להיות מספיק ברור כדי למקד חיפוש.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בצעי פעולת חיפוש אחת רק ליעד הראשי",
+                "description": "למשל חיפוש ממוקד או התאמת proof.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        },
+        {
+          "variantId": "job_target_postings_first",
+          "label": "Evidence-from-postings target",
+          "axisValue": "postings_first",
+          "declaredFit": [
+            "User learns from concrete market examples",
+            "Job titles are confusing"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "למצוא יעד חיפוש דרך דפוסים במשרות שמעניינות אותך",
+            "description": "מתחיל מהשוק עצמו ומתרגם דפוסים ליעד חיפוש ברור.",
+            "why": [
+              "אני רואה הרבה שמות תפקיד ולא יודעת מה באמת מתאים",
+              "אני רוצה להתמקד בלי לנחש"
+            ],
+            "dreamId": "dream_career_noa_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g08b_m0",
+                "title": "זיהיתי מה חוזר במשרות שמושכות אותי",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g08b_m1",
+                "title": "צמצמתי את השוק לשתי משפחות תפקידים",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g08b_m2",
+                "title": "בחרתי יעד חיפוש ברור",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g08b_m3",
+                "title": "בדקתי את היעד דרך חיפוש ממוקד",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "אספי חמש משרות שגרמו לך לעצור ולהגיד זה מעניין",
+                "description": "גם אם שמות התפקידים שונים.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "סמני מה חוזר בחמש המשרות",
+                "description": "חפשי משימות, בעיות וסביבת עבודה שחוזרות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "קבצי את המשרות לשתי משפחות תפקידים",
+                "description": "קבצי לפי העבודה בפועל, לא רק title.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בדקי עוד שלוש משרות מכל משפחה",
+                "description": "בדקי האם הדפוס מחזיק.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "בחרי את המשפחה שמתאימה יותר לניסיון ולאילוצים שלך",
+                "description": "זו בחירת יעד חיפוש, לא זהות מקצועית.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "נסחי משפט יעד אחד לחיפוש",
+                "description": "משפט שמגדיר תפקיד, סוג עבודה וסביבה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בצעי חיפוש ממוקד אחד לפי המשפט החדש",
+                "description": "בדקי אם התוצאות רלוונטיות יותר.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        },
+        {
+          "variantId": "job_target_conversation_first",
+          "label": "Conversation-first target",
+          "axisValue": "conversation_first",
+          "declaredFit": [
+            "User gets clarity from people who know the market",
+            "Relevant people are accessible"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "למצוא יעד חיפוש דרך שיחות עם אנשים שמכירים את השוק",
+            "description": "שתי שיחות מציאות מצמצמות אפשרויות ואז מאמתים אותן מול משרות אמיתיות.",
+            "why": [
+              "אני לא יודעת איזה תפקידים מתאימים לניסיון שלי",
+              "אני רוצה פחות ניחושים ויותר מידע מהשטח"
+            ],
+            "dreamId": "dream_career_noa_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g08c_m0",
+                "title": "קיבלתי שני כיוונים ריאליים מתוך שיחות מציאות",
+                "order": 0,
+                "weight": 2
+              },
+              {
+                "id": "g08c_m1",
+                "title": "אימתתי שהכיוונים קיימים ומתאימים בשוק",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g08c_m2",
+                "title": "בחרתי יעד ראשי",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g08c_m3",
+                "title": "התחלתי חיפוש ממוקד ליעד",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי שני אנשים שיכולים לתת לך תמונה על תפקידים קרובים למה שאת עושה",
+                "description": "עדיף אנשים שמכירים כמה פונקציות.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "עשי שיחה אחת שמטרתה לזהות שניים עד שלושה כיוונים ריאליים",
+                "description": "בקשי דוגמאות לתפקידים, לא המלצה על קריירה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "עשי שיחה שנייה ובדקי האם אותם כיוונים חוזרים",
+                "description": "השיחה השנייה מאמתת.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "בדקי מדגם קטן של משרות בשני הכיוונים שחזרו",
+                "description": "חפשי האם העבודה בפועל תואמת למה ששמעת.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "בחרי יעד ראשי לפי fit, ניסיון ואילוצים",
+                "description": "שמרי יעד שני כגיבוי בלבד.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "בצעי פעולת חיפוש ראשונה ליעד הראשי",
+                "description": "למשל שיחה נוספת ממוקדת או התאמת proof.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        }
+      ],
+      "matchingHypothesis": {
+        "criteria_first": [
+          "startingMode=understand_first"
+        ],
+        "postings_first": [
+          "previousSuccessPattern=concrete_examples"
+        ],
+        "conversation_first": [
+          "goalSpecificSocialFit=helpful"
+        ],
+        "vetoes": [
+          "If target is already clear, route elsewhere"
+        ]
+      }
+    },
+    {
+      "goalId": "CAR_G09",
+      "goal": "לשפר את ההצגה של הניסיון שלי כדי לקבל יותר תגובות",
+      "domain": "career",
+      "goalKind": "process",
+      "subtype": "LAND_ROLE",
+      "primaryBottleneck": "PROOF_GAP",
+      "variantAxis": "proof_source",
+      "persona": {
+        "name": "Roni",
+        "summary": "34, applying for Project Operations roles. Relevant experience exists but is not communicated clearly.",
+        "userSaid": [
+          "אני עושה דברים שדומים למה שמבקשים, אבל בקורות החיים זה לא נראה חזק.",
+          "אני כותבת אחריות, לא באמת מה השתנה בזכותי.",
+          "אני לא רוצה להמציא הישגים שאין לי."
+        ],
+        "capacity": "about 2 hours/week"
+      },
+      "dream": {
+        "id": "dream_career_roni_01",
+        "title": "לעבור לתפקיד שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+        "description": "שאיפה למנף ניסיון אמיתי לתפקידי Project Operations עם יותר ownership."
+      },
+      "variants": [
+        {
+          "variantId": "proof_extract_existing",
+          "label": "Existing-evidence extraction",
+          "axisValue": "existing_evidence",
+          "declaredFit": [
+            "User already has relevant experience",
+            "Capacity is limited"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "לחלץ מהניסיון שכבר יש לך הוכחות שמתאימות לתפקיד היעד",
+            "description": "מתרגם ניסיון קיים ל-proof ברור בלי להמציא הישגים.",
+            "why": [
+              "יש לי ניסיון רלוונטי אבל הוא לא עובר טוב",
+              "אני לא רוצה להמציא הישגים"
+            ],
+            "dreamId": "dream_career_roni_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g09a_m0",
+                "title": "מיפיתי ניסיון אמיתי לדרישות של היעד",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g09a_m1",
+                "title": "ניסחתי proof ברור ואמין",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "g09a_m2",
+                "title": "הכנסתי את ה-proof להצגה שלי",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g09a_m3",
+                "title": "בדקתי את ההצגה החדשה בפעולת חיפוש אמיתית",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי משרת יעד אחת שמייצגת טוב את מה שאת מחפשת",
+                "description": "היא תשמש reference.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "סמני שלוש דרישות מרכזיות שאת כבר יכולה להוכיח",
+                "description": "רק ניסיון אמיתי.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "לכל דרישה, מצאי דוגמה אמיתית אחת מהעבר",
+                "description": "כתבי מצב, פעולה והשפעה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "הפכי שתי דוגמאות לשורות proof קצרות",
+                "description": "בלי לנפח או להמציא.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "הכניסי את ה-proof למסמך או לפרופיל הרלוונטי",
+                "description": "עדכני רק מה שמשפיע על היעד.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "השתמשי בגרסה החדשה בפעולת חיפוש אחת",
+                "description": "הגשה, פנייה או שיתוף.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        },
+        {
+          "variantId": "proof_build_artifact",
+          "label": "Targeted artifact/proof build",
+          "axisValue": "new_artifact",
+          "declaredFit": [
+            "Capability likely exists but visible proof is missing",
+            "User learns by creating"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "לבנות הוכחה קטנה שמראה יכולת שקשה לראות מהניסיון הקיים",
+            "description": "מייצר artifact ממוקד אחד כדי לסגור proof gap בלי לבנות portfolio ענק.",
+            "why": [
+              "יש דברים שאני יודעת לעשות אבל אין לי איך להראות אותם",
+              "אני רוצה הוכחה אמיתית ולא ניסוח מנופח"
+            ],
+            "dreamId": "dream_career_roni_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g09b_m0",
+                "title": "בחרתי proof gap אחד שכדאי לסגור",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g09b_m1",
+                "title": "יצרתי artifact שמדגים את היכולת",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "g09b_m2",
+                "title": "וידאתי שה-proof מובן ורלוונטי",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g09b_m3",
+                "title": "השתמשתי בו בחיפוש אמיתי",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי דרישה אחת שחוזרת בתפקידי היעד ושקשה לך להוכיח היום",
+                "description": "בחרי proof gap, לא skill שאין לך.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "הגדירי artifact קטן שיכול להראות את היכולת",
+                "description": "למשל מפת תהליך או analysis קצר.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בני גרסה ראשונה של ה-artifact",
+                "description": "השתמשי בחומר שמותר לחשוף.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 40
+              },
+              {
+                "title": "בדקי אם אדם שמכיר את העבודה מבין מה ה-artifact מוכיח",
+                "description": "בקשי feedback על relevance.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "שפרי פעם אחת לפי המשוב",
+                "description": "המטרה היא proof מספיק טוב לשימוש.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "שלבי את ה-artifact בהצגה שלך",
+                "description": "קשרי אותו לדרישה שהוא מוכיח.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "השתמשי בו בפעולת חיפוש אחת",
+                "description": "בדקי האם קל יותר להסביר התאמה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 5
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 3
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        },
+        {
+          "variantId": "proof_role_story_translation",
+          "label": "Role-story translation",
+          "axisValue": "story_translation",
+          "declaredFit": [
+            "User has experience but struggles to connect it to target-role value",
+            "Transferable experience is central"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "לתרגם את הניסיון שלך לסיפורי proof שמדברים בשפה של תפקיד היעד",
+            "description": "ממפה ניסיון אמיתי לערך שהיעד מחפש ובונה ממנו סיפורים קצרים.",
+            "why": [
+              "עשיתי דברים רלוונטיים אבל הם נשמעים כמו אחריות",
+              "אני רוצה להסביר את הערך שלי בלי לנפח"
+            ],
+            "dreamId": "dream_career_roni_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g09c_m0",
+                "title": "חיברתי את הניסיון שלי לערך שהיעד מחפש",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g09c_m1",
+                "title": "בניתי סיפורי proof אמינים",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "g09c_m2",
+                "title": "וידאתי שהסיפורים מעבירים את היכולת הנכונה",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g09c_m3",
+                "title": "השתמשתי בהם בפעולת חיפוש אמיתית",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחרי משרת יעד וסמני שלושה סוגי ערך שהיא מחפשת",
+                "description": "למשל ownership, coordination או process improvement.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "בחרי שלוש חוויות מהעבר שממחישות את הערך",
+                "description": "לא חייב אותו title.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "כתבי לכל חוויה סיפור קצר: הבעיה, הפעולה וההשפעה",
+                "description": "אם אין מספר מדויק, אל תמציאי.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "הפכי סיפור אחד לגרסה לקורות חיים ולגרסה מדוברת",
+                "description": "אותה ראיה, שתי צורות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "בדקי עם אדם אחד מה הוא מבין שהסיפור מוכיח",
+                "description": "בקשי ממנו לתאר את היכולת ששמע.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "עדכני את שני הסיפורים הנוספים",
+                "description": "שמרי אותם קצרים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "השתמשי באחד הסיפורים בפעולת חיפוש",
+                "description": "הגשה, פנייה או הכנה לראיון.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        }
+      ],
+      "matchingHypothesis": {
+        "existing_evidence": [
+          "realisticCapacity=low_or_moderate"
+        ],
+        "new_artifact": [
+          "startingMode=action_first"
+        ],
+        "story_translation": [
+          "transferableExperience=true"
+        ],
+        "vetoes": [
+          "If capability is actually missing, route to capability building"
+        ]
+      }
+    },
+    {
+      "goalId": "CAR_G10",
+      "goal": "להגיע ליותר הזדמנויות ואנשים רלוונטיים בחיפוש עבודה",
+      "domain": "career",
+      "goalKind": "process",
+      "subtype": "LAND_ROLE",
+      "primaryBottleneck": "OPPORTUNITY_ACCESS_GAP",
+      "variantAxis": "access_channel",
+      "persona": {
+        "name": "Lior",
+        "summary": "33, clear B2B partnerships target and credible experience, but mostly applies through public postings.",
+        "userSaid": [
+          "אני יודע לאיזה תפקידים אני רוצה להגיע.",
+          "יש לי ניסיון רלוונטי, אבל אני בעיקר שולח דרך אתרים.",
+          "אני כמעט לא מגיע לשיחות עם אנשים מהתחום.",
+          "נטוורקינג מרגיש לי מאולץ כשאין לי סיבה אמיתית לדבר עם מישהו."
+        ],
+        "capacity": "about 90 minutes/week"
+      },
+      "dream": {
+        "id": "dream_career_lior_01",
+        "title": "לעבור לתפקיד partnerships שבו אני בונה מערכות יחסים ומייצר הזדמנויות עסקיות",
+        "description": "שאיפה לקריירה שמחברת אנשים, הזדמנויות וחשיבה מסחרית."
+      },
+      "variants": [
+        {
+          "variantId": "access_warm_network",
+          "label": "Warm-network route",
+          "axisValue": "warm_network",
+          "declaredFit": [
+            "Existing professional ties exist",
+            "Cold networking creates friction"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "להגיע להזדמנויות דרך אנשים שכבר מכירים אותך",
+            "description": "מפעיל קשרים קיימים בצורה טבעית וממוקדת.",
+            "why": [
+              "אני רוצה להגיע ליותר שיחות רלוונטיות",
+              "נטוורקינג קר מרגיש לי מאולץ"
+            ],
+            "dreamId": "dream_career_lior_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g10a_m0",
+                "title": "זיהיתי קשרים קיימים שיכולים לפתוח מידע או גישה",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g10a_m1",
+                "title": "יצרתי שתי פניות טבעיות וממוקדות",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g10a_m2",
+                "title": "הפכתי תגובה למידע, שיחה או חיבור",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "g10a_m3",
+                "title": "הגדרתי דרך חוזרת להשתמש בערוץ",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "רשום חמישה אנשים שכבר מכירים אותך ושעשויים להיות במרחק קשר אחד מהתחום",
+                "description": "לא צריך אנשים חשובים.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "בחר שני אנשים שיש סיבה טבעית לפנות אליהם",
+                "description": "בקש perspective או intro, לא עבודה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "שלח פנייה אחת עם הקשר ברור",
+                "description": "כתוב למה אתה פונה ומה יעזור.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "שלח פנייה שנייה",
+                "description": "שפר ניסוח אם צריך.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "עקוב אחרי שיחה או חיבור שנוצר",
+                "description": "רשום מה למדת ומה הצעד הבא.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "בחר דרך אחת לחזור על הערוץ פעם בשבוע",
+                "description": "מינימום קטן וריאלי.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        },
+        {
+          "variantId": "access_repeated_community",
+          "label": "Repeated-community route",
+          "axisValue": "repeated_community",
+          "declaredFit": [
+            "User prefers relationships built over repeated context",
+            "Relevant recurring communities are available"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "לבנות גישה להזדמנויות דרך קהילה מקצועית שחוזרים אליה",
+            "description": "מחליף networking חד-פעמי בנוכחות חוזרת במקום שבו קשרים נוצרים טבעית.",
+            "why": [
+              "אני מעדיף קשר שנבנה לאורך זמן",
+              "אני צריך יותר גישה לשיחות אמיתיות"
+            ],
+            "dreamId": "dream_career_lior_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g10b_m0",
+                "title": "מצאתי קהילה רלוונטית וחוויתי איך היא פועלת",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g10b_m1",
+                "title": "השתתפתי בה יותר מפעם אחת",
+                "order": 1,
+                "weight": 2
+              },
+              {
+                "id": "g10b_m2",
+                "title": "נוצר קשר מקצועי טבעי אחד",
+                "order": 2,
+                "weight": 1
+              },
+              {
+                "id": "g10b_m3",
+                "title": "החלטתי אם להפוך את הקהילה לערוץ חוזר",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחר קהילה מקצועית אחת שבה אנשים מהתחום חוזרים ונפגשים",
+                "description": "עדיף הקשר חוזר.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "היכנס פעם אחת כדי להבין מה קורה שם",
+                "description": "שים לב מי משתתף ואיך נוצרים קשרים.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "בפעם הבאה, תרום פעולה קטנה אחת",
+                "description": "שאלה טובה, תגובה או שיחה קצרה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "חזור לאותה קהילה פעם נוספת",
+                "description": "המטרה היא familiarity.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 30
+              },
+              {
+                "title": "פתח שיחה אחת עם אדם שנוצר איתו הקשר טבעי",
+                "description": "שאל על העבודה מתוך ההקשר.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 20
+              },
+              {
+                "title": "החלט אם הקהילה שווה להפוך לערוץ חוזר",
+                "description": "אם כן, קבע מינימום השתתפות.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        },
+        {
+          "variantId": "access_targeted_conversations",
+          "label": "Targeted information-conversation route",
+          "axisValue": "targeted_conversations",
+          "declaredFit": [
+            "Clear target exists",
+            "Purposeful one-to-one outreach fits better than generic networking"
+          ],
+          "libraryMeta": {
+            "linkedExpertIds": [
+              "career"
+            ],
+            "note": "Central Journey Library metadata; not asserted as a persisted Journey field."
+          },
+          "journey": {
+            "title": "לפתוח גישה דרך שיחות מידע ממוקדות עם אנשים רלוונטיים",
+            "description": "מייצר פניות קטנות ומדויקות לאנשים שמחזיקים מידע או הקשר רלוונטי.",
+            "why": [
+              "אני יודע לאן אני רוצה להגיע אבל אני לא מגיע מספיק לאנשים",
+              "אני לא אוהב networking בלי סיבה ברורה"
+            ],
+            "dreamId": "dream_career_lior_01",
+            "durationDays": 28,
+            "rhythm": "few-times-week",
+            "milestones": [
+              {
+                "id": "g10c_m0",
+                "title": "זיהיתי אנשים ספציפיים שיש סיבה אמיתית לדבר איתם",
+                "order": 0,
+                "weight": 1
+              },
+              {
+                "id": "g10c_m1",
+                "title": "שלחתי פניות ממוקדות ולא גנריות",
+                "order": 1,
+                "weight": 1
+              },
+              {
+                "id": "g10c_m2",
+                "title": "הפכתי תגובה למידע, שיחה או קשר",
+                "order": 2,
+                "weight": 2
+              },
+              {
+                "id": "g10c_m3",
+                "title": "הגדרתי קצב קטן שאפשר לחזור עליו",
+                "order": 3,
+                "weight": 1
+              }
+            ],
+            "steps": [
+              {
+                "title": "בחר שלוש חברות או צוותים שהיית רוצה להבין טוב יותר",
+                "description": "בחר מקומות רלוונטיים ליעד.",
+                "isStarterStep": true,
+                "cadence": "once",
+                "estimatedDuration": 8
+              },
+              {
+                "title": "בכל מקום, מצא אדם אחד שיכול לתת מידע שימושי",
+                "description": "לא חייב להיות מגייס.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15,
+                "dependsOnStepIndex": 0
+              },
+              {
+                "title": "נסח שאלה אחת ספציפית לכל אדם",
+                "description": "למה דווקא הוא ומה תרצה להבין.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "שלח שתי פניות ממוקדות",
+                "description": "בקש perspective קצר, לא עבודה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 15
+              },
+              {
+                "title": "אם יש תגובה, עשה שיחה קצרה והוצא insight אחד וצעד אחד",
+                "description": "אם אין, למד מהניסוח ונסה את האדם השלישי.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 25
+              },
+              {
+                "title": "בצע follow-up אחד שממשיך את הקשר טבעית",
+                "description": "תודה עם עדכון קצר או שאלה שנולדה.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              },
+              {
+                "title": "בחר אם הערוץ הזה ראוי לחזרה שבועית",
+                "description": "למשל שתי פניות איכותיות בשבוע.",
+                "isStarterStep": false,
+                "cadence": "once",
+                "estimatedDuration": 10
+              }
+            ]
+          },
+          "authoringMeta": {
+            "stepMilestoneAllocation": [
+              {
+                "stepIndex": 0,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 1,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 2,
+                "milestoneOrder": 0
+              },
+              {
+                "stepIndex": 3,
+                "milestoneOrder": 1
+              },
+              {
+                "stepIndex": 4,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 5,
+                "milestoneOrder": 2
+              },
+              {
+                "stepIndex": 6,
+                "milestoneOrder": 3
+              }
+            ],
+            "note": "Authoring metadata only."
+          }
+        }
+      ],
+      "matchingHypothesis": {
+        "warm_network": [
+          "resourcesAndAccess=existing_ties"
+        ],
+        "repeated_community": [
+          "previousSuccessPattern=repeated_context"
+        ],
+        "targeted_conversations": [
+          "clearTarget=true"
+        ],
+        "vetoes": [
+          "If target is unclear, route to target clarification first"
+        ]
+      }
+    }
+  ],
+  "validation": {
+    "CAR_G01": {
+      "errors": [],
+      "warnings": [
+        "career_direction_clarity_first: legacy variant lacks allocation metadata",
+        "career_direction_action_first: legacy variant lacks allocation metadata",
+        "career_direction_hybrid: legacy variant lacks allocation metadata"
+      ]
+    },
+    "CAR_G02": {
+      "errors": [],
+      "warnings": []
+    },
+    "CAR_G03": {
+      "errors": [],
+      "warnings": []
+    },
+    "CAR_G08": {
+      "errors": [],
+      "warnings": []
+    },
+    "CAR_G09": {
+      "errors": [],
+      "warnings": []
+    },
+    "CAR_G10": {
+      "errors": [],
+      "warnings": []
+    }
+  }
+}

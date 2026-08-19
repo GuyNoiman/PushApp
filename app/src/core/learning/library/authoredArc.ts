@@ -67,6 +67,16 @@ export interface AuthoredProcessStep {
 export interface AuthoredArc {
   milestones: readonly AuthoredMilestone[];
   steps: readonly AuthoredProcessStep[];
+  /**
+   * The span the author wrote this arc for, in days. ADVISORY and not read by the Planner: a
+   * Journey's real length comes from the user's own horizon answer and their constraints, and it
+   * must keep doing so — the person's available weeks outrank the author's intent.
+   *
+   * It is recorded because it is a real piece of the content ("this is a five-week arc, not a
+   * fortnight's"), it is what the author balanced the Step count against, and dropping it would
+   * mean guessing it back later from nothing.
+   */
+  suggestedDurationDays?: number;
 }
 
 /** One authored string in the ACTIVE language and form of address, falling back to the English. */

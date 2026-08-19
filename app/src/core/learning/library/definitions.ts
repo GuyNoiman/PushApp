@@ -6,29 +6,33 @@
  * a Journey, a version, or an entirely new KIND of difference happens here and in the `library`
  * translation cache — never in the selector, the ratings, or the planner (D62 §1).
  *
- * ONE Journey exists so far: the generic recurring Journey, which is the three ways a repeated
- * action takes hold (`./recurringApproaches`) promoted from "three approaches the matcher picks
- * between" to "one Journey with three declared versions". Nothing about the plans it produces has
- * changed; what has changed is that the difference between the versions is now stated by the
- * Journey itself, the versions are addressable entities that hold ratings, and the question that
- * separates them belongs to the Journey rather than to the matcher.
+ * WHAT IS IN IT. The generic recurring Journey — the three ways a repeated action takes hold
+ * (`./recurringApproaches`), promoted from "three approaches the matcher picks between" to "one
+ * Journey with three declared versions" — and the Career section (`./career`): eighteen Journeys in
+ * six goal families, each Journey carrying its own authored Milestone arc.
  *
  * WHY THE GENERIC RECURRING JOURNEY HAS `domain: 'any'`: how a repeated action takes hold is not
  * domain knowledge. It is identical for a protein shake and for changing the pillowcases, and
  * writing it once per domain would be the same content four times, drifting apart on the fifth
- * (the same argument that keeps the horizon question out of the experts).
+ * (the same argument that keeps the horizon question out of the experts). A Career Journey is the
+ * opposite: it is domain content, so it is a candidate only inside its own domain — see
+ * {@link journeyDefinitionsFor}.
  *
- * WHAT IS NOT HERE, and why it is missing CONTENT rather than a decision: there is no Journey for a
- * PROCESS goal yet. The founder's rule settles the architecture — **a set of Milestones IS a Journey**,
- * several Journeys exist for the same goal, and a variant NEVER changes Milestones — so an arc that
- * differs is simply another definition here, and a domain expert's hardcoded arc is Journey #1 for its
- * goals. What is missing is the authored Journeys themselves (gated on the partner's content being
- * ingested under our terminology and language rules) and the expert selecting from them instead of
- * returning its one arc. A process Journey is a definition with `shape: 'process'`; nothing in the
- * model below needs to change to hold one.
+ * THE TWO LEVELS. A GOAL FAMILY holds the several Journeys authored for one goal and the axis they
+ * differ along; a JOURNEY holds the versions of itself, which never differ on their Milestones. The
+ * founder's rule decides which of the two a difference belongs to, and it is not a matter of taste:
+ * same arc ⇒ a version, different arc ⇒ another Journey in the family.
+ *
+ * WHAT IS STILL MISSING, and it is a route rather than content: nothing takes a real conversation to
+ * a Career family yet. Choosing one needs the expert to diagnose WHICH of the six a goal is (its
+ * subtype and its bottleneck), and the experts do not diagnose — each returns one hardcoded arc. So
+ * these Journeys are validated, translated and unreachable, and `AppCore.matchVariant` deliberately
+ * refuses to stamp provenance from a Journey whose content was not the one built.
  *
  * Pure TypeScript — no React, no i18n at module level, no clock reads.
  */
+import { CAREER_FAMILIES, CAREER_JOURNEYS } from './career';
+import type { GoalFamily } from './goalFamily';
 import type { JourneyDefinition } from './journeyDefinition';
 import type { JourneyShape } from '../types';
 
@@ -136,8 +140,33 @@ export const RECURRING_GENERIC: JourneyDefinition = {
   defaultVariantId: 'anchor',
 };
 
-/** Every Journey the library can build. Ordered; the registry never reorders it. */
-export const JOURNEY_DEFINITIONS: readonly JourneyDefinition[] = [RECURRING_GENERIC];
+/**
+ * Every Journey in the library. Ordered; the registry never reorders it.
+ *
+ * The generic recurring Journey first, then the eighteen Career Journeys ingested from the partner's
+ * package (`./career`). They sit in ONE list rather than in a second registry so `journeyDefinition`
+ * resolves any id, and so a validation test covers every shipped Journey with no way to forget one.
+ */
+export const JOURNEY_DEFINITIONS: readonly JourneyDefinition[] = [
+  RECURRING_GENERIC,
+  ...CAREER_JOURNEYS,
+];
+
+/**
+ * Every goal family — the groups of several Journeys authored for ONE goal. All six are Career
+ * today; a family for another domain is content, and lands beside them.
+ */
+export const GOAL_FAMILIES: readonly GoalFamily[] = [...CAREER_FAMILIES];
+
+/** One family by id, or undefined for an unknown id (never throws). */
+export function goalFamily(id: string | undefined): GoalFamily | undefined {
+  return GOAL_FAMILIES.find((f) => f.id === id);
+}
+
+/** The families that are candidates for a goal in this domain, in authored order. */
+export function goalFamiliesFor(domain: string | undefined): GoalFamily[] {
+  return GOAL_FAMILIES.filter((f) => f.domain === domain);
+}
 
 /** One definition by id, or undefined for an unknown id (never throws). */
 export function journeyDefinition(id: string | undefined): JourneyDefinition | undefined {
@@ -153,8 +182,14 @@ export function journeyDefinition(id: string | undefined): JourneyDefinition | u
  * function that returns one Journey would have to be rewritten the day the second one lands.
  */
 export function journeyDefinitionsFor(shape: JourneyShape, domain?: string): JourneyDefinition[] {
-  return JOURNEY_DEFINITIONS.filter((d) => d.shape === shape).sort((a, b) => {
-    const specific = (d: JourneyDefinition) => (d.domain !== 'any' && d.domain === domain ? 0 : 1);
+  // A Journey authored FOR a domain is a candidate only inside it. Before the Career section landed
+  // every definition was `domain: 'any'`, so a sort was enough and nothing could be mis-offered;
+  // with domain content in the library, a filter is what stops a career arc from being handed to
+  // someone working on their relationships.
+  return JOURNEY_DEFINITIONS.filter(
+    (d) => d.shape === shape && (d.domain === 'any' || d.domain === domain),
+  ).sort((a, b) => {
+    const specific = (d: JourneyDefinition) => (d.domain !== 'any' ? 0 : 1);
     return specific(a) - specific(b);
   });
 }

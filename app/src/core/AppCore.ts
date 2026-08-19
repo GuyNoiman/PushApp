@@ -1221,7 +1221,12 @@ export class AppCore {
    * ever compare on completion rate — which is how a learning loop starts recommending whatever is
    * easiest to finish.
    *
-   * Only the recurring Journey has versions today, so a `process` goal simply comes back unchanged.
+   * Only a RECURRING plan can be built from the library today, so that is the only kind of plan
+   * allowed to claim provenance from it. The Career section (`learning/library/career`) holds
+   * eighteen process Journeys with real Milestone arcs, but nothing routes a conversation to them
+   * yet — the plan still comes from the domain expert's own arc. Stamping a `libraryRef` on it
+   * anyway would attribute a plan to a Journey whose content was never used, and every verdict that
+   * Journey later earned would be evidence about something else.
    */
   private matchVariant(spec: GoalSpec): GoalSpec {
     const shape = journeyShapeFor(spec.processType, spec.cadence);
@@ -1233,10 +1238,9 @@ export class AppCore {
       signals: profileSignals(this.getOnboardingCoachSummary()),
       ratings: variantScores(rateLibrary(this.state.journeys), definition.id),
     });
+    if (choice.variant.build.kind !== 'recurring') return spec;
     const libraryRef = { definitionId: choice.definitionId, variantId: choice.variantId, version: choice.version };
-    return choice.variant.build.kind === 'recurring'
-      ? { ...spec, approach: choice.variant.build.approach, libraryRef }
-      : { ...spec, libraryRef };
+    return { ...spec, approach: choice.variant.build.approach, libraryRef };
   }
 
   // ── Future Journeys (Future Journey Management) ─────────────────────────────

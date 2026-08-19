@@ -41,7 +41,22 @@ clean. The blocks under this one are the same day's earlier sessions and stay ac
 `00_Foundation/CHANGELOG.md`, the "2026-08-19 (night)" entry; design rules in
 `04_Product/Design_System.md` §0.
 
-**The partner build is submitted.** The founder ran it himself (the interactive Apple sign-in is his
+**The partner build is submitted, and App Store Connect now HAS the app.** EAS created the record
+during `--auto-submit`: **ASC App ID `6803091892`**, so TestFlight lives at
+`https://appstoreconnect.apple.com/apps/6803091892/testflight/ios`. The submission
+(`870529c6-908c-4019-b94e-8212f1ce73e4`) finished successfully with **version 1.0.0, build 3**, whose
+runtime version is the fingerprint below.
+
+**Why the partner still has no invitation, and it is not a bug on our side.** Being in Users and
+Access is not being a tester: an internal tester has to be added to a TestFlight INTERNAL GROUP inside
+the app, and Apple only sends the mail at that moment. Two things can also hold the build back before
+that: the export-compliance question (answer it under the build — the app uses only HTTPS and the
+system keychain), and the unaccepted Developer Program License Agreement. A permanent fix for the
+compliance prompt exists (`ITSAppUsesNonExemptEncryption: false` in `app.json`) and must NOT be applied
+now: it is a native change, it would move the fingerprint, and it would cut build 3 off from our
+over-the-air updates. It belongs to whatever the next build is.
+
+**Original note:** The founder ran it himself (the interactive Apple sign-in is his
 and nobody else's), generated the certificate, the profile and an App Store Connect API key, and
 `--auto-submit` delivered it. Build 2 is the partner build.
 

@@ -20,6 +20,17 @@ jest.mock('react-native-view-shot', () => ({ captureRef: (...a: unknown[]) => mo
   virtual: true,
 });
 
+const mockRequestPermissions = jest.fn();
+const mockSaveToLibrary = jest.fn();
+jest.mock(
+  'expo-media-library',
+  () => ({
+    requestPermissionsAsync: (...a: unknown[]) => mockRequestPermissions(...a),
+    saveToLibraryAsync: (...a: unknown[]) => mockSaveToLibrary(...a),
+  }),
+  { virtual: true },
+);
+
 const mockShareAsync = jest.fn();
 const mockIsAvailable = jest.fn();
 jest.mock('expo-sharing', () => ({
@@ -62,6 +73,8 @@ beforeEach(() => {
   mockIsAvailable.mockResolvedValue(true);
   mockCaptureRef.mockResolvedValue('file:///tmp/rn-view-shot-9f3a.png');
   mockShareAsync.mockResolvedValue(undefined);
+  mockRequestPermissions.mockResolvedValue({ granted: true });
+  mockSaveToLibrary.mockResolvedValue(undefined);
 });
 
 describe('ViewShotCardShareGateway — capabilities', () => {
@@ -69,8 +82,8 @@ describe('ViewShotCardShareGateway — capabilities', () => {
     expect(gateway.isImageExportAvailable()).toBe(true);
   });
 
-  it('reports SAVING as unavailable — a different capability, asked separately', () => {
-    expect(gateway.isImageSaveAvailable()).toBe(false);
+  it('reports SAVING as available only when BOTH the capture and the library are present', () => {
+    expect(gateway.isImageSaveAvailable()).toBe(true);
   });
 });
 
@@ -130,8 +143,36 @@ describe('ViewShotCardShareGateway — sharing the card as an image', () => {
   });
 });
 
-describe('ViewShotCardShareGateway — saving', () => {
-  it('resolves `unavailable` rather than pretending to have saved', async () => {
-    expect(await gateway.saveCardImage(ref)).toEqual({ status: 'unavailable' });
+describe('ViewShotCardShareGateway — saving to the photo library', () => {
+  it('asks for WRITE-ONLY permission at the moment of the tap, then saves the captured card', async () => {
+    const outcome = await gateway.saveCardImage(ref);
+
+    expect(outcome).toEqual({ status: 'success' });
+    // `true` is the write-only flag: the app never asks to READ anyone's photos.
+    expect(mockRequestPermissions).toHaveBeenCalledWith(true);
+    expect(mockSaveToLibrary).toHaveBeenCalledWith('file:///cache/pushapp-completion.png');
+  });
+
+  it('treats a refusal as an ANSWER, not a failure, and never captures anything', async () => {
+    mockRequestPermissions.mockResolvedValue({ granted: false });
+
+    expect(await gateway.saveCardImage(ref)).toEqual({ status: 'cancelled' });
+    expect(mockCaptureRef).not.toHaveBeenCalled();
+    expect(mockSaveToLibrary).not.toHaveBeenCalled();
+  });
+
+  it('resolves `failed` — never throws — when the library write errors', async () => {
+    mockSaveToLibrary.mockRejectedValue(new Error('disk full'));
+    expect(await gateway.saveCardImage(ref)).toEqual({ status: 'failed' });
+  });
+
+  it('does not leave the working file behind once the library holds its copy', async () => {
+    mockFileState.exists = true;
+    await gateway.saveCardImage(ref);
+    expect(mockDelete).toHaveBeenCalledWith('file:///cache/pushapp-completion.png');
+  });
+
+  it('reports `unavailable` when there is no view to capture', async () => {
+    expect(await gateway.saveCardImage({ current: null })).toEqual({ status: 'unavailable' });
   });
 });

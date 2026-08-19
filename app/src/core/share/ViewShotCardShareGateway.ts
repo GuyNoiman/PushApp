@@ -21,11 +21,14 @@
  * SAFETY RED-LINE (PRD §7): every method RESOLVES a calm outcome and never throws. Journey completion
  * must not depend on a capture, a share sheet, or a filesystem.
  *
- * SAVING is deliberately NOT implemented here (resolves `unavailable`): writing to the user's photo
- * library needs another native dependency and a photo-library permission, which is a store-compliance
- * and privacy decision rather than a technical one. The UI reads
- * {@link CardShareGateway.isImageSaveAvailable} and simply does not offer the action, so nothing dead
- * is shown.
+ * SAVING writes the card into the user's photo library (founder decision, 2026-08-19: "if the user
+ * wants to save to the gallery we will ask for gallery permission"). Two things about that permission
+ * are deliberate. It is requested at the moment Save is TAPPED, never at startup — a permission asked
+ * before the person has expressed the intent is a permission they cannot evaluate. And it is
+ * ADD-ONLY: we never request read access, because the app has no reason to look at anyone's photos,
+ * and asking for a capability we do not use is the over-ask a store review is right to flag.
+ *
+ * A refusal is not an error. Declining is an answer, so it resolves `cancelled` and nothing is shown.
  */
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -47,6 +50,12 @@ type ViewShotModule = {
   captureRef: (view: unknown, options: Record<string, unknown>) => Promise<string>;
 };
 
+/** The subset of `expo-media-library` used here — an ADD-ONLY permission and a single save call. */
+type MediaLibraryModule = {
+  requestPermissionsAsync: (writeOnly?: boolean) => Promise<{ granted: boolean }>;
+  saveToLibraryAsync: (uri: string) => Promise<void>;
+};
+
 /** Load the native module at call time; `null` when this build does not carry it. */
 function loadViewShot(): ViewShotModule | null {
   try {
@@ -57,14 +66,41 @@ function loadViewShot(): ViewShotModule | null {
   }
 }
 
+/** Same call-time load for the photo library — absent in Expo Go, on web and under jest. */
+function loadMediaLibrary(): MediaLibraryModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-media-library') as MediaLibraryModule;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Capture the card behind `ref` to a PNG at a NAMED path. Shared by share and save because the
+ * recipient of a share and the photo in a library should be the same artifact, produced once.
+ * PNG at full quality: the card is flat colour, type and glyphs — exactly what JPEG artefacts land on.
+ */
+async function captureCard(viewShot: ViewShotModule, ref: CardCaptureRef, file: File): Promise<void> {
+  const uri = await viewShot.captureRef(ref.current, {
+    format: 'png',
+    quality: 1,
+    result: 'tmpfile',
+  });
+  // Move it under a NAMED file: view-shot's own temp name is a random string, which would arrive as
+  // a meaningless attachment and land in the photo library with no identity.
+  if (file.exists) file.delete();
+  new File(uri).move(file);
+}
+
 export const ViewShotCardShareGateway: CardShareGateway = {
   isImageExportAvailable(): boolean {
     return loadViewShot() !== null;
   },
 
-  // Not offered — see the note at the top of this file. Honest `unavailable`, never a silent no-op.
+  // Saving needs BOTH the capture and the photo library. Either one missing ⇒ do not offer the action.
   isImageSaveAvailable(): boolean {
-    return false;
+    return loadViewShot() !== null && loadMediaLibrary() !== null;
   },
 
   async shareCardImage(ref: CardCaptureRef, opts?: ShareCardOptions): Promise<ShareOutcome> {
@@ -75,18 +111,7 @@ export const ViewShotCardShareGateway: CardShareGateway = {
     try {
       if (!(await Sharing.isAvailableAsync())) return { status: 'unavailable' };
 
-      // PNG at full quality: the card is flat colour, type and glyphs, which is exactly what JPEG
-      // artefacts show up on. `tmpfile` keeps the bitmap out of memory and off the JS bridge.
-      const uri = await viewShot.captureRef(ref.current, {
-        format: 'png',
-        quality: 1,
-        result: 'tmpfile',
-      });
-
-      // Move it under a NAMED file, because the recipient sees the filename. view-shot's own temp
-      // name is a random string, which would arrive as a meaningless attachment.
-      if (file.exists) file.delete();
-      new File(uri).move(file);
+      await captureCard(viewShot, ref, file);
 
       await Sharing.shareAsync(file.uri, {
         mimeType: 'image/png',
@@ -107,8 +132,32 @@ export const ViewShotCardShareGateway: CardShareGateway = {
     }
   },
 
-  async saveCardImage(_ref: CardCaptureRef, _opts?: ShareCardOptions): Promise<SaveOutcome> {
-    return { status: 'unavailable' };
+  async saveCardImage(ref: CardCaptureRef, _opts?: ShareCardOptions): Promise<SaveOutcome> {
+    const viewShot = loadViewShot();
+    const media = loadMediaLibrary();
+    if (!viewShot || !media || !ref.current) return { status: 'unavailable' };
+
+    const file = new File(Paths.cache, SHARE_IMAGE_FILENAME);
+    try {
+      // Asked HERE, on the tap, and write-only. A person who just chose "save my card" can judge this
+      // prompt; the same prompt at startup is one they have no way to evaluate.
+      const { granted } = await media.requestPermissionsAsync(true);
+      // Declining is an answer, not a failure — the caller shows nothing for it.
+      if (!granted) return { status: 'cancelled' };
+
+      await captureCard(viewShot, ref, file);
+      await media.saveToLibraryAsync(file.uri);
+      return { status: 'success' };
+    } catch {
+      return { status: 'failed' };
+    } finally {
+      // The library now holds the copy the user asked for; the working file has no reason to linger.
+      try {
+        if (file.exists) file.delete();
+      } catch {
+        // A cleanup failure must not mask the original outcome.
+      }
+    }
   },
 
   // Text sharing has no native part, so it is the Null gateway's implementation verbatim rather than

@@ -53,6 +53,14 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.872942140221-mjuroef83u4mhmeuo4310adt6gurk009"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "PushApp saves your completion card to your photos, only when you tap Save.",
+          "isAccessMediaLocationEnabled": false,
+          "photosPermission": false
+        }
       ]
     ],
     "experiments": {

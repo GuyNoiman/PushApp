@@ -1,8 +1,9 @@
 /**
  * ShareActionRow (Completion Celebration, I1) — the share / save action buttons for the ceremony
- * (PRD §4). "Share completion" is always offered (it degrades to text share when image export is
- * unavailable — web / Expo Go); "Save image" appears only when the platform can render the card to
- * an image (`imageAvailable`).
+ * (PRD §4). "Share completion" is always offered — it degrades to a text share when this build
+ * cannot capture the card. "Save image" appears only when the device can actually be written to
+ * (`saveAvailable`), which is a different capability from capturing and is asked for separately: a
+ * build that can share the card as an image may still have no way to put it in the photo library.
  *
  * Presentational only (Engineering Bible §19): it renders buttons and calls the handlers the parent
  * passes; the parent owns the gateway call, the privacy preview, and the calm outcome handling.
@@ -17,12 +18,16 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function ShareActionRow({
-  imageAvailable,
+  saveAvailable,
   busy,
   onShare,
   onSave,
 }: {
-  imageAvailable: boolean;
+  /**
+   * Whether SAVING to the device is possible. Offering Save on the strength of "we can capture it"
+   * is how a button that can only ever answer "unavailable" gets put on screen.
+   */
+  saveAvailable: boolean;
   busy: boolean;
   onShare: () => void;
   onSave: () => void;
@@ -50,7 +55,7 @@ export function ShareActionRow({
         </View>
       </Pressable>
 
-      {imageAvailable ? (
+      {saveAvailable ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('ceremony.saveImage')}

@@ -28,6 +28,11 @@ export const NullCardShareGateway: CardShareGateway = {
     return false;
   },
 
+  // Nothing to capture here, so nothing to save either.
+  isImageSaveAvailable(): boolean {
+    return false;
+  },
+
   // Image ops are inert here: there is nothing to render to, so report `unavailable` (never throw).
   async shareCardImage(_ref: CardCaptureRef, _opts?: ShareCardOptions): Promise<ShareOutcome> {
     return { status: 'unavailable' };

@@ -62,6 +62,15 @@ export interface CardShareGateway {
   isImageExportAvailable(): boolean;
 
   /**
+   * Whether the card can be SAVED to the device. Separate from {@link isImageExportAvailable} on
+   * purpose: capturing the card and writing it into the user's photo library are different
+   * capabilities, and the second one needs a photo-library permission. Collapsing them into one flag
+   * is what puts a Save button on screen that can only ever answer "unavailable" — the UI asks this
+   * before offering the action, so nothing dead is shown.
+   */
+  isImageSaveAvailable(): boolean;
+
+  /**
    * Render the card behind `ref` to an image and hand it to the OS share sheet. Resolves
    * `{ status: 'unavailable' }` when image export is off; never throws (PRD §7).
    */

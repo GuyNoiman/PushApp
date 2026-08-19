@@ -79,6 +79,9 @@ export default function CompletionScreen() {
 
   const gateway = useMemo(() => getCardShareGateway(), []);
   const imageAvailable = gateway.isImageExportAvailable();
+  // Asked separately: this build can capture the card without being able to write it to the photo
+  // library, and Save must not be offered on the strength of the capture alone.
+  const saveAvailable = gateway.isImageSaveAvailable();
   const variant = CARD_TEMPLATE_VARIANTS[index];
 
   const close = useCallback(() => {
@@ -184,7 +187,7 @@ export default function CompletionScreen() {
 
           {/* Share / save. On web / Expo Go image export is off, so this degrades to text share. */}
           <ShareActionRow
-            imageAvailable={imageAvailable}
+            saveAvailable={saveAvailable}
             busy={busy}
             onShare={() => void onShare()}
             onSave={() => void onSave()}

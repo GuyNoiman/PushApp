@@ -3,24 +3,24 @@
  * `core/location/index.ts` seam: it resolves the single {@link CardShareGateway} implementation so
  * every caller depends on the interface, not the platform.
  *
- * TODAY: always returns the {@link NullCardShareGateway} — web / Expo Go have no native capture
- * module, so image export reports UNAVAILABLE and sharing degrades to text (PRD §0 deferred #2).
- *
- * TODO(native seam): once the Apple native dev build exists, install `react-native-view-shot` and
- * construct an `ExpoViewShotCardShareGateway` here (guarded like `getLocationGateway`'s feature
- * flag) so the real `captureRef` → share/save path lights up with NO caller changes. Do NOT install
- * the dep or wire it until that build is real (Apple account still pending; cost-guarded).
+ * It resolves the REAL {@link ViewShotCardShareGateway} whenever this build carries
+ * `react-native-view-shot`, and the inert {@link NullCardShareGateway} otherwise — web, Expo Go, jest,
+ * and any build made before the dependency was added. That check is the gateway's own
+ * `isImageExportAvailable()`, so there is exactly one place that decides whether capture is possible
+ * and no caller changes either way: with capture, sharing sends the card as an image; without it,
+ * sharing degrades to text and still works.
  */
 import { NullCardShareGateway } from './NullCardShareGateway';
+import { ViewShotCardShareGateway } from './ViewShotCardShareGateway';
 import type { CardShareGateway } from './CardShareGateway';
 
 let instance: CardShareGateway | null = null;
 
 export function getCardShareGateway(): CardShareGateway {
   if (!instance) {
-    // Deferred: no native capture module yet. When the native build lands, construct the
-    // view-shot gateway here; until then we stay inert (image export off, text share only).
-    instance = NullCardShareGateway;
+    instance = ViewShotCardShareGateway.isImageExportAvailable()
+      ? ViewShotCardShareGateway
+      : NullCardShareGateway;
   }
   return instance;
 }

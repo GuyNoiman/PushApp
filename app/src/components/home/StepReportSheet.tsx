@@ -3,7 +3,13 @@
  * replaces the old instant "+ done" affordance (founder direction: instant-complete
  * was wrong). A calm bottom sheet offering the report options from the old design:
  *
- *   Done · Partial · Couldn't · Postpone · Reschedule
+ *   Done · Partial · Couldn't · Postpone
+ *
+ * POSTPONE AND RESCHEDULE ARE ONE ACTION (founder, device pass 2026-08-19). They used to be two
+ * rows here and read as the same thing, because they were: both said "not now", and the difference
+ * — whether you name the new time yourself — is a choice you make AFTER deciding to postpone, not
+ * a different decision. So the menu asks the one question, and the postpone sheet behind it offers
+ * an automatic time, a specific one, and an optional reason. Do not re-add a second row.
  *
  * Presentational only — it reports the chosen option upward (no business logic,
  * Engineering Bible §19). The parent (StepReportFlow) routes each choice to the
@@ -26,7 +32,6 @@ export type ReportChoice =
   | 'partial'
   | 'couldnt'
   | 'postpone'
-  | 'reschedule'
   /** Reverse the report and leave the Step unreported (D36 — "Mark not reported yet"). */
   | 'notReportedYet';
 
@@ -118,17 +123,12 @@ export function StepReportSheet({
                 hint={t('report.couldnt.hint')}
                 onPress={() => onChoose('couldnt')}
               />
+              {/* The single "not now" action — picking a time lives INSIDE it, not beside it. */}
               <Option
                 icon="time-outline"
                 label={t('report.postpone.label')}
                 hint={t('report.postpone.hint')}
                 onPress={() => onChoose('postpone')}
-              />
-              <Option
-                icon="calendar-outline"
-                label={t('report.reschedule.label')}
-                hint={t('report.reschedule.hint')}
-                onPress={() => onChoose('reschedule')}
               />
 
               {/* Only offered once a report exists — clears it back to unreported (reverse only). */}

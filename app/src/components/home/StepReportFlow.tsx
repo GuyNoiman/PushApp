@@ -7,20 +7,23 @@
  *   Done       → core.checkInStep  (+ a celebratory confetti burst via onDone)
  *   Partial    → core.submitReason(did_partially)   — records partial progress
  *   Couldn't   → core.submitReason(couldnt, cancel) — free let-go (grace lever)
- *   Postpone   → RecoveryFlow      — the full "what happened?" loop (reused)
- *   Reschedule → RescheduleModal   — pick a proposed time (reused), retime lever
+ *   Postpone   → RecoveryFlow      — the ONE "not now" loop (reused): an automatic time, a
+ *                                    specific one, an optional reason, or a free let-go
+ *
+ * There is no separate Reschedule branch any more (founder, device pass 2026-08-19) — "postpone"
+ * and "reschedule" were the same decision offered twice, and picking a time is a choice made INSIDE
+ * the postpone sheet. RecoveryFlow now carries `onReviewed` so the merged action still surfaces the
+ * adaptive week-review that the old Reschedule branch ran.
  *
  * Purely wiring: it holds no business logic, only sequences sheets and calls the
  * facade. Rendered once by Home; `step` being null keeps everything closed.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
 import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { RecoveryFlow } from '@/components/journey/RecoveryFlow';
-import { RescheduleModal } from '@/components/journey/RescheduleModal';
-import { interpretPostponeResult } from '@/components/journey/postponeResult';
 import { PartialNoteSheet } from '@/components/home/PartialNoteSheet';
 import { StepReportSheet, type ReportChoice } from '@/components/home/StepReportSheet';
 import type { AppCore, WeekReviewOutcome } from '@/core/AppCore';
@@ -28,7 +31,7 @@ import type { TodayStep } from '@/core/engines/JourneyEngine';
 import { isInClosedWeek } from '@/core/util/week';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 
-type Stage = 'menu' | 'partialNote' | 'recovery' | 'reschedule';
+type Stage = 'menu' | 'partialNote' | 'recovery';
 
 export function StepReportFlow({
   step,
@@ -59,13 +62,6 @@ export function StepReportFlow({
   useEffect(() => {
     if (step) setStage('menu');
   }, [step]);
-
-  // Reschedule candidates are proposed by the engine (gated by the device env); only
-  // computed once we actually enter the reschedule stage for the current Step.
-  const candidates = useMemo(
-    () => (step && stage === 'reschedule' ? core.proposeStepTimes(step.journeyId, step.step.id) : []),
-    [step, stage, core],
-  );
 
   if (!step) return null;
   const { journeyId, step: s, status } = step;
@@ -143,10 +139,6 @@ export function StepReportFlow({
         reverseIfCompleted();
         setStage('recovery');
         break;
-      case 'reschedule':
-        reverseIfCompleted();
-        setStage('reschedule');
-        break;
       case 'notReportedYet':
         // Reverse only — clear the report back to unreported, keeping history (D36).
         core.reverseReport(journeyId, s.id);
@@ -188,28 +180,12 @@ export function StepReportFlow({
         onBack={onClose}
       />
 
-      {/* Reused Miss-Recovery loop (postpone → what happened → propose times). */}
-      {stage === 'recovery' && <RecoveryFlow step={step} core={core} onClose={onClose} />}
-
-      {/* Reused reschedule sheet — confirm a proposed time as a PER-OCCURRENCE one-shot postpone
-          (Step Postponement, D37 §11.4), NOT a Journey-level retime. The adaptive week-review still
-          runs off the recorded signal. */}
-      <RescheduleModal
-        visible={stage === 'reschedule'}
-        stepTitle={s.title}
-        candidates={candidates}
-        onConfirm={(chosenAt) => {
-          void (async () => {
-            const result = await core.postponeStepReminder(journeyId, s.id, { chosenTime: chosenAt });
-            // Same shared reading as RecoveryFlow — never silently swallow a failure / false success.
-            const { close, notice } = interpretPostponeResult(result, t);
-            if (result.ok) onReviewed?.(core.reviewWeek(journeyId));
-            if (notice) Alert.alert(notice);
-            if (close) onClose();
-          })();
-        }}
-        onCancel={onClose}
-      />
+      {/* The single "not now" loop: an automatic time, a specific one (its own sheet, inside),
+          an optional reason, or a free let-go. `onReviewed` keeps the adaptive week-review that the
+          removed Reschedule branch used to run — merging the two must not quietly drop it. */}
+      {stage === 'recovery' && (
+        <RecoveryFlow step={step} core={core} onReviewed={onReviewed} onClose={onClose} />
+      )}
     </>
   );
 }

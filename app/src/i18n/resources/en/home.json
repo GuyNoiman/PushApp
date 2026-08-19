@@ -78,11 +78,7 @@
     },
     "postpone": {
       "label": "Postpone",
-      "hint": "Not now — tell me what got in the way."
-    },
-    "reschedule": {
-      "label": "Reschedule",
-      "hint": "Move it to a better time."
+      "hint": "Not now — choose a new time, or let me pick one."
     },
     "partialNote": {
       "title": "Add a note?",

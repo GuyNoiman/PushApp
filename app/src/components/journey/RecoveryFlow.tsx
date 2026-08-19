@@ -9,6 +9,11 @@
  *     • Add a reason (opt.)    → ReasonSheet     → postponeStepReminder({ reasonId, note })
  *     • Not this time          → ReasonSheet     → core.submitReason(cancel)   (free let-go)
  *
+ * This is now the ONLY "not now" path (founder, device pass 2026-08-19): the report menu's separate
+ * "Reschedule" row is gone, because naming the new time yourself is the "Pick a time" choice INSIDE
+ * this sheet, not a second decision beside it. That row used to run the adaptive week-review, so
+ * this flow now does — see {@link onReviewed}; a merge must not quietly drop a behaviour.
+ *
  * A postpone NEVER requires a reason (§11.2). The fast sheet stays open to surface an honest notice
  * (no-slot-today, a day-crossing warning, or reminders-off) instead of silently closing.
  */
@@ -20,7 +25,7 @@ import { interpretPostponeResult } from '@/components/journey/postponeResult';
 import { ReasonHistorySheet } from '@/components/journey/ReasonHistorySheet';
 import { ReasonSheet } from '@/components/journey/ReasonSheet';
 import { RescheduleModal } from '@/components/journey/RescheduleModal';
-import type { AppCore, PostponeReminderResult } from '@/core/AppCore';
+import type { AppCore, PostponeReminderResult, WeekReviewOutcome } from '@/core/AppCore';
 import { buildCalendarLink } from '@/core/calendar/calendarLink';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { ReasonId } from '@/core/types/domain';
@@ -32,10 +37,17 @@ type Stage = 'postpone' | 'reason' | 'times' | 'history';
 export function RecoveryFlow({
   step,
   core,
+  onReviewed,
   onClose,
 }: {
   step: TodayStep;
   core: AppCore;
+  /**
+   * Fired after a postpone/let-go ran the adaptive week-review, so the host can surface the outcome
+   * (Home's "I adjusted your week" card). Optional — a host that has nowhere to show it omits it,
+   * and `reviewWeek` is inert anyway when the adaptive loop is off.
+   */
+  onReviewed?: (outcome: WeekReviewOutcome) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation('journey');
@@ -54,6 +66,8 @@ export function RecoveryFlow({
   // (no-slot-today, a day-crossing warning, or reminders-off).
   const handleResult = (result: PostponeReminderResult) => {
     const { close, notice: n } = interpretPostponeResult(result, t);
+    // Only a real postpone feeds the adaptive loop; a rejected one changed nothing to review.
+    if (result.ok) onReviewed?.(core.reviewWeek(journeyId));
     if (close) {
       onClose();
       return;
@@ -81,20 +95,24 @@ export function RecoveryFlow({
   const [intent, setIntent] = useState<'postpone' | 'cancel'>('postpone');
   const onReason = (chosen: ReasonId, note?: string) => {
     if (intent === 'cancel') {
-      void core.submitReason({ journeyId, stepId: s.id, action: 'cancel', reasonId: chosen, note });
+      void core
+        .submitReason({ journeyId, stepId: s.id, action: 'cancel', reasonId: chosen, note })
+        .then(() => onReviewed?.(core.reviewWeek(journeyId)));
       onClose();
       return;
     }
     // §11.6a: "Did it partially" is a FINAL report even when reached via "Add a reason" — record it
     // as a Partial (its StepPartial cancels any pending one-shot), NEVER as another postpone.
     if (chosen === 'did_partially') {
-      void core.submitReason({
-        journeyId,
-        stepId: s.id,
-        action: 'postpone',
-        reasonId: 'did_partially',
-        note,
-      });
+      void core
+        .submitReason({
+          journeyId,
+          stepId: s.id,
+          action: 'postpone',
+          reasonId: 'did_partially',
+          note,
+        })
+        .then(() => onReviewed?.(core.reviewWeek(journeyId)));
       onClose();
       return;
     }

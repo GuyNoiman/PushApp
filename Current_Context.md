@@ -1,10 +1,10 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-18 (later session)** — start at the **"⛳ START HERE — D62 is built"** block
-below; the "⛳ Previous START HERE" block under it is accurate about what shipped earlier the same day and
-names the three documents to read first. Everything under it is accurate history, kept in full, but superseded as the
-starting point. Previous top entry follows.
+Last updated: **2026-08-19 (autonomous session)** — start at the **"⛳ START HERE — 2026-08-19"** block
+below. Under it, the "⛳ Previous START HERE — D62 is built" block (2026-08-18, later) and the ones under
+that are accurate history, kept in full and superseded only as the starting point. Previous top entry
+follows.
 Prior: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
 (SESSION — MVP-ready sweep)" just below (most current and authoritative). It supersedes — but does not
 replace — the same-day "⭐ HANDOFF SNAPSHOT — 2026-08-13 (overnight autonomous session)" underneath it,
@@ -33,7 +33,33 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — D62 is built (2026-08-18, later session)
+# ⛳ START HERE — 2026-08-19 (autonomous session): three of the open list are built
+
+Read `04_Product/Open_Work_2026-08-19.md` — it is still the open list, and this block only records what
+came off it. Branch `feat/buddy-3d-and-reminders`, everything committed and pushed, **jest 1610 / 159
+suites**, `tsc` clean.
+
+**Done, one commit each:** §1.1 the streak badge (the rule was already right — what was missing was
+showing it), §1.2 Postpone absorbing Reschedule, §2.2 real Apple/Google sign-in. Full detail in
+`00_Foundation/CHANGELOG.md`'s 2026-08-19 entry.
+
+### The one thing that must not be lost between sessions
+**Every native change has to land before the SINGLE build that goes to the partner.** Sign-in has already
+added two native dependencies. §1.3 (sharing the completion card as an image) needs one more, and that is
+the founder's open decision — if it is taken after the build, the fix costs another build.
+
+### Still open on that list
+- **§1.3 — blocked on the founder.** A faithful capture of the completion card needs a native
+  view-capture dependency; nothing installed can do it, and the card is Ionicons glyphs + theme tokens +
+  custom fonts, so re-authoring it as SVG would be a fidelity gamble and a duplicated design. The whole
+  seam for it already exists and is unchanged (`core/share/`): one gateway file replaces the Null one and
+  no caller moves.
+- **§1.4 and the binding badge's wording** — options were rendered for him; awaiting his pick.
+- **§1.5** — a device check only he can do.
+
+---
+
+# ⛳ Previous START HERE — D62 is built (2026-08-18, later session)
 
 The block below this one is still accurate about what shipped earlier the same day; this is what changed
 after it, and it is the better starting point for anything touching the plan path.

@@ -4,6 +4,78 @@ Status: Living Document
 
 ---
 
+# 2026-08-19 — the streak becomes visible, Postpone absorbs Reschedule, and real Apple/Google sign-in
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` unchanged (3 pre-existing errors in two test
+files, none from this work) · **jest 1610 passing / 159 suites** (from 1589 / 155 at session start).
+Works `04_Product/Open_Work_2026-08-19.md` §1.1, §1.2 and §2.2. Each item committed and pushed on its own.
+
+## §1.1 — the streak rule was already right; the app never SHOWED which Steps bind
+
+The rule (D26.4) is unchanged and was not touched: only a Step whose Journey has **no slack left this
+week** can break the streak. The defect was that the user could not see the difference — two Steps
+rendered identically, one was missed, the streak rose, and nothing on screen explained why. A rule the
+user cannot see is a rule the user cannot trust.
+
+- `streakRole()` sits beside `isUrgentMiss` in `core/util/urgency.ts` and NAMES the two sides of the
+  existing predicate; `core.streakRole()` is the single facade. A test asserts the label and the rule
+  never disagree on any rhythm or any day of the week — the point being that a second definition in the
+  UI is exactly how a shown label and an applied rule drift apart.
+- `StepStreakBadge` is shared by Today's focus and This week, so a Step's meaning cannot depend on which
+  section of Home it happens to sit in. Calm teal for the recommended side, the warm GOLD role for the
+  binding one — never `danger`: this is arithmetic about the week, not a verdict on the person.
+- **Copy, second pass (founder, same day).** The first pair was `מומלץ` / `מחזיק את השבוע`. He ruled that
+  *"מומלץ להיום"* is the more accurate phrasing and that *"מחזיק את השבוע"* is not clear. The shipped pair
+  is `מומלץ להיום` / `נדרש להיום` — differing in one word, so the difference is legible at a glance.
+  Alternatives for the second label were rendered for him and are still open.
+
+## §1.2 — Postpone and Reschedule are one action
+
+On the device the two rows read as the same thing, because they were: both mean "not now", and whether
+you name the new time yourself is a choice made AFTER that decision. The report menu now asks once, and
+`RecoveryFlow` — which already offered an automatic time, a specific one, an optional reason and a free
+let-go — is the single path.
+
+The removed branch was doing one thing the postpone path was not: running the adaptive week-review behind
+Home's "I adjusted your week" card. `RecoveryFlow` now takes `onReviewed` and fires it on a real
+postpone, a partial and a let-go, so **merging removed a row without removing a behaviour**. The orphaned
+`report.reschedule.*` copy is gone in both languages so nothing invites the row back.
+
+## §2.2 — real Apple and Google sign-in (P4/P5)
+
+Two native dependencies added (`expo-apple-authentication`, `@react-native-google-signin/google-signin`),
+both free. **This is a native change and must therefore land before the single build that goes to the
+partner.**
+
+- Both providers reduce to the same shape: a signed **identity token** exchanged by
+  `supabase.auth.signInWithIdToken`. The uid that comes back is an ordinary `auth.uid()`, so every RLS
+  policy behaves exactly as on the anonymous path.
+- The native modules live behind `core/auth/nativeIdentity.ts` and are loaded at CALL time. This keeps
+  `SupabaseAuthGateway`'s standing rule intact — it still imports no native module — so Expo Go, web and
+  jest are untouched, and a build without the modules degrades to an honest `AuthNotAvailableError`
+  rather than failing to start.
+- A cancel has its own type, never reaches Supabase, and CLEARS the error banner instead of raising one.
+- `app/sign-in.tsx` is not a wall: an anonymous session is already a full session, and the screen says
+  what signing in is actually for (recovery on a new phone; letting a Support Circle know who is who). A
+  provider this build cannot run is hidden, not shown broken — which is also Apple's requirement.
+  Buttons follow Apple's and Google's guidelines rather than pulling their native button views into a
+  screen that must also render in Expo Go and on web.
+- Privacy holds (red-line R1): only the token crosses the boundary, Apple's one-time full name and the
+  Google profile are never read, and Settings can say no more than which provider is linked.
+- **The Google URL scheme is committed in `app.json`**, not read from env: it is baked into the binary at
+  build time, so an env var could not reach it and a missing scheme breaks the redirect silently. The
+  value is public by design, exactly like the client id. Verified with `expo config --type introspect` —
+  the Apple sign-in entitlement and the URL scheme both land.
+
+## Still open from that list
+
+§1.3 (the shared completion image) is **blocked on one founder decision** — a faithful capture of the
+card needs a native view-capture dependency; there is no way to do it with what is installed. §1.4 (a
+completed card's background) and the alternative wording for the binding badge were rendered for him and
+await his pick. §1.5 (Home's scroll-to-top) still needs a device check only he can do.
+
+---
+
 # 2026-08-18 (later) — a Journey declares its own variant axis, and every variant is a rated entity (D62/D63)
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` unchanged (3 pre-existing errors in two test

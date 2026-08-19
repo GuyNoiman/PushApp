@@ -19,7 +19,8 @@
     "todayFocus": "Today's focus",
     "thisWeek": "This week",
     "giveSupport": "Give support",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "journeys": "Your Journeys"
   },
   "caughtUp": {
     "title": "You're all caught up today.",
@@ -59,7 +60,20 @@
       "done": "all Steps done",
       "empty": "no Steps"
     },
-    "today": "Today"
+    "today": "Today",
+    "summary": {
+      "title": "This week",
+      "done": "Steps done",
+      "streak": "Day streak",
+      "progress": "Weekly progress",
+      "mood": {
+        "empty": "Nothing planned for this week yet.",
+        "starting": "The week is just getting started.",
+        "building": "You're building momentum.",
+        "strong": "A strong week.",
+        "complete": "You finished everything you planned this week."
+      }
+    }
   },
   "milestone": "Milestone {{current}} of {{total}}",
   "step": {
@@ -83,7 +97,8 @@
     },
     "action": {
       "nudge": "Nudge",
-      "cheer": "Cheer"
+      "cheer": "Cheer",
+      "message": "Message"
     },
     "empty": {
       "nudge": "Everyone in your circle is on track right now.",

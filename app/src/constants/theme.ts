@@ -56,6 +56,19 @@ const light = {
    * finished card and a selected chip are different states and must not share a fill by accident.
    */
   tealWash: '#F1F7F6',
+  /**
+   * THE WEEK'S GROUND — the three stops of the summary card's gradient (2026-08-19 redesign).
+   *
+   * It is a dusk, and it is deliberately the ONLY place in the app that uses a picture-like fill:
+   * the week is the one thing on Home that is about a stretch of time rather than about a task, and
+   * giving it a horizon is what makes it read as a chapter instead of another card. In LIGHT it is a
+   * warm early evening — peach into cream — so dark ink still reads on it at AA.
+   */
+  sunsetFrom: '#FBE4CF',
+  sunsetMid: '#F6D3C4',
+  sunsetTo: '#EFE6DA',
+  /** The sun itself, and the glow around it. */
+  sunsetSun: '#E8935A',
   /** Amber — urgency ONLY (streak flame, most-urgent). Mapped onto the `gold` role. */
   gold: '#AD7A2C',
   goldTint: '#F2EAD9',
@@ -132,6 +145,11 @@ const dark: Palette = {
    *  completed card reads as a different surface without turning into a coloured block. */
   tealWash: '#1E2A2A',
   /** Amber — urgency ONLY (streak / most-urgent). Mapped onto the `gold` role. */
+  /** THE WEEK'S GROUND in dark — a real dusk: deep indigo falling into ember. */
+  sunsetFrom: '#161C2B',
+  sunsetMid: '#2A2030',
+  sunsetTo: '#4A2A25',
+  sunsetSun: '#E8763C',
   gold: '#DBA660',
   goldTint: '#322810',
   goldStrong: '#EFC98A',

@@ -54,10 +54,19 @@ export function displayFont(weight: DisplayWeight = 'regular'): string {
 }
 
 /**
- * Optical correction for the display face in use. Fraunces has a large x-height and reads bigger
- * than Frank Ruhl Libre at the same px, so Hebrew is given back the size the Latin face takes —
- * without this, the Hebrew headings look one step smaller than their English equivalents on the
- * same screen. A multiplier rather than a table of sizes, so the type scale stays in one place.
+ * Optical correction for the display face in use — applied to FONT SIZE ONLY, never to line height.
+ *
+ * Two different faces at the same px look like two different sizes: Fraunces has a large x-height
+ * and reads bigger than Frank Ruhl Libre, so Hebrew is given back the presence the Latin face takes
+ * for free. That is the optical half.
+ *
+ * THE LAYOUT HALF IS THE RULE THIS FUNCTION EXISTS TO PROTECT (founder, 2026-08-19): *"since the
+ * font differs between the languages, make sure they occupy the same space on screen — sometimes
+ * that means one size for one and another size for the other."* Optical parity must never turn into
+ * layout drift, so every display role declares an EXPLICIT `lineHeight` that does not go through
+ * this multiplier. A line of a heading is then exactly as tall in Hebrew as in English, every card
+ * below it starts at the same y, and a screenshot of the two languages can be laid on top of each
+ * other. Scale the size; never the box.
  */
 export function displayScale(): number {
   return isHebrew() ? 1.06 : 1;

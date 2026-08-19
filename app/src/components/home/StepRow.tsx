@@ -25,6 +25,19 @@
  * ד1"): the teal wash and the check tile. The oversized watermark check does not come with it — it
  * was designed for a tall card and would be texture across a 64px row rather than behind it.
  *
+ * THE LIGHTNESS PASS (founder, 2026-08-19: *"it still feels a bit heavy — I want it to breathe, to
+ * be lighter and less crowded"*). Every removal below is a thing that was competing for attention
+ * rather than earning it:
+ *  - the row has NO fill and NO border of its own. It sits on the page, separated by air and a
+ *    hairline, instead of being a small card inside a bigger card;
+ *  - the icon lost its coloured tile and is now just the glyph, so the colour still carries urgency
+ *    without a second shape around it;
+ *  - the meta line is the DREAM only. The Journey and the Milestone position moved out — they are
+ *    what the Journeys card is for, and repeating them under every Step was the same fact three
+ *    times on one screen;
+ *  - `recommended` is quiet TEXT and only `binding` keeps a pill. A badge on every row is a badge
+ *    that says nothing; a badge on the one that binds the week is information.
+ *
  * Presentational only. Swipe (Done / Postpone / Let go) is retired on a completed or locked row,
  * exactly as before; the tap path stays open so a mistaken report can be changed.
  */
@@ -40,7 +53,6 @@ import { displayFont, displayScale } from '@/constants/displayFont';
 import { Radius, Spacing } from '@/constants/theme';
 import type { StepStatus } from '@/core/status/stepStatus';
 import type { StreakRole } from '@/core/util/urgency';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 
 /** How much time-pressure a pending Step carries — drives its icon tile. */
@@ -50,7 +62,6 @@ export function StepRow({
   icon,
   title,
   dream,
-  meta,
   note,
   urgency,
   status,
@@ -66,8 +77,6 @@ export function StepRow({
   title: string;
   /** The Dream this Step's Journey serves — the grouping, moved onto the row. */
   dream?: string;
-  /** "Journey · Milestone N of M". */
-  meta?: string;
   /** One short line about WHEN — carried from, belongs to, or done on. Always the caller's words. */
   note?: string;
   urgency: StepUrgency;
@@ -85,16 +94,8 @@ export function StepRow({
 }) {
   const theme = useTheme();
   const { t } = useTranslation('home');
-  const onAccent = useColorScheme() === 'dark' ? '#0A1615' : '#F5FBFB';
-
   const completed = status === 'completed';
   // A completed Step drops out of the urgency scale entirely and settles on the calm end.
-  const accentTint =
-    completed || urgency === 'calm'
-      ? theme.tealTint
-      : urgency === 'urgent'
-        ? theme.dangerTint
-        : theme.goldTint;
   const accentStrong =
     completed || urgency === 'calm'
       ? theme.tealStrong
@@ -116,16 +117,14 @@ export function StepRow({
         onPress={onPress}
         style={({ pressed }) => [
           styles.row,
-          { backgroundColor: theme.backgroundElement },
-          completed && { backgroundColor: theme.tealWash },
           pullForward && !completed && [styles.pullForward, { borderColor: theme.hairline }],
           pressed && styles.pressed,
         ]}>
-        <View style={[styles.tile, { backgroundColor: completed ? theme.tint : accentTint }]}>
+        <View style={styles.glyph}>
           <Ionicons
-            name={completed ? 'checkmark' : icon}
-            size={18}
-            color={completed ? onAccent : accentStrong}
+            name={completed ? 'checkmark-circle' : icon}
+            size={completed ? 22 : 20}
+            color={completed ? theme.tint : accentStrong}
           />
         </View>
 
@@ -135,7 +134,7 @@ export function StepRow({
             style={[
               styles.title,
               {
-                color: completed ? theme.textSecondary : theme.text,
+                color: completed ? theme.textMuted : theme.text,
                 fontFamily: displayFont(),
                 fontSize: Math.round(16 * displayScale()),
               },
@@ -144,13 +143,8 @@ export function StepRow({
           </ThemedText>
           <View style={styles.metaRow}>
             {dream ? (
-              <ThemedText type="small" numberOfLines={1} style={{ color: theme.tealStrong }}>
-                {dream}
-              </ThemedText>
-            ) : null}
-            {meta ? (
               <ThemedText type="small" numberOfLines={1} style={{ color: theme.textMuted }}>
-                {meta}
+                {dream}
               </ThemedText>
             ) : null}
             {note ? (
@@ -158,10 +152,17 @@ export function StepRow({
                 {note}
               </ThemedText>
             ) : null}
+            {/* The calm side of the streak rule is a whisper, not a badge: it says "missing this
+                costs nothing" and must never look like something being asked of you. */}
+            {streakRole === 'recommended' && !completed ? (
+              <ThemedText type="small" numberOfLines={1} style={{ color: theme.tealStrong }}>
+                {t('streakRole.recommended.label')}
+              </ThemedText>
+            ) : null}
           </View>
-          {streakRole && !completed ? (
+          {streakRole === 'binding' && !completed ? (
             <View style={styles.badgeRow}>
-              <StepStreakBadge role={streakRole} />
+              <StepStreakBadge role="binding" />
             </View>
           ) : null}
         </View>
@@ -177,28 +178,27 @@ export function StepRow({
 
 const styles = StyleSheet.create({
   swipe: {
-    marginBottom: Spacing.two,
+    marginBottom: Spacing.one,
   },
+  // No fill, no border: a Step is a line on the page. Generous vertical padding is what separates
+  // one from the next, because air separates more calmly than a box does.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
     paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.two,
     borderRadius: Radius.card,
   },
   // An offer from a later day: outlined and dashed, never filled like a Step the day is asking for.
   pullForward: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderStyle: 'dashed',
   },
-  tile: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.button,
+  // A fixed box so every title starts at the same x whether the glyph is a check or a walk icon.
+  glyph: {
+    width: 24,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   main: {
     flex: 1,
@@ -209,8 +209,6 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     letterSpacing: -0.1,
   },
-  // The meta line wraps rather than truncating the Dream away: on a narrow phone in Hebrew, a Dream
-  // title plus a Milestone position does not fit one line, and the Dream is the part worth keeping.
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -219,7 +217,7 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
-    marginTop: 2,
+    marginTop: Spacing.one,
   },
   trailing: {
     flexDirection: 'row',
@@ -227,6 +225,6 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.6,
   },
 });

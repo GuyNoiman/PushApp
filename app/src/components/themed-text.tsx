@@ -84,16 +84,19 @@ const makeStyles = (c: ReturnType<typeof useTheme>) =>
     // The display voice, in whichever face this language speaks (see constants/displayFont). A
     // serif at a large size needs LESS letter-spacing and MORE line-height than a sans does at the
     // same px, or it reads cramped and bookish rather than composed.
+    // The LINE HEIGHTS are fixed and language-independent on purpose: only the font SIZE is
+    // corrected per face, so a heading occupies exactly the same box in Hebrew as in English and
+    // nothing below it moves (see constants/displayFont).
     display: {
       fontFamily: displayFont(),
       fontSize: Math.round(28 * displayScale()),
-      lineHeight: Math.round(36 * displayScale()),
+      lineHeight: 36,
       letterSpacing: -0.2,
     },
     displaySmall: {
       fontFamily: displayFont(),
       fontSize: Math.round(19 * displayScale()),
-      lineHeight: Math.round(26 * displayScale()),
+      lineHeight: 26,
       letterSpacing: -0.1,
     },
     subtitle: {

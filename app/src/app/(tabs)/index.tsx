@@ -31,7 +31,7 @@ import { useTranslation } from 'react-i18next';
 import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SupportBoard, type SupportPerson } from '@/components/home/SupportBoard';
+import { SupportCarousel, type SupportPerson } from '@/components/home/SupportCarousel';
 import { FinalStepConfirmSheet } from '@/components/celebration/FinalStepConfirmSheet';
 import { CoachButton } from '@/components/home/CoachButton';
 import { JourneyFeedbackSheet } from '@/components/celebration/JourneyFeedbackSheet';
@@ -41,7 +41,9 @@ import { StepReportFlow } from '@/components/home/StepReportFlow';
 import { WeekAdjustedCard } from '@/components/home/WeekAdjustedCard';
 import { WeeklyReviewCard } from '@/components/home/WeeklyReviewCard';
 import { TopStatusBar } from '@/components/home/TopStatusBar';
+import { JourneyCarousel, type JourneyCard } from '@/components/home/JourneyCarousel';
 import { WeekDayStrip } from '@/components/home/WeekDayStrip';
+import { WeekSummaryCard } from '@/components/home/WeekSummaryCard';
 import { StepRow, type StepUrgency } from '@/components/home/StepRow';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -50,7 +52,8 @@ import { displayFont, displayScale } from '@/constants/displayFont';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
-import { milestoneOfStep } from '@/core/util/milestones';
+import { currentMilestone } from '@/core/util/milestones';
+import { isRunning } from '@/core/util/journeyStatus';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import type { Dream, Journey } from '@/core/types/domain';
@@ -323,19 +326,6 @@ export default function HomeScreen() {
     return map;
   }, [snapshot?.dreams]);
 
-  // Build a short meta line ("Journey · Milestone N of M") for a Step. The position comes from the
-  // SHARED derivation (`core/util/milestones`) the Journeys card and the Journey detail also read,
-  // so no two surfaces can report a different Milestone for the same Journey (Device QA A1).
-  const metaFor = useMemo(
-    () => (item: TodayStep): string => {
-      const journey = journeyById.get(item.journeyId);
-      const pos = milestoneOfStep(journey, item.step);
-      const ms = pos ? t('milestone', { current: pos.current, total: pos.total }) : null;
-      return [item.journeyTitle, ms].filter(Boolean).join(' · ');
-    },
-    [journeyById, t],
-  );
-
   // ── Quick-swipe report paths — the SAME facade calls the ⋯ menu uses, so swipe and
   // menu stay in lock-step (Engineering Bible §19: the engines own the logic). Done
   // routes through the shared confetti trigger so the burst pops on the screen.
@@ -427,6 +417,35 @@ export default function HomeScreen() {
     [t],
   );
 
+  // YOUR JOURNEYS — one card per RUNNING Journey, swiped through. Frozen, future and finished
+  // Journeys are absent by construction: the card is about what is moving right now, and a paused
+  // Journey asking for attention on Home is the opposite of what pausing meant.
+  const journeyCards: JourneyCard[] = useMemo(() => {
+    return (snapshot?.journeys ?? [])
+      .filter((journey) => isRunning(journey))
+      .map((journey) => {
+        const position = currentMilestone(journey);
+        const dream = journey.dreamId ? dreamById.get(journey.dreamId) : undefined;
+        return {
+          id: journey.id,
+          title: journey.title,
+          ...(dream ? { dream: dream.title } : {}),
+          progress: core.journeyProgress(journey.id),
+          ...(position ? { milestone: position } : {}),
+          ...(position
+            ? { milestoneLabel: t('milestone', { current: position.current, total: position.total }) }
+            : {}),
+          onPress: () => router.push(`/journey/${journey.id}` as Href),
+        };
+      });
+  }, [snapshot?.journeys, dreamById, core, router, t]);
+
+  // The week in three numbers — the summary card's whole input (founder's definitions).
+  const summary = useMemo(
+    () => (ready && snapshot ? core.weekSummary() : { done: 0, total: 0, progress: 0 }),
+    [core, ready, snapshot],
+  );
+
   // Steps of LATER days that could be done now. Shown at the END of every day and not only a
   // finished one: someone with time this evening should not have to complete the day first.
   const alsoToday = useMemo(
@@ -466,9 +485,12 @@ export default function HomeScreen() {
           // A quiet friend gets a genuine NUDGE — a distinct outreach kind from a Cheer (the
           // gateway persists which one it is), so the amber action is honest, not a relabeled cheer.
           onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId, 'nudge'),
+          // Free-text messaging is not built yet, so Message opens the Inbox: an honest destination
+          // beats a button that answers a tap with nothing.
+          onMessage: () => router.push('/(tabs)/inbox' as Href),
         };
       });
-  }, [social, t]);
+  }, [social, t, router]);
 
   // A brand-new account has nobody to support, and a section about nobody is worse than no
   // section: the whole "Give support" area — heading included — stays away until there is at
@@ -497,9 +519,10 @@ export default function HomeScreen() {
           name: ap.owner.handle,
           status,
           onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId, 'cheer'),
+          onMessage: () => router.push('/(tabs)/inbox' as Href),
         };
       });
-  }, [social, t]);
+  }, [social, t, router]);
 
   if (!ready || !snapshot) {
     return (
@@ -588,11 +611,7 @@ export default function HomeScreen() {
 
           {/* ── The week, as seven days: one surface holding the strip and the day's Steps ── */}
           <SectionHeader title={t('week.title')} count={openOnDay} tone={headerTone} />
-          <View
-            style={[
-              styles.weekCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
-            ]}>
+          <View style={styles.weekCard}>
             <WeekDayStrip days={week.days} selectedIndex={selectedIndex} onSelect={setSelectedDay} />
             {day && day.steps.length === 0 ? (
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
@@ -605,7 +624,6 @@ export default function HomeScreen() {
                 icon={iconForJourney(item.journeyId)}
                 title={item.step.title}
                 dream={dreamFor(item)}
-                meta={metaFor(item)}
                 note={
                   carriedFrom !== undefined
                     ? t('week.carriedFrom', { day: dayName(carriedFrom) })
@@ -631,6 +649,11 @@ export default function HomeScreen() {
             ))}
           </View>
 
+          {/* ── This week — the chapter the day sits inside, in three numbers ── */}
+          <View style={styles.summary}>
+            <WeekSummaryCard done={summary.done} total={summary.total} streak={snapshot.streak} />
+          </View>
+
           {/* ── "You could also do today" — later Steps that can be pulled forward ── */}
           {alsoToday.length > 0 ? (
             <>
@@ -642,7 +665,6 @@ export default function HomeScreen() {
                     icon={iconForJourney(item.journeyId)}
                     title={item.step.title}
                     dream={dreamFor(item)}
-                    meta={metaFor(item)}
                     note={
                       item.step.plannedFor !== undefined
                         ? t('week.belongsTo', { day: dayName(item.step.plannedFor) })
@@ -661,6 +683,24 @@ export default function HomeScreen() {
             </>
           ) : null}
 
+          {/* ── Your Journeys — one card at a time, swiped through ── */}
+          {journeyCards.length > 0 ? (
+            <>
+              <SectionHeader
+                title={t('sections.journeys')}
+                right={
+                  <ThemedText
+                    type="smallBold"
+                    onPress={() => router.push('/(tabs)/journeys' as Href)}
+                    style={{ color: theme.tint }}>
+                    {t('sections.seeAll')}
+                  </ThemedText>
+                }
+              />
+              <JourneyCarousel cards={journeyCards} />
+            </>
+          ) : null}
+
           {/* ── Give support — two switchable tabs, each row shows the person + WHY.
                  Hidden entirely (heading included) until there is someone to support. ── */}
           {hasFriends && (
@@ -676,7 +716,7 @@ export default function HomeScreen() {
                   </ThemedText>
                 }
               />
-              <SupportBoard needSupport={realNudge} deservePraise={realCheer} />
+              <SupportCarousel needSupport={realNudge} deservePraise={realCheer} />
             </>
           )}
         </TabScrollView>
@@ -750,18 +790,18 @@ const styles = StyleSheet.create({
   coach: {
     paddingBottom: Spacing.one,
   },
-  // ONE surface for the week: the strip and the day's Steps share a card, so a day reads as a day
-  // instead of as a stack of competing cards.
+  // The week is ONE region, and after the lightness pass it is not a box: no fill, no border. The
+  // strip and the day's Steps simply share the page, and air does the grouping a card used to do.
   weekCard: {
     marginHorizontal: Spacing.four,
-    padding: Spacing.three,
-    borderRadius: 20,
-    borderWidth: 1,
     gap: Spacing.one,
   },
   // The pull-forward Steps sit OUTSIDE that surface: they are an offer, not part of the day.
   aheadList: {
     marginHorizontal: Spacing.four,
+  },
+  summary: {
+    paddingTop: Spacing.four,
   },
   calmCard: {
     marginHorizontal: Spacing.four,

@@ -66,7 +66,6 @@ function render(over: Record<string, unknown> = {}) {
       createElement(StepRow, {
         icon: 'walk',
         title: TITLE,
-        meta: META,
         urgency: 'calm',
         status: 'unreported' as StepStatus,
         onPress: jest.fn(),
@@ -90,11 +89,16 @@ function isSwipeable(root: TestRoot): boolean {
 const tree = (root: TestRoot) => JSON.stringify(root.toJSON());
 
 describe('what the row still says', () => {
-  it('renders the title, the Dream it serves, and the Journey · Milestone line', () => {
+  it('renders the title and the Dream it serves', () => {
     const json = tree(render({ dream: DREAM }));
     expect(json).toContain(TITLE);
     expect(json).toContain(DREAM);
-    expect(json).toContain(META);
+  });
+
+  it('does NOT repeat the Journey and the Milestone position — that is the Journeys card s job', () => {
+    // The lightness pass took them out deliberately: under every Step they were the same fact
+    // printed three times on one screen.
+    expect(tree(render({ dream: DREAM }))).not.toContain(META);
   });
 
   it('renders the WHEN note when there is one, and nothing when there is not', () => {

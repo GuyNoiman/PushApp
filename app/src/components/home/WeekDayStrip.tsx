@@ -104,10 +104,10 @@ function DayMarkGlyph({ mark, color }: { mark: DayMark; color: string }) {
 }
 
 const styles = StyleSheet.create({
+  // No horizontal padding of its own: the strip lives INSIDE the week card, which owns the inset.
   strip: {
     flexDirection: 'row',
     gap: Spacing.one,
-    paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.three,
   },
   pill: {

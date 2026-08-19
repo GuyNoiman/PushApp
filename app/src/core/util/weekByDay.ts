@@ -247,3 +247,39 @@ export function pullForwardCandidates(
     .sort((a, b) => (a.step.plannedFor ?? 0) - (b.step.plannedFor ?? 0))
     .slice(0, limit);
 }
+
+/** The week in three numbers — what Home's summary card shows. */
+export interface WeekSummary {
+  /** Steps reported DONE since the week began, up to now. */
+  done: number;
+  /** Every Step this week holds, done or not — the denominator the founder specified. */
+  total: number;
+  /** `done / total` in [0,1]; 0 when the week holds nothing, never NaN. */
+  progress: number;
+}
+
+/**
+ * Summarise the current week (founder's definitions, 2026-08-19): **steps done** is how many were
+ * completed from the start of the week until now, and **weekly progress** is the share of the
+ * week's Steps that were completed — completed out of everything the week holds.
+ *
+ * The denominator is the week's OWN Steps, not the Journey's and not the plan's: a person's sense of
+ * "how is my week going" is about this week, and a number that quietly counted next month's Steps
+ * would read as failure for no reason. Steps with no date belong to a frequency-based plan and are
+ * counted in the current week, because that is the week the user can act in.
+ */
+export function summariseWeek(steps: readonly TodayStep[], now: number): WeekSummary {
+  const weekStart = startOfWeek(now);
+  const nextWeek = startOfWeek(now) + 7 * DAY_MS;
+  const inWeek = steps.filter((item) => {
+    if (item.step.dropped) return false;
+    const planned = plannedDay(item);
+    if (planned === undefined) return true;
+    return planned >= weekStart && planned < nextWeek;
+  });
+  const done = inWeek.filter(
+    (item) => item.step.done && (item.step.lastCheckInAt ?? weekStart) >= weekStart,
+  ).length;
+  const total = inWeek.length;
+  return { done, total, progress: total > 0 ? done / total : 0 };
+}

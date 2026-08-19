@@ -11,7 +11,7 @@ import type { TodayStep } from '../../engines/JourneyEngine';
 import type { Journey, Step } from '../../types/domain';
 import { startOfLocalDay } from '../date';
 import { setWeekStartDay } from '../week';
-import { buildWeekByDay, pullForwardCandidates } from '../weekByDay';
+import { buildWeekByDay, pullForwardCandidates, summariseWeek } from '../weekByDay';
 
 const DAY = 24 * 60 * 60 * 1000;
 // A Wednesday, mid-morning, in a week that starts on Sunday — so there are days on both sides.
@@ -199,5 +199,36 @@ describe('what can be pulled forward', () => {
       todayStep({ id: 'ok', plannedFor: TODAY + DAY }),
     ];
     expect(pullForwardCandidates(blocked, TODAY).map((s) => s.step.id)).toEqual(['ok']);
+  });
+});
+
+describe('the week in three numbers', () => {
+  // The founder's definitions: "steps done" is what was completed since the week began, and
+  // "weekly progress" is the share of the week's Steps that were completed.
+  const done = (id: string, plannedFor: number) =>
+    todayStep({ id, plannedFor, done: true, lastCheckInAt: plannedFor });
+
+  it('counts only what belongs to THIS week', () => {
+    const summary = summariseWeek(
+      [
+        done('a', TODAY - DAY),
+        todayStep({ id: 'b', plannedFor: TODAY }),
+        todayStep({ id: 'next-week', plannedFor: TODAY + 20 * DAY }),
+      ],
+      NOW,
+    );
+    expect(summary).toEqual({ done: 1, total: 2, progress: 0.5 });
+  });
+
+  it('counts an undated Step, because this is the week the user can act in', () => {
+    expect(summariseWeek([todayStep({ id: 'floating' })], NOW).total).toBe(1);
+  });
+
+  it('ignores a Step the coach shed from scope', () => {
+    expect(summariseWeek([todayStep({ id: 'gone', plannedFor: TODAY, dropped: true })], NOW).total).toBe(0);
+  });
+
+  it('reports zero rather than NaN for a week that holds nothing', () => {
+    expect(summariseWeek([], NOW)).toEqual({ done: 0, total: 0, progress: 0 });
   });
 });

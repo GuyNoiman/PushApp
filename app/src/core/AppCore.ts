@@ -74,7 +74,13 @@ import { isFuture, isRunning, resolveJourneyStatus } from './util/journeyStatus'
 import { startOfWeek, weekKey } from './util/week';
 import { STREAK_CONFIG } from './config/streak';
 import { streakRole, type StreakRole } from './util/urgency';
-import { buildWeekByDay, pullForwardCandidates, type WeekByDay } from './util/weekByDay';
+import {
+  buildWeekByDay,
+  pullForwardCandidates,
+  summariseWeek,
+  type WeekByDay,
+  type WeekSummary,
+} from './util/weekByDay';
 import { defaultAdaptivePolicy } from './config/adaptivePolicy';
 import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
 import { featureFlags } from './config/featureFlags';
@@ -2073,6 +2079,17 @@ export class AppCore {
    */
   weekByDay(now: number = Date.now()): WeekByDay {
     return buildWeekByDay(this.journeyEngine.getWeekSteps(), this.state.journeys, now, STREAK_CONFIG);
+  }
+
+  /**
+   * The week in three numbers for Home's summary card (`core/util/weekByDay.summariseWeek`): how
+   * many Steps were done since the week began, out of everything this week holds.
+   *
+   * It reads the same display superset the day strip does, so the card and the strip can never
+   * disagree about what the week contains.
+   */
+  weekSummary(now: number = Date.now()): WeekSummary {
+    return summariseWeek(this.journeyEngine.getWeekSteps(), now);
   }
 
   /**

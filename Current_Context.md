@@ -43,12 +43,32 @@ accurate. Full detail: `00_Foundation/CHANGELOG.md`, the "2026-08-19 (evening)" 
 **Three topics, one commit each:** the library model can hold a Journey with its own Milestone arc ·
 the partner's eighteen Career Journeys, translated into it · Home is seven days.
 
+### THE RULE THAT NOW GOVERNS EVERY CHANGE — read this before touching app.json or a dependency
+
+**The partner build carries iOS runtime fingerprint `df6c2127bbd3be3766774e3f008f4ae5158306cd`**
+(computed from this tree with `npx expo-updates fingerprint:generate --platform ios`). The runtime
+version policy is `fingerprint`, so an over-the-air update only reaches a binary whose fingerprint
+MATCHES. Anything that changes the native project changes that hash, and the moment it changes, every
+`eas update` we publish stops reaching the build the partner is running.
+
+**Native = a new dependency with native code, any `app.json` change (plugins, `infoPlist`,
+entitlements, icons, splash, permissions), an SDK bump.** Not native, and therefore free to ship over
+the air: all TypeScript, every component, i18n copy, colours, artwork files, and fonts (they are
+loaded at runtime from JS-required assets, not embedded).
+
+So the Home redesign ships to the partner with no reinstall — as long as nobody edits `app.json` on
+the way. `expo-blur` and `expo-linear-gradient` were added BEFORE the build precisely so the design
+would not need one. If a native change genuinely becomes necessary, it means a new build, and the
+partner has to install it: that is a decision to raise, never a side effect.
+
 ### The one thing that must not be lost between sessions
-**The build did not go out.** `eas build --platform ios --profile production --auto-submit` stops at
-`Distribution Certificate is not validated for non-interactive builds` — signing needs an interactive
-Apple sign-in with the founder's own Apple ID and its 2FA code. He runs it; nobody else can. The
-attempt moved the remote `buildNumber` 1 → 2 and created the `production` channel/branch, both
-harmless and both needed anyway.
+**Superseded the same evening: the founder ran it himself and IT WENT OUT.** The autonomous attempt
+had stopped at `Distribution Certificate is not validated for non-interactive builds`, because signing
+needs an interactive Apple sign-in with his own Apple ID and its 2FA code. He ran
+`npx eas-cli@latest build --platform ios --profile production --auto-submit`, generated the
+distribution certificate, the provisioning profile and an App Store Connect API key, and the build
+was submitted (submission `870529c6-908c-4019-b94e-8212f1ce73e4`). **Build number 2 is the partner
+build.**
 
 ### Waiting on the founder
 1. **Run the build himself**, from `app/`:

@@ -2,6 +2,11 @@
 
 Status: Draft for approval · Phase 4, screen 1 · 2026-07-06
 
+> **Superseded in part, 2026-08-19:** the founder approved a **week-by-day view** that replaces BOTH
+> "Today's focus" and "This week" with a seven-day strip and a per-day list. The specification lives in
+> `../PRD/Week_By_Day_Home_PRD.md`; everything else on this page still holds. Nothing below is deleted —
+> it stays as the design history of the sections being replaced.
+
 > This is a UX design specification (purpose, hierarchy, flow, states) — not visual
 > mockups and not implementation. It builds on `Screen_Bible.md` and the decisions in
 > `06_Decisions/Decision_Log.md`.

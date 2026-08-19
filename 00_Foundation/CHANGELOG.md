@@ -4,6 +4,103 @@ Status: Living Document
 
 ---
 
+# 2026-08-19 (later) — the card ships as an image, the completed card gets its own ground, and the build stops being empty
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1631 passing / 161 suites** (from 1610 / 159 earlier
+the same day). Seven commits, one per topic. This entry continues the 2026-08-19 entry below it, which is
+accurate about the morning and simply stops before this work.
+
+**With this batch, everything the partner build needs is IN.** Three of the seven commits are native
+(view capture, media library, expo-updates + iPad), and that was the whole reason they were sequenced
+here: after the build goes out, only non-native changes can reach the device without a reinstall.
+
+## §1.4 — a completed Step card gets its own ground
+
+Chosen by the founder from rendered options (option D1): a very light teal wash, a turquoise **outline**
+in place of the start-edge bar, and a large check watermarked into the background near the far end of the
+progress bar, the end the bar is travelling toward.
+
+- The urgency edge is dropped once the card is done, because a finished Step has no urgency left and the
+  outline already carries that role all the way round.
+- The watermark sits at 8% opacity and is hidden from screen readers: texture, never a second
+  announcement of "done".
+- `tealWash` is its own theme token in both palettes rather than a reuse of `tealTint` — a settled card
+  and a selected chip are different states and must not drift into one fill by accident.
+- The card still says "done" in words, so the new ground is never the only signal, and its width is
+  unchanged so a list does not shift when a Step completes.
+
+## §1.3 — the completion card shares as the card, and now saves to the photo library
+
+The founder answered the open question with a yes, and it was built in two commits.
+
+- **Share (`react-native-view-shot`, MIT, free).** Share used to send a sentence about the card; the card
+  IS the artifact. Capturing the real view means the image cannot drift from the design by construction,
+  which re-authoring it as SVG could not have promised. The gateway loads the native module at CALL time,
+  exactly like `core/auth/nativeIdentity`, so web, Expo Go and jest are unaffected and a build without the
+  module degrades to the old text share instead of failing.
+- **Save (`expo-media-library`).** The founder's call: if someone wants the card in their gallery, ask for
+  gallery permission. Two deliberate constraints — the permission is requested when **Save is tapped**,
+  never at startup, and it is **add-only**: the plugin's default read-access declaration is switched off,
+  because the app has no reason to look at anyone's photos and declaring a capability we never use is the
+  over-ask a store review is right to question. Verified through `expo config --type introspect`: only the
+  add-usage string lands.
+- Declining is an answer, not a failure: it resolves `cancelled`, nothing is captured, and the screen says
+  nothing. A failed capture, a failed share and an absent share sheet all resolve calmly — a completed
+  Journey must not depend on any of them.
+- Share and save go through **one** capture path, so what a friend receives and what sits in the library
+  cannot differ.
+- **Known limit:** the personal caption does not travel with the shared image. That is the share sheet's
+  behaviour, not a bug we can fix from here.
+
+## Settings — the week's first day is picked from a list, not by cycling
+
+Tapping the row used to advance Sun → Mon → … one day per tap, a shape that never shows what the choices
+are and that made the day just behind the current one six taps away. The row now opens the seven days with
+today's choice ticked and announced as selected, and picking closes the sheet. The sheet
+(`SettingsOptionSheet`) is generic over its value type, so the form-of-address row can adopt it without a
+second component.
+
+## The server side — the proxy records everyone, and account deletion is live
+
+- **`delete-account` is DEPLOYED** and verified answering 401 unauthenticated. It was written on
+  2026-08-09 and parked as a store gate; a second real person on the app changes that, because without it
+  "Delete account" fails and the client correctly refuses to wipe local data, leaving the user stuck.
+- **The per-user ceiling is a `BYTE_CAP_MB` secret**, not a constant. Unset, malformed or non-positive
+  falls back to the decided 2 MB — a bad secret must never read as "no limit". The cap is a LIFETIME
+  total; nothing resets it.
+- **Every request is now recorded in `llm_usage`, exempt callers included.** Skipping the write for
+  `UNMETERED_UIDS` conflated "no ceiling" with "invisible": the founder's own uid is the one whose spend
+  reaches his card, and an empty table could equally mean "the proxy was never reached" or "this caller is
+  exempt" — an ambiguity that cost a debugging round the same day. Only the ceiling is waived now. The
+  write is best-effort: failing to store a counter must never fail a request whose answer is already in hand.
+- **`llm_usage` exists.** The founder ran the migration in the SQL editor, so the cap is now actually
+  enforced rather than absent. (Closes §2.1 of `04_Product/Open_Work_2026-08-19.md`.)
+
+## The build — an environment that was empty, updates over the air, and iPad
+
+- **The EAS `production` and `preview` environments had NO variables at all.** A build from them would
+  have installed perfectly and then had no Supabase URL, no coach and no sign-in — it would have read as a
+  broken app rather than as missing config. All four public values are now set for both:
+  `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`,
+  `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. `production` is also store-signed now, which TestFlight requires.
+- **`expo-updates` is in.** From the partner build onward, anything that is not native reaches the device
+  without a reinstall. Two deliberate settings: `fallbackToCacheTimeout=0` so an update check never holds
+  the splash screen (it applies on the next launch instead), and `runtimeVersion.policy=fingerprint` rather
+  than `appVersion` — with appVersion, a build carrying these new native modules and one without would
+  share a runtime id, and an update built against the new native code could land on the old build and crash
+  it.
+- **iPad is declared** (`supportsTablet`). The partner tests on an iPad, and without it the app is an
+  iPhone-only binary that iPad runs in a scaled phone window. **Still portrait-only** — worth revisiting.
+
+## Known limits carried forward
+
+- Moving from an anonymous identity to a real one does NOT migrate what the server holds under the
+  anonymous uid. The instruction to the partner is therefore to sign in on first launch.
+- The shared image travels without the personal caption (share-sheet limitation).
+- The app is portrait-only on iPad.
+
+---
+
 # 2026-08-19 — the streak becomes visible, Postpone absorbs Reschedule, and real Apple/Google sign-in
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` unchanged (3 pre-existing errors in two test

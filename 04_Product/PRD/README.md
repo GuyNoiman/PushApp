@@ -78,6 +78,12 @@ error states.
   guidance rather than a cap, and there is no ceiling on extension — the invariant is that the end date
   only ever moves because the user said so.** **Stage: MVP · Status: founder-decided 2026-08-14 (§4/§8);
   contract in specification, eight open questions in §14, not ready to build.**
+- `Week_By_Day_Home_PRD.md` — Home's week strip: seven day pills (letter only, no dates, current week
+  only), a flat Step list per day with the Dream on the card, an always-present "you could also do today"
+  section of pull-forward Steps, and the rule by which a missed Step does or does not travel to the next
+  day (the SAME urgency computation that feeds `streakRole`, never a second definition). Replaces BOTH
+  "Today's focus" and "This week". **Stage: POC/MVP · Status: approved in full by the founder
+  2026-08-19, NOT built; one open sentence in §6.**
 - `Coach_Context_Summaries_PRD.md` — optional, minimal, end-to-end encrypted Dream/Journey context for
   the Coach. **Stage: MVP · Status: Approved; security/privacy release gate.**
 - `Account_Inactivity_Freeze_PRD.md` — server-authoritative 21-day inactivity freeze for Active/Future

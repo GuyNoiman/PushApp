@@ -1,8 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-19 (autonomous session)** — start at the **"⛳ START HERE — 2026-08-19"** block
-below. Under it, the "⛳ Previous START HERE — D62 is built" block (2026-08-18, later) and the ones under
+Last updated: **2026-08-19 (later, same day)** — start at the **"⛳ START HERE — 2026-08-19 (later,
+same day)"** block below. Under it, the same day's earlier "⛳ Previous START HERE — 2026-08-19
+(autonomous session)" block is accurate history for the morning. Under it, the "⛳ Previous START HERE — D62 is built" block (2026-08-18, later) and the ones under
 that are accurate history, kept in full and superseded only as the starting point. Previous top entry
 follows.
 Prior: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
@@ -33,7 +34,52 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-19 (autonomous session): three of the open list are built
+# ⛳ START HERE — 2026-08-19 (later, same day): the partner build is fully loaded
+
+Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1631 / 161 suites**, `tsc` clean.
+The block under this one covers the morning of the same day and is still accurate; this is what came after
+it. Full detail: `00_Foundation/CHANGELOG.md`, the "2026-08-19 (later)" entry.
+
+**Seven commits:** the completed-Step card's own ground (§1.4, option D1) · the completion card shares as
+an IMAGE and saves to the photo library (§1.3) · the week's first day picked from a list instead of by
+cycling · `delete-account` deployed and the proxy cap moved to a `BYTE_CAP_MB` secret · every caller
+recorded in `llm_usage`, exempt ones included · a store-signed `production` profile with an environment on
+every profile · `expo-updates`, iPad support, and the four public values loaded into an EAS environment
+that was **completely empty**.
+
+### The one thing to know about sequencing from here
+**All native work for the partner build is IN.** From that build onward, anything that is not native
+reaches the device over the air (`expo-updates`, fingerprint runtime version) with no reinstall. So a new
+native dependency from here costs another build — check before adding one.
+
+### Waiting on the founder (nothing in code depends on these)
+- **App Store Connect: the app record for `com.guynoiman.pushapp` does not exist yet.** Without it there
+  is nowhere to submit a build.
+- Confirm Supabase's Apple provider saved: toggle on, `com.guynoiman.pushapp` in **Client IDs**, secret
+  field EMPTY (not needed for native sign-in), "Allow users without an email" OFF. Google is already done.
+- Confirm new-user sign-ups are enabled.
+- The partner (`liamsh1979@gmail.com`, his Apple address) is invited to the team; add him to the internal
+  test group once a build is up.
+- Optional: set `BYTE_CAP_MB=4` if the partner should get 4 MB (the cap is a LIFETIME total, not monthly).
+- Optional verification: talk to the Coach, then check a row landed in `llm_usage`.
+
+### Approved and NOT yet built
+1. **The partner's Journey library** — `07_Assets/01_…_v0.6.md` + `02_…_18_Journeys_v0.6.json`: 18
+   Journeys linked to Career across six goal families. He did not invent a model field; he held the link
+   as `libraryMeta.linkedExpertIds` at authoring level until we decide how to implement it. This is a
+   translation into `app/src/core/learning/library/`, not a copy, and it is content only — it blocks no build.
+2. **The week-by-day view on Home** — approved in full, replacing BOTH "Today's focus" and "This week".
+   Spec: `04_Product/PRD/Week_By_Day_Home_PRD.md`.
+
+### Known limits carried into the partner build
+- Moving from an anonymous identity to a real one does not migrate what the server holds under the
+  anonymous uid, so the partner is told to sign in on FIRST launch.
+- The shared image travels without the personal caption (share-sheet limitation).
+- iPad is supported but the app is still portrait-only.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-19 (autonomous session): three of the open list are built
 
 Read `04_Product/Open_Work_2026-08-19.md` — it is still the open list, and this block only records what
 came off it. Branch `feat/buddy-3d-and-reminders`, everything committed and pushed, **jest 1610 / 159

@@ -4,6 +4,67 @@ Status: Living Document
 
 ---
 
+# 2026-08-19 (night) — the Home redesign, first pass
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` clean on everything touched (the 3
+pre-existing errors in two old test files are untouched) · **jest 1715 / 169 suites**. Built from the
+founder's two mockups, with his own correction applied on top of them: *"it still feels a bit heavy,
+I want it to breathe, lighter and less crowded."* Design rules are recorded in
+`04_Product/Design_System.md` §0.
+
+**It all ships over the air.** The fingerprint the partner's build carries is unchanged
+(`df6c2127…`) — verified after adding the fonts — so every screen below reaches his phone with no
+reinstall. `expo-blur` and `expo-linear-gradient` went in BEFORE that build for exactly this reason.
+
+## A display voice, and a different face in each language
+
+The founder's ruling: English is the display that matters most and must not be held back by what
+Hebrew supports. So English speaks in **Fraunces** and Hebrew in **Frank Ruhl Libre**, resolved at
+render time per language (`constants/displayFont.ts`).
+
+The rule that came with it is a layout rule, not a typographic one: the font SIZE is corrected per
+face so neither language looks smaller, and the LINE HEIGHT is not, so a heading occupies the same
+box in both and nothing below it moves. Its test asserts exactly that.
+
+## The lightness pass
+
+- **A Step is a line on the page.** No fill, no border, no icon tile — the glyph carries urgency in
+  colour alone, and air does the grouping a card used to do.
+- **The Journey and the Milestone position left the row.** Under every Step they were the same fact
+  three times on one screen; the Journeys card now says them once.
+- **The streak badge stopped being on everything.** The calm side is quiet text; the pill is kept for
+  the Step that actually binds the week. A badge on every row is a badge that says nothing.
+- **The coach card says "primary" once**, with one soft gradient instead of a tint plus a hard edge
+  plus a shadow, and its identity moved into a glowing orb drawn in code.
+
+## Three new modules
+
+- **The week as a chapter** — the three numbers the founder specified (Steps done since the week
+  began, the streak, and the share of THIS week's Steps that are done), over a dusk drawn in code so
+  it re-tones for the light theme, stays sharp at any size, and weighs nothing. Its sentence reports
+  the week back and never flatters: "strong" starts only at three quarters, and a week with nothing
+  planned is empty rather than a failure. The mood lives in core beside the numbers, where it can be
+  tested without rendering a gradient.
+- **The Journeys carousel** — one active Journey per card, swiped through, with a Milestone rail read
+  from the SHARED `currentMilestone`, so two surfaces cannot report a different Milestone for one
+  Journey. Frozen and Future Journeys are absent by construction.
+- **The people carousel** — one person at a time instead of a list of rows. The two tones stay
+  separate (a quiet friend gets a nudge, one who moved gets a cheer). **Message** is in the design
+  because messaging is coming; until it lands it opens the Inbox, because a button that answers a tap
+  with silence teaches people to stop tapping.
+
+`TodayFocusCard`, `WeekDreamGroup` and `SupportBoard` are deleted rather than left orphaned; their
+tests were carried over to what replaced them, extended for what the new components added.
+
+## Also this session
+
+The week-by-day rule was corrected to the founder's own words — a Step travels to the next day
+because it was `recommended` and not yet `required` — so the condition is now `streakRole` itself and
+a binding Step that was missed stays on its day. `04_Product/PRD/Week_By_Day_Home_PRD.md` §6 records
+his wording and no longer carries an open question.
+
+---
+
 # 2026-08-19 (evening) — the partner's library is in, and Home is a week of seven days
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` clean on everything touched ·

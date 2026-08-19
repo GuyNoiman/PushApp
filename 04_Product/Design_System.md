@@ -1,12 +1,80 @@
 # Design System
 
-Status: Draft · Phase 5 · 2026-07-06
+Status: Draft · Phase 5 · 2026-07-06 · **§0 added 2026-08-19 (the redesign in progress) — read it first**
 
 > Direction: **A (playful game-world) primary, B (calm wellness) secondary** — *"a cozy,
 > encouraging world that stays clean and calm."* Concrete tokens (exact hex, fonts) are
 > drafts to be finalized. Grounds on `Product_Philosophy.md` and `AI_Product_Principles.md`.
 
 ---
+
+## 0. The 2026-08-19 redesign — what supersedes the sections below
+
+Status: **In progress, founder-directed from his own mockups.** Nothing below is deleted: §§1–10 are
+the system this is growing out of, and everything they say that is not contradicted here still holds.
+What changed is written here so a reader knows which of the two is current.
+
+### 0.1 The display voice, and it is a different face in each language
+
+Headings, card titles and Step titles are set in a display SERIF; body copy, labels, chips and
+buttons stay Inter. A serif everywhere reads as a magazine; a serif on the sentences that matter
+reads as care.
+
+**The face is chosen per language, and neither one is a compromise** (founder: *"the English display
+is the one that matters most to me, and I do not want it to suffer because of what Hebrew supports.
+Split them, and pick the best of each"*):
+
+| Language | Display face | Why |
+|---|---|---|
+| English (and any Latin script) | **Fraunces** 500 / 600 | Warm old-style serif with real character; holds from a 16px card title to a 30px statement. |
+| Hebrew | **Frank Ruhl Libre** 500 / 700 | Drawn AS Hebrew rather than derived from a Latin design, so a heading looks deliberate and not translated. |
+
+**The layout rule that goes with it, and it is not optional:** two faces at the same px look like two
+different sizes, so the font SIZE is corrected per face — and the LINE HEIGHT is not. Every display
+role declares an explicit, language-independent line height, so a heading occupies the same box in
+both languages and nothing below it moves. Scale the size; never the box. Owned by
+`app/src/constants/displayFont.ts`, and asserted by its test.
+
+Baloo 2 is fully retired as a display face (it was already replaced by Inter earlier); the assets
+stay loaded only as a fallback during the migration.
+
+### 0.2 Lightness — the founder's correction to his own mockups
+
+*"It still feels a bit heavy. I want it to breathe, lighter and less crowded."* That is now a rule,
+and it reads as four questions to ask of anything new:
+
+1. **Is this a card inside a card?** Then it is one too many. A Step is a line on the page, separated
+   by air, not a small card inside a bigger one.
+2. **Is this fact already on screen?** The Journey and the Milestone position came off every Step row
+   because the Journeys card says them once, properly.
+3. **Is this badge on everything?** Then it says nothing. The calm side of the streak rule is quiet
+   text; only the Step that actually binds the week keeps a pill.
+4. **Is this shouting more than once?** The coach card used a tint, a hard edge and a shadow to say
+   one thing. One soft gradient says it.
+
+### 0.3 The one picture-like surface
+
+The week's summary card carries a DUSK — a gradient with a sun and two ridges. It is the only
+picture-like fill in the app, because the week is the only thing on Home that is about a stretch of
+time rather than a task, and a horizon is what makes a stretch of time feel like one.
+
+**It is drawn in code** (`expo-linear-gradient` + `react-native-svg`), never shipped as an image, for
+three reasons that all matter: it re-tones for the light theme instead of looking like a photograph
+pasted onto paper, it stays sharp at any screen size, and it weighs nothing — which is what lets the
+whole redesign travel over the air to a build that is already on someone's phone.
+
+### 0.4 Carousels, not lists, for context
+
+Home shows the day as a list because the day is what the user came to act on. The two things that are
+CONTEXT for it — the active Journeys, and the people who could use a word — are carousels, one card at
+a time. A list of them would compete with the day; one card says its piece and steps aside. It is also
+the difference between meeting a person and processing a queue.
+
+### 0.5 Colour, unchanged in principle
+
+Teal is still the one accent and amber is still reserved for genuine time pressure. The redesign adds
+`sunset*` tokens (the dusk) to BOTH palettes; the light theme is not an afterthought, and every new
+surface was checked in both.
 
 ## 1. Design Philosophy
 

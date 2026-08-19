@@ -1,8 +1,8 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-19 (later, same day)** — start at the **"⛳ START HERE — 2026-08-19 (later,
-same day)"** block below. Under it, the same day's earlier "⛳ Previous START HERE — 2026-08-19
+Last updated: **2026-08-19 (evening)** — start at the **"⛳ START HERE — 2026-08-19 (evening)"**
+block below. Under it, the same day's afternoon and morning blocks are accurate history. Under it, the same day's earlier "⛳ Previous START HERE — 2026-08-19
 (autonomous session)" block is accurate history for the morning. Under it, the "⛳ Previous START HERE — D62 is built" block (2026-08-18, later) and the ones under
 that are accurate history, kept in full and superseded only as the starting point. Previous top entry
 follows.
@@ -34,7 +34,59 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-19 (later, same day): the partner build is fully loaded
+# ⛳ START HERE — 2026-08-19 (evening): the library is in, Home is a week, the build needs him
+
+Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1693 / 167 suites**, `tsc`
+clean. The two blocks under this one cover the same day's morning and afternoon and are still
+accurate. Full detail: `00_Foundation/CHANGELOG.md`, the "2026-08-19 (evening)" entry.
+
+**Three topics, one commit each:** the library model can hold a Journey with its own Milestone arc ·
+the partner's eighteen Career Journeys, translated into it · Home is seven days.
+
+### The one thing that must not be lost between sessions
+**The build did not go out.** `eas build --platform ios --profile production --auto-submit` stops at
+`Distribution Certificate is not validated for non-interactive builds` — signing needs an interactive
+Apple sign-in with the founder's own Apple ID and its 2FA code. He runs it; nobody else can. The
+attempt moved the remote `buildNumber` 1 → 2 and created the `production` channel/branch, both
+harmless and both needed anyway.
+
+### Waiting on the founder
+1. **Run the build himself**, from `app/`:
+   `npx eas-cli@latest build --platform ios --profile production --auto-submit`
+   It will ask to sign in to Apple and to generate a Distribution Certificate — say yes.
+2. **App Store Connect: the app record for `com.guynoiman.pushapp` still does not exist.** Without it
+   `--auto-submit` has nowhere to deliver.
+3. Confirm Supabase's Apple provider saved (toggle on, `com.guynoiman.pushapp` in Client IDs, secret
+   EMPTY, "Allow users without an email" OFF) and that new sign-ups are enabled. Google is done.
+4. **The partner's invitation email.** He reports it never arrived. The likeliest reason is that a
+   TestFlight INTERNAL-tester invite is not sent until a build exists — so it resolves itself with
+   step 1. Otherwise: the spam folder, an address that is not his Apple ID, or an invitation older
+   than seven days (Users and Access → his row → Resend Invitation).
+5. **Read `04_Product/Partner_Letter_2026-08-19_Library_Ingest.md` and send it.** He asked for the
+   three-Journeys-per-family decision to be agreed with the partner rather than announced, and the
+   letter's real ask is the diagnosis (§5.2) — the piece that would make the eighteen Journeys
+   reachable.
+6. Optional: `BYTE_CAP_MB=4` for the partner; verify a row lands in `llm_usage` after using the Coach.
+
+### The gap to close next, in code
+**Nothing routes a conversation to the Career Journeys.** Choosing a family needs the Career expert
+to diagnose which of the six a goal is (unclear target / missing proof / no access), and the experts
+do not diagnose — each returns one fixed arc. The content is validated, translated and unreachable
+until that lands, and `AppCore.matchVariant` deliberately refuses to stamp provenance from a Journey
+whose content was not the one built.
+
+### Known limits carried into the partner build
+- Moving from an anonymous identity to a real one does not migrate what the server holds under the
+  anonymous uid, so the partner signs in on FIRST launch.
+- The shared image travels without the personal caption (share-sheet limitation).
+- iPad is supported but the app is still portrait-only.
+- One clause of the week-by-day spec is marked OPEN in its PRD §6 and was built on the plainer
+  reading: "the Journey still has room in the week" = it still OWES sessions this week. A different
+  ruling is a one-line change.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-19 (later, same day): the partner build is fully loaded
 
 Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1631 / 161 suites**, `tsc` clean.
 The block under this one covers the morning of the same day and is still accurate; this is what came after

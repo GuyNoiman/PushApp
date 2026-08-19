@@ -4,6 +4,99 @@ Status: Living Document
 
 ---
 
+# 2026-08-19 (evening) — the partner's library is in, and Home is a week of seven days
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` clean on everything touched ·
+**jest 1693 passing / 167 suites** (from 1631 / 161 earlier the same day). Three topics, one commit
+each, plus the docs commit that closed the morning's gap.
+
+## The Journey Library can hold a Journey that brings its own Milestone arc
+
+The partner's package arrived as 18 career Journeys in six goal families, three per family — and the
+three in a family do NOT share a Milestone arc. Under the founder's own rule that is not three
+versions of one Journey, it is three Journeys for one goal, and the library had nowhere to put that.
+
+- **An AUTHORED ARC is content** (`learning/library/authoredArc.ts`): Milestones, Steps, minutes,
+  i18n keys, with a validator for the mistakes that would not crash anything — a Milestone no Step
+  belongs to, a dependency that runs backwards or crosses a stage. It reaches the Planner as the
+  same `PlanStructure` a domain expert returns, so nothing downstream knows which it was.
+- **A GOAL FAMILY** (`learning/library/goalFamily.ts`) holds the several Journeys authored for one
+  goal, the diagnosis that lands someone there, and the axis they differ along. The axis is on the
+  FAMILY because the dimension belongs to the difference between them, not to any one of them.
+- **The choosing moved.** Picking a Journey from a family and picking a version of a Journey are the
+  same decision at two rungs — answer, then profile, then rating as a tie-break only, then a named
+  default. It is now written once (`learning/library/selectable.ts`) and both callers are thin. Two
+  copies is how a fix at one level quietly fails to apply at the other.
+- The Planner now carries a Step's **description** and its authored **dependency** through. Both are
+  content the arcs actually have, and dropping them would have turned a plan that says what counts
+  as done into a list of slogans.
+
+## The eighteen Career Journeys, translated rather than copied
+
+Six families, three Journeys each, Hebrew and English, validated by tests that fail if the content is
+wrong. What deliberately did NOT come across, and why:
+
+- **The personas and their Dreams.** A Dream belongs to the person living it; a library Journey that
+  arrives holding someone else's is the app telling a user what to want.
+- **The persona's particulars inside Step titles.** Two families name her actual two options and her
+  target role. Those now read "the first option" and "the direction you are testing", because the
+  user's own answer belongs in that sentence. A test asserts none of the four persona strings
+  survives anywhere in the content.
+- **The English words scattered through the Hebrew** (proof, artifact, skill gap, insight,
+  follow-up): a user reading their own language should not have to translate half a sentence.
+- His Steps were written to a woman, which was right for his persona. Rather than discard that, it
+  became the **feminine form**: every Step exists in both, and the new copy path resolves in the
+  user's own form of address (D31).
+
+Two corrections fell out of the ingest. `journeyDefinitionsFor` now FILTERS by domain instead of
+merely sorting by it — with domain content in the library, a sort would have offered a career arc to
+someone working on their relationships. And `matchVariant` refuses to stamp provenance from a process
+Journey: the plan still comes from the expert's own arc, so crediting it to a library Journey whose
+content was never used would make every verdict that Journey later earned evidence about something
+else.
+
+**What is NOT done, and the tests say so out loud:** nothing routes a real conversation to these
+Journeys. Choosing a family needs the Career expert to diagnose which of the six a goal is — unclear
+target, missing proof, or no access — and the experts do not diagnose, they return one fixed arc.
+`04_Product/Partner_Letter_2026-08-19_Library_Ingest.md` is drafted and asks the partner for that
+diagnosis, since it is the part only a domain expert can write. It also explains the three-Journeys
+decision, which the founder asked to agree with him rather than announce.
+
+## Home is the week, as seven days
+
+Approved in full by the founder and specified in `04_Product/PRD/Week_By_Day_Home_PRD.md`. It
+replaces BOTH "Today's focus" and "This week": they told the same week twice in two shapes, and
+neither could show an EMPTY day, which is real information about a week.
+
+- **Seven pills**, letters only, no dates, current week only. One mark under each letter — a dot for
+  open Steps, a check for a day whose Steps are all done, nothing for an empty day (whose pill dims)
+  — and the check sits in the dot's own box, so the strip does not jump when a day completes.
+- **Inside a day, a flat list**, so the Dream moved onto the card.
+- **"You could also do today"** at the end of every day (not only a finished one): Steps of later
+  days that can be pulled forward, dashed, no side edge, each saying which day it belongs to.
+- **A missed Step** moves to the next day as a required Step only if its Journey still owes the week
+  sessions AND that day does not already carry a Step of the same Journey. The founder's own case is
+  the test: three workouts a week, today already has one, so yesterday's does not jump onto today.
+  Condition (a) reads `remainingRequiredSessions` — the same arithmetic behind `streakRole`.
+- **It moves nothing.** A carried Step is SHOWN on a later day and never rescheduled, so the record
+  of what was planned stays true and the adaptive planner remains the only thing that moves a Step.
+- Seeing it run corrected two things: the count beside the heading is the SELECTED day's open Steps,
+  and the "recommended / needed today" badge appears only on today's list — on Thursday it would be
+  saying something untrue about Thursday.
+
+`WeekDreamGroup` is deleted rather than left orphaned; its design reasoning lives on in the UX doc
+and in git.
+
+## The build did NOT go out, and it needs the founder
+
+`eas build --platform ios --profile production --auto-submit` was run and stopped at credentials:
+**"Distribution Certificate is not validated for non-interactive builds."** Signing needs an
+interactive Apple sign-in with his own Apple ID and its 2FA code, which is his to do and nobody
+else's. Two side effects of the attempt, both harmless: the remote `buildNumber` moved 1 → 2, and the
+`production` update channel and branch were created (they were needed anyway).
+
+---
+
 # 2026-08-19 (later) — the card ships as an image, the completed card gets its own ground, and the build stops being empty
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1631 passing / 161 suites** (from 1610 / 159 earlier

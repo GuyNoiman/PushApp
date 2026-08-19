@@ -49,12 +49,17 @@ runtime version is the fingerprint below.
 
 **Why the partner still has no invitation, and it is not a bug on our side.** Being in Users and
 Access is not being a tester: an internal tester has to be added to a TestFlight INTERNAL GROUP inside
-the app, and Apple only sends the mail at that moment. Two things can also hold the build back before
-that: the export-compliance question (answer it under the build — the app uses only HTTPS and the
-system keychain), and the unaccepted Developer Program License Agreement. A permanent fix for the
-compliance prompt exists (`ITSAppUsesNonExemptEncryption: false` in `app.json`) and must NOT be applied
-now: it is a native change, it would move the fingerprint, and it would cut build 3 off from our
-over-the-air updates. It belongs to whatever the next build is.
+the app, and Apple only sends the mail at that moment. A tester who shows **"No Builds Available"** is
+almost always a person whose App Store Connect USER invitation was never accepted — Apple will not
+expose a build to an account that does not exist yet.
+
+**Export compliance is already handled and needs no action:** `app.json` declares
+`ITSAppUsesNonExemptEncryption: false` (correct for an app that uses only HTTPS and the system
+keychain), so the build's metadata reads "App Uses Non-Exempt Encryption: No" and TestFlight never
+asks. Verified on build 3.
+
+**The Developer Program License Agreement is still unaccepted**, and only the Account Holder can do
+it, at `https://developer.apple.com/account`. It blocks new submissions and app updates.
 
 **Original note:** The founder ran it himself (the interactive Apple sign-in is his
 and nobody else's), generated the certificate, the profile and an App Store Connect API key, and

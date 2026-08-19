@@ -49,5 +49,7 @@
   "noMatches": {
     "title": "אין תוצאות",
     "body": "אין שיחות שתואמות ל\"{{query}}\"."
-  }
+  },
+  "unreadCount_one": "{{count}} ממתין",
+  "unreadCount_other": "{{count}} ממתינים"
 }

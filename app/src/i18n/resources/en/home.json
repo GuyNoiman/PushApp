@@ -4,7 +4,8 @@
     "afternoon": "Good afternoon",
     "evening": "Good evening",
     "line": "{{greeting}}, {{name}}",
-    "fallbackName": "there"
+    "fallbackName": "there",
+    "tagline": "Small steps, big momentum."
   },
   "coach": {
     "title": "Talk to your coach",

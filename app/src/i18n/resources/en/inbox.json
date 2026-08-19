@@ -49,5 +49,7 @@
   "noMatches": {
     "title": "No matches",
     "body": "No conversations match \"{{query}}\"."
-  }
+  },
+  "unreadCount_one": "{{count}} waiting",
+  "unreadCount_other": "{{count}} waiting"
 }

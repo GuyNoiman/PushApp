@@ -541,13 +541,39 @@ export default function HomeScreen() {
         <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* ── Greeting ── */}
           <View style={styles.header}>
-            <ThemedText
-              style={[
-                styles.hi,
-                { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(27 * displayScale()) },
+            {/* A monogram, not a photo: profile photos are Phase 2 (ProfileProvider), and a grey
+                placeholder head would be a promise of a feature that is not there. Initials in the
+                display face read as a person and are true today. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.title', { ns: 'settings' })}
+              onPress={() => router.push('/(tabs)/settings' as Href)}
+              style={({ pressed }) => [
+                styles.avatar,
+                { backgroundColor: theme.tealTint, borderColor: theme.tint },
+                pressed && styles.avatarPressed,
               ]}>
-              {t('greeting.line', { greeting, name })}
-            </ThemedText>
+              <ThemedText
+                style={[
+                  styles.avatarText,
+                  { color: theme.tealStrong, fontFamily: displayFont('strong') },
+                ]}>
+                {initialsOf(name)}
+              </ThemedText>
+            </Pressable>
+            <View style={styles.headerText}>
+              <ThemedText
+                numberOfLines={1}
+                style={[
+                  styles.hi,
+                  { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(25 * displayScale()) },
+                ]}>
+                {t('greeting.line', { greeting, name })}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                {t('greeting.tagline')}
+              </ThemedText>
+            </View>
           </View>
 
           {/* ── Talk to your coach — the primary way in, pinned near the top ── */}
@@ -776,9 +802,32 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.six,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 19,
+    letterSpacing: 0.5,
+  },
+  avatarPressed: {
+    opacity: 0.7,
   },
   // The greeting is the app's own voice, so it takes the display serif (2026-08-19 redesign).
   hi: {

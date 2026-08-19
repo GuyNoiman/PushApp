@@ -160,7 +160,7 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-          <ThemedText type="title">{t('title')}</ThemedText>
+          <ThemedText type="display">{t('title')}</ThemedText>
         </View>
 
         {/* Tab-aware: tapping this tab while already on it returns the page to the top. */}

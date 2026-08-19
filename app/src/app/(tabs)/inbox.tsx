@@ -164,6 +164,13 @@ export default function InboxScreen() {
     [requestedRowsReal, allyInviteRowsReal],
   );
 
+  // What is actually waiting, across every tab — the line under the title. Requests count as
+  // unread by definition: they are asking for an answer.
+  const unreadCount =
+    friendsRows.filter((r) => r.unread).length +
+    alliesRows.filter((r) => r.unread).length +
+    requestedRows.length;
+
   const tabs: InboxTab[] = [
     { key: 'friends', label: t('tabs.friends'), unread: friendsRows.some((r) => r.unread) },
     { key: 'allies', label: t('tabs.allies') },
@@ -188,7 +195,18 @@ export default function InboxScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <ThemedText type="title">{t('title')}</ThemedText>
+          <View style={styles.headerText}>
+            <ThemedText type="display" numberOfLines={1}>
+              {t('title')}
+            </ThemedText>
+            {/* The count of what is actually waiting, under the title — the mockup's line, and the
+                one thing a person opens this tab to know. Silent when nothing is unread. */}
+            {unreadCount > 0 ? (
+              <ThemedText type="small" style={{ color: theme.tint }}>
+                {t('unreadCount', { count: unreadCount })}
+              </ThemedText>
+            ) : null}
+          </View>
           <ComposeButton
             onPress={() =>
               // Honest, not dead: it says what it can't do yet and offers the thing that DOES
@@ -359,6 +377,11 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: MaxContentWidth,
     alignSelf: 'stretch',
+  },
+  headerText: {
+    flexShrink: 1,
+    minWidth: 0,
+    gap: 2,
   },
   header: {
     flexDirection: 'row',

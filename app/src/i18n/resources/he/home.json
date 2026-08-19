@@ -4,7 +4,8 @@
     "afternoon": "צהריים טובים",
     "evening": "ערב טוב",
     "line": "{{greeting}}, {{name}}",
-    "fallbackName": "חבר"
+    "fallbackName": "חבר",
+    "tagline": "צעדים קטנים, תנופה גדולה."
   },
   "coach": {
     "title": "דברו עם המאמן שלכם",

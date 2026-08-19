@@ -1,12 +1,25 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
+import { displayFont, displayScale } from '@/constants/displayFont';
 import { FontFamily, Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { START_TEXT_ALIGN, writingDirection } from '@/i18n/rtl';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?:
+    | 'default'
+    | 'title'
+    | 'small'
+    | 'smallBold'
+    | 'subtitle'
+    | 'link'
+    | 'linkPrimary'
+    | 'code'
+    /** A STATEMENT — the greeting, a section's own heading. Display serif (see {@link FontFamily}). */
+    | 'display'
+    /** The same voice one step down: a card's own title. */
+    | 'displaySmall';
   themeColor?: ThemeColor;
 };
 
@@ -32,6 +45,8 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         type === 'link' && styles.link,
         type === 'linkPrimary' && styles.linkPrimary,
         type === 'code' && styles.code,
+        type === 'display' && styles.display,
+        type === 'displaySmall' && styles.displaySmall,
         style,
       ]}
       {...rest}
@@ -65,6 +80,21 @@ const makeStyles = (c: ReturnType<typeof useTheme>) =>
       fontFamily: FontFamily.headingBold,
       fontSize: 26,
       lineHeight: 32,
+    },
+    // The display voice, in whichever face this language speaks (see constants/displayFont). A
+    // serif at a large size needs LESS letter-spacing and MORE line-height than a sans does at the
+    // same px, or it reads cramped and bookish rather than composed.
+    display: {
+      fontFamily: displayFont(),
+      fontSize: Math.round(28 * displayScale()),
+      lineHeight: Math.round(36 * displayScale()),
+      letterSpacing: -0.2,
+    },
+    displaySmall: {
+      fontFamily: displayFont(),
+      fontSize: Math.round(19 * displayScale()),
+      lineHeight: Math.round(26 * displayScale()),
+      letterSpacing: -0.1,
     },
     subtitle: {
       fontFamily: FontFamily.headingBold,

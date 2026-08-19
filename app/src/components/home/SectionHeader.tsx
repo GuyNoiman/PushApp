@@ -6,12 +6,17 @@
  *
  * `tone` tints the title + count: 'urgent' uses amber (the mature system reserves
  * amber for genuine time-pressure); 'default' stays in ink. Presentational only.
+ *
+ * The title is set in the DISPLAY SERIF (2026-08-19 redesign). A section heading is one of the few
+ * places the app speaks in its own voice rather than reporting data, and the serif is what makes the
+ * difference audible — see {@link FontFamily} for why this particular face and not a Latin one.
  */
 import { type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { FontFamily, Radius, Spacing } from '@/constants/theme';
+import { displayFont, displayScale } from '@/constants/displayFont';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function SectionHeader({
@@ -34,7 +39,13 @@ export function SectionHeader({
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        <ThemedText style={[styles.title, { color: accent }]}>{title}</ThemedText>
+        <ThemedText
+          style={[
+            styles.title,
+            { color: accent, fontFamily: displayFont(), fontSize: Math.round(24 * displayScale()) },
+          ]}>
+          {title}
+        </ThemedText>
         {count !== undefined && (
           <View style={[styles.pill, { backgroundColor: pillBg }]}>
             <ThemedText type="smallBold" style={[styles.count, { color: pillFg }]}>
@@ -66,10 +77,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 22,
-    lineHeight: 28,
-    letterSpacing: -0.4,
+    lineHeight: 34,
+    letterSpacing: -0.2,
   },
   pill: {
     minWidth: 22,

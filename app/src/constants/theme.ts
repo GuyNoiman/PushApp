@@ -189,6 +189,26 @@ export const Radius = {
  * only as a fallback for any stray hard-coded reference during the migration.
  */
 export const FontFamily = {
+  /**
+   * DISPLAY — resolved PER LANGUAGE at render time; see `./displayFont`, which owns the choice.
+   * These two keys remain for the rare caller that needs a literal family name (a static style that
+   * never re-renders across a language change). Prefer `displayFont()`.
+   *
+   * The 2026-08-19 redesign is built on a display serif.
+   *
+   * It is here for one reason the other candidates could not meet: **the app is English first and
+   * Hebrew second, and a display face has to be genuinely good in both.** Frank Ruhl Libre's Hebrew
+   * is a real Hebrew serif rather than Hebrew derived from a Latin face, and its Latin is a proper
+   * editorial serif rather than an afterthought — so a heading looks deliberate in either language
+   * instead of looking translated.
+   *
+   * It is for STATEMENTS only: the greeting, section headings, card titles, the big numbers. Body
+   * text, labels, chips and buttons stay Inter. A serif everywhere reads as a magazine; a serif on
+   * the sentences that matter reads as care.
+   */
+  displayRegular: 'FrankRuhlLibre_400Regular',
+  displayMedium: 'FrankRuhlLibre_500Medium',
+  displayBold: 'FrankRuhlLibre_700Bold',
   // Headings / display — now Inter (was Baloo 2).
   headingBold: 'Inter_700Bold',
   headingSemiBold: 'Inter_600SemiBold',
@@ -205,6 +225,11 @@ export const FontFamily = {
  * drift apart. Inter now covers headings too (700 added); Baloo kept as fallback.
  */
 export const FontAssets = {
+  Fraunces_500Medium: require('@expo-google-fonts/fraunces/500Medium/Fraunces_500Medium.ttf'),
+  Fraunces_600SemiBold: require('@expo-google-fonts/fraunces/600SemiBold/Fraunces_600SemiBold.ttf'),
+  FrankRuhlLibre_400Regular: require('@expo-google-fonts/frank-ruhl-libre/400Regular/FrankRuhlLibre_400Regular.ttf'),
+  FrankRuhlLibre_500Medium: require('@expo-google-fonts/frank-ruhl-libre/500Medium/FrankRuhlLibre_500Medium.ttf'),
+  FrankRuhlLibre_700Bold: require('@expo-google-fonts/frank-ruhl-libre/700Bold/FrankRuhlLibre_700Bold.ttf'),
   Inter_400Regular: require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
   Inter_500Medium: require('@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf'),
   Inter_600SemiBold: require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
@@ -218,8 +243,8 @@ export const Fonts = Platform.select({
   ios: {
     /** Body sans — Inter. */
     sans: FontFamily.bodyRegular,
-    /** iOS `UIFontDescriptorSystemDesignSerif` (unused; kept for compat). */
-    serif: 'ui-serif',
+    /** Display serif — Frank Ruhl Libre (loaded at runtime, so it travels over the air). */
+    serif: FontFamily.displayMedium,
     /** Display / headings — Baloo 2 (rounded, warm). */
     rounded: FontFamily.headingBold,
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */

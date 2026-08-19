@@ -42,11 +42,12 @@ import { WeekAdjustedCard } from '@/components/home/WeekAdjustedCard';
 import { WeeklyReviewCard } from '@/components/home/WeeklyReviewCard';
 import { TopStatusBar } from '@/components/home/TopStatusBar';
 import { WeekDayStrip } from '@/components/home/WeekDayStrip';
-import { TodayFocusCard, type StepUrgency } from '@/components/home/TodayFocusCard';
+import { StepRow, type StepUrgency } from '@/components/home/StepRow';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TabScrollView } from '@/components/ui/TabScrollView';
-import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
+import { displayFont, displayScale } from '@/constants/displayFont';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
 import { milestoneOfStep } from '@/core/util/milestones';
@@ -532,7 +533,11 @@ export default function HomeScreen() {
         <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* ── Greeting ── */}
           <View style={styles.header}>
-            <ThemedText style={[styles.hi, { color: theme.text }]}>
+            <ThemedText
+              style={[
+                styles.hi,
+                { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(27 * displayScale()) },
+              ]}>
               {t('greeting.line', { greeting, name })}
             </ThemedText>
           </View>
@@ -581,76 +586,69 @@ export default function HomeScreen() {
             />
           ) : null}
 
-          {/* ── The week, as seven days: the strip, then the selected day's Steps ── */}
+          {/* ── The week, as seven days: one surface holding the strip and the day's Steps ── */}
           <SectionHeader title={t('week.title')} count={openOnDay} tone={headerTone} />
-          <WeekDayStrip
-            days={week.days}
-            selectedIndex={selectedIndex}
-            onSelect={setSelectedDay}
-          />
-          {day && day.steps.length === 0 ? (
-            <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+          <View
+            style={[
+              styles.weekCard,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+            ]}>
+            <WeekDayStrip days={week.days} selectedIndex={selectedIndex} onSelect={setSelectedDay} />
+            {day && day.steps.length === 0 ? (
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
                 {t(day.isToday ? 'week.emptyDayToday' : 'week.emptyDay')}
               </ThemedText>
-            </View>
-          ) : null}
-          {day && day.steps.length > 0 ? (
-            <View style={styles.focusStack}>
-              {day.steps.map(({ item, carriedFrom, doneOn, missed }) => (
-                <TodayFocusCard
-                  key={item.step.id}
-                  icon={iconForJourney(item.journeyId)}
-                  title={item.step.title}
-                  meta={metaFor(item)}
-                  dream={dreamFor(item)}
-                  note={
-                    carriedFrom !== undefined
-                      ? t('week.carriedFrom', { day: dayName(carriedFrom) })
-                      : doneOn !== undefined
-                        ? t('week.doneOn', { day: dayName(doneOn) })
-                        : missed
-                          ? t('week.missed')
-                          : undefined
-                  }
-                  progress={core.journeyProgress(item.journeyId)}
-                  // Time pressure is a statement about TODAY. Another day of the week is calm by
-                  // definition — its hours have not started running out, or they already have.
-                  urgency={day.isToday ? focusUrgency : 'calm'}
-                  status={item.status}
-                  // "Recommended today" / "needed today" is a statement about TODAY's arithmetic. On
-                  // another day of the week it would be saying something untrue about that day, so
-                  // the badge belongs to today's list only.
-                  streakRole={day.isToday ? core.streakRole(item.journeyId) : undefined}
-                  locked={isInClosedWeek(item.step.plannedFor)}
-                  onPress={() => setReportStep(item)}
-                  onDone={() => reportDone(item)}
-                  onPostpone={() => reportPostpone(item)}
-                  onLetGo={() => reportLetGo(item)}
-                />
-              ))}
-            </View>
-          ) : null}
+            ) : null}
+            {day?.steps.map(({ item, carriedFrom, doneOn, missed }) => (
+              <StepRow
+                key={item.step.id}
+                icon={iconForJourney(item.journeyId)}
+                title={item.step.title}
+                dream={dreamFor(item)}
+                meta={metaFor(item)}
+                note={
+                  carriedFrom !== undefined
+                    ? t('week.carriedFrom', { day: dayName(carriedFrom) })
+                    : doneOn !== undefined
+                      ? t('week.doneOn', { day: dayName(doneOn) })
+                      : missed
+                        ? t('week.missed')
+                        : undefined
+                }
+                // Time pressure is a statement about TODAY. Another day of the week is calm by
+                // definition — its hours have not started running out, or they already have.
+                urgency={day.isToday ? focusUrgency : 'calm'}
+                status={item.status}
+                // "Recommended today" / "needed today" is a statement about TODAY's arithmetic. On
+                // another day it would be saying something untrue about that day.
+                streakRole={day.isToday ? core.streakRole(item.journeyId) : undefined}
+                locked={isInClosedWeek(item.step.plannedFor)}
+                onPress={() => setReportStep(item)}
+                onDone={() => reportDone(item)}
+                onPostpone={() => reportPostpone(item)}
+                onLetGo={() => reportLetGo(item)}
+              />
+            ))}
+          </View>
 
           {/* ── "You could also do today" — later Steps that can be pulled forward ── */}
           {alsoToday.length > 0 ? (
             <>
               <SectionHeader title={t('week.alsoToday')} count={alsoToday.length} />
-              <View style={styles.focusStack}>
+              <View style={styles.aheadList}>
                 {alsoToday.map((item) => (
-                  <TodayFocusCard
+                  <StepRow
                     key={`ahead-${item.step.id}`}
                     icon={iconForJourney(item.journeyId)}
                     title={item.step.title}
-                    meta={metaFor(item)}
                     dream={dreamFor(item)}
+                    meta={metaFor(item)}
                     note={
                       item.step.plannedFor !== undefined
                         ? t('week.belongsTo', { day: dayName(item.step.plannedFor) })
                         : undefined
                     }
                     pullForward
-                    progress={core.journeyProgress(item.journeyId)}
                     urgency="calm"
                     status={item.status}
                     onPress={() => setReportStep(item)}
@@ -744,18 +742,26 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
   },
+  // The greeting is the app's own voice, so it takes the display serif (2026-08-19 redesign).
   hi: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.4,
+    lineHeight: 38,
+    letterSpacing: -0.2,
   },
   coach: {
     paddingBottom: Spacing.one,
   },
-  // The Today's-focus cards stack with a small gap so each reads as its own card.
-  focusStack: {
-    gap: Spacing.two,
+  // ONE surface for the week: the strip and the day's Steps share a card, so a day reads as a day
+  // instead of as a stack of competing cards.
+  weekCard: {
+    marginHorizontal: Spacing.four,
+    padding: Spacing.three,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: Spacing.one,
+  },
+  // The pull-forward Steps sit OUTSIDE that surface: they are an offer, not part of the day.
+  aheadList: {
+    marginHorizontal: Spacing.four,
   },
   calmCard: {
     marginHorizontal: Spacing.four,

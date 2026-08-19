@@ -15,6 +15,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { getAuthGateway, type AuthUser } from '@/core/auth';
+import { SignInCancelledError } from '@/core/auth/nativeIdentity';
 import { checkBackendHealth } from '@/core/social/backendHealth';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'signedOut';
@@ -71,8 +72,9 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
 
   // Derive status from a user snapshot. NOTE: onAuthChange fires INITIAL_SESSION
   // with null before ensureSession() resolves, so status can briefly read
-  // 'signedOut' on a cold start. Harmless today — there is no signed-out UI yet
-  // (sign-in is P4); ensureSession then flips it to 'anonymous' within a tick.
+  // 'signedOut' on a cold start. Harmless: the app has no signed-out wall — an
+  // anonymous session is a full session — and ensureSession flips it to
+  // 'anonymous' within a tick.
   const applyUser = useCallback((u: AuthUser | null) => {
     setUser(u);
     setStatus(u ? (u.isAnonymous ? 'anonymous' : 'authenticated') : 'signedOut');
@@ -122,19 +124,37 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
     };
   }, [gateway, guard, applyUser]);
 
-  const signInWithApple = useCallback(async () => {
-    await guard(async () => {
-      const u = await gateway.signInWithApple();
-      applyUser(u);
-    });
-  }, [gateway, guard, applyUser]);
+  /**
+   * Run a sign-in, treating a CANCEL as a non-event. Closing the provider's sheet is a decision, not
+   * a failure, so it must leave no error banner behind — it even CLEARS a previous one, because the
+   * screen the person is looking at is now in a clean state. Everything else goes through `guard`
+   * and surfaces as a readable string.
+   */
+  const runSignIn = useCallback(
+    async (signIn: () => Promise<AuthUser>) => {
+      try {
+        applyUser(await signIn());
+        setError(null);
+      } catch (e) {
+        if (e instanceof SignInCancelledError) {
+          setError(null);
+          return;
+        }
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+      }
+    },
+    [applyUser],
+  );
 
-  const signInWithGoogle = useCallback(async () => {
-    await guard(async () => {
-      const u = await gateway.signInWithGoogle();
-      applyUser(u);
-    });
-  }, [gateway, guard, applyUser]);
+  const signInWithApple = useCallback(
+    () => runSignIn(() => gateway.signInWithApple()),
+    [gateway, runSignIn],
+  );
+
+  const signInWithGoogle = useCallback(
+    () => runSignIn(() => gateway.signInWithGoogle()),
+    [gateway, runSignIn],
+  );
 
   const signOut = useCallback(async () => {
     await guard(async () => {

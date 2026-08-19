@@ -115,5 +115,16 @@
   "restart": {
     "title": "Reopen to finish",
     "body": "PushApp needs to reopen to finish switching language and direction."
+  },
+  "signIn": {
+    "title": "Sign in",
+    "lead": "Your record already lives on this phone.",
+    "body": "Signing in makes it recoverable if you change phone or reinstall, and it is what lets a Support Circle know who is who. Nothing here changes how the app works — you can close this and carry on.",
+    "unavailable": "Sign-in is not available in this version of the app.",
+    "privacy": "We only keep the sign-in itself. Your name and email stay with Apple or Google.",
+    "rowDetail": "Recover your record on a new phone",
+    "signedInWith": "Signed in with {{provider}}",
+    "signOut": "Sign out",
+    "signOutDetail": "Your record stays on this phone."
   }
 }

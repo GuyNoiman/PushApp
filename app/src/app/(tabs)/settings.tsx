@@ -40,6 +40,7 @@ import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
 import { useApp } from '@/state/AppProvider';
+import { useAuth } from '@/state/AuthProvider';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useTheme } from '@/hooks/use-theme';
 import { findLanguage } from '@/i18n/languages';
@@ -141,6 +142,13 @@ export default function SettingsScreen() {
   // TODO(auth): replace with a real OAuth session for both providers.
   const simUser = getSimulatedUser();
 
+  // The REAL identity, if one is linked. `providers` carries only provider names (never PII), so
+  // this is also all the UI is able to say about who the person is — by design (red-line R1).
+  const { user, status, signOut } = useAuth();
+  const signedIn = status === 'authenticated';
+  const linkedProvider = user?.providers.find((p) => p === 'apple' || p === 'google');
+  const providerLabel = linkedProvider === 'apple' ? 'Apple' : 'Google';
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -164,11 +172,35 @@ export default function SettingsScreen() {
             />
           </SettingsSection>
 
-          {/* Account — Apple is still "coming soon"; Google reads as connected via the
-              dev-simulated sign-in when the founder's env vars are set. The email +
-              "Simulated" note keep it honest that no real OAuth ran. TODO(auth). */}
+          {/* Account — real Apple/Google sign-in (P4/P5). Signed in ⇒ the linked provider and a way
+              back out; not signed in ⇒ ONE row into the sign-in screen, which is where the two
+              providers live and where it can be explained why anyone would bother. The row is not a
+              wall: an anonymous session is a full session, and the app works without ever tapping it.
+              The dev-simulated single-user sign-in is still shown when its env is set, labelled as
+              simulated so it can never be mistaken for a real OAuth identity. */}
           <SettingsSection title={t('sections.account')}>
-            <SettingsRow icon="logo-apple" label={t('account.apple')} badge={t('account.comingSoon')} />
+            {signedIn ? (
+              <>
+                <SettingsRow
+                  icon={linkedProvider === 'apple' ? 'logo-apple' : 'logo-google'}
+                  label={t('signIn.signedInWith', { provider: providerLabel })}
+                  connected
+                />
+                <SettingsRow
+                  icon="log-out-outline"
+                  label={t('signIn.signOut')}
+                  detail={t('signIn.signOutDetail')}
+                  onPress={() => void signOut()}
+                />
+              </>
+            ) : (
+              <SettingsRow
+                icon="person-circle-outline"
+                label={t('signIn.title')}
+                detail={t('signIn.rowDetail')}
+                onPress={() => router.push('/sign-in' as Href)}
+              />
+            )}
             {simUser.signedIn ? (
               <SettingsRow
                 icon="logo-google"
@@ -180,9 +212,7 @@ export default function SettingsScreen() {
                 }
                 connected
               />
-            ) : (
-              <SettingsRow icon="logo-google" label={t('account.google')} badge={t('account.comingSoon')} />
-            )}
+            ) : null}
           </SettingsSection>
 
           {/* App — light presentational placeholders (no logic wired yet). */}

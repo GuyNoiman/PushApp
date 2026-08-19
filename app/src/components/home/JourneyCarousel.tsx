@@ -118,6 +118,7 @@ export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
                   {Array.from({ length: card.milestone.total }, (_, i) => (
                     <View
                       key={i}
+                      testID={i < card.milestone!.current ? 'milestone-dot-filled' : 'milestone-dot'}
                       style={[
                         styles.dot,
                         {
@@ -161,6 +162,7 @@ export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
           {cards.map((card, i) => (
             <View
               key={card.id}
+              testID="pager-dot"
               style={[
                 styles.pagerDot,
                 { backgroundColor: i === index ? theme.tint : theme.backgroundSelected },

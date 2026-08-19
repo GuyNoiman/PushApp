@@ -16,18 +16,11 @@
     "a11y": "Your week was adjusted. {{narration}}"
   },
   "sections": {
-    "todayFocus": "Today's focus",
-    "thisWeek": "This week",
     "giveSupport": "Give support",
     "seeAll": "See all",
     "journeys": "Your Journeys"
   },
-  "caughtUp": {
-    "title": "You're all caught up today.",
-    "body": "Nothing pressing right now — a good moment to look ahead."
-  },
   "week": {
-    "empty": "No other Steps scheduled this week.",
     "title": "My week",
     "alsoToday": "You could also do today",
     "emptyDay": "Nothing planned for this day.",

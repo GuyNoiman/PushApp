@@ -7,12 +7,17 @@
  * — so a missed Step whose streak still rose read as a bug. A rule the user cannot see is a rule the
  * user cannot trust.
  *
- *   • `recommended` — today's suggestion, with room left in the week behind it. Missing it costs
- *     nothing. The token is the CALM teal one, and it is deliberately not muted-grey: a recommended
- *     Step is the real work of the day, not an optional extra.
- *   • `binding`     — the week has run out of slack, so this session is what holds it together. The
- *     token is the warm GOLD role (the same non-failure amber a Partial uses), NEVER `danger`: this
- *     is arithmetic about the week, not a verdict on the person, and it must never read as a threat.
+ *   • `recommended` — "Recommended today": today's suggestion, with room left in the week behind it.
+ *     Missing it costs nothing. The token is the CALM teal one, and it is deliberately not
+ *     muted-grey: a recommended Step is the real work of the day, not an optional extra.
+ *   • `binding`     — "Needed today": the week has run out of slack, so there is no other day left
+ *     for this one. The token is the warm GOLD role (the same non-failure amber a Partial uses),
+ *     NEVER `danger` — this is arithmetic about the week, not a verdict on the person, and it must
+ *     never read as a threat.
+ *
+ * The labels are a matched pair on purpose (founder, 2026-08-19): "recommended today" / "needed
+ * today" differ in one word, so the difference between them is legible at a glance. An earlier
+ * "holds the week" was rejected as unclear — a label has to be understood before it can reassure.
  *
  * Both states carry an icon + a word, never colour alone. The `binding` state is announced with the
  * consequence spelled out, because that sentence is the whole point of the badge.
@@ -38,7 +43,7 @@ export function StepStreakBadge({ role }: { role: StreakRole }) {
   // Gold for `binding` (warm attention, the Partial role) — never `danger`. Teal for `recommended`.
   const ink = binding ? theme.goldStrong : theme.tealStrong;
   const bg = binding ? theme.goldTint : theme.tealTint;
-  const icon = binding ? 'link' : 'star-outline';
+  const icon = binding ? 'alert-circle-outline' : 'star-outline';
   const label = t(binding ? 'streakRole.binding.label' : 'streakRole.recommended.label');
 
   return (

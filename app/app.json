@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.guynoiman.pushapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.guynoiman.pushapp",
@@ -45,7 +46,14 @@
       "expo-secure-store",
       "expo-asset",
       "expo-notifications",
-      "expo-localization"
+      "expo-localization",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.872942140221-mjuroef83u4mhmeuo4310adt6gurk009"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

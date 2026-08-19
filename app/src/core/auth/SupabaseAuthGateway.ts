@@ -4,10 +4,14 @@
  * (`../social/supabaseClient`) — there must be exactly one client so session
  * persistence and realtime share the same auth state (Auth_Backend_Proposal §2).
  *
- * Phase 1–2 scope: own the anonymous session bootstrap (moved here from the
- * social pillar), plus getCurrentUser / signOut / onAuthChange. Apple/Google are
- * declared on the interface but stubbed — they need a native dev build (P3+) and
- * this file must NOT import any native module (keeps Expo Go + web working).
+ * Scope: own the anonymous session bootstrap (moved here from the social pillar), plus
+ * getCurrentUser / signOut / onAuthChange, and the real Apple/Google sign-in exchange (P4/P5).
+ *
+ * THIS FILE STILL IMPORTS NO NATIVE MODULE, and that rule has not been relaxed by Apple/Google
+ * landing: the native sheets live behind `./nativeIdentity`, which loads them at call time. All that
+ * arrives here is a signed identity token — a string — which is exactly what Supabase's
+ * `signInWithIdToken` wants. So Expo Go, web and jest keep working, and a build without the native
+ * modules degrades to an honest AuthNotAvailableError instead of failing to start.
  */
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 
@@ -19,6 +23,7 @@ import {
   type AuthUser,
 } from './AuthGateway';
 import { toAuthUser } from './authUser';
+import { appleIdentityToken, googleIdentityToken } from './nativeIdentity';
 import { getSingleUserConfig, type SingleUserConfig } from './singleUser';
 
 export class SupabaseAuthGateway implements AuthGateway {
@@ -142,15 +147,36 @@ export class SupabaseAuthGateway implements AuthGateway {
     return () => data.subscription.unsubscribe();
   }
 
-  // ── Real sign-in — DECLARED, stubbed until the native dev build lands (P3+) ──
-  // These intentionally import NO native module so the app keeps running in
-  // Expo Go and on web. P4/P5 will replace the bodies with the ID-token exchange
-  // (`supabase.auth.signInWithIdToken`) once the native modules are added.
+  // ── Real sign-in (P4/P5) — the native sheet runs behind `./nativeIdentity`; only a token lands here ──
+
+  /**
+   * Apple sign-in. The OS sheet returns a signed identity token, which Supabase verifies against
+   * Apple and exchanges for a session. The uid that comes back is a real `auth.uid()`, so every RLS
+   * policy behaves identically to the anonymous path — nothing downstream branches on how someone
+   * signed in.
+   *
+   * A cancel propagates as `SignInCancelledError` (the caller shows nothing); a build without the
+   * native module propagates as `AuthNotAvailableError`.
+   */
   async signInWithApple(): Promise<AuthUser> {
-    throw new AuthNotAvailableError('Apple/Google sign-in requires a native dev build (Phase 3+)');
+    return this.exchangeIdToken('apple', await appleIdentityToken());
   }
 
+  /** Google sign-in — symmetric with {@link signInWithApple}; same token exchange, same guarantees. */
   async signInWithGoogle(): Promise<AuthUser> {
-    throw new AuthNotAvailableError('Apple/Google sign-in requires a native dev build (Phase 3+)');
+    return this.exchangeIdToken('google', await googleIdentityToken());
+  }
+
+  /**
+   * Trade a provider identity token for a Supabase session. The token is verified SERVER-SIDE
+   * against the provider, so a forged one cannot mint a session; nothing about the person is read
+   * off it here (red-line R1 — no PII in PushApp's own tables).
+   */
+  private async exchangeIdToken(provider: 'apple' | 'google', token: string): Promise<AuthUser> {
+    const { data, error } = await this.client().auth.signInWithIdToken({ provider, token });
+    if (error) throw error;
+    const user = toAuthUser(data.user);
+    if (!user) throw new AuthNotAvailableError(`${provider} sign-in returned no user.`);
+    return user;
   }
 }

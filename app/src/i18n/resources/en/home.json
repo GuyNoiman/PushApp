@@ -99,12 +99,12 @@
   },
   "streakRole": {
     "recommended": {
-      "label": "Recommended",
+      "label": "Recommended today",
       "a11y": "Recommended for today. Your week still has room for it, so leaving it for another day keeps your streak."
     },
     "binding": {
-      "label": "Holds the week",
-      "a11y": "Holds the week. Every day left this week needs a session now, so this is the one your streak rests on."
+      "label": "Needed today",
+      "a11y": "Needed today. There is no other day left in the week for it, so this is the one your streak rests on."
     }
   }
 }

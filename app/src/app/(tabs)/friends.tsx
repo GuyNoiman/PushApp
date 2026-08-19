@@ -36,7 +36,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -47,6 +47,8 @@ import { TogetherIllustration } from '@/components/friends/TogetherIllustration'
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TabScrollView } from '@/components/ui/TabScrollView';
+import { getCardShareGateway } from '@/core/share';
+import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 // From the module, not the `@/core/social` barrel: this is a runtime VALUE, and the barrel pulls
 // the Supabase-backed gateway in with it.
@@ -59,7 +61,9 @@ export default function FriendsScreen() {
   const social = useSocial();
   const theme = useTheme();
   const router = useRouter();
-  const { t } = useTranslation('circle');
+  // Addressed, not plain: the invite message is written TO the user's friends in the user's own
+  // voice ("I'm using PushApp…"), which inflects by gender in Hebrew (D31).
+  const { t } = useAddressedTranslation('circle');
 
   const [showAdd, setShowAdd] = useState(false);
 
@@ -73,13 +77,32 @@ export default function FriendsScreen() {
     [social.friends, social.allyProgress],
   );
 
+  // INVITE was a button that did nothing — it has been in the header since the 2026-08-07 redesign
+  // with an empty handler. It now opens the OS share sheet with the one thing a friend actually needs
+  // to find you: your username. Sharing is the interim path the acquisition PRD allows until real
+  // invite links exist (Invite_Friend_Acquisition_PRD), and it degrades honestly — a platform with no
+  // share sheet resolves `unavailable` and nothing is claimed to have been sent.
+  const shareInvite = useCallback(() => {
+    const handle = social.profile?.handle?.trim();
+    void getCardShareGateway().shareText(
+      handle ? t('inviteMessage', { handle }) : t('inviteMessageNoHandle'),
+    );
+  }, [social.profile?.handle, t]);
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-          <ThemedText type="title">{t('title')}</ThemedText>
+          <View style={styles.headerText}>
+            <ThemedText type="display" numberOfLines={1}>
+              {t('title')}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('subtitle')}
+            </ThemedText>
+          </View>
           <View style={styles.headerActions}>
-            <HeaderButton label={t('invite')} icon="share-outline" onPress={() => {}} />
+            <HeaderButton label={t('invite')} icon="share-outline" onPress={shareInvite} />
             <HeaderButton label={t('add')} icon="person-add-outline" onPress={() => setShowAdd((v) => !v)} active={showAdd} />
           </View>
         </View>
@@ -353,10 +376,17 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'stretch',
   },
+  // The title and its line share a column so the buttons stay pinned to the top of the block.
+  headerText: {
+    flexShrink: 1,
+    minWidth: 0,
+    gap: 2,
+  },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: Spacing.two,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,

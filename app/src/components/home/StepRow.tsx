@@ -55,15 +55,11 @@ import type { StepStatus } from '@/core/status/stepStatus';
 import type { StreakRole } from '@/core/util/urgency';
 import { useTheme } from '@/hooks/use-theme';
 
-/** How much time-pressure a pending Step carries — drives its icon tile. */
-export type StepUrgency = 'calm' | 'warn' | 'urgent';
-
 export function StepRow({
   icon,
   title,
   dream,
   note,
-  urgency,
   status,
   streakRole,
   pullForward = false,
@@ -79,7 +75,6 @@ export function StepRow({
   dream?: string;
   /** One short line about WHEN — carried from, belongs to, or done on. Always the caller's words. */
   note?: string;
-  urgency: StepUrgency;
   status: StepStatus;
   /** `recommended` while the week has slack, `binding` once it does not. Today's list only. */
   streakRole?: StreakRole;
@@ -95,13 +90,14 @@ export function StepRow({
   const theme = useTheme();
   const { t } = useTranslation('home');
   const completed = status === 'completed';
-  // A completed Step drops out of the urgency scale entirely and settles on the calm end.
-  const accentStrong =
-    completed || urgency === 'calm'
-      ? theme.tealStrong
-      : urgency === 'urgent'
-        ? theme.danger
-        : theme.goldStrong;
+  /**
+   * THE GLYPH IS CALM, ALWAYS (founder, 2026-08-19, on the web build). It used to take an urgency
+   * colour from the hour of the day, which meant that after eight in the evening every icon in the
+   * list turned red — an alarm about nothing, in an app whose promise is no penalty for a life that
+   * got in the way. And it was saying, badly, what the streak badge now says precisely: whether
+   * missing this Step costs anything. One signal, in words, in one place.
+   */
+  const glyphColor = theme.tealStrong;
 
   return (
     <SwipeableStepRow
@@ -124,7 +120,7 @@ export function StepRow({
           <Ionicons
             name={completed ? 'checkmark-circle' : icon}
             size={completed ? 22 : 20}
-            color={completed ? theme.tint : accentStrong}
+            color={completed ? theme.tint : glyphColor}
           />
         </View>
 

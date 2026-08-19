@@ -27,6 +27,11 @@ jest.mock('expo-router', () => ({
 }));
 const mockSocial: { current: Record<string, unknown> } = { current: {} };
 jest.mock('@/state/SocialProvider', () => ({ useSocial: () => mockSocial.current }));
+// The screen speaks in the user's form of address (D31). The hook reads the profile, which reaches
+// for storage, so it is stubbed here the same way `react-i18next` is: the key IS the assertion.
+jest.mock('@/i18n/useAddressedTranslation', () => ({
+  useAddressedTranslation: () => ({ t: (key: string) => key }),
+}));
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (k: string, opts?: Record<string, unknown>) => (opts ? `${k}|${JSON.stringify(opts)}` : k),

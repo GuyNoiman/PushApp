@@ -16,5 +16,8 @@
     "title": "It's easier when someone knows",
     "body": "When a friend knows what you're working on, it's easier to keep going on the harder days. Add someone you trust, and you decide what they get to see.",
     "cta": "Add your first friend"
-  }
+  },
+  "subtitle": "Better together. Support and be supported.",
+  "inviteMessage": "I'm using PushApp to move on the things that matter to me. Add me so we can cheer each other on: {{handle}}",
+  "inviteMessageNoHandle": "I'm using PushApp to move on the things that matter to me. Let's back each other up."
 }

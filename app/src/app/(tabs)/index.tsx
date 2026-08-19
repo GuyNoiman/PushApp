@@ -44,7 +44,7 @@ import { TopStatusBar } from '@/components/home/TopStatusBar';
 import { JourneyCarousel, type JourneyCard } from '@/components/home/JourneyCarousel';
 import { WeekDayStrip } from '@/components/home/WeekDayStrip';
 import { WeekSummaryCard } from '@/components/home/WeekSummaryCard';
-import { StepRow, type StepUrgency } from '@/components/home/StepRow';
+import { StepRow } from '@/components/home/StepRow';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TabScrollView } from '@/components/ui/TabScrollView';
@@ -103,14 +103,12 @@ function greetingKeyForHour(hour: number): 'morning' | 'afternoon' | 'evening' {
 }
 
 /**
- * Approximate a today-Step's time pressure from the current hour: calm before ~16:00,
- * amber ~16–20:00, red after ~20:00. TODO(data): real per-Step due-times should drive
- * this once the model carries them — the hour is a stand-in for "the day running out".
+ * The next thing a Journey is asking for — its first Step that is still open, in plan order. A card
+ * that shows only a percentage says where you are and not what to do; this is what makes it
+ * actionable. Dropped Steps are out of scope, and a Journey with nothing open simply has no line.
  */
-function urgencyForHour(hour: number): StepUrgency {
-  if (hour >= 20) return 'urgent';
-  if (hour >= 16) return 'warn';
-  return 'calm';
+function nextOpenStep(journey: Journey): string | undefined {
+  return journey.steps.find((step) => !step.done && !step.dropped)?.title;
 }
 
 /** Up to two initials from a handle/name, for a monogram avatar. */
@@ -435,6 +433,7 @@ export default function HomeScreen() {
           ...(position
             ? { milestoneLabel: t('milestone', { current: position.current, total: position.total }) }
             : {}),
+          ...(nextOpenStep(journey) ? { nextStep: nextOpenStep(journey) } : {}),
           onPress: () => router.push(`/journey/${journey.id}` as Href),
         };
       });
@@ -453,13 +452,6 @@ export default function HomeScreen() {
     [core, ready, snapshot, day],
   );
 
-  // The count beside the heading is the SELECTED day's open Steps — the list directly under it. A
-  // count of today's Steps while the user is reading Thursday would be a number about a different
-  // day than the one on screen.
-  const openOnDay = useMemo(
-    () => (day?.steps ?? []).filter((s) => !s.item.step.done).length,
-    [day],
-  );
 
   // GIVE SUPPORT — real Ally progress split into the two tabs: a friend gone quiet
   // needs support/a Nudge (amber); a friend who recently moved deserves praise/a Cheer
@@ -531,7 +523,6 @@ export default function HomeScreen() {
     );
   }
 
-  const focusUrgency = urgencyForHour(hour);
 
   return (
     <ThemedView style={styles.container}>
@@ -603,13 +594,22 @@ export default function HomeScreen() {
             />
           ) : null}
 
-          {/* ── The week, as seven days: one surface holding the strip and the day's Steps ── */}
-          {/* The heading stays in ink even when the day is running out. Tinting a whole section
-              amber because of the hour was the page shouting on behalf of the Steps — the urgency
-              belongs to the Step that has it, and each one already carries its own colour. */}
-          <SectionHeader title={t('week.title')} count={openOnDay} />
-          <View style={styles.weekCard}>
+          {/* ── The week's plan: ONE card holding the strip, the day's Steps, and what can be
+                 pulled forward. They are one thing — a day — and they share one surface. ── */}
+          <SectionHeader title={t('week.title')} />
+          <View
+            style={[
+              styles.weekCard,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+            ]}>
             <WeekDayStrip days={week.days} selectedIndex={selectedIndex} onSelect={setSelectedDay} />
+
+            <View style={[styles.cardDivider, { backgroundColor: theme.hairline }]} />
+
+            <ThemedText type="displaySmall" style={styles.daySteps}>
+              {day?.isToday ? t('week.daySteps') : dayName(day?.dayStart ?? Date.now())}
+            </ThemedText>
+
             {day && day.steps.length === 0 ? (
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
                 {t(day.isToday ? 'week.emptyDayToday' : 'week.emptyDay')}
@@ -632,7 +632,6 @@ export default function HomeScreen() {
                 }
                 // Time pressure is a statement about TODAY. Another day of the week is calm by
                 // definition — its hours have not started running out, or they already have.
-                urgency={day.isToday ? focusUrgency : 'calm'}
                 status={item.status}
                 // "Recommended today" / "needed today" is a statement about TODAY's arithmetic. On
                 // another day it would be saying something untrue about that day.
@@ -644,18 +643,16 @@ export default function HomeScreen() {
                 onLetGo={() => reportLetGo(item)}
               />
             ))}
-          </View>
 
-          {/* ── This week — the chapter the day sits inside, in three numbers ── */}
-          <View style={styles.summary}>
-            <WeekSummaryCard done={summary.done} total={summary.total} streak={snapshot.streak} />
-          </View>
-
-          {/* ── "You could also do today" — later Steps that can be pulled forward ── */}
-          {alsoToday.length > 0 ? (
-            <>
-              <SectionHeader title={t('week.alsoToday')} count={alsoToday.length} />
-              <View style={styles.aheadList}>
+            {/* Steps of LATER days that could be done now. Inside the day's own card and directly
+                under its Steps (founder, 2026-08-19): it is an extension of the day, not a second
+                subject, and lifting it into its own module made it look like one. */}
+            {alsoToday.length > 0 ? (
+              <>
+                <View style={[styles.cardDivider, { backgroundColor: theme.hairline }]} />
+                <ThemedText type="small" style={[styles.aheadHeading, { color: theme.textMuted }]}>
+                  {t('week.alsoToday')}
+                </ThemedText>
                 {alsoToday.map((item) => (
                   <StepRow
                     key={`ahead-${item.step.id}`}
@@ -668,7 +665,6 @@ export default function HomeScreen() {
                         : undefined
                     }
                     pullForward
-                    urgency="calm"
                     status={item.status}
                     onPress={() => setReportStep(item)}
                     onDone={() => reportDone(item)}
@@ -676,9 +672,14 @@ export default function HomeScreen() {
                     onLetGo={() => reportLetGo(item)}
                   />
                 ))}
-              </View>
-            </>
-          ) : null}
+              </>
+            ) : null}
+          </View>
+
+          {/* ── This week — the chapter the day sits inside, in three numbers ── */}
+          <View style={styles.summary}>
+            <WeekSummaryCard done={summary.done} total={summary.total} streak={snapshot.streak} />
+          </View>
 
           {/* ── Your Journeys — one card at a time, swiped through ── */}
           {journeyCards.length > 0 ? (
@@ -787,15 +788,25 @@ const styles = StyleSheet.create({
   coach: {
     paddingBottom: Spacing.one,
   },
-  // The week is ONE region, and after the lightness pass it is not a box: no fill, no border. The
-  // strip and the day's Steps simply share the page, and air does the grouping a card used to do.
+  // The day IS a card again (founder, on the web build: with no fill the cards stopped reading as
+  // cards at all). Lightness now comes from the inside — no boxes around the rows, hairlines instead
+  // of borders, and one surface holding the whole day rather than four competing ones.
   weekCard: {
     marginHorizontal: Spacing.four,
-    gap: Spacing.one,
+    padding: Spacing.three,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: Spacing.two,
   },
-  // The pull-forward Steps sit OUTSIDE that surface: they are an offer, not part of the day.
-  aheadList: {
-    marginHorizontal: Spacing.four,
+  cardDivider: {
+    height: 1,
+    marginVertical: Spacing.one,
+  },
+  daySteps: {
+    marginBottom: Spacing.one,
+  },
+  aheadHeading: {
+    marginBottom: Spacing.one,
   },
   summary: {
     paddingTop: Spacing.four,

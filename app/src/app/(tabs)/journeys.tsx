@@ -145,11 +145,31 @@ export default function JourneysScreen() {
       ? t('future.capacity.review', { count: capacity.count })
       : undefined;
 
+  // The next thing this Journey is actually asking for. A card that says only "65%" tells you where
+  // you are and not what to do; one line of the next Step turns the list into something you can act
+  // on. First Step that is still open, in plan order — dropped Steps are out of scope, and a Journey
+  // with nothing open (everything reported) simply shows no line.
+  const nextStepTitles = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const journey of snapshot?.journeys ?? []) {
+      const next = journey.steps.find((step) => !step.done && !step.dropped);
+      if (next) map.set(journey.id, next.title);
+    }
+    return map;
+  }, [snapshot?.journeys]);
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <ThemedText type="title">{t('title')}</ThemedText>
+          <View style={styles.headerText}>
+            <ThemedText type="display" numberOfLines={1}>
+              {t('title')}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('subtitle')}
+            </ThemedText>
+          </View>
           <View style={styles.headerActions}>
             {/* My Dreams entry (T0-a) — Dreams are the "who I'm becoming" behind these Journeys. */}
             <Pressable
@@ -298,7 +318,13 @@ export default function JourneysScreen() {
           ) : (
             <View style={styles.list}>
               {buckets.active.map((card) => (
-                <JourneyCard key={card.view.id} view={card.view} dream={card.dream} bucket="active" />
+                <JourneyCard
+                  key={card.view.id}
+                  view={card.view}
+                  dream={card.dream}
+                  bucket="active"
+                  nextStep={nextStepTitles.get(card.view.id)}
+                />
               ))}
             </View>
           )}
@@ -325,12 +351,15 @@ function JourneyCard({
   dream,
   bucket,
   futureStart,
+  nextStep,
 }: {
   view: JourneyView;
   dream?: string;
   bucket: JourneyBucket;
   /** Present only on a Future card — which not-started-yet state to word the start line from. */
   futureStart?: FutureStartState;
+  /** The next open Step's title, on a RUNNING Journey only — what this Journey is asking for now. */
+  nextStep?: string;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -418,7 +447,7 @@ function JourneyCard({
                 {dream}
               </ThemedText>
             ) : null}
-            <ThemedText type="subtitle" numberOfLines={1} style={styles.cardTitle}>
+            <ThemedText type="displaySmall" numberOfLines={1} style={styles.cardTitle}>
               {view.title}
             </ThemedText>
           </View>
@@ -463,6 +492,18 @@ function JourneyCard({
           </ThemedText>
         )}
 
+        {/* What it is asking for next. Only on a running Journey: a finished one asks for nothing,
+            a canceled one must never read as still going, and one that has not started has no next
+            Step yet — it has a start date. */}
+        {nextStep && !completed && !canceled && !future ? (
+          <View style={styles.nextStep}>
+            <Ionicons name="arrow-forward-circle-outline" size={14} color={theme.tealStrong} />
+            <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
+              {t('card.nextStep', { title: nextStep })}
+            </ThemedText>
+          </View>
+        ) : null}
+
         {/* No bar and no percentage on a canceled Journey — the honest "N of M Steps done" line
             above is the whole measure (PRD §4.5). A Future Journey has nothing to show yet. */}
         {!future && !canceled && (
@@ -505,11 +546,25 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: Spacing.two,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
+  },
+  // The title and its line share a column so the actions stay pinned to the top of the block and do
+  // not drift down when the subtitle wraps in a longer language.
+  headerText: {
+    flexShrink: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  nextStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    marginTop: Spacing.two,
   },
   headerActions: {
     flexDirection: 'row',

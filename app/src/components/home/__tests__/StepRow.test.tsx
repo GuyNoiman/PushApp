@@ -66,7 +66,6 @@ function render(over: Record<string, unknown> = {}) {
       createElement(StepRow, {
         icon: 'walk',
         title: TITLE,
-        urgency: 'calm',
         status: 'unreported' as StepStatus,
         onPress: jest.fn(),
         onDone: jest.fn(),

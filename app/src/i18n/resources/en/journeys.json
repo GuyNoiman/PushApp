@@ -35,7 +35,8 @@
     "paused": "PAUSED",
     "canceled": "CANCELED",
     "stepsDone": "{{done}} of {{total}} Steps done",
-    "open": "Open {{title}}"
+    "open": "Open {{title}}",
+    "nextStep": "Next: {{title}}"
   },
   "ends": {
     "ended": "ended",
@@ -74,5 +75,6 @@
       "cancel": "Keep",
       "confirm": "Remove"
     }
-  }
+  },
+  "subtitle": "Purposeful journeys. Real progress."
 }

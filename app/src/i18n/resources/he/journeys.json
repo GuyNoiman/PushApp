@@ -35,7 +35,8 @@
     "paused": "מושהה",
     "canceled": "מבוטל",
     "stepsDone": "{{done}} מתוך {{total}} צעדים הושלמו",
-    "open": "פתיחת {{title}}"
+    "open": "פתיחת {{title}}",
+    "nextStep": "הבא: {{title}}"
   },
   "ends": {
     "ended": "הסתיים",
@@ -74,5 +75,6 @@
       "cancel": "להשאיר",
       "confirm": "להסיר"
     }
-  }
+  },
+  "subtitle": "מסעות עם כוונה. התקדמות אמיתית."
 }

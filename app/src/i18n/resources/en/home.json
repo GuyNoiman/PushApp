@@ -8,7 +8,10 @@
   },
   "coach": {
     "title": "Talk to your coach",
-    "subtitle": "Plan a goal, adjust your week, or think it through"
+    "subtitle": "Plan a goal, adjust your week, or think it through",
+    "eyebrow": "Your coach",
+    "ready": "Ready when you are.",
+    "cta": "Talk"
   },
   "weekAdjusted": {
     "title": "I adjusted your week",
@@ -21,7 +24,7 @@
     "journeys": "Your Journeys"
   },
   "week": {
-    "title": "My week",
+    "title": "Week's plan",
     "alsoToday": "You could also do today",
     "emptyDay": "Nothing planned for this day.",
     "emptyDayToday": "Nothing planned for today.",
@@ -66,7 +69,8 @@
         "strong": "A strong week.",
         "complete": "You finished everything you planned this week."
       }
-    }
+    },
+    "daySteps": "Today's steps"
   },
   "milestone": "Milestone {{current}} of {{total}}",
   "step": {
@@ -147,5 +151,11 @@
       "label": "Needed today",
       "a11y": "Needed today. There is no other day left in the week for it, so this is the one your streak rests on."
     }
+  },
+  "carousel": {
+    "overall": "Overall progress",
+    "milestone": "Next milestone",
+    "nextStep": "Next step",
+    "open": "Open Journey"
   }
 }

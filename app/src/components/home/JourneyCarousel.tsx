@@ -18,7 +18,9 @@
  *
  * Presentational: the caller passes the already-derived cards.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Pressable,
   ScrollView,
@@ -33,7 +35,7 @@ import { ThemedText } from '@/components/themed-text';
 import { displayFont, displayScale } from '@/constants/displayFont';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isRTL } from '@/i18n/rtl';
+import { chevronName, isRTL } from '@/i18n/rtl';
 
 /** One Journey, as the carousel needs it. */
 export interface JourneyCard {
@@ -47,11 +49,14 @@ export interface JourneyCard {
   milestone?: { current: number; total: number };
   /** "Milestone 3 of 5" — the caller's words, already translated. */
   milestoneLabel?: string;
+  /** The next open Step's title — what this Journey is asking for now. */
+  nextStep?: string;
   onPress: () => void;
 }
 
 export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
   const theme = useTheme();
+  const { t } = useTranslation('home');
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const scroller = useRef<ScrollView>(null);
@@ -95,23 +100,47 @@ export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
                 { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
                 pressed && styles.pressed,
               ]}>
-              {card.dream ? (
-                <ThemedText type="small" numberOfLines={1} style={{ color: theme.tealStrong }}>
-                  {card.dream}
+              <View style={styles.head}>
+                <View style={[styles.tile, { backgroundColor: theme.tealTint }]}>
+                  <Ionicons name="flag-outline" size={18} color={theme.tealStrong} />
+                </View>
+                <View style={styles.headText}>
+                  {card.dream ? (
+                    <ThemedText type="small" numberOfLines={1} style={{ color: theme.tealStrong }}>
+                      {card.dream}
+                    </ThemedText>
+                  ) : null}
+                  <ThemedText
+                    numberOfLines={2}
+                    style={[
+                      styles.title,
+                      {
+                        color: theme.text,
+                        fontFamily: displayFont(),
+                        fontSize: Math.round(19 * displayScale()),
+                      },
+                    ]}>
+                    {card.title}
+                  </ThemedText>
+                </View>
+              </View>
+
+              <View style={styles.progressHead}>
+                <ThemedText type="small" style={{ color: theme.textMuted }}>
+                  {t('carousel.overall')}
                 </ThemedText>
-              ) : null}
-              <ThemedText
-                numberOfLines={2}
-                style={[
-                  styles.title,
-                  {
-                    color: theme.text,
-                    fontFamily: displayFont(),
-                    fontSize: Math.round(19 * displayScale()),
-                  },
-                ]}>
-                {card.title}
-              </ThemedText>
+                <ThemedText type="smallBold" style={[styles.pct, { color: theme.textSecondary }]}>
+                  {`${Math.round(card.progress * 100)}%`}
+                </ThemedText>
+              </View>
+              <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
+                <View
+                  style={[
+                    styles.fill,
+                    { backgroundColor: theme.tint, width: `${Math.round(card.progress * 100)}%` },
+                  ]}
+                />
+              </View>
 
               {card.milestone ? (
                 <View style={styles.rail} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -132,25 +161,21 @@ export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
                 </View>
               ) : null}
 
-              <View style={styles.footer}>
+              {/* The two facts that make a card actionable rather than decorative: where the arc has
+                  reached, and what it is asking for next. Each is skipped when it has nothing to
+                  say — a Journey with no Milestones does not get an invented one. */}
+              <View style={[styles.facts, { borderTopColor: theme.hairline }]}>
                 {card.milestoneLabel ? (
-                  <ThemedText type="small" numberOfLines={1} style={{ color: theme.textMuted }}>
-                    {card.milestoneLabel}
-                  </ThemedText>
-                ) : (
-                  <View />
-                )}
-                <ThemedText type="smallBold" style={{ color: theme.textSecondary }}>
-                  {`${Math.round(card.progress * 100)}%`}
-                </ThemedText>
+                  <Fact label={t('carousel.milestone')} value={card.milestoneLabel} />
+                ) : null}
+                {card.nextStep ? <Fact label={t('carousel.nextStep')} value={card.nextStep} /> : null}
               </View>
-              <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
-                <View
-                  style={[
-                    styles.fill,
-                    { backgroundColor: theme.tint, width: `${Math.round(card.progress * 100)}%` },
-                  ]}
-                />
+
+              <View style={[styles.cta, { borderColor: theme.tint }]}>
+                <ThemedText type="smallBold" style={{ color: theme.tint }}>
+                  {t('carousel.open')}
+                </ThemedText>
+                <Ionicons name={chevronName()} size={14} color={theme.tint} />
               </View>
             </Pressable>
           </View>
@@ -175,6 +200,21 @@ export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
   );
 }
 
+/** One labelled fact on the card. The label is small and muted; the fact carries the weight. */
+function Fact({ label, value }: { label: string; value: string }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.fact}>
+      <ThemedText type="small" numberOfLines={1} style={{ color: theme.textMuted }}>
+        {label}
+      </ThemedText>
+      <ThemedText type="smallBold" numberOfLines={2} style={{ color: theme.text }}>
+        {value}
+      </ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   slide: {
     paddingHorizontal: Spacing.four,
@@ -183,7 +223,54 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     padding: Spacing.four,
+    gap: Spacing.two,
+  },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  tile: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  progressHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.two,
+  },
+  pct: {
+    fontVariant: ['tabular-nums'],
+  },
+  facts: {
+    flexDirection: 'row',
+    gap: Spacing.four,
+    borderTopWidth: 1,
+    paddingTop: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  fact: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.one,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.one,
   },
   title: {
     lineHeight: 26,
@@ -205,18 +292,10 @@ const styles = StyleSheet.create({
   dotCurrent: {
     width: 22,
   },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Spacing.three,
-    gap: Spacing.two,
-  },
   track: {
-    height: 4,
+    height: 6,
     borderRadius: Radius.pill,
     overflow: 'hidden',
-    marginTop: Spacing.one,
   },
   fill: {
     height: '100%',

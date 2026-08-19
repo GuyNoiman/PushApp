@@ -17,7 +17,8 @@
 // card until he notices. Here every request is attributed to a verified uid and metered.
 //
 // THE CAP (founder decision, 2026-08-18): 2 MB of request+response bytes per user by default, and
-// NO cap for the founder's own uid(s), listed in the `UNMETERED_UIDS` secret. The number itself is
+// NO cap for the founder's own uid(s), listed in the `UNMETERED_UIDS` secret. Unmetered means no
+// CEILING — every caller's spend is still recorded, including his. The number itself is
 // the `BYTE_CAP_MB` secret so it can be moved per deployment without touching this file.
 //
 // IT ONLY BITES ONCE `llm_usage` EXISTS. Without that table the usage read returns nothing, spent
@@ -131,6 +132,8 @@ serve(async (req: Request) => {
   const metered = !unmetered.includes(uid);
 
   let usedBytes = 0;
+  // Only the CEILING is waived for an unmetered uid. What was spent is still recorded below —
+  // see the note at step 5.
   if (metered) {
     const { data: usage } = await admin
       .from('llm_usage')
@@ -163,12 +166,24 @@ serve(async (req: Request) => {
   const text = await upstream.text();
   const responseBytes = new TextEncoder().encode(text).length;
 
-  // ── 5. Meter what was actually spent. Counts only — never content. ──
-  if (metered) {
+  // ── 5. Record what was actually spent — for EVERY caller. Counts only, never content. ──
+  //
+  // This used to skip unmetered uids entirely, and that conflated two different things. Being
+  // unmetered means "no ceiling", not "invisible": the founder's own uid is the one whose spend
+  // actually reaches his card, so it is the last one that should go uncounted. It also made the
+  // whole thing unverifiable — an empty table could equally mean "the proxy was never reached" or
+  // "the caller happens to be exempt", which is exactly the ambiguity that cost a debugging round on
+  // 2026-08-19. A ledger that skips rows cannot answer the question it exists to answer.
+  //
+  // Best-effort: a failure to write a counter must never fail a request the user already paid for
+  // and whose answer is in hand.
+  try {
     await admin.rpc('record_llm_usage', {
       p_user_id: uid,
       p_bytes: requestBytes + responseBytes,
     });
+  } catch {
+    // Swallowed deliberately — see above.
   }
 
   // Pass the upstream status through so the client's existing error handling still works.

@@ -133,13 +133,14 @@ export function SupportCarousel({
           </ScrollView>
 
           <ThemedText
+            testID="support-name"
             style={[
               styles.name,
               { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(19 * displayScale()) },
             ]}>
             {focused.name}
           </ThemedText>
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
+          <ThemedText testID="support-status" type="small" style={{ color: theme.textSecondary }}>
             {focused.status}
           </ThemedText>
 

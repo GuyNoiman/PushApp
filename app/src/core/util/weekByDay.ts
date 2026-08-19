@@ -283,3 +283,22 @@ export function summariseWeek(steps: readonly TodayStep[], now: number): WeekSum
   const total = inWeek.length;
   return { done, total, progress: total > 0 ? done / total : 0 };
 }
+
+/** Which sentence the week has earned. Named states, so the copy is content and not a formula. */
+export type WeekMood = 'empty' | 'starting' | 'building' | 'strong' | 'complete';
+
+/**
+ * The mood for a week's numbers — what Home's summary card says out loud.
+ *
+ * It lives here, beside the numbers themselves, because it is a DERIVATION and not decoration: the
+ * rule is that the card reports the week back rather than flattering the person. Deliberately blunt
+ * at the edges — a week with nothing planned is empty and not a failure, zero done is a week that
+ * has not started, and done is done. "Strong" begins only at three quarters, so the word keeps
+ * meaning something.
+ */
+export function moodFor(done: number, total: number): WeekMood {
+  if (total === 0) return 'empty';
+  if (done === 0) return 'starting';
+  if (done >= total) return 'complete';
+  return done / total >= 0.75 ? 'strong' : 'building';
+}

@@ -26,20 +26,10 @@ import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg'
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import { moodFor } from '@/core/util/weekByDay';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-
-/** Which sentence the week has earned. Named states, so the copy is content and not a formula. */
-export type WeekMood = 'empty' | 'starting' | 'building' | 'strong' | 'complete';
-
-/** The mood for a week's numbers. Deliberately blunt at the edges: 0 is 0, and done is done. */
-export function moodFor(done: number, total: number): WeekMood {
-  if (total === 0) return 'empty';
-  if (done === 0) return 'starting';
-  if (done >= total) return 'complete';
-  return done / total >= 0.75 ? 'strong' : 'building';
-}
 
 export function WeekSummaryCard({
   done,

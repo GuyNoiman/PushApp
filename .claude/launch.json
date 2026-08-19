@@ -33,6 +33,29 @@
       ],
       "cwd": "app",
       "port": 8081
+    },
+    {
+      "name": "pushapp-web-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8082"
+      ],
+      "cwd": "app",
+      "port": 8082
+    },
+    {
+      "name": "pushapp-web-seeded",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "EXPO_PUBLIC_DEMO_SEED=1 npx expo start --web --port 8083"
+      ],
+      "cwd": "app",
+      "port": 8083
     }
   ]
 }

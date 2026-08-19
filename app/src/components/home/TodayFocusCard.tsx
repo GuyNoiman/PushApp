@@ -60,6 +60,9 @@ export function TodayFocusCard({
   urgency,
   status,
   streakRole,
+  dream,
+  note,
+  pullForward = false,
   locked = false,
   onPress,
   onDone,
@@ -84,6 +87,24 @@ export function TodayFocusCard({
    * question the badge answers is about a Step still open.
    */
   streakRole?: StreakRole;
+  /**
+   * The Dream this Step's Journey serves, shown ON the card. The week-by-day list is flat — one day,
+   * one list — so the grouping that used to be a heading over a rail moved onto the card itself, and
+   * a Step never loses the thing it is ultimately for.
+   */
+  dream?: string;
+  /**
+   * One short line about WHEN: the day a missed Step came from, the day a pulled-forward Step
+   * belongs to, or the day a Step was actually done when that was not the day it was planned for.
+   * Always the caller's words — this card never computes a date.
+   */
+  note?: string;
+  /**
+   * A Step of a LATER day, offered early ("you could also do today"). It wears a dashed outline and
+   * drops the start edge: it is an offer, not something the day is asking of you, and the two must
+   * not look alike.
+   */
+  pullForward?: boolean;
   /** True when the Step sits in a closed (past) week — swipe report actions are disabled (D36). */
   locked?: boolean;
   /** Opens the report sheet (Done · Partial · Couldn't · Postpone · Reschedule). */
@@ -148,11 +169,13 @@ export function TodayFocusCard({
           completed && styles.completedCard,
           // …and takes its own ground — the wash + outline of the chosen option (see the header).
           completed && { backgroundColor: theme.tealWash, borderColor: theme.tint, borderWidth: 2 },
+          // An offer from a later day: dashed, flat, and without the start edge below.
+          pullForward && !completed && styles.pullForwardCard,
           pressed && styles.pressed,
         ]}>
         {/* The start edge is the URGENCY accent, and a completed card has no urgency left: its
             outline now carries that job all the way round, so a second bar would only double it. */}
-        {completed ? null : (
+        {completed || pullForward ? null : (
           <View testID="urgency-edge" style={[styles.edge, { backgroundColor: accent, width: edgeWidth }]} />
         )}
 
@@ -178,6 +201,11 @@ export function TodayFocusCard({
             />
           </View>
           <View style={styles.main}>
+            {dream && dream.length > 0 ? (
+              <ThemedText type="small" numberOfLines={1} style={{ color: theme.tealStrong }}>
+                {dream}
+              </ThemedText>
+            ) : null}
             <ThemedText
               numberOfLines={2}
               style={[styles.title, { color: completed ? theme.textSecondary : theme.text }]}>
@@ -190,6 +218,11 @@ export function TodayFocusCard({
             )}
             {/* Says, BEFORE the fact, whether missing this costs the streak — the thing the two
                 otherwise-identical cards never told apart (Open Work 1.1). Not shown once settled. */}
+            {note && note.length > 0 ? (
+              <ThemedText type="small" numberOfLines={1} style={{ color: theme.textMuted }}>
+                {note}
+              </ThemedText>
+            ) : null}
             {streakRole && !completed ? (
               <View style={styles.badgeRow}>
                 <StepStreakBadge role={streakRole} />
@@ -233,6 +266,14 @@ const styles = StyleSheet.create({
   // A finished Step lies flat on the page: no shadow, no lift. Nothing is muted away — every
   // detail stays readable — it simply stops competing with what is still open.
   completedCard: {
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  // Dashed and flat: an offer sits on the page rather than above it, so the day's own Steps stay
+  // the things that look asked-for.
+  pullForwardCard: {
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
     shadowOpacity: 0,
     elevation: 0,
   },

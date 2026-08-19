@@ -26,7 +26,40 @@
     "body": "Nothing pressing right now — a good moment to look ahead."
   },
   "week": {
-    "empty": "No other Steps scheduled this week."
+    "empty": "No other Steps scheduled this week.",
+    "title": "My week",
+    "alsoToday": "You could also do today",
+    "emptyDay": "Nothing planned for this day.",
+    "emptyDayToday": "Nothing planned for today.",
+    "belongsTo": "Belongs to {{day}}",
+    "carriedFrom": "Carried from {{day}}",
+    "doneOn": "Done on {{day}}",
+    "missed": "Not done",
+    "letters": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "days": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "dayA11y": "{{day}}",
+    "state": {
+      "open": "has open Steps",
+      "done": "all Steps done",
+      "empty": "no Steps"
+    },
+    "today": "Today"
   },
   "milestone": "Milestone {{current}} of {{total}}",
   "step": {

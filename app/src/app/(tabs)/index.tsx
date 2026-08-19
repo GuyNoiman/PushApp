@@ -4,10 +4,8 @@
  *
  *   TOP STATUS STRIP (level + XP-to-next-level bar · streak — icons + numbers; Coins hidden, D29)
  *   → greeting-with-name → "Talk to your coach" (the primary HERO card, near the top)
- *   → TODAY'S FOCUS  — the next pending Step of EACH active Journey, a small STACK of
- *                      urgency-coloured cards (calm → amber → red as the day runs out)
- *   → THIS WEEK      — the remaining pending Steps GROUPED BY DREAM, each Step its own
- *                      SEPARATE card strung along a turquoise rail per Dream
+ *   → MY WEEK        — seven day pills, then the selected day's Steps as one flat list, then
+ *                      "you could also do today" (Steps of later days that can be pulled forward)
  *   → GIVE SUPPORT   — friends in a TWO-TAB segmented board ("Needs support", amber /
  *                      "Deserve praise", turquoise); each row shows the person, the WHY
  *                      they surfaced, and one action button (Nudge / Cheer)
@@ -18,6 +16,13 @@
  * Reschedule); a Done fires a brief confetti burst. Empty data degrades gently — the
  * support board shows a calm empty state per tab once you have friends, and the whole
  * GIVE SUPPORT area (heading included) stays hidden until you have at least one.
+ *
+ * MY WEEK REPLACED TWO SECTIONS (founder, approved in full 2026-08-19 —
+ * `04_Product/PRD/Week_By_Day_Home_PRD.md`). "Today's focus" and "This week" told the same week
+ * twice in two shapes, and neither could show an EMPTY day, which is real information about a week.
+ * All the reasoning about days, marks, pull-forward and what happens to a missed Step lives in the
+ * one pure derivation behind it (`core/util/weekByDay`); this screen only decides what a day's
+ * cards look like. The Dream a Step serves moved ONTO the card, because the day's list is flat.
  */
 import { useIsFocused } from '@react-navigation/native';
 import { useRouter, type Href } from 'expo-router';
@@ -36,7 +41,7 @@ import { StepReportFlow } from '@/components/home/StepReportFlow';
 import { WeekAdjustedCard } from '@/components/home/WeekAdjustedCard';
 import { WeeklyReviewCard } from '@/components/home/WeeklyReviewCard';
 import { TopStatusBar } from '@/components/home/TopStatusBar';
-import { WeekDreamGroup, type WeekStepView } from '@/components/home/WeekDreamGroup';
+import { WeekDayStrip } from '@/components/home/WeekDayStrip';
 import { TodayFocusCard, type StepUrgency } from '@/components/home/TodayFocusCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -44,7 +49,6 @@ import { TabScrollView } from '@/components/ui/TabScrollView';
 import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
-import { startOfLocalDay } from '@/core/util/date';
 import { milestoneOfStep } from '@/core/util/milestones';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
@@ -111,14 +115,6 @@ function initialsOf(name: string): string {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-/** One "This week" group: the week's Steps under the Dream (or Journey) they serve. */
-interface WeekGroupView {
-  key: string;
-  title: string;
-  isDream: boolean;
-  steps: WeekStepView[];
 }
 
 export default function HomeScreen() {
@@ -391,99 +387,63 @@ export default function HomeScreen() {
     [core, surfaceReview],
   );
 
-  // TODAY'S FOCUS — the next pending Step of EACH active Journey (so with the current
-  // 3 seeded Journeys the stack shows ~3), never a checked-in Step. TODO(data): this is
-  // a heuristic "today" — one Step per active Journey — until real per-Step due-dates
-  // exist; then this should surface the Steps actually due today instead.
-  const todaySteps = useMemo(() => snapshot?.todaySteps ?? [], [snapshot?.todaySteps]);
-  const focusSteps = useMemo(() => {
-    const seen = new Set<string>();
-    const out: TodayStep[] = [];
-    for (const s of todaySteps) {
-      if (s.step.done || seen.has(s.journeyId)) continue;
-      seen.add(s.journeyId);
-      out.push(s);
-    }
-    return out;
-  }, [todaySteps]);
-  // …plus the Steps ALREADY REPORTED DONE TODAY, kept on the board beneath them (device QA
-  // 2026-08-17). A Step that was just completed must not vanish: the day's honest picture is what
-  // you finished sitting beside what is still open, and the evidence is quietly the reward. They
-  // come from `weekSteps` (the display superset that keeps done Steps) and are bounded to TODAY's
-  // check-ins, so yesterday's work doesn't pile up on today's focus.
-  const completedToday = useMemo(() => {
-    const dayStart = startOfLocalDay(Date.now());
-    return (snapshot?.weekSteps ?? []).filter(
-      (s) => s.step.done && (s.step.lastCheckInAt ?? 0) >= dayStart,
-    );
-  }, [snapshot?.weekSteps]);
-  // What the stack renders: still-open first, settled below.
-  const focusRows = useMemo(
-    () => [...focusSteps, ...completedToday],
-    [focusSteps, completedToday],
+  // THE WEEK, AS SEVEN DAYS. One derivation (core/util/weekByDay) replaces both of Home's old Step
+  // sections — "Today's focus" (the next Step of each active Journey) and "This week" (everything
+  // else, grouped by Dream). They told the same week twice, and neither of them could show an empty
+  // day, which is real information about a week. Everything below is presentation: which day is
+  // selected, and how a day's Steps are dressed.
+  const week = useMemo(
+    () => (ready && snapshot ? core.weekByDay() : { days: [], todayIndex: 0 }),
+    [core, ready, snapshot],
   );
-  const focusStepIds = useMemo(
-    () => new Set(focusSteps.map((s) => s.step.id)),
-    [focusSteps],
-  );
+  // The strip opens on TODAY. The selection is remembered while Home stays mounted, and re-anchors
+  // to today whenever the week itself changes — a day boundary crossed with the app open must not
+  // leave the user reading yesterday.
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const firstDayOfWeek = week.days[0]?.dayStart;
+  useEffect(() => {
+    setSelectedDay(null);
+  }, [firstDayOfWeek]);
+  const selectedIndex = selectedDay ?? week.todayIndex;
+  const day = week.days[selectedIndex];
 
-  // THIS WEEK — every OTHER pending Step of the week (all of weekSteps, minus the ones
-  // already shown in Today's focus), grouped by the Dream their Journey serves. A
-  // Journey with no Dream forms its own group.
-  const weekGroups: WeekGroupView[] = useMemo(() => {
-    const pending = (snapshot?.weekSteps ?? []).filter(
-      (s) => !s.step.done && !focusStepIds.has(s.step.id),
-    );
-    const groups = new Map<string, WeekGroupView>();
-    for (const item of pending) {
+  // The Dream a Step ultimately serves — the grouping that used to be a heading now rides on the
+  // card, because the day's list is flat.
+  const dreamFor = useMemo(
+    () => (item: TodayStep): string | undefined => {
       const journey = journeyById.get(item.journeyId);
       const dream = journey?.dreamId ? dreamById.get(journey.dreamId) : undefined;
-      const key = dream ? `dream:${dream.id}` : `journey:${item.journeyId}`;
-      const title = dream?.title ?? journey?.title ?? item.journeyTitle;
-      // Step Dependencies (Slice 8): a Step waiting on an unmet dependency (engine `locked` flag) is
-      // rendered non-interactively — folded behind its predecessor as a blank deck layer, or shown as
-      // a calm "waiting" card when the predecessor isn't in this group. The predecessor's title is
-      // on-device (G1) UI copy for the hint only.
-      const dependsOnStepId = item.step.dependsOnStepId;
-      const predecessorTitle = dependsOnStepId
-        ? journey?.steps.find((s) => s.id === dependsOnStepId)?.title
-        : undefined;
-      const row: WeekStepView = {
-        key: item.step.id,
-        icon: iconForJourney(item.journeyId),
-        title: item.step.title,
-        meta: metaFor(item),
-        done: item.step.done,
-        status: item.status,
-        streakRole: core.streakRole(item.journeyId),
-        locked: isInClosedWeek(item.step.plannedFor),
-        waiting: item.locked,
-        dependsOnStepId,
-        predecessorTitle,
-        onPress: () => setReportStep(item),
-        onDone: () => reportDone(item),
-        onPostpone: () => reportPostpone(item),
-        onLetGo: () => reportLetGo(item),
-      };
-      const group = groups.get(key);
-      if (group) group.steps.push(row);
-      else groups.set(key, { key, title, isDream: Boolean(dream), steps: [row] });
-    }
-    return [...groups.values()];
-  }, [
-    snapshot?.weekSteps,
-    focusStepIds,
-    journeyById,
-    dreamById,
-    metaFor,
-    reportDone,
-    reportPostpone,
-    reportLetGo,
-  ]);
+      return dream?.title;
+    },
+    [journeyById, dreamById],
+  );
 
-  const weekCount = useMemo(
-    () => weekGroups.reduce((n, g) => n + g.steps.length, 0),
-    [weekGroups],
+  const dayName = useCallback(
+    (epochMs: number): string => {
+      const names = t('week.days', { returnObjects: true }) as unknown as string[];
+      return names[new Date(epochMs).getDay()];
+    },
+    [t],
+  );
+
+  // Steps of LATER days that could be done now. Shown at the END of every day and not only a
+  // finished one: someone with time this evening should not have to complete the day first.
+  const alsoToday = useMemo(
+    () => (ready && snapshot && day ? core.pullForward(day.dayStart) : []),
+    [core, ready, snapshot, day],
+  );
+
+  // The count beside the heading is the SELECTED day's open Steps — the list directly under it. A
+  // count of today's Steps while the user is reading Thursday would be a number about a different
+  // day than the one on screen.
+  const openOnDay = useMemo(
+    () => (day?.steps ?? []).filter((s) => !s.item.step.done).length,
+    [day],
+  );
+  // The heading's urgent tone stays a statement about TODAY, because that is what time pressure is.
+  const openToday = useMemo(
+    () => (week.days[week.todayIndex]?.steps ?? []).filter((s) => !s.item.step.done).length,
+    [week],
   );
 
   // GIVE SUPPORT — real Ally progress split into the two tabs: a friend gone quiet
@@ -553,7 +513,7 @@ export default function HomeScreen() {
   }
 
   const focusUrgency = urgencyForHour(hour);
-  const headerTone = focusSteps.length > 0 && focusUrgency !== 'calm' ? 'urgent' : 'default';
+  const headerTone = openToday > 0 && focusUrgency !== 'calm' ? 'urgent' : 'default';
 
   return (
     <ThemedView style={styles.container}>
@@ -621,32 +581,47 @@ export default function HomeScreen() {
             />
           ) : null}
 
-          {/* ── Today's focus — a small stack, one card per active Journey ── */}
-          <SectionHeader title={t('sections.todayFocus')} count={focusSteps.length} tone={headerTone} />
-          {/* Nothing OPEN left → the caught-up note; anything reported today still shows below it,
-              so the day reads as finished rather than as empty. */}
-          {focusSteps.length === 0 && (
+          {/* ── The week, as seven days: the strip, then the selected day's Steps ── */}
+          <SectionHeader title={t('week.title')} count={openOnDay} tone={headerTone} />
+          <WeekDayStrip
+            days={week.days}
+            selectedIndex={selectedIndex}
+            onSelect={setSelectedDay}
+          />
+          {day && day.steps.length === 0 ? (
             <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
-              <ThemedText type="smallBold" style={{ color: theme.text }}>
-                {t('caughtUp.title')}
-              </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {t('caughtUp.body')}
+                {t(day.isToday ? 'week.emptyDayToday' : 'week.emptyDay')}
               </ThemedText>
             </View>
-          )}
-          {focusRows.length > 0 && (
+          ) : null}
+          {day && day.steps.length > 0 ? (
             <View style={styles.focusStack}>
-              {focusRows.map((item) => (
+              {day.steps.map(({ item, carriedFrom, doneOn, missed }) => (
                 <TodayFocusCard
                   key={item.step.id}
                   icon={iconForJourney(item.journeyId)}
                   title={item.step.title}
                   meta={metaFor(item)}
+                  dream={dreamFor(item)}
+                  note={
+                    carriedFrom !== undefined
+                      ? t('week.carriedFrom', { day: dayName(carriedFrom) })
+                      : doneOn !== undefined
+                        ? t('week.doneOn', { day: dayName(doneOn) })
+                        : missed
+                          ? t('week.missed')
+                          : undefined
+                  }
                   progress={core.journeyProgress(item.journeyId)}
-                  urgency={focusUrgency}
+                  // Time pressure is a statement about TODAY. Another day of the week is calm by
+                  // definition — its hours have not started running out, or they already have.
+                  urgency={day.isToday ? focusUrgency : 'calm'}
                   status={item.status}
-                  streakRole={core.streakRole(item.journeyId)}
+                  // "Recommended today" / "needed today" is a statement about TODAY's arithmetic. On
+                  // another day of the week it would be saying something untrue about that day, so
+                  // the badge belongs to today's list only.
+                  streakRole={day.isToday ? core.streakRole(item.journeyId) : undefined}
                   locked={isInClosedWeek(item.step.plannedFor)}
                   onPress={() => setReportStep(item)}
                   onDone={() => reportDone(item)}
@@ -655,26 +630,38 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
-          )}
+          ) : null}
 
-          {/* ── This week — grouped by Dream, strung along a turquoise rail ── */}
-          <SectionHeader title={t('sections.thisWeek')} count={weekCount} />
-          {weekGroups.length === 0 ? (
-            <View style={[styles.calmCard, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {t('week.empty')}
-              </ThemedText>
-            </View>
-          ) : (
-            weekGroups.map((group) => (
-              <WeekDreamGroup
-                key={group.key}
-                title={group.title}
-                isDream={group.isDream}
-                steps={group.steps}
-              />
-            ))
-          )}
+          {/* ── "You could also do today" — later Steps that can be pulled forward ── */}
+          {alsoToday.length > 0 ? (
+            <>
+              <SectionHeader title={t('week.alsoToday')} count={alsoToday.length} />
+              <View style={styles.focusStack}>
+                {alsoToday.map((item) => (
+                  <TodayFocusCard
+                    key={`ahead-${item.step.id}`}
+                    icon={iconForJourney(item.journeyId)}
+                    title={item.step.title}
+                    meta={metaFor(item)}
+                    dream={dreamFor(item)}
+                    note={
+                      item.step.plannedFor !== undefined
+                        ? t('week.belongsTo', { day: dayName(item.step.plannedFor) })
+                        : undefined
+                    }
+                    pullForward
+                    progress={core.journeyProgress(item.journeyId)}
+                    urgency="calm"
+                    status={item.status}
+                    onPress={() => setReportStep(item)}
+                    onDone={() => reportDone(item)}
+                    onPostpone={() => reportPostpone(item)}
+                    onLetGo={() => reportLetGo(item)}
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
 
           {/* ── Give support — two switchable tabs, each row shows the person + WHY.
                  Hidden entirely (heading included) until there is someone to support. ── */}

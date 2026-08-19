@@ -74,6 +74,7 @@ import { isFuture, isRunning, resolveJourneyStatus } from './util/journeyStatus'
 import { startOfWeek, weekKey } from './util/week';
 import { STREAK_CONFIG } from './config/streak';
 import { streakRole, type StreakRole } from './util/urgency';
+import { buildWeekByDay, pullForwardCandidates, type WeekByDay } from './util/weekByDay';
 import { defaultAdaptivePolicy } from './config/adaptivePolicy';
 import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
 import { featureFlags } from './config/featureFlags';
@@ -2059,6 +2060,28 @@ export class AppCore {
     const journey = this.state.journeys.find((j) => j.id === journeyId);
     if (!journey) return 'recommended';
     return streakRole(journey, now, STREAK_CONFIG);
+  }
+
+  /**
+   * The week as SEVEN DAYS — the single derivation behind Home's day strip and its per-day list
+   * (`core/util/weekByDay`, Week_By_Day_Home_PRD). It is a pure VIEW: a Step that was missed is
+   * SHOWN on a later day when the rule allows it, and nothing is ever rescheduled by looking at it.
+   *
+   * It reads the display superset (`getWeekSteps`), so a finished day shows a check rather than
+   * reading as empty, and it injects the SAME {@link STREAK_CONFIG} the streak rule and the badge
+   * use — "does this Journey still owe the week sessions" must have exactly one answer in the app.
+   */
+  weekByDay(now: number = Date.now()): WeekByDay {
+    return buildWeekByDay(this.journeyEngine.getWeekSteps(), this.state.journeys, now, STREAK_CONFIG);
+  }
+
+  /**
+   * The Steps of LATER days that could be done on `dayStart` already — Home's "you could also do
+   * today" list. Always available, not a reward for finishing the day: someone with time this
+   * evening should not have to complete today before being offered the next thing.
+   */
+  pullForward(dayStart: number, limit?: number): TodayStep[] {
+    return pullForwardCandidates(this.journeyEngine.getWeekSteps(), dayStart, limit);
   }
 
   /**

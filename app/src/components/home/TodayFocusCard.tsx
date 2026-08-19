@@ -13,7 +13,14 @@
  * the same width as every other card. It only SETTLES: the urgency accent drops to calm
  * turquoise, the tile becomes a check, the ink softens and the lift goes flat. No status
  * pill: the check and the settled card carry the meaning, so the pill was only repeating
- * them (founder, device pass 2026-08-17). Seeing what you finished sitting beside what is
+ * them (founder, device pass 2026-08-17).
+ *
+ * THE SETTLED CARD NOW CARRIES ITS OWN GROUND (founder, chosen from rendered options 2026-08-19,
+ * "option ד1"): a very light teal wash, a turquoise outline in place of the start edge, and a large
+ * check watermarked into the background near the FAR end of the progress bar — the end the bar is
+ * travelling toward. He asked for a done card to stand out more; the wash does that without the card
+ * becoming a coloured block, and the watermark is the quiet, oversized version of the thing that
+ * already happened. It stays at roughly 8% opacity, so it is texture and never something to read. Seeing what you finished sitting beside what is
  * still open is the honest picture of a day — and quietly, it is the reward. No celebration
  * lives here (the report already fires the confetti, and the ceremony belongs to finishing a
  * Journey — D42). A completed card is no longer swipeable, but it is still tappable, so a
@@ -139,9 +146,27 @@ export function TodayFocusCard({
           { backgroundColor: theme.backgroundElement, borderColor: theme.hairline, shadowColor: '#000' },
           // Settled, not shouting: the card stops lifting off the page once it is done.
           completed && styles.completedCard,
+          // …and takes its own ground — the wash + outline of the chosen option (see the header).
+          completed && { backgroundColor: theme.tealWash, borderColor: theme.tint, borderWidth: 2 },
           pressed && styles.pressed,
         ]}>
-        <View style={[styles.edge, { backgroundColor: accent, width: edgeWidth }]} />
+        {/* The start edge is the URGENCY accent, and a completed card has no urgency left: its
+            outline now carries that job all the way round, so a second bar would only double it. */}
+        {completed ? null : (
+          <View testID="urgency-edge" style={[styles.edge, { backgroundColor: accent, width: edgeWidth }]} />
+        )}
+
+        {/* Background texture, not content: hidden from screen readers, and painted before the head
+            and the progress row so it always sits behind them. */}
+        {completed ? (
+          <View
+            testID="done-watermark"
+            style={styles.watermark}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants">
+            <Ionicons name="checkmark" size={84} color={theme.tint} />
+          </View>
+        ) : null}
 
         <View style={styles.head}>
           <View
@@ -228,6 +253,16 @@ const styles = StyleSheet.create({
     start: 0,
     top: 0,
     bottom: 0,
+  },
+  // Near the FAR end of the progress bar with a small margin, not flush against it — the position
+  // the founder picked. `end` is direction-aware, so it lands on the correct side under RTL too.
+  watermark: {
+    position: 'absolute',
+    end: Spacing.four,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    opacity: 0.08,
   },
   head: {
     flexDirection: 'row',

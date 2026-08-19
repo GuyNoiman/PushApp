@@ -121,6 +121,29 @@ describe('TodayFocusCard — a COMPLETED Step keeps its identity', () => {
   });
 });
 
+describe('TodayFocusCard — the settled card carries its own ground', () => {
+  // The founder picked this treatment from rendered options (2026-08-19, "option ד1"): a done card
+  // should stand out more than a plain white one, without becoming a coloured block.
+  it('drops the urgency edge — a completed Step has no urgency left to accent', () => {
+    expect(renderCard('unreported').root.findAllByProps({ testID: 'urgency-edge' }).length)
+      .toBeGreaterThan(0);
+    expect(renderCard('completed').root.findAllByProps({ testID: 'urgency-edge' }).length).toBe(0);
+  });
+
+  it('shows the check watermark only once done, and hides it from screen readers', () => {
+    const marks = renderCard('completed').root.findAllByProps({ testID: 'done-watermark' });
+    expect(marks.length).toBeGreaterThan(0);
+    // It is texture, not content — a screen reader must never read a second check out loud.
+    expect(marks[0].props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(renderCard('unreported').root.findAllByProps({ testID: 'done-watermark' }).length).toBe(0);
+  });
+
+  it('still says it is done in words — the new ground is never the only signal', () => {
+    const completed = renderCard('completed');
+    expect(completed.root.findAllByProps({ accessibilityLabel: 'step.doneA11y' }).length).toBeGreaterThan(0);
+  });
+});
+
 describe('TodayFocusCard — PARTIAL and couldn’t are not nothing', () => {
   it('a partial keeps its title, its chip, and stays actionable', () => {
     const partial = renderCard('partially_completed');

@@ -49,6 +49,13 @@ const light = {
   teal: '#0E6E74',
   tealTint: '#E1EFEF',
   tealStrong: '#0A565B',
+  /**
+   * A very light teal WASH — one step quieter than `tealTint`. It marks a surface that is SETTLED
+   * rather than selected or urgent: today the completed Step card, which the founder wanted to stand
+   * out without shouting (chosen from rendered options, 2026-08-19). Deliberately its own token: a
+   * finished card and a selected chip are different states and must not share a fill by accident.
+   */
+  tealWash: '#F1F7F6',
   /** Amber — urgency ONLY (streak flame, most-urgent). Mapped onto the `gold` role. */
   gold: '#AD7A2C',
   goldTint: '#F2EAD9',
@@ -121,6 +128,9 @@ const dark: Palette = {
   teal: '#42C7C9',
   tealTint: '#123230',
   tealStrong: '#7FE3E4',
+  /** The settled wash, dark side: lifted just off `backgroundElement` with a faint teal cast, so a
+   *  completed card reads as a different surface without turning into a coloured block. */
+  tealWash: '#1E2A2A',
   /** Amber — urgency ONLY (streak / most-urgent). Mapped onto the `gold` role. */
   gold: '#DBA660',
   goldTint: '#322810',

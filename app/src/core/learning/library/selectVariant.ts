@@ -10,6 +10,12 @@
  * remembering: an axis is dropped when the profile already places the user on it, and dropped again
  * when the surviving versions no longer differ on it.
  *
+ * THE ALGORITHM ITSELF IS NOT HERE. Choosing one of N candidates by answer → profile → rating →
+ * declared default is the SAME decision the library makes one level up, when it picks which Journey
+ * of the several authored for a goal this person gets (`./selectJourney`). It lives once, in
+ * `./selectable`, and this file is the Journey-version-shaped face of it. Two copies of that ladder
+ * is how a fix at one level silently fails to apply at the other.
+ *
  * THE ENGINE KNOWS NOTHING ABOUT WHAT AN AXIS MEANS. It reads ids. Certainty, free time, urgency and
  * friction are all the same shape to it, which is exactly what makes a new kind of difference
  * content rather than code.
@@ -32,7 +38,6 @@
  * Pure TypeScript — no React, no i18n, no clock reads, no vendor imports.
  */
 import {
-  defaultVariant,
   variantById,
   type AxisId,
   type AxisValue,
@@ -41,11 +46,17 @@ import {
   type JourneyVariant,
   type LibraryRef,
   type ProfileSignalId,
-  type VariantAxis,
 } from './journeyDefinition';
+import { choose, placeOn, questionsFor, type AxisPlacement, type SelectionVia } from './selectable';
 
-/** How a placement or a choice came about — reported, never guessed at by the caller. */
-export type VariantVia = 'answer' | 'profile' | 'rating' | 'default';
+/**
+ * How a placement or a choice came about. Re-exported under the library's older name so callers that
+ * speak about VERSIONS keep their vocabulary; it is the same union as {@link SelectionVia}.
+ */
+export type VariantVia = SelectionVia;
+
+/** Where the user sits on ONE axis, and what put them there. */
+export type { AxisPlacement };
 
 /** What is known about this user when the version is picked. Every field optional — cold start is normal. */
 export interface VariantContext {
@@ -63,15 +74,6 @@ export interface VariantContext {
    * overrides a considered answer.
    */
   ratings?: Readonly<Record<string, number | undefined>>;
-}
-
-/** Where the user sits on ONE axis, and what put them there. */
-export interface AxisPlacement {
-  axisId: AxisId;
-  value: AxisValueId;
-  via: Extract<VariantVia, 'answer' | 'profile'>;
-  /** The answer or profile id that decided it. */
-  signal: string;
 }
 
 /** A question this Journey needs asked, in the order the Journey declared its axes. */
@@ -94,12 +96,6 @@ export interface VariantChoice extends LibraryRef {
   signal: string;
 }
 
-/** The values a variant covers on an axis; an axis it omits means it suits EVERY position on it. */
-function coverage(variant: JourneyVariant, axis: VariantAxis): Set<AxisValueId> {
-  const declared = variant.position[axis.id];
-  return new Set(declared && declared.length > 0 ? declared : axis.values.map((v) => v.id));
-}
-
 /**
  * Where this user sits on each of the Journey's axes, from what is already known.
  *
@@ -107,132 +103,38 @@ function coverage(variant: JourneyVariant, axis: VariantAxis): Set<AxisValueId> 
  * and the profile is a prior collected in the user's first minutes about goals in general.
  */
 export function placeOnAxes(def: JourneyDefinition, ctx: VariantContext = {}): AxisPlacement[] {
-  const placements: AxisPlacement[] = [];
-  for (const axis of def.axes) {
-    const answered = ctx.answers?.[axis.id];
-    if (answered && axis.values.some((v) => v.id === answered)) {
-      placements.push({ axisId: axis.id, value: answered, via: 'answer', signal: `${axis.id}:${answered}` });
-      continue;
-    }
-    // The profile, in the caller's priority order: the FIRST id this axis recognises places them.
-    const mapped = axis.answeredByProfile;
-    if (!mapped) continue;
-    const hit = (ctx.signals ?? []).find((id) => mapped[id] !== undefined);
-    if (hit) placements.push({ axisId: axis.id, value: mapped[hit], via: 'profile', signal: hit });
-  }
-  return placements;
-}
-
-/** The versions still in play once every known placement has been applied. Never empty. */
-function candidates(def: JourneyDefinition, placements: readonly AxisPlacement[]): JourneyVariant[] {
-  const surviving = def.variants.filter((variant) =>
-    placements.every((p) => {
-      const axis = def.axes.find((a) => a.id === p.axisId);
-      return !axis || coverage(variant, axis).has(p.value);
-    }),
-  );
-  // CONTRADICTORY input (an axis answered in a way no version covers) must not produce "no plan".
-  // Fall back to the whole set and let the profile and the default decide, exactly as at cold start.
-  return surviving.length > 0 ? surviving : [...def.variants];
+  return placeOn(def.axes, ctx);
 }
 
 /**
  * The questions this Journey still needs asked — after it has been chosen, and only these.
  *
- * An axis is asked when BOTH of these hold, and dropped the moment either fails:
- *  1. nothing already places the user on it (no answer, nothing in the profile), and
- *  2. the versions still in play genuinely differ on it — if they all cover the same positions, the
- *     answer cannot change which version is built, so the question would cost the user a turn of
- *     their attention and buy nothing.
+ * An axis is asked when nothing already places the user on it AND the versions still in play
+ * genuinely differ on it (see {@link ./selectable.questionsFor} for why both conditions matter).
  */
 export function variantQuestionsFor(
   def: JourneyDefinition,
   ctx: VariantContext = {},
 ): VariantQuestion[] {
-  const placements = placeOnAxes(def, ctx);
-  const placed = new Set(placements.map((p) => p.axisId));
-  const inPlay = candidates(def, placements);
-  if (inPlay.length < 2) return [];
-
-  return def.axes
-    .filter((axis) => !placed.has(axis.id) && discriminates(axis, inPlay))
-    .map((axis) => ({ axisId: axis.id, questionKey: axis.questionKey, values: axis.values }));
-}
-
-/** True when at least two of the versions in play cover different positions on this axis. */
-function discriminates(axis: VariantAxis, inPlay: readonly JourneyVariant[]): boolean {
-  const first = coverage(inPlay[0], axis);
-  return inPlay.some((variant) => {
-    const set = coverage(variant, axis);
-    return set.size !== first.size || [...set].some((v) => !first.has(v));
-  });
+  return questionsFor(def.axes, def.variants, ctx);
 }
 
 /**
- * Pick the version. Deterministic, offline, no model call.
- *
- * The ladder, strongest evidence first:
- *  1. **What the user told this Journey** — an axis answer, which filters the candidates.
- *  2. **What the profile argues** — the weighted signals a version declared it cares about, read in
- *     the caller's priority order.
- *  3. **What the outcomes say** — the rating, as a TIE-BREAK only (D62 §4 makes a version a rated
- *     entity; this is where that rating is allowed to matter, and it is deliberately the weakest
- *     rung so a thin sample can never overrule an answer).
- *  4. **The declared default** — named by the Journey, reported honestly as `'default'`.
+ * Pick the version. Deterministic, offline, no model call — the shared ladder in `./selectable`
+ * (answer → profile → rating → the Journey's own declared default), stamped with the provenance a
+ * live Journey carries so the verdict it eventually earns is credited to the version that produced
+ * it (D62 §4).
  */
 export function selectVariant(def: JourneyDefinition, ctx: VariantContext = {}): VariantChoice {
-  const placements = placeOnAxes(def, ctx);
-  const inPlay = candidates(def, placements);
-  const ref = { definitionId: def.id, version: def.version };
-
-  if (inPlay.length === 1) {
-    const placement = placements.find((p) => p.via === 'answer') ?? placements[0];
-    const via: VariantVia = placement?.via ?? 'default';
-    return { ...ref, variantId: inPlay[0].id, variant: inPlay[0], via, signal: placement?.signal ?? 'default' };
-  }
-
-  // 2 — the profile. A signal's WEIGHT is the Journey's declared preference; its POSITION in the
-  // caller's list is the profile's own priority, and it decides equal weights.
-  const signals = ctx.signals ?? [];
-  const scored = inPlay.map((variant) => {
-    let weight = 0;
-    let firstIndex = Number.MAX_SAFE_INTEGER;
-    let signal = '';
-    signals.forEach((id, index) => {
-      const declared = variant.profileSignals?.[id];
-      if (declared === undefined) return;
-      weight += declared;
-      if (index < firstIndex) {
-        firstIndex = index;
-        signal = id;
-      }
-    });
-    return { variant, weight, firstIndex, signal };
-  });
-  const best = [...scored].sort((a, b) => b.weight - a.weight || a.firstIndex - b.firstIndex)[0];
-  if (best.weight > 0) {
-    // A genuine tie on both weight and position is not a match — two versions the profile likes
-    // equally is exactly the case the rating and then the default exist for.
-    const tied = scored.filter((s) => s.weight === best.weight && s.firstIndex === best.firstIndex);
-    if (tied.length === 1) {
-      return { ...ref, variantId: best.variant.id, variant: best.variant, via: 'profile', signal: best.signal };
-    }
-  }
-
-  // 3 — the rating, over whatever is still tied.
-  const rated = inPlay
-    .map((variant) => ({ variant, score: ctx.ratings?.[variant.id] }))
-    .filter((r): r is { variant: JourneyVariant; score: number } => typeof r.score === 'number')
-    .sort((a, b) => b.score - a.score);
-  if (rated.length > 0 && (rated.length === 1 || rated[0].score > rated[1].score)) {
-    return { ...ref, variantId: rated[0].variant.id, variant: rated[0].variant, via: 'rating', signal: 'rating' };
-  }
-
-  // 4 — the declared default, or the first version still in play if the default was filtered out by
-  // an answer (a user who told us something we must honour, about a Journey whose default does not
-  // suit them).
-  const fallback = inPlay.includes(defaultVariant(def)) ? defaultVariant(def) : inPlay[0];
-  return { ...ref, variantId: fallback.id, variant: fallback, via: 'default', signal: 'default' };
+  const selection = choose(def.axes, def.variants, def.defaultVariantId, ctx);
+  return {
+    definitionId: def.id,
+    version: def.version,
+    variantId: selection.item.id,
+    variant: selection.item,
+    via: selection.via,
+    signal: selection.signal,
+  };
 }
 
 /** Resolve a stamped {@link LibraryRef} back to its version, or undefined if the content moved on. */

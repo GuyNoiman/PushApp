@@ -133,6 +133,14 @@ function layoutStructure(
   const sessionsPerWeek = flexible ? deriveSessionsPerWeek(constraints, entries) : undefined;
 
   // 4. Emit NewStepInputs. The first Step is the deliberately-easy Starter Step.
+  //    A template dependency is authored by TEMPLATE ID (an arc is written before any Step exists),
+  //    so it is resolved to the positional index the engine expects now that the flattened order is
+  //    known. An unresolvable id is simply dropped: a plan must never fail to build because one
+  //    authored dependency does not match, and an unlinked Step is merely unordered, not broken.
+  const indexOfTemplate = new Map<string, number>();
+  entries.forEach((e, i) => {
+    if (e.template.id !== undefined) indexOfTemplate.set(e.template.id, i);
+  });
   const stepCadence: Cadence = goal.cadence ?? (flexible ? 'weekly' : goal.isHabit ? 'daily' : 'once');
   const steps: NewStepInput[] = entries.map((e, i) => ({
     title: e.template.title,
@@ -140,6 +148,10 @@ function layoutStructure(
     cadence: stepCadence,
     estimatedDuration: e.template.estimatedMinutes,
     difficulty: e.template.difficulty,
+    ...(e.template.description !== undefined ? { description: e.template.description } : {}),
+    ...(dependencyIndex(e.template, indexOfTemplate, i) !== undefined
+      ? { dependsOnStepIndex: dependencyIndex(e.template, indexOfTemplate, i) }
+      : {}),
     // Omitted entirely for an unstaged Step — it belongs to no Milestone, and an empty string
     // would read as a Milestone the surfaces then try to resolve.
     ...(e.milestone ? { milestoneId: e.milestone.id } : {}),
@@ -163,6 +175,22 @@ function layoutStructure(
     milestones,
     ...(sessionsPerWeek !== undefined ? { sessionsPerWeek } : {}),
   };
+}
+
+/**
+ * The positional predecessor for a template, or undefined when it has none / names one that is not
+ * in this plan / would point forwards. The engine drops an invalid dependency anyway; refusing to
+ * emit one here keeps the reason for it visible at the place the intent was authored.
+ */
+function dependencyIndex(
+  template: StepTemplate,
+  indexOfTemplate: ReadonlyMap<string, number>,
+  ownIndex: number,
+): number | undefined {
+  const dependsOn = template.dependsOnTemplateId;
+  if (dependsOn === undefined) return undefined;
+  const index = indexOfTemplate.get(dependsOn);
+  return index !== undefined && index < ownIndex ? index : undefined;
 }
 
 // ── Scheduling ───────────────────────────────────────────────────────────────

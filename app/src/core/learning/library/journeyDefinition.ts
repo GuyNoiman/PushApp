@@ -35,6 +35,7 @@
  *
  * Pure TypeScript — no React, no i18n, no clock reads, no vendor imports.
  */
+import { validateAuthoredArc, type AuthoredArc } from './authoredArc';
 import type { RecurringApproachId } from './recurringApproaches';
 import type { JourneyShape } from '../types';
 
@@ -91,12 +92,20 @@ export interface VariantAxis {
  * What a variant actually BUILDS. A discriminated union so a new kind of content is a new member
  * rather than a loosened type.
  *
- * Only `recurring` exists today, because only the recurring shape has real variants to choose
- * between (`./recurringApproaches`). The process shape's variants are a separate, still-open founder
- * decision (Status_Report_2026-08-18 §3: whether authored arcs REPLACE the expert's arc or shape how
- * the user moves through it) — so this union is where that lands, and nothing here pre-empts it.
+ *  - `recurring` — one of the authored ways a repeated action takes hold (`./recurringApproaches`).
+ *  - `process`   — a whole authored Milestone arc with its Steps (`./authoredArc`).
+ *
+ * The process member is what lets a Journey carry its own arc instead of borrowing the one
+ * hardcoded in its domain expert. It does NOT make an arc a variable of a version: the founder's
+ * rule is that a differing arc is a different JOURNEY (see the file header), so in practice a
+ * process definition has one version holding one arc, and a second arc for the same goal is a
+ * second definition grouped with it by a {@link ./goalFamily.GoalFamily}. The union member is
+ * per-variant only because that is where `build` lives — the day a process Journey grows real
+ * versions (same Milestones, different pace), they each name the arc they build.
  */
-export type VariantBuild = { kind: 'recurring'; approach: RecurringApproachId };
+export type VariantBuild =
+  | { kind: 'recurring'; approach: RecurringApproachId }
+  | { kind: 'process'; arc: AuthoredArc };
 
 /** One version of a Journey: where it sits on its Journey's axes, and what it builds. */
 export interface JourneyVariant {
@@ -189,6 +198,13 @@ export function validateJourneyDefinition(def: JourneyDefinition): string[] {
   if (!variantIds.has(def.defaultVariantId)) problems.push('defaultVariantId names no variant');
 
   for (const variant of def.variants) {
+    // An authored arc is content too, and its own mistakes (a Step in no Milestone, a dependency
+    // that runs backwards) are reported here so ONE check covers a definition end to end.
+    if (variant.build.kind === 'process') {
+      for (const problem of validateAuthoredArc(variant.build.arc)) {
+        problems.push(`variant ${variant.id}: ${problem}`);
+      }
+    }
     for (const [axisId, values] of Object.entries(variant.position)) {
       const axis = def.axes.find((a) => a.id === axisId);
       if (!axis) {

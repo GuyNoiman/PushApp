@@ -40,6 +40,27 @@ export interface StepTemplate {
   estimatedMinutes: number;
   /** Relative difficulty 1..5. */
   difficulty: number;
+  /**
+   * The short "what this actually means" line under the title. Optional: an expert's own arc titles
+   * are self-explanatory and carry none, while an authored library arc
+   * (`./library/authoredArc`) almost always does — the description is where the content
+   * says what counts as having done the Step, which is exactly what stops a staged plan from
+   * reading as a list of slogans.
+   */
+  description?: string;
+  /**
+   * The template's own id inside the structure it came from. Present only when something needs to
+   * REFER to this template — today that is {@link dependsOnTemplateId}. It never reaches a Step: a
+   * live Step carries a minted id, and the template it came from is recorded on the Journey.
+   */
+  id?: string;
+  /**
+   * An earlier template, by {@link id}, that must be reported before this one unlocks (Step
+   * Dependencies, linear, within a Milestone). The Planner resolves it to the POSITIONAL
+   * `dependsOnStepIndex` the engine expects once the flattened order is known, because a Step's real
+   * id does not exist until it is minted.
+   */
+  dependsOnTemplateId?: string;
 }
 
 /**

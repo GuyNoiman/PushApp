@@ -30,6 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DeleteAccountSheet } from '@/components/settings/DeleteAccountSheet';
 import { ProfileIdentity } from '@/components/settings/ProfileIdentity';
+import { SettingsOptionSheet } from '@/components/settings/SettingsOptionSheet';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemedText } from '@/components/themed-text';
@@ -75,8 +76,14 @@ export default function SettingsScreen() {
 
   // Localized weekday names (Sun..Sat) for the week-start row's value.
   const weekdayNames = t('weekdays', { ns: 'common', returnObjects: true }) as string[];
-  // Interim: cycle Sun → Mon → … → Sat on tap. Moves into a proper picker in the P1 profile redesign.
-  const cycleWeekStart = () => setWeekStartDay((((weekStartDay + 1) % 7) as Weekday));
+  // Tapping the row OPENS the seven days and lets one be chosen (founder, 2026-08-19). It used to
+  // cycle Sun → Mon → … on each tap, which never showed what the options were and made the day
+  // just behind the current one a six-tap trip through six days nobody wanted.
+  const [weekStartSheetVisible, setWeekStartSheetVisible] = useState(false);
+  const weekStartOptions = useMemo(
+    () => weekdayNames.map((label, i) => ({ value: i as Weekday, label })),
+    [weekdayNames],
+  );
   const { exportData, deleteAccount } = useAccountActions();
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
 
@@ -256,7 +263,7 @@ export default function SettingsScreen() {
               label={t('app.weekStart')}
               detail={t('app.weekStartDetail')}
               value={weekdayNames[weekStartDay]}
-              onPress={cycleWeekStart}
+              onPress={() => setWeekStartSheetVisible(true)}
             />
             {/* Small Step celebrations on/off (Completion Celebration §2.1). Tap toggles;
                 the big Journey completion ceremony can't be disabled (detail line). */}
@@ -307,6 +314,16 @@ export default function SettingsScreen() {
             </SettingsSection>
           ) : null}
         </TabScrollView>
+
+        {/* The seven days, with today's choice ticked — see SettingsOptionSheet for why a list. */}
+        <SettingsOptionSheet
+          visible={weekStartSheetVisible}
+          title={t('app.weekStart')}
+          options={weekStartOptions}
+          selected={weekStartDay}
+          onSelect={setWeekStartDay}
+          onClose={() => setWeekStartSheetVisible(false)}
+        />
 
         <DeleteAccountSheet
           visible={deleteSheetVisible}

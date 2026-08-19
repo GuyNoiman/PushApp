@@ -455,6 +455,7 @@ export default function HomeScreen() {
         meta: metaFor(item),
         done: item.step.done,
         status: item.status,
+        streakRole: core.streakRole(item.journeyId),
         locked: isInClosedWeek(item.step.plannedFor),
         waiting: item.locked,
         dependsOnStepId,
@@ -645,6 +646,7 @@ export default function HomeScreen() {
                   progress={core.journeyProgress(item.journeyId)}
                   urgency={focusUrgency}
                   status={item.status}
+                  streakRole={core.streakRole(item.journeyId)}
                   locked={isInClosedWeek(item.step.plannedFor)}
                   onPress={() => setReportStep(item)}
                   onDone={() => reportDone(item)}

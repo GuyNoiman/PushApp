@@ -44,3 +44,25 @@ export function isUrgentMiss(journey: Journey, now: number, config: StreakConfig
   const remaining = remainingRequiredSessions(journey, now, config);
   return remaining > 0 && remaining >= remainingDaysInWeek(now);
 }
+
+/**
+ * What a Step's Journey means for the STREAK right now, as one shared derivation (Open Work 1.1).
+ *
+ * The streak rule itself is unchanged (D26.4) — this only NAMES the two sides of the existing
+ * {@link isUrgentMiss} test so a surface can show the difference instead of leaving the user to
+ * infer it from a number that moved:
+ *
+ *   • `recommended` — the week still has slack. Doing this today is the suggestion; missing it
+ *     costs the streak NOTHING, because another day this week can still carry the session.
+ *   • `binding`     — no slack is left. Every remaining day must carry a session, so this is the
+ *     one that holds the week together, and a miss is what the streak rule reacts to.
+ *
+ * This is a naming of the SAME predicate, deliberately — a second definition in the UI is exactly
+ * how the shown label and the applied rule drift apart.
+ */
+export type StreakRole = 'recommended' | 'binding';
+
+/** {@link StreakRole} for a Journey at `now` — `binding` iff a miss right now would be urgent. */
+export function streakRole(journey: Journey, now: number, config: StreakConfig): StreakRole {
+  return isUrgentMiss(journey, now, config) ? 'binding' : 'recommended';
+}

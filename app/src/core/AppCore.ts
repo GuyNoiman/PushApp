@@ -72,6 +72,8 @@ import { classifyTrial, effectiveSendAt, withinResponseWindow } from './timing/o
 import { evaluateWeekGate } from './review/weekGate';
 import { isFuture, isRunning, resolveJourneyStatus } from './util/journeyStatus';
 import { startOfWeek, weekKey } from './util/week';
+import { STREAK_CONFIG } from './config/streak';
+import { streakRole, type StreakRole } from './util/urgency';
 import { defaultAdaptivePolicy } from './config/adaptivePolicy';
 import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
 import { featureFlags } from './config/featureFlags';
@@ -2037,6 +2039,22 @@ export class AppCore {
    */
   journeyProgress(journeyId: string): number {
     return this.journeyEngine.journeyProgress(journeyId);
+  }
+
+  /**
+   * What a Journey means for the STREAK right now — `recommended` while the week still has slack,
+   * `binding` once every remaining day must carry a session (Open Work 1.1). The SINGLE entry point
+   * for surfaces that want to SHOW the difference the streak rule already applies (D26.4).
+   *
+   * The rule is unchanged: this reads the very same `isUrgentMiss` predicate the StreakEngine
+   * resets on, through the same injected {@link STREAK_CONFIG}, so the badge on a Step row and the
+   * behaviour of the streak can never disagree. A missing Journey is reported as `recommended` —
+   * the calm side — because a surface must never threaten on the strength of data it doesn't have.
+   */
+  streakRole(journeyId: string, now: number = Date.now()): StreakRole {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey) return 'recommended';
+    return streakRole(journey, now, STREAK_CONFIG);
   }
 
   /**

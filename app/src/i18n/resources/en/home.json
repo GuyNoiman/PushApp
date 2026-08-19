@@ -100,5 +100,15 @@
       "notCompleted": "Not completed",
       "a11y": "Status: {{status}}"
     }
+  },
+  "streakRole": {
+    "recommended": {
+      "label": "Recommended",
+      "a11y": "Recommended for today. Your week still has room for it, so leaving it for another day keeps your streak."
+    },
+    "binding": {
+      "label": "Holds the week",
+      "a11y": "Holds the week. Every day left this week needs a session now, so this is the one your streak rests on."
+    }
   }
 }

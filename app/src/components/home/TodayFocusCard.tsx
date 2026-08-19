@@ -31,9 +31,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
 import { StepStatusChip } from '@/components/home/StepStatusChip';
+import { StepStreakBadge } from '@/components/home/StepStreakBadge';
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import type { StepStatus } from '@/core/status/stepStatus';
+import type { StreakRole } from '@/core/util/urgency';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -50,6 +52,7 @@ export function TodayFocusCard({
   progress,
   urgency,
   status,
+  streakRole,
   locked = false,
   onPress,
   onDone,
@@ -67,6 +70,13 @@ export function TodayFocusCard({
    * chip, and `completed` additionally settles the whole card (calm accent, check tile, no lift).
    */
   status: StepStatus;
+  /**
+   * Which side of the streak rule this Step's Journey is on right now (D26.4, surfaced per Open Work
+   * 1.1) — `recommended` while the week still has slack, `binding` once it doesn't. Derived ONCE by
+   * `core.streakRole()`; this card only renders it. A settled (completed) Step shows none: the
+   * question the badge answers is about a Step still open.
+   */
+  streakRole?: StreakRole;
   /** True when the Step sits in a closed (past) week — swipe report actions are disabled (D36). */
   locked?: boolean;
   /** Opens the report sheet (Done · Partial · Couldn't · Postpone · Reschedule). */
@@ -153,6 +163,13 @@ export function TodayFocusCard({
                 {meta}
               </ThemedText>
             )}
+            {/* Says, BEFORE the fact, whether missing this costs the streak — the thing the two
+                otherwise-identical cards never told apart (Open Work 1.1). Not shown once settled. */}
+            {streakRole && !completed ? (
+              <View style={styles.badgeRow}>
+                <StepStreakBadge role={streakRole} />
+              </View>
+            ) : null}
           </View>
           {/* Partial and couldn't wear their chip — it is the only place those outcomes are
               written, and a partial is real work. A completed Step renders no chip at all (the
@@ -177,6 +194,12 @@ export function TodayFocusCard({
 }
 
 const styles = StyleSheet.create({
+  // The badge sits on its own line under the meta: the long `binding` label must never squeeze the
+  // Step title, and `alignSelf` keeps the pill hugging its own text instead of filling the column.
+  badgeRow: {
+    flexDirection: 'row',
+    marginTop: Spacing.one,
+  },
   // The swipe wrapper carries the card's outer margin so the reveal panels align to
   // the card's edges (the card itself is now flush inside the swipeable).
   swipe: {

@@ -29,9 +29,11 @@ import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-nativ
 
 import { SwipeableStepRow } from '@/components/home/SwipeableStepRow';
 import { StepStatusChip } from '@/components/home/StepStatusChip';
+import { StepStreakBadge } from '@/components/home/StepStreakBadge';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import type { StepStatus } from '@/core/status/stepStatus';
+import type { StreakRole } from '@/core/util/urgency';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
@@ -50,6 +52,11 @@ export interface WeekStepView {
   done: boolean;
   /** The Step's derived reporting status (D36) — shows a calm Partial / Not-completed chip. */
   status: StepStatus;
+  /**
+   * Which side of the streak rule this Step's Journey is on right now (D26.4, surfaced per Open Work
+   * 1.1). Derived by `core.streakRole()` — the same predicate the StreakEngine resets on.
+   */
+  streakRole?: StreakRole;
   /** True when the Step sits in a closed (past) week — swipe report actions are disabled (D36). */
   locked: boolean;
   /** True when the Step is WAITING on an unmet dependency (Step Dependencies) — non-interactive. */
@@ -163,6 +170,14 @@ export function WeekDreamGroup({
             {row.meta}
           </ThemedText>
         )}
+        {/* Same badge, same derivation as the focus stack — a Step's streak meaning must not depend
+            on which section of Home it happens to be sitting in. A done Step is past the question;
+            a WAITING one is not actionable yet, so neither carries it. */}
+        {row.streakRole && !row.done && !waiting ? (
+          <View style={styles.badgeRow}>
+            <StepStreakBadge role={row.streakRole} />
+          </View>
+        ) : null}
       </View>
 
       {!row.done && !waiting && <StepStatusChip status={row.status} />}
@@ -338,6 +353,12 @@ export function WeekDreamGroup({
 }
 
 const styles = StyleSheet.create({
+  // Its own line under the meta — the compact week row has no horizontal room to spare, and the
+  // `binding` label is a phrase, not a word.
+  badgeRow: {
+    flexDirection: 'row',
+    marginTop: Spacing.half,
+  },
   group: {
     marginTop: Spacing.three,
     marginHorizontal: Spacing.four,

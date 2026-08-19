@@ -1,8 +1,8 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-19 (evening)** — start at the **"⛳ START HERE — 2026-08-19 (evening)"**
-block below. Under it, the same day's afternoon and morning blocks are accurate history. Under it, the same day's earlier "⛳ Previous START HERE — 2026-08-19
+Last updated: **2026-08-19 (night)** — start at the **"⛳ START HERE — 2026-08-19 (night)"** block
+below. Under it, the same day's afternoon and morning blocks are accurate history. Under it, the same day's earlier "⛳ Previous START HERE — 2026-08-19
 (autonomous session)" block is accurate history for the morning. Under it, the "⛳ Previous START HERE — D62 is built" block (2026-08-18, later) and the ones under
 that are accurate history, kept in full and superseded only as the starting point. Previous top entry
 follows.
@@ -34,7 +34,55 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-19 (evening): the library is in, Home is a week, the build needs him
+# ⛳ START HERE — 2026-08-19 (night): the build went out, and Home is being redesigned
+
+Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1722 / 170 suites**, `tsc`
+clean. The blocks under this one are the same day's earlier sessions and stay accurate. Detail:
+`00_Foundation/CHANGELOG.md`, the "2026-08-19 (night)" entry; design rules in
+`04_Product/Design_System.md` §0.
+
+**The partner build is submitted.** The founder ran it himself (the interactive Apple sign-in is his
+and nobody else's), generated the certificate, the profile and an App Store Connect API key, and
+`--auto-submit` delivered it. Build 2 is the partner build.
+
+### THE RULE THAT GOVERNS EVERY CHANGE FROM HERE
+The build carries iOS runtime fingerprint `df6c2127bbd3be3766774e3f008f4ae5158306cd`. Updates only
+reach a binary whose fingerprint MATCHES, so **anything that changes the native project — a native
+dependency, any `app.json` edit, an SDK bump — cuts the partner's phone off from our updates.** Not
+native, and therefore free: all TypeScript, every component, i18n copy, colours, artwork drawn in
+code, and fonts (loaded at runtime from JS assets — verified: adding two font families left the
+fingerprint untouched). `expo-blur` and `expo-linear-gradient` were added BEFORE the build precisely
+so the redesign would never need one.
+
+### Where the redesign stands
+Built from the founder's two mockups plus his correction to them (*"it still feels heavy, I want it to
+breathe"*). Done: the display voice (**Fraunces** in English, **Frank Ruhl Libre** in Hebrew, resolved
+per language, with the line-height rule that keeps both occupying the same box), the lightness pass on
+the day's Steps, the week's summary card over a code-drawn dusk, the Journeys carousel, the people
+carousel, and a quieter coach card. All of it works in BOTH themes and was checked in both.
+
+**Not yet done from those mockups:** the profile photo beside the greeting, the top status strip's own
+treatment, and the immersive full-bleed variant of the people section. The founder said his mockups are
+*not final* — treat them as direction, not specification, and expect the lightness rule to keep pruning
+them.
+
+### Waiting on the founder
+- **App Store Connect: accept the updated Apple Developer Program License Agreement** (the yellow
+  banner). Without it, submissions and new apps are blocked.
+- Add the partner (`liamsh1979@gmail.com`, already in the team as Marketing, which is a valid internal
+  tester role) to the TestFlight internal group once the build finishes processing — that is the moment
+  his invitation email is actually sent.
+- Answer TestFlight's export-compliance question (the app uses only HTTPS and the system keychain).
+- Read and send `04_Product/Partner_Letter_2026-08-19_Library_Ingest.md`.
+- §1.5 of the open list (Home's scroll-to-top) still needs a device check only he can do.
+
+### The gap to close next, in code
+Nothing routes a conversation to the eighteen Career Journeys: the expert has to diagnose which of the
+six families a goal is, and it does not diagnose. The letter asks the partner for exactly that.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-19 (evening): the library is in, Home is a week
 
 Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1693 / 167 suites**, `tsc`
 clean. The two blocks under this one cover the same day's morning and afternoon and are still

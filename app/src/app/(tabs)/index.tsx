@@ -460,11 +460,6 @@ export default function HomeScreen() {
     () => (day?.steps ?? []).filter((s) => !s.item.step.done).length,
     [day],
   );
-  // The heading's urgent tone stays a statement about TODAY, because that is what time pressure is.
-  const openToday = useMemo(
-    () => (week.days[week.todayIndex]?.steps ?? []).filter((s) => !s.item.step.done).length,
-    [week],
-  );
 
   // GIVE SUPPORT — real Ally progress split into the two tabs: a friend gone quiet
   // needs support/a Nudge (amber); a friend who recently moved deserves praise/a Cheer
@@ -537,7 +532,6 @@ export default function HomeScreen() {
   }
 
   const focusUrgency = urgencyForHour(hour);
-  const headerTone = openToday > 0 && focusUrgency !== 'calm' ? 'urgent' : 'default';
 
   return (
     <ThemedView style={styles.container}>
@@ -610,7 +604,10 @@ export default function HomeScreen() {
           ) : null}
 
           {/* ── The week, as seven days: one surface holding the strip and the day's Steps ── */}
-          <SectionHeader title={t('week.title')} count={openOnDay} tone={headerTone} />
+          {/* The heading stays in ink even when the day is running out. Tinting a whole section
+              amber because of the hour was the page shouting on behalf of the Steps — the urgency
+              belongs to the Step that has it, and each one already carries its own colour. */}
+          <SectionHeader title={t('week.title')} count={openOnDay} />
           <View style={styles.weekCard}>
             <WeekDayStrip days={week.days} selectedIndex={selectedIndex} onSelect={setSelectedDay} />
             {day && day.steps.length === 0 ? (

@@ -74,10 +74,15 @@ neither could show an EMPTY day, which is real information about a week.
 - **Inside a day, a flat list**, so the Dream moved onto the card.
 - **"You could also do today"** at the end of every day (not only a finished one): Steps of later
   days that can be pulled forward, dashed, no side edge, each saying which day it belongs to.
-- **A missed Step** moves to the next day as a required Step only if its Journey still owes the week
-  sessions AND that day does not already carry a Step of the same Journey. The founder's own case is
-  the test: three workouts a week, today already has one, so yesterday's does not jump onto today.
-  Condition (a) reads `remainingRequiredSessions` — the same arithmetic behind `streakRole`.
+- **A missed Step** moves to the next day only if it was merely `recommended` and not yet `required`
+  AND that day does not already carry a Step of the same Journey. The founder answered the open
+  clause the same evening in his own words — *"it was recommended and not yet required, so if it was
+  not done that day it simply moved to the next day"* — so condition (a) is `streakRole` itself and
+  not a paraphrase of it: the badge on the card and the movement of the card now say the same thing.
+  A **binding** Step that was missed stays on its day, because the streak rule has already reacted to
+  it and letting it reappear would hide the one miss the app is honest about. The second condition is
+  his own test case: three workouts a week, today already has one, so yesterday's does not jump onto
+  today.
 - **It moves nothing.** A carried Step is SHOWN on a later day and never rescheduled, so the record
   of what was planned stays true and the adaptive planner remains the only thing that moves a Step.
 - Seeing it run corrected two things: the count beside the heading is the SELECTED day's open Steps,

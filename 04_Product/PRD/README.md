@@ -82,8 +82,8 @@ error states.
   only), a flat Step list per day with the Dream on the card, an always-present "you could also do today"
   section of pull-forward Steps, and the rule by which a missed Step does or does not travel to the next
   day (the SAME urgency computation that feeds `streakRole`, never a second definition). Replaces BOTH
-  "Today's focus" and "This week". **Stage: POC/MVP · Status: approved in full by the founder
-  2026-08-19, NOT built; one open sentence in §6.**
+  "Today's focus" and "This week". **Stage: POC/MVP · Status: BUILT 2026-08-19; §6's open clause was
+  answered by the founder the same evening and the rule follows his wording.**
 - `Coach_Context_Summaries_PRD.md` — optional, minimal, end-to-end encrypted Dream/Journey context for
   the Coach. **Stage: MVP · Status: Approved; security/privacy release gate.**
 - `Account_Inactivity_Freeze_PRD.md` — server-authoritative 21-day inactivity freeze for Active/Future

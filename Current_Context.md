@@ -80,9 +80,9 @@ whose content was not the one built.
   anonymous uid, so the partner signs in on FIRST launch.
 - The shared image travels without the personal caption (share-sheet limitation).
 - iPad is supported but the app is still portrait-only.
-- One clause of the week-by-day spec is marked OPEN in its PRD §6 and was built on the plainer
-  reading: "the Journey still has room in the week" = it still OWES sessions this week. A different
-  ruling is a one-line change.
+- The week-by-day spec has no open clauses left: §6 was answered by the founder the same evening —
+  a Step travels because it was `recommended` and not yet `required` — and the code now reads
+  `streakRole` directly.
 
 ---
 

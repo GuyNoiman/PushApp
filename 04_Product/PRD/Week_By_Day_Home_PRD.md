@@ -2,8 +2,8 @@
 
 Status: **Approved in full by the founder, 2026-08-19 (later session). NOT built.** This file is the
 specification he approved in conversation, moved into the repo so it cannot be lost between sessions.
-One point is marked OPEN in §6 and needs one sentence from him before that branch is coded; everything
-else is decided.
+Every point is decided: the one clause that was open in §6 was answered by the founder the same
+evening and is recorded there with his own wording.
 
 Stage: **POC / MVP.** Replaces existing Home surfaces — it adds no new pillar.
 Related: `Done/Daily_Step_Reporting_PRD.md` (how a Step is reported), `Done/Week_Boundary_Preference_PRD.md`
@@ -61,27 +61,29 @@ it in one glance, and it makes a quiet promise the current layout cannot: the da
 
 ## 6. A missed Step and the day boundary
 
-A Step that was not done moves to the next day **as a required Step (never as an optional one)**
-**only if BOTH hold:**
+A Step that was not done moves to the next day **only if BOTH hold:**
 
-- **(a)** its Journey still has room in the week — *the same computation that feeds `streakRole`*
-  (`core/util/urgency.ts`: `remainingRequiredSessions` against `remainingDaysInWeek`), **not a second
-  definition**; and
+- **(a)** it was only **`recommended`** and not yet **`required`** — i.e. `streakRole` says the week
+  still had slack, so missing it cost the streak nothing. This is the founder's own wording
+  (2026-08-19): *"the intention was that the Step was recommended and not yet required, and so if it
+  was not done that day it simply moved to the next day."* The condition is `streakRole` itself, not
+  a paraphrase of it (`core/util/urgency.ts`), so the badge on the card and the movement of the card
+  can never say different things; and
 - **(b)** the target day does not already carry a Step of that same Journey.
 
 If either fails, the Step is **marked "not done" and stays on its own day**. It does not travel
-forward.
+forward. In particular a **binding** Step that was missed stays put: the streak rule has already
+reacted to it, and letting it reappear tomorrow as if nothing had happened would hide the one miss
+the app is honest about.
 
 > **The founder's example, which is the test case:** three workouts a week; today already has a
 > workout; therefore yesterday's workout does **not** jump onto today.
 
-> **OPEN — one sentence needed from the founder.** Condition (a) says "the Journey still has room in
-> the week". Two readings are possible and they behave differently:
-> **(i)** the Journey still OWES sessions this week (`remainingRequiredSessions > 0`) and days remain
-> to place them — so a Journey that already hit its weekly target does not push a missed Step forward;
-> or **(ii)** the week still has SLACK (`!isUrgentMiss`) — i.e. it moves forward only while the week
-> is not yet tight. Reading (i) is what the phrase most plainly says and is the one this PRD assumes
-> until he answers; it is also the reading that keeps the promise "the week's target is what matters".
+> **Resolved 2026-08-19 (evening).** This section previously carried an OPEN question about what
+> "the Journey still has room in the week" meant. The founder answered it in the words quoted above,
+> and the code follows that answer: a Journey that has already met its weekly target is
+> `recommended`, so its missed Step travels; a Journey with no slack left is `binding`, so its missed
+> Step stays.
 
 ## 7. Edge cases (the standard checklist)
 

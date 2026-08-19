@@ -91,7 +91,7 @@ describe('the seven days', () => {
 });
 
 describe('a Step that was not done', () => {
-  it('travels to the next day when its Journey still owes the week sessions and that day is free', () => {
+  it('travels to the next day when it was only recommended and that day is free', () => {
     const week = build([todayStep({ plannedFor: TODAY - DAY })]);
     const today = week.days[week.todayIndex];
     expect(today.steps).toHaveLength(1);
@@ -112,14 +112,25 @@ describe('a Step that was not done', () => {
     expect(week.days[week.todayIndex].steps).toHaveLength(1);
   });
 
-  it('does not travel once its Journey has already met the week s target', () => {
-    // `few-times-week` asks for three; three are done, so the week owes nothing and a missed Step
-    // has no reason to be pushed anywhere.
+  it('does NOT travel when its Journey was already binding — a real miss stays a real miss', () => {
+    // The founder's ruling, in his words: a Step travels because it was "recommended and not yet
+    // required". A DAILY Journey on Wednesday needs seven sessions with four days left, so it is
+    // binding — and a binding Step that was missed must not quietly reappear tomorrow as if nothing
+    // had happened, because the streak rule has already reacted to it.
+    const binding = journey({ rhythm: 'daily' });
+    const week = build([todayStep({ plannedFor: TODAY - DAY })], [binding]);
+    expect(week.days[week.todayIndex].steps).toHaveLength(0);
+    expect(week.days[week.todayIndex - 1].steps[0].missed).toBe(true);
+  });
+
+  it('travels when the Journey has already met the week s target — nothing is at stake', () => {
+    // `few-times-week` asks for three and three are done, so the week has all the slack there is:
+    // the Step is recommended, missing it costs nothing, and it simply moves on.
     const done = (id: string) => step({ id, done: true, lastCheckInAt: TODAY - DAY });
     const met = journey({ steps: [done('a'), done('b'), done('c')] });
     const week = build([todayStep({ plannedFor: TODAY - DAY })], [met]);
-    expect(week.days[week.todayIndex].steps).toHaveLength(0);
-    expect(week.days[week.todayIndex - 1].steps[0].missed).toBe(true);
+    expect(week.days[week.todayIndex].steps).toHaveLength(1);
+    expect(week.days[week.todayIndex].steps[0].carriedFrom).toBe(TODAY - DAY);
   });
 
   it('is not treated as missed once it was REPORTED — an answered Step stays on its own day', () => {

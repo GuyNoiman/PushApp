@@ -15,16 +15,19 @@
  *  2. **What can be pulled forward.** Every day offers the Steps of LATER days that could be done
  *     now — always, not only once the day is finished, because someone with time this evening
  *     should not have to complete today to be offered the next thing.
- *  3. **What happens to a Step that was missed.** It moves to the next day as a REQUIRED Step only
- *     if its Journey still owes sessions this week AND that next day does not already carry a Step
- *     of the same Journey. Otherwise it stays on its own day, marked not done. The founder's own
- *     test case: three workouts a week, today already has one, so yesterday's does not jump onto
- *     today.
+ *  3. **What happens to a Step that was missed.** It moves to the next day only if it was merely
+ *     RECOMMENDED — the week still had slack, so missing it cost nothing — AND that next day does
+ *     not already carry a Step of the same Journey. Otherwise it stays on its own day, marked not
+ *     done. Two founder rulings meet here: a Step that was already BINDING has been genuinely
+ *     missed and must not quietly reappear tomorrow as if nothing happened, and the second
+ *     condition is his own test case — three workouts a week, today already has one, so yesterday's
+ *     does not jump onto today.
  *
- * WHY (a) OF THAT RULE READS THE URGENCY HELPER: "the Journey still has room in the week" is
- * `remainingRequiredSessions` against `remainingDaysInWeek` — the SAME arithmetic that feeds
- * `streakRole` (`./urgency`). A second definition of what the week still owes is exactly how the
- * badge on a card and the movement of a card come to disagree.
+ * WHY (a) IS LITERALLY `streakRole` AND NOT A PARAPHRASE OF IT: the badge on the card already tells
+ * the user which side of the streak rule this Step is on, and the card's MOVEMENT now says the same
+ * thing. `recommended` means the week can still absorb it, so it travels; `binding` means every
+ * remaining day has to carry a session, so a miss is a miss. One predicate, one meaning — a second
+ * definition is exactly how a shown label and an applied rule come to disagree.
  *
  * IT MOVES NOTHING. This is a pure view over the plan: a carried Step is REPORTED on a later day,
  * never rescheduled. The Step's own `plannedFor` is untouched, so the record of what was planned
@@ -36,7 +39,7 @@ import type { StreakConfig } from '../config/streak';
 import type { TodayStep } from '../engines/JourneyEngine';
 import type { Journey } from '../types/domain';
 import { startOfLocalDay, startOfNextLocalDay } from './date';
-import { remainingRequiredSessions } from './urgency';
+import { streakRole } from './urgency';
 import { startOfWeek } from './week';
 
 /** How a day's pill is marked. */
@@ -195,11 +198,15 @@ function carryForward(
   config: StreakConfig,
 ): number {
   const journey = journeys.find((j) => j.id === item.journeyId);
-  // (a) Does the week still owe sessions for this Journey? Read from `remainingRequiredSessions` —
-  // the same arithmetic behind `streakRole` — so the badge and the movement can never disagree. A
-  // Journey that has already met its weekly target has no reason to push a missed Step anywhere.
-  const owed = journey ? remainingRequiredSessions(journey, now, config) : 0;
-  if (owed <= 0) return from;
+  // (a) Was this Step only RECOMMENDED, and not yet required? That is the founder's own wording for
+  // the condition, and it is `streakRole` itself rather than a paraphrase of it: while the week
+  // still has slack, missing the Step costs nothing and it simply moves to the next day. Once the
+  // Journey is BINDING — every remaining day has to carry a session — a miss is a real miss, and it
+  // stays on its own day marked not done rather than quietly reappearing tomorrow.
+  //
+  // A Journey we cannot find is treated as recommended: the calm side, because a surface must never
+  // strand a Step on the strength of data it does not have.
+  if (journey && streakRole(journey, now, config) !== 'recommended') return from;
 
   let day = from;
   while (day < today) {

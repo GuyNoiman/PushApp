@@ -16,8 +16,13 @@
 // possible for the first time. Today, a leaked key has no ceiling at all: it bills the founder's
 // card until he notices. Here every request is attributed to a verified uid and metered.
 //
-// THE CAP (founder decision, 2026-08-18): 2 MB of request+response bytes per user, and NO cap for
-// the founder's own uid(s), listed in the `UNMETERED_UIDS` secret. Bytes are an unusual unit for
+// THE CAP (founder decision, 2026-08-18): 2 MB of request+response bytes per user by default, and
+// NO cap for the founder's own uid(s), listed in the `UNMETERED_UIDS` secret. The number itself is
+// the `BYTE_CAP_MB` secret so it can be moved per deployment without touching this file.
+//
+// IT ONLY BITES ONCE `llm_usage` EXISTS. Without that table the usage read returns nothing, spent
+// reads as zero, and every request passes — the cap is not "loose", it is absent. Running
+// `migrations/0002_llm_usage.sql` is what turns it on. Bytes are an unusual unit for
 // model usage — requests and tokens are the conventional ones — but they were what he asked for,
 // they are exactly measurable here, and request counts are recorded alongside so the unit can be
 // revisited with real numbers rather than guesses.
@@ -29,6 +34,7 @@
 // DEPLOY (founder action — needs the Supabase CLI and a login):
 //     supabase secrets set GEMINI_API_KEY=…            # the key, server-side only
 //     supabase secrets set UNMETERED_UIDS=<your-uid>   # comma-separated; may be left unset
+//     supabase secrets set BYTE_CAP_MB=4               # optional; defaults to 2
 //     supabase functions deploy gemini-proxy
 //
 // Deno/Edge runtime (URL imports, `Deno.env`), intentionally OUTSIDE the app's TypeScript/ESLint
@@ -44,8 +50,20 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-/** The per-user ceiling: 2 MB of request + response bytes (founder decision, 2026-08-18). */
-const BYTE_CAP = 2 * 1024 * 1024;
+/**
+ * The per-user ceiling in request + response bytes (founder decision, 2026-08-18: 2 MB).
+ *
+ * Read from the `BYTE_CAP_MB` secret so the number can be changed with one command and no code
+ * change or review — the moment a second real person is on the app, "how much is he allowed" stops
+ * being a constant anyone should have to edit a file to move. Unset, malformed or non-positive falls
+ * back to the decided 2 MB: a bad secret must never be read as "no limit".
+ *
+ *     supabase secrets set BYTE_CAP_MB=4
+ *
+ * It is a LIFETIME total, not monthly — nothing resets `llm_usage.bytes`.
+ */
+const capMb = Number(Deno.env.get('BYTE_CAP_MB'));
+const BYTE_CAP = (Number.isFinite(capMb) && capMb > 0 ? capMb : 2) * 1024 * 1024;
 
 /** Upstream. Only the model id is taken from the caller, and only from an allowlist. */
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';

@@ -64,8 +64,8 @@ Doing it in any other order strands two days of work behind a build that has not
 
 Six tools, and a protocol that governs every one after them
 (`04_Product/Tool_Addition_Protocol.md`). **Life Wheel · Values Clarification · My Best Possible Year ·
-Direction Statement** are complete. **Passion Map** has its engine and no screens. **Mirror Feedback**
-has its rules and deliberately no sending.
+Direction Statement · Passion Map** are complete, engine and screens. **Mirror Feedback** has its
+rules and deliberately no sending — see below.
 
 A conversation now has a token budget with three zones, and `narrowing` means one concrete thing:
 stop offering free text, keep offering cards, which cost nothing. Nobody is ever told they ran out.
@@ -73,13 +73,14 @@ stop offering free text, keep offering cards, which cost nothing. Nobody is ever
 ## ▶ NEXT, in order
 
 1. **The ordering decision above.**
-2. **Passion Map screens** — the engine is built and tested; the six-prompt flow, the arrangement
-   canvas and the daily signal are the work.
-3. **Mirror Feedback setup screens** — the safe half only. Nothing that sends.
-4. **The influence contracts** — the founder asked to be reminded at the end of the tool run. Values
+2. **Mirror Feedback setup screens** — the safe half only. Nothing that sends.
+3. **The influence contracts** — the founder asked to be reminded at the end of the tool run. Values
    Clarification still owes one; the reflections were answered in advance by D66.
-5. **Wire the diagnosis into the orchestrator** — `careerDiagnosis` is a tested engine and
-   `CoachOrchestrator` still walks a fixed list and never calls it.
+4. **Wire the diagnosis into the orchestrator** — `careerDiagnosis` is a tested engine and
+   `CoachOrchestrator` still walks a fixed list and never calls it. This is the one that turns
+   twenty-seven authored Career Journeys from correct into reachable.
+5. **The two remaining tools** — Strength Evidence and a Weekly reflection. Direction Statement's
+   "what I bring" drawer stays empty until the first of them exists, by design.
 
 ## What is waiting on somebody else
 

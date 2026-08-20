@@ -8,7 +8,7 @@
  * 1: every accepted friend is an entry point to their profile), so it is built from the friends
  * list and ally progress folds in as the status line only.
  */
-import type { AllyProgress, Friend, SocialProfile } from './SocialGateway';
+import type { AllyMember, AllyProgress, Friend, SocialProfile } from './SocialGateway';
 
 /**
  * What we can honestly say about a friend's shared Journeys, as DATA rather than copy.
@@ -69,4 +69,32 @@ export function buildCircleRows(
         cheerTarget: latest ? { toId: friend.profile.id, journeyId: latest.journeyId } : null,
       };
     });
+}
+
+/**
+ * THE ALLIES LIST — everyone in at least one of my Support Circles who is NOT one of my friends
+ * (founder, 2026-08-20). It is the second tab of Circle, and the distinction it draws is a real one:
+ * a friend is someone I keep, an Ally is someone who is standing with me on something specific and
+ * may be a stranger otherwise. Collapsing them into one list would either hide the friends among the
+ * helpers or imply a relationship nobody agreed to.
+ *
+ * Deduped by person, because a member of three of my circles is one human being; sorted by handle so
+ * the list is stable between loads and does not reshuffle when a circle changes.
+ *
+ * A PENDING friend request does not make someone a friend, so they still belong here — the tab they
+ * appear in follows what is actually true today, not what is being negotiated.
+ */
+export function globalAllies(
+  members: readonly AllyMember[],
+  friends: readonly Friend[],
+): SocialProfile[] {
+  const friendIds = new Set(
+    friends.filter((f) => f.status === 'accepted').map((f) => f.profile.id),
+  );
+  const byId = new Map<string, SocialProfile>();
+  for (const member of members) {
+    if (friendIds.has(member.profile.id)) continue;
+    if (!byId.has(member.profile.id)) byId.set(member.profile.id, member.profile);
+  }
+  return [...byId.values()].sort((a, b) => a.handle.localeCompare(b.handle));
 }

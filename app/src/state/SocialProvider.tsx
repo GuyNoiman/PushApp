@@ -10,10 +10,13 @@
  * No business logic here: screens read this state and call these actions (§19).
  */
 import * as Notifications from 'expo-notifications';
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
 import { assertCompanionAllowed, getSocialGateway } from '@/core/social';
+// From its own module rather than the barrel: the barrel is what the provider's tests mock, and a
+// pure derivation should not disappear because a test stubbed the gateway next to it.
+import { globalAllies } from '@/core/social/circleRows';
 // Imported from the module itself, not the barrel: this is a runtime VALUE (an `instanceof`
 // check), and the barrel pulls the Supabase-backed gateway in with it.
 import { NotFriendsError } from '@/core/social/SocialGateway';
@@ -38,6 +41,11 @@ export interface SocialContextValue {
   profile: SocialProfile | null;
   friends: Friend[];
   allyProgress: AllyProgress[];
+  /**
+   * Everyone in at least one of my Support Circles who is NOT a friend — the global Ally list behind
+   * Circle's second tab (founder, 2026-08-20). Derived, never stored: the truth is the circles.
+   */
+  allies: SocialProfile[];
   incomingCheers: Cheer[];
   /** Incoming Support-Circle invites awaiting this user's decision (Inbox → Requested, D2). */
   incomingAllyInvites: AllyInvite[];
@@ -84,6 +92,7 @@ const EMPTY: SocialContextValue = {
   profile: null,
   friends: [],
   allyProgress: [],
+  allies: [],
   incomingCheers: [],
   incomingAllyInvites: [],
   needsHandle: false,
@@ -132,6 +141,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [allyProgress, setAllyProgress] = useState<AllyProgress[]>([]);
+  const [circleMembers, setCircleMembers] = useState<AllyMember[]>([]);
   const [incomingCheers, setIncomingCheers] = useState<Cheer[]>([]);
   const [incomingAllyInvites, setIncomingAllyInvites] = useState<AllyInvite[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -172,16 +182,18 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     await guard(async () => {
-      const [p, f, ap, invites] = await Promise.all([
+      const [p, f, ap, invites, members] = await Promise.all([
         gateway.currentProfile(),
         gateway.listFriends(),
         gateway.allyProgress(),
         gateway.incomingAllyInvites(),
+        gateway.listAllAllies(),
       ]);
       setProfile(p);
       setFriends(f);
       setAllyProgress(ap);
       setIncomingAllyInvites(invites);
+      setCircleMembers(members);
     });
   }, [gateway, guard]);
 
@@ -201,6 +213,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       setAllyProgress([]);
       setIncomingCheers([]);
       setIncomingAllyInvites([]);
+      setCircleMembers([]);
       return;
     }
     void (async () => {
@@ -521,11 +534,16 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     [gateway, guard],
   );
 
+  // Derived on read, not stored: the Ally list is a VIEW of the circles minus the friends, so it
+  // cannot fall out of step with either of them.
+  const allies = useMemo(() => globalAllies(circleMembers, friends), [circleMembers, friends]);
+
   const value: SocialContextValue = {
     enabled: true,
     profile,
     friends,
     allyProgress,
+    allies,
     incomingCheers,
     incomingAllyInvites,
     needsHandle: profile === null,

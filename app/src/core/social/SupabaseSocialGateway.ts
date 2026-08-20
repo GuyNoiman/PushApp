@@ -320,6 +320,24 @@ export class SupabaseSocialGateway implements SocialGateway {
     }));
   }
 
+  async listAllAllies(): Promise<AllyMember[]> {
+    const id = await this.requireUid();
+    // Every Journey of mine at once, ACCEPTED only — the same row shape as `listJourneyAllies`,
+    // without the per-Journey filter. A person in three of my circles comes back three times; the
+    // pure `globalAllies` derivation is what collapses them into one person.
+    const { data, error } = await this.client()
+      .from('journey_allies')
+      .select('visibility, status, ally:profiles!ally_id(id,handle,buddy_summary)')
+      .eq('owner_id', id)
+      .eq('status', 'accepted');
+    if (error) throw error;
+    return (data ?? []).map((row: any): AllyMember => ({
+      profile: toProfile(row.ally as ProfileRow),
+      bundle: bundleFromVisibility(row.visibility as Visibility),
+      status: row.status as AllyInviteStatus,
+    }));
+  }
+
   async incomingAllyInvites(): Promise<AllyInvite[]> {
     const id = await this.requireUid();
     const { data, error } = await this.client()

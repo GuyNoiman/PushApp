@@ -19,5 +19,17 @@
   },
   "subtitle": "Better together. Support and be supported.",
   "inviteMessage": "I'm using PushApp to move on the things that matter to me. Add me so we can cheer each other on: {{handle}}",
-  "inviteMessageNoHandle": "I'm using PushApp to move on the things that matter to me. Let's back each other up."
+  "inviteMessageNoHandle": "I'm using PushApp to move on the things that matter to me. Let's back each other up.",
+  "tabs": {
+    "friends": "Friends",
+    "allies": "Allies"
+  },
+  "allies": {
+    "inYourCircle": "In one of your Support Circles",
+    "addFriend": "Add friend",
+    "empty": {
+      "title": "No Allies yet",
+      "body": "An Ally is someone who joined the Support Circle of one of your Journeys. You invite them from the Journey itself."
+    }
+  }
 }

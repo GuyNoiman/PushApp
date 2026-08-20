@@ -89,6 +89,9 @@ function setSocial(overrides: Record<string, unknown> = {}) {
     error: null,
     friends: [],
     allyProgress: [],
+    // Circle has two tabs now — friends and the global Ally list (2026-08-20). These tests are about
+    // the FRIENDS tab, so the Ally list is empty unless a case says otherwise.
+    allies: [],
     addFriendByHandle: jest.fn(),
     sendCheer: jest.fn(async () => {}),
     ...overrides,

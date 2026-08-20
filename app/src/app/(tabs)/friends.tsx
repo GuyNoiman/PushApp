@@ -66,6 +66,7 @@ export default function FriendsScreen() {
   const { t } = useAddressedTranslation('circle');
 
   const [showAdd, setShowAdd] = useState(false);
+  const [people, setPeople] = useState<'friends' | 'allies'>('friends');
 
   const signedIn = social.enabled && !social.needsHandle && !!social.profile;
 
@@ -133,35 +134,131 @@ export default function FriendsScreen() {
             />
           )}
 
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            {t('yourFriends')}
-          </ThemedText>
+          {/* TWO TABS — friends and Allies (founder, 2026-08-20). The distinction is real and worth
+              the tab: a friend is someone you keep; an Ally is someone standing with you on one
+              specific thing, who may be a stranger otherwise. One list would either hide the friends
+              among the helpers or imply a relationship nobody agreed to. */}
+          <View style={[styles.tabs, { borderBottomColor: theme.hairline }]}>
+            {(['friends', 'allies'] as const).map((tab) => {
+              const active = tab === people;
+              const count = tab === 'friends' ? rows.length : social.allies.length;
+              return (
+                <Pressable
+                  key={tab}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={t(`tabs.${tab}`)}
+                  onPress={() => setPeople(tab)}
+                  style={styles.tab}>
+                  <ThemedText type="smallBold" themeColor={active ? 'text' : 'textMuted'}>
+                    {count > 0 ? `${t(`tabs.${tab}`)} · ${count}` : t(`tabs.${tab}`)}
+                  </ThemedText>
+                  {active ? <View style={[styles.tabUnderline, { backgroundColor: theme.teal }]} /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
 
-          {rows.length === 0 ? (
-            <EmptyState
-              title={t('empty.title')}
-              body={t('empty.body')}
-              cta={t('empty.cta')}
-              onCta={() => setShowAdd(true)}
-            />
+          {people === 'friends' ? (
+            rows.length === 0 ? (
+              <EmptyState
+                title={t('empty.title')}
+                body={t('empty.body')}
+                cta={t('empty.cta')}
+                onCta={() => setShowAdd(true)}
+              />
+            ) : (
+              <View style={styles.list}>
+                {rows.map((row) => {
+                  const cheer = row.cheerTarget;
+                  return (
+                    <PersonRow
+                      key={row.id}
+                      row={row}
+                      onOpen={() => router.push(`/friend/${row.id}` as Href)}
+                      onCheer={cheer ? () => void social.sendCheer(cheer.toId, cheer.journeyId) : undefined}
+                    />
+                  );
+                })}
+              </View>
+            )
+          ) : social.allies.length === 0 ? (
+            <AlliesEmpty title={t('allies.empty.title')} body={t('allies.empty.body')} />
           ) : (
             <View style={styles.list}>
-              {rows.map((row) => {
-                const cheer = row.cheerTarget;
-                return (
-                  <PersonRow
-                    key={row.id}
-                    row={row}
-                    onOpen={() => router.push(`/friend/${row.id}` as Href)}
-                    onCheer={cheer ? () => void social.sendCheer(cheer.toId, cheer.journeyId) : undefined}
-                  />
-                );
-              })}
+              {social.allies.map((ally) => (
+                <AllyRow
+                  key={ally.id}
+                  handle={ally.handle}
+                  onAdd={() => social.addFriendByHandle(ally.handle)}
+                />
+              ))}
             </View>
           )}
         </TabScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+/**
+ * The Allies tab, empty. It gets its OWN empty state rather than the friends one, because there is
+ * no button that could fill it: an Ally appears when someone accepts a place in a Support Circle,
+ * which happens on a Journey, not here. An empty state with a CTA that leads nowhere is worse than
+ * a sentence that explains.
+ */
+function AlliesEmpty({ title, body }: { title: string; body: string }) {
+  const theme = useTheme();
+  return (
+    <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.hairline }]}>
+      <ThemedText type="default">{title}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+        {body}
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+/**
+ * One Ally: someone in a Support Circle of mine who is not a friend. The row offers exactly ONE
+ * action — add them as a friend — because that is the only thing this relationship can become from
+ * here. It deliberately does NOT open a profile: a Friend Profile is a friends-only surface (the
+ * server authorizes it that way), and offering a door that the backend will refuse is worse than
+ * offering none.
+ */
+function AllyRow({ handle, onAdd }: { handle: string; onAdd: () => void }) {
+  const theme = useTheme();
+  const { t } = useTranslation('circle');
+  return (
+    <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+      <View style={[styles.avatar, { backgroundColor: theme.tealTint }]}>
+        <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+          {handle.replace(/^@/, '').slice(0, 2).toUpperCase()}
+        </ThemedText>
+      </View>
+      <View style={styles.main}>
+        <ThemedText type="smallBold" numberOfLines={1}>
+          {handle}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
+          {t('allies.inYourCircle')}
+        </ThemedText>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('allies.addFriend')}
+        onPress={onAdd}
+        style={({ pressed }) => [
+          styles.allyAction,
+          { borderColor: theme.tealTint },
+          pressed && styles.pressed,
+        ]}>
+        <Ionicons name="person-add-outline" size={15} color={theme.tealStrong} />
+        <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
+          {t('allies.addFriend')}
+        </ThemedText>
+      </Pressable>
+    </View>
   );
 }
 
@@ -377,6 +474,31 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   // The title and its line share a column so the buttons stay pinned to the top of the block.
+  tabs: {
+    flexDirection: 'row',
+    gap: Spacing.four,
+    borderBottomWidth: 1,
+  },
+  tab: {
+    paddingBottom: Spacing.two,
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: -1,
+    start: 0,
+    end: 0,
+    height: 2,
+    borderRadius: 999,
+  },
+  allyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   headerText: {
     flexShrink: 1,
     minWidth: 0,

@@ -258,6 +258,17 @@ export interface SocialGateway {
   changeAllyBundle(journeyId: string, allyId: string, bundle: AllyBundle): Promise<void>;
   /** The owner's Support Circle for one Journey — every non-terminal member/invite. */
   listJourneyAllies(journeyId: string): Promise<AllyMember[]>;
+  /**
+   * Every person who has ACCEPTED a place in ANY of my Support Circles — the global Ally list
+   * (founder, 2026-08-20: *"allies are everyone who is in at least one of my support circles and is
+   * not saved as a friend… we do maintain one global list that is not in the context of a
+   * Journey"*).
+   *
+   * One query rather than one per Journey: the Circle tab shows PEOPLE, and asking the server once
+   * per shared Journey to assemble a list of people would make the screen slower the more the user
+   * shares — exactly backwards. Pending invites are excluded: an invitation is not yet a circle.
+   */
+  listAllAllies(): Promise<AllyMember[]>;
   /** Incoming Support-Circle invites still awaiting THIS user's decision (Inbox → Requested). */
   incomingAllyInvites(): Promise<AllyInvite[]>;
   /** Close every live invite for a Journey (lifecycle: complete/abandon/delete). */
@@ -325,6 +336,7 @@ export const NullSocialGateway: SocialGateway = {
   async removeAlly() {},
   async changeAllyBundle() {},
   async listJourneyAllies() { return []; },
+  async listAllAllies() { return []; },
   async incomingAllyInvites() { return []; },
   async closeJourneyInvites() {},
   async publishCompanionSteps() {},

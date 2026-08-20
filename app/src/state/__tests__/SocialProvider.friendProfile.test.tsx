@@ -40,6 +40,7 @@ const mockGateway = {
   listFriends: jest.fn(async () => []),
   allyProgress: jest.fn(async () => []),
   incomingAllyInvites: jest.fn(async () => []),
+  listAllAllies: jest.fn(async () => []),
   mySharedJourneyIds: jest.fn(async () => []),
   myCompanionJourneyIds: jest.fn(async () => []),
   subscribeToCheers: jest.fn(() => () => {}),

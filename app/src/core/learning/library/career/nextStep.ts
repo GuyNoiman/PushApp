@@ -14,8 +14,9 @@
  * Q7 of onboarding already asks it ("do you need to be clear before acting, or do you start by
  * doing"), so anyone who answered it is never asked again.
  *
- * TRANSLATED, NOT COPIED. The source package (`07_Assets/02_Central_Journey_Library_Career_Linked_
- * 18_Journeys_v0.6.json`) is an authoring artifact: it carries personas, a Dream, a `libraryMeta.
+ * TRANSLATED, NOT COPIED. The source package (`07_Assets/Partner_Packages/Career_v0.6_2026-08-19/
+ * 02_Central_Journey_Library_Career_Linked_18_Journeys_v0.6.json`) is an authoring artifact: it
+ * carries personas, a Dream, a `libraryMeta.
  * linkedExpertIds` link it explicitly does not claim is a model field, and a `matchingHypothesis`
  * written as a ranking. What survives here is what our model can hold honestly — the arcs, the
  * Steps, the axis, and which profile answers place a user on it. The personas and their Dreams do

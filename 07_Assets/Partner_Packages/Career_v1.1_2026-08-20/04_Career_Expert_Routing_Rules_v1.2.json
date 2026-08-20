@@ -1,0 +1,208 @@
+{
+  "version": "1.2-guy-aligned",
+  "precedence": [
+    "safety/professional appropriateness",
+    "hard constraints/feasibility",
+    "user goal",
+    "primary bottleneck / Goal Family diagnosis",
+    "family-axis Journey placement",
+    "weaker onboarding/profile pull"
+  ],
+  "rules": [
+    {
+      "id": "ROUTE_G01_VS_G08",
+      "question": "Is the user choosing a broader career direction or already actively job searching with an unclear target?",
+      "if": [
+        {
+          "signal": "activeJobSearch",
+          "op": "eq",
+          "value": "no",
+          "source": "goal_specific"
+        },
+        {
+          "signal": "careerDirectionClarity",
+          "op": "in",
+          "value": [
+            "unclear",
+            "partial"
+          ],
+          "source": "goal_specific"
+        }
+      ],
+      "routeTo": "CAR_G01",
+      "elseIf": [
+        {
+          "signal": "activeJobSearch",
+          "op": "eq",
+          "value": "yes",
+          "source": "goal_specific"
+        },
+        {
+          "signal": "targetClarity",
+          "op": "eq",
+          "value": "broad",
+          "source": "goal_specific"
+        }
+      ],
+      "elseRouteTo": "CAR_G08"
+    },
+    {
+      "id": "ROUTE_G13_ONLY_AFTER_UPSTREAM_CHECK",
+      "question": "Are target, proof, access and interview bottlenecks already ruled out as primary?",
+      "routeTo": "CAR_G13 only when primaryBottleneck=SELF_EFFICACY_PERSISTENCE_GAP and targetStillMeaningful=yes",
+      "otherwise": "Route to the diagnosed upstream family."
+    },
+    {
+      "id": "ROUTE_G14_SUBFAMILY",
+      "question": "What specifically blocks growth in the current role?",
+      "values": {
+        "responsibility_scope": "CAR_G14_RESP",
+        "capability": "CAR_G14_CAP",
+        "access_visibility": "CAR_G14_ACCESS",
+        "context_constraint": "Do not force G14; assess fit/transition instead."
+      }
+    },
+    {
+      "id": "ROUTE_G14_VS_G15",
+      "question": "Is there a concrete next level/role or promotion target?",
+      "if": {
+        "signal": "concretePromotionTarget",
+        "op": "eq",
+        "value": "yes",
+        "source": "goal_specific"
+      },
+      "routeTo": "CAR_G15",
+      "elseRouteTo": "CAR_G14 subfamily based on growthSubBottleneck"
+    },
+    {
+      "id": "ROUTE_CAPABILITY_VS_PROOF",
+      "question": "Can the user already do the target work at the needed baseline?",
+      "if": "No → capability-building family (e.g. CAR_G18).",
+      "else": "If capability exists but is not visible/credible → proof family (e.g. CAR_G09)."
+    },
+    {
+      "id": "ROUTE_TRANSITION_TYPE",
+      "question": "What kind of career transition is the user making?",
+      "values": {
+        "new_field_or_function": "CAR_G04 then route by transitionPrimaryGap",
+        "new_industry_same_function": "CAR_G05",
+        "new_function_same_industry": "CAR_G06 then route by transitionPrimaryGap",
+        "reentry": "CAR_G07 then route by reentryPrimaryNeed",
+        "planned_exit": "CAR_G21 then route by exitPrimaryNeed"
+      }
+    },
+    {
+      "id": "ROUTE_G04_G06_BY_GAP",
+      "question": "For a transition, what is the main bridge missing?",
+      "values": {
+        "capability": "CAP subfamily",
+        "proof": "PROOF/RESP subfamily",
+        "access": "ACCESS subfamily",
+        "context_constraint": "Do not force a content Journey; handle feasibility/constraints first."
+      }
+    },
+    {
+      "id": "ROUTE_G07_REENTRY",
+      "question": "What most blocks re-entry right now?",
+      "values": {
+        "confidence": "CAR_G07_CONF",
+        "proof": "CAR_G07_PROOF",
+        "access": "CAR_G07_ACCESS",
+        "context_constraint": "Address feasibility/constraints before Journey selection."
+      }
+    },
+    {
+      "id": "ROUTE_G16_CURRENT_ROLE_FIT",
+      "question": "Which controllable part of the current role is most responsible for poor fit?",
+      "values": {
+        "task_mix": "CAR_G16 task-mix Journey",
+        "collaboration": "CAR_G16 collaboration Journey",
+        "learning_growth": "CAR_G16 learning/growth Journey",
+        "context_constraint": "Do not force job-crafting; assess G21 or external transition."
+      }
+    },
+    {
+      "id": "ROUTE_G17_FIRST_MANAGEMENT",
+      "question": "Is the user explicitly preparing for a first management/leadership role?",
+      "if": "yes → CAR_G17",
+      "otherwise": "Use G14/G15 depending on growth vs concrete promotion target."
+    },
+    {
+      "id": "ROUTE_G19_VS_G09",
+      "question": "Is the user trying to build a reusable professional example/portfolio item, or improve presentation specifically inside an active job search?",
+      "if": "standalone proof/portfolio goal → CAR_G19",
+      "else": "active search presentation/response problem → CAR_G09."
+    },
+    {
+      "id": "ROUTE_G21_EXIT",
+      "question": "What must be solved before a large exit decision?",
+      "values": {
+        "direction": "CAR_G21_DIR",
+        "bridge": "CAR_G21_BRIDGE",
+        "constraints": "CAR_G21_CONSTRAINT"
+      }
+    },
+    {
+      "id": "MERGE_G20",
+      "routeTo": "CAR_G09",
+      "reason": "Existing-experience-to-evidence translation is already covered by G09 Journeys; keeping a second goal would duplicate routing."
+    },
+    {
+      "id": "MERGE_G22",
+      "routeTo": "CAR_G10",
+      "reason": "Goal-specific networking/access is already covered by G10; separate numbering would duplicate the same user need."
+    }
+  ],
+  "journeyVersionRule": {
+    "journeyRule": "Different Milestones => different Journeys, even when they serve the same goal.",
+    "versionRule": "Same Milestones with different pace, workload or path => versions of the same Journey.",
+    "currentAuthoringResult": "All current multi-Journey families have distinct Milestone arcs; therefore the current 60 authored items are Journeys, not versions.",
+    "ratingUnit": "Journey",
+    "familyPurpose": "A Goal Family groups Journeys that share the same user goal and diagnosis, and records the axis/question that distinguishes member Journeys."
+  },
+  "diagnosticDecisionTrees": [
+    {
+      "id": "DIAGNOSE_APPLY_NO_RESPONSE",
+      "triggerExample": "אני מגיש/ה מועמדות ולא חוזרים אליי",
+      "purpose": "Distinguish unclear target from missing proof from lack of access before assigning a Journey.",
+      "orderedQuestions": [
+        {
+          "order": 1,
+          "question": "לאילו תפקידים אתה מגיש כרגע — משפחה אחת די ברורה, או כמה סוגי תפקידים שונים?",
+          "interpretation": {
+            "many_or_broad": "Target is not yet stable → route to CAR_G08 / DIRECTION_GAP.",
+            "one_clear_target": "Continue to proof check."
+          }
+        },
+        {
+          "order": 2,
+          "question": "כשאתה מסתכל על 2–3 דרישות מרכזיות של תפקיד היעד, יש לך דוגמאות אמיתיות שמראות שכבר עשית משהו דומה?",
+          "interpretation": {
+            "cannot_do_yet": "This may be CAPABILITY_GAP; do not mislabel as proof. Route to the appropriate skill/transition capability family.",
+            "can_do_but_hard_to_show": "PROOF_GAP → CAR_G09.",
+            "clear_relevant_examples": "Continue to access check."
+          }
+        },
+        {
+          "order": 3,
+          "question": "איך אתה מגיע לרוב ההזדמנויות — כמעט רק דרך הגשות פתוחות, או שיש גם שיחות, חיבורים ואנשים שמכירים אותך?",
+          "interpretation": {
+            "mostly_anonymous_applications_and_little_access": "OPPORTUNITY_ACCESS_GAP → CAR_G10.",
+            "reasonable_access": "Continue to process/sample check."
+          }
+        },
+        {
+          "order": 4,
+          "question": "כמה חיפוש ממוקד כבר עשית עם יעד ברור, הוכחות רלוונטיות וגישה סבירה — והיכן בדיוק התהליך נשבר?",
+          "interpretation": {
+            "too_little_evidence": "Do not over-diagnose from a tiny sample; keep gathering evidence.",
+            "inconsistent_process": "SEARCH_PROCESS_GAP may be primary; inspect CAR_G11 or the specific later-stage family.",
+            "interviews_but_no_progress": "CAR_G12.",
+            "target_proof_access_all_credible_but_no_clear_pattern": "Do not force a family. Continue diagnosis with fresh search evidence."
+          }
+        }
+      ],
+      "stopRule": "Stop as soon as one primary bottleneck is supported strongly enough to change Goal-Family routing."
+    }
+  ]
+}

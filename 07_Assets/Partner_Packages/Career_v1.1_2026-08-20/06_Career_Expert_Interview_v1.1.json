@@ -1,0 +1,130 @@
+{
+  "version": "1.1-guy-aligned",
+  "principle": "Ask the minimum questions that can change Goal-Family diagnosis, eligibility, family-axis Journey placement, or personalization.",
+  "stages": [
+    {
+      "stage": "A_goal_state",
+      "purpose": "Identify the user-facing Career problem.",
+      "questions": [
+        {
+          "id": "C1",
+          "q": "מה היית רוצה שיהיה שונה בקריירה שלך בתקופה הקרובה?",
+          "use": "goal family discovery"
+        },
+        {
+          "id": "C2",
+          "q": "אתה בעיקר מנסה לבחור כיוון, לעבור למשהו חדש, למצוא עבודה, לגדול במקום הנוכחי, או לבנות יכולת/הוכחה?",
+          "use": "subtype routing; coach may paraphrase naturally"
+        },
+        {
+          "id": "C3",
+          "q": "מה ייחשב מבחינתך שינוי אמיתי — משהו שנוכל לזהות בעולם, לא רק להרגיש?",
+          "use": "completion state"
+        }
+      ]
+    },
+    {
+      "stage": "B_current_state",
+      "purpose": "Locate the bottleneck.",
+      "questions": [
+        {
+          "id": "C4",
+          "q": "מה כבר ניסית סביב המטרה הזאת, ומה קרה בפועל?",
+          "use": "avoid repeating failed tactic; prior evidence"
+        },
+        {
+          "id": "C5",
+          "q": "איפה בדיוק זה נתקע היום?",
+          "use": "bottleneck hypothesis"
+        },
+        {
+          "id": "C6",
+          "q": "אם היית צריך לעשות את העבודה של השלב הבא מחר — מה אתה כבר יודע לעשות, ומה עדיין לא?",
+          "use": "capability vs proof"
+        },
+        {
+          "id": "C7",
+          "q": "יש לך הזדמנויות ואנשים רלוונטיים להגיע אליהם, או שהבעיה היא בעיקר גישה?",
+          "use": "access"
+        },
+        {
+          "id": "C8",
+          "q": "אם אתה כבר בחיפוש: באיזה שלב השרשרת נשברת — יעד, הזדמנויות, תגובות, ראיונות או אחרי ראיון?",
+          "use": "search process"
+        }
+      ]
+    },
+    {
+      "stage": "C_constraints_and_fit",
+      "purpose": "Prevent unrealistic routing.",
+      "questions": [
+        {
+          "id": "C9",
+          "q": "מה המסלול חייב לכבד כדי להיות אפשרי בחיים שלך עכשיו?",
+          "use": "constraints"
+        },
+        {
+          "id": "C10",
+          "q": "כמה זמן ואנרגיה באמת אפשר להגן על זה בשבוע רגיל?",
+          "use": "capacity"
+        },
+        {
+          "id": "C11",
+          "q": "למטרה הזאת, שיחה או מעורבות של אנשים אחרים תעזור או תכביד?",
+          "use": "goal-specific social fit"
+        }
+      ]
+    },
+    {
+      "stage": "D_transition_specific",
+      "when": "CAREER_TRANSITION",
+      "questions": [
+        {
+          "id": "T1",
+          "q": "אתה מחליף תחום/פונקציה, רק תעשייה, רק תפקיד בתוך אותה תעשייה, חוזר אחרי הפסקה, או מתכנן יציאה?",
+          "use": "transitionType"
+        },
+        {
+          "id": "T2",
+          "q": "מה חסר בעיקר כדי לגשר — יכולת, הוכחה, גישה, כיוון, או תנאי חיים שצריך לכבד?",
+          "use": "transitionPrimaryGap"
+        }
+      ]
+    },
+    {
+      "stage": "E_current_role_specific",
+      "when": "GROW_CURRENT_ROLE",
+      "questions": [
+        {
+          "id": "G1",
+          "q": "יש יעד קונקרטי של קידום/רמה הבאה, או שאתה פשוט רוצה יותר צמיחה והתאמה בתפקיד?",
+          "use": "G14 vs G15"
+        },
+        {
+          "id": "G2",
+          "q": "מה חוסם את הצמיחה — היקף אחריות, יכולת, גישה/נראות, או מגבלה של המקום עצמו?",
+          "use": "G14 subfamily"
+        },
+        {
+          "id": "G3",
+          "q": "אם הבעיה היא fit: מה היית רוצה לשנות קודם — סוג המשימות, דרך העבודה עם אנשים, או כמות הלמידה/צמיחה?",
+          "use": "G16"
+        }
+      ]
+    }
+  ],
+  "stopRule": "Stop interviewing once subtype, primary bottleneck/Goal Family, feasibility, and the family-axis information needed to choose among member Journeys are known.",
+  "specificDecisionTrees": {
+    "apply_no_response": {
+      "trigger": "User says they apply and receive little/no response.",
+      "use": "Run DIAGNOSE_APPLY_NO_RESPONSE from the routing rules.",
+      "order": [
+        "target clarity",
+        "capability vs proof",
+        "access",
+        "process/sample"
+      ],
+      "doNot": "Do not jump straight to motivation, CV rewriting, or networking before identifying the primary bottleneck."
+    }
+  }
+}

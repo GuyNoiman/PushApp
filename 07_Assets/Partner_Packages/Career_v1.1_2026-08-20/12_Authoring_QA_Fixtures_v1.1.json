@@ -1,0 +1,1171 @@
+{
+  "status": "NON_IMPORTABLE_QA_ONLY",
+  "rule": "Personas are an authoring realism test only. Never import into the central Journey Library.",
+  "fixtures": [
+    {
+      "journeyAuthoringKey": "career_direction_clarity_first",
+      "userGoalId": "CAR_G01",
+      "goalFamilyId": "CAR_G01",
+      "fixture": {
+        "persona": {
+          "name": "Dana",
+          "summary": "29, four years in customer support/operations at a software company. She wants to understand her next career direction without quitting first or paying for a long course before testing fit.",
+          "userSaid": [
+            "אני לא רוצה להישאר בתמיכה עוד שנים.",
+            "אני הכי נהנית כשאני מזהה בעיה שחוזרת אצל לקוחות ומצליחה לחבר בין אנשים כדי לפתור אותה.",
+            "אני רוצה להרגיש שאני מתפתחת ולומדת, לא רק סוגרת עוד טיקט.",
+            "אני לא רוצה להוציא עכשיו אלפי שקלים על קורס לפני שאני יודעת שהכיוון מתאים לי."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_dana_01",
+          "title": "לבנות קריירה שבה אני ממשיכה ללמוד, פותרת בעיות ומשפיעה מעבר למשימה הבאה",
+          "description": "שאיפה ארוכת־טווח לקריירה מתפתחת שבה דנה משתמשת ביכולת שלה לזהות בעיות, לחבר בין אנשים ולהמשיך ללמוד."
+        },
+        "personalizedWhy": [
+          "אני לא רוצה להישאר בתמיכה עוד שנים",
+          "אני רוצה להרגיש שאני מתפתחת ולומדת, לא רק סוגרת עוד טיקט",
+          "אני לא רוצה להשקיע בקורס ארוך לפני שאני יודעת שהכיוון מתאים לי"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_direction_action_first",
+      "userGoalId": "CAR_G01",
+      "goalFamilyId": "CAR_G01",
+      "fixture": {
+        "persona": {
+          "name": "Dana",
+          "summary": "29, four years in customer support/operations at a software company. She wants to understand her next career direction without quitting first or paying for a long course before testing fit.",
+          "userSaid": [
+            "אני לא רוצה להישאר בתמיכה עוד שנים.",
+            "אני הכי נהנית כשאני מזהה בעיה שחוזרת אצל לקוחות ומצליחה לחבר בין אנשים כדי לפתור אותה.",
+            "אני רוצה להרגיש שאני מתפתחת ולומדת, לא רק סוגרת עוד טיקט.",
+            "אני לא רוצה להוציא עכשיו אלפי שקלים על קורס לפני שאני יודעת שהכיוון מתאים לי."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_dana_01",
+          "title": "לבנות קריירה שבה אני ממשיכה ללמוד, פותרת בעיות ומשפיעה מעבר למשימה הבאה",
+          "description": "שאיפה ארוכת־טווח לקריירה מתפתחת שבה דנה משתמשת ביכולת שלה לזהות בעיות, לחבר בין אנשים ולהמשיך ללמוד."
+        },
+        "personalizedWhy": [
+          "אני לא רוצה להישאר בתמיכה עוד שנים",
+          "אני הכי נהנית כשאני מזהה בעיה שחוזרת אצל לקוחות ומצליחה לחבר בין אנשים כדי לפתור אותה",
+          "אני רוצה להרגיש שאני מתפתחת ולומדת"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_direction_hybrid",
+      "userGoalId": "CAR_G01",
+      "goalFamilyId": "CAR_G01",
+      "fixture": {
+        "persona": {
+          "name": "Dana",
+          "summary": "29, four years in customer support/operations at a software company. She wants to understand her next career direction without quitting first or paying for a long course before testing fit.",
+          "userSaid": [
+            "אני לא רוצה להישאר בתמיכה עוד שנים.",
+            "אני הכי נהנית כשאני מזהה בעיה שחוזרת אצל לקוחות ומצליחה לחבר בין אנשים כדי לפתור אותה.",
+            "אני רוצה להרגיש שאני מתפתחת ולומדת, לא רק סוגרת עוד טיקט.",
+            "אני לא רוצה להוציא עכשיו אלפי שקלים על קורס לפני שאני יודעת שהכיוון מתאים לי."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_dana_01",
+          "title": "לבנות קריירה שבה אני ממשיכה ללמוד, פותרת בעיות ומשפיעה מעבר למשימה הבאה",
+          "description": "שאיפה ארוכת־טווח לקריירה מתפתחת שבה דנה משתמשת ביכולת שלה לזהות בעיות, לחבר בין אנשים ולהמשיך ללמוד."
+        },
+        "personalizedWhy": [
+          "אני לא רוצה להישאר בתמיכה עוד שנים",
+          "אני רוצה להרגיש שאני מתפתחת ולומדת",
+          "אני לא רוצה להשקיע הרבה לפני שאני יודעת שהכיוון מתאים לי"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_two_options_criteria_first",
+      "userGoalId": "CAR_G02",
+      "goalFamilyId": "CAR_G02",
+      "fixture": {
+        "persona": {
+          "name": "Yael",
+          "summary": "32, works in marketing operations and is choosing between Product Operations and Customer Success Operations. She wants more cross-functional problem solving, cannot take a major pay cut, and does not want to commit to a course before deciding.",
+          "userSaid": [
+            "יש לי שתי אופציות שאני באמת שוקלת: Product Operations או Customer Success Operations.",
+            "אני אוהבת לפתור בעיות בין צוותים ולא להיות רק בתוך משימה אחת.",
+            "אני לא יכולה להרשות לעצמי ירידה גדולה בשכר.",
+            "אני לא רוצה להתחיל עוד קורס לפני שאני יודעת לאיזה כיוון אני הולכת."
+          ],
+          "capacity": "about 90–120 minutes/week"
+        },
+        "dream": {
+          "id": "dream_career_yael_01",
+          "title": "לבנות קריירה שבה אני פותרת בעיות רוחביות, מתפתחת ושומרת על יציבות",
+          "description": "שאיפה ארוכת־טווח לעבודה שמחברת פתרון בעיות, השפעה בין־צוותית והתפתחות בלי לוותר על יציבות בסיסית."
+        },
+        "personalizedWhy": [
+          "אני רוצה תפקיד עם יותר פתרון בעיות בין צוותים",
+          "אני רוצה להמשיך להתפתח",
+          "אני לא יכולה להרשות לעצמי ירידה גדולה בשכר"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_two_options_test_first",
+      "userGoalId": "CAR_G02",
+      "goalFamilyId": "CAR_G02",
+      "fixture": {
+        "persona": {
+          "name": "Yael",
+          "summary": "32, works in marketing operations and is choosing between Product Operations and Customer Success Operations. She wants more cross-functional problem solving, cannot take a major pay cut, and does not want to commit to a course before deciding.",
+          "userSaid": [
+            "יש לי שתי אופציות שאני באמת שוקלת: Product Operations או Customer Success Operations.",
+            "אני אוהבת לפתור בעיות בין צוותים ולא להיות רק בתוך משימה אחת.",
+            "אני לא יכולה להרשות לעצמי ירידה גדולה בשכר.",
+            "אני לא רוצה להתחיל עוד קורס לפני שאני יודעת לאיזה כיוון אני הולכת."
+          ],
+          "capacity": "about 90–120 minutes/week"
+        },
+        "dream": {
+          "id": "dream_career_yael_01",
+          "title": "לבנות קריירה שבה אני פותרת בעיות רוחביות, מתפתחת ושומרת על יציבות",
+          "description": "שאיפה ארוכת־טווח לעבודה שמחברת פתרון בעיות, השפעה בין־צוותית והתפתחות בלי לוותר על יציבות בסיסית."
+        },
+        "personalizedWhy": [
+          "אני רוצה להבין איזה סוג עבודה באמת מתאים לי",
+          "אני רוצה יותר פתרון בעיות בין צוותים",
+          "אני לא רוצה להשקיע בקורס לפני שאני יודעת לאיזה כיוון אני הולכת"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_two_options_conversation_first",
+      "userGoalId": "CAR_G02",
+      "goalFamilyId": "CAR_G02",
+      "fixture": {
+        "persona": {
+          "name": "Yael",
+          "summary": "32, works in marketing operations and is choosing between Product Operations and Customer Success Operations. She wants more cross-functional problem solving, cannot take a major pay cut, and does not want to commit to a course before deciding.",
+          "userSaid": [
+            "יש לי שתי אופציות שאני באמת שוקלת: Product Operations או Customer Success Operations.",
+            "אני אוהבת לפתור בעיות בין צוותים ולא להיות רק בתוך משימה אחת.",
+            "אני לא יכולה להרשות לעצמי ירידה גדולה בשכר.",
+            "אני לא רוצה להתחיל עוד קורס לפני שאני יודעת לאיזה כיוון אני הולכת."
+          ],
+          "capacity": "about 90–120 minutes/week"
+        },
+        "dream": {
+          "id": "dream_career_yael_01",
+          "title": "לבנות קריירה שבה אני פותרת בעיות רוחביות, מתפתחת ושומרת על יציבות",
+          "description": "שאיפה ארוכת־טווח לעבודה שמחברת פתרון בעיות, השפעה בין־צוותית והתפתחות בלי לוותר על יציבות בסיסית."
+        },
+        "personalizedWhy": [
+          "אני רוצה להבין איך העבודה באמת נראית לפני שאני בוחרת",
+          "אני רוצה יותר פתרון בעיות בין צוותים",
+          "אני רוצה לבחור בלי להתחייב קודם לקורס ארוך"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_fit_test_work_sample",
+      "userGoalId": "CAR_G03",
+      "goalFamilyId": "CAR_G03",
+      "fixture": {
+        "persona": {
+          "name": "Amit",
+          "summary": "30, works in operations and is curious about moving toward data analysis. He likes solving operational problems with numbers, but has never worked as a data analyst and does not want to pay for a bootcamp before knowing whether the work itself fits.",
+          "userSaid": [
+            "אני חושב על Data Analysis כבר כמה חודשים.",
+            "אני אוהב כשאני מצליח להבין מה המספרים אומרים על בעיה אמיתית.",
+            "אני לא יודע אם אני אוהב את העבודה עצמה או רק את הרעיון של המקצוע.",
+            "אני לא רוצה לשלם עכשיו על bootcamp לפני שבדקתי התאמה."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_amit_01",
+          "title": "לבנות קריירה שבה אני משתמש בחשיבה אנליטית כדי לפתור בעיות אמיתיות",
+          "description": "שאיפה ארוכת־טווח לעבודה שמשלבת למידה, ניתוח ובעיות מהעולם האמיתי."
+        },
+        "personalizedWhy": [
+          "אני אוהב להבין מה המספרים אומרים על בעיה אמיתית",
+          "אני רוצה לדעת אם אני אוהב את העבודה עצמה ולא רק את הרעיון של המקצוע",
+          "אני לא רוצה להתחייב ל-תוכנית הכשרה לפני שבדקתי התאמה"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_fit_test_conversation",
+      "userGoalId": "CAR_G03",
+      "goalFamilyId": "CAR_G03",
+      "fixture": {
+        "persona": {
+          "name": "Amit",
+          "summary": "30, works in operations and is curious about moving toward data analysis. He likes solving operational problems with numbers, but has never worked as a data analyst and does not want to pay for a bootcamp before knowing whether the work itself fits.",
+          "userSaid": [
+            "אני חושב על Data Analysis כבר כמה חודשים.",
+            "אני אוהב כשאני מצליח להבין מה המספרים אומרים על בעיה אמיתית.",
+            "אני לא יודע אם אני אוהב את העבודה עצמה או רק את הרעיון של המקצוע.",
+            "אני לא רוצה לשלם עכשיו על bootcamp לפני שבדקתי התאמה."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_amit_01",
+          "title": "לבנות קריירה שבה אני משתמש בחשיבה אנליטית כדי לפתור בעיות אמיתיות",
+          "description": "שאיפה ארוכת־טווח לעבודה שמשלבת למידה, ניתוח ובעיות מהעולם האמיתי."
+        },
+        "personalizedWhy": [
+          "אני לא יודע אם אני אוהב את העבודה עצמה או רק את הרעיון שלה",
+          "אני רוצה להבין איך המקצוע נראה ביום־יום",
+          "אני לא רוצה לשלם על הכשרה לפני שיש לי ראיות"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "career_fit_test_real_context",
+      "userGoalId": "CAR_G03",
+      "goalFamilyId": "CAR_G03",
+      "fixture": {
+        "persona": {
+          "name": "Amit",
+          "summary": "30, works in operations and is curious about moving toward data analysis. He likes solving operational problems with numbers, but has never worked as a data analyst and does not want to pay for a bootcamp before knowing whether the work itself fits.",
+          "userSaid": [
+            "אני חושב על Data Analysis כבר כמה חודשים.",
+            "אני אוהב כשאני מצליח להבין מה המספרים אומרים על בעיה אמיתית.",
+            "אני לא יודע אם אני אוהב את העבודה עצמה או רק את הרעיון של המקצוע.",
+            "אני לא רוצה לשלם עכשיו על bootcamp לפני שבדקתי התאמה."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_amit_01",
+          "title": "לבנות קריירה שבה אני משתמש בחשיבה אנליטית כדי לפתור בעיות אמיתיות",
+          "description": "שאיפה ארוכת־טווח לעבודה שמשלבת למידה, ניתוח ובעיות מהעולם האמיתי."
+        },
+        "personalizedWhy": [
+          "אני אוהב להבין מה המספרים אומרים על בעיה אמיתית",
+          "אני רוצה לחוות איך זה מרגיש כשמישהו באמת צריך את התוצאה",
+          "אני לא רוצה להתחייב להכשרה לפני שבדקתי התאמה"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "job_target_criteria_first",
+      "userGoalId": "CAR_G08",
+      "goalFamilyId": "CAR_G08",
+      "fixture": {
+        "persona": {
+          "name": "Noa",
+          "summary": "31, wants a new job after five years in operations but is applying across too many unrelated titles.",
+          "userSaid": [
+            "אני רוצה לעזוב את התפקיד הנוכחי אבל אני שולחת לכל מיני תפקידים.",
+            "לפעמים אני רואה משרה ואומרת אולי גם זה.",
+            "אני לא יודעת אם הבעיה היא בקורות החיים או שפשוט אין לי יעד ברור."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_noa_01",
+          "title": "לעבור לעבודה שמתאימה יותר לחוזקות שלי ונותנת לי מקום להתפתח",
+          "description": "שאיפה לקריירה ממוקדת יותר שבה הבחירות נעשות לפי fit אמיתי."
+        },
+        "personalizedWhy": [
+          "אני רוצה להבין למה אני מכוונת",
+          "יש לי זמן מוגבל לחיפוש"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "job_target_postings_first",
+      "userGoalId": "CAR_G08",
+      "goalFamilyId": "CAR_G08",
+      "fixture": {
+        "persona": {
+          "name": "Noa",
+          "summary": "31, wants a new job after five years in operations but is applying across too many unrelated titles.",
+          "userSaid": [
+            "אני רוצה לעזוב את התפקיד הנוכחי אבל אני שולחת לכל מיני תפקידים.",
+            "לפעמים אני רואה משרה ואומרת אולי גם זה.",
+            "אני לא יודעת אם הבעיה היא בקורות החיים או שפשוט אין לי יעד ברור."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_noa_01",
+          "title": "לעבור לעבודה שמתאימה יותר לחוזקות שלי ונותנת לי מקום להתפתח",
+          "description": "שאיפה לקריירה ממוקדת יותר שבה הבחירות נעשות לפי fit אמיתי."
+        },
+        "personalizedWhy": [
+          "אני רואה הרבה שמות תפקיד ולא יודעת מה באמת מתאים",
+          "אני רוצה להתמקד בלי לנחש"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "job_target_conversation_first",
+      "userGoalId": "CAR_G08",
+      "goalFamilyId": "CAR_G08",
+      "fixture": {
+        "persona": {
+          "name": "Noa",
+          "summary": "31, wants a new job after five years in operations but is applying across too many unrelated titles.",
+          "userSaid": [
+            "אני רוצה לעזוב את התפקיד הנוכחי אבל אני שולחת לכל מיני תפקידים.",
+            "לפעמים אני רואה משרה ואומרת אולי גם זה.",
+            "אני לא יודעת אם הבעיה היא בקורות החיים או שפשוט אין לי יעד ברור."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_noa_01",
+          "title": "לעבור לעבודה שמתאימה יותר לחוזקות שלי ונותנת לי מקום להתפתח",
+          "description": "שאיפה לקריירה ממוקדת יותר שבה הבחירות נעשות לפי fit אמיתי."
+        },
+        "personalizedWhy": [
+          "אני לא יודעת איזה תפקידים מתאימים לניסיון שלי",
+          "אני רוצה פחות ניחושים ויותר מידע מהשטח"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "proof_extract_existing",
+      "userGoalId": "CAR_G09",
+      "goalFamilyId": "CAR_G09",
+      "fixture": {
+        "persona": {
+          "name": "Roni",
+          "summary": "34, applying for Project Operations roles. Relevant experience exists but is not communicated clearly.",
+          "userSaid": [
+            "אני עושה דברים שדומים למה שמבקשים, אבל בקורות החיים זה לא נראה חזק.",
+            "אני כותבת אחריות, לא באמת מה השתנה בזכותי.",
+            "אני לא רוצה להמציא הישגים שאין לי."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_roni_01",
+          "title": "לעבור לתפקיד שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+          "description": "שאיפה למנף ניסיון אמיתי לתפקידי Project Operations עם יותר ownership."
+        },
+        "personalizedWhy": [
+          "יש לי ניסיון רלוונטי אבל הוא לא עובר טוב",
+          "אני לא רוצה להמציא הישגים"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "proof_build_artifact",
+      "userGoalId": "CAR_G09",
+      "goalFamilyId": "CAR_G09",
+      "fixture": {
+        "persona": {
+          "name": "Roni",
+          "summary": "34, applying for Project Operations roles. Relevant experience exists but is not communicated clearly.",
+          "userSaid": [
+            "אני עושה דברים שדומים למה שמבקשים, אבל בקורות החיים זה לא נראה חזק.",
+            "אני כותבת אחריות, לא באמת מה השתנה בזכותי.",
+            "אני לא רוצה להמציא הישגים שאין לי."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_roni_01",
+          "title": "לעבור לתפקיד שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+          "description": "שאיפה למנף ניסיון אמיתי לתפקידי Project Operations עם יותר ownership."
+        },
+        "personalizedWhy": [
+          "יש דברים שאני יודעת לעשות אבל אין לי איך להראות אותם",
+          "אני רוצה הוכחה אמיתית ולא ניסוח מנופח"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "proof_role_story_translation",
+      "userGoalId": "CAR_G09",
+      "goalFamilyId": "CAR_G09",
+      "fixture": {
+        "persona": {
+          "name": "Roni",
+          "summary": "34, applying for Project Operations roles. Relevant experience exists but is not communicated clearly.",
+          "userSaid": [
+            "אני עושה דברים שדומים למה שמבקשים, אבל בקורות החיים זה לא נראה חזק.",
+            "אני כותבת אחריות, לא באמת מה השתנה בזכותי.",
+            "אני לא רוצה להמציא הישגים שאין לי."
+          ],
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_roni_01",
+          "title": "לעבור לתפקיד שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+          "description": "שאיפה למנף ניסיון אמיתי לתפקידי Project Operations עם יותר ownership."
+        },
+        "personalizedWhy": [
+          "עשיתי דברים רלוונטיים אבל הם נשמעים כמו אחריות",
+          "אני רוצה להסביר את הערך שלי בלי לנפח"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "access_warm_network",
+      "userGoalId": "CAR_G10",
+      "goalFamilyId": "CAR_G10",
+      "fixture": {
+        "persona": {
+          "name": "Lior",
+          "summary": "33, clear B2B partnerships target and credible experience, but mostly applies through public postings.",
+          "userSaid": [
+            "אני יודע לאיזה תפקידים אני רוצה להגיע.",
+            "יש לי ניסיון רלוונטי, אבל אני בעיקר שולח דרך אתרים.",
+            "אני כמעט לא מגיע לשיחות עם אנשים מהתחום.",
+            "נטוורקינג מרגיש לי מאולץ כשאין לי סיבה אמיתית לדבר עם מישהו."
+          ],
+          "capacity": "about 90 minutes/week"
+        },
+        "dream": {
+          "id": "dream_career_lior_01",
+          "title": "לעבור לתפקיד partnerships שבו אני בונה מערכות יחסים ומייצר הזדמנויות עסקיות",
+          "description": "שאיפה לקריירה שמחברת אנשים, הזדמנויות וחשיבה מסחרית."
+        },
+        "personalizedWhy": [
+          "אני רוצה להגיע ליותר שיחות רלוונטיות",
+          "נטוורקינג קר מרגיש לי מאולץ"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "access_repeated_community",
+      "userGoalId": "CAR_G10",
+      "goalFamilyId": "CAR_G10",
+      "fixture": {
+        "persona": {
+          "name": "Lior",
+          "summary": "33, clear B2B partnerships target and credible experience, but mostly applies through public postings.",
+          "userSaid": [
+            "אני יודע לאיזה תפקידים אני רוצה להגיע.",
+            "יש לי ניסיון רלוונטי, אבל אני בעיקר שולח דרך אתרים.",
+            "אני כמעט לא מגיע לשיחות עם אנשים מהתחום.",
+            "נטוורקינג מרגיש לי מאולץ כשאין לי סיבה אמיתית לדבר עם מישהו."
+          ],
+          "capacity": "about 90 minutes/week"
+        },
+        "dream": {
+          "id": "dream_career_lior_01",
+          "title": "לעבור לתפקיד partnerships שבו אני בונה מערכות יחסים ומייצר הזדמנויות עסקיות",
+          "description": "שאיפה לקריירה שמחברת אנשים, הזדמנויות וחשיבה מסחרית."
+        },
+        "personalizedWhy": [
+          "אני מעדיף קשר שנבנה לאורך זמן",
+          "אני צריך יותר גישה לשיחות אמיתיות"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "access_targeted_conversations",
+      "userGoalId": "CAR_G10",
+      "goalFamilyId": "CAR_G10",
+      "fixture": {
+        "persona": {
+          "name": "Lior",
+          "summary": "33, clear B2B partnerships target and credible experience, but mostly applies through public postings.",
+          "userSaid": [
+            "אני יודע לאיזה תפקידים אני רוצה להגיע.",
+            "יש לי ניסיון רלוונטי, אבל אני בעיקר שולח דרך אתרים.",
+            "אני כמעט לא מגיע לשיחות עם אנשים מהתחום.",
+            "נטוורקינג מרגיש לי מאולץ כשאין לי סיבה אמיתית לדבר עם מישהו."
+          ],
+          "capacity": "about 90 minutes/week"
+        },
+        "dream": {
+          "id": "dream_career_lior_01",
+          "title": "לעבור לתפקיד partnerships שבו אני בונה מערכות יחסים ומייצר הזדמנויות עסקיות",
+          "description": "שאיפה לקריירה שמחברת אנשים, הזדמנויות וחשיבה מסחרית."
+        },
+        "personalizedWhy": [
+          "אני יודע לאן אני רוצה להגיע אבל אני לא מגיע מספיק לאנשים",
+          "אני לא אוהב יצירת קשרים מקצועיים בלי סיבה ברורה"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "search_staged_pipeline",
+      "userGoalId": "CAR_G11",
+      "goalFamilyId": "CAR_G11",
+      "fixture": {
+        "persona": {
+          "name": "Shira",
+          "summary": "28, has a clear People Operations target but repeatedly searches intensely for a few days and then disappears when work gets busy.",
+          "capacity": "variable, about 1–3 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_shira_01",
+          "title": "לעבור לתפקיד People Operations שמתאים יותר לחוזקות שלי",
+          "description": "מעבר לתפקיד מתאים יותר בלי להפוך את החיפוש לפרויקט ששואב את כל החיים."
+        },
+        "personalizedWhy": [
+          "אני רוצה להפסיק להתחיל חזק ואז להיעלם",
+          "אני רוצה לדעת מה לעשות בכל פעם שאני חוזרת לחיפוש"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "search_simple_rhythm",
+      "userGoalId": "CAR_G11",
+      "goalFamilyId": "CAR_G11",
+      "fixture": {
+        "persona": {
+          "name": "Shira",
+          "summary": "28, has a clear People Operations target but repeatedly searches intensely for a few days and then disappears when work gets busy.",
+          "capacity": "variable, about 1–3 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_shira_01",
+          "title": "לעבור לתפקיד People Operations שמתאים יותר לחוזקות שלי",
+          "description": "מעבר לתפקיד מתאים יותר בלי להפוך את החיפוש לפרויקט ששואב את כל החיים."
+        },
+        "personalizedWhy": [
+          "אני לא רוצה עוד מערכת לנהל",
+          "אני צריכה פשוט לא להיעלם מהחיפוש"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "search_minimum_effective",
+      "userGoalId": "CAR_G11",
+      "goalFamilyId": "CAR_G11",
+      "fixture": {
+        "persona": {
+          "name": "Shira",
+          "summary": "28, has a clear People Operations target but repeatedly searches intensely for a few days and then disappears when work gets busy.",
+          "capacity": "variable, about 1–3 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_shira_01",
+          "title": "לעבור לתפקיד People Operations שמתאים יותר לחוזקות שלי",
+          "description": "מעבר לתפקיד מתאים יותר בלי להפוך את החיפוש לפרויקט ששואב את כל החיים."
+        },
+        "personalizedWhy": [
+          "אני נעלמת מהחיפוש כשאין לי זמן",
+          "אני צריכה דרך לחזור גם אחרי פספוס"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "interview_analysis",
+      "userGoalId": "CAR_G12",
+      "goalFamilyId": "CAR_G12",
+      "fixture": {
+        "persona": {
+          "name": "Daniel",
+          "summary": "35, reaches interviews for operations leadership roles but often stalls after early rounds and struggles to know what to improve.",
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_daniel_01",
+          "title": "להגיע לתפקיד הובלה שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+          "description": "להתקדם לתפקיד leadership תוך הצגה בהירה ואמינה של הניסיון."
+        },
+        "personalizedWhy": [
+          "אני כבר מגיע לראיונות",
+          "אני לא יודע מה בדיוק נופל"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "interview_practice",
+      "userGoalId": "CAR_G12",
+      "goalFamilyId": "CAR_G12",
+      "fixture": {
+        "persona": {
+          "name": "Daniel",
+          "summary": "35, reaches interviews for operations leadership roles but often stalls after early rounds and struggles to know what to improve.",
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_daniel_01",
+          "title": "להגיע לתפקיד הובלה שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+          "description": "להתקדם לתפקיד leadership תוך הצגה בהירה ואמינה של הניסיון."
+        },
+        "personalizedWhy": [
+          "אני נזכר בדוגמאות הטובות רק אחרי הראיון",
+          "אני רוצה לתרגל בלי להפוך כל ראיון לפרויקט"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "interview_story_bank",
+      "userGoalId": "CAR_G12",
+      "goalFamilyId": "CAR_G12",
+      "fixture": {
+        "persona": {
+          "name": "Daniel",
+          "summary": "35, reaches interviews for operations leadership roles but often stalls after early rounds and struggles to know what to improve.",
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_daniel_01",
+          "title": "להגיע לתפקיד הובלה שבו הניסיון שלי מקבל יותר אחריות והשפעה",
+          "description": "להתקדם לתפקיד leadership תוך הצגה בהירה ואמינה של הניסיון."
+        },
+        "personalizedWhy": [
+          "יש לי דוגמאות טובות אבל אני נזכר בהן מאוחר",
+          "אני רוצה להראות ראיות ולא לדבר באופן כללי"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "rejection_minimum_action",
+      "userGoalId": "CAR_G13",
+      "goalFamilyId": "CAR_G13",
+      "fixture": {
+        "persona": {
+          "name": "Maya",
+          "summary": "30, has searched for three months and now avoids the search after repeated rejections even though the target still matters.",
+          "capacity": "about 1–2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_maya_01",
+          "title": "לעבור לתפקיד שמאפשר לי יותר יצירה, אחריות והתפתחות",
+          "description": "להמשיך במהלך הקריירה בלי להפוך דחייה להוכחה שהמטרה לא מתאימה."
+        },
+        "personalizedWhy": [
+          "אני רוצה לחזור בלי להתחיל מאפס",
+          "אני נמנעת אפילו מלפתוח את החיפוש"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "rejection_structured_return",
+      "userGoalId": "CAR_G13",
+      "goalFamilyId": "CAR_G13",
+      "fixture": {
+        "persona": {
+          "name": "Maya",
+          "summary": "30, has searched for three months and now avoids the search after repeated rejections even though the target still matters.",
+          "capacity": "about 1–2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_maya_01",
+          "title": "לעבור לתפקיד שמאפשר לי יותר יצירה, אחריות והתפתחות",
+          "description": "להמשיך במהלך הקריירה בלי להפוך דחייה להוכחה שהמטרה לא מתאימה."
+        },
+        "personalizedWhy": [
+          "אני רוצה לחזור בלי להתחיל הכול מחדש",
+          "אני צריכה לדעת מה לעשות קודם",
+          "אני לא רוצה שכל דחייה תפרק את החיפוש"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "rejection_mastery_rebuild",
+      "userGoalId": "CAR_G13",
+      "goalFamilyId": "CAR_G13",
+      "fixture": {
+        "persona": {
+          "name": "Maya",
+          "summary": "30, has searched for three months and now avoids the search after repeated rejections even though the target still matters.",
+          "capacity": "about 1–2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_maya_01",
+          "title": "לעבור לתפקיד שמאפשר לי יותר יצירה, אחריות והתפתחות",
+          "description": "להמשיך במהלך הקריירה בלי להפוך דחייה להוכחה שהמטרה לא מתאימה."
+        },
+        "personalizedWhy": [
+          "הדחיות גרמו לי להרגיש שאני פחות מוכנה",
+          "אני רוצה לחזור דרך משהו שאני יכולה לשלוט בו"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "current_role_growth_project_first",
+      "userGoalId": "CAR_G14",
+      "goalFamilyId": "CAR_G14_RESP",
+      "fixture": {
+        "persona": {
+          "name": "Tamar",
+          "summary": "30, works in operations, likes the company and team, but feels she has been doing the same level of work for a year and wants visible growth without leaving immediately.",
+          "capacity": "about 1–2 hours/week beyond normal work"
+        },
+        "dream": {
+          "id": "dream_career_tamar_01",
+          "title": "לבנות קריירה שבה אני ממשיכה לגדול ולקחת אחריות משמעותית",
+          "description": "שאיפה להמשיך להתפתח דרך אחריות, למידה והשפעה — גם מתוך התפקיד הנוכחי."
+        },
+        "personalizedWhy": [
+          "אני לא רוצה לעזוב רק כי אני תקועה",
+          "אני רוצה יותר אחריות",
+          "אני רוצה שיהיה ברור שאני גדלה"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "current_role_growth_skill_first",
+      "userGoalId": "CAR_G14",
+      "goalFamilyId": "CAR_G14_CAP",
+      "fixture": {
+        "persona": {
+          "name": "Tamar",
+          "summary": "30, works in operations, likes the company and team, but feels she has been doing the same level of work for a year and wants visible growth without leaving immediately.",
+          "capacity": "about 1–2 hours/week beyond normal work"
+        },
+        "dream": {
+          "id": "dream_career_tamar_01",
+          "title": "לבנות קריירה שבה אני ממשיכה לגדול ולקחת אחריות משמעותית",
+          "description": "שאיפה להמשיך להתפתח דרך אחריות, למידה והשפעה — גם מתוך התפקיד הנוכחי."
+        },
+        "personalizedWhy": [
+          "אני רוצה להתפתח בלי ללמוד משהו רק בשביל לסמן וי",
+          "אני רוצה שהלמידה תשפיע על העבודה שלי",
+          "אני רוצה ראיות שאני מוכנה ליותר"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "current_role_growth_opportunity_first",
+      "userGoalId": "CAR_G14",
+      "goalFamilyId": "CAR_G14_ACCESS",
+      "fixture": {
+        "persona": {
+          "name": "Tamar",
+          "summary": "30, works in operations, likes the company and team, but feels she has been doing the same level of work for a year and wants visible growth without leaving immediately.",
+          "capacity": "about 1–2 hours/week beyond normal work"
+        },
+        "dream": {
+          "id": "dream_career_tamar_01",
+          "title": "לבנות קריירה שבה אני ממשיכה לגדול ולקחת אחריות משמעותית",
+          "description": "שאיפה להמשיך להתפתח דרך אחריות, למידה והשפעה — גם מתוך התפקיד הנוכחי."
+        },
+        "personalizedWhy": [
+          "אני מרגישה שאני יכולה יותר ממה שאני עושה היום",
+          "אני לא רוצה לחכות שיציעו לי",
+          "אני רוצה שיחה שמובילה למשהו קונקרטי"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "promotion_evidence_map",
+      "userGoalId": "CAR_G15",
+      "goalFamilyId": "CAR_G15",
+      "fixture": {
+        "persona": {
+          "name": "Omer",
+          "summary": "36, senior IC in customer operations, wants a lead role. He is doing strong work but is unsure what evidence decision-makers need to see before considering him ready.",
+          "capacity": "about 1–2 hours/week beyond normal work"
+        },
+        "dream": {
+          "id": "dream_career_omer_01",
+          "title": "לעבור לתפקיד שבו אני מוביל יותר עבודה ואנשים ומשפיע רחב יותר",
+          "description": "שאיפה להתקדם מאחריות אישית להובלה רחבה יותר על בסיס readiness אמיתי ולא רק ותק."
+        },
+        "personalizedWhy": [
+          "אני רוצה להבין מה באמת חסר לי",
+          "אני לא רוצה פשוט לעבוד יותר ולקוות שישימו לב",
+          "אני רוצה ראיות שאפשר לדבר עליו"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "promotion_stretch_responsibility",
+      "userGoalId": "CAR_G15",
+      "goalFamilyId": "CAR_G15",
+      "fixture": {
+        "persona": {
+          "name": "Omer",
+          "summary": "36, senior IC in customer operations, wants a lead role. He is doing strong work but is unsure what evidence decision-makers need to see before considering him ready.",
+          "capacity": "about 1–2 hours/week beyond normal work"
+        },
+        "dream": {
+          "id": "dream_career_omer_01",
+          "title": "לעבור לתפקיד שבו אני מוביל יותר עבודה ואנשים ומשפיע רחב יותר",
+          "description": "שאיפה להתקדם מאחריות אישית להובלה רחבה יותר על בסיס readiness אמיתי ולא רק ותק."
+        },
+        "personalizedWhy": [
+          "אני רוצה להראות שאני יכולה לעשות חלק מהתפקיד הבא",
+          "אני לא רוצה להסתפק בלדבר על פוטנציאל",
+          "אני רוצה ראיות מתוך עבודה אמיתית"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "promotion_stakeholder_alignment",
+      "userGoalId": "CAR_G15",
+      "goalFamilyId": "CAR_G15",
+      "fixture": {
+        "persona": {
+          "name": "Omer",
+          "summary": "36, senior IC in customer operations, wants a lead role. He is doing strong work but is unsure what evidence decision-makers need to see before considering him ready.",
+          "capacity": "about 1–2 hours/week beyond normal work"
+        },
+        "dream": {
+          "id": "dream_career_omer_01",
+          "title": "לעבור לתפקיד שבו אני מוביל יותר עבודה ואנשים ומשפיע רחב יותר",
+          "description": "שאיפה להתקדם מאחריות אישית להובלה רחבה יותר על בסיס readiness אמיתי ולא רק ותק."
+        },
+        "personalizedWhy": [
+          "אני לא בטוח מה באמת נחשב מוכן",
+          "אני לא רוצה לעבוד קשה יותר בלי לדעת מה נמדד",
+          "אני רוצה תיאום ציפיות ברור"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "skill_project_based",
+      "userGoalId": "CAR_G18",
+      "goalFamilyId": "CAR_G18",
+      "fixture": {
+        "persona": {
+          "name": "Eitan",
+          "summary": "29, wants to move from operations into analytics-heavy roles. He has identified SQL as a real gap but has repeatedly started courses and stopped.",
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_eitan_01",
+          "title": "לבנות קריירה שבה אני משתמש יותר בנתונים כדי לפתור בעיות",
+          "description": "שאיפה לעבור בהדרגה לעבודה אנליטית יותר דרך יכולת שאפשר להפעיל ולהוכיח."
+        },
+        "personalizedWhy": [
+          "אני מתחיל קורסים ולא מסיים",
+          "אני לומד יותר טוב כשיש בעיה לפתור",
+          "אני רוצה משהו שאוכל להראות"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "skill_structured_path",
+      "userGoalId": "CAR_G18",
+      "goalFamilyId": "CAR_G18",
+      "fixture": {
+        "persona": {
+          "name": "Eitan",
+          "summary": "29, wants to move from operations into analytics-heavy roles. He has identified SQL as a real gap but has repeatedly started courses and stopped.",
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_eitan_01",
+          "title": "לבנות קריירה שבה אני משתמש יותר בנתונים כדי לפתור בעיות",
+          "description": "שאיפה לעבור בהדרגה לעבודה אנליטית יותר דרך יכולת שאפשר להפעיל ולהוכיח."
+        },
+        "personalizedWhy": [
+          "אני צריך מסלול ברור",
+          "אני לא רוצה ללכת לאיבוד בין עשרות משאבים",
+          "אני רוצה לדעת שאני באמת מתקדם"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "skill_practice_feedback",
+      "userGoalId": "CAR_G18",
+      "goalFamilyId": "CAR_G18",
+      "fixture": {
+        "persona": {
+          "name": "Eitan",
+          "summary": "29, wants to move from operations into analytics-heavy roles. He has identified SQL as a real gap but has repeatedly started courses and stopped.",
+          "capacity": "about 2 hours/week"
+        },
+        "dream": {
+          "id": "dream_career_eitan_01",
+          "title": "לבנות קריירה שבה אני משתמש יותר בנתונים כדי לפתור בעיות",
+          "description": "שאיפה לעבור בהדרגה לעבודה אנליטית יותר דרך יכולת שאפשר להפעיל ולהוכיח."
+        },
+        "personalizedWhy": [
+          "אני יודע את הבסיס אבל לא מרגיש מספיק טוב",
+          "אני צריך לדעת מה לשפר בפועל",
+          "אני לומד טוב כשאני מקבל משוב"
+        ],
+        "note": "Synthetic QA fixture only. Never instantiate these values for a real user."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "transition_field_function_proof_bridge",
+      "userGoalId": "CAR_G04",
+      "goalFamilyId": "CAR_G04_PROOF",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "transition_field_function_capability_bridge",
+      "userGoalId": "CAR_G04",
+      "goalFamilyId": "CAR_G04_CAP",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "transition_field_function_access_bridge",
+      "userGoalId": "CAR_G04",
+      "goalFamilyId": "CAR_G04_ACCESS",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "industry_shift_translation",
+      "userGoalId": "CAR_G05",
+      "goalFamilyId": "CAR_G05",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "industry_shift_conversation",
+      "userGoalId": "CAR_G05",
+      "goalFamilyId": "CAR_G05",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "industry_shift_sample",
+      "userGoalId": "CAR_G05",
+      "goalFamilyId": "CAR_G05",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "function_shift_adjacent_responsibility",
+      "userGoalId": "CAR_G06",
+      "goalFamilyId": "CAR_G06_RESP",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "function_shift_skill_practice",
+      "userGoalId": "CAR_G06",
+      "goalFamilyId": "CAR_G06_CAP",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "function_shift_access_bridge",
+      "userGoalId": "CAR_G06",
+      "goalFamilyId": "CAR_G06_ACCESS",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "reentry_confidence_rebuild",
+      "userGoalId": "CAR_G07",
+      "goalFamilyId": "CAR_G07_CONF",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "reentry_proof_refresh",
+      "userGoalId": "CAR_G07",
+      "goalFamilyId": "CAR_G07_PROOF",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "reentry_network_reactivation",
+      "userGoalId": "CAR_G07",
+      "goalFamilyId": "CAR_G07_ACCESS",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "current_role_fit_task_mix",
+      "userGoalId": "CAR_G16",
+      "goalFamilyId": "CAR_G16",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "current_role_fit_collaboration",
+      "userGoalId": "CAR_G16",
+      "goalFamilyId": "CAR_G16",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "current_role_fit_learning_growth",
+      "userGoalId": "CAR_G16",
+      "goalFamilyId": "CAR_G16",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "first_manager_lead_project",
+      "userGoalId": "CAR_G17",
+      "goalFamilyId": "CAR_G17",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "first_manager_mentor_support",
+      "userGoalId": "CAR_G17",
+      "goalFamilyId": "CAR_G17",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "first_manager_shadow_feedback",
+      "userGoalId": "CAR_G17",
+      "goalFamilyId": "CAR_G17",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "portfolio_proof_current_work",
+      "userGoalId": "CAR_G19",
+      "goalFamilyId": "CAR_G19",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "portfolio_proof_standalone",
+      "userGoalId": "CAR_G19",
+      "goalFamilyId": "CAR_G19",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "portfolio_proof_real_world",
+      "userGoalId": "CAR_G19",
+      "goalFamilyId": "CAR_G19",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "planned_exit_next_option",
+      "userGoalId": "CAR_G21",
+      "goalFamilyId": "CAR_G21_DIR",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "planned_exit_bridge_first",
+      "userGoalId": "CAR_G21",
+      "goalFamilyId": "CAR_G21_BRIDGE",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    },
+    {
+      "journeyAuthoringKey": "planned_exit_constraint_staged",
+      "userGoalId": "CAR_G21",
+      "goalFamilyId": "CAR_G21_CONSTRAINT",
+      "fixture": {
+        "note": "Synthetic QA fixture intentionally omitted in final library template."
+      },
+      "purpose": "Synthetic authoring/QA only. Never imported into the central Journey Library."
+    }
+  ]
+}

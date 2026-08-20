@@ -1,0 +1,311 @@
+{
+  "version": "1.2-guy-aligned",
+  "principle": "Only collect a signal if it can change eligibility, Goal-Family routing, Journey placement on a family axis, secondary Journey ranking, or coaching behavior.",
+  "coreOnboardingSignals": {
+    "realisticCapacity": {
+      "values": [
+        "very_light",
+        "light",
+        "moderate",
+        "substantial",
+        "variable"
+      ],
+      "hebrewOptions": {
+        "very_light": "כמה דקות בכל פעם",
+        "light": "עד בערך שעה בשבוע",
+        "moderate": "בערך 1–3 שעות בשבוע",
+        "substantial": "יותר מ-3 שעות בשבוע",
+        "variable": "משתנה מאוד משבוע לשבוע"
+      }
+    },
+    "startingMode": {
+      "values": [
+        "understand_first",
+        "action_first",
+        "hybrid",
+        "depends"
+      ],
+      "hebrewOptions": {
+        "understand_first": "קודם להבין מה הגיוני",
+        "action_first": "לנסות משהו קטן וללמוד ממנו",
+        "hybrid": "קצת בהירות ואז להתחיל לזוז",
+        "depends": "תלוי במטרה"
+      }
+    },
+    "structurePreference": {
+      "values": [
+        "explicit_next_step",
+        "guided_choice",
+        "autonomy",
+        "depends"
+      ],
+      "hebrewOptions": {
+        "explicit_next_step": "תגידו לי בדיוק מה הצעד הבא",
+        "guided_choice": "תנו לי דרך ברורה עם קצת בחירה",
+        "autonomy": "תנו לי כיוון ואני אבחר איך",
+        "depends": "תלוי במטרה"
+      }
+    },
+    "previousSuccessPattern": {
+      "values": [
+        "routine",
+        "social_support",
+        "deadline",
+        "small_steps",
+        "visible_progress",
+        "understand_first",
+        "action_and_adjust",
+        "external_accountability",
+        "none_known",
+        "other"
+      ],
+      "hebrewOptions": {
+        "routine": "שגרה קבועה",
+        "social_support": "לעשות את זה עם מישהו",
+        "deadline": "דדליין או יעד ברור",
+        "small_steps": "צעדים קטנים מאוד",
+        "visible_progress": "לראות התקדמות",
+        "understand_first": "להבין את התוכנית קודם",
+        "action_and_adjust": "להתחיל ולשפר תוך כדי",
+        "external_accountability": "מישהו או משהו שמחזיק אותי אחראי",
+        "none_known": "לא עולה לי משהו שעבד",
+        "other": "אחר"
+      }
+    },
+    "abandonmentPattern": {
+      "values": [
+        "no_time",
+        "forgot",
+        "lost_motivation",
+        "too_hard",
+        "one_miss_derails",
+        "too_many_steps",
+        "lost_relevance",
+        "other",
+        "unknown"
+      ],
+      "hebrewOptions": {
+        "no_time": "נגמר לי הזמן",
+        "forgot": "אני שוכח",
+        "lost_motivation": "אני מאבד מוטיבציה",
+        "too_hard": "זה נהיה קשה מדי",
+        "one_miss_derails": "פספוס אחד מוציא אותי מהמסלול",
+        "too_many_steps": "יש יותר מדי דברים לעשות",
+        "lost_relevance": "זה מפסיק להרגיש חשוב",
+        "other": "משהו אחר",
+        "unknown": "אני עדיין לא יודע"
+      }
+    }
+  },
+  "deferredFromCoreOnboarding": {
+    "challengePreference": {
+      "reason": "The current library does not yet author intentional same-Milestone Journey Versions for consistency/balanced/stretch. This signal therefore does not materially change selection yet."
+    }
+  },
+  "goalSpecificSignals": {
+    "socialSupportFit": [
+      "helpful",
+      "neutral",
+      "friction",
+      "depends"
+    ],
+    "peopleAccess": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "realContextAccess": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "existingRelevantExperience": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "reusableEvidenceAvailable": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "visibleProofMissing": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "artifactFeasible": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "transferableExperience": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "roleStoryNeed": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "existingTies": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "communityAccess": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "directOutreachFit": [
+      "helpful",
+      "neutral",
+      "friction",
+      "depends"
+    ],
+    "recentInterviewEvidence": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "proofRetrievalUnderPressure": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "goalConfidence": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "existingProofOpportunity": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "growthSubBottleneck": [
+      "responsibility_scope",
+      "capability",
+      "access_visibility",
+      "context_constraint"
+    ],
+    "workplaceGrowthPossible": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "concretePromotionTarget": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "promotionCriteriaClarity": [
+      "clear",
+      "partial",
+      "ambiguous",
+      "no_path"
+    ],
+    "nextLevelOpportunity": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "decisionMakerAccess": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "skillBaseline": [
+      "none",
+      "basic",
+      "functional"
+    ],
+    "feedbackAccess": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "activeJobSearch": [
+      "yes",
+      "no"
+    ],
+    "targetClarity": [
+      "broad",
+      "clear"
+    ],
+    "careerDirectionClarity": [
+      "unclear",
+      "partial",
+      "clear"
+    ],
+    "searchHistorySufficient": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "targetStillMeaningful": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "transitionType": [
+      "new_field_or_function",
+      "new_industry_same_function",
+      "new_function_same_industry",
+      "reentry",
+      "planned_exit"
+    ],
+    "transitionPrimaryGap": [
+      "capability",
+      "proof",
+      "access",
+      "context_constraint",
+      "direction"
+    ],
+    "reentryPrimaryNeed": [
+      "confidence",
+      "proof",
+      "access",
+      "context_constraint"
+    ],
+    "currentRoleFitLever": [
+      "task_mix",
+      "collaboration",
+      "learning_growth",
+      "context_constraint"
+    ],
+    "firstManagementTarget": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "portfolioGoal": [
+      "yes",
+      "no",
+      "unknown"
+    ],
+    "exitPrimaryNeed": [
+      "direction",
+      "bridge",
+      "constraints"
+    ]
+  },
+  "canonicalGoalAliases": {
+    "CAR_G20": {
+      "canonicalGoalId": "CAR_G09",
+      "reason": "Existing-experience-to-evidence translation is already covered by G09 variants; keeping a second goal would duplicate routing."
+    },
+    "CAR_G22": {
+      "canonicalGoalId": "CAR_G10",
+      "reason": "Goal-specific networking/access is already covered by G10; separate numbering would duplicate the same user need."
+    }
+  },
+  "selectionSemantics": {
+    "primary": "Expert diagnosis selects a Goal Family.",
+    "withinFamily": "The family's authored axis/question places the user among member Journeys.",
+    "secondary": "Onboarding/profile signals provide a weaker pull when more than one Journey remains plausible.",
+    "versions": "Journey Versions are not selected here unless the Milestone arc is identical."
+  }
+}

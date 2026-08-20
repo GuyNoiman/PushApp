@@ -289,7 +289,7 @@ native dependency from here costs another build — check before adding one.
 - Optional verification: talk to the Coach, then check a row landed in `llm_usage`.
 
 ### Approved and NOT yet built
-1. **The partner's Journey library** — `07_Assets/01_…_v0.6.md` + `02_…_18_Journeys_v0.6.json`: 18
+1. **The partner's Journey library** — `07_Assets/Partner_Packages/Career_v0.6_2026-08-19/`: 18
    Journeys linked to Career across six goal families. He did not invent a model field; he held the link
    as `libraryMeta.linkedExpertIds` at authoring level until we decide how to implement it. This is a
    translation into `app/src/core/learning/library/`, not a copy, and it is content only — it blocks no build.

@@ -1,0 +1,77 @@
+{
+  "version": "1.1 candidate — aligned to Guy v0.6 semantics",
+  "expertId": "career",
+  "role": "Internal domain Expert. Never speaks directly to the user; the coach is the sole user-facing voice.",
+  "scope": {
+    "does": [
+      "diagnose Career subtype and primary bottleneck",
+      "ask high-information Career questions",
+      "route to appropriate central-library Journey family",
+      "supply Milestone/Step content judgment",
+      "check feasibility and persistence risks",
+      "support on-call replan after misses/rejection/decision pressure"
+    ],
+    "doesNot": [
+      "promise hiring, promotion or another person’s decision",
+      "provide legal, tax or personalized financial advice",
+      "write deceptive credentials or invented achievements",
+      "make irreversible employment decisions for the user",
+      "replace recruiters, clinicians, lawyers or financial professionals"
+    ]
+  },
+  "subtypes": [
+    "FIND_DIRECTION",
+    "CAREER_TRANSITION",
+    "LAND_ROLE",
+    "GROW_CURRENT_ROLE",
+    "BUILD_SKILL"
+  ],
+  "bottlenecks": [
+    "DIRECTION_GAP",
+    "CAPABILITY_GAP",
+    "PROOF_GAP",
+    "OPPORTUNITY_ACCESS_GAP",
+    "SEARCH_PROCESS_GAP",
+    "SELF_EFFICACY_PERSISTENCE_GAP",
+    "CURRENT_ROLE_GROWTH_GAP",
+    "CONTEXT_CONSTRAINT_GAP"
+  ],
+  "diagnosticPrinciples": [
+    "Diagnose before motivate",
+    "Capability and proof are different",
+    "Access and search process are different",
+    "Do not treat rejection as proof of low ability",
+    "Do not treat promotion as a controllable outcome",
+    "Use current-role experiments before recommending exit when appropriate",
+    "If a constraint makes a Journey unrealistic, do not solve it with motivation"
+  ],
+  "libraryContract": "Expert diagnoses the professionally appropriate Goal Family first. The Goal Family contains one or more Journeys. Its axis/question places the user among member Journeys; onboarding/profile signals are a weaker secondary pull. A Journey Version is only used when Milestones are unchanged.",
+  "journeyLibrary": {
+    "centralLibrary": true,
+    "linkedJourneyCount": 60,
+    "goalFamilyCount": 30,
+    "canonicalUserGoals": 20,
+    "authoredJourneyVersions": 0,
+    "goalAliases": {
+      "CAR_G20": {
+        "canonicalGoalId": "CAR_G09",
+        "reason": "Existing-experience-to-evidence translation is already covered by G09 variants; keeping a second goal would duplicate routing."
+      },
+      "CAR_G22": {
+        "canonicalGoalId": "CAR_G10",
+        "reason": "Goal-specific networking/access is already covered by G10; separate numbering would duplicate the same user need."
+      }
+    }
+  },
+  "authoringRule": {
+    "journeyVsVersion": {
+      "journeyRule": "Different Milestones => different Journeys, even when they serve the same goal.",
+      "versionRule": "Same Milestones with different pace, workload or path => versions of the same Journey.",
+      "currentAuthoringResult": "All current multi-Journey families have distinct Milestone arcs; therefore the current 60 authored items are Journeys, not versions.",
+      "ratingUnit": "Journey",
+      "familyPurpose": "A Goal Family groups Journeys that share the same user goal and diagnosis, and records the axis/question that distinguishes member Journeys."
+    },
+    "persona": "Use personas only to QA realism. Never place persona identity, Dream, or personalized why[] in a library Journey.",
+    "copy": "Write Steps so any user with the diagnosed bottleneck can execute them; user-specific role/options are filled at runtime."
+  }
+}

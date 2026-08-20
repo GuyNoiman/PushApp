@@ -1,0 +1,72 @@
+{
+  "version": "1.1-guy-aligned",
+  "moves": [
+    {
+      "trigger": "action_freeze",
+      "diagnose": [
+        "Is the Step unclear, too large, blocked, or no longer relevant?"
+      ],
+      "response": [
+        "Shrink or clarify the next controllable action",
+        "Do not add motivation before fixing friction",
+        "Use postponement/Grace Token mechanisms rather than a new forgiveness system"
+      ]
+    },
+    {
+      "trigger": "rejection",
+      "diagnose": [
+        "Was this one rejection or a pattern?",
+        "Where in the search did it occur?",
+        "Did target/proof/access/process change?"
+      ],
+      "response": [
+        "Treat rejection as data",
+        "Do not infer personal worth",
+        "Route upstream if a new primary bottleneck appears",
+        "If bottlenecks are ruled out, use G13 recovery family"
+      ]
+    },
+    {
+      "trigger": "interview_imminent",
+      "diagnose": [
+        "What is the highest-value preparation gap right now?"
+      ],
+      "response": [
+        "One story, one question, or one delivery adjustment",
+        "Do not cram a full interview curriculum"
+      ]
+    },
+    {
+      "trigger": "decision_pressure",
+      "diagnose": [
+        "What decision is actually due now? What information could still change it?"
+      ],
+      "response": [
+        "Separate reversible next move from irreversible commitment",
+        "Use G02/G03 logic when appropriate"
+      ]
+    },
+    {
+      "trigger": "momentum_drop",
+      "diagnose": [
+        "No time, too hard, one miss, lost relevance, or low confidence?"
+      ],
+      "response": [
+        "Adapt the mechanism to the miss reason",
+        "Return to minimum meaningful action",
+        "Do not reset the Journey automatically"
+      ]
+    },
+    {
+      "trigger": "promotion_or_workplace_disappointment",
+      "diagnose": [
+        "Was the outcome outside user control? Is there useful readiness evidence? Is the path still real?"
+      ],
+      "response": [
+        "Separate outcome from readiness work",
+        "Re-route to growth/transition if the organization cannot offer the path",
+        "Do not promise promotion"
+      ]
+    }
+  ]
+}

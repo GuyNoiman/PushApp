@@ -2,7 +2,7 @@
  * career — the Career-linked section of the central Journey Library.
  *
  * SIX GOAL FAMILIES, EIGHTEEN JOURNEYS, ingested from the partner's authoring package
- * (`07_Assets/01_Central_Journey_Library_Career_Linked_v0.6.md` + the `02_…json` beside it) and
+ * (`07_Assets/Partner_Packages/Career_v0.6_2026-08-19/`, the `01_…md` + the `02_…json` beside it) and
  * translated into our model rather than copied into it. What changed in the translation, and why,
  * is written at the top of each family file; the three structural decisions are here:
  *

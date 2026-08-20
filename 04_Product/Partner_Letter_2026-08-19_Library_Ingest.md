@@ -1,7 +1,7 @@
 # Letter to the coaching partner — your v0.6 library is in, and one thing changed shape on the way
 
 Status: **Draft for the founder's review and sending. NOT SENT.** Prepared 2026-08-19 after ingesting
-`07_Assets/01_Central_Journey_Library_Career_Linked_v0.6.md` and its JSON companion.
+`07_Assets/Partner_Packages/Career_v0.6_2026-08-19/` (moved there 2026-08-20 when the one-folder-per-delivery convention was established; it arrived as `07_Assets/01_…_v0.6.md` and its JSON companion).
 Follows `04_Product/Partner_Letter_2026-08-18.md` (architecture) — this one is about the content itself.
 
 The founder's instruction, in his words: this is *"something to share and agree on together with the

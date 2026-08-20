@@ -10,6 +10,57 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-20 — The partner's package, in English, at a rhythm the coach decides
+
+> Founder decisions taken while reviewing the partner's Career Expert candidate v1.1
+> (`07_Assets/Partner_Packages/Career_v1.1_2026-08-20/`). Engineering detail:
+> `00_Foundation/CHANGELOG.md`.
+
+### D64 — Authored content is HELD in English; a Hebrew delivery is translated once, at the end
+**Decision (founder, 2026-08-20):** it is fine for the partner to write in Hebrew today, and we keep
+his Hebrew as it arrives. **Our side holds English.** The translation is done **once**, when a package
+is final or close to it — not per delivery, and not per revision. **From the next letter onward the
+partner is asked to deliver in English**, so the English is the author's rather than ours.
+
+**Why translate once and late.** A package that is still being argued about changes shape between
+versions; translating each revision pays the same cost repeatedly and, worse, produces an English
+copy that quietly diverges from the Hebrew it came from. One translation against a settled version is
+one artifact with one meaning.
+
+**Why English is the side we hold.** The repository language is English (CLAUDE.md §3.7), the library
+is authored in English and the meta-agent translates it to the user's language at runtime (D55). A
+Hebrew-source library would invert that and make English the translation of a translation.
+
+**Reflected in:** `07_Assets/Partner_Packages/README.md` (the standing instruction), the next partner
+letter, `04_Product/Open_Work_2026-08-20.md` §1.1.
+
+### D65 — The rhythm is not authored. The coach sets it, from the profile and the user's weekly time
+**Decision (founder, 2026-08-20),** answering the partner's open question about
+`rhythm / sessionsPerWeek / recurring Steps`:
+
+> The meta-agent decides, from the user's profile and from how much time they want to give **this**
+> Journey each week. The Steps follow from that. Where a Journey allows it the track is open-ended,
+> and we add Steps to fit the user's time.
+
+**What this settles.** A library Journey does **not** carry a cadence, and the partner is right to
+have marked every one of his `frequencyPolicy` fields provisional. Authored content supplies the ARC —
+the Milestones, the Steps and their order — and the coach supplies the RATE.
+
+**Why this is the right split, recorded so it is not re-argued.** A cadence written into a library
+Journey is a guess about a person the author never met, and it is the guess most likely to be wrong:
+the same arc is four weeks for someone with three hours a week and three months for someone with
+twenty minutes. It also puts the rhythm where the app already asks about it — capacity is an
+onboarding signal, and "how much do you want to give this" is a question the coach can ask about the
+one Journey being built.
+
+**What it opens, and is deliberately not decided here:** an open-ended Journey has no fixed end, so
+"finished" has to mean something other than "the last Step was done". That is a real question and it
+belongs to the completion ceremony, not to this decision.
+
+**Reflected in:** `04_Product/Open_Work_2026-08-20.md` §1.1, and the reply to the partner.
+
+---
+
 ## 2026-08-18 — Plan shapes, the library's first slice, and the end-of-Journey label
 
 > Working session with the founder, on branch `feat/buddy-3d-and-reminders`. It began as a review of

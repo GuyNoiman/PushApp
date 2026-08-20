@@ -18,6 +18,11 @@ import {
 import {
   CLAIM_MIN_SUPPORT,
   CONFIDENTIAL_THRESHOLD,
+  ROUND_OPEN_DAYS,
+  acceptsResponses,
+  expiresAt,
+  mustDiscardResponses,
+  outcome,
   canSend,
   claimIsSupported,
   closeRound,
@@ -218,6 +223,58 @@ describe('what a synthesis may claim', () => {
     expect(CLAIM_MIN_SUPPORT).toBe(2);
     expect(claimIsSupported(1)).toBe(false);
     expect(claimIsSupported(2)).toBe(true);
+  });
+});
+
+describe('the week (founder, 2026-08-21)', () => {
+  const SENT = 1_700_000_000_000;
+  const DAY = 24 * 60 * 60 * 1000;
+  const sent = () => {
+    let r = startRound('r1', 'confidential');
+    r = setQuestions(r, FIVE);
+    return lock(r, SENT, 7);
+  };
+
+  it('runs for seven days from the first invitation', () => {
+    expect(ROUND_OPEN_DAYS).toBe(7);
+    expect(expiresAt(sent())).toBe(SENT + 7 * DAY);
+    expect(expiresAt(startRound('r', 'confidential'))).toBeUndefined();
+  });
+
+  it('locks the questions FOR THE CONTRIBUTORS when the week is up', () => {
+    const r = sent();
+    expect(acceptsResponses(r, SENT + 6 * DAY)).toBe(true);
+    // Somebody opening on day nine is told it closed, not shown a form that goes nowhere.
+    expect(acceptsResponses(r, SENT + 9 * DAY)).toBe(false);
+  });
+
+  it('shows NO result while the week runs, even once the threshold is met', () => {
+    // Opening at the moment the fifth answer lands would tell a requester watching the counter WHEN
+    // each person answered — and against a list they invited themselves, timing is an identity.
+    const during = outcome(sent(), tallies([5, 5, 5, 5, 5]), SENT + 3 * DAY);
+    expect(during).toBe('collecting');
+  });
+
+  it('delivers when the week ends with enough answers', () => {
+    expect(outcome(sent(), tallies([5, 6, 5, 5, 7]), SENT + 8 * DAY)).toBe('delivered');
+  });
+
+  it('says plainly that not enough people answered, and invents nothing', () => {
+    expect(outcome(sent(), tallies([5, 5, 4, 5, 5]), SENT + 8 * DAY)).toBe('notEnough');
+  });
+
+  it('is a draft until the first invitation, whatever the clock says', () => {
+    const r = setQuestions(startRound('r', 'confidential'), FIVE);
+    expect(outcome(r, tallies([9, 9, 9, 9, 9]), SENT + 99 * DAY)).toBe('draft');
+  });
+
+  it('DESTROYS the answers a short round collected', () => {
+    // People answered under a promise that produced nothing. Keeping their words then serves
+    // nobody — and it removes the temptation to carry four answers into a second round they never
+    // consented to.
+    expect(mustDiscardResponses(sent(), tallies([5, 5, 2, 5, 5]), SENT + 8 * DAY)).toBe(true);
+    expect(mustDiscardResponses(sent(), tallies([5, 5, 5, 5, 5]), SENT + 8 * DAY)).toBe(false);
+    expect(mustDiscardResponses(sent(), tallies([1, 1, 1, 1, 1]), SENT + 2 * DAY)).toBe(false);
   });
 });
 

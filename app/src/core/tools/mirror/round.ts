@@ -40,6 +40,18 @@ export type MirrorMode = 'visible' | 'confidential';
 
 /** Confidential mode needs this many VALID answers to every question before anything opens (§3.2). */
 export const CONFIDENTIAL_THRESHOLD = 5;
+
+/**
+ * How long a round stays open (founder, 2026-08-21): **one week.** After that the questions lock for
+ * the contributors, and the requester is told what happened either way.
+ *
+ * A DEADLINE IS ALSO A PRIVACY DEVICE, and that is the better half of this decision. If a result
+ * opened the moment the fifth answer landed, a requester watching the counter would learn WHEN each
+ * person answered — and against a list of seven people they invited themselves, timing is an
+ * identity. The PRD forbids exactly that (§3.2: not the timing or order). So a result is delivered
+ * when the round CLOSES, never at the moment a response arrives.
+ */
+export const ROUND_OPEN_DAYS = 7;
 /** A claim in a synthesis needs this much support, or it is suppressed rather than softened (§10). */
 export const CLAIM_MIN_SUPPORT = 2;
 
@@ -98,6 +110,67 @@ export function lock(round: MirrorRound, at: number, invited: number): MirrorRou
 
 export function closeRound(round: MirrorRound): MirrorRound {
   return { ...round, status: 'closed' };
+}
+
+/** When the week is up. Undefined until the first invitation, because that is when it starts. */
+export function expiresAt(round: MirrorRound): number | undefined {
+  return round.lockedAt === undefined
+    ? undefined
+    : round.lockedAt + ROUND_OPEN_DAYS * 24 * 60 * 60 * 1000;
+}
+
+/**
+ * Whether a contributor may still answer. The week locks the questions FOR THEM — somebody opening
+ * an invitation on day nine is told the round has closed, not shown a form whose answer goes nowhere.
+ */
+export function acceptsResponses(round: MirrorRound, now: number): boolean {
+  if (round.status !== 'open') return false;
+  const ends = expiresAt(round);
+  return ends === undefined || now < ends;
+}
+
+/**
+ * What the requester is shown. Exactly four states, and the last one is the honest failure the
+ * founder asked for by name.
+ */
+export type RoundOutcome =
+  /** Not sent yet. */
+  | 'draft'
+  /** The week is running. Aggregate progress only; NO result, even if the threshold is already met. */
+  | 'collecting'
+  /** Closed, and there is something to read. */
+  | 'delivered'
+  /** Closed, and not enough people answered — so no result exists and none is invented. */
+  | 'notEnough';
+
+export function outcome(
+  round: MirrorRound,
+  tallies: readonly QuestionTally[],
+  now: number,
+): RoundOutcome {
+  if (round.status === 'draft' || round.lockedAt === undefined) return 'draft';
+  if (acceptsResponses(round, now)) return 'collecting';
+  return readiness(round, tallies).open ? 'delivered' : 'notEnough';
+}
+
+/**
+ * Whether the answers that WERE collected must now be destroyed.
+ *
+ * A round that closes short produces nothing, and people answered under a promise that produced
+ * nothing. Keeping their words then serves nobody: not the requester, who will never be allowed to
+ * read them, and certainly not the contributors. They go.
+ *
+ * It also removes the temptation of the obvious "helpful" feature — carrying four answers into a
+ * second round. Those four people consented to ONE round with one set of questions, and reusing
+ * their words under a new consent is not a convenience; it is a different thing from what they
+ * agreed to.
+ */
+export function mustDiscardResponses(
+  round: MirrorRound,
+  tallies: readonly QuestionTally[],
+  now: number,
+): boolean {
+  return outcome(round, tallies, now) === 'notEnough';
 }
 
 // ── Readiness, without ever naming anybody ────────────────────────────────────────────────────

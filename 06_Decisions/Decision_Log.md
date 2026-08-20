@@ -16,6 +16,38 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > (`07_Assets/Partner_Packages/Career_v1.1_2026-08-20/`). Engineering detail:
 > `00_Foundation/CHANGELOG.md`.
 
+### D67 — A Mirror Feedback round runs for one week, and closes honestly either way
+**Decision (founder, 2026-08-21):**
+
+> The questionnaires are open for a week. After that they lock for the friends. If enough answers
+> were collected the result goes to the sender, and if not he gets a message that not enough friends
+> answered, so a result cannot be produced.
+
+**What this settles.** A round has a fixed life. The questions lock FOR THE CONTRIBUTORS at the end
+of the week — somebody opening an invitation on day nine is told the round has closed, rather than
+shown a form whose answer goes nowhere. And the requester gets one of exactly two honest endings.
+
+**A deadline turns out to be a privacy device too, and that is the better half of it.** If a result
+opened the moment the fifth answer landed, a requester watching the counter would learn WHEN each
+person answered — and against a list of seven people they invited themselves, timing is an identity.
+The PRD already forbids exposing timing or order (§3.2). So the result is delivered when the round
+CLOSES, never at the moment a response arrives, and the founder's instinct and the privacy rule point
+the same way.
+
+**One consequence taken deliberately: a short round DESTROYS the answers it did collect.** People
+answered under a promise that produced nothing, and keeping their words then serves nobody — not the
+requester, who will never be allowed to read them, and certainly not the contributors. It also
+removes the temptation of the obvious "helpful" feature: carrying four answers into a second round.
+Those four people consented to ONE round with one set of questions, and reusing their words under a
+new consent is not a convenience, it is a different thing from what they agreed to.
+
+**Open, and smaller than it looks:** the live counter is itself a partial timing signal. Somebody
+watching "3 of 5" become "4 of 5" learns that somebody answered in that window. The PRD's own design
+shows that counter, so this is not a new problem — but if it ever matters, the fix is to round the
+counter or to show it only on entry, not to remove the deadline.
+
+**Reflected in:** `app/src/core/tools/mirror/round.ts`, `04_Product/PRD/Tools_Documentation/Mirror_Feedback_PRD.md`.
+
 ### D66 — A reflection is FOR THE USER. It does not have to teach us anything
 **Decision (founder, 2026-08-20),** on the reflection tools (My Best Possible Year, and the daily
 page, start-of-week page, birthdays and moments that follow it):

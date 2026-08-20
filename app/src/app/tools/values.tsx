@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SwipeableValueCard } from '@/components/tools/SwipeableValueCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { displayFont, displayScale } from '@/constants/displayFont';
@@ -34,6 +35,8 @@ import { CUSTOM_VALUE_KEY } from '@/core/tools/values/catalog';
 import {
   addCustom,
   candidates,
+  defineTargets,
+  defineValue,
   deck,
   nextCard,
   presenceTargets,
@@ -47,6 +50,7 @@ import {
   targetCount,
   undoSort,
   type Bucket,
+  type ValueDefinition,
   type ValuesDepth,
   type ValuesState,
 } from '@/core/tools/values/flow';
@@ -117,6 +121,8 @@ export default function ValuesScreen() {
             <Rank state={state} save={store.save} label={label} />
           ) : stage === 'presence' ? (
             <Presence state={state} save={store.save} label={label} />
+          ) : stage === 'define' ? (
+            <Define state={state} save={store.save} label={label} />
           ) : (
             <Result state={state} label={label} onRestart={store.clear} />
           )}
@@ -182,11 +188,9 @@ function Intro({ onPick }: { onPick: (depth: ValuesDepth) => void }) {
           <ThemedText type="small" style={{ color: theme.textMuted }}>
             {t(`values.intro.${depth}Meta`)}
           </ThemedText>
-          {depth === 'quick' ? (
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              {t('values.intro.quickNote')}
-            </ThemedText>
-          ) : null}
+          <ThemedText type="small" style={{ color: theme.textSecondary }}>
+            {t(depth === 'quick' ? 'values.intro.quickNote' : 'values.intro.deepNote')}
+          </ThemedText>
         </Pressable>
       ))}
     </>
@@ -241,11 +245,14 @@ function Sort({
         {t('values.sort.subtitle')}
       </ThemedText>
 
-      <View
-        style={[
-          styles.valueCard,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
-        ]}>
+      <SwipeableValueCard
+        cardKey={card.key}
+        onSort={(bucket) => save(sortCard(state, card.key, bucket))}
+        style={{
+          ...styles.valueCard,
+          backgroundColor: theme.backgroundElement,
+          borderColor: theme.hairline,
+        }}>
         <View style={[styles.glyph, { backgroundColor: theme.tealTint }]}>
           <Ionicons name="compass-outline" size={18} color={theme.tealStrong} />
         </View>
@@ -258,6 +265,13 @@ function Sort({
         </ThemedText>
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
           {meaning(card.key)}
+        </ThemedText>
+      </SwipeableValueCard>
+
+      {/* The gestures, named in words. A swipe nobody can discover is a swipe nobody uses. */}
+      <View style={styles.swipeHint}>
+        <ThemedText type="small" style={{ color: theme.textMuted }}>
+          {`← ${t('values.sort.swipeNotNow')}  ·  ↓ ${t('values.sort.swipeMaybe')}  ·  ${t('values.sort.swipeCore')} →`}
         </ThemedText>
       </View>
 
@@ -590,6 +604,75 @@ function Presence({
   );
 }
 
+/**
+ * The founder's five questions, one value at a time, deep pass only.
+ *
+ * EVERY FIELD IS OPTIONAL and "skip" is a real button. Twenty free-text boxes at the end of a
+ * twenty-minute sort is a wall, and a wall at the end is where people stop — so the tool asks, and
+ * silence is an answer.
+ */
+function Define({
+  state,
+  save,
+  label,
+}: {
+  state: ValuesState;
+  save: (s: ValuesState) => void;
+  label: (key: string) => string;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation('tools');
+  const key = defineTargets(state).find((k) => state.definitions?.[k] === undefined);
+  const [draft, setDraft] = useState<ValueDefinition>({});
+  if (!key) return null;
+
+  const field = (name: keyof ValueDefinition) => (
+    <View key={name} style={styles.fieldBlock}>
+      <ThemedText type="small" style={{ color: theme.text }}>
+        {t(`values.define.${name}`, { value: label(key) })}
+      </ThemedText>
+      <TextInput
+        value={draft[name] ?? ''}
+        onChangeText={(text) => setDraft((prev) => ({ ...prev, [name]: text }))}
+        placeholder={t('values.define.placeholder')}
+        placeholderTextColor={theme.textMuted}
+        accessibilityLabel={t(`values.define.${name}`, { value: label(key) })}
+        multiline
+        style={[styles.input, styles.multiline, { color: theme.text, borderColor: theme.hairline }]}
+      />
+    </View>
+  );
+
+  const finish = (definition: ValueDefinition) => {
+    save(defineValue(state, key, definition));
+    setDraft({});
+  };
+
+  return (
+    <>
+      <ThemedText style={[styles.big, { fontFamily: displayFont(), color: theme.text }]}>
+        {label(key)}
+      </ThemedText>
+      <ThemedText type="small" style={{ color: theme.textSecondary }}>
+        {t('values.define.lead')}
+      </ThemedText>
+
+      {(['meaning', 'livedLike', 'absentLike', 'step'] as const).map(field)}
+
+      <Cta label={t('values.define.continue')} onPress={() => finish(draft)} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('values.define.skip')}
+        onPress={() => finish({})}
+        style={({ pressed }) => [styles.centeredButton, pressed && styles.pressed]}>
+        <ThemedText type="small" style={{ color: theme.textMuted }}>
+          {t('values.define.skip')}
+        </ThemedText>
+      </Pressable>
+    </>
+  );
+}
+
 function Result({
   state,
   label,
@@ -638,6 +721,19 @@ function Result({
           ? t('values.result.gap', { value: label(result.widestGap.key) })
           : t('values.result.noGap')}
       </ThemedText>
+
+      {result.steps.length > 0 ? (
+        <>
+          <ThemedText type="displaySmall" style={{ paddingTop: Spacing.three }}>
+            {t('values.result.yourSteps')}
+          </ThemedText>
+          {result.steps.map((entry) => (
+            <ThemedText key={entry.key} type="small" style={{ color: theme.text, lineHeight: 21 }}>
+              {`${label(entry.key)} — ${entry.step}`}
+            </ThemedText>
+          ))}
+        </>
+      ) : null}
 
       {state.depth === 'quick' ? (
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
@@ -728,6 +824,9 @@ const styles = StyleSheet.create({
   },
   glyph: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   valueName: { lineHeight: 36 },
+  swipeHint: { alignItems: 'center', paddingTop: Spacing.two },
+  fieldBlock: { gap: Spacing.one, paddingTop: Spacing.two },
+  multiline: { minHeight: 64, textAlignVertical: 'top' },
   bucketRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.three },
   bucketButton: {
     flex: 1,

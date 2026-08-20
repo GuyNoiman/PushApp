@@ -15,6 +15,8 @@ import {
   PRESENCE_COUNT,
   addCustom,
   candidates,
+  defineTargets,
+  defineValue,
   deck,
   kept,
   nextCard,
@@ -184,6 +186,49 @@ describe('reducing and ranking refuse anything that was not on the table', () =>
 
     expect(s.ranked).toHaveLength(FINAL_COUNT);
     expect(s.ranked).not.toContain('sneaked-in');
+  });
+});
+
+describe('the deep pass asks the five questions; the quick one does not', () => {
+  /** A run taken all the way to the presence stage. */
+  function throughPresence(depth: 'quick' | 'deep'): ValuesState {
+    let s = sortAll(startValues(depth, SEED), ['core']);
+    for (const target of LADDER[depth]) s = reduceTo(s, candidates(s).slice(0, target));
+    s = rank(s, candidates(s));
+    for (const key of presenceTargetsOf(s)) s = setPresence(s, key, 6);
+    return s;
+  }
+  const presenceTargetsOf = (s: ValuesState) => s.ranked.slice(0, PRESENCE_COUNT);
+
+  it('the quick pass is finished at the presence step', () => {
+    expect(defineTargets(throughPresence('quick'))).toEqual([]);
+    expect(stageOf(throughPresence('quick'))).toBe('done');
+  });
+
+  it('the deep pass then asks about all FIVE, not only the three with a score', () => {
+    const s = throughPresence('deep');
+    expect(stageOf(s)).toBe('define');
+    expect(defineTargets(s)).toHaveLength(5);
+  });
+
+  it('treats a SKIP as answered, so a wall at the end cannot trap anybody', () => {
+    let s = throughPresence('deep');
+    for (const key of defineTargets(s)) s = defineValue(s, key, {});
+
+    expect(stageOf(s)).toBe('done');
+    // Nothing was written, so nothing is claimed: the reading carries no definition.
+    expect(readValues(s)!.values.every((v) => v.definition === undefined)).toBe(true);
+  });
+
+  it('keeps what was written, drops what was only whitespace, and collects the steps', () => {
+    let s = throughPresence('deep');
+    const targets = defineTargets(s);
+    s = defineValue(s, targets[0], { meaning: ' room to think ', livedLike: '   ', step: 'One walk' });
+    for (const key of targets.slice(1)) s = defineValue(s, key, {});
+
+    const result = readValues(s)!;
+    expect(result.values[0].definition).toEqual({ meaning: 'room to think', step: 'One walk' });
+    expect(result.steps).toEqual([{ key: targets[0], step: 'One walk' }]);
   });
 });
 

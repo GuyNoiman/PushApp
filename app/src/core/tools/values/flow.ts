@@ -69,8 +69,32 @@ export const PRESENCE_COUNT = 3;
 /** The quick pass caps what can be kept, to force a real choice at the sort rather than after it. */
 export const QUICK_KEEP_CAP = 7;
 
-/** Where the flow is. */
-export type ValuesStage = 'sort' | 'reduce' | 'rank' | 'presence' | 'done';
+/**
+ * Where the flow is. `define` exists ONLY in the deep pass — it is the founder's five questions per
+ * value, and it is the difference between knowing your values and knowing what they ask of you.
+ */
+export type ValuesStage = 'sort' | 'reduce' | 'rank' | 'presence' | 'define' | 'done';
+
+/**
+ * What a person says about one of their five values, in their own words.
+ *
+ * EVERY FIELD IS OPTIONAL, and that is not laziness. Twenty free-text boxes at the end of a
+ * twenty-minute sort is a wall, and a wall at the end is where people stop. Visiting a value counts
+ * as answering it — the tool asks, and silence is a legitimate answer to "what does this mean to
+ * you". The fourth of the founder's five questions is not here: "how present is it" is the
+ * `presence` stage, asked of the top three, because it is the only one of the five that produces a
+ * number the app can read.
+ */
+export interface ValueDefinition {
+  /** What this value means to you. */
+  meaning?: string;
+  /** What it looks like when you are living by it. */
+  livedLike?: string;
+  /** What makes you feel you are not living by it. */
+  absentLike?: string;
+  /** One small step that would express it this week. */
+  step?: string;
+}
 
 /** A value the person wrote themselves. Name and meaning are theirs; nothing is authored for it. */
 export interface CustomValue {
@@ -92,6 +116,12 @@ export interface ValuesState {
   presence: Readonly<Record<string, number>>;
   /** Their own value, if they added one. */
   custom?: CustomValue;
+  /**
+   * The deep pass's per-value answers, keyed by value. A key being PRESENT means the value was
+   * visited, whether or not anything was written — which is how "skip" is recorded without a
+   * separate flag that could disagree with the answers beside it.
+   */
+  definitions?: Readonly<Record<string, ValueDefinition>>;
 }
 
 export function startValues(depth: ValuesDepth, seed: number): ValuesState {
@@ -172,6 +202,35 @@ export function presenceTargets(state: ValuesState): string[] {
   return state.ranked.slice(0, PRESENCE_COUNT);
 }
 
+/** The values the deep pass asks the five questions about — all five, in order. */
+export function defineTargets(state: ValuesState): string[] {
+  return state.depth === 'deep' ? [...state.ranked] : [];
+}
+
+/** Record (or skip) one value's answers. An empty object is a skip. */
+export function defineValue(
+  state: ValuesState,
+  key: string,
+  definition: ValueDefinition,
+): ValuesState {
+  const trim = (v?: string) => {
+    const t = v?.trim();
+    return t && t.length > 0 ? t : undefined;
+  };
+  return {
+    ...state,
+    definitions: {
+      ...state.definitions,
+      [key]: {
+        ...(trim(definition.meaning) ? { meaning: trim(definition.meaning) } : {}),
+        ...(trim(definition.livedLike) ? { livedLike: trim(definition.livedLike) } : {}),
+        ...(trim(definition.absentLike) ? { absentLike: trim(definition.absentLike) } : {}),
+        ...(trim(definition.step) ? { step: trim(definition.step) } : {}),
+      },
+    },
+  };
+}
+
 export function setPresence(state: ValuesState, key: string, score: number): ValuesState {
   const clamped = Math.min(10, Math.max(1, Math.round(score)));
   return { ...state, presence: { ...state.presence, [key]: clamped } };
@@ -183,6 +242,7 @@ export function stageOf(state: ValuesState): ValuesStage {
   if (targetCount(state) !== null) return 'reduce';
   if (state.ranked.length < Math.min(FINAL_COUNT, candidates(state).length)) return 'rank';
   if (presenceTargets(state).some((k) => state.presence[k] === undefined)) return 'presence';
+  if (defineTargets(state).some((k) => state.definitions?.[k] === undefined)) return 'define';
   return 'done';
 }
 
@@ -192,6 +252,8 @@ export interface ValueStanding {
   key: string;
   /** 1-based position in the final list. */
   position: number;
+  /** What they said about it, in the deep pass. Absent in the quick one. */
+  definition?: ValueDefinition;
   /** How present it feels today, 1–10. Absent for anything below the top three. */
   presence?: number;
   /** How far it is from being lived, for the top three. Higher is further. */
@@ -204,6 +266,11 @@ export interface ValuesResult {
   top: ValueStanding[];
   /** The one furthest from being lived. Null when nothing is far, which is a real answer. */
   widestGap: ValueStanding | null;
+  /**
+   * The small steps a person named for themselves, in order. The deep pass's most actionable
+   * output — and it is theirs, so nothing here schedules it.
+   */
+  steps: { key: string; step: string }[];
 }
 
 /** The gap has to be at least this wide to be worth naming, like the Life Wheel's. */
@@ -215,9 +282,11 @@ export function readValues(state: ValuesState): ValuesResult | null {
 
   const values: ValueStanding[] = state.ranked.map((key, index) => {
     const presence = state.presence[key];
+    const definition = state.definitions?.[key];
     return {
       key,
       position: index + 1,
+      ...(definition && Object.keys(definition).length > 0 ? { definition } : {}),
       ...(presence !== undefined
         ? // A first value living at 3 is further from being lived than a third value at 3, so the
           // gap is weighted by position: distance from ten, scaled by how high they placed it.
@@ -232,5 +301,8 @@ export function readValues(state: ValuesState): ValuesResult | null {
     values,
     top,
     widestGap: widest && (widest.gap ?? 0) >= NOTABLE_GAP ? widest : null,
+    steps: values
+      .filter((v) => v.definition?.step)
+      .map((v) => ({ key: v.key, step: v.definition!.step! })),
   };
 }

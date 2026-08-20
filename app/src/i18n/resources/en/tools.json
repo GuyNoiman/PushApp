@@ -263,8 +263,9 @@
       "quickMeta": "15 cards · about 5 minutes",
       "quickNote": "Faster, and less precise. You can go deeper afterwards without starting again.",
       "deep": "Full clarification",
-      "deepMeta": "65 cards · 15 to 20 minutes",
-      "resume": "Pick up where you left off"
+      "deepMeta": "65 cards · about 20 minutes",
+      "resume": "Pick up where you left off",
+      "deepNote": "Longer, and more precise."
     },
     "sort": {
       "title": "What matters most?",
@@ -311,7 +312,19 @@
       "deepen": "Want to sharpen this? You can go on to the full clarification without starting again.",
       "private": "Private unless you choose to share it.",
       "done": "Done",
-      "retake": "Start again"
+      "retake": "Start again",
+      "yourSteps": "The steps you named for yourself"
+    },
+    "define": {
+      "title": "{{value}}",
+      "meaning": "What does {{value}} mean to you?",
+      "livedLike": "What does it look like when you are living by it?",
+      "absentLike": "What makes you feel you are not?",
+      "step": "One small step this week that would express it",
+      "placeholder": "In your own words",
+      "skip": "Skip this one",
+      "continue": "Continue",
+      "lead": "Five short questions, and every one of them is optional."
     }
   }
 }

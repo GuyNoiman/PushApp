@@ -38,6 +38,7 @@ export interface ToolDefinition {
 export const TOOL_CATALOG: readonly ToolDefinition[] = [
   { key: 'questionnaire', category: 'know', icon: 'list-outline', route: '/questionnaire', minutes: 6 },
   { key: 'communication', category: 'relate', icon: 'chatbubbles-outline', route: '/settings/communication-style', minutes: 3 },
+  { key: 'lifeWheel', category: 'know', icon: 'pie-chart-outline', route: '/tools/life-wheel', minutes: 8 },
   { key: 'reflection', category: 'reflect', icon: 'create-outline', minutes: 10 },
   { key: 'breathe', category: 'calm', icon: 'leaf-outline', minutes: 2 },
   { key: 'strengths', category: 'know', icon: 'sparkles-outline', minutes: 8 },

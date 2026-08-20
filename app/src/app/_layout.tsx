@@ -21,6 +21,7 @@ import '@/i18n';
 import { AppProvider, useApp } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
+import { LifeWheelProvider } from '@/state/LifeWheelStore';
 import { ToolsShelfProvider } from '@/state/ToolsShelf';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
@@ -114,11 +115,15 @@ export default function RootLayout() {
                           which tools somebody reaches for is a picture of what they are struggling
                           with, and it never leaves the phone. */}
                       <ToolsShelfProvider>
+                        {/* The Life Wheel's answers and the one summary the rest of the app may
+                            read. ON-DEVICE ONLY (G1) — see the store's header. */}
+                        <LifeWheelProvider>
                         {/* Renders nothing: re-resolves pending reminder copy whenever the
                             language, form of address or communication style changes (D40). It sits
                             here because it needs the core, the language provider AND the profile. */}
                         <NotificationCopySync />
                         <ThemedChrome />
+                        </LifeWheelProvider>
                       </ToolsShelfProvider>
                     </ProfileProvider>
                   </LanguagePreferenceProvider>

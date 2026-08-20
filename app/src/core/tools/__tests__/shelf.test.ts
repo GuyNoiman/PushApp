@@ -131,10 +131,14 @@ describe('what gets recommended', () => {
     expect(recommended(usage, NOW).map((t) => t.key)).not.toContain('communication');
   });
 
-  it('offers it again once a day has passed', () => {
+  it('becomes eligible again once a day has passed', () => {
+    // Eligibility, not placement: with the limit raised it is back in the pool. It still ranks
+    // BELOW anything never tried, which is the ordering rule and is tested above.
     const usage = recordUse({}, 'communication', NOW - 25 * 60 * MIN);
 
-    expect(recommended(usage, NOW).map((t) => t.key)).toContain('communication');
+    expect(recommended(usage, NOW, TOOL_CATALOG.length).map((t) => t.key)).toContain(
+      'communication',
+    );
   });
 
   it('returns nothing rather than repeating, when everything live is fresh', () => {

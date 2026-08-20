@@ -11,7 +11,8 @@
     "strengths": "Strengths map",
     "timer": "Focus timer",
     "kindness": "Act of kindness",
-    "hardDay": "For a hard day"
+    "hardDay": "For a hard day",
+    "lifeWheel": "Life Wheel"
   },
   "questionnaire": {
     "save": "Save my answers"
@@ -56,6 +57,60 @@
     "strengths": "What you are good at, in your own words.",
     "timer": "One stretch of work, with nothing else allowed in.",
     "kindness": "One small thing for someone else, chosen on purpose.",
-    "hardDay": "Somewhere to put it down when the day went badly."
+    "hardDay": "Somewhere to put it down when the day went badly.",
+    "lifeWheel": "Eight parts of your life, and which one is quietly costing you."
+  },
+  "lifeWheel": {
+    "title": "Life Wheel",
+    "intro": {
+      "lead": "Eight parts of a life, eight minutes.",
+      "body": "For each one you answer two things: how it is going, and how much it matters to you right now. The second question is the one that makes the first one mean something. Nothing here is scored and nothing is shared.",
+      "start": "Start",
+      "resume": "Pick up where you left off"
+    },
+    "progress": "{{current}} of {{total}}",
+    "saveExit": "Save and exit",
+    "saveContinue": "Save and continue",
+    "noRightAnswers": "There are no right answers.",
+    "areas": {
+      "health": "Health",
+      "relationships": "Relationships",
+      "family": "Family",
+      "career": "Career",
+      "money": "Money",
+      "growth": "Growth",
+      "fun": "Fun",
+      "environment": "Environment"
+    },
+    "blurb": {
+      "health": "Your body, your sleep, your energy.",
+      "relationships": "The people you choose, and how close they feel.",
+      "family": "The people you did not choose.",
+      "career": "The work itself, not the job title.",
+      "money": "What you have, and how much you have to think about it.",
+      "growth": "Learning, and becoming someone slightly different.",
+      "fun": "The part of the week that is not useful.",
+      "environment": "Where you live, and whether it holds you."
+    },
+    "satisfaction": "How is your {{area}} going right now?",
+    "weight": "And how much does it matter to you at the moment?",
+    "scale": {
+      "satisfactionLow": "Not going well",
+      "satisfactionHigh": "Going well",
+      "weightLow": "Not a priority now",
+      "weightHigh": "It is what matters most"
+    },
+    "result": {
+      "title": "Your wheel",
+      "lead": "This is the shape of your life right now, in your own numbers.",
+      "pressingOne": "The area costing you most is {{area}}. It matters {{weight}} out of ten and it is at {{satisfaction}}.",
+      "pressingTwo": "Two areas are asking for something: {{first}} and {{second}}. Both matter more than they are currently getting.",
+      "pressingNone": "Nothing on your wheel is far from where you want it. That is worth noticing rather than rushing past.",
+      "strongest": "{{area}} is carrying you at the moment. It is worth knowing what you are doing right there.",
+      "lowButFine": "Some areas are low and do not matter much right now, and that is a life with priorities in it. This tool never treats a low number on its own as a problem.",
+      "next": "Nothing happens automatically from this. If one of these is worth working on, the coach is there when you want it.",
+      "retake": "Take it again",
+      "done": "Done"
+    }
   }
 }

@@ -12,6 +12,9 @@ import { useEffect } from 'react';
 import { I18nManager, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { resolveMediaGateway } from '@/core/media/ExpoMediaGateway';
+import { setMediaGateway } from '@/core/media/MediaGateway';
+
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, FontAssets } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -70,6 +73,13 @@ const NavThemes: Record<'light' | 'dark', Theme> = {
     },
   },
 };
+
+/**
+ * Install the media gateway once, at module load. It resolves to the real one when the native
+ * modules are in this build and to the Null one when they are not, so a JS-only build, Expo Go and
+ * every jest run all keep working — they simply do not offer a camera.
+ */
+setMediaGateway(resolveMediaGateway());
 
 export default function RootLayout() {
   // Load the brand fonts (Baloo 2 headings + Inter body, Design System §3) before

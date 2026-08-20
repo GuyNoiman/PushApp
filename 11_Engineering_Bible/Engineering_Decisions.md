@@ -477,8 +477,36 @@ events inside the existing pattern:
 
 ## E6 — Capturing media: audio, photos, and speech-to-text
 
-- **Date:** 2026-08-20 · **Status: PROPOSAL, not yet decided.** Written at the founder's request so
-  the cost is visible before the next build, not after it.
+- **Date:** 2026-08-20 · **Status: DECIDED and BUILT (2026-08-21), on the branch `feat/native-media`.**
+  The founder approved images and audio; speech-to-text is NOT taken (routes 2 and 3 below stay
+  unscheduled, and dictation remains the phone keyboard's).
+
+### What was built, and where it lives
+
+`expo-image-picker` and `expo-audio` are installed, with a permission sentence each that says what
+the capability is FOR in the user's own terms. `core/media/MediaGateway` is the seam every caller
+uses; `ExpoMediaGateway` loads the vendors lazily so a build without them still runs on the Null
+gateway — which is what Expo Go, a JS-only build and every jest run get. `AttachmentStrip` is the one
+control, and it renders NOTHING when the build cannot do anything rather than offering a button that
+apologises. A reflection's `attachments` are files on the device and are never uploaded.
+
+### THE FINGERPRINT MOVED, and that is why this is on its own branch
+
+| | iOS runtime fingerprint |
+|---|---|
+| Build 3, and `feat/buddy-3d-and-reminders` | `df6c2127bbd3be3766774e3f008f4ae5158306cd` |
+| `feat/native-media` | `503102a48932eb9a9f8a5696f8051ef4828f252c` |
+
+**Merging this branch ends over-the-air delivery to build 3.** Everything built on 2026-08-20/21 —
+six tools, the connection work, the Career ingest — is pure TypeScript and is deliverable to the
+partner's current phone RIGHT NOW. Merging first would strand all of it behind a new build that only
+the founder can produce (it needs his Apple sign-in).
+
+**So the order is: publish the over-the-air update FIRST, then merge this branch, then cut a build.**
+That is the only reason the work is not on the main branch already.
+
+- **Owner:** Founder decides; engineering scoped it.
+- **Stage:** Next build (POC → MVP).
 - **Owner:** Founder decides; engineering scoped it.
 - **Stage:** Next build (POC → MVP).
 

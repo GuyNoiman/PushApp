@@ -453,5 +453,15 @@
     },
     "continue": "Continue",
     "saveDraft": "Save draft"
+  },
+  "attach": {
+    "photo": "Photo",
+    "camera": "Take one",
+    "voice": "Voice note",
+    "stop": "Stop",
+    "remove": "Remove",
+    "seconds": "{{count}}s",
+    "denied": "Your phone has that turned off for PushApp. Settings can change it whenever you want.",
+    "failed": "That did not work. Nothing was saved."
   }
 }

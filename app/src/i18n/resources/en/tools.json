@@ -1,15 +1,19 @@
 {
   "title": "Tools",
   "subtitle": "Small things you do inside the app, and come out knowing yourself a little better.",
-  "communication": {
-    "title": "How to talk to you",
-    "body": "Six short comparisons that decide how the coach and your reminders are worded.",
-    "action": "Take the questionnaire"
+  "soon": "Coming",
+  "footnote": "New tools show up here as they land. Anything marked coming does not exist yet, which is why it does not open.",
+  "items": {
+    "questionnaire": "My questionnaire",
+    "communication": "How to talk to me",
+    "reflection": "Weekly reflection",
+    "breathe": "Breathe",
+    "strengths": "Strengths map",
+    "timer": "Focus timer",
+    "kindness": "Act of kindness",
+    "hardDay": "For a hard day"
   },
-  "soon": {
-    "title": "Coming here",
-    "reflection": "A weekly reflection questionnaire",
-    "strengths": "A strengths map",
-    "games": "Short games that train persistence"
+  "questionnaire": {
+    "save": "Save my answers"
   }
 }

@@ -214,6 +214,9 @@ function ThemedChrome() {
             option 1): messages are correspondence, not a place you live in, and Instagram's
             pattern of an envelope at the top of the feed is what people already expect. */}
         <Stack.Screen name="inbox" />
+        {/* The nine onboarding questions, taken again from the Tools tab. A root route rather than a
+            nested one so it slides over the tabs like every other full-screen flow. */}
+        <Stack.Screen name="questionnaire" />
         {/* DEV-only adaptive report→replan trigger — reachable from Settings when the
             founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
         <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />

@@ -28,8 +28,14 @@
  * THE LIGHTNESS PASS (founder, 2026-08-19: *"it still feels a bit heavy — I want it to breathe, to
  * be lighter and less crowded"*). Every removal below is a thing that was competing for attention
  * rather than earning it:
- *  - the row has NO fill and NO border of its own. It sits on the page, separated by air and a
- *    hairline, instead of being a small card inside a bigger card;
+ *  - the row had NO fill and NO border of its own, sitting on the page separated by air rather than
+ *    being a small card inside a bigger card. **PARTLY REVERSED by the founder on 2026-08-20, on a
+ *    real device:** with nothing around it, a Step did not read as an OBJECT, and a Step that does
+ *    not read as an object does not read as something you can drag. The swipe report (Done /
+ *    Postpone / Let go) is the fastest path through the day and it was invisible. The row now has a
+ *    hairline frame and no fill — the smallest thing that makes it a tile you can take hold of,
+ *    while the lightness the rest of the pass bought (no coloured tiles, one meta line, air between
+ *    rows) is untouched;
  *  - the icon lost its coloured tile and is now just the glyph, so the colour still carries urgency
  *    without a second shape around it;
  *  - the meta line is the DREAM only. The Journey and the Milestone position moved out — they are
@@ -113,7 +119,8 @@ export function StepRow({
         onPress={onPress}
         style={({ pressed }) => [
           styles.row,
-          pullForward && !completed && [styles.pullForward, { borderColor: theme.hairline }],
+          { borderColor: theme.hairline },
+          pullForward && !completed && styles.pullForward,
           pressed && styles.pressed,
         ]}>
         <View style={styles.glyph}>
@@ -176,8 +183,9 @@ const styles = StyleSheet.create({
   swipe: {
     marginBottom: Spacing.one,
   },
-  // No fill, no border: a Step is a line on the page. Generous vertical padding is what separates
-  // one from the next, because air separates more calmly than a box does.
+  // A framed tile with NO fill: the frame is what says "this is one thing, and you can move it";
+  // the absent fill is what keeps a list of them from reading as a stack of cards. Generous vertical
+  // padding still does the separating.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -185,10 +193,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.card,
-  },
-  // An offer from a later day: outlined and dashed, never filled like a Step the day is asking for.
-  pullForward: {
     borderWidth: 1,
+  },
+  // An offer from a later day: the same frame, dashed, so it reads as provisional rather than as
+  // something today is asking for. Only the STYLE differs now that every row is framed.
+  pullForward: {
     borderStyle: 'dashed',
   },
   // A fixed box so every title starts at the same x whether the glyph is a check or a walk icon.

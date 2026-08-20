@@ -70,6 +70,29 @@ CONTEXT for it — the active Journeys, and the people who could use a word — 
 a time. A list of them would compete with the day; one card says its piece and steps aside. It is also
 the difference between meeting a person and processing a queue.
 
+### 0.4b What a card is, after the founder saw it running (2026-08-19/20)
+
+The first lightness pass took the fill off almost everything, and on the real build the result was
+that **nothing read as a card at all** — the surfaces matched the page. The correction, and it is the
+rule now:
+
+- **A card has a surface and an edge.** The day, a Journey, a conversation: each is a card.
+- **The lightness lives INSIDE the card.** No boxes around the rows within it, hairlines instead of
+  borders, one surface for a whole subject instead of four competing ones.
+- **One subject, one card.** The day's Steps and the Steps that can be pulled forward into it share a
+  card, because they are the same subject. Lifting the second into its own module with its own
+  heading made it look like a different one.
+- This reverses `Inbox_Screen.md`'s "IG-style rows, not cards" for the Inbox, deliberately and for
+  the same reason.
+
+### 0.4c Urgency is said in words, once
+
+The Step glyph used to take a colour from the hour of the day, so after 8pm every icon in the list
+turned red. That is an alarm about nothing, in the app whose promise is no penalty for a life that
+got in the way — and it was saying badly what `streakRole` says precisely: whether missing this Step
+costs anything. **The glyph is calm always; the streak badge is the only urgency signal, and it is
+words.** Amber stays reserved for the one Step that actually binds the week.
+
 ### 0.5 Colour, unchanged in principle
 
 Teal is still the one accent and amber is still reserved for genuine time pressure. The redesign adds

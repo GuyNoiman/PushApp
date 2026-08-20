@@ -4,6 +4,55 @@ Status: Living Document
 
 ---
 
+# 2026-08-20 — the redesign, second round: the founder's notes from the running build
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1728 / 171 suites**. Everything here came
+from him looking at the real app rather than at a mockup, which is why several of it reverses
+something the mockups said. Rules recorded in `04_Product/Design_System.md` §0.4b–§0.5.
+
+## What the first pass got wrong, and the rule that replaced it
+
+**Cards stopped being cards.** The lightness pass had taken the fill off the day's Steps, and on the
+web build nothing read as a card any more. A card has a surface and an edge again; the lightness now
+lives INSIDE it — no boxes around the rows, hairlines instead of borders, one surface per subject.
+
+**"You could also do today" moved into the day's card**, under its Steps. It is an extension of the
+day, not a second subject.
+
+**Every Step glyph is calm.** It used to redden with the hour, which after 8pm turned the whole list
+into an alarm about nothing — and said badly what the streak badge says precisely. One urgency
+signal, in words, in one place.
+
+## Home, matched to the mockups
+
+The greeting has a monogram avatar (a photo would promise a Phase-2 feature that does not exist) and
+the tagline. The coach card is an eyebrow, one short line and a real Talk button. The heading is
+**Week's plan**, and the bare count beside it is gone — it counted the selected day's open Steps in a
+place where nobody could tell what it counted; the day's own heading sits inside the card instead.
+The Journeys card carries overall progress, the Milestone rail, the next Step, and Open Journey.
+
+## Circle: Friends and Allies
+
+The founder's answer to what his mockup's third statistic should have been — not a number, a second
+list. **An Ally is anyone who accepted a place in at least one of my Support Circles and is not saved
+as a friend**, held as ONE global list rather than per-Journey (`listAllAllies` + the pure
+`globalAllies` derivation). Only accepted rows count, a person in three circles is one person, and a
+pending friend request does not promote anyone. An Ally row offers one action — add as friend — and
+does not open a profile, because Friend Profile is a friends-only surface the server authorizes as
+such.
+
+**Invite works.** It had sat in that header since 2026-08-07 with an empty handler; it now shares the
+user's username through the OS share sheet, in their own form of address.
+
+## The other tabs
+
+Journeys, Circle, Inbox and Settings took the display voice and the line the mockups give each of
+them. Journeys shows the next Step on every active card. Inbox conversations became cards with teal
+unread dots, and the title says how much is actually waiting — the design built ahead of the
+messaging feature, at the founder's request.
+
+---
+
 # 2026-08-19 (night) — the Home redesign, first pass
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · `eslint` clean on everything touched (the 3

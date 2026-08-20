@@ -17,6 +17,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { RestartPrompt } from '@/components/settings/RestartPrompt';
+import { confirmAndRestartApp } from '@/i18n/restart';
+import { isRTL, isRTLLocale } from '@/i18n/rtl';
 import {
   OnboardingPrimaryButton,
   OnboardingScaffold,
@@ -201,11 +203,27 @@ export default function OnboardingScreen() {
 
 // ── Step bodies (presentational; flow-specific, co-located like coach.tsx) ──────
 
-/** §3 — language first: device-preselected but confirmed; a direction flip prompts a reopen. */
+/**
+ * §3 — language first: device-preselected but confirmed; a direction flip relaunches the app.
+ *
+ * IT RESTARTS RIGHT HERE, and that is the fix for what the partner hit (2026-08-20): he chose Hebrew
+ * and then answered the whole questionnaire in a left-aligned layout, because the flip only takes
+ * effect on a fresh launch and nothing was relaunching. Onboarding is the cheapest possible moment
+ * to relaunch — the language is already persisted and there is nothing else to lose — and it is the
+ * worst possible moment to leave someone reading a mirror-image of their own language.
+ */
 function LanguageStep({ onContinue }: { onContinue: () => void }) {
   const theme = useTheme();
   const { t } = useTranslation('onboarding');
   const { language, setLanguage, pendingRestart } = useLanguagePreference();
+
+  const select = (code: LanguageCode) => {
+    // Read the flip BEFORE applying it: `setLanguage` forces the new direction for the next launch,
+    // so afterwards there is nothing left to compare against.
+    const flipsDirection = isRTLLocale(code) !== isRTL();
+    setLanguage(code);
+    if (flipsDirection) confirmAndRestartApp();
+  };
 
   return (
     <OnboardingScaffold footer={<OnboardingPrimaryButton label={t('language.continue')} onPress={onContinue} />}>
@@ -223,7 +241,7 @@ function LanguageStep({ onContinue }: { onContinue: () => void }) {
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               accessibilityLabel={lang.englishName}
-              onPress={() => setLanguage(lang.code as LanguageCode)}
+              onPress={() => select(lang.code as LanguageCode)}
               style={({ pressed }) => [styles.langRow, pressed && styles.pressed]}>
               <View style={styles.langMain}>
                 <ThemedText type="default">{lang.endonym}</ThemedText>
@@ -461,7 +479,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   langMain: { flex: 1, gap: 1 },
-  langDivider: { position: 'absolute', left: Spacing.three, right: 0, bottom: 0, height: 1 },
+  // `start`/`end`, not `left`/`right`: a physical inset does not mirror, so under RTL the divider
+  // would be indented on the wrong side of the list.
+  langDivider: { position: 'absolute', start: Spacing.three, end: 0, bottom: 0, height: 1 },
   section: { borderRadius: Radius.card, overflow: 'hidden', gap: 0 },
   pressed: { opacity: 0.6 },
 });

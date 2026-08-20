@@ -4,6 +4,81 @@ Status: Living Document
 
 ---
 
+# 2026-08-21 — the Tools tab becomes real: six tools, a token budget, and the native branch
+
+Branch `feat/buddy-3d-and-reminders` (pushed), plus a second branch `feat/native-media` (pushed).
+`tsc` clean · **jest 1976 / 188 suites**. Continues the 2026-08-20 entries below, which stay accurate.
+
+## The Tools tab, rebuilt from the founder's own screens
+
+His designed screen replaced the four directions we proposed and he rejected. Search · three lenses
+(all / recently used / saved) · five categories · at most two recommendations. **The six unbuilt tools
+never appear as equals** — greyed, inside their category, never recommended. Every tool now carries
+the sentence that says what it does TO you, because a name and an icon ask a person to be curious.
+
+## Six tools, and the protocol that governs them
+
+`04_Product/Tool_Addition_Protocol.md` — a tool is not added until it says what it teaches us, the
+smallest summary that carries it, which parts of the app may read it WITH A REASON EACH, and when it
+goes stale. **"It influences nothing" is a valid contract; leaving it unanswered is not.**
+
+| Tool | State |
+|---|---|
+| **Life Wheel** | Built. Two questions per area — how it is, and how much it matters — and the finding is the DISTANCE. A low score in something you do not care about is a life with priorities in it, not a problem. Its influence: a pressing area is OFFERED as a Dream. |
+| **Values Clarification** | Built. 65 values, sort → reduce → rank → presence. Swipeable (right = very important, left = not for me now, down = between — the founder's correction, held in the MODEL). The deep pass asks his five questions per value, every field optional. |
+| **My Best Possible Year** | Built, on a writing SURFACE designed for the four exercises after it. Five steps; the halfway note at six months; nothing becomes a Dream that the person did not type. |
+| **Direction Statement** | Built. NOT a Dream and NOT a commitment, so it ends without offering to create anything. Its drawers are fed by CONTRIBUTORS, because the two tools the design names do not exist — "what I bring" is deliberately EMPTY and typed, since guessing at a strength is the one thing that drawer must never do. |
+| **Passion Map** | **Engine only.** Built to the PRD that arrived with it. Screens are the next piece. |
+| **Mirror Feedback** | **Rules only, on purpose.** See below. |
+
+## Mirror Feedback: the rules, and why nothing sends
+
+The only tool carrying OTHER PEOPLE'S private words, and the only one promising something to somebody
+who is not our user. The engine is built and the sending is not: invitation delivery does not exist,
+and the redaction pass needs an AI provider contract (no-training, zero-retention) we do not have.
+
+Three rules protect a contributor. The threshold is PER QUESTION and the whole result stays sealed
+until every one clears — opening question three at five while four sits at two tells the requester
+which question people would not answer. The requester sees a COUNT, never a person: the shape the
+engine is handed cannot hold an identity. Mode and questions LOCK at the first invitation.
+
+**A round runs one week (D67).** A deadline turned out to be a privacy device: a result that opened
+the moment the fifth answer landed would tell a requester WHEN each person answered, and against a
+list of seven people they invited themselves, timing is an identity. A short round DESTROYS what it
+collected — people answered under a promise that produced nothing.
+
+## A conversation now has a budget
+
+Tokens, with calls as a second ceiling that catches a loop. Three zones — open → narrowing → closing —
+because a budget that is fine until it is exhausted produces exactly the failure it exists to avoid.
+`narrowing` means one concrete thing: stop OFFERING free text, keep offering cards, which are free.
+**Nobody is ever told they ran out.** Metering is a decorator outside the retry, so a call retried
+three times is charged three times, and a failed call still counts.
+
+## The native branch, and the ORDER that matters
+
+`feat/native-media` adds `expo-image-picker` and `expo-audio` behind one `MediaGateway`. It moves the
+iOS fingerprint from `df6c2127…` to `503102a4…`.
+
+**Everything above is pure TypeScript and reaches the partner's current phone over the air TODAY.**
+Merging the native branch ends that. So: **publish the update first, then merge, then cut a build.**
+Detail: `11_Engineering_Bible/Engineering_Decisions.md` E6.
+
+## Decisions
+
+- **D64** — authored content is HELD in English; a Hebrew delivery is translated ONCE, late.
+- **D65** — the expert supplies the rhythm CONSTRAINTS; the coach chooses inside them.
+- **D66** — a reflection is FOR THE USER and does not have to teach us anything.
+- **D67** — a Mirror round runs a week and closes honestly either way.
+- **E6** — media capture: decided and built, on its own branch.
+
+## Also
+
+Career **G11–G13 ingested** (27 Journeys in 9 families), and the diagnosis now routes a real
+conversation to five of them. Challenges captured as Future with the question it is waiting on.
+
+---
+
 # 2026-08-20 (evening) — the silence is fixed, and the cause turned out to be real
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1767 / 178 suites**. Continues the

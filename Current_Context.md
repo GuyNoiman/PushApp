@@ -1,8 +1,8 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-20 (evening)** — start at the **"⛳ START HERE — 2026-08-20 (evening)"** block
-below. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
+Last updated: **2026-08-21 (overnight)** — start at the **"⛳ START HERE — 2026-08-21 (overnight)"**
+block below, and read its first section before merging anything. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
 day's four sessions, and the 2026-08-18 blocks under those are accurate history of the day before.
 Nothing below is deleted; each is superseded only as the starting point.
@@ -34,7 +34,65 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-20 (evening): the silence is fixed, and the cause was real
+# ⛳ START HERE — 2026-08-21 (overnight): the Tools tab is real, and there is ONE ordering decision
+
+Everything committed and **pushed**, on TWO branches. `tsc` clean, **jest 1976 / 188 suites**.
+Full detail: `00_Foundation/CHANGELOG.md`, the 2026-08-21 entry.
+
+## ▶ THE ONE THING TO DECIDE FIRST, before anything else is merged
+
+Two branches exist and the ORDER between them matters:
+
+| Branch | iOS fingerprint | What it holds |
+|---|---|---|
+| `feat/buddy-3d-and-reminders` | `df6c2127…` — **matches build 3** | Everything from 20–21 August: six tools, the connection work, the token budget, the Career ingest |
+| `feat/native-media` | `503102a4…` — **does not match** | `expo-image-picker` + `expo-audio` behind one MediaGateway |
+
+**Everything on the first branch reaches the partner's phone over the air right now. Merging the
+second one ends that** until a new build, which only the founder can produce (it needs his Apple
+sign-in). So:
+
+1. **Publish the update**, from `app/`, on the first branch:
+   `npx expo-updates fingerprint:generate --platform ios` (must still read `df6c2127…`), then
+   `npx eas-cli@latest update --branch production --message "<what changed>"`
+2. **Then** merge `feat/native-media`.
+3. **Then** cut a new build, and the partner reinstalls.
+
+Doing it in any other order strands two days of work behind a build that has not been made.
+
+## What is built
+
+Six tools, and a protocol that governs every one after them
+(`04_Product/Tool_Addition_Protocol.md`). **Life Wheel · Values Clarification · My Best Possible Year ·
+Direction Statement** are complete. **Passion Map** has its engine and no screens. **Mirror Feedback**
+has its rules and deliberately no sending.
+
+A conversation now has a token budget with three zones, and `narrowing` means one concrete thing:
+stop offering free text, keep offering cards, which cost nothing. Nobody is ever told they ran out.
+
+## ▶ NEXT, in order
+
+1. **The ordering decision above.**
+2. **Passion Map screens** — the engine is built and tested; the six-prompt flow, the arrangement
+   canvas and the daily signal are the work.
+3. **Mirror Feedback setup screens** — the safe half only. Nothing that sends.
+4. **The influence contracts** — the founder asked to be reminded at the end of the tool run. Values
+   Clarification still owes one; the reflections were answered in advance by D66.
+5. **Wire the diagnosis into the orchestrator** — `careerDiagnosis` is a tested engine and
+   `CoachOrchestrator` still walks a fixed list and never calls it.
+
+## What is waiting on somebody else
+
+- **The partner:** the brief asking for the ANSWERS to his diagnosis questions
+  (`04_Product/Partner_Brief_2026-08-20_Diagnosis_Questions.md`), and confirmation of the
+  `INTERVIEW_STAGE_GAP` split.
+- **The founder, for Mirror Feedback:** the four blocking decisions in the PRD's §18 — raw-response
+  backup expiry, the redaction provider and region, the moderation process, and Inbox + push
+  invitation delivery. None of them is an engineering call.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-20 (evening): the silence is fixed, and the cause was real
 
 Committed on `feat/buddy-3d-and-reminders`, **jest 1767 / 178 suites**, `tsc` clean. The open list is
 still `04_Product/Open_Work_2026-08-20.md` — read it after this block; several items on it are now

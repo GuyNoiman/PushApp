@@ -15,7 +15,9 @@
     "lifeWheel": "Life Wheel",
     "valuesClarity": "Values clarification",
     "bestYear": "My Best Possible Year",
-    "direction": "Direction Statement"
+    "direction": "Direction Statement",
+    "passionMap": "Passion map",
+    "mirror": "Mirror feedback"
   },
   "questionnaire": {
     "save": "Save my answers"
@@ -64,7 +66,9 @@
     "lifeWheel": "Eight parts of your life, and which one is quietly costing you.",
     "valuesClarity": "Which five values you want to live by, and how far you are from them.",
     "bestYear": "Write from a year ahead, and meet it again when it arrives.",
-    "direction": "One sentence about where you are pointed. Not a goal, and nothing is planned from it."
+    "direction": "One sentence about where you are pointed. Not a goal, and nothing is planned from it.",
+    "passionMap": "What draws you in, tested against real days.",
+    "mirror": "What people who know you see, when you ask them properly."
   },
   "lifeWheel": {
     "title": "Life Wheel",

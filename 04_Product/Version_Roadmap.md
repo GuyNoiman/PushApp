@@ -46,6 +46,10 @@ Goal: something people pay for; deepen the loops and turn on monetization.
 - **Weekly-planning flow** (§34.7)
 - **AI Buddy-drafts-your-Journey** (paid tier) + conversational refinement
 - **Achievements** wall (medals, conditions, detail sheet)
+- **Challenges** — time-boxed challenges a person can JOIN, with proof (a photo) and a completion prize
+  that lands on the Achievements wall (founder, 2026-08-20). Depends on media capture (E6) and on the
+  Achievements wall itself. Full capture, with the one question that decides whether it belongs in
+  this product at all: `PRD/Future/Challenges_PRD.md`.
 - **Deeper economy** — a second currency (e.g. gems), richer Shop, offers / "purchases-left"
 - **Buddy customization depth** — clothing · items · location · furniture categories
 - **Broader Ally types** (beyond friends) + fuller Support Circle

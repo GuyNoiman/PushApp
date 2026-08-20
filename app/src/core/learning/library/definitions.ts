@@ -168,6 +168,29 @@ export function goalFamiliesFor(domain: string | undefined): GoalFamily[] {
   return GOAL_FAMILIES.filter((f) => f.domain === domain);
 }
 
+/**
+ * The family an expert's DIAGNOSIS names — the rung that was missing between a real conversation and
+ * this library (`../experts/careerDiagnosis`).
+ *
+ * A family is identified by the PAIR, never by the bottleneck alone: `DIRECTION_GAP` is the
+ * bottleneck of three different Career families, and only the subtype separates "I do not know what
+ * I am aiming at in my career" from "I am applying for too many kinds of role". Matching on one half
+ * would route a job search into a soul search.
+ *
+ * Returns `undefined` for a pair no family claims, which is the correct answer rather than an error:
+ * an expert may legitimately diagnose a bottleneck whose content has not been authored yet, and the
+ * caller must say so instead of substituting the nearest family.
+ */
+export function goalFamilyForDiagnosis(
+  domain: string,
+  subtype: string,
+  bottleneck: string,
+): GoalFamily | undefined {
+  return GOAL_FAMILIES.find(
+    (f) => f.domain === domain && f.subtype === subtype && f.bottleneck === bottleneck,
+  );
+}
+
 /** One definition by id, or undefined for an unknown id (never throws). */
 export function journeyDefinition(id: string | undefined): JourneyDefinition | undefined {
   return JOURNEY_DEFINITIONS.find((d) => d.id === id);

@@ -752,6 +752,33 @@
           "description": "For example two good approaches a week."
         }
       }
+    },
+    "diagnosis": {
+      "applyNoResponse": {
+        "target": {
+          "prompt": "What kinds of roles are you applying for at the moment?",
+          "broad": "Several different kinds of role",
+          "clear": "One fairly clear kind of role"
+        },
+        "proof": {
+          "prompt": "Think of two or three central requirements of that role. Do you have real examples showing you have already done something like them?",
+          "cannotYet": "Honestly, I cannot do that work yet",
+          "cannotShow": "I can do it, but it is hard to show",
+          "haveExamples": "Yes, I have clear relevant examples"
+        },
+        "access": {
+          "prompt": "How do most of your opportunities reach you?",
+          "applicationsOnly": "Almost entirely through open applications",
+          "peopleToo": "Through conversations and people who know me, too"
+        },
+        "searchProcess": {
+          "prompt": "With a clear target, relevant proof and reasonable access, how much focused searching have you actually done, and where does it break?",
+          "barelyStarted": "I have barely started",
+          "collapses": "I start, and then the search falls apart",
+          "interviewsNoOffer": "I reach interviews and it stops there",
+          "noPattern": "I have searched properly and I see no pattern"
+        }
+      }
     }
   }
 }

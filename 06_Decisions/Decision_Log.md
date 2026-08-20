@@ -34,7 +34,7 @@ Hebrew-source library would invert that and make English the translation of a tr
 **Reflected in:** `07_Assets/Partner_Packages/README.md` (the standing instruction), the next partner
 letter, `04_Product/Open_Work_2026-08-20.md` §1.1.
 
-### D65 — The rhythm is not authored. The coach sets it, from the profile and the user's weekly time
+### D65 — The expert supplies the rhythm CONSTRAINTS; the coach chooses the rhythm inside them
 **Decision (founder, 2026-08-20),** answering the partner's open question about
 `rhythm / sessionsPerWeek / recurring Steps`:
 
@@ -52,6 +52,24 @@ the same arc is four weeks for someone with three hours a week and three months 
 twenty minutes. It also puts the rhythm where the app already asks about it — capacity is an
 onboarding signal, and "how much do you want to give this" is a question the coach can ask about the
 one Journey being built.
+
+**AMENDED the same day, by the founder, and the amendment matters:**
+
+> The expert can still say how many times a Step should be done, over what period, or give general
+> guidance that helps decide the rhythm. It should be a COMBINATION of what the expert supplies and
+> what the coach decides.
+
+So the split is not "content has no say". It is: **the expert states the rhythm CONSTRAINTS its
+content actually knows, and the coach chooses inside them.** An expert genuinely knows things the
+coach cannot infer — that a Step is worth nothing done once, that two of them a week is the floor
+below which the arc stops working, that a particular Milestone needs a fortnight to be real. What it
+cannot know is how much of a person's week is available. Guidance from the domain, the rate from the
+person, and the coach is the only thing that sees both.
+
+The practical form: a Step may carry a repetition hint and a Milestone a minimum span, both ADVISORY,
+and the coach schedules within them. Where they conflict with the person's capacity the coach
+lengthens the Journey rather than dropping below the expert's floor — a plan that runs slower is
+still the plan; a plan below the floor is a different plan wearing its name.
 
 **What it opens, and is deliberately not decided here:** an open-ended Journey has no fixed end, so
 "finished" has to mean something other than "the last Step was done". That is a real question and it

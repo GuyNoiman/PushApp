@@ -21,6 +21,7 @@ import '@/i18n';
 import { AppProvider, useApp } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
+import { ToolsShelfProvider } from '@/state/ToolsShelf';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
 import { NotificationCopySync } from '@/state/NotificationCopySync';
@@ -109,11 +110,16 @@ export default function RootLayout() {
                         adaptation fields. It mirrors form-of-address (D31) + week-start day (D33) into
                         the framework-free modules the engines read, so there is a single home. */}
                     <ProfileProvider>
-                      {/* Renders nothing: re-resolves pending reminder copy whenever the
-                          language, form of address or communication style changes (D40). It sits
-                          here because it needs the core, the language provider AND the profile. */}
-                      <NotificationCopySync />
-                      <ThemedChrome />
+                      {/* What the person has opened and kept in the Tools tab. ON-DEVICE ONLY (G1):
+                          which tools somebody reaches for is a picture of what they are struggling
+                          with, and it never leaves the phone. */}
+                      <ToolsShelfProvider>
+                        {/* Renders nothing: re-resolves pending reminder copy whenever the
+                            language, form of address or communication style changes (D40). It sits
+                            here because it needs the core, the language provider AND the profile. */}
+                        <NotificationCopySync />
+                        <ThemedChrome />
+                      </ToolsShelfProvider>
                     </ProfileProvider>
                   </LanguagePreferenceProvider>
                 </CelebrationPreferenceProvider>

@@ -1,6 +1,6 @@
 {
   "title": "Tools",
-  "subtitle": "Small things you do inside the app, and come out knowing yourself a little better.",
+  "subtitle": "Find what can help you right now.",
   "soon": "Coming",
   "footnote": "New tools show up here as they land. Anything marked coming does not exist yet, which is why it does not open.",
   "items": {
@@ -15,5 +15,47 @@
   },
   "questionnaire": {
     "save": "Save my answers"
+  },
+  "search": "Search tools",
+  "noMatch": "Nothing here matches “{{query}}” yet.",
+  "tabs": {
+    "all": "All tools",
+    "recent": "Recently used",
+    "saved": "Saved"
+  },
+  "sections": {
+    "recent": "Recently used",
+    "categories": "Browse by category",
+    "recommended": "Recommended for you"
+  },
+  "categories": {
+    "know": "Know yourself",
+    "reflect": "Reflect and journal",
+    "calm": "Calm and reset",
+    "focus": "Focus and act",
+    "relate": "People and relationships"
+  },
+  "count": "{{count}} tool",
+  "count_other": "{{count}} tools",
+  "minutes": "{{count}} min",
+  "ago": {
+    "now": "Just now",
+    "minutes": "{{count}} min ago",
+    "hours": "{{count}} h ago",
+    "days": "{{count}} d ago"
+  },
+  "save": "Save",
+  "unsave": "Remove from saved",
+  "savedEmpty": "Nothing saved yet. Save a tool and it waits for you here.",
+  "recentEmpty": "Once you have used a tool, it shows up here.",
+  "blurbs": {
+    "questionnaire": "Teaches the coach how you actually work.",
+    "communication": "Sets the voice the app uses when you are struggling.",
+    "reflection": "Ten minutes on what the week was really about.",
+    "breathe": "Two minutes to get out of your own head.",
+    "strengths": "What you are good at, in your own words.",
+    "timer": "One stretch of work, with nothing else allowed in.",
+    "kindness": "One small thing for someone else, chosen on purpose.",
+    "hardDay": "Somewhere to put it down when the day went badly."
   }
 }

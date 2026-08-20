@@ -1,65 +1,114 @@
 /**
- * Tools — the fifth tab, in the slot the Inbox left on 2026-08-20.
+ * Tools — the fifth tab, rebuilt 2026-08-20 from the founder's own designed screen.
  *
- * WHAT IT IS FOR, in the founder's words: *"games and questionnaires for the user"*, including the
- * onboarding questionnaire, *"so the user can redo it if they want"*. The through-line is that
- * everything here is something you DO inside the app and come out of knowing yourself a little
- * better — the opposite of Home, which is about the world outside the app and what you promised to
- * do in it.
+ * WHAT IT IS FOR, in his words: *"games and questionnaires for the user"*, including the onboarding
+ * questionnaire, *"so the user can redo it if they want"*. The through-line is that everything here
+ * is something you DO inside the app and come out of knowing yourself a little better — the opposite
+ * of Home, which is about the world outside the app and what you promised to do in it.
  *
- * THE SHAPE IS HIS REFERENCE, THE STYLE IS OURS. He sent a bright children's-app screen: a hero
- * illustration over a two-column grid of tiles. The grid is exactly right and it is what this
- * builds; the cartoon is not, because this app talks to adults about things they have failed at
- * before, and a jolly mascot would be the wrong voice at the wrong moment. So the hero is a calm
- * horizon drawn in code, in the same language as the week's dusk.
+ * ── WHAT REPLACED WHAT, and why ─────────────────────────────────────────────────────────────────
  *
- * WHAT IS LIVE IS WHAT EXISTS. Two tiles work. The rest are marked as coming and are NOT pressable —
- * they are a roadmap the user can see, not buttons that answer a tap with nothing. The moment one
- * lands it becomes live; nothing else about the screen changes.
+ * The previous version was a hero horizon over a flat grid of eight equal tiles. It was built from a
+ * children's-app reference the founder sent, and it had one honest problem: eight tiles of identical
+ * size and weight, six of which do not exist, reads as a waiting room whatever is drawn on top. Four
+ * alternative directions were designed and he rejected all four; this is HIS screen, and it answers
+ * the problem a different way — by giving the page an ORDER of attention instead of a flat list:
+ *
+ *   search        → for the person who already knows what they came for
+ *   recently used → the strongest signal there is about what someone will open next
+ *   categories    → five rooms, so eight tools stop being a bag
+ *   recommended   → at most two, LIVE only, for the person who does not know where to start
+ *
+ * **The six unbuilt tools never appear as equals.** They live inside their category, greyed, with
+ * "Coming" on them and no tap. They are never recommended, never counted as usable and never given a
+ * tile the same weight as something that works. A page that recommends something unbuildable lies.
+ *
+ * **The filter control from the mockup is deliberately not built.** It has no defined behaviour yet,
+ * and the rule this tab was built on the first time still holds: a button that answers a tap with
+ * nothing is worse than no button. It lands when there is something to filter by.
+ *
+ * **PRIVACY (G1).** What somebody opens here — "for a hard day", three times this week — is a picture
+ * of what they are struggling with. It is stored on the device and nowhere else
+ * ({@link ../../state/ToolsShelf}), never synced and never logged.
+ *
+ * Presentational only (Bible §19): the catalogue is {@link ../../core/tools/catalog}, the arithmetic
+ * is {@link ../../core/tools/shelf}, and the stored shelf is the provider.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, type Href } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TabScrollView } from '@/components/ui/TabScrollView';
+import { displayFont, displayScale } from '@/constants/displayFont';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import {
+  TOOL_CATALOG,
+  TOOL_CATEGORY_IDS,
+  isLive,
+  toolsInCategory,
+  type ToolCategoryId,
+  type ToolDefinition,
+} from '@/core/tools/catalog';
+import { ago, recentlyUsed, recommended, savedTools, searchTools } from '@/core/tools/shelf';
 import { useTheme } from '@/hooks/use-theme';
+import { isRTL } from '@/i18n/rtl';
+import { useToolsShelf } from '@/state/ToolsShelf';
 
-/** One tile. `href` present ⇒ it works; absent ⇒ it is on the way and says so. */
-interface Tool {
-  key: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  href?: Href;
-}
-
-const TOOLS: readonly Tool[] = [
-  { key: 'questionnaire', icon: 'list-outline', href: '/questionnaire' as Href },
-  { key: 'communication', icon: 'chatbubbles-outline', href: '/settings/communication-style' as Href },
-  { key: 'reflection', icon: 'create-outline' },
-  { key: 'breathe', icon: 'leaf-outline' },
-  { key: 'strengths', icon: 'sparkles-outline' },
-  { key: 'timer', icon: 'timer-outline' },
-  { key: 'kindness', icon: 'heart-outline' },
-  { key: 'hardDay', icon: 'medkit-outline' },
-];
+/** The three lenses on the same catalogue, in the order the founder's design shows them. */
+type Lens = 'all' | 'recent' | 'saved';
+const LENSES: readonly Lens[] = ['all', 'recent', 'saved'];
 
 export default function ToolsScreen() {
+  const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation('tools');
+  const shelf = useToolsShelf();
+
+  const [lens, setLens] = useState<Lens>('all');
+  const [query, setQuery] = useState('');
+  /** Which category is expanded. Null ⇒ the page's own order, which is the default view. */
+  const [openCategory, setOpenCategory] = useState<ToolCategoryId | null>(null);
+
+  const label = useCallback((tool: ToolDefinition) => t(`items.${tool.key}`), [t]);
+
+  // Read once per render so every "how long ago" on the screen agrees with itself.
+  const now = Date.now();
+  const recent = useMemo(() => recentlyUsed(shelf.usage), [shelf.usage]);
+  const suggested = useMemo(() => recommended(shelf.usage, now), [shelf.usage, now]);
+  const saved = useMemo(() => savedTools(shelf.saved), [shelf.saved]);
+  const searching = query.trim().length > 0;
+  const results = useMemo(() => searchTools(query, label), [query, label]);
+
+  /** Open a tool and remember it. A "coming" tool has no route and never reaches here. */
+  const open = useCallback(
+    (tool: ToolDefinition) => {
+      if (!tool.route) return;
+      shelf.markUsed(tool.key);
+      router.push(tool.route as Href);
+    },
+    [router, shelf],
+  );
+
+  /** The list a lens is showing, once search or a lens has narrowed the catalogue. */
+  const listed: ToolDefinition[] | null = searching
+    ? results
+    : lens === 'saved'
+      ? saved
+      : lens === 'recent'
+        ? recent
+        : openCategory
+          ? toolsInCategory(openCategory)
+          : null;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <Hero />
-
           <View style={styles.header}>
             <ThemedText type="display">{t('title')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
@@ -67,17 +116,222 @@ export default function ToolsScreen() {
             </ThemedText>
           </View>
 
-          <View style={styles.grid}>
-            {TOOLS.map((tool) => (
-              <Tile
-                key={tool.key}
-                label={t(`items.${tool.key}`)}
-                icon={tool.icon}
-                onPress={tool.href ? () => router.push(tool.href!) : undefined}
-                soonLabel={t('soon')}
-              />
-            ))}
+          {/* ── Search — for the person who already knows what they came for ── */}
+          <View
+            style={[
+              styles.search,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+            ]}>
+            <Ionicons name="search" size={17} color={theme.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('search')}
+              placeholderTextColor={theme.textMuted}
+              accessibilityLabel={t('search')}
+              style={[styles.searchInput, { color: theme.text, textAlign: isRTL() ? 'right' : 'left' }]}
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+            {searching ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('clearSearch', { ns: 'common' })}
+                onPress={() => setQuery('')}
+                hitSlop={10}>
+                <Ionicons name="close-circle" size={17} color={theme.textMuted} />
+              </Pressable>
+            ) : null}
           </View>
+
+          {/* ── The three lenses. Hidden while searching: a search is already a lens, and two at
+              once is a state nobody can predict the result of. ── */}
+          {!searching ? (
+            <View style={[styles.segmented, { backgroundColor: theme.backgroundSelected }]}>
+              {LENSES.map((value) => {
+                const active = lens === value;
+                return (
+                  <Pressable
+                    key={value}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={t(`tabs.${value}`)}
+                    onPress={() => {
+                      setLens(value);
+                      setOpenCategory(null);
+                    }}
+                    style={[
+                      styles.segment,
+                      active && { backgroundColor: theme.tint },
+                    ]}>
+                    <ThemedText
+                      type="smallBold"
+                      style={{ color: active ? theme.backgroundElement : theme.textSecondary }}>
+                      {t(`tabs.${value}`)}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {/* An open category needs a way back out of it. Without one the only exit is a lens tab,
+              which is not where anyone looks for "back". */}
+          {openCategory && !searching ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('back', { ns: 'common' })}
+              onPress={() => setOpenCategory(null)}
+              style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}>
+              <Ionicons
+                name={isRTL() ? 'chevron-forward' : 'chevron-back'}
+                size={18}
+                color={theme.tint}
+              />
+              <ThemedText type="smallBold" style={{ color: theme.tint }}>
+                {t(`categories.${openCategory}`)}
+              </ThemedText>
+            </Pressable>
+          ) : null}
+
+          {listed ? (
+            <ToolList
+              tools={listed}
+              emptyText={
+                searching
+                  ? t('noMatch', { query: query.trim() })
+                  : lens === 'saved'
+                    ? t('savedEmpty')
+                    : t('recentEmpty')
+              }
+              onOpen={open}
+              shelf={shelf}
+            />
+          ) : (
+            <>
+              {/* ── Recently used — the strongest signal about what gets opened next ── */}
+              {recent.length > 0 ? (
+                <>
+                  <SectionTitle>{t('sections.recent')}</SectionTitle>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.rail}>
+                    {recent.map((tool) => {
+                      const since = ago(shelf.usage[tool.key] ?? now, now);
+                      return (
+                        <Pressable
+                          key={tool.key}
+                          accessibilityRole="button"
+                          accessibilityLabel={label(tool)}
+                          onPress={() => open(tool)}
+                          style={({ pressed }) => [
+                            styles.recentCard,
+                            { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+                            pressed && styles.pressed,
+                          ]}>
+                          <View style={[styles.glyph, { backgroundColor: theme.tealTint }]}>
+                            <Ionicons
+                              name={tool.icon as keyof typeof Ionicons.glyphMap}
+                              size={17}
+                              color={theme.tealStrong}
+                            />
+                          </View>
+                          <ThemedText type="displaySmall" numberOfLines={2} style={styles.recentTitle}>
+                            {label(tool)}
+                          </ThemedText>
+                          <ThemedText type="small" style={{ color: theme.textMuted }}>
+                            {since.unit === 'now'
+                              ? t('ago.now')
+                              : t(`ago.${since.unit}`, { count: since.value })}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </>
+              ) : null}
+
+              {/* ── Five rooms. A category is what a tool does FOR you, which is what turns eight
+                  tools into a place instead of a drawer. ── */}
+              <SectionTitle>{t('sections.categories')}</SectionTitle>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.rail}>
+                {TOOL_CATEGORY_IDS.map((id) => {
+                  const count = toolsInCategory(id).length;
+                  return (
+                    <Pressable
+                      key={id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t(`categories.${id}`)}, ${t('count', { count })}`}
+                      onPress={() => setOpenCategory(id)}
+                      style={({ pressed }) => [
+                        styles.categoryCard,
+                        { backgroundColor: theme.tealWash, borderColor: theme.hairline },
+                        pressed && styles.pressed,
+                      ]}>
+                      <View style={[styles.glyph, { backgroundColor: theme.tealTint }]}>
+                        <Ionicons name={CATEGORY_ICON[id]} size={17} color={theme.tealStrong} />
+                      </View>
+                      <ThemedText type="displaySmall" numberOfLines={2} style={styles.categoryTitle}>
+                        {t(`categories.${id}`)}
+                      </ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textMuted }}>
+                        {t('count', { count })}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              {/* ── At most two, LIVE only, for the person who does not know where to start ── */}
+              {suggested.length > 0 ? (
+                <>
+                  <SectionTitle>{t('sections.recommended')}</SectionTitle>
+                  <View style={styles.recommendList}>
+                    {suggested.map((tool) => (
+                      <Pressable
+                        key={tool.key}
+                        accessibilityRole="button"
+                        accessibilityLabel={label(tool)}
+                        onPress={() => open(tool)}
+                        style={({ pressed }) => [
+                          styles.recommendCard,
+                          { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+                          pressed && styles.pressed,
+                        ]}>
+                        <View style={styles.recommendText}>
+                          <ThemedText type="displaySmall" numberOfLines={1}>
+                            {label(tool)}
+                          </ThemedText>
+                          <ThemedText
+                            type="small"
+                            numberOfLines={2}
+                            style={{ color: theme.textSecondary }}>
+                            {t(`blurbs.${tool.key}`)}
+                          </ThemedText>
+                          {tool.minutes ? (
+                            <ThemedText type="small" style={{ color: theme.textMuted }}>
+                              {t('minutes', { count: tool.minutes })}
+                            </ThemedText>
+                          ) : null}
+                        </View>
+                        <View style={[styles.playCircle, { backgroundColor: theme.tint }]}>
+                          <Ionicons
+                            name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+                            size={17}
+                            color={theme.backgroundElement}
+                          />
+                        </View>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : null}
+            </>
+          )}
 
           <ThemedText type="small" themeColor="textMuted" style={styles.foot}>
             {t('footnote')}
@@ -88,161 +342,242 @@ export default function ToolsScreen() {
   );
 }
 
-/**
- * The horizon at the top of the screen — the same code-drawn language as the week's summary card,
- * for the same reasons: it re-tones between the themes, stays sharp at any size, and weighs nothing,
- * so the whole tab travels over the air.
- */
-function Hero() {
-  const theme = useTheme();
-  const dark = useColorScheme() === 'dark';
+/** Category glyphs. Here rather than in the catalogue: a room's icon is a screen decision. */
+const CATEGORY_ICON: Record<ToolCategoryId, keyof typeof Ionicons.glyphMap> = {
+  know: 'person-outline',
+  reflect: 'book-outline',
+  calm: 'leaf-outline',
+  focus: 'locate-outline',
+  relate: 'heart-outline',
+};
+
+function SectionTitle({ children }: { children: string }) {
   return (
-    <View style={styles.hero} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <LinearGradient
-        colors={[theme.sunsetFrom, theme.sunsetMid, theme.sunsetTo]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={styles.heroFill}>
-        <Svg width="100%" height="100%" viewBox="0 0 340 150" preserveAspectRatio="none">
-          <Defs>
-            <RadialGradient id="toolsHalo" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={theme.sunsetSun} stopOpacity={dark ? 0.5 : 0.4} />
-              <Stop offset="1" stopColor={theme.sunsetSun} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Circle cx="252" cy="52" r="46" fill="url(#toolsHalo)" />
-          <Circle cx="252" cy="52" r="13" fill={theme.sunsetSun} opacity={dark ? 0.9 : 0.75} />
-          {/* A paper plane, not a mascot: the idea of going somewhere, drawn with three strokes. */}
-          <Path
-            d="M74 92 L150 62 L120 106 L110 90 Z"
-            fill={dark ? '#F4EDE7' : '#3B2C24'}
-            opacity={0.9}
-          />
-          <Path d="M110 90 L150 62" stroke={theme.sunsetSun} strokeWidth="2" opacity={0.8} />
-          <Path
-            d="M0 150 C60 126 110 136 160 124 C214 111 258 122 340 110 L340 150 Z"
-            fill={dark ? '#1C1522' : '#E4C6AE'}
-            opacity={dark ? 0.9 : 0.7}
-          />
-        </Svg>
-      </LinearGradient>
-    </View>
+    <ThemedText type="displaySmall" style={styles.sectionTitle}>
+      {children}
+    </ThemedText>
   );
 }
 
-/** One tool tile. Without `onPress` it renders as a calm "coming" tile and cannot be tapped. */
-function Tile({
-  label,
-  icon,
-  onPress,
-  soonLabel,
+/**
+ * A narrowed list of tools, as rows. A row carries the one line that says what the tool does TO you,
+ * because a name and an icon ask a person to be curious and a sentence lets them choose.
+ *
+ * A tool that does not exist yet renders as a row too — greyed, labelled, and not pressable. It is a
+ * roadmap the user can read, never a button that answers a tap with nothing.
+ */
+function ToolList({
+  tools,
+  emptyText,
+  onOpen,
+  shelf,
 }: {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  onPress?: () => void;
-  soonLabel: string;
+  tools: ToolDefinition[];
+  emptyText: string;
+  onOpen: (tool: ToolDefinition) => void;
+  shelf: ReturnType<typeof useToolsShelf>;
 }) {
   const theme = useTheme();
-  const soon = onPress === undefined;
+  const { t } = useTranslation('tools');
 
-  const body = (
-    <>
-      <View style={[styles.tile, { backgroundColor: soon ? theme.backgroundSelected : theme.tealTint }]}>
-        <Ionicons name={icon} size={20} color={soon ? theme.textMuted : theme.tealStrong} />
-      </View>
-      <View style={styles.tileText}>
-        <ThemedText
-          type="displaySmall"
-          numberOfLines={2}
-          style={{ color: soon ? theme.textMuted : theme.text }}>
-          {label}
-        </ThemedText>
-        {soon ? (
-          <ThemedText type="small" style={{ color: theme.textMuted }}>
-            {soonLabel}
-          </ThemedText>
-        ) : null}
-      </View>
-    </>
-  );
-
-  if (soon) {
+  if (tools.length === 0) {
     return (
-      <View
-        // Announced as unavailable rather than silently inert, so a screen-reader user is not left
-        // tapping a tile that will never answer.
-        accessibilityLabel={`${label}. ${soonLabel}`}
-        style={[styles.card, styles.soonCard, { borderColor: theme.hairline }]}>
-        {body}
-      </View>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
+        {emptyText}
+      </ThemedText>
     );
   }
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
-        pressed && styles.pressed,
-      ]}>
-      {body}
-    </Pressable>
+    <View style={styles.list}>
+      {tools.map((tool) => {
+        const live = isLive(tool);
+        const saved = shelf.isSaved(tool.key);
+        const name = t(`items.${tool.key}`);
+        return (
+          <View
+            key={tool.key}
+            style={[
+              styles.row,
+              { borderColor: theme.hairline },
+              live
+                ? { backgroundColor: theme.backgroundElement }
+                : { borderStyle: 'dashed' as const },
+            ]}>
+            <Pressable
+              accessibilityRole={live ? 'button' : 'text'}
+              accessibilityLabel={live ? name : `${name}. ${t('soon')}`}
+              disabled={!live}
+              onPress={() => onOpen(tool)}
+              style={styles.rowMain}>
+              <View
+                style={[
+                  styles.glyph,
+                  { backgroundColor: live ? theme.tealTint : theme.backgroundSelected },
+                ]}>
+                <Ionicons
+                  name={tool.icon as keyof typeof Ionicons.glyphMap}
+                  size={17}
+                  color={live ? theme.tealStrong : theme.textMuted}
+                />
+              </View>
+              <View style={styles.rowText}>
+                <ThemedText
+                  type="displaySmall"
+                  numberOfLines={1}
+                  style={{
+                    color: live ? theme.text : theme.textMuted,
+                    fontSize: Math.round(16 * displayScale()),
+                    fontFamily: displayFont(),
+                  }}>
+                  {name}
+                </ThemedText>
+                <ThemedText type="small" numberOfLines={2} style={{ color: theme.textMuted }}>
+                  {live
+                    ? t(`blurbs.${tool.key}`)
+                    : `${t('soon')} · ${t(`blurbs.${tool.key}`)}`}
+                </ThemedText>
+              </View>
+              {tool.minutes && live ? (
+                <ThemedText type="small" style={{ color: theme.textMuted }}>
+                  {t('minutes', { count: tool.minutes })}
+                </ThemedText>
+              ) : null}
+            </Pressable>
+
+            {/* Saving a tool that does not exist would be saving a promise. */}
+            {live ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: saved }}
+                accessibilityLabel={`${saved ? t('unsave') : t('save')}: ${name}`}
+                onPress={() => shelf.toggleSaved(tool.key)}
+                hitSlop={10}
+                style={styles.saveButton}>
+                <Ionicons
+                  name={saved ? 'bookmark' : 'bookmark-outline'}
+                  size={17}
+                  color={saved ? theme.tint : theme.textMuted}
+                />
+              </Pressable>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
   );
 }
+
+// Every live tool must have a blurb, and every blurb a tool. Asserted by the screen's test rather
+// than at runtime, so a missing sentence fails in CI instead of rendering an i18n key to a user.
+export const TOOL_KEYS = TOOL_CATALOG.map((tool) => tool.key);
 
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: 'row', justifyContent: 'center' },
   safeArea: { flex: 1, maxWidth: MaxContentWidth, alignSelf: 'stretch' },
   content: { paddingBottom: BottomTabInset + Spacing.six },
-  hero: {
-    height: 150,
-    marginHorizontal: Spacing.four,
-    marginTop: Spacing.two,
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  heroFill: { flex: 1 },
   header: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
     gap: 2,
   },
-  grid: {
+  search: {
+    marginHorizontal: Spacing.four,
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    height: 44,
+    borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  searchInput: { flex: 1, fontSize: 15, padding: 0 },
+  segmented: {
+    marginHorizontal: Spacing.four,
+    marginTop: Spacing.three,
+    flexDirection: 'row',
+    borderRadius: Radius.pill,
+    padding: 3,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+  },
+  sectionTitle: {
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.two,
   },
-  // Two per row, and the gap is subtracted so the pair fits any width without a hardcoded phone size.
-  card: {
-    width: '48%',
-    flexGrow: 1,
-    minHeight: 108,
-    borderRadius: 18,
-    borderWidth: 1,
+  rail: { paddingHorizontal: Spacing.four, gap: Spacing.two },
+  recentCard: {
+    width: 150,
     padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: Spacing.two,
-    justifyContent: 'space-between',
   },
-  soonCard: {
-    borderStyle: 'dashed',
-    backgroundColor: 'transparent',
+  recentTitle: { minHeight: 40 },
+  categoryCard: {
+    width: 128,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.two,
   },
-  tile: {
-    width: 38,
-    height: 38,
-    borderRadius: Radius.button,
+  categoryTitle: { minHeight: 40 },
+  glyph: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tileText: { gap: 1 },
-  foot: {
+  recommendList: { paddingHorizontal: Spacing.four, gap: Spacing.two },
+  recommendCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  recommendText: { flex: 1, gap: 2 },
+  playCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  list: { paddingHorizontal: Spacing.four, paddingTop: Spacing.three, gap: Spacing.two },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    paddingEnd: Spacing.two,
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+  },
+  rowText: { flex: 1, minWidth: 0, gap: 2 },
+  saveButton: { padding: Spacing.two },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
   },
-  pressed: { opacity: 0.85 },
+  empty: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four },
+  foot: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four },
+  pressed: { opacity: 0.7 },
 });

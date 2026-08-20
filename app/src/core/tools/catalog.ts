@@ -40,6 +40,7 @@ export const TOOL_CATALOG: readonly ToolDefinition[] = [
   { key: 'communication', category: 'relate', icon: 'chatbubbles-outline', route: '/settings/communication-style', minutes: 3 },
   { key: 'lifeWheel', category: 'know', icon: 'pie-chart-outline', route: '/tools/life-wheel', minutes: 8 },
   { key: 'valuesClarity', category: 'know', icon: 'compass-outline', route: '/tools/values', minutes: 5 },
+  { key: 'bestYear', category: 'reflect', icon: 'sunny-outline', route: '/tools/best-year', minutes: 15 },
   { key: 'reflection', category: 'reflect', icon: 'create-outline', minutes: 10 },
   { key: 'breathe', category: 'calm', icon: 'leaf-outline', minutes: 2 },
   { key: 'strengths', category: 'know', icon: 'sparkles-outline', minutes: 8 },

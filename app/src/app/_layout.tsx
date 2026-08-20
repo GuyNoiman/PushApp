@@ -23,6 +23,7 @@ import { AuthProvider } from '@/state/AuthProvider';
 import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
 import { LifeWheelProvider } from '@/state/LifeWheelStore';
 import { ToolsShelfProvider } from '@/state/ToolsShelf';
+import { ReflectionsProvider } from '@/state/ReflectionsStore';
 import { ValuesProvider } from '@/state/ValuesStore';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
 import { LanguagePreferenceProvider } from '@/state/LanguagePreference';
@@ -122,11 +123,15 @@ export default function RootLayout() {
                           {/* A Values Clarification in progress, and the five it ends with.
                               ON-DEVICE ONLY (G1) — see the store's header. */}
                           <ValuesProvider>
+                            {/* Letters written to a future self, and what is due back. The most
+                                personal thing the app holds — ON-DEVICE ONLY (G1). */}
+                            <ReflectionsProvider>
                         {/* Renders nothing: re-resolves pending reminder copy whenever the
                             language, form of address or communication style changes (D40). It sits
                             here because it needs the core, the language provider AND the profile. */}
                         <NotificationCopySync />
                         <ThemedChrome />
+                            </ReflectionsProvider>
                           </ValuesProvider>
                         </LifeWheelProvider>
                       </ToolsShelfProvider>

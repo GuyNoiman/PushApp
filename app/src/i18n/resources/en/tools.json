@@ -13,7 +13,8 @@
     "kindness": "Act of kindness",
     "hardDay": "For a hard day",
     "lifeWheel": "Life Wheel",
-    "valuesClarity": "Values clarification"
+    "valuesClarity": "Values clarification",
+    "bestYear": "My Best Possible Year"
   },
   "questionnaire": {
     "save": "Save my answers"
@@ -60,7 +61,8 @@
     "kindness": "One small thing for someone else, chosen on purpose.",
     "hardDay": "Somewhere to put it down when the day went badly.",
     "lifeWheel": "Eight parts of your life, and which one is quietly costing you.",
-    "valuesClarity": "Which five values you want to live by, and how far you are from them."
+    "valuesClarity": "Which five values you want to live by, and how far you are from them.",
+    "bestYear": "Write from a year ahead, and meet it again when it arrives."
   },
   "lifeWheel": {
     "title": "Life Wheel",
@@ -325,6 +327,65 @@
       "skip": "Skip this one",
       "continue": "Continue",
       "lead": "Five short questions, and every one of them is optional."
+    }
+  },
+  "bestYear": {
+    "title": "My Best Possible Year",
+    "step": "{{current}} of {{total}}",
+    "date": {
+      "title": "When are you writing from?",
+      "body": "You are going to write from that day, looking back, as though the year went as well as it realistically could. Not a fantasy, and not a plan.",
+      "in365": "A year from now",
+      "in730": "Two years from now",
+      "in180": "Six months from now"
+    },
+    "prepare": {
+      "title": "Before you start.",
+      "body": "Write in the past tense, as though it has already happened. Write to somebody who has not seen you this year. And keep it realistic — the point is a year you could actually have, because that is the only kind you can walk towards.",
+      "begin": "I am ready"
+    },
+    "write": {
+      "title": "A year has passed, and things went as well as they realistically could.",
+      "body": "Write to someone who has not seen you this year. What changed in your everyday life?",
+      "placeholder": "Start anywhere.",
+      "words": "{{count}} words",
+      "prompts": {
+        "personal": "Personal life",
+        "work": "Work and learning",
+        "relationships": "Relationships",
+        "ordinaryDay": "An ordinary day"
+      },
+      "hints": {
+        "personal": "What is different about how you look after yourself?",
+        "work": "What did you get good at, and what did you stop doing?",
+        "relationships": "Who did you get closer to, and how?",
+        "ordinaryDay": "Walk through a Tuesday. What does it actually look like?"
+      },
+      "dictate": "Use the microphone on your keyboard to speak instead of typing."
+    },
+    "deliver": {
+      "title": "When should this come back to you?",
+      "body": "It stays on this phone. Nothing is sent anywhere.",
+      "checkpoint": "Also check in after six months",
+      "checkpointNote": "Not a reminder to do anything. A chance to ask whether you still mean it, and whether you are moving that way.",
+      "save": "Save the letter"
+    },
+    "result": {
+      "title": "It is written.",
+      "returns": "It comes back to you on {{date}}.",
+      "checkpointOn": "You will hear from it once before then, on {{date}}.",
+      "dreamsLead": "Anything in there you are actually aiming at? Keep it as a Dream. You choose, and you can edit it.",
+      "dreamPlaceholder": "Name what you are aiming at",
+      "addDream": "Keep as a Dream",
+      "dreamAdded": "Added to your Dreams.",
+      "done": "Done"
+    },
+    "readBack": {
+      "letter": "You wrote this a while ago, for today.",
+      "checkpoint": "Halfway. You wrote this on {{date}} — is it still what you want, and are you moving that way?",
+      "open": "Read it",
+      "keep": "Close it",
+      "written": "Written {{date}}"
     }
   }
 }

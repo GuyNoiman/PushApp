@@ -35,6 +35,7 @@ import enNotify from './resources/en/notify.json';
 import enOnboarding from './resources/en/onboarding.json';
 import enRecovery from './resources/en/recovery.json';
 import enSettings from './resources/en/settings.json';
+import enTools from './resources/en/tools.json';
 import enWeeklyReview from './resources/en/weeklyReview.json';
 import heCelebration from './resources/he/celebration.json';
 import heCircle from './resources/he/circle.json';
@@ -52,6 +53,7 @@ import heJourney from './resources/he/journey.json';
 import heJourneys from './resources/he/journeys.json';
 import heNotify from './resources/he/notify.json';
 import heSettings from './resources/he/settings.json';
+import heTools from './resources/he/tools.json';
 import heWeeklyReview from './resources/he/weeklyReview.json';
 import heDreams from './resources/he/dreams.json';
 import heOnboarding from './resources/he/onboarding.json';
@@ -62,8 +64,8 @@ export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 
 export const DEFAULT_NAMESPACE = 'common';
 
 export const resources = {
-  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, friendProfile: enFriendProfile, explore: enExplore, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, onboarding: enOnboarding, communication: enCommunication, celebration: enCelebration, inactivity: enInactivity, recovery: enRecovery, library: enLibrary },
-  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, friendProfile: heFriendProfile, explore: heExplore, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, onboarding: heOnboarding, communication: heCommunication, celebration: heCelebration, inactivity: heInactivity, recovery: heRecovery, library: heLibrary },
+  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, friendProfile: enFriendProfile, explore: enExplore, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, onboarding: enOnboarding, communication: enCommunication, celebration: enCelebration, inactivity: enInactivity, recovery: enRecovery, library: enLibrary, tools: enTools },
+  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, friendProfile: heFriendProfile, explore: heExplore, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, onboarding: heOnboarding, communication: heCommunication, celebration: heCelebration, inactivity: heInactivity, recovery: heRecovery, library: heLibrary, tools: heTools },
 } as const;
 
 /**

@@ -14,12 +14,17 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // The five mature nav tabs (mature redesign 2026-08-07, `mature_proposal.html`):
-// Home · Journeys · Circle · Inbox · Settings — a calm icon+label bar. One accent
+// Home · Journeys · Circle · Tools · Settings — a calm icon+label bar. One accent
 // does the work: the active tab is turquoise (`theme.teal`), inactive tabs are
 // muted neutral (`theme.textMuted`) — no per-tab rainbow, no active-pill
-// background. Inbox was re-added and Settings brought back as the 5th tab (founder
-// feedback 2026-08-07); Coach, Explore and Buddy stay archived out of the bar
-// (routes still exist). Kept in sync with the native tab bar in `app-tabs.tsx`.
+// background. INBOX LEFT THE BAR on 2026-08-20 (founder's option 1): it is reached
+// from the mail button in Home's status strip, and Tools took the slot. Coach,
+// Explore and Buddy stay archived out of the bar (routes still exist).
+//
+// KEPT IN SYNC BY HAND with the native bar in `app-tabs.tsx`, and that is a trap
+// worth naming: this file is the `.web` variant, so a change made only to the
+// other one is invisible on native and vice versa. Any tab added, removed or
+// renamed has to be done twice.
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function AppTabs() {
@@ -40,8 +45,8 @@ export default function AppTabs() {
           <TabTrigger name="friends" href="/friends" asChild>
             <TabButton label="Circle" icon="people-outline" iconActive="people" />
           </TabTrigger>
-          <TabTrigger name="inbox" href="/inbox" asChild>
-            <TabButton label="Inbox" icon="mail-outline" iconActive="mail" />
+          <TabTrigger name="tools" href="/tools" asChild>
+            <TabButton label="Tools" icon="sparkles-outline" iconActive="sparkles" />
           </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
             <TabButton label="Settings" icon="settings-outline" iconActive="settings" />

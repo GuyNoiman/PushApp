@@ -209,6 +209,11 @@ function ThemedChrome() {
             Home hero via router.push('/coach'). A card push with its own back
             button so it slides over the tabs. */}
         <Stack.Screen name="coach" />
+        {/* Inbox — a root Stack route since 2026-08-20, opened from the mail button in Home's
+            status strip. It LEFT the tab bar so the fifth slot could become Tools (founder's
+            option 1): messages are correspondence, not a place you live in, and Instagram's
+            pattern of an envelope at the top of the feed is what people already expect. */}
+        <Stack.Screen name="inbox" />
         {/* DEV-only adaptive report→replan trigger — reachable from Settings when the
             founder-device-only adaptiveCoachDev flag is on; inert otherwise. */}
         <Stack.Screen name="dev-adaptive" options={{ presentation: 'modal' }} />

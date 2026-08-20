@@ -14,8 +14,11 @@
  * `<TabScrollView>` instead of a bare `<ScrollView>` — see
  * `components/ui/TabScrollView.tsx`.
  *
- * Inbox was re-added to the bar (founder feedback 2026-08-07); Settings is back
- * as the 5th tab (founder feedback 2026-08-07) and now hosts the user's identity.
+ * INBOX LEFT THE BAR on 2026-08-20 (founder's option 1, chosen from rendered options): it is now a
+ * root Stack route reached from the mail button in Home's status strip, the pattern people already
+ * know from Instagram. Messages are correspondence, not a place to live in, and the slot it freed
+ * became TOOLS — the home for questionnaires and small in-app experiences. Settings stays the fifth
+ * tab (founder feedback 2026-08-07) and hosts the user's identity.
  * Coach, Explore and Buddy remain ARCHIVED out of the bar (`href: null`) — their
  * route files still exist and open if navigated to directly, but they are no
  * longer tabbable. See 04_Product/UX/Archived_Screens.md.
@@ -87,11 +90,11 @@ export default function AppTabs() {
         }}
       />
       <Tabs.Screen
-        name="inbox"
+        name="tools"
         options={{
-          title: t('tabs.inbox'),
+          title: t('tabs.tools'),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'mail' : 'mail-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={size} color={color} />
           ),
         }}
       />

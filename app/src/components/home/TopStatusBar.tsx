@@ -10,6 +10,12 @@
  * accruing them, but with the Shop archived there is no sink to show. Re-add the coin Stat when
  * Coins get a real role.
  *
+ * THE MAIL BUTTON (2026-08-20) sits at the end of the strip, carrying the number of things actually
+ * waiting. The Inbox left the tab bar so the fifth slot could become Tools, and this is where it
+ * went — the founder picked it from rendered options, and it is the placement people already know
+ * from Instagram: the same spot on every screen position, with the count on it. The badge is hidden
+ * at zero rather than showing a "0", because a badge that is always there stops meaning anything.
+ *
  * The LEVEL cluster carries a thin TURQUOISE progress bar to the next level (the old
  * ResourceBar behaviour) plus a small tabular readout, so the eye reads "how far to
  * the next level" at a glance. The bar wears its own tinted ground under a hairline;
@@ -17,7 +23,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -54,6 +60,8 @@ export function TopStatusBar({
   xpIntoLevel,
   xpForNextLevel,
   streak,
+  waiting = 0,
+  onOpenInbox,
 }: {
   level: number;
   /** XP earned inside the current level — fills the progress bar. */
@@ -61,6 +69,10 @@ export function TopStatusBar({
   /** XP needed to reach the next level — the bar's full width. */
   xpForNextLevel: number;
   streak: number;
+  /** How many things are waiting in the Inbox — drives the badge. Zero hides it. */
+  waiting?: number;
+  /** Opens the Inbox. Omitted only in tests/stories that render the strip alone. */
+  onOpenInbox?: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('home');
@@ -106,11 +118,69 @@ export function TopStatusBar({
         valueColor={theme.text}
         label={t('status.streak')}
       />
+
+      {onOpenInbox ? (
+        <Pressable
+          accessibilityRole="button"
+          // The count is IN the label, not only on the badge: a screen reader must hear how much is
+          // waiting, not just that there is a button here.
+          accessibilityLabel={
+            waiting > 0 ? t('status.inboxWaiting', { count: waiting }) : t('status.inbox')
+          }
+          onPress={onOpenInbox}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.mail,
+            { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+            pressed && styles.pressed,
+          ]}>
+          <Ionicons name="mail-outline" size={16} color={theme.text} />
+          {waiting > 0 ? (
+            <View
+              style={[styles.badge, { backgroundColor: theme.tint, borderColor: theme.backgroundSelected }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants">
+              <ThemedText type="smallBold" style={[styles.badgeText, { color: theme.background }]}>
+                {waiting > 9 ? '9+' : waiting}
+              </ThemedText>
+            </View>
+          ) : null}
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mail: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // `end`, not `right`: the badge follows the writing direction, so it stays on the outer corner in
+  // Hebrew instead of drifting over the icon.
+  badge: {
+    position: 'absolute',
+    top: -4,
+    end: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontVariant: ['tabular-nums'],
+  },
+  pressed: {
+    opacity: 0.7,
+  },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',

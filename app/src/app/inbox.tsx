@@ -36,6 +36,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+// From its own module rather than the barrel: the barrel reaches the gateway and its storage, and a
+// pure count has no business dragging those into a screen (or into a test that stubs them).
+import { inboxWaitingCount } from '@/core/social/inboxWaiting';
 import type { AllyProgress, Cheer, Friend, SocialProfile } from '@/core/social';
 import { useTheme } from '@/hooks/use-theme';
 import { START_TEXT_ALIGN } from '@/i18n/rtl';
@@ -164,12 +167,14 @@ export default function InboxScreen() {
     [requestedRowsReal, allyInviteRowsReal],
   );
 
-  // What is actually waiting, across every tab — the line under the title. Requests count as
-  // unread by definition: they are asking for an answer.
-  const unreadCount =
-    friendsRows.filter((r) => r.unread).length +
-    alliesRows.filter((r) => r.unread).length +
-    requestedRows.length;
+  // What is actually waiting — the line under the title, from the SAME derivation the mail button's
+  // badge reads (`core/social/inboxWaiting`). A badge and a heading that disagree about how much is
+  // waiting is the kind of small dishonesty that teaches people to trust neither.
+  const unreadCount = inboxWaitingCount({
+    incomingCheers: social.incomingCheers,
+    friends: social.friends,
+    incomingAllyInvites: social.incomingAllyInvites,
+  });
 
   const tabs: InboxTab[] = [
     { key: 'friends', label: t('tabs.friends'), unread: friendsRows.some((r) => r.unread) },

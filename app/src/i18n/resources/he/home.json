@@ -84,7 +84,10 @@
     "level": "רמה {{level}}, {{into}} מתוך {{total}} נקודות ניסיון לרמה הבאה",
     "coins": "מטבעות",
     "streak": "ימי רצף",
-    "stat": "{{value}} {{label}}"
+    "stat": "{{value}} {{label}}",
+    "inbox": "תיבת ההודעות",
+    "inboxWaiting_one": "תיבת ההודעות, {{count}} ממתין",
+    "inboxWaiting_other": "תיבת ההודעות, {{count}} ממתינים"
   },
   "swipe": {
     "postponeA11y": "לדחות את הצעד הזה",

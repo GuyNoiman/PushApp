@@ -17,12 +17,21 @@
   "letGo": "Let go",
   "loading": "Loading…",
   "dismiss": "Dismiss",
-  "weekdays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  "weekdays": [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ],
   "tabs": {
     "home": "Home",
     "journeys": "Journeys",
     "circle": "Circle",
     "inbox": "Inbox",
-    "settings": "Settings"
+    "settings": "Settings",
+    "tools": "Tools"
   }
 }

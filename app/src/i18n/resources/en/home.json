@@ -82,7 +82,10 @@
     "level": "Level {{level}}, {{into}} of {{total}} XP to next level",
     "coins": "coins",
     "streak": "day streak",
-    "stat": "{{value}} {{label}}"
+    "stat": "{{value}} {{label}}",
+    "inbox": "Inbox",
+    "inboxWaiting_one": "Inbox, {{count}} waiting",
+    "inboxWaiting_other": "Inbox, {{count}} waiting"
   },
   "swipe": {
     "postponeA11y": "Postpone this step",

@@ -18,5 +18,6 @@ export function getSocialGateway(): SocialGateway {
 
 export * from './SocialGateway';
 export * from './circleRows';
+export * from './inboxWaiting';
 export * from './companion';
 export * from './friendProfile';

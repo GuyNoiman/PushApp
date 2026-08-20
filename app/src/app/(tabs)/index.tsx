@@ -53,6 +53,9 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
 import type { WeekReviewOutcome } from '@/core/AppCore';
 import { currentMilestone } from '@/core/util/milestones';
+// From its own module rather than the barrel: the barrel reaches the gateway and its storage, and a
+// pure count has no business dragging those into a screen (or into a test that stubs them).
+import { inboxWaitingCount } from '@/core/social/inboxWaiting';
 import { isRunning } from '@/core/util/journeyStatus';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
@@ -415,6 +418,19 @@ export default function HomeScreen() {
     [t],
   );
 
+  // How much is waiting in the Inbox — the badge on the mail button that replaced the Inbox tab.
+  // The count comes from the SAME derivation the Inbox's own heading uses, so the badge and the
+  // screen can never disagree about how much is waiting.
+  const waiting = useMemo(
+    () =>
+      inboxWaitingCount({
+        incomingCheers: social.incomingCheers,
+        friends: social.friends,
+        incomingAllyInvites: social.incomingAllyInvites,
+      }),
+    [social.incomingCheers, social.friends, social.incomingAllyInvites],
+  );
+
   // YOUR JOURNEYS — one card per RUNNING Journey, swiped through. Frozen, future and finished
   // Journeys are absent by construction: the card is about what is moving right now, and a paused
   // Journey asking for attention on Home is the opposite of what pausing meant.
@@ -474,7 +490,7 @@ export default function HomeScreen() {
           onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId, 'nudge'),
           // Free-text messaging is not built yet, so Message opens the Inbox: an honest destination
           // beats a button that answers a tap with nothing.
-          onMessage: () => router.push('/(tabs)/inbox' as Href),
+          onMessage: () => router.push('/inbox' as Href),
         };
       });
   }, [social, t, router]);
@@ -506,7 +522,7 @@ export default function HomeScreen() {
           name: ap.owner.handle,
           status,
           onPress: () => void social.sendCheer(ap.owner.id, ap.journeyId, 'cheer'),
-          onMessage: () => router.push('/(tabs)/inbox' as Href),
+          onMessage: () => router.push('/inbox' as Href),
         };
       });
   }, [social, t, router]);
@@ -534,6 +550,8 @@ export default function HomeScreen() {
           xpIntoLevel={snapshot.buddy.xpIntoLevel}
           xpForNextLevel={snapshot.buddy.xpForNextLevel}
           streak={snapshot.streak}
+          waiting={waiting}
+          onOpenInbox={() => router.push('/inbox' as Href)}
         />
 
         {/* Tapping the Home tab while already on Home returns this (the app's longest) scroll to

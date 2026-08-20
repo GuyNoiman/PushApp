@@ -457,5 +457,96 @@
     },
     "continue": "Continue",
     "saveDraft": "Save draft"
+  },
+  "passionMap": {
+    "title": "Passion map",
+    "intro": {
+      "lead": "Let's notice what brings you alive.",
+      "body": "Six short prompts, and up to eight Sparks — moments, activities and subjects that draw you in. There are no right answers, and this is only a starting map. You can test it against real life later.",
+      "meta": "6 prompts · about 5 to 7 minutes",
+      "cap": "Up to 8 Sparks",
+      "skippable": "You can skip any prompt.",
+      "editable": "Your map stays yours to edit.",
+      "start": "Start exploring",
+      "notNow": "Not now"
+    },
+    "prompts": {
+      "energy": "What can you do for a long time and still feel more energized afterward?",
+      "naturalReturn": "What do you keep coming back to, even when nobody asks?",
+      "absorption": "When did you recently lose track of time, in a good way?",
+      "contribution": "What do people ask you for help with that you genuinely enjoy?",
+      "noJudgment": "If you knew nobody would judge you, what would you try, learn or make?",
+      "meaningfulChange": "What change, in your life or someone else's, would feel worth contributing to?"
+    },
+    "collect": {
+      "step": "Prompt {{current}} of {{total}}",
+      "placeholder": "A few words",
+      "counts": "{{here}} of {{perPrompt}} here · {{total}} of {{cap}} total",
+      "add": "Add",
+      "skip": "Skip",
+      "capReached": "That is eight. Review them before adding another."
+    },
+    "review": {
+      "title": "Which three to five feel strongest today?",
+      "body": "Everything you collected is here. Edit or remove anything, then choose the ones that ring truest right now.",
+      "chosen": "{{count}} chosen",
+      "earlyClues": "Fewer than four is fine — the result will be early clues rather than a map, and nothing will be invented to fill it.",
+      "continue": "Continue"
+    },
+    "why": {
+      "title": "What is it about this that draws you in?",
+      "optional": "Optional",
+      "placeholder": "In your own words",
+      "skip": "Skip this one",
+      "continue": "Continue"
+    },
+    "arrange": {
+      "title": "Shape your map",
+      "body": "These groupings are suggestions. Rename them, move a Spark, or leave one on its own.",
+      "suggested": "Suggested",
+      "rename": "Rename",
+      "moveTo": "Move to…",
+      "ungrouped": "On its own",
+      "save": "Save my map"
+    },
+    "result": {
+      "title": "Your passion map",
+      "clues": "These are clues, not labels. Your map can change as you learn from real life.",
+      "earlyTitle": "Early clues",
+      "basedOn": "Based on {{moments}} moments across {{days}} days",
+      "firstRun": "Based on your first exploration",
+      "noInsightYet": "Add signals from real moments and patterns will appear here.",
+      "addSignal": "Add today's signal",
+      "edit": "Edit my map",
+      "startOver": "Start over",
+      "done": "Done"
+    },
+    "signal": {
+      "title": "What stood out today?",
+      "body": "A quick signal, to keep your map up to date.",
+      "what": "What was the moment or activity?",
+      "placeholder": "e.g. helped a friend with their CV",
+      "energy": "Energy afterward",
+      "drained": "Drained",
+      "neutral": "Neutral",
+      "energized": "Energized",
+      "pull": "Want to return?",
+      "avoid": "No",
+      "maybe": "Maybe",
+      "return": "Yes",
+      "note": "What about it affected you?",
+      "noteOptional": "optional",
+      "notePlaceholder": "Share what you noticed…",
+      "save": "Save signal",
+      "full": "Three moments is plenty for one day."
+    },
+    "proposal": {
+      "strengthen": "{{subject}} has energized you across {{days}} different days. Worth adding to your map?",
+      "question": "{{subject}} has drained you across {{days}} different days. Worth a second look at what it means?",
+      "accept": "Add it",
+      "edit": "Edit",
+      "notNow": "Not now",
+      "note": "Nothing changes on your map until you say so."
+    }
   }
 }

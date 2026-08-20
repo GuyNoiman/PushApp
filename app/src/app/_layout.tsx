@@ -23,6 +23,7 @@ import { AuthProvider } from '@/state/AuthProvider';
 import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
 import { LifeWheelProvider } from '@/state/LifeWheelStore';
 import { ToolsShelfProvider } from '@/state/ToolsShelf';
+import { PassionMapProvider } from '@/state/PassionMapStore';
 import { ReflectionsProvider } from '@/state/ReflectionsStore';
 import { ValuesProvider } from '@/state/ValuesStore';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
@@ -125,6 +126,7 @@ export default function RootLayout() {
                           <ValuesProvider>
                             {/* Letters written to a future self, and what is due back. The most
                                 personal thing the app holds — ON-DEVICE ONLY (G1). */}
+                            <PassionMapProvider>
                             <ReflectionsProvider>
                         {/* Renders nothing: re-resolves pending reminder copy whenever the
                             language, form of address or communication style changes (D40). It sits
@@ -132,6 +134,7 @@ export default function RootLayout() {
                         <NotificationCopySync />
                         <ThemedChrome />
                             </ReflectionsProvider>
+                            </PassionMapProvider>
                           </ValuesProvider>
                         </LifeWheelProvider>
                       </ToolsShelfProvider>

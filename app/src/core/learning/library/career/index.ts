@@ -1,7 +1,7 @@
 /**
  * career — the Career-linked section of the central Journey Library.
  *
- * SIX GOAL FAMILIES, EIGHTEEN JOURNEYS, ingested from the partner's authoring package
+ * NINE GOAL FAMILIES, TWENTY-SEVEN JOURNEYS, ingested from the partner's authoring packages
  * (`07_Assets/Partner_Packages/Career_v0.6_2026-08-19/`, the `01_…md` + the `02_…json` beside it) and
  * translated into our model rather than copied into it. What changed in the translation, and why,
  * is written at the top of each family file; the three structural decisions are here:
@@ -28,20 +28,38 @@
 import type { GoalFamily } from '../goalFamily';
 import type { JourneyDefinition } from '../journeyDefinition';
 import { CAREER_ACCESS, CAREER_ACCESS_JOURNEYS } from './access';
+import { CAREER_INTERVIEW_STAGE, CAREER_INTERVIEW_STAGE_JOURNEYS } from './interviewStage';
 import { CAREER_FIT_TEST, CAREER_FIT_TEST_JOURNEYS } from './fitTest';
 import { CAREER_JOB_TARGET, CAREER_JOB_TARGET_JOURNEYS } from './jobTarget';
 import { CAREER_NEXT_STEP, CAREER_NEXT_STEP_JOURNEYS } from './nextStep';
 import { CAREER_PROOF, CAREER_PROOF_JOURNEYS } from './proof';
+import {
+  CAREER_RETURN_AFTER_REJECTION,
+  CAREER_RETURN_AFTER_REJECTION_JOURNEYS,
+} from './returnAfterRejection';
+import { CAREER_SEARCH_PROCESS, CAREER_SEARCH_PROCESS_JOURNEYS } from './searchProcess';
 import { CAREER_TWO_OPTIONS, CAREER_TWO_OPTIONS_JOURNEYS } from './twoOptions';
 
 export * from './access';
+export * from './interviewStage';
+export * from './returnAfterRejection';
+export * from './searchProcess';
 export * from './fitTest';
 export * from './jobTarget';
 export * from './nextStep';
 export * from './proof';
 export * from './twoOptions';
 
-/** The six Career goal families, in the order the partner's package lists them. */
+/**
+ * The NINE Career goal families, in the order the partner's packages list them: the six from v0.6,
+ * then the three from v1.1 (CAR_G11-G13, ingested 2026-08-20).
+ *
+ * The last four are the job search read as ONE sequence of bottlenecks, and the order below is that
+ * sequence: an unclear target, then missing proof, then no access, then a process that cannot be
+ * sustained, then the interview room itself — and only when every one of those is ruled out, the
+ * confidence to keep going. That order is also the diagnosis's order
+ * (`../../experts/careerDiagnosis`), and it is the same list read from the outside in.
+ */
 export const CAREER_FAMILIES: readonly GoalFamily[] = [
   CAREER_NEXT_STEP,
   CAREER_TWO_OPTIONS,
@@ -49,9 +67,12 @@ export const CAREER_FAMILIES: readonly GoalFamily[] = [
   CAREER_JOB_TARGET,
   CAREER_PROOF,
   CAREER_ACCESS,
+  CAREER_SEARCH_PROCESS,
+  CAREER_INTERVIEW_STAGE,
+  CAREER_RETURN_AFTER_REJECTION,
 ];
 
-/** All eighteen Career Journeys, grouped by their family, in the same order. */
+/** All twenty-seven Career Journeys, grouped by their family, in the same order. */
 export const CAREER_JOURNEYS: readonly JourneyDefinition[] = [
   ...CAREER_NEXT_STEP_JOURNEYS,
   ...CAREER_TWO_OPTIONS_JOURNEYS,
@@ -59,4 +80,7 @@ export const CAREER_JOURNEYS: readonly JourneyDefinition[] = [
   ...CAREER_JOB_TARGET_JOURNEYS,
   ...CAREER_PROOF_JOURNEYS,
   ...CAREER_ACCESS_JOURNEYS,
+  ...CAREER_SEARCH_PROCESS_JOURNEYS,
+  ...CAREER_INTERVIEW_STAGE_JOURNEYS,
+  ...CAREER_RETURN_AFTER_REJECTION_JOURNEYS,
 ];

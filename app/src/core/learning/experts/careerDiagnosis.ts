@@ -9,6 +9,8 @@
  *   the TARGET is too broad          → LAND_ROLE / DIRECTION_GAP          (career.jobTarget)
  *   the PROOF is missing             → LAND_ROLE / PROOF_GAP              (career.proof)
  *   there is no ACCESS               → LAND_ROLE / OPPORTUNITY_ACCESS_GAP (career.access)
+ *   the SEARCH keeps collapsing      → LAND_ROLE / SEARCH_PROCESS_GAP     (career.searchProcess)
+ *   the INTERVIEW room is where it stops → LAND_ROLE / INTERVIEW_STAGE_GAP (career.interviewStage)
  *
  * Treating the wrong one is exactly how a job search stays busy and stays stuck. The order below is
  * not arbitrary and is not ours: it is the partner's, from
@@ -52,17 +54,15 @@ export type CareerDiagnosisOutcome =
 
 /**
  * Why a diagnosis stopped without a family. Each of these is a real, different next move, which is
- * why they are not one "unknown".
+ * why they are not one "unknown". The list SHRANK on 2026-08-20 when CAR_G11 and CAR_G12 were
+ * ingested: "the search keeps collapsing" and "I stall at the interview" now have Journeys to route
+ * to and are no longer unresolved.
  */
 export type UnresolvedReason =
   /** They cannot do the target work yet. That is a skill-building goal, not a job-search one. */
   | 'capabilityGap'
   /** Too little search behind them to read a pattern from. Diagnosing now would be inventing. */
   | 'notEnoughEvidence'
-  /** They reach interviews and stall there — a later-stage family we have not ingested yet. */
-  | 'interviewStage'
-  /** The process itself keeps collapsing — CAR_G11, also not ingested yet. */
-  | 'unsustainableProcess'
   /** Target, proof and access all credible and still no pattern. Keep looking; force nothing. */
   | 'noClearPattern';
 
@@ -197,13 +197,17 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
           value: 'collapses',
           label: 'I start, and then the search falls apart',
           labelKey: `${K}.searchProcess.collapses`,
-          outcome: { kind: 'unresolved', reason: 'unsustainableProcess' },
+          outcome: { kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'SEARCH_PROCESS_GAP' },
         },
         {
           value: 'interviewsNoOffer',
           label: 'I reach interviews and it stops there',
           labelKey: `${K}.searchProcess.interviewsNoOffer`,
-          outcome: { kind: 'unresolved', reason: 'interviewStage' },
+          // NOT the partner's own bottleneck string. He gives this and the previous answer the same
+          // `SEARCH_PROCESS_GAP`, but a family is identified here by the (subtype, bottleneck) pair,
+          // and two families sharing a pair would route to whichever was declared first. See
+          // `../library/career/interviewStage`'s header — raised with him.
+          outcome: { kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'INTERVIEW_STAGE_GAP' },
         },
         {
           value: 'noPattern',

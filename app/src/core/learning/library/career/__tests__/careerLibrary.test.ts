@@ -1,5 +1,5 @@
 /**
- * The whole Career section at once — eighteen Journeys in six families, ingested from the partner's
+ * The whole Career section at once — twenty-seven Journeys in nine families, ingested from the partner's
  * package. Each family file has its own tests for what makes IT particular; these are the rules that
  * must hold for all of them, and they are the ones that catch an ingest mistake rather than a coding
  * one.
@@ -24,9 +24,10 @@ const arcOf = (definitionId: string): AuthoredArc => {
 };
 
 describe('the ingest as a whole', () => {
-  it('is six families of three Journeys, eighteen in all', () => {
-    expect(CAREER_FAMILIES).toHaveLength(6);
-    expect(CAREER_JOURNEYS).toHaveLength(18);
+  it('is nine families of three Journeys, twenty-seven in all', () => {
+    // Six from the partner's v0.6 package, three more from v1.1 (CAR_G11-G13, 2026-08-20).
+    expect(CAREER_FAMILIES).toHaveLength(9);
+    expect(CAREER_JOURNEYS).toHaveLength(27);
     for (const family of CAREER_FAMILIES) expect(family.members).toHaveLength(3);
   });
 
@@ -52,13 +53,13 @@ describe('the ingest as a whole', () => {
   it('registers every Journey and every family so an id always resolves', () => {
     for (const journey of CAREER_JOURNEYS) expect(journeyDefinition(journey.id)).toBe(journey);
     for (const family of CAREER_FAMILIES) expect(goalFamily(family.id)).toBe(family);
-    expect(goalFamiliesFor('career')).toHaveLength(6);
+    expect(goalFamiliesFor('career')).toHaveLength(9);
     expect(goalFamiliesFor('relationships')).toEqual([]);
   });
 
   it('never offers a career arc to another domain', () => {
     expect(journeyDefinitionsFor('process', 'relationships')).toEqual([]);
-    expect(journeyDefinitionsFor('process', 'career')).toHaveLength(18);
+    expect(journeyDefinitionsFor('process', 'career')).toHaveLength(27);
     // The generic recurring Journey is domain-less and stays available everywhere.
     expect(journeyDefinitionsFor('recurring', 'relationships')).toHaveLength(1);
   });

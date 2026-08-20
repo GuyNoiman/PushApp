@@ -93,6 +93,33 @@ describe('careerDiagnosis — where each route lands in the real library', () =>
     expect(family?.id).toBe('career.proof');
   });
 
+  it('a search that keeps collapsing routes to the search-process family (CAR_G11)', () => {
+    const outcome = outcomeOf(
+      APPLY_NO_RESPONSE,
+      walk('clear', 'haveExamples', 'peopleToo', 'collapses'),
+    );
+
+    if (!routesToFamily(outcome)) throw new Error('expected a family');
+    expect(goalFamilyForDiagnosis('career', outcome.subtype, outcome.bottleneck)?.id).toBe(
+      'career.searchProcess',
+    );
+  });
+
+  it('stalling at the interview routes to the interview family (CAR_G12)', () => {
+    // The partner gives this and the previous answer the SAME bottleneck string. We split them,
+    // because a family here is the (subtype, bottleneck) pair and a shared pair routes to whichever
+    // was declared first — which would send someone who stalls in interviews to fix their pipeline.
+    const outcome = outcomeOf(
+      APPLY_NO_RESPONSE,
+      walk('clear', 'haveExamples', 'peopleToo', 'interviewsNoOffer'),
+    );
+
+    if (!routesToFamily(outcome)) throw new Error('expected a family');
+    expect(goalFamilyForDiagnosis('career', outcome.subtype, outcome.bottleneck)?.id).toBe(
+      'career.interviewStage',
+    );
+  });
+
   it('proof but no way in routes to the access family', () => {
     const outcome = outcomeOf(APPLY_NO_RESPONSE, walk('clear', 'haveExamples', 'applicationsOnly'));
 
@@ -107,7 +134,7 @@ describe('careerDiagnosis — where each route lands in the real library', () =>
       .map((o) => o.outcome)
       .filter((o) => o?.kind === 'family');
 
-    expect(routes).toHaveLength(3);
+    expect(routes).toHaveLength(5);
     for (const route of routes) {
       if (route?.kind !== 'family') throw new Error('unreachable');
       expect(goalFamilyForDiagnosis('career', route.subtype, route.bottleneck)).toBeDefined();
@@ -146,22 +173,11 @@ describe('careerDiagnosis — an unresolved diagnosis is a result, not a failure
     expect(outcome).toEqual({ kind: 'unresolved', reason: 'notEnoughEvidence' });
   });
 
-  it('names the later-stage bottlenecks we have not ingested, instead of forcing a family', () => {
-    const stalls = outcomeOf(
-      APPLY_NO_RESPONSE,
-      walk('clear', 'haveExamples', 'peopleToo', 'interviewsNoOffer'),
-    );
-    const collapses = outcomeOf(
-      APPLY_NO_RESPONSE,
-      walk('clear', 'haveExamples', 'peopleToo', 'collapses'),
-    );
+  it('refuses to force a family when target, proof and access are all credible', () => {
     const nothing = outcomeOf(
       APPLY_NO_RESPONSE,
       walk('clear', 'haveExamples', 'peopleToo', 'noPattern'),
     );
-
-    expect(stalls).toEqual({ kind: 'unresolved', reason: 'interviewStage' });
-    expect(collapses).toEqual({ kind: 'unresolved', reason: 'unsustainableProcess' });
     expect(nothing).toEqual({ kind: 'unresolved', reason: 'noClearPattern' });
   });
 

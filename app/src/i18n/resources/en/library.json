@@ -779,6 +779,348 @@
           "noPattern": "I have searched properly and I see no pattern"
         }
       }
+    },
+    "searchProcess": {
+      "goal": "Build a job search I can actually keep up",
+      "axis": {
+        "question": "What shape of search could you actually keep up over time?",
+        "staged": "A clear, staged process",
+        "rhythm": "A simple weekly rhythm",
+        "minimum": "A flexible minimum that survives a busy week"
+      },
+      "staged": {
+        "essence": "Break the search into stages, find the one that jams, and simplify it.",
+        "m0": "I have a simple, clear search process",
+        "m1": "I have run it once and found where it jams",
+        "m2": "I have simplified it and run it again",
+        "m3": "I have a minimum version for a busy week",
+        "s0": {
+          "title": "Write down the four stages of your search",
+          "description": "Finding, checking the fit, applying or reaching out, and following up is enough."
+        },
+        "s1": {
+          "title": "Set one small weekly target for each stage",
+          "description": "A target for an ordinary week, not an ideal one."
+        },
+        "s2": {
+          "title": "Run one full round through the stages",
+          "description": "The point is to test the process, not to get a lot done."
+        },
+        "s3": {
+          "title": "Mark where you got stuck",
+          "description": "Find one bottleneck."
+        },
+        "s4": {
+          "title": "Simplify one stage",
+          "description": "A template, a checklist, or one small filtering rule."
+        },
+        "s5": {
+          "title": "Run the process again",
+          "description": "See whether it is easier to carry out."
+        },
+        "s6": {
+          "title": "Define a minimum version for a busy week",
+          "description": "What keeps the search alive without adding weight."
+        }
+      },
+      "rhythm": {
+        "essence": "Build two small weekly search moments instead of a system.",
+        "m0": "I have picked two realistic search moments",
+        "m1": "I have run a full rhythm once",
+        "m2": "I have adjusted it to what actually worked",
+        "m3": "I have a rhythm I can keep going",
+        "s0": {
+          "title": "Choose two realistic moments for searching",
+          "description": "Pick windows that are actually likely to happen."
+        },
+        "s1": {
+          "title": "Give each moment one action",
+          "description": "For example, filtering in one and applying or reaching out in the other."
+        },
+        "s2": {
+          "title": "Do both moments this week",
+          "description": "Missing one is not starting over."
+        },
+        "s3": {
+          "title": "Note which one went better",
+          "description": "The time of day, the kind of task, or having prepared beforehand."
+        },
+        "s4": {
+          "title": "Change one detail, and only one",
+          "description": "Do not rebuild the whole rhythm."
+        },
+        "s5": {
+          "title": "Do the two moments again",
+          "description": "See whether the rhythm holds better this time."
+        },
+        "s6": {
+          "title": "Choose the rhythm for the next two weeks",
+          "description": "What stays fixed, and what is allowed to move."
+        }
+      },
+      "minimum": {
+        "essence": "Find the smallest action that keeps the search alive, and grow only when there is room.",
+        "m0": "I have found my minimum action",
+        "m1": "I kept it going without taking on more",
+        "m2": "I have matched the minimum to my real week",
+        "m3": "I have a rule for coming back after a miss",
+        "s0": {
+          "title": "Choose a search action that takes ten minutes at most",
+          "description": "Something that keeps the search alive."
+        },
+        "s1": {
+          "title": "Do it once",
+          "description": "The minimum is a success in its own right."
+        },
+        "s2": {
+          "title": "Add a second action only if there is room for it",
+          "description": "Do not turn a good week into the standard."
+        },
+        "s3": {
+          "title": "Write down what was actually possible",
+          "description": "The time and the energy you really had."
+        },
+        "s4": {
+          "title": "Adjust the minimum",
+          "description": "If it is still too big, make it smaller."
+        },
+        "s5": {
+          "title": "Hold to the same principle for another week",
+          "description": "The minimum first, more only afterwards."
+        },
+        "s6": {
+          "title": "Write your rule for coming back after a miss",
+          "description": "You return to the minimum. You do not make up for everything."
+        }
+      }
+    },
+    "interviewStage": {
+      "goal": "Get further in interviews",
+      "axis": {
+        "question": "When you want to get better at interviews, what usually helps you most?",
+        "analysis": "Going over an interview I already had",
+        "practice": "Practising my answers",
+        "stories": "Preparing strong examples in advance"
+      },
+      "analysis": {
+        "essence": "Mine the interviews you have already had, and change one pattern.",
+        "m0": "I have reconstructed a real interview",
+        "m1": "I have found one pattern worth changing",
+        "m2": "I have practised that one change",
+        "m3": "I have tested it in a real interview",
+        "s0": {
+          "title": "Reconstruct your last interview in three moments",
+          "description": "A moment that went well, a weak one, and a question that caught you out."
+        },
+        "s1": {
+          "title": "Separate what you know from what you are guessing",
+          "description": "Do not try to read the interviewer’s mind."
+        },
+        "s2": {
+          "title": "If you were given real feedback, compare it with what you wrote",
+          "description": "If you were not, do not invent any."
+        },
+        "s3": {
+          "title": "Choose one pattern to work on",
+          "description": "The length of your answers, for example, or evidence that lands weakly."
+        },
+        "s4": {
+          "title": "Prepare one small change",
+          "description": "A way of structuring an answer, or one story ready to go."
+        },
+        "s5": {
+          "title": "Practise it on one or two questions",
+          "description": "A long mock interview is not needed."
+        },
+        "s6": {
+          "title": "Test the change in your next interview",
+          "description": "Measure the pattern, not whether you got an offer."
+        }
+      },
+      "practice": {
+        "essence": "Improve by short, focused practice rather than by analysis.",
+        "m0": "I have a starting point for two answers",
+        "m1": "I have made them clearer and better evidenced",
+        "m2": "I have practised and heard how it lands",
+        "m3": "I have used the change in an interview",
+        "s0": {
+          "title": "Pick two interview questions that keep coming up",
+          "description": "Real ones you have already been asked."
+        },
+        "s1": {
+          "title": "Answer them once with no preparation",
+          "description": "This is your starting point."
+        },
+        "s2": {
+          "title": "Check one answer for clarity, focus and evidence",
+          "description": "Do not try to fix everything."
+        },
+        "s3": {
+          "title": "Build a shorter version of it",
+          "description": "Keep the story true."
+        },
+        "s4": {
+          "title": "Practise it again",
+          "description": "See whether you reach the point sooner."
+        },
+        "s5": {
+          "title": "Ask one person for focused feedback",
+          "description": "What did they understand about you from the answer?"
+        },
+        "s6": {
+          "title": "Use the structure in your next interview",
+          "description": "Write down how it went straight afterwards."
+        }
+      },
+      "storyBank": {
+        "essence": "Organise the experience you already have into evidence you can reach for.",
+        "m0": "I have mapped stories to what the role needs",
+        "m1": "I have cut them down to clear evidence",
+        "m2": "I can reach for them under pressure",
+        "m3": "I have used one in a real interview",
+        "s0": {
+          "title": "Pick three capabilities that keep appearing in your target roles",
+          "description": "Working across teams, or deciding what comes first, for example."
+        },
+        "s1": {
+          "title": "Find a real story for each one",
+          "description": "Something you did, and what changed because of it."
+        },
+        "s2": {
+          "title": "Cut each story down to four sentences",
+          "description": "The situation, what you did, what it cost to choose it, and the result."
+        },
+        "s3": {
+          "title": "Choose the one weak story",
+          "description": "Do not rewrite them all."
+        },
+        "s4": {
+          "title": "Strengthen it with evidence you already have",
+          "description": "Without inventing numbers."
+        },
+        "s5": {
+          "title": "Practise reaching for them from different questions",
+          "description": "Not memorising. Matching."
+        },
+        "s6": {
+          "title": "Use one of them in your next interview",
+          "description": "See whether it came to you more easily."
+        }
+      }
+    },
+    "returnAfterRejection": {
+      "goal": "Start moving again after being turned down",
+      "axis": {
+        "question": "What would help you start moving again after being turned down?",
+        "smallest": "Starting really small",
+        "route": "Coming back along a set route",
+        "proof": "Building a small proof of what I can do first"
+      },
+      "smallest": {
+        "essence": "Get moving again on actions so small they need no motivation.",
+        "m0": "I have done one small search action again",
+        "m1": "I proved I can come back without a burst of effort",
+        "m2": "I have built a small rhythm",
+        "m3": "I have a rule for the next rejection",
+        "s0": {
+          "title": "Choose a search action that takes ten minutes at most",
+          "description": "Something very small."
+        },
+        "s1": {
+          "title": "Do it once",
+          "description": "The point is movement."
+        },
+        "s2": {
+          "title": "Choose one more small action",
+          "description": "The same size as the first."
+        },
+        "s3": {
+          "title": "Do that one too",
+          "description": "Note what turned out to be easier than you expected."
+        },
+        "s4": {
+          "title": "Pick two short moments for next week",
+          "description": "Do not scale up quickly."
+        },
+        "s5": {
+          "title": "Do at least one of them",
+          "description": "Missing the second is not starting over."
+        },
+        "s6": {
+          "title": "Write your rule for the next rejection",
+          "description": "Back to a small action, with nothing to make up for."
+        }
+      },
+      "route": {
+        "essence": "Come back along a short, defined route rather than deciding where to start.",
+        "m0": "I have a way back made of two small actions",
+        "m1": "I did both of them without making up for lost time",
+        "m2": "I came back for a second week at a small pace",
+        "m3": "I have a clear rule for the next rejection",
+        "s0": {
+          "title": "Choose two search actions you already know how to do",
+          "description": "One message and checking two openings, for example. No new preparation task."
+        },
+        "s1": {
+          "title": "Order them by which is easiest to begin",
+          "description": "The aim is a simple way in, not a full plan."
+        },
+        "s2": {
+          "title": "Do the first one",
+          "description": "Do not add actions to make up for the time that was lost."
+        },
+        "s3": {
+          "title": "Do the second one",
+          "description": "If the week is busy, keep the action the same size."
+        },
+        "s4": {
+          "title": "Choose one action for next week",
+          "description": "Keep it small enough that it needs no burst of motivation."
+        },
+        "s5": {
+          "title": "Do the one you chose",
+          "description": "The aim is a second week of continuity, not more load."
+        },
+        "s6": {
+          "title": "Write your rule for the next rejection",
+          "description": "For example: after a rejection I go back to one of the two actions, and make up for nothing."
+        }
+      },
+      "proof": {
+        "essence": "Rebuild a piece of evidence of what you can do, then take it straight out into the search.",
+        "m0": "I have found evidence of what I can already do",
+        "m1": "I have made one small piece of proof",
+        "m2": "I have used it inside the search itself",
+        "m3": "I am moving again, with a rule that protects it",
+        "s0": {
+          "title": "Name one thing that proves you moved forward, offer or no offer",
+          "description": "An interview, a skill, a connection, or something you made."
+        },
+        "s1": {
+          "title": "Choose one small thing you can do that is entirely yours to do",
+          "description": "Something inside your own control."
+        },
+        "s2": {
+          "title": "Take it as far as a usable version",
+          "description": "Usable, not perfect."
+        },
+        "s3": {
+          "title": "Use what you made in one real search action",
+          "description": "Preparing must not become the way you avoid searching."
+        },
+        "s4": {
+          "title": "Note what changed in how ready you feel",
+          "description": "The fear does not have to be gone."
+        },
+        "s5": {
+          "title": "Do one more search action",
+          "description": "Keep the dose small."
+        },
+        "s6": {
+          "title": "Choose a rule that protects your sense of capability through rejections",
+          "description": "Without stopping the search itself."
+        }
+      }
     }
   }
 }

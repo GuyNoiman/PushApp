@@ -8,12 +8,20 @@
  * (Accept / Decline) render beneath the preview for actionable items like an
  * incoming connection request.
  *
+ * REDESIGNED 2026-08-19/20 from the founder's mockup, and it reverses one earlier call: a
+ * conversation is a CARD now, not a bare row. `Inbox_Screen.md` said "IG-style rows, not cards", and
+ * his mockup for this pass shows cards — with a reason that holds up on the device, where the bare
+ * rows had no edges at all against the dark ground and the list read as one undifferentiated column.
+ * The name takes the display voice, and the unread dot is TEAL rather than the danger red: an unread
+ * message is something waiting, not something wrong.
+ *
  * Presentational only — it takes data + callbacks; no social/business logic lives
  * here (Engineering Bible §19).
  */
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { displayFont, displayScale } from '@/constants/displayFont';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -54,7 +62,11 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
       accessibilityRole="button"
       accessibilityLabel={`${row.name}. ${row.preview}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && onPress ? styles.pressed : null]}>
+      style={({ pressed }) => [
+        styles.row,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
+        pressed && onPress ? styles.pressed : null,
+      ]}>
       {/* TODO(avatar): replace initials with the friend's profile photo when profiles land */}
       <View style={[styles.avatar, { backgroundColor: theme.tealTint }]}>
         <ThemedText type="smallBold" style={[styles.avatarText, { color: theme.tint }]}>
@@ -64,7 +76,13 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
 
       <View style={styles.main}>
         <View style={styles.nameRow}>
-          <ThemedText themeColor="text" style={styles.name} numberOfLines={1}>
+          <ThemedText
+            themeColor="text"
+            style={[
+              styles.name,
+              { fontFamily: displayFont(), fontSize: Math.round(17 * displayScale()) },
+            ]}
+            numberOfLines={1}>
             {row.name}
           </ThemedText>
           {row.timestamp ? (
@@ -109,7 +127,7 @@ export function InboxRow({ row, onPress }: { row: InboxRowData; onPress?: () => 
         )}
       </View>
 
-      {row.unread && <View style={[styles.dot, { backgroundColor: theme.danger }]} />}
+      {row.unread && <View style={[styles.dot, { backgroundColor: theme.tint }]} />}
     </Pressable>
   );
 }
@@ -127,8 +145,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.three,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
+    padding: Spacing.three,
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.two,
+    borderRadius: Radius.card,
+    borderWidth: 1,
   },
   pressed: {
     opacity: 0.6,
@@ -154,9 +175,7 @@ const styles = StyleSheet.create({
   },
   name: {
     flex: 1,
-    fontFamily: FontFamily.headingBold,
-    fontSize: 17,
-    lineHeight: 22,
+    lineHeight: 23,
   },
   timestamp: {
     // Tabular figures so timestamps stay column-aligned down the list.

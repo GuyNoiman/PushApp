@@ -42,12 +42,17 @@ rules: `04_Product/Design_System.md` §0.
 
 ### The two things that must not be rediscovered the hard way
 
-**1. Everything built since build 3 is NOT on the partner's phone.** It is in git only. Build 3
-subscribes to the `production` channel and the fingerprint has not moved, so one command from `app/`
-delivers all of it:
-`npx eas-cli@latest update --branch production --message "Home redesign, Hebrew onboarding fix"`
-That is the highest-value outstanding action, and it also proves the over-the-air pipeline, which
-nothing has yet.
+**1. The first over-the-air update is PUBLISHED (2026-08-20).** Everything built after build 3 —
+the whole redesign, the Hebrew onboarding fix, the name-leak fix, the account-deletion fix, Tools —
+went out on the `production` branch as update group `8ba787c1-50ab-4bea-9a9f-82586cf1587c`, at
+runtime version `df6c2127…`, which is exactly what build 3 carries. The partner receives it on his
+next launch (the check never holds the splash — it applies on the following launch, by design).
+
+**Publishing again is one command from `app/`:**
+`npx eas-cli@latest update --branch production --message "<what changed>"`
+Verify the fingerprint FIRST with `npx expo-updates fingerprint:generate --platform ios` — if the
+hash is no longer `df6c2127…`, the update cannot reach the build the partner is holding, and the
+answer is a new build rather than a publish.
 
 **2. The fingerprint rule.** The build carries iOS runtime fingerprint
 `df6c2127bbd3be3766774e3f008f4ae5158306cd`. Updates only reach a binary whose fingerprint MATCHES, so

@@ -23,7 +23,11 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
 import type { CoachOption } from '@/components/coach/coachScript';
-import { CoachOrchestrator, type CoachTurn } from '@/core/coach/CoachOrchestrator';
+import {
+  CoachOrchestrator,
+  CoachUnavailableError,
+  type CoachTurn,
+} from '@/core/coach/CoachOrchestrator';
 import type { GoalSpec } from '@/core/coach/interviewPlaybook';
 import { SafetyLayer } from '@/core/coach/SafetyLayer';
 import type { DomainQuestion } from '@/core/learning/DomainExpert';
@@ -37,8 +41,13 @@ import type { CoachOnboardingSummary } from '@/core/onboarding/model';
  * so they follow the active language — they are never model output.
  */
 
-/** Where the coach is in the one LLM round-trip: idle, waiting on triage, or a soft error. */
-export type LiveCoachStatus = 'idle' | 'thinking' | 'error';
+/**
+ * Where the coach is in the one LLM round-trip: idle, waiting on triage, a soft error, or
+ * `unavailable` — the coach could not REACH a model at all and has deliberately not started an
+ * interview it could only finish by guessing (2026-08-20). `error` remains the softer "something
+ * hiccupped, say that again" state.
+ */
+export type LiveCoachStatus = 'idle' | 'thinking' | 'error' | 'unavailable';
 
 /** One render-ready transcript item — maps 1:1 onto the presentational coach components. */
 export type LiveCoachItem =
@@ -76,6 +85,12 @@ export interface UseLiveCoach {
   selectMulti: (ids: string[]) => void;
   /** Submit a free-text "Other" answer. */
   answerOther: (text: string) => void;
+  /**
+   * Try the opening again after an `unavailable` status. It re-sends the LAST opening the person
+   * typed, so a coach that lost the connection picks up from their first sentence instead of asking
+   * them to write it a second time. A no-op when there is nothing to retry.
+   */
+  retryOpening: () => void;
 }
 
 /** Construction options — a test seam to inject an orchestrator over a MockLlmClient. */
@@ -148,6 +163,8 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   // The raw current question, kept in a ref so handlers always read the latest without re-binding.
   const rawQuestionRef = useRef<DomainQuestion | null>(null);
   const startedRef = useRef(false);
+  /** The last opening text, kept so an `unavailable` coach can be retried without retyping it. */
+  const lastOpeningRef = useRef<string | null>(null);
 
   const applyQuestion = useCallback(
     (question: DomainQuestion | null) => {
@@ -207,9 +224,16 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         const turn = await call();
         setStatus('idle');
         applyTurn(turn);
-      } catch {
-        // triage already degrades internally; this guards anything that still throws (e.g. a
-        // transport error surfaced as LlmError) so the surface stays alive and retryable.
+      } catch (e) {
+        // NEVER REACHED A MODEL. The coach has nothing to build an interview on, so it says so and
+        // stops, rather than degrading into a worse coach that turns the person's own sentence into
+        // the title of a Journey they never asked for. The screen renders the retry affordance.
+        if (e instanceof CoachUnavailableError) {
+          setStatus('unavailable');
+          setAwaitingOpening(false);
+          return;
+        }
+        // Anything else is a softer hiccup: the surface stays alive and the person can say it again.
         setStatus('error');
         setItems((prev) => [...prev, { kind: 'coach', text: t('retry') }]);
         if (thinking) setAwaitingOpening(true);
@@ -222,10 +246,22 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     (text: string) => {
       const trimmed = text.trim();
       if (trimmed.length === 0) return;
+      lastOpeningRef.current = trimmed;
       void advance(trimmed, () => orchestratorRef.current!.triage(trimmed), true);
     },
     [advance],
   );
+
+  /**
+   * Retry after `unavailable`. The orchestrator was left exactly where it was (still awaiting the
+   * opening, with the unanswered line taken back out of its history), so the SAME instance can run
+   * triage again. The echoed user bubble is already in the transcript, so it is not echoed twice.
+   */
+  const retryOpening = useCallback(() => {
+    const text = lastOpeningRef.current;
+    if (!text) return;
+    void advance(null, () => orchestratorRef.current!.triage(text), true);
+  }, [advance]);
 
   const selectSingle = useCallback(
     (id: string) => {
@@ -270,5 +306,6 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     selectSingle,
     selectMulti,
     answerOther,
+    retryOpening,
   };
 }

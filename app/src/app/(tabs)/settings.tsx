@@ -44,6 +44,7 @@ import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useTheme } from '@/hooks/use-theme';
+import { useServerConnection } from '@/hooks/useServerConnection';
 import { findLanguage } from '@/i18n/languages';
 import type { AddressForm } from '@/i18n/addressForm';
 import type { Weekday } from '@/core/util/week';
@@ -151,7 +152,7 @@ export default function SettingsScreen() {
 
   // The REAL identity, if one is linked. `providers` carries only provider names (never PII), so
   // this is also all the UI is able to say about who the person is — by design (red-line R1).
-  const { user, status, signOut, enabled: backendEnabled } = useAuth();
+  const { user, status, signOut } = useAuth();
   const signedIn = status === 'authenticated';
   /**
    * NO SESSION AT ALL, on a build that HAS a backend — the state that hid for days (2026-08-20).
@@ -164,7 +165,8 @@ export default function SettingsScreen() {
    *
    * A capability that fails without saying so is one nobody fixes. So it says so.
    */
-  const disconnected = backendEnabled && status === 'signedOut';
+  const connection = useServerConnection();
+  const disconnected = connection.disconnected;
   const linkedProvider = user?.providers.find((p) => p === 'apple' || p === 'google');
   const providerLabel = linkedProvider === 'apple' ? 'Apple' : 'Google';
 
@@ -226,7 +228,15 @@ export default function SettingsScreen() {
               <SettingsRow
                 icon="cloud-offline-outline"
                 label={t('signIn.disconnected')}
-                detail={t('signIn.disconnectedDetail')}
+                // Tapping it RETRIES. Saying "not connected" and giving no way to try again is only
+                // half the fix: someone who was offline at first launch would otherwise stay cut off
+                // until they reinstalled.
+                detail={
+                  connection.retrying
+                    ? t('connection.retrying', { ns: 'common' })
+                    : t('signIn.disconnectedDetail')
+                }
+                onPress={() => void connection.retry()}
               />
             ) : null}
             {simUser.signedIn ? (

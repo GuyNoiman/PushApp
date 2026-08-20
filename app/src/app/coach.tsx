@@ -15,6 +15,7 @@
  * {@link useLiveCoach} (Engineering Bible §19).
  */
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,12 +30,14 @@ import { buildCoachScript, type CoachOption } from '@/components/coach/coachScri
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { featureFlags } from '@/core/config/featureFlags';
 import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
 import type { JourneyStart } from '@/core/types/domain';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useServerConnection } from '@/hooks/useServerConnection';
 import { isRTL } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useApp } from '@/state/AppProvider';
@@ -47,8 +50,58 @@ import { useApp } from '@/state/AppProvider';
  */
 export default function CoachScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string; journeyId?: string }>();
+  // Read unconditionally so the hook order never depends on the route.
+  const connection = useServerConnection();
   if (mode === 'edit') return <EditCoachScreen />;
+  /**
+   * NO SESSION, NO INTERVIEW (2026-08-20). The live coach understands the opening through our proxy,
+   * which authenticates with the device's own session. With no session it cannot understand anything
+   * — and it used to carry on anyway, turning whatever the person typed into the title of a Journey.
+   * A coach that cannot do its job should say so and offer to try again, not quietly become a worse
+   * coach. The SCRIPTED prototype needs no session, so it is deliberately not gated.
+   */
+  if (featureFlags.liveCoach && connection.disconnected) {
+    return <CoachOfflineScreen onRetry={() => void connection.retry()} retrying={connection.retrying} />;
+  }
   return featureFlags.liveCoach ? <LiveCoachScreen /> : <ScriptedCoachScreen />;
+}
+
+/**
+ * The whole Coach surface when this device has no session: the same chrome, and one honest card in
+ * place of a conversation. The retry re-runs `ensureSession`, so someone who was simply offline at
+ * first launch gets their coach back without reinstalling.
+ */
+function CoachOfflineScreen({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
+  const theme = useTheme();
+  const { t } = useAddressedTranslation('coach');
+  const { t: tCommon } = useTranslation('common');
+
+  return (
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('closeConversation')}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            hitSlop={8}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+            <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
+          </Pressable>
+          <ThemedText type="smallBold">{t('header')}</ThemedText>
+        </View>
+        <View style={styles.offline}>
+          <ConnectionNotice
+            variant="block"
+            title={tCommon('connection.coachTitle')}
+            body={tCommon('connection.coachBody')}
+            onRetry={onRetry}
+            retrying={retrying}
+          />
+        </View>
+      </SafeAreaView>
+    </ThemedView>
+  );
 }
 
 /** The three start modes offered at final approval (Future Journey Management, §5). */
@@ -71,6 +124,7 @@ function LiveCoachScreen() {
   // skipped when the user already answered it in onboarding.
   const coach = useLiveCoach({ profile: core.getOnboardingCoachSummary() });
   const { t } = useAddressedTranslation('coach');
+  const { t: tCommon } = useTranslation('common');
 
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);
 
@@ -235,6 +289,17 @@ function LiveCoachScreen() {
             })}
 
             {coach.status === 'thinking' && <CoachBubble role="coach" text={t('thinking')} />}
+
+            {/* The connection went while the coach was understanding the opening. Nothing was built
+                from it — say that plainly, and offer the one action that can change it. */}
+            {coach.status === 'unavailable' && (
+              <ConnectionNotice
+                variant="block"
+                title={tCommon('connection.coachLostTitle')}
+                body={tCommon('connection.coachLostBody')}
+                onRetry={coach.retryOpening}
+              />
+            )}
 
             {coach.question && (
               <CoachOptions
@@ -556,6 +621,13 @@ function ScriptedCoachScreen() {
 }
 
 const styles = StyleSheet.create({
+  /** The offline screen's single card, given the same side margins as the conversation. */
+  offline: {
+    padding: Spacing.three,
+    maxWidth: MaxContentWidth,
+    width: '100%',
+    alignSelf: 'center',
+  },
   container: {
     flex: 1,
     flexDirection: 'row',

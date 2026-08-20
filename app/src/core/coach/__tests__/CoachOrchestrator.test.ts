@@ -20,7 +20,12 @@
 import i18n from '@/i18n';
 
 import { MockLlmClient } from '../../llm/LlmClient';
-import { CoachOrchestrator, extractDomain, extractGoals } from '../CoachOrchestrator';
+import {
+  CoachOrchestrator,
+  CoachUnavailableError,
+  extractDomain,
+  extractGoals,
+} from '../CoachOrchestrator';
 import { SafetyLayer } from '../SafetyLayer';
 
 /** A mock understanding response carrying a SINGLE goal of the given domain + kind. */
@@ -262,7 +267,14 @@ describe('CoachOrchestrator — fallback when nothing is understood', () => {
     expect(next.activeExpert?.displayName).toBe('General');
   });
 
-  it('falls back safely when the understanding call throws', async () => {
+  /**
+   * REPLACES an earlier test that asserted the OPPOSITE — that a throwing understanding call also
+   * took the process-type fallback. That behaviour was the bug: an unreachable model and a model
+   * that answered with nothing usable are different situations, and treating them the same is how a
+   * person's own sentence became the title of a Journey they never asked for (partner, 2026-08-20).
+   * The fallback above is still correct for its own case, which is why it is untouched.
+   */
+  it('REFUSES to fall back when the understanding call never reached a model', async () => {
     const orchestrator = new CoachOrchestrator({
       llm: new MockLlmClient(() => {
         throw new Error('transport down');
@@ -270,10 +282,34 @@ describe('CoachOrchestrator — fallback when nothing is understood', () => {
     });
     orchestrator.start();
 
-    const turn = await orchestrator.triage('something');
+    // It rejects rather than answering with a Journey shaped out of the raw text. That the spec was
+    // left untouched is asserted by the retry test below, where the SAME instance still starts a
+    // clean interview afterwards.
+    await expect(orchestrator.triage('something')).rejects.toBeInstanceOf(CoachUnavailableError);
+  });
 
-    expect(turn.state.phase).toBe('processType');
-    expect(turn.question?.id).toBe('meta.processType');
+  it('stays retryable after an unreachable understanding call', async () => {
+    let reachable = false;
+    const orchestrator = new CoachOrchestrator({
+      llm: new MockLlmClient(() => {
+        if (!reachable) throw new Error('transport down');
+        return JSON.stringify({ goals: [{ title: 'run a 5k', kind: 'process', domain: 'general' }] });
+      }),
+    });
+    orchestrator.start();
+
+    await expect(orchestrator.triage('I want to run a 5k')).rejects.toBeInstanceOf(
+      CoachUnavailableError,
+    );
+
+    // The connection comes back and the SAME instance runs the same opening — the interview starts
+    // properly, and the unanswered line was not left behind to be counted twice.
+    reachable = true;
+    const turn = await orchestrator.triage('I want to run a 5k');
+
+    expect(turn.state.spec.title).toBe('run a 5k');
+    expect(turn.state.history.filter((m) => m.role === 'user' && m.content === 'I want to run a 5k'))
+      .toHaveLength(1);
   });
 });
 

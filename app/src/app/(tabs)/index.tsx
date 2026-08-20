@@ -47,6 +47,7 @@ import { WeekSummaryCard } from '@/components/home/WeekSummaryCard';
 import { StepRow } from '@/components/home/StepRow';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { TabScrollView } from '@/components/ui/TabScrollView';
 import { displayFont, displayScale } from '@/constants/displayFont';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -62,6 +63,7 @@ import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import type { Dream, Journey } from '@/core/types/domain';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { useTheme } from '@/hooks/use-theme';
+import { useServerConnection } from '@/hooks/useServerConnection';
 import { useApp } from '@/state/AppProvider';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useSocial } from '@/state/SocialProvider';
@@ -128,6 +130,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('home');
+  const { t: tCommon } = useTranslation('common');
   // Whether Home is the screen the user is actually looking at — see the feedback gate below.
   const isFocused = useIsFocused();
 
@@ -303,6 +306,18 @@ export default function HomeScreen() {
       setFeedbackOpen(true);
     }
   }, [isFocused, pendingFeedbackAsk, pendingCeremony, pendingReview, pendingInactivity]);
+
+  /**
+   * NO SESSION — said out loud, once, at the top of Home (2026-08-20).
+   *
+   * Not a modal and not a blocker: the app genuinely works without a server, and this page is proof
+   * of it. But the coach and the Support Circle do not, and for a stretch of days they failed with
+   * nothing on screen to explain why. The dismissal is deliberately in memory only — it clears the
+   * line for this run of the app, and lets it come back on the next launch if the situation has not
+   * changed. Persisting it would hide the problem for good, which is the bug we are fixing.
+   */
+  const connection = useServerConnection();
+  const [connectionDismissed, setConnectionDismissed] = useState(false);
 
   const hour = new Date().getHours();
   const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
@@ -593,6 +608,18 @@ export default function HomeScreen() {
               </ThemedText>
             </View>
           </View>
+
+          {/* ── Not connected — placed right above the coach card, because the coach is the first
+              thing the person will reach for and the first thing that will not work ── */}
+          {connection.disconnected && !connectionDismissed ? (
+            <ConnectionNotice
+              title={tCommon('connection.offlineTitle')}
+              body={tCommon('connection.offlineBody')}
+              onRetry={() => void connection.retry()}
+              retrying={connection.retrying}
+              onDismiss={() => setConnectionDismissed(true)}
+            />
+          ) : null}
 
           {/* ── Talk to your coach — the primary way in, pinned near the top ── */}
           <View style={styles.coach}>

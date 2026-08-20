@@ -17,6 +17,16 @@
   "letGo": "Let go",
   "loading": "Loading…",
   "dismiss": "Dismiss",
+  "connection": {
+    "retry": "Try again",
+    "retrying": "Connecting…",
+    "offlineTitle": "Not connected to the server",
+    "offlineBody": "Your Journeys are safe on this phone and everything here still works. The coach and your Circle need the connection, so they are waiting until it is back.",
+    "coachTitle": "The coach can't reach the server",
+    "coachBody": "It will not start a plan it cannot finish properly, so it is waiting rather than guessing. Your Journeys are safe on this phone.",
+    "coachLostTitle": "The coach lost the connection",
+    "coachLostBody": "Nothing you wrote became a Journey. Try again in a moment and it will pick up from your first sentence."
+  },
   "weekdays": [
     "Sunday",
     "Monday",

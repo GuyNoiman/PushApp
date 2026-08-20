@@ -142,4 +142,56 @@ describe('useLiveCoach', () => {
     expect(lastCoach?.kind === 'coach' && lastCoach.text).toMatch(/once more/i);
     unmount();
   });
+
+  /**
+   * THE BUG THIS ENCODES (partner, 2026-08-20): with no session the understanding call cannot reach
+   * our proxy, and the coach used to carry on regardless — it took the person's raw sentence as the
+   * goal and built a Journey out of it. A coach that cannot understand anything must say so.
+   */
+  it('goes UNAVAILABLE instead of interviewing when the coach cannot reach a model', async () => {
+    const orchestrator = new CoachOrchestrator({
+      llm: new MockLlmClient(() => {
+        throw new LlmError('No signed-in session for the coach', undefined, 'config');
+      }),
+    });
+    const { result, unmount } = renderLiveCoach(orchestrator);
+
+    await act(async () => {
+      result.current.sendOpening('I want to run a 5k');
+    });
+
+    expect(result.current.status).toBe('unavailable');
+    expect(result.current.goalSpec).toBeNull();
+    expect(result.current.question).toBeNull();
+    // Nothing was turned into a Journey, and no interview question was asked.
+    expect(result.current.items.some((i) => i.kind === 'journey')).toBe(false);
+    unmount();
+  });
+
+  it('retryOpening picks the conversation up from the same opening once the server is back', async () => {
+    let reachable = false;
+    const orchestrator = new CoachOrchestrator({
+      llm: new MockLlmClient(() => {
+        if (!reachable) throw new LlmError('offline', undefined, 'network');
+        return JSON.stringify({ goals: [{ title: 'run a 5k', kind: 'process', domain: 'general' }] });
+      }),
+    });
+    const { result, unmount } = renderLiveCoach(orchestrator);
+
+    await act(async () => {
+      result.current.sendOpening('I want to run a 5k');
+    });
+    expect(result.current.status).toBe('unavailable');
+
+    reachable = true;
+    await act(async () => {
+      result.current.retryOpening();
+    });
+
+    expect(result.current.status).toBe('idle');
+    expect(result.current.question).not.toBeNull();
+    // The person did not have to type their sentence again, and it is not echoed twice.
+    expect(result.current.items.filter((i) => i.kind === 'user')).toHaveLength(1);
+    unmount();
+  });
 });

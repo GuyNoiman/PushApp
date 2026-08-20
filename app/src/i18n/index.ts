@@ -60,7 +60,7 @@ import heOnboarding from './resources/he/onboarding.json';
 import heRecovery from './resources/he/recovery.json';
 
 /** Every namespace we split copy into. `common` is the default. */
-export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'friendProfile', 'explore', 'weeklyReview', 'dreams', 'notify', 'onboarding', 'communication', 'celebration', 'inactivity', 'recovery', 'library'] as const;
+export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'friendProfile', 'explore', 'weeklyReview', 'dreams', 'notify', 'onboarding', 'communication', 'celebration', 'inactivity', 'recovery', 'library', 'tools'] as const;
 export const DEFAULT_NAMESPACE = 'common';
 
 export const resources = {

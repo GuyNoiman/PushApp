@@ -160,6 +160,23 @@ export const SCHEDULING_QUESTION: DomainQuestion = {
 
 // ── Public turn / state shapes ──────────────────────────────────────────────────
 
+/**
+ * The coach could not REACH a model for the understanding call — no session, no network, a timeout,
+ * an HTTP error. It is not "the model had nothing useful to say"; it is "we never asked anybody".
+ *
+ * It exists so the surface can tell the truth. A coach with no connection must not quietly become a
+ * worse coach: it cannot understand a goal, so it must not start an interview it can only finish by
+ * guessing. The screen shows the person that the coach is unavailable and offers to try again
+ * ({@link ../../components/coach/useLiveCoach}); the orchestrator stays retryable.
+ */
+export class CoachUnavailableError extends Error {
+  /** The underlying transport/config failure (an `LlmError`, usually). Never shown to the user. */
+  constructor(readonly reason?: unknown) {
+    super('The coach could not reach the server.');
+    this.name = 'CoachUnavailableError';
+  }
+}
+
 /** The ACTIVE EXPERT the triage step selected — surfaced for the dev harness / UI. */
 export interface ActiveExpert {
   id: DomainId;
@@ -347,7 +364,16 @@ export class CoachOrchestrator {
     const text = goalText.trim();
     this.history.push({ role: 'user', content: text });
 
-    const goals = await this.understand(text);
+    let goals: UnderstoodGoal[];
+    try {
+      goals = await this.understand(text);
+    } catch (e) {
+      // The coach could not reach a model. Leave the orchestrator EXACTLY where it was — still in
+      // `goal`, with the unanswered line taken back out of the history — so the same instance can be
+      // retried without the opening being counted twice.
+      this.history.pop();
+      throw e;
+    }
 
     if (goals.length === 0) {
       // Understanding produced nothing usable — keep the demoted process-type question as a fallback
@@ -415,29 +441,40 @@ export class CoachOrchestrator {
 
   /**
    * UNDERSTAND the free-text opening via the meta-agent (one LLM call): return the distinct goals it
-   * describes, each with a validated domain + kind ({@link extractGoals}). A transport/LLM failure
-   * degrades to an EMPTY list so the caller takes the safe fallback path — the interview never crashes.
+   * describes, each with a validated domain + kind ({@link extractGoals}).
+   *
+   * THIS USED TO SWALLOW EVERY FAILURE and return an empty list, which put a call we never made and
+   * an answer we could not use into the same box. They are not the same thing:
+   *  · the model ANSWERED and its answer held no usable goal ⇒ {@link extractGoals} returns `[]`
+   *    without throwing, and the demoted process-type question is exactly the right fallback;
+   *  · the call never reached a model at all (no session, no network, a timeout, an HTTP error) ⇒
+   *    there is nothing to fall back ONTO, and pretending otherwise is how a person's message became
+   *    the title of a Journey they never asked for (partner, 2026-08-20).
+   *
+   * So a throw stays a throw, re-labelled {@link CoachUnavailableError} for the surface to recognise.
+   * `extractGoals` never throws, so anything caught here is genuinely the call, never the answer.
    */
   private async understand(goalText: string): Promise<UnderstoodGoal[]> {
+    const system = [
+      this.styleFragment,
+      COACH_SYSTEM_PROMPT,
+      TRIAGE_SYSTEM_PROMPT,
+      buildLocaleDirective(this.locale),
+    ]
+      .filter((s) => s.length > 0)
+      .join('\n\n');
+    let result;
     try {
-      const system = [
-        this.styleFragment,
-        COACH_SYSTEM_PROMPT,
-        TRIAGE_SYSTEM_PROMPT,
-        buildLocaleDirective(this.locale),
-      ]
-        .filter((s) => s.length > 0)
-        .join('\n\n');
-      const result = await this.llm.complete({
+      result = await this.llm.complete({
         system,
         json: true,
         temperature: 0,
         messages: [...this.history, { role: 'user', content: buildTriageDirective(goalText) }],
       });
-      return extractGoals(result.text);
-    } catch {
-      return [];
+    } catch (cause) {
+      throw new CoachUnavailableError(cause);
     }
+    return extractGoals(result.text);
   }
 
   /**

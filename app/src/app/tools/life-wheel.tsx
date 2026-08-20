@@ -36,12 +36,10 @@ import {
   LIFE_WHEEL_MIN,
   answeredCount,
   clampScore,
-  isComplete,
   nextArea,
   readWheel,
   recordArea,
   type LifeAreaId,
-  type LifeWheelAnswers,
 } from '@/core/tools/lifeWheel/model';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';

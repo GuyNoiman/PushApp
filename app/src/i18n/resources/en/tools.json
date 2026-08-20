@@ -14,7 +14,8 @@
     "hardDay": "For a hard day",
     "lifeWheel": "Life Wheel",
     "valuesClarity": "Values clarification",
-    "bestYear": "My Best Possible Year"
+    "bestYear": "My Best Possible Year",
+    "direction": "Direction Statement"
   },
   "questionnaire": {
     "save": "Save my answers"
@@ -62,7 +63,8 @@
     "hardDay": "Somewhere to put it down when the day went badly.",
     "lifeWheel": "Eight parts of your life, and which one is quietly costing you.",
     "valuesClarity": "Which five values you want to live by, and how far you are from them.",
-    "bestYear": "Write from a year ahead, and meet it again when it arrives."
+    "bestYear": "Write from a year ahead, and meet it again when it arrives.",
+    "direction": "One sentence about where you are pointed. Not a goal, and nothing is planned from it."
   },
   "lifeWheel": {
     "title": "Life Wheel",
@@ -387,5 +389,69 @@
       "keep": "Close it",
       "written": "Written {{date}}"
     }
+  },
+  "direction": {
+    "title": "Direction Statement",
+    "step": "Step {{current}} of {{total}}",
+    "notADream": "This is a direction, not a commitment or a Dream.",
+    "intro": {
+      "lead": "One sentence about where you are pointed.",
+      "body": "It brings together what draws you and what you naturally bring. It is not a goal and nothing gets planned from it — it is a long-term reading that helps the coach phrase Dreams later, in your language rather than ours.",
+      "begin": "Begin"
+    },
+    "draws": {
+      "title": "What draws you?",
+      "body": "Pick up to three. These came from the values you already narrowed down; add anything that is missing.",
+      "empty": "Nothing here yet — write what pulls you.",
+      "add": "Add your own"
+    },
+    "brings": {
+      "title": "And what do you naturally bring?",
+      "body": "Pick up to three. Nobody has told us this yet, so it is yours to write. Not what you should be good at — what people actually come to you for.",
+      "empty": "Write what you bring.",
+      "add": "Add your own"
+    },
+    "drawer": {
+      "draws": "What draws me",
+      "brings": "What I bring"
+    },
+    "drafts": {
+      "title": "Five ways of saying it.",
+      "body": "Same words, different weight. Pick the one that sounds like you.",
+      "label": "Draft {{n}}"
+    },
+    "templates": {
+      "leadWithPull": "I want to {{draw}} by using my {{a}}{{andB}}.",
+      "leadWithGift": "My {{a}}{{andB}} are for {{draw}}.",
+      "leadWithPerson": "I am at my best when my {{a}} helps somebody {{draw}}.",
+      "leadWithPractice": "I keep practising {{a}} so that I can {{draw}}.",
+      "leadWithPlain": "{{draw}}, with {{a}}{{andB}}.",
+      "and": " and {{b}}"
+    },
+    "refine": {
+      "title": "Bring together what draws you and what you naturally bring.",
+      "alive": "How alive does this feel?",
+      "makeItTen": "What would make it a 10?",
+      "thought": "Add a thought…"
+    },
+    "trim": {
+      "title": "Now make it yours.",
+      "body": "Edit it freely. Around eight to twelve words tends to be sayable, but it is your sentence.",
+      "target": "Target {{min}}–{{max}} words",
+      "words": "{{count}} words"
+    },
+    "gloss": {
+      "title": "What do these words mean to you?",
+      "body": "Every one of them means something different to different people. This is optional, and it is the part a coach will actually read.",
+      "placeholder": "In your own words"
+    },
+    "result": {
+      "title": "Your direction, for now.",
+      "note": "Nothing is planned from this. When you are ready to work on something, the coach can start here.",
+      "done": "Done",
+      "again": "Write it again"
+    },
+    "continue": "Continue",
+    "saveDraft": "Save draft"
   }
 }

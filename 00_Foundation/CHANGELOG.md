@@ -4,6 +4,71 @@ Status: Living Document
 
 ---
 
+# 2026-08-20 — the redesign lands on every tab, and three bugs the partner found
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1750 / 175 suites**. Open list:
+`04_Product/Open_Work_2026-08-20.md`. Design rules: `04_Product/Design_System.md` §0.
+
+## Three bugs, all found by a second person using the app
+
+**The app greeted every user by the founder's name.** `coachContent.opening` said "Hi Guy, how can I
+help you today?" in English and the same with גיא in Hebrew — a development name written into the
+copy and shipped. The partner was greeted as somebody else in his own language, typed "why Guy?" into
+the coach to ask about it, and the coach did what it is built to do: understood a goal and helped him
+build a Journey out of the question. So he reported an app full of a stranger's things, and he was
+right. The greeting is nameless now, and a new test
+(`src/i18n/__tests__/noPersonalData.test.ts`) sweeps every shipped resource file for development
+identities, because a name in copy renders, translates and passes i18n parity — every other test in
+this repo is blind to it.
+
+**Hebrew onboarding ran left-to-right.** React Native applies an LTR↔RTL flip only on a fresh launch,
+and in a release build `DevSettings.reload` is stubbed out — so the app could not relaunch itself, the
+banner asked politely for something nobody does mid-signup, and the whole questionnaire ran mirrored.
+`expo-updates` landed the day before for over-the-air updates, and its `reloadAsync()` is exactly the
+production relaunch this path was missing. Onboarding now relaunches on the spot when the choice flips
+direction — the cheapest moment in the app's life to do it.
+
+**Delete account refused on behalf of an account that did not exist.** He tried to start over and was
+told his data had not been deleted. It had not: the remote delete was called with no session, the
+server answered 401, and the strict "remote before local" rule left him holding data he had asked to
+be rid of. The rule is intact — a real account is still deleted server-side first, and any failure
+there still stops everything — but "nobody is signed in" is now treated as nothing to delete rather
+than as a failure. **The 401 is also the best evidence we have that his device had no Supabase
+session at all**, which would explain the odd Journey too (the coach's documented fallback uses the
+raw text when the understanding call cannot reach the proxy). Checking whether anonymous sign-in is
+enabled is the top item on the founder's list.
+
+**And a guarantee, because the question he raised deserves a mechanical answer:** the demo seed and
+the simulated identity are now gated on `__DEV__` as well as on their env vars, so a shipped build
+cannot invent Journeys or show a developer's name whatever any `.env` file says.
+
+## The redesign reached every tab
+
+Journeys, Circle, Inbox, Settings and the new Tools all speak in the display voice now, and each
+carries the line its mockup gives it. Journeys shows the next Step on every active card. Inbox
+conversations became cards with teal unread dots (an unread message is something waiting, not
+something wrong). Circle's INVITE button does something for the first time since it was added in
+August — it shares the user's username through the OS share sheet.
+
+**Circle gained an Allies tab.** The founder's answer to what his mockup's third statistic should
+have been: not a number, a second list. An Ally is anyone who accepted a place in at least one of the
+user's Support Circles and is not saved as a friend, held as ONE global list rather than per-Journey.
+
+**The Inbox left the tab bar** (his option 1, chosen from rendered options) for a mail button with a
+count in Home's status strip, and **TOOLS took the slot**: questionnaires and small in-app
+experiences, including the nine onboarding questions as something the user can take again. That
+retake reuses the onboarding pages rather than re-implementing them, and writes nothing until the
+last question — a retake that saved halfway would leave a profile half old and half new.
+
+## Also today
+
+The week-by-day rule was corrected to the founder's own words (a Step travels because it was
+`recommended`, not because the week owes sessions). The founder ran the production build himself and
+it is in TestFlight as build 3. The object model was drawn out as a map with an explanation of every
+term, and the Inbox placement options were rendered before one was chosen.
+
+---
+
 # 2026-08-20 — the redesign, second round: the founder's notes from the running build
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1728 / 171 suites**. Everything here came

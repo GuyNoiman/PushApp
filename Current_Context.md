@@ -1,11 +1,10 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-19 (night)** — start at the **"⛳ START HERE — 2026-08-19 (night)"** block
-below. Under it, the same day's afternoon and morning blocks are accurate history. Under it, the same day's earlier "⛳ Previous START HERE — 2026-08-19
-(autonomous session)" block is accurate history for the morning. Under it, the "⛳ Previous START HERE — D62 is built" block (2026-08-18, later) and the ones under
-that are accurate history, kept in full and superseded only as the starting point. Previous top entry
-follows.
+Last updated: **2026-08-20** — start at the **"⛳ START HERE — 2026-08-20"** block below. The
+2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
+day's four sessions, and the 2026-08-18 blocks under those are accurate history of the day before.
+Nothing below is deleted; each is superseded only as the starting point.
 Prior: **2026-08-13 (SESSION — MVP-ready sweep)** — read the "⭐ HANDOFF SNAPSHOT — 2026-08-13
 (SESSION — MVP-ready sweep)" just below (most current and authoritative). It supersedes — but does not
 replace — the same-day "⭐ HANDOFF SNAPSHOT — 2026-08-13 (overnight autonomous session)" underneath it,
@@ -34,7 +33,48 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-19 (night): the build went out, and Home is being redesigned
+# ⛳ START HERE — 2026-08-20: the redesign is on every tab, and the partner found three real bugs
+
+Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1750 / 175 suites**, `tsc`
+clean, working tree clean. **The open list is now `04_Product/Open_Work_2026-08-20.md` — read it after
+this block.** Full detail of what changed: `00_Foundation/CHANGELOG.md`, the 2026-08-20 entry. Design
+rules: `04_Product/Design_System.md` §0.
+
+### The two things that must not be rediscovered the hard way
+
+**1. Everything built since build 3 is NOT on the partner's phone.** It is in git only. Build 3
+subscribes to the `production` channel and the fingerprint has not moved, so one command from `app/`
+delivers all of it:
+`npx eas-cli@latest update --branch production --message "Home redesign, Hebrew onboarding fix"`
+That is the highest-value outstanding action, and it also proves the over-the-air pipeline, which
+nothing has yet.
+
+**2. The fingerprint rule.** The build carries iOS runtime fingerprint
+`df6c2127bbd3be3766774e3f008f4ae5158306cd`. Updates only reach a binary whose fingerprint MATCHES, so
+a native dependency, any `app.json` edit, or an SDK bump cuts his phone off from every update we
+publish. All TypeScript, components, copy, colours, code-drawn artwork and runtime-loaded fonts are
+free. `expo-blur` and `expo-linear-gradient` went in BEFORE the build precisely so the redesign would
+never need one.
+
+### What happened today
+Three bugs, all found by a second person using the app: the coach greeted **every** user by the
+founder's name; Hebrew onboarding ran left-to-right because a release build could not relaunch itself
+after the language flip; and Delete account refused on behalf of an account that did not exist. All
+three are fixed, each with a test that would have caught it. A fourth thing came out of the third:
+his device almost certainly had **no Supabase session at all**, which is now the top item on the
+founder's list (Open_Work §2.2) because it also explains the strange Journey he ended up with.
+
+The redesign reached every tab, the Inbox moved to a button in Home's status strip, and the freed slot
+became **Tools** — where the onboarding questionnaire can now be taken again.
+
+### The single biggest gap in the product
+Nothing routes a real conversation to the eighteen Career Journeys. Choosing a family needs the Career
+expert to DIAGNOSE which of the six a goal is, and the experts do not diagnose. The letter drafted for
+the partner asks him for exactly that, because it is domain work rather than engineering.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-19 (night): the build went out
 
 Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1722 / 170 suites**, `tsc`
 clean. The blocks under this one are the same day's earlier sessions and stay accurate. Detail:

@@ -1,7 +1,8 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-20** — start at the **"⛳ START HERE — 2026-08-20"** block below. The
+Last updated: **2026-08-20 (evening)** — start at the **"⛳ START HERE — 2026-08-20 (evening)"** block
+below. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
 day's four sessions, and the 2026-08-18 blocks under those are accurate history of the day before.
 Nothing below is deleted; each is superseded only as the starting point.
@@ -33,7 +34,46 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-20: the redesign is on every tab, and the partner found three real bugs
+# ⛳ START HERE — 2026-08-20 (evening): the silence is fixed, and the cause was real
+
+Committed on `feat/buddy-3d-and-reminders`, **jest 1767 / 178 suites**, `tsc` clean. The open list is
+still `04_Product/Open_Work_2026-08-20.md` — read it after this block; several items on it are now
+marked DONE with their evidence. Detail: `00_Foundation/CHANGELOG.md`, the "2026-08-20 (evening)"
+entry.
+
+### The one thing that must not be rediscovered the hard way
+**Anonymous sign-ins were genuinely disabled on the Supabase project, and are now on.** It was
+confirmed by calling the endpoint, not by reading a toggle: a real sign-up request returned
+`422 anonymous_provider_disabled`, the founder saved the setting again, and the identical request
+returned `200` with a session. That single switch is the whole explanation for the coach that
+invented a Journey, the Delete account that refused, and a Support Circle that did nothing. **Verify a
+provider by calling it. The toggle had been believed on for days.**
+
+### What was built
+The app now SAYS when there is no server. One hook (`hooks/useServerConnection.ts`) answers "is there
+a session" for Home, the Coach and Settings, and owns the retry. The Coach no longer starts an
+interview it cannot finish: `CoachOrchestrator.understand()` used to swallow a failed understanding
+call and hand back an empty list, which is the exact line that turned the partner's question into the
+title of a Journey. A model that ANSWERS with nothing usable still falls back; a call that never
+reached a model raises `CoachUnavailableError` and the screen says so. A Step also got its hairline
+frame back, because without one it did not read as something you could drag.
+
+### Two environment facts that cost time today
+- `npm run dev` publishes the packager under a `.local` mDNS name that iOS often cannot resolve, so a
+  saved Expo Go entry hangs with no error. Use `REACT_NATIVE_PACKAGER_HOSTNAME=<LAN IP>` and check the
+  manifest's `launchAsset.url`.
+- `Unimplemented component: ViewManagerAdapter_ExpoLinearGradient` means the device's binary predates
+  the dependency (installed 2026-08-19 15:21). Not a code bug, and deliberately not worked around —
+  see Open Work §3.2.
+
+### ▶ NEXT
+The founder rejected all four Tools-tab directions and is bringing a designed screen of his own.
+**Do not restyle Tools until it arrives.** The largest gap in the product is unchanged: nothing routes
+a real conversation to the eighteen Career Journeys, because the experts do not diagnose.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-20: the redesign is on every tab, and the partner found three real bugs
 
 Everything committed and pushed on `feat/buddy-3d-and-reminders`, **jest 1750 / 175 suites**, `tsc`
 clean, working tree clean. **The open list is now `04_Product/Open_Work_2026-08-20.md` — read it after

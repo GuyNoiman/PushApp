@@ -4,6 +4,78 @@ Status: Living Document
 
 ---
 
+# 2026-08-20 (evening) — the silence is fixed, and the cause turned out to be real
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1767 / 178 suites**. Continues the
+2026-08-20 entry below, which stays accurate; this is the same day's later session.
+
+## The root cause was found, and it was exactly the suspect
+
+The morning's entry named the prime suspect: the partner's device had no Supabase session at all.
+It was confirmed here, not guessed. A real anonymous sign-up request sent to the project came back
+`422 anonymous_provider_disabled` — anonymous sign-ins were still switched off, after they were
+believed to have been turned on. The founder saved the setting again and the identical request
+returned `200` with a genuine anonymous session. One switch explains every symptom: the coach that
+invented a Journey out of a message, the Delete account that refused, and a Support Circle that
+quietly did nothing.
+
+## What was built so the next silence cannot last days
+
+**The app now says when there is no server** (Open Work §1.2, the founder's own instruction).
+
+- `hooks/useServerConnection.ts` is the single answer to "is there a session", and the single retry.
+  Home, the Coach and Settings all read it instead of each deriving it from `useAuth`. A build with
+  **no backend at all is deliberately NOT disconnected** — it is local, and it works exactly as
+  designed; claiming otherwise would put a permanent false alarm in front of every offline user.
+- **Home** carries an honest, dismissible line above the coach card, in the app's amber. The
+  dismissal is IN MEMORY ONLY: it clears the line for this run and lets it return next launch if
+  nothing has changed. Persisting it would hide the problem for good, which is the bug being fixed.
+- **The Coach refuses to start an interview it cannot finish.** `CoachOrchestrator.understand()` used
+  to swallow every failure and return an empty list, which put "the model answered with nothing
+  usable" and "we never reached a model" in the same box. They are not the same: the first still
+  takes the process-type fallback, the second now raises `CoachUnavailableError`, the screen says the
+  coach cannot reach the server, and the orchestrator is left retryable — so the retry picks up from
+  the person's first sentence instead of asking them to type it again. This is the precise line of
+  code that turned the partner's question into the title of a Journey.
+- **Settings'** existing "Not connected to the server" row now retries when tapped.
+
+**A Step got its frame back** (founder, on a real device): without a border a Step did not read as an
+object, and an object you cannot see is an object you do not try to drag — so the swipe report (Done
+/ Postpone / Let go), the fastest path through a day, was invisible. This partly reverses the
+2026-08-19 lightness pass, which was right about the fill and wrong about the frame. Everything else
+that pass bought is untouched.
+
+**`tools` joined `NAMESPACES`**, so the Tools copy is covered by the en/he parity guard like every
+other namespace. It had been shipping unchecked since the tab landed.
+
+## Two things learned about the environment, both worth keeping
+
+**A `.local` hostname is not a working dev URL.** `npm run dev` sets the packager hostname from
+`scutil --get LocalHostName`, so the manifest told the phone to fetch the bundle from
+`h-MacBook-Air-sl-guy-2.local` — an mDNS name iOS often cannot resolve, which is why the saved entry
+in Expo Go simply hung. Starting with `REACT_NATIVE_PACKAGER_HOSTNAME=<LAN IP>` fixes it, and the
+proof is in the manifest: the `launchAsset.url` must carry the IP.
+
+**An old development build cannot render new native views.** Three screens showed
+`Unimplemented component: ViewManagerAdapter_ExpoLinearGradient` — the Coach card, the week's summary
+and the Tools hero. The binary on the device predates 2026-08-19 15:21, when `expo-linear-gradient`
+and `expo-blur` were installed. **No graceful fallback was built for it, on purpose:** the only
+available check (`UIManager.getViewManagerConfig`) is not reliable under the New Architecture, and a
+wrong answer would flatten the whole redesign in real builds. The fix is the runtime — Expo Go (which
+bundles the module, at no cost) or a fresh development build.
+
+## Rejected, and kept as history
+
+Four directions for the Tools tab were designed and rendered (rooms · one-thing-for-now · a swipeable
+deck · a quiet serif index) and the founder rejected all four; he is producing a designed screen
+elsewhere and will bring it back. The observation that produced them still stands and outlives them:
+the tab shows eight tiles of equal weight and six of them do not exist, and no styling fixes a page
+that is three-quarters roadmap. So does the smaller one: every tool needs a sentence saying what it
+does to you. "Breathe" means nothing; "two minutes to get out of your own head" is something a person
+chooses.
+
+---
+
 # 2026-08-20 — the redesign lands on every tab, and three bugs the partner found
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 1750 / 175 suites**. Open list:

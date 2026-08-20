@@ -13,7 +13,7 @@ const BRANCH_IDS: InterviewBranchId[] = ['A', 'B', 'C'];
 
 describe('INTERVIEW_PLAYBOOK', () => {
   it('opens with the coach greeting', () => {
-    expect(INTERVIEW_PLAYBOOK.opening).toBe('Hi Guy, how can I help you today?');
+    expect(INTERVIEW_PLAYBOOK.opening).toBe('Hi, how can I help you today?');
   });
 
   it('offers exactly the three closed choices A, B, C', () => {

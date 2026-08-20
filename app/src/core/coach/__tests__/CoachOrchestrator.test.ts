@@ -82,7 +82,9 @@ describe('CoachOrchestrator — start / understanding', () => {
 
     const opening = orchestrator.start();
 
-    expect(opening.coachMessage).toBe('Hi Guy, how can I help you today?');
+    // Nameless on purpose (2026-08-20): the opening used to greet the founder by name, which is
+    // what every user then saw. A real name reaches the screen from the user's own profile.
+    expect(opening.coachMessage).toBe('Hi, how can I help you today?');
     expect(opening.state.phase).toBe('goal');
     // The legacy A/B/C choices are still exposed for back-compat, but ignored by the flow.
     expect(opening.choices.map((c) => c.id)).toEqual(['A', 'B', 'C']);
@@ -377,7 +379,7 @@ describe('CoachOrchestrator — safety guard', () => {
 
     const opening = orchestrator.start();
 
-    expect(opening.coachMessage).toBe('HI GUY, HOW CAN I HELP YOU TODAY?');
+    expect(opening.coachMessage).toBe('HI, HOW CAN I HELP YOU TODAY?');
   });
 
   it('drives the whole flow cleanly with the SafetyLayer guard installed', async () => {

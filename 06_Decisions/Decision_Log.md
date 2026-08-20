@@ -16,6 +16,31 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > (`07_Assets/Partner_Packages/Career_v1.1_2026-08-20/`). Engineering detail:
 > `00_Foundation/CHANGELOG.md`.
 
+### D66 — A reflection is FOR THE USER. It does not have to teach us anything
+**Decision (founder, 2026-08-20),** on the reflection tools (My Best Possible Year, and the daily
+page, start-of-week page, birthdays and moments that follow it):
+
+> The documentation exercises serve the user more than us. We will build some reminder mechanism for
+> them, but they will not necessarily help us learn about the user.
+
+**What this settles.** The Tool Addition Protocol requires every tool to answer "what does it teach
+us" — and it already allows **"it influences nothing"** as a valid contract, written down with its
+reason. This is that answer, for a whole family at once: the reflections are a private writing
+surface, and their value is the writing. They owe the app nothing.
+
+**Why it is the right call, and not a gap.** These are the most personal words the product will ever
+hold. A tool that learns from them changes what it is: people write differently when something is
+reading. The one thing a reflection is allowed to hand over is what the person deliberately types
+into the "keep this as a Dream" box at the end — and that is not the letter being read, it is a
+separate sentence the person wrote on purpose, knowing where it goes.
+
+**What is still owed for them:** the RETURN mechanism — when a letter or a page comes back, and how.
+Today that is in-app and derived from the stored dates. The founder wants to think about the shape;
+until then nothing more is built.
+
+**Reflected in:** `04_Product/Tool_Addition_Protocol.md` §4b, `app/src/core/tools/reflections/model.ts`,
+`app/src/state/ReflectionsStore.tsx`.
+
 ### D64 — Authored content is HELD in English; a Hebrew delivery is translated once, at the end
 **Decision (founder, 2026-08-20):** it is fine for the partner to write in Hebrew today, and we keep
 his Hebrew as it arrives. **Our side holds English.** The translation is done **once**, when a package

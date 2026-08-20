@@ -472,3 +472,85 @@ events inside the existing pattern:
   simulation stage); `11_Engineering_Bible/Module_Architecture.md`'s existing reserved seams
   (Profile/Intervention/Interests) and `app/src/core/events/events.ts`'s reserved events, which
   this design builds on rather than replaces.
+
+---
+
+## E6 — Capturing media: audio, photos, and speech-to-text
+
+- **Date:** 2026-08-20 · **Status: PROPOSAL, not yet decided.** Written at the founder's request so
+  the cost is visible before the next build, not after it.
+- **Owner:** Founder decides; engineering scoped it.
+- **Stage:** Next build (POC → MVP).
+
+### Context
+
+The founder, on the reflection tools:
+
+> To make the documenting mechanisms comfortable for the user we will have to add audio recording,
+> image upload, even holding a conversation that is finally converted to text. We can do it later,
+> toward the next build, but these are capabilities we will need in several places in the app.
+
+He is right that it is several places, and that is the reason to decide it once: a letter to your
+future self, a moment worth recording, a hard day, and later a shared card all want the same three
+capabilities. Today the writing surface is text only, and dictation is the phone keyboard's own
+microphone — free, native-free, and already working in every text field.
+
+### The cost, stated plainly
+
+**All three are NATIVE.** Every one changes the iOS runtime fingerprint, which means the partner's
+current build stops receiving over-the-air updates and needs a new install (Open Work §3.1). That is
+not an argument against doing it — it is the reason to do all of it in ONE build rather than three.
+
+| Capability | Module | Already in? | New permission string | Notes |
+|---|---|---|---|---|
+| Save an image to photos | `expo-media-library` | **Yes**, save-only | already declared | Used by the completion card |
+| PICK an image | `expo-image-picker` | No | photo library (read), camera | Two separate prompts if the camera is offered |
+| Record audio | `expo-audio` (SDK 54; replaces `expo-av`) | No | microphone | Also needs a background/route policy decision |
+| Speech to text | — | No first-party module | — | See below; this is the one with a real fork in it |
+| Files on disk | `expo-file-system` | **Yes** | none | Already used; enough for storing both |
+
+### Speech to text is the only genuine decision
+
+Three routes, and they are not close:
+
+1. **The keyboard's microphone — what we do today.** Zero cost, zero native code, zero permissions,
+   works in every language the phone has, and the text never leaves the device. Its limit is that it
+   is dictation into a field, not "hold a conversation that becomes text".
+2. **On-device recognition** (`expo-speech-recognition`, community). Native, a microphone AND a
+   speech-recognition permission, quality varies by language — Hebrew notably worse than English.
+   Still free per use, still on device.
+3. **Cloud transcription.** Best quality, and it **costs money per minute** and sends the most
+   personal audio the app will ever hold across the network. For a letter to your future self or a
+   page written on a hard day, that is a different product promise from the one every reflection
+   screen currently makes ("it stays on this phone"). If it is ever done it needs its own consent
+   moment, not a setting.
+
+**Recommendation:** 1 now, 2 with the next build, 3 only if a specific feature cannot exist without
+it — and then per-use, with the person told.
+
+### What it opens that is not the modules
+
+- **Size.** Audio and photos are orders of magnitude larger than everything the app stores today. It
+  needs a retention answer (how long is a recording kept?) and a size answer, or a phone fills up.
+- **Account export and deletion must include them.** Both paths exist and both currently move JSON.
+  A media file that survives "delete my account" is the worst kind of bug in this area.
+- **Store review.** New permission strings are the thing App Review reads most carefully. Each one
+  needs a sentence saying what it is FOR, in the user's terms.
+- **The Circle.** The moment a photo can be attached, "share this" becomes a different question.
+
+### Recommended order
+
+1. **Images first.** One module, one permission, immediately useful in reflections, and the smallest
+   privacy surface — a photo the person chose.
+2. **Audio second, in the same build.** One module, one permission. Store the file; play it back.
+   No transcription.
+3. **Recognition after that**, once there is real usage to justify the permission.
+4. Cloud transcription: not scheduled.
+
+### Until it is decided
+
+The writing surface is built so attachments are additive: a reflection's `sections` are text, and an
+`attachments` list is the only thing that has to be added to the stored shape. **No native seam is
+being stubbed in ahead of time** — the repo has that pattern for location and calendar and it is the
+right one for a capability with a permission behind it, but it is not worth a file until the decision
+is made.

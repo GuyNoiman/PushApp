@@ -128,7 +128,8 @@ and it means §2.2 is **deferred, not waived**.
 | How to talk to me | Pre-dates the protocol; sets the coach's voice (D40) |
 | Life Wheel | **Written.** A pressing area is OFFERED as a Dream (§3) |
 | Values clarification | **Owed** |
-| My Best Possible Year | **Owed** — it offers a Dream, but only from words the person types, and the letter itself is read by nothing |
+| My Best Possible Year | **Answered by D66** — a reflection is for the user and teaches us nothing. The only thing it hands over is the sentence a person deliberately types into the Dream box, which is not the letter being read |
+| The rest of the reflection family (daily · week start · birthdays · moments) | **Answered by D66**, in advance |
 | The remaining three | Owed, along with the tools |
 
 **Nothing ships to a real user with an unwritten contract.** A tool can be built and tested without

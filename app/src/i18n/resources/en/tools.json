@@ -110,7 +110,12 @@
       "lowButFine": "Some areas are low and do not matter much right now, and that is a life with priorities in it. This tool never treats a low number on its own as a problem.",
       "next": "Nothing happens automatically from this. If one of these is worth working on, the coach is there when you want it.",
       "retake": "Take it again",
-      "done": "Done"
+      "done": "Done",
+      "dreamTitle": "{{area}}",
+      "dreamsLead": "Would you like to keep this as a Dream? A Dream is something you are aiming at, not a plan — nothing gets scheduled.",
+      "addDream": "Add {{area}} as a Dream",
+      "dreamAdded": "{{area}} is one of your Dreams now.",
+      "dreamExists": "You already have a Dream for {{area}}."
     }
   }
 }

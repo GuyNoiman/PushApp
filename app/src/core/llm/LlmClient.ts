@@ -42,6 +42,16 @@ export interface LlmRequest {
   maxOutputTokens?: number;
 }
 
+/** What a call actually cost, as the PROVIDER counted it — never our own estimate. */
+export interface LlmUsage {
+  /** Tokens in the request, including the system prompt and the whole transcript sent with it. */
+  promptTokens?: number;
+  /** Tokens the model generated. */
+  completionTokens?: number;
+  /** Both together. The one number a budget spends against. */
+  totalTokens?: number;
+}
+
 /** The model's answer. `text` is the concatenated text of the first candidate. */
 export interface LlmResult {
   text: string;
@@ -49,6 +59,12 @@ export interface LlmResult {
   finishReason?: string;
   /** The concrete model version that answered, when reported (e.g. `gemini-2.5-flash`). */
   model?: string;
+  /**
+   * What it cost, when the provider says. ABSENT is normal and must never be treated as free — a
+   * budget that reads a missing count as zero is a budget that stops counting the moment a provider
+   * changes its response shape. See {@link ../llm/MeteringLlmClient}.
+   */
+  usage?: LlmUsage;
 }
 
 /** The completion seam. A real-provider client (see {@link ./GeminiClient}) implements this. */

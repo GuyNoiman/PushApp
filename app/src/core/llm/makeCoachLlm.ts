@@ -2,9 +2,10 @@
  * makeCoachLlm — the one place that composes the {@link LlmClient} stack the on-device live coach
  * talks to. Reading outward-in, a request passes through:
  *
- *   RateLimitRetryingLlmClient  → rides out a 429 at the single-call level
- *     └ RedactingLlmClient      → minimises PII out of the outbound request (G1)
- *         └ GeminiClient        → the provider call
+ *   MeteringLlmClient           → charges the conversation's budget for every call, even a failed one
+ *     └ RateLimitRetryingLlmClient  → rides out a 429 at the single-call level
+ *         └ RedactingLlmClient      → minimises PII out of the outbound request (G1)
+ *             └ GeminiClient        → the provider call
  *
  * Keeping the composition here means callers (the {@link ../../components/coach/useLiveCoach} hook)
  * never wire vendor + privacy + retry concerns by hand, and the redaction seam can never be skipped.
@@ -26,6 +27,7 @@
  * Pure TypeScript — no React, no UI, no vendor imports beyond the shared Supabase client.
  */
 import { GeminiClient } from './GeminiClient';
+import { MeteringLlmClient, type SpendSink } from './MeteringLlmClient';
 import type { LlmClient } from './LlmClient';
 import { RateLimitRetryingLlmClient } from './RateLimitRetryingLlmClient';
 import { RedactingLlmClient } from './RedactingLlmClient';
@@ -43,8 +45,15 @@ function proxyUrl(): string | undefined {
   return base ? `${base.replace(/\/+$/, '')}/functions/v1/gemini-proxy` : undefined;
 }
 
-/** Build the composed LlmClient the live coach uses (retry ∘ redact ∘ Gemini). */
-export function makeCoachLlm(): LlmClient {
+/**
+ * Build the composed LlmClient the live coach uses.
+ *
+ * With a sink, the stack gains METERING on the OUTSIDE — outside the retry, so a call that is
+ * retried three times is charged three times, which is what it actually cost. Inside the retry it
+ * would report one call for three, and the runaway a budget exists to catch is exactly the case that
+ * retries.
+ */
+export function makeCoachLlm(onSpend?: SpendSink): LlmClient {
   const url = proxyUrl();
   // Bound to a local const so the narrowing survives into the async closure below.
   const client = supabase;
@@ -60,5 +69,6 @@ export function makeCoachLlm(): LlmClient {
           },
         })
       : new GeminiClient();
-  return new RateLimitRetryingLlmClient(new RedactingLlmClient(gemini));
+  const stack = new RateLimitRetryingLlmClient(new RedactingLlmClient(gemini));
+  return onSpend ? new MeteringLlmClient(stack, onSpend) : stack;
 }

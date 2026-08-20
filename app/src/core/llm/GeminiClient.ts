@@ -81,6 +81,12 @@ interface GeminiResponse {
     finishReason?: string;
   }[];
   modelVersion?: string;
+  /** Gemini's own token accounting. The proxy passes the body through verbatim, so it survives. */
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
   error?: { message?: string; status?: string };
 }
 
@@ -194,6 +200,14 @@ export class GeminiClient implements LlmClient {
       text,
       finishReason: candidate?.finishReason,
       model: json.modelVersion ?? this.model,
+      // Reported, never inferred. A conversation's budget spends against what the provider counted.
+      usage: json.usageMetadata
+        ? {
+            promptTokens: json.usageMetadata.promptTokenCount,
+            completionTokens: json.usageMetadata.candidatesTokenCount,
+            totalTokens: json.usageMetadata.totalTokenCount,
+          }
+        : undefined,
     };
   }
 }

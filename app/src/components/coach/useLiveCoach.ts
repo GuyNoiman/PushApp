@@ -32,6 +32,15 @@ import type { GoalSpec } from '@/core/coach/interviewPlaybook';
 import { SafetyLayer } from '@/core/coach/SafetyLayer';
 import type { DomainQuestion } from '@/core/learning/DomainExpert';
 import { SENSITIVE_DOMAINS } from '@/core/coach/sensitiveDomains';
+import {
+  DEFAULT_BUDGET,
+  EMPTY_BUDGET,
+  canSpend,
+  spend,
+  zoneOf,
+  type BudgetState,
+  type BudgetZone,
+} from '@/core/llm/conversationBudget';
 import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
 import type { CoachOnboardingSummary } from '@/core/onboarding/model';
 
@@ -77,6 +86,18 @@ export interface UseLiveCoach {
   handoff: boolean;
   /** True while the coach awaits the opening free-text (the only free-text moment). */
   awaitingOpening: boolean;
+  /**
+   * How much of this conversation's budget is left, as a zone rather than a number (2026-08-20).
+   *
+   * `open` ⇒ the coach may still ask things that cost. `narrowing` ⇒ it must stop offering free text
+   * and keep to closed cards, which are free. `closing` ⇒ build from what is known and land.
+   *
+   * The SCREEN reads this to decide what to offer, which is the point: the budget is a rule about
+   * what the coach asks, not an error the person is shown. Nobody is ever told they ran out.
+   */
+  budgetZone: BudgetZone;
+  /** Whether a free-text answer may still be offered. False from `narrowing` onward. */
+  canAskOpenQuestion: boolean;
   /** Send the opening free-text — the only LLM call (triage). */
   sendOpening: (text: string) => void;
   /** Pick a single closed option by its id (index). */
@@ -136,6 +157,13 @@ function journeyCardItem(spec: GoalSpec, t: TFunction<'coach'>): LiveCoachItem {
 
 export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   const { t, i18n } = useTranslation('coach');
+  /**
+   * What this conversation has cost. A ref, not state: it is written from inside the LLM stack and a
+   * setState there would re-render mid-call. The zone is mirrored into state below, where the screen
+   * can see it.
+   */
+  const budgetRef = useRef<BudgetState>(EMPTY_BUDGET);
+  const [budgetZone, setBudgetZone] = useState<BudgetZone>('open');
   const orchestratorRef = useRef<CoachOrchestrator | null>(null);
   if (orchestratorRef.current === null) {
     orchestratorRef.current =
@@ -143,7 +171,11 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       // Thread the user's ACTIVE language into the one understanding call so the coach reads a
       // non-English opening in it (the visible dialogue is already localized via i18n).
       new CoachOrchestrator({
-        llm: makeCoachLlm(),
+        // Every call is charged as it happens, including one that fails — see MeteringLlmClient.
+        llm: makeCoachLlm((tokens) => {
+          budgetRef.current = spend(budgetRef.current, { tokens });
+          setBudgetZone(zoneOf(budgetRef.current, DEFAULT_BUDGET));
+        }),
         guard: new SafetyLayer().messageGuard(),
         locale: i18n.language,
         // What onboarding already learned, so the chosen Journey does not ask a question the user
@@ -307,5 +339,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     selectMulti,
     answerOther,
     retryOpening,
+    budgetZone,
+    canAskOpenQuestion: canSpend(budgetRef.current, DEFAULT_BUDGET),
   };
 }

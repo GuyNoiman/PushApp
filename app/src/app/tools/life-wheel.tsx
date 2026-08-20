@@ -45,12 +45,14 @@ import {
 } from '@/core/tools/lifeWheel/model';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
+import { useApp } from '@/state/AppProvider';
 import { useLifeWheel } from '@/state/LifeWheelStore';
 
 export default function LifeWheelScreen() {
   const theme = useTheme();
   const { t } = useTranslation('tools');
   const store = useLifeWheel();
+  const { core, snapshot } = useApp();
 
   /** The area on screen. Follows the store until the person moves, then leads. */
   const [area, setArea] = useState<LifeAreaId | null>(null);
@@ -254,6 +256,62 @@ export default function LifeWheelScreen() {
                 <Finding text={t('lifeWheel.result.next')} muted />
               </View>
 
+              {/* ── The influence this tool has on the rest of the app, and it is OFFERED ──
+                  Founder, 2026-08-20: an area with a big gap should become one of the person's
+                  Dreams. It is offered rather than inserted, and the distinction is the whole
+                  product: a tool that quietly adds things to somebody's app is how the partner
+                  ended up looking at a stranger's Journeys. A Dream is an aspiration, not a plan —
+                  adding one schedules nothing and commits to nothing. One tap, their choice. */}
+              {reading.pressing.length > 0 ? (
+                <View style={styles.dreams}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                    {t('lifeWheel.result.dreamsLead')}
+                  </ThemedText>
+                  {reading.pressing.map((entry) => {
+                    const areaName = t(`lifeWheel.areas.${entry.area}`);
+                    const already = (snapshot?.dreams ?? []).some(
+                      (d) => d.title.trim().toLocaleLowerCase() === areaName.trim().toLocaleLowerCase(),
+                    );
+                    return (
+                      <Pressable
+                        key={entry.area}
+                        accessibilityRole="button"
+                        accessibilityState={{ disabled: already }}
+                        accessibilityLabel={
+                          already
+                            ? t('lifeWheel.result.dreamExists', { area: areaName })
+                            : t('lifeWheel.result.addDream', { area: areaName })
+                        }
+                        disabled={already}
+                        onPress={() =>
+                          core.createDream({
+                            title: areaName,
+                            why: t(`lifeWheel.blurb.${entry.area}`),
+                          })
+                        }
+                        style={({ pressed }) => [
+                          styles.dreamRow,
+                          { borderColor: already ? theme.hairline : theme.tint },
+                          (pressed || already) && styles.pressed,
+                        ]}>
+                        <Ionicons
+                          name={already ? 'checkmark-circle' : 'add-circle-outline'}
+                          size={18}
+                          color={already ? theme.textMuted : theme.tint}
+                        />
+                        <ThemedText
+                          type="small"
+                          style={{ color: already ? theme.textMuted : theme.tint }}>
+                          {already
+                            ? t('lifeWheel.result.dreamExists', { area: areaName })
+                            : t('lifeWheel.result.addDream', { area: areaName })}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('lifeWheel.result.done')}
@@ -423,6 +481,16 @@ const styles = StyleSheet.create({
   value: { fontSize: 22, paddingTop: Spacing.one },
   ends: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 52 },
   findings: { gap: Spacing.two, paddingTop: Spacing.two },
+  dreams: { gap: Spacing.two, paddingTop: Spacing.four },
+  dreamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   finding: { lineHeight: 21 },
   cta: {
     marginTop: Spacing.four,

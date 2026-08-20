@@ -306,7 +306,10 @@ function LiveCoachScreen() {
                 prompt={coach.question.label}
                 options={coach.question.options}
                 multiSelect={coach.question.multiSelect}
-                allowOther={coach.question.allowOther}
+                // The budget narrows what the coach ASKS, never what it tells the person. A
+                // question that allowed free text stops offering it and keeps its cards, which cost
+                // nothing — so the conversation carries on and nobody is told they ran out.
+                allowOther={coach.question.allowOther && coach.canAskOpenQuestion}
                 continueLabel={t('continue')}
                 selectedIds={selectedIds}
                 disabled={false}

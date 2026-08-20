@@ -125,6 +125,8 @@
     "rowDetail": "Recover your record on a new phone",
     "signedInWith": "Signed in with {{provider}}",
     "signOut": "Sign out",
-    "signOutDetail": "Your record stays on this phone."
+    "signOutDetail": "Your record stays on this phone.",
+    "disconnected": "Not connected to the server",
+    "disconnectedDetail": "Your Journeys are safe on this device. The coach and your Circle will not work until the connection is back."
   }
 }

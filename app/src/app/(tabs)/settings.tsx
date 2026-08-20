@@ -151,8 +151,20 @@ export default function SettingsScreen() {
 
   // The REAL identity, if one is linked. `providers` carries only provider names (never PII), so
   // this is also all the UI is able to say about who the person is — by design (red-line R1).
-  const { user, status, signOut } = useAuth();
+  const { user, status, signOut, enabled: backendEnabled } = useAuth();
   const signedIn = status === 'authenticated';
+  /**
+   * NO SESSION AT ALL, on a build that HAS a backend — the state that hid for days (2026-08-20).
+   *
+   * The app opens an anonymous session at launch, and that session is what the coach's proxy and
+   * account deletion both authenticate with. Anonymous sign-ins turned out to be switched off on the
+   * project, so it failed on every device — and failed SILENTLY: the app degrades politely, this
+   * screen looked entirely normal, and the partner met it as three unrelated bugs (a coach that
+   * invented a Journey out of his message, a delete that refused, a social pillar that did nothing).
+   *
+   * A capability that fails without saying so is one nobody fixes. So it says so.
+   */
+  const disconnected = backendEnabled && status === 'signedOut';
   const linkedProvider = user?.providers.find((p) => p === 'apple' || p === 'google');
   const providerLabel = linkedProvider === 'apple' ? 'Apple' : 'Google';
 
@@ -208,6 +220,15 @@ export default function SettingsScreen() {
                 onPress={() => router.push('/sign-in' as Href)}
               />
             )}
+            {/* Stated plainly, and stated as OURS: the user did nothing wrong, their Journeys are
+                safe on the device, and the parts that need the server are the parts that are off. */}
+            {disconnected ? (
+              <SettingsRow
+                icon="cloud-offline-outline"
+                label={t('signIn.disconnected')}
+                detail={t('signIn.disconnectedDetail')}
+              />
+            ) : null}
             {simUser.signedIn ? (
               <SettingsRow
                 icon="logo-google"

@@ -33,6 +33,11 @@ export interface SimulatedUser {
  * Metro can inline them (see the header note).
  */
 export function getSimulatedUser(): SimulatedUser {
+  // GATED ON `__DEV__` (2026-08-20). A simulated identity is a development convenience, and in a
+  // release build it would put a developer's name and email in front of a real person as if they
+  // had signed in. `__DEV__` is compiled to `false` when the app is built, so a shipped app cannot
+  // show one however the env is configured — the env var alone was one edited file away from that.
+  if (!__DEV__) return { signedIn: false, provider: 'google' };
   const name = process.env.EXPO_PUBLIC_SIM_USER_NAME?.trim() || undefined;
   const email = process.env.EXPO_PUBLIC_SIM_USER_EMAIL?.trim() || undefined;
   return {

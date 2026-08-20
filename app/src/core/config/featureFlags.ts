@@ -142,8 +142,16 @@ export const featureFlags = {
    * Deliberately its OWN flag rather than riding `adaptiveCoachDev`: the founder needs to test the
    * adaptive loop and the genuinely-empty first run independently, and coupling them would mean
    * turning one on silently re-seeds the other's device.
+   *
+   * IT IS ALSO GATED ON `__DEV__` (2026-08-20), which is belt AND braces on purpose. The env var
+   * lives only in a git-ignored `.env.local` that `.easignore` keeps out of the upload — but that is
+   * three separate files agreeing with each other, and the cost of one of them being edited wrongly
+   * is a real user opening the app to a plan somebody else wrote. The partner reported exactly that
+   * shape of confusion for a different reason, and it is not a thing to be one mistake away from.
+   * `__DEV__` is compiled to `false` in every release build, so a shipped app CANNOT seed, whatever
+   * any env file says.
    */
-  devSeedDemoData: Boolean(process.env.EXPO_PUBLIC_DEMO_SEED),
+  devSeedDemoData: __DEV__ && Boolean(process.env.EXPO_PUBLIC_DEMO_SEED),
 } as const;
 
 export type FeatureFlags = typeof featureFlags;

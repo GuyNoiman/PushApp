@@ -113,6 +113,28 @@ built before it has one.
 
 ---
 
+## 4b. STANDING REMINDER — the influence contracts are owed (founder, 2026-08-20)
+
+**The founder asked to be reminded of this at the end of the tool-building run.** He is adding tools
+first and will write every influence contract afterwards, in one pass, once he can see them together.
+That is a reasonable order — the contracts are easier to write against a real set than one at a time —
+and it means §2.2 is **deferred, not waived**.
+
+**Eight tools in total.** As of 2026-08-20 the built ones are:
+
+| Tool | Influence contract |
+|---|---|
+| My questionnaire | Pre-dates the protocol; feeds the coach's onboarding profile |
+| How to talk to me | Pre-dates the protocol; sets the coach's voice (D40) |
+| Life Wheel | **Written.** A pressing area is OFFERED as a Dream (§3) |
+| Values clarification | **Owed** |
+| My Best Possible Year | **Owed** — it offers a Dream, but only from words the person types, and the letter itself is read by nothing |
+| The remaining three | Owed, along with the tools |
+
+**Nothing ships to a real user with an unwritten contract.** A tool can be built and tested without
+one; it should not reach somebody's phone without one, because the contract is the part that decides
+whether the app feels perceptive or invasive.
+
 ## 5. Notes
 
 - **"It influences nothing" is a valid contract** — written down, with the reason. What is not valid

@@ -1,14 +1,16 @@
 // delete-account — Supabase Edge Function (Deno) for O1 account deletion.
 //
-// NOT DEPLOYED YET. This file lives in the repo so the deletion path is complete
-// and reviewable, but a complete REMOTE delete only works once it is deployed:
+// DEPLOYED 2026-08-19 and verified answering 401 to an unauthenticated call. (This header used to
+// say NOT DEPLOYED; it was deployed the day a second real person started using the app, because
+// without it "Delete account" fails and the client correctly refuses to wipe local data, which
+// leaves the user stuck.)
 //
 //     supabase functions deploy delete-account
 //
-// Deploying (and the SUPABASE_SERVICE_ROLE_KEY it relies on) is a founder action,
-// deferred to pre-release. Until then the client's `supabase.functions.invoke(
-// 'delete-account')` will fail, and useAccountActions correctly REFUSES to wipe
-// local data — so no account is left half-deleted.
+// A 401 from here means the CALLER had no session, not that anything is broken — and as of
+// 2026-08-20 the client no longer calls this at all when nobody is signed in (see
+// `app/src/state/useAccountActions.ts`): there is no account to delete, so it wipes the device
+// instead of failing on behalf of one that does not exist.
 //
 // WHY SERVICE ROLE: a signed-in client cannot delete `auth.users` (or the
 // profiles / cheers / entitlements rows that only the owner-or-nobody RLS

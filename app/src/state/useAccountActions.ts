@@ -91,25 +91,36 @@ export function useAccountActions() {
   }, [core, user, profile]);
 
   /**
-   * Permanently delete the account. Remote FIRST (when enabled + reachable); only
-   * after that is confirmed do we wipe everything local. Throws
-   * {@link BackendUnreachableError} (offline) or the remote error (server failure)
-   * WITHOUT touching local data, so a failed attempt is fully recoverable.
+   * Permanently delete the account. Remote FIRST (when there IS a remote account and it is
+   * reachable); only after that is confirmed do we wipe everything local. Throws
+   * {@link BackendUnreachableError} (offline) or the remote error (server failure) WITHOUT touching
+   * local data, so a failed attempt is fully recoverable.
+   *
+   * THE DEAD END THIS FIXES (partner, 2026-08-20): he tried to start over, tapped Delete account,
+   * and was told his data had NOT been deleted. It had not: the remote call was made with no session
+   * to make it with, the server correctly answered 401, and the strict "remote before local" rule
+   * did the rest. He was left holding data he had explicitly asked to be rid of, with no way to get
+   * rid of it — the app refusing on behalf of an account that does not exist.
+   *
+   * So the remote step now runs only when there is a SESSION to run it with. The safety rule it was
+   * protecting is intact and unchanged: whenever a server-side account exists, it is deleted first,
+   * and a failure there still stops everything. What changed is that "there is nobody signed in" is
+   * treated as what it is — nothing to delete remotely — instead of as a failure.
    */
   const deleteAccount = useCallback(async (): Promise<void> => {
-    // 1) Remote delete must succeed before any local wipe.
-    if (enabled) {
+    // 1) Remote delete must succeed before any local wipe — when there is one to do.
+    if (enabled && user) {
       const health = await checkBackendHealth();
       if (health !== 'reachable') throw new BackendUnreachableError();
       await deleteRemote(); // throws on failure → we stop here, local intact
     }
 
-    // 2) Remote is gone (or there is no backend). Now wipe local, in order.
+    // 2) Remote is gone (or there was never a remote account). Now wipe local, in order.
     await Notifications.cancelAllScheduledNotificationsAsync();
     await signOut();
     await core.resetToFirstRun();
     await AsyncStorage.multiRemove([...ACCOUNT_STORAGE_KEYS]);
-  }, [enabled, deleteRemote, signOut, core]);
+  }, [enabled, user, deleteRemote, signOut, core]);
 
   return { exportData, deleteAccount };
 }

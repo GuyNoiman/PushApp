@@ -16,6 +16,41 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > (`07_Assets/Partner_Packages/Career_v1.1_2026-08-20/`). Engineering detail:
 > `00_Foundation/CHANGELOG.md`.
 
+### D69 — The confidential synthesis runs on the paid Gemini, behind a swappable factory
+**Decision (founder, 2026-08-21):**
+
+> We can connect now to the Gemini I paid for, and in the future when we replace it, this tool's
+> agent will be replaced with it.
+
+**What this settles**, and it is the last of the two provider questions from the PRD's §18: the
+confidential synthesis may run, because a PAID tier's terms say the content is not used for training.
+The free tier's do not, and that was the actual blocker — for the coach it is a risk we can live with
+(a person's own words, given to a coach they chose to talk to), but for Mirror Feedback it is not:
+those are a contributor's words, given under a promise of confidentiality, and we cannot promise
+somebody something our own terms contradict.
+
+**The swap is one file.** `makeSynthesisLlm` is the whole provider surface, so replacing the model
+later is an edit there and nothing above it changes.
+
+**MIRROR GETS ITS OWN CLIENT, and the reason is not tidiness.** The coach's stack REDACTS on the way
+out, because it is minimising a person's own words. This one must not: the model's entire job here is
+the de-identification, and handing it pre-mangled text would destroy exactly the detail it has to
+generalise and leave it summarising something nobody wrote. The safety sits where it belongs
+instead — the paid terms, the prompt's prohibitions, and the free local check on the way back.
+
+**What it costs, stated because this is the first thing in the app that spends per use:** one round
+is five questions and their answers plus the instructions once — on the order of 3–4k tokens in and
+500 out, a fraction of a cent on Flash-class pricing. And it is per ROUND, not per conversation: a
+person does this a few times a year. It is metered like everything else, so the figure is never a
+guess.
+
+**Region is still open**, and is smaller than it looks: it matters for a European user under GDPR and
+not before. Pinning it means going through Vertex AI rather than the plain API, which is a change to
+the same one file.
+
+**Reflected in:** `app/src/core/tools/mirror/runSynthesis.ts`, `.../synthesisPrompt.ts`,
+`11_Engineering_Bible/Engineering_Decisions.md` (E6 sits beside this one).
+
 ### D68 — The nudge on day three, the extension for a late invitee, and a week of raw retention
 **Decision (founder, 2026-08-21),** completing D67:
 

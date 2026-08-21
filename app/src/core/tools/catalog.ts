@@ -45,7 +45,7 @@ export const TOOL_CATALOG: readonly ToolDefinition[] = [
   { key: 'breathe', category: 'calm', icon: 'leaf-outline', minutes: 2 },
   { key: 'direction', category: 'know', icon: 'navigate-outline', route: '/tools/direction', minutes: 10 },
   { key: 'passionMap', category: 'know', icon: 'sparkles-outline', route: '/tools/passion-map', minutes: 7 },
-  { key: 'mirror', category: 'relate', icon: 'people-circle-outline', minutes: 10 },
+  { key: 'mirror', category: 'relate', icon: 'people-circle-outline', route: '/tools/mirror', minutes: 10 },
   { key: 'strengths', category: 'know', icon: 'sparkles-outline', minutes: 8 },
   { key: 'timer', category: 'focus', icon: 'timer-outline', minutes: 25 },
   { key: 'kindness', category: 'relate', icon: 'heart-outline', minutes: 5 },

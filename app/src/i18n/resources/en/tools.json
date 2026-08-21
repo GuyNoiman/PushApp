@@ -548,5 +548,90 @@
       "notNow": "Not now",
       "note": "Nothing changes on your map until you say so."
     }
+  },
+  "mirror": {
+    "title": "Mirror feedback",
+    "mode": {
+      "title": "How would you like to receive feedback?",
+      "body": "Both help you grow. They are different promises to the people you ask, so choose before you invite anybody.",
+      "visible": "Visible responses",
+      "visibleBody": "Invite one or more people. You see each response with their name.",
+      "confidential": "Confidential synthesis",
+      "confidentialBody": "Invite at least five. You receive one de-identified summary per question, and never the raw responses.",
+      "how": "How confidentiality works",
+      "howBody": "We hide identities and remove identifying details before writing the summary. We say de-identified rather than anonymous, because context can still make somebody guessable — and saying otherwise would be a promise we cannot keep.",
+      "locked": "Once you invite the first person, the mode and the questions are fixed. Changing either starts a new round."
+    },
+    "pick": {
+      "title": "What would you like to learn?",
+      "counter": "{{count}} of {{total}} selected",
+      "recommended": "Recommended set",
+      "writeOwn": "Write my own question",
+      "continue": "Continue",
+      "categories": {
+        "moments": "Moments",
+        "strengths": "Strengths",
+        "impact": "Impact",
+        "growth": "Growth"
+      }
+    },
+    "custom": {
+      "title": "Write your own question",
+      "placeholder": "What helps me bring out the best in a team?",
+      "ready": "This question is ready",
+      "readyBody": "Our review found no identifying or sensitive details.",
+      "guidance": "Avoid names, diagnoses, intimate details, or anything that could identify who answered.",
+      "add": "Add question",
+      "cancel": "Cancel",
+      "problems": {
+        "empty": "There is nothing here yet.",
+        "tooLong": "That is longer than {{max}} characters.",
+        "multipleQuestions": "This looks like two questions. People answer the first one and the second quietly disappears.",
+        "namesSomeone": "This names somebody. That is usually a slip, and in a confidential round it can identify a person.",
+        "asksForJudgement": "This asks people to judge you rather than tell you what they saw. That is a different tool, and a harder one to hear.",
+        "sensitive": "This asks about something too personal to put in front of a friend."
+      }
+    },
+    "bank": {
+      "atMyBest": "When have you seen me at my best?",
+      "handledDifficulty": "When have you seen me handle something difficult well?",
+      "leftImpression": "What action of mine left an impression on you?",
+      "helpedSomeone": "When have you seen me help somebody in a way that mattered?",
+      "mostNatural": "In what situations do I seem most myself?",
+      "strengthStandsOut": "Which of my strengths stands out most to you?",
+      "qualityTrust": "What makes it easier for you to trust me?",
+      "peopleAskFor": "What do people naturally ask me for help with?",
+      "underestimate": "What am I good at that I probably underestimate?",
+      "bringToGroup": "What do I bring to a group that others often do not?",
+      "positiveImpact": "What effect do I have on the people around me?",
+      "howIMakePeopleFeel": "How do people feel around me when I am at my best?",
+      "whatPeopleGain": "What do people get from having me in their lives?",
+      "useMoreOften": "Which of my strengths should I use more often?",
+      "smallChange": "What small change would help me be more like that?"
+    },
+    "review": {
+      "title": "Review and send",
+      "questions": "{{count}} selected questions",
+      "edit": "Edit",
+      "people": "{{count}} people selected",
+      "send": "Send invitations",
+      "saveDraft": "Save draft",
+      "notYet": "Invitations cannot be sent yet",
+      "notYetBody": "Delivery needs the Inbox and push work that is in progress. Everything else here is finished, and the moment that lands this button works. Nothing has been sent and nobody has been contacted."
+    },
+    "round": {
+      "collecting": "{{count}} of {{needed}} responses so far",
+      "collectingNote": "The round is open for a week. The result opens when it closes, never as answers arrive — so nobody can work out when you were answered.",
+      "nudge": "Not enough people have answered yet. Adding a few more is the thing that helps, and everyone gets at least five days from the moment you do.",
+      "inviteMore": "Invite more people",
+      "close": "Close the round",
+      "delivered": "Your reflected strengths",
+      "deliveredNote": "Patterns, not individual responses.",
+      "notEnough": "Not enough people answered, so there is no summary to show.",
+      "notEnoughBody": "That is not a failure of yours. Confidential feedback needs five answers to every question before it can be shown safely, and the responses that did come in have been deleted.",
+      "sealed": "Results open only after the confidentiality threshold is met.",
+      "neverRaw": "Raw responses are never shown to you.",
+      "noPattern": "No shared pattern was strong enough to show safely."
+    }
   }
 }

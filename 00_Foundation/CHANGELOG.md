@@ -31,18 +31,43 @@ goes stale. **"It influences nothing" is a valid contract; leaving it unanswered
 | **Passion Map** | **Engine only.** Built to the PRD that arrived with it. Screens are the next piece. |
 | **Mirror Feedback** | **Rules only, on purpose.** See below. |
 
-## Mirror Feedback: the rules, and why nothing sends
+## Mirror Feedback: complete, except the invitation
 
 The only tool carrying OTHER PEOPLE'S private words, and the only one promising something to somebody
-who is not our user. The engine is built and the sending is not: invitation delivery does not exist,
-and the redaction pass needs an AI provider contract (no-training, zero-retention) we do not have.
+who is not our user. **Built end to end except the one thing that cannot be: sending the invitation.**
+The Send button explains that in a sentence and says nothing was sent and nobody contacted, because
+the PRD forbids production ever claiming a delivery.
+
+**The synthesis runs, on the founder's paid Gemini (D69).** A paid tier's terms say the content is
+not used for training, which was the actual blocker — for the coach the free tier is a risk we can
+live with (a person's own words, to a coach they chose); for a contributor's words, given under a
+promise, it was not.
+
+**The mechanism is one call out and one free check back**, and the efficient answer turned out to be
+the safe one. One request per ROUND rather than one per question — the safety instructions are paid
+for once and the five outputs are written against each other. And instead of a second model reviewing
+the first, a local set intersection: we hold the source, so checking that no identifying token
+survived costs nothing, cannot hallucinate, and never has a bad day. A hit REJECTS the synthesis
+rather than editing it.
+
+**Mirror gets its own client**, and not for tidiness: the coach's stack redacts on the way out, and
+this one must not — the model's whole job here IS the de-identification, and pre-mangled text would
+leave it summarising something nobody wrote.
+
+**The narrow door (founder):** nobody reads a contributor's answer unless the person who received the
+synthesis flags it. That has a consequence the retention rule respects — a report FREEZES the
+retention clock, an audited look is permitted only against an open report and only for its own
+question, and `requesterMaySeeRaw()` returns false with no argument.
 
 Three rules protect a contributor. The threshold is PER QUESTION and the whole result stays sealed
 until every one clears — opening question three at five while four sits at two tells the requester
 which question people would not answer. The requester sees a COUNT, never a person: the shape the
 engine is handed cannot hold an identity. Mode and questions LOCK at the first invitation.
 
-**A round runs one week (D67).** A deadline turned out to be a privacy device: a result that opened
+**A round runs one week (D67), with a nudge on day three and a week of retention after closure
+(D68).** A late invitee gets five days and the deadline moves for everyone, forward only — a
+per-person deadline would let the synthesis open while somebody still had days to answer, and a round
+whose ending depends on who was invited when is a round whose timing describes its contributors. A deadline turned out to be a privacy device: a result that opened
 the moment the fifth answer landed would tell a requester WHEN each person answered, and against a
 list of seven people they invited themselves, timing is an identity. A short round DESTROYS what it
 collected — people answered under a promise that produced nothing.
@@ -70,9 +95,17 @@ Detail: `11_Engineering_Bible/Engineering_Decisions.md` E6.
 - **D65** — the expert supplies the rhythm CONSTRAINTS; the coach chooses inside them.
 - **D66** — a reflection is FOR THE USER and does not have to teach us anything.
 - **D67** — a Mirror round runs a week and closes honestly either way.
+- **D68** — the day-three nudge, the late-invite extension, and a week of raw retention FROM CLOSURE.
+- **D69** — the confidential synthesis runs on the paid Gemini, behind a swappable factory.
 - **E6** — media capture: decided and built, on its own branch.
 
 ## Also
+
+A **letter to the partner** (`04_Product/Partner_Letter_2026-08-21_Tools_And_Next_Package.md`): what
+shipped, and what we need from his next package. The ask CHANGED shape from the 20th — that brief
+asked for closed option labels, and this one asks for the question plus what each KIND of answer
+means, because the token budget is what makes open questions affordable and asking for labels we no
+longer want would have wasted his time.
 
 Career **G11–G13 ingested** (27 Journeys in 9 families), and the diagnosis now routes a real
 conversation to five of them. Challenges captured as Future with the question it is waiting on.

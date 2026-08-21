@@ -1,8 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-21 (overnight)** — start at the **"⛳ START HERE — 2026-08-21 (overnight)"**
-block below, and read its first section before merging anything. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
+Last updated: **2026-08-21 (end of session)** — start at the **"⛳ START HERE — 2026-08-21"** block
+below, and read its first section before merging anything. The overnight block under it is accurate
+history of the same session's earlier half. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
 day's four sessions, and the 2026-08-18 blocks under those are accurate history of the day before.
 Nothing below is deleted; each is superseded only as the starting point.
@@ -34,7 +35,60 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-21 (overnight): the Tools tab is real, and there is ONE ordering decision
+# ⛳ START HERE — 2026-08-21: six tools, a token budget, and one ordering decision
+
+Everything committed and **pushed**, on TWO branches. `tsc` clean, **jest 2014 / 190 suites**.
+**The open list is now `04_Product/Open_Work_2026-08-21.md` — read it after this block.**
+Full detail: `00_Foundation/CHANGELOG.md`, the 2026-08-21 entry.
+
+## ▶ DECIDE THIS BEFORE MERGING ANYTHING
+
+| Branch | iOS fingerprint | What it holds |
+|---|---|---|
+| `feat/buddy-3d-and-reminders` | `df6c2127…` — **matches build 3** | Everything from 20–21 August |
+| `feat/native-media` | `503102a4…` — **does not match** | `expo-image-picker` + `expo-audio` |
+
+Everything on the first branch reaches the partner's phone over the air **right now**. Merging the
+second ends that until a new build, which only the founder can produce. So: **publish the update,
+then merge, then cut a build.** Any other order strands two days of work.
+
+## What exists now
+
+**The Tools tab is a place rather than a waiting room** — search, three lenses, five rooms, at most
+two recommendations, and every tool carrying a sentence about what it does TO you. Six tools live in
+it. Five are complete; **Mirror Feedback is complete except sending an invitation**, which is the one
+thing that cannot be built yet.
+
+**A conversation has a budget** in tokens, with calls as a second ceiling. Three zones, and
+`narrowing` means one concrete thing: stop offering free text, keep offering cards, which are free.
+Nobody is ever told they ran out.
+
+**Every tool answers to one protocol** (`04_Product/Tool_Addition_Protocol.md`): what it teaches us,
+the smallest summary that carries it, who may read it with a reason each, and when it goes stale.
+
+## The five decisions this session produced
+
+- **D64** — content is HELD in English; a Hebrew delivery is translated once, late.
+- **D65** — the expert supplies rhythm CONSTRAINTS; the coach chooses inside them.
+- **D66** — a reflection is FOR THE USER and owes the app nothing.
+- **D67 / D68** — a Mirror round runs a week, nudges on day three, extends for a late invitee, and
+  holds raw answers a week FROM CLOSURE.
+- **D69** — the confidential synthesis runs on the paid Gemini, behind one swappable file.
+- **E6** — media capture: decided and built, on its own branch.
+
+## ▶ NEXT, in order
+
+1. **The ordering decision above.**
+2. **Wire the diagnosis into the coach** — `careerDiagnosis` is tested and `CoachOrchestrator` never
+   calls it. This is what turns twenty-seven authored Career Journeys from correct into reachable,
+   and it carries the founder's "fewer closed answers, more of a conversation" with it.
+3. **Send the partner letter** (`Partner_Letter_2026-08-21_Tools_And_Next_Package.md`).
+4. **The influence contract Values Clarification still owes.**
+5. **Strength Evidence**, which two other tools are waiting on.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-21 (overnight): the Tools tab is real, and there is ONE ordering decision
 
 Everything committed and **pushed**, on TWO branches. `tsc` clean, **jest 1976 / 188 suites**.
 Full detail: `00_Foundation/CHANGELOG.md`, the 2026-08-21 entry.

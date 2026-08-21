@@ -18,8 +18,15 @@ import {
 import {
   CLAIM_MIN_SUPPORT,
   CONFIDENTIAL_THRESHOLD,
+  LATE_INVITE_MIN_DAYS,
+  NUDGE_AFTER_DAYS,
+  RAW_RETENTION_DAYS,
   ROUND_OPEN_DAYS,
   acceptsResponses,
+  extendForLateInvite,
+  rawExpiresAt,
+  rawRetentionExpired,
+  shouldNudge,
   expiresAt,
   mustDiscardResponses,
   outcome,
@@ -275,6 +282,78 @@ describe('the week (founder, 2026-08-21)', () => {
     expect(mustDiscardResponses(sent(), tallies([5, 5, 2, 5, 5]), SENT + 8 * DAY)).toBe(true);
     expect(mustDiscardResponses(sent(), tallies([5, 5, 5, 5, 5]), SENT + 8 * DAY)).toBe(false);
     expect(mustDiscardResponses(sent(), tallies([1, 1, 1, 1, 1]), SENT + 2 * DAY)).toBe(false);
+  });
+});
+
+describe('the nudge, the extension and the retention (founder, 2026-08-21)', () => {
+  const SENT = 1_700_000_000_000;
+  const DAY = 24 * 60 * 60 * 1000;
+  const sent = () => lock(setQuestions(startRound('r1', 'confidential'), FIVE), SENT, 7);
+
+  it('says nothing for the first three days', () => {
+    expect(NUDGE_AFTER_DAYS).toBe(3);
+    expect(shouldNudge(sent(), tallies([1, 1, 1, 1, 1]), SENT + 2 * DAY)).toBe(false);
+  });
+
+  it('tells the requester on day three when the round is short', () => {
+    expect(shouldNudge(sent(), tallies([2, 2, 2, 2, 2]), SENT + 3 * DAY)).toBe(true);
+  });
+
+  it('says nothing when the round is already there', () => {
+    expect(shouldNudge(sent(), tallies([5, 5, 5, 5, 5]), SENT + 4 * DAY)).toBe(false);
+  });
+
+  it('says nothing once the round has closed — that is a different message', () => {
+    expect(shouldNudge(sent(), tallies([1, 1, 1, 1, 1]), SENT + 9 * DAY)).toBe(false);
+  });
+
+  it('gives a late invitee at least five days, and moves the deadline for EVERYONE', () => {
+    // One deadline for the round, extended rather than per-person: a per-person deadline would let
+    // the synthesis open while somebody still had days to answer.
+    const late = extendForLateInvite(sent(), SENT + 5 * DAY, 3);
+
+    expect(LATE_INVITE_MIN_DAYS).toBe(5);
+    expect(expiresAt(late)).toBe(SENT + 10 * DAY);
+    expect(acceptsResponses(late, SENT + 9 * DAY)).toBe(true);
+    expect(late.invited).toBe(10);
+  });
+
+  it('NEVER moves the deadline backwards', () => {
+    // Somebody promised until Friday is not brought forward because a name was added on Thursday.
+    const early = extendForLateInvite(sent(), SENT + 1 * DAY, 1);
+    expect(expiresAt(early)).toBe(SENT + ROUND_OPEN_DAYS * DAY);
+  });
+
+  it('cannot extend a round that was never sent, or one already closed', () => {
+    const draft = setQuestions(startRound('r', 'confidential'), FIVE);
+    expect(extendForLateInvite(draft, SENT, 3)).toBe(draft);
+    const shut = closeRound(sent());
+    expect(extendForLateInvite(shut, SENT, 3)).toBe(shut);
+  });
+
+  it('holds the raw answers for a week AFTER the round closes, not after it was sent', () => {
+    // The two are the same instant for an untouched round; measured from sending, retention would
+    // expire exactly when collection ends and leave no window to build the synthesis.
+    expect(RAW_RETENTION_DAYS).toBe(7);
+    const r = sent();
+    const closed = SENT + ROUND_OPEN_DAYS * DAY;
+
+    expect(rawExpiresAt(r, SENT + 2 * DAY)).toBeUndefined(); // still collecting
+    expect(rawExpiresAt(r, closed + 1)).toBe(closed + RAW_RETENTION_DAYS * DAY);
+  });
+
+  it('counts the retention from the EXTENDED close when somebody was invited late', () => {
+    const late = extendForLateInvite(sent(), SENT + 5 * DAY, 2);
+    const closed = SENT + 10 * DAY;
+    expect(rawExpiresAt(late, closed + 1)).toBe(closed + RAW_RETENTION_DAYS * DAY);
+  });
+
+  it('expires the raw answers whatever the round produced', () => {
+    const r = sent();
+    const closed = SENT + ROUND_OPEN_DAYS * DAY;
+
+    expect(rawRetentionExpired(r, closed + 1)).toBe(false);
+    expect(rawRetentionExpired(r, closed + (RAW_RETENTION_DAYS + 1) * DAY)).toBe(true);
   });
 });
 

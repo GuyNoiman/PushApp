@@ -52,6 +52,37 @@ export const CONFIDENTIAL_THRESHOLD = 5;
  * when the round CLOSES, never at the moment a response arrives.
  */
 export const ROUND_OPEN_DAYS = 7;
+
+/**
+ * The NUDGE (founder, 2026-08-21): three days in, if the round is still short, tell the requester —
+ * not enough people have answered, and adding more recipients is the thing that helps.
+ *
+ * It says a number and never a name. "Four of the five are in" is something the counter already
+ * shows; who is missing is not, and this must not become the one place it leaks.
+ */
+export const NUDGE_AFTER_DAYS = 3;
+
+/**
+ * When somebody is invited MID-ROUND, everyone's window grows so the newcomers get at least this
+ * long (founder, 2026-08-21).
+ *
+ * ONE DEADLINE FOR THE WHOLE ROUND, extended rather than per-person, and it can only ever move
+ * FORWARD. Two reasons, and the second is the important one: a per-person deadline would mean the
+ * synthesis could open while somebody still had days left to answer, and a round whose end depends
+ * on who was invited when is a round whose timing describes its contributors.
+ */
+export const LATE_INVITE_MIN_DAYS = 5;
+
+/**
+ * How long a contributor's raw answer survives after the round closes (founder, 2026-08-21: hold the
+ * data for a week).
+ *
+ * MEASURED FROM CLOSURE, not from sending — those are the same instant for an untouched round, and
+ * a retention that expired the moment collection ended would leave no window in which the synthesis
+ * could actually be produced. After it, only the de-identified synthesis remains, and the raw words
+ * are gone from primary storage.
+ */
+export const RAW_RETENTION_DAYS = 7;
 /** A claim in a synthesis needs this much support, or it is suppressed rather than softened (§10). */
 export const CLAIM_MIN_SUPPORT = 2;
 
@@ -68,6 +99,11 @@ export interface MirrorRound {
   lockedAt?: number;
   /** How many people were invited. A count, never a list, once the round is confidential. */
   invited: number;
+  /**
+   * A deadline pushed out because somebody was invited late. Absent for an untouched round; only
+   * ever later than the normal one.
+   */
+  extendedTo?: number;
 }
 
 export function startRound(id: string, mode: MirrorMode): MirrorRound {
@@ -112,11 +148,66 @@ export function closeRound(round: MirrorRound): MirrorRound {
   return { ...round, status: 'closed' };
 }
 
-/** When the week is up. Undefined until the first invitation, because that is when it starts. */
+/**
+ * When the round stops accepting answers.
+ *
+ * Normally a week from the first invitation; later if somebody was invited late (see
+ * {@link extendForLateInvite}). Undefined until the first invitation, because that is when it starts.
+ */
 export function expiresAt(round: MirrorRound): number | undefined {
-  return round.lockedAt === undefined
-    ? undefined
-    : round.lockedAt + ROUND_OPEN_DAYS * 24 * 60 * 60 * 1000;
+  if (round.lockedAt === undefined) return undefined;
+  const base = round.lockedAt + ROUND_OPEN_DAYS * DAY_MS;
+  return Math.max(base, round.extendedTo ?? 0);
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Invite more people part-way through, and give everyone the longer window.
+ *
+ * The deadline moves to whichever is later: where it already was, or five days from now. **It never
+ * moves backwards** — somebody who was promised until Friday is not brought forward because the
+ * requester added a name on Thursday.
+ */
+export function extendForLateInvite(round: MirrorRound, at: number, added: number): MirrorRound {
+  if (!isLocked(round) || round.status !== 'open') return round;
+  const wanted = at + LATE_INVITE_MIN_DAYS * DAY_MS;
+  const current = expiresAt(round) ?? 0;
+  return {
+    ...round,
+    invited: round.invited + added,
+    extendedTo: Math.max(current, wanted),
+  };
+}
+
+/**
+ * Whether the requester should be told the round is running short.
+ *
+ * Three days in, still open, and not yet ready. It carries a COUNT and never a name.
+ */
+export function shouldNudge(
+  round: MirrorRound,
+  tallies: readonly QuestionTally[],
+  now: number,
+): boolean {
+  if (round.lockedAt === undefined || round.status !== 'open') return false;
+  if (now < round.lockedAt + NUDGE_AFTER_DAYS * DAY_MS) return false;
+  if (!acceptsResponses(round, now)) return false;
+  return !readiness(round, tallies).open;
+}
+
+/** When the raw answers must be gone. Undefined while the round is still collecting. */
+export function rawExpiresAt(round: MirrorRound, now: number): number | undefined {
+  const ends = expiresAt(round);
+  if (ends === undefined) return undefined;
+  const closed = round.status === 'closed' ? ends : now >= ends ? ends : undefined;
+  return closed === undefined ? undefined : closed + RAW_RETENTION_DAYS * DAY_MS;
+}
+
+/** True once the raw answers must be destroyed, whatever the round produced. */
+export function rawRetentionExpired(round: MirrorRound, now: number): boolean {
+  const at = rawExpiresAt(round, now);
+  return at !== undefined && now >= at;
 }
 
 /**

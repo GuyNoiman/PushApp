@@ -16,6 +16,35 @@ Each entry records the decision, its framing, and where it is reflected in the r
 > (`07_Assets/Partner_Packages/Career_v1.1_2026-08-20/`). Engineering detail:
 > `00_Foundation/CHANGELOG.md`.
 
+### D68 — The nudge on day three, the extension for a late invitee, and a week of raw retention
+**Decision (founder, 2026-08-21),** completing D67:
+
+> Hold the data for a week. Also, after three days, if not enough have answered, send the user a
+> notification that not enough friends answered and that it is worth adding more recipients. If he
+> adds them, the answering window grows for all recipients, until they all have at least five days.
+
+**Three rules, and each one has a reason worth keeping.**
+
+**The nudge carries a count and never a name.** "Four of the five are in" is something the counter
+already shows the requester; who has not answered is not, and a helpful reminder is exactly the kind
+of place that leak arrives through. It fires once the round is three days old, still open, and still
+short.
+
+**A late invitee gets five days, and the extension moves the deadline for EVERYONE — forward only.**
+One deadline for the round rather than one per person, for two reasons, and the second is the one
+that matters: a per-person deadline would let the synthesis open while somebody still had days left
+to answer, and a round whose ending depends on who was invited when is a round whose timing describes
+its contributors. Forward only, because somebody promised until Friday is not brought forward because
+a name was added on Thursday.
+
+**Raw answers are held one week FROM CLOSURE, not from sending.** For an untouched round those are
+the same instant, which is exactly the problem: retention measured from sending would expire the
+moment collection ended and leave no window in which the synthesis could be produced. After the week,
+only the de-identified synthesis remains. This answers the first of the PRD's four blocking decisions
+(§18.1).
+
+**Reflected in:** `app/src/core/tools/mirror/round.ts`, `04_Product/PRD/Tools_Documentation/Mirror_Feedback_PRD.md`.
+
 ### D67 — A Mirror Feedback round runs for one week, and closes honestly either way
 **Decision (founder, 2026-08-21):**
 

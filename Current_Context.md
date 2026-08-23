@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-21 (end of session)** — start at the **"⛳ START HERE — 2026-08-21"** block
+Last updated: **2026-08-23** — start at the **"⛳ START HERE — 2026-08-23"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
 history of the same session's earlier half. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
@@ -35,7 +35,57 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-21: six tools, a token budget, and one ordering decision
+# ⛳ START HERE — 2026-08-23: the privacy contract, seven more tools, eight rooms, two real bugs
+
+On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2199 / 202 suites**.
+The ordering decision in the block below is UNCHANGED and still first: **publish → merge → build.**
+Full detail: `00_Foundation/CHANGELOG.md`, the 2026-08-21 (evening) entry.
+
+## What exists now
+
+**The privacy contract** — `04_Product/Privacy_Contract_With_The_User.md`. Everything the app can
+know about a person, built from the code: device-only, our server table by table, third parties,
+what others tell us, and what we deliberately do not collect. The legal policy and both store forms
+get generated from it.
+
+**Seven more tools**, from the founder's approved PRDs and his light/dark flows: Gratitude Log ·
+What Worked for Me? · A Self-Compassion Moment · What Really Matters to Me? · What Am I Carrying
+Right Now? · From Obstacle to Action · My Support Map. Thirteen tools are now live in the tab. The
+shared opening screen, step frame and one records store mean the fourteenth is cheap.
+
+**The bell's data layer** — a chronological feed of what other PEOPLE did, with read marks. No UI:
+the founder is writing the Inbox task and the bell belongs in it.
+
+## The bug that mattered
+
+**Delete account wiped four keys.** The list predated the Tools tab and nothing widened it, so every
+tool answer survived a deletion. Fixed, generated from the tool list, and named key-by-key in a test.
+
+## Two findings worth not rediscovering
+
+- **The bell needs no server change.** Cheers have always been stored and readable by the recipient;
+  the app only ever listened to the realtime subscription, so a cheer that arrived while the app was
+  closed was never seen. Both request timestamps were already in the database, unselected.
+- **Gemini's tier is a privacy property, not a billing detail.** The paid tier does not train on
+  content and the free tier does. Somebody must confirm the proxy's key belongs to a billing-enabled
+  project, or the privacy contract's AI section is false.
+
+## ▶ NEXT, in order
+
+1. **The Notification Center** — `04_Product/PRD/Notification_Center_PRD.md` is approved and ready.
+   Its first pass: the Bell with its count, the chronological list over the events that really exist
+   (cheer, nudge, friend request, ally invite), viewport-based seen, and inline approve/decline. The
+   engine underneath it is already built and tested (`core/social/notifications.ts`).
+2. **The ordering decision below** — publish the update, then merge `feat/native-media`, then build.
+3. **Wire the diagnosis into the coach.** `careerDiagnosis` now speaks the partner's vocabulary and
+   can be driven by signals heard in conversation; `CoachOrchestrator` still never calls it. This is
+   the one that turns twenty-seven authored Career Journeys from correct into reachable.
+4. **The two empty rooms** — שינוי דפוסים ודחפים and גוף ואנרגיה show "coming soon" and are waiting
+   for their first tool.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-21: six tools, a token budget, and one ordering decision
 
 Everything committed and **pushed**, on TWO branches. `tsc` clean, **jest 2014 / 190 suites**.
 **The open list is now `04_Product/Open_Work_2026-08-21.md` — read it after this block.**

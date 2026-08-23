@@ -4,6 +4,117 @@ Status: Living Document
 
 ---
 
+# 2026-08-23 — the privacy contract, seven more tools, eight rooms, and two real bugs
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 2199 / 202 suites** (from 2014 / 190).
+Continues the 2026-08-21 entries below, which stay accurate.
+
+## The privacy contract with the user
+
+`04_Product/Privacy_Contract_With_The_User.md` — not legal wording, deliberately. One list of
+everything the app can know about a person, built FROM THE CODE rather than from memory: what stays
+on the device, what sits on our server table by table, what leaves to a third party, what other
+people tell us (Mirror), and what we deliberately do not collect. The legal policy, the Apple
+privacy label and the Play Data Safety form are all generated from this list.
+
+Three things it surfaced: the private profile blob is **plaintext and holds a birth date**; we run
+**no analytics SDK at all**, which is an asset worth stating; and almost everything sensitive never
+leaves the device by architecture rather than by policy.
+
+Open on the founder: the controller entity, the minimum age, written no-training terms from the model
+provider, and a support address. His decisions this session: no referral to named crisis bodies (we
+recommend a professional instead), and the age question stays open.
+
+## A defect found while writing it, and fixed
+
+**Delete account wiped four keys.** The list predated the Tools, and nothing widened it when they
+landed — so a deletion left the Life Wheel answers, the Values sort, the Passion Map and the
+reflections sitting on the device. The most personal content in the product, surviving the one action
+meant to be rid of it. `ACCOUNT_STORAGE_KEYS` is now complete, the record-keeping tools' keys are
+GENERATED from the tool list so a new tool cannot be forgotten, and each key is named in a test.
+
+## The notifications bell — the data spine, no UI yet
+
+The founder asked for a bell that gathers what other people did for you. Two findings: **no server
+change is needed** (cheers have always been stored and readable; the app only ever listened to the
+live subscription, so a cheer that arrived while the app was closed vanished), and both request
+timestamps existed in the database and were simply never selected.
+
+Built: `core/social/notifications.ts` (a chronological feed of cheer · nudge · friend request · ally
+invite) and `core/social/notificationReads.ts` (read marks, on-device). Three rules are enforced in
+code: the feed never reorders around what the app thinks matters, it never invents a time, and every
+notification REQUIRES a human actor — there is nowhere to put an app-generated nudge. UI waits for
+the founder's Inbox task.
+
+## Seven tools, from his approved PRDs and designs
+
+`04_Product/PRD/Tools_Documentation/` (seven new PRDs) and
+`04_Product/UX/Tools_Concepts_2026-08-21/` (seven full flows, light and dark).
+
+| Tool | What is built |
+|---|---|
+| **Gratitude Log** | Five entries, daily or weekly, with the deepening and the note. No streak, no missed days, no analysis — the one tool whose influence contract is EMPTY, and there is no `signals.ts` beside it for anyone to import. |
+| **What Worked for Me?** | One moment, what may have helped, the person's own part, one reusable idea. "May have helped" is the wording, never "because". Credit is declinable. |
+| **A Self-Compassion Moment** | Three sentences and a breath, one to three minutes, learning nothing. The audio route is SHOWN and honestly marked not-ready rather than hidden or faked. |
+| **What Really Matters to Me?** | The four sides of a decision, one screen each, and a clarity statement. The model exports nothing that scores — a test asserts the absence by name. |
+| **What Am I Carrying Right Now?** | One finished week in a hundred tiles, energy kept separate from time, and no trend claimed from fewer than three comparable weeks. |
+| **From Obstacle to Action** | The if–then response, with a LOCAL deterministic check of shape (recognisable trigger, one action, yours, no impossible promise). Every flag is a question; nothing is ever refused. The coach refinement is shown as awaiting its privacy gate. |
+| **My Support Map** | Five moments, people from the Circle or typed privately, and the gaps as gaps. Nothing touches the social graph; invitations say plainly that delivery is not built. |
+
+Shared, so the eighth tool is cheap: `components/tools/ToolOpening` (the founder's opening-screen
+rule, with Start pinned outside the scroll), `ToolStep`, `ToolTextField`, `ToolEntryList`,
+`ToolChoiceCard`, `BreathCircle`, `LoadMosaic`, `core/tools/families.ts` (the colour families from
+his README §5.1) and **one** `state/ToolRecordsStore` instead of seven providers.
+
+Copy is complete in English and Hebrew. A smoke test renders all seven screens and presses Start.
+
+## The Tools tab has eight rooms now, and colour belongs to the room
+
+The founder replaced the five rooms with his eight: להכיר את עצמי · לבחור כיוון · לעבור לפעולה ·
+תיעוד והתבוננות · עזרה ברגע הזה · שינוי דפוסים ודחפים · קשרים ותמיכה · גוף ואנרגיה.
+
+**Colour moved from the tool to the room** (`core/tools/rooms.ts`). Before, each tool named its own
+accent — which meant two tools in one room could drift apart and a tool moved between rooms kept the
+old colour. Now the room holds the colour and every tool inside inherits it, opening screen included.
+A test asserts no two rooms share a hue and that no tool carries a private one.
+
+Eight rooms needed eight hues and the palette had seven, so **`clay` (#A4523E) was added** — chosen
+by the founder from rendered swatches and then pushed one step redder, with an authored dark value.
+It is the first accent added since the mature redesign.
+
+The six placeholder rows for tools that did not exist (`reflection`, `breathe`, `strengths`,
+`timer`, `kindness`, `hardDay`) were removed on his instruction; two of them were superseded by A
+Self-Compassion Moment and the rest live on in their PRDs. The two rooms that hold nothing yet are
+SHOWN and labelled "coming soon" rather than hidden — his call: a room a person can see is a promise
+about where the product is going.
+
+## Three identical reminders — found, explained, fixed
+
+The founder's phone showed three copies of the same reminder at once. The scheduler tears down before
+it rebuilds, but it tracked the ids it owned **in memory**: a cold start began with an empty list, so
+it cancelled nothing and scheduled another copy — one per launch. The teardown now sweeps the OS for
+repeating notifications instead of trusting our own bookkeeping, which also cleans up the copies
+earlier launches left behind. One-shot postpone reminders are untouched. Two regression tests.
+
+Why he had received none until then: the 2026-08-17 device QA found the engine never re-read
+permission on a cold start, and that fix only reached his phone in the 08-20 over-the-air update.
+Both halves are the same story.
+
+## The coach can sharpen an if–then response, and the Career diagnosis speaks the partner's language
+
+**Obstacle to Action's refinement is wired** (`core/tools/obstacleToAction/refine.ts`). It sends the
+two halves of the sentence and the obstacle behind them — asserted by a test that the linked Journey,
+the wish and the outcome cannot reach the request — and what comes back is shown BESIDE the original
+for the person to choose. Per the founder (2026-08-23) there is no per-tap disclosure: the promise is
+made once, at sign-up, and kept by what the call actually carries.
+
+**The partner's Career v1.2 is folded in** (`07_Assets/Partner_Packages/Career_v1.2_2026-08-23`).
+The diagnosis engine now speaks HIS signal vocabulary rather than four names of our own, each answer
+declares the signal value it implies, and `applyKnownSignals` makes his first principle mechanical:
+a question whose signal the conversation already supports is not asked. His `unknown`, a value no
+option declares, and a real answer already given all behave correctly — nine tests. He confirmed our
+`CAR_G12` → `INTERVIEW_STAGE_GAP` correction, and his family names match ours exactly.
+
 # 2026-08-21 — the Tools tab becomes real: six tools, a token budget, and the native branch
 
 Branch `feat/buddy-3d-and-reminders` (pushed), plus a second branch `feat/native-media` (pushed).

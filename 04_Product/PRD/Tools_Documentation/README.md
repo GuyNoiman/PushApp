@@ -1,7 +1,7 @@
 # Tools Documentation — Master Index and Product Impact Map
 
 Status: **Living documentation hub — individual tools remain drafts until their PRD says otherwise.**
-Updated: **2026-08-21**.
+Updated: **2026-08-21 (seven additional approved Tool specifications and complete light/dark flows).**
 Scope: Tools-tab reflections, exercises, assessments, and rights-constrained workshop concepts.
 
 ---
@@ -45,6 +45,13 @@ never the user's answers, theme names, stories, ratings, or inferred sensitive t
 | [Best Possible Year](Best_Possible_Year_PRD.md) | Guided private reflection | Nothing from the letter; only a separate aspiration deliberately typed into the Dream box may leave the Tool | Gives the user a private future-writing ritual and optional scheduled return | User only; separately authored Dream-box text may enter explicit Dream exploration | Read, mine, summarize, classify, or extract aspirations/resources/barriers from the letter—even after completion | High | MVP candidate |
 | [Mirror Feedback](Mirror_Feedback_PRD.md) | Social reflection | Named visible perspectives or a de-identified synthesis, plus a separate user-confirmed reflection | Adds external evidence without exposing confidential raw responses | Tool result only; sharing a version-bound confirmed reflection is proposed after contract approval | Expose confidential raw answers/statuses, publish feedback, rank the user, or treat abuse as insight | Very high | Future / sensitive |
 | [Original Visual Check-In](Original_Visual_Check_In_PRD.md) | Conversation opener | The user's own meaning for a selected scene/position and current emotional context | Offers a low-language entry into private reflection or a Coach conversation | Tool result; explicit Coach share | Apply a psychological interpretation, diagnosis, or copy the Blob Tree artwork | Very high | Future / rights and safety gated |
+| [Obstacle to Action](Obstacle_to_Action_PRD.md) | Action planning | One confirmed, recognizable trigger and one small user-controlled response | Converts a recurring internal obstacle into a usable if–then response | Tool result; user-requested Coach refinement; separately approved linked-object conversation | Edit a Dream/Journey, schedule action, or treat the response as completed behavior | High | POC; Coach refinement privacy-gated |
+| [My Support Map](Support_Map_PRD.md) | Guided social reflection | The user's current mapping of people to five support roles; names remain private Tool content | Helps the user see who they may want beside them and where support feels absent | Tool result; explicit per-person invitation/action only | Add a Friend/Ally, expose role assignments, score relationships, or assume consent/availability | Very high | POC core; invitations dependency-gated |
+| [What Am I Carrying Right Now?](Current_Load_Map_PRD.md) | Time-bounded reflection | One dated representative-week allocation/energy snapshot and optional small experiment | Turns vague overload into a user-owned view of time, energy, and missing space | Tool result; optional previewed Coach discussion | Optimize the user, alter a weekly plan/Journey, or label them productive/overloaded | High | POC |
+| [A Self-Compassion Moment](Self_Compassion_Moment_PRD.md) | Immediate Tool | Nothing; an optional saved phrase remains private content rather than a user signal | Provides a low-demand pause during a difficult moment | Current Tool session; optional private phrase shortcut | Infer distress, trigger follow-up, analyze why it was opened, or present itself as therapy/crisis support | Very high | POC text; audio dependency-gated |
+| [What Really Matters to Me?](Decisional_Clarity_PRD.md) | Decision reflection | Structural completion only; decision content and clarity statement remain private | Separates the four sides of ambivalence without deciding for the user | Tool result; previewed explicit Coach discussion | Score readiness, recommend a side, or implement a decision | Very high | POC |
+| [What Worked for Me?](What_Worked_PRD.md) | Private evidence reflection | Nothing enters the general model; records remain user-owned under D66 | Helps the user preserve evidence about conditions that supported real action | Tool result/history only | Claim causation, award progress, or alter a Journey/Weekly Review | High | POC |
+| [Gratitude Log](Gratitude_Log_PRD.md) | Private recurring record | Nothing enters the general model under D66 | Creates a private dated record of at least five appreciated people/moments/things | Tool result/history and account export only | Mine themes, infer mood/relationships/values, create motivation copy, or expose entries | High | POC |
 
 ### Reading the table
 
@@ -65,6 +72,13 @@ never the user's answers, theme names, stories, ratings, or inferred sensitive t
 - [Passion Map](Passion_Map_PRD.md)
 - [Strength Evidence](Strength_Evidence_PRD.md)
 - [Best Possible Year](Best_Possible_Year_PRD.md)
+- [Obstacle to Action](Obstacle_to_Action_PRD.md)
+- [My Support Map](Support_Map_PRD.md)
+- [What Am I Carrying Right Now?](Current_Load_Map_PRD.md)
+- [A Self-Compassion Moment](Self_Compassion_Moment_PRD.md)
+- [What Really Matters to Me?](Decisional_Clarity_PRD.md)
+- [What Worked for Me?](What_Worked_PRD.md)
+- [Gratitude Log](Gratitude_Log_PRD.md)
 
 ### Future and sensitive concepts
 
@@ -84,6 +98,14 @@ Values Summary is the result screen of Values Sort, not a separate Tool.
 
 ## 5. Shared UX rules
 
+- Every first-use flow begins with one dedicated opening screen containing: Tool name, a concise inviting
+  description, **what the user will receive** with a target icon, **estimated time** with a clock icon, and a
+  visible **Start** action. Start must be visible without scrolling on the minimum supported viewport. The
+  illustration becomes smaller/background decoration before essential content or Start is pushed below the
+  fold.
+- If several routes exist, the opening screen says **Choose one of the options** and presents each route with a
+  title, concise explanation, and its own estimated time where duration differs. The selection is made before
+  Start; do not hide route choice on the next screen without a product reason.
 - Show Tool type and estimated time before starting.
 - One cognitive operation per screen; save progress and allow exit/resume.
 - Returning users see their current result before being asked to repeat or edit.
@@ -94,6 +116,27 @@ Values Summary is the result screen of Values Sort, not a separate Tool.
 - No Tool awards XP merely for opening, answering quickly, or returning daily.
 - No missed-day punishment, shame copy, or false urgency.
 - Drag interactions always have a tap/keyboard/screen-reader alternative.
+- User-facing screens use one language at a time. Do not insert English product nouns into otherwise Hebrew
+  sentences; localized canonical terms use their approved localized display copy while domain documentation
+  continues using canonical English terminology.
+
+### 5.1 Color-family wayfinding
+
+Color identifies a Tool or Tool family; it never communicates score, correctness, completion, urgency, or
+diagnosis. Similar future Tools reuse the established family before inventing another accent:
+
+| Family | Approved direction | Current Tools |
+|---|---|---|
+| Move forward | Teal | Obstacle to Action |
+| Together / social reflection | Purple | My Support Map; future social Tools |
+| Understand myself | Warm amber, explicitly non-warning | What Am I Carrying Right Now? |
+| Immediate care | Soft coral/rose, explicitly non-danger | A Self-Compassion Moment; future Immediate Tools |
+| Decision clarity | Calm blue | What Really Matters to Me? |
+| Records — useful evidence | Fresh green | What Worked for Me? |
+| Records — appreciation | Soft gold with a constellation motif, distinct from Coins | Gratitude Log |
+
+Every family has a full light and dark treatment. Dark mode is authored rather than mechanically inverted;
+contrast, hierarchy, field boundaries, glow, and selected states are separately verified.
 
 ## 6. Shared result states
 

@@ -24,6 +24,7 @@ import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
 import { LifeWheelProvider } from '@/state/LifeWheelStore';
 import { ToolsShelfProvider } from '@/state/ToolsShelf';
 import { PassionMapProvider } from '@/state/PassionMapStore';
+import { ToolRecordsProvider } from '@/state/ToolRecordsStore';
 import { ReflectionsProvider } from '@/state/ReflectionsStore';
 import { ValuesProvider } from '@/state/ValuesStore';
 import { EntitlementProvider } from '@/state/EntitlementProvider';
@@ -128,11 +129,15 @@ export default function RootLayout() {
                                 personal thing the app holds — ON-DEVICE ONLY (G1). */}
                             <PassionMapProvider>
                             <ReflectionsProvider>
+                            {/* What the record-keeping tools write (the 2026-08-21 set). ON-DEVICE
+                                ONLY, and several of them read by nothing at all (D66). */}
+                            <ToolRecordsProvider>
                         {/* Renders nothing: re-resolves pending reminder copy whenever the
                             language, form of address or communication style changes (D40). It sits
                             here because it needs the core, the language provider AND the profile. */}
                         <NotificationCopySync />
                         <ThemedChrome />
+                            </ToolRecordsProvider>
                             </ReflectionsProvider>
                             </PassionMapProvider>
                           </ValuesProvider>

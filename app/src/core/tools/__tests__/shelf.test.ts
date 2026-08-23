@@ -37,11 +37,12 @@ describe('the catalogue', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('counts a category as everything in it, live and coming together', () => {
-    // Browsing a room shows both; each is labelled honestly. A count of only the live ones would
-    // make four of the five rooms read as empty.
-    expect(categoryCount('know')).toBe(toolsInCategory('know').length);
-    expect(toolsInCategory('know').some((t) => !isLive(t))).toBe(true);
+  it('counts a room as everything in it', () => {
+    // Live and coming together. Since 2026-08-23 every catalogue row IS live — the placeholder rows
+    // were removed with the move to the founder's eight rooms — so the second half of this rule has
+    // nothing to assert against today and is covered by `isLive` being the only definition below.
+    expect(categoryCount('selfKnowledge')).toBe(toolsInCategory('selfKnowledge').length);
+    expect(categoryCount('selfKnowledge')).toBeGreaterThan(0);
   });
 
   it('treats a route as the ONE definition of live', () => {
@@ -99,10 +100,13 @@ describe('saved', () => {
 });
 
 describe('search', () => {
-  const label = (t: { key: string }) => ({ questionnaire: 'My questionnaire', breathe: 'Breathe' })[t.key] ?? t.key;
+  // Labels come from i18n in the app; here they are stubbed so the test asserts the MATCHING and
+  // not the copy. (`breathe` was a placeholder row and left the catalogue on 2026-08-23.)
+  const label = (t: { key: string }) =>
+    ({ questionnaire: 'My questionnaire', gratitude: 'Gratitude log' })[t.key] ?? t.key;
 
   it('matches on the visible label, case-insensitively', () => {
-    expect(searchTools('BREA', label).map((t) => t.key)).toEqual(['breathe']);
+    expect(searchTools('GRATIT', label).map((t) => t.key)).toEqual(['gratitude']);
   });
 
   it('an empty query is the whole catalogue, not an empty result', () => {
@@ -119,10 +123,14 @@ describe('what gets recommended', () => {
   });
 
   it('prefers something not tried before, and among those the shortest', () => {
-    // Both live tools untried: the 3-minute one comes before the 6-minute one.
+    // Asserted against the CATALOGUE rather than a named tool: the shortest live tool changes every
+    // time a quicker one is added (it did on 2026-08-21), and the rule being tested is the ordering,
+    // not which tool currently happens to win it.
     const picked = recommended({}, NOW);
-    expect(picked[0].key).toBe('communication');
-    expect(findTool('communication')?.minutes).toBeLessThan(findTool('questionnaire')!.minutes!);
+    const shortest = Math.min(
+      ...TOOL_CATALOG.filter(isLive).map((tool) => tool.minutes ?? Number.POSITIVE_INFINITY),
+    );
+    expect(findTool(picked[0].key)?.minutes).toBe(shortest);
   });
 
   it('does not offer back what was just done', () => {

@@ -52,6 +52,11 @@ export interface AllyInvite {
   journeyId: string;
   bundle: AllyBundle;
   status: AllyInviteStatus;
+  /**
+   * Epoch ms the invite was sent (`journey_allies.requested_at`). Optional for the same reason as
+   * {@link Friend.requestedAt}: fixtures have no server row, and the feed refuses to guess.
+   */
+  requestedAt?: number;
 }
 
 /**
@@ -89,6 +94,12 @@ export interface Friend {
   status: FriendStatus;
   /** 'incoming' = they asked you; 'outgoing' = you asked them. */
   direction: 'incoming' | 'outgoing';
+  /**
+   * Epoch ms the request was made (`friendships.created_at`). Optional ONLY because fixtures and
+   * the dev sample data build Friends without a server row; every Friend that came from the
+   * gateway has it. The notification feed skips a request with no time rather than invent one.
+   */
+  requestedAt?: number;
 }
 
 /**
@@ -304,6 +315,16 @@ export interface SocialGateway {
    * unsubscribe fn.
    */
   subscribeToCheers(uid: string, onCheer: (cheer: Cheer) => void): () => void;
+  /**
+   * Cheers and nudges RECEIVED, newest first, within the last `days`.
+   *
+   * WHY IT WAS MISSING UNTIL NOW: the only path for a cheer was the realtime subscription, so a
+   * cheer that arrived while the app was closed was never seen by anybody — the row was written and
+   * the app simply never asked for it. The rows have always been there and RLS has always allowed
+   * the recipient to read them (`cheers_read`: `to_id = auth.uid()`); nothing needed to change on
+   * the server for this.
+   */
+  listReceivedCheers(days: number): Promise<Cheer[]>;
   /** Realtime updates to Journeys the user is an Ally of. Returns an unsubscribe fn. */
   subscribeToAllyUpdates(onUpdate: (progress: AllyProgress) => void): () => void;
 }
@@ -348,5 +369,6 @@ export const NullSocialGateway: SocialGateway = {
   async myCompanionJourneyIds() { return []; },
   async sendCheer() {},
   subscribeToCheers() { return () => {}; },
+  async listReceivedCheers() { return []; },
   subscribeToAllyUpdates() { return () => {}; },
 };

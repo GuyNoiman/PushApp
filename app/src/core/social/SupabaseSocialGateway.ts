@@ -119,7 +119,7 @@ export class SupabaseSocialGateway implements SocialGateway {
     const id = await this.requireUid();
     const { data, error } = await this.client()
       .from('friendships')
-      .select('requester_id, addressee_id, status, requester:profiles!requester_id(id,handle,buddy_summary), addressee:profiles!addressee_id(id,handle,buddy_summary)')
+      .select('requester_id, addressee_id, status, created_at, requester:profiles!requester_id(id,handle,buddy_summary), addressee:profiles!addressee_id(id,handle,buddy_summary)')
       .or(`requester_id.eq.${id},addressee_id.eq.${id}`);
     if (error) throw error;
     return (data ?? []).map((row: any): Friend => {
@@ -129,6 +129,9 @@ export class SupabaseSocialGateway implements SocialGateway {
         profile: toProfile(other as ProfileRow),
         status: row.status,
         direction: outgoing ? 'outgoing' : 'incoming',
+        // The column has always been there (`friendships.created_at`, not null); it was simply
+        // never selected. The bell needs it to place the request in time.
+        ...(row.created_at ? { requestedAt: new Date(row.created_at).getTime() } : {}),
       };
     });
   }
@@ -342,7 +345,7 @@ export class SupabaseSocialGateway implements SocialGateway {
     const id = await this.requireUid();
     const { data, error } = await this.client()
       .from('journey_allies')
-      .select('journey_id, visibility, status, owner:profiles!owner_id(id,handle,buddy_summary)')
+      .select('journey_id, visibility, status, requested_at, owner:profiles!owner_id(id,handle,buddy_summary)')
       .eq('ally_id', id)
       .eq('status', 'requested');
     if (error) throw error;
@@ -351,6 +354,7 @@ export class SupabaseSocialGateway implements SocialGateway {
       journeyId: row.journey_id,
       bundle: bundleFromVisibility(row.visibility as Visibility),
       status: row.status as AllyInviteStatus,
+      ...(row.requested_at ? { requestedAt: new Date(row.requested_at).getTime() } : {}),
     }));
   }
 
@@ -485,6 +489,26 @@ export class SupabaseSocialGateway implements SocialGateway {
     const id = await this.requireUid();
     const { error } = await this.client().from('cheers').insert({ from_id: id, to_id: toId, journey_id: journeyId, kind });
     if (error) throw error;
+  }
+
+  async listReceivedCheers(days: number): Promise<Cheer[]> {
+    const id = await this.requireUid();
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await this.client()
+      .from('cheers')
+      .select('id, from_id, to_id, journey_id, kind, created_at')
+      .eq('to_id', id)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((r: any): Cheer => ({
+      id: r.id,
+      fromId: r.from_id,
+      toId: r.to_id,
+      journeyId: r.journey_id,
+      kind: r.kind,
+      createdAt: new Date(r.created_at).getTime(),
+    }));
   }
 
   subscribeToCheers(uid: string, onCheer: (cheer: Cheer) => void): () => void {

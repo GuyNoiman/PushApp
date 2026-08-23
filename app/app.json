@@ -75,6 +75,19 @@
           "isAccessMediaLocationEnabled": false,
           "photosPermission": false
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "PushApp records a voice note only when you tap record, and it stays on this phone."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PushApp lets you attach a photo to something you are writing. It stays on this phone.",
+          "cameraPermission": "PushApp lets you take a photo for something you are writing. It stays on this phone."
+        }
       ]
     ],
     "experiments": {

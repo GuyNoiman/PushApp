@@ -30,6 +30,7 @@
  *
  * Pure TypeScript — no React, no i18n, no clock reads.
  */
+import type { Attachment } from '../../media/MediaGateway';
 
 /** The exercises. `bestYear` is built; the rest are named so the surface is designed for them. */
 export const REFLECTION_IDS = [
@@ -94,6 +95,15 @@ export interface Reflection {
   writtenAt: number;
   /** What was written under each prompt. A prompt with nothing under it is simply absent. */
   sections: Readonly<Record<string, string>>;
+  /**
+   * Photos and voice notes kept with it (2026-08-21). Files on THIS device — see
+   * {@link ../../media/MediaGateway}. They travel with the reflection and are deleted with it, and
+   * like everything else here they never leave the phone.
+   *
+   * ADDITIVE ON PURPOSE: a reflection written before attachments existed simply has none, and a
+   * build without the native modules simply cannot add any. Neither is a migration.
+   */
+  attachments?: readonly Attachment[];
   /** When the letter comes back, if it does. */
   deliverAt?: number;
   /** The earlier check-in, if the person kept it. */
@@ -113,9 +123,17 @@ export function wordCount(sections: Readonly<Record<string, string>>): number {
     .filter((w) => w.length > 0).length;
 }
 
-/** True when there is anything at all to keep. One paragraph is a finished reflection. */
-export function hasContent(sections: Readonly<Record<string, string>>): boolean {
-  return Object.values(sections).some((text) => text.trim().length > 0);
+/**
+ * True when there is anything at all to keep. One paragraph is a finished reflection — and so is one
+ * photo with no words at all, which is often what a moment worth recording actually is.
+ */
+export function hasContent(
+  sections: Readonly<Record<string, string>>,
+  attachments: readonly Attachment[] = [],
+): boolean {
+  return (
+    Object.values(sections).some((text) => text.trim().length > 0) || attachments.length > 0
+  );
 }
 
 /** The instant a horizon lands on, from the day it was written. */
@@ -137,6 +155,7 @@ export function buildReflection(input: {
   sections: Readonly<Record<string, string>>;
   horizonDays?: number;
   keepCheckpoint?: boolean;
+  attachments?: readonly Attachment[];
 }): Reflection {
   const exercise = REFLECTION_EXERCISES[input.exercise];
   const sections = Object.fromEntries(
@@ -158,6 +177,7 @@ export function buildReflection(input: {
     exercise: input.exercise,
     writtenAt: input.writtenAt,
     sections,
+    ...(input.attachments?.length ? { attachments: [...input.attachments] } : {}),
     ...(deliverAt !== undefined ? { deliverAt } : {}),
     ...(checkpointAt !== undefined && checkpointAt < deliverAt! ? { checkpointAt } : {}),
   };

@@ -10,12 +10,15 @@
  * them and people write a wish list, which teaches nobody anything. The exercise's whole claim is
  * that a year you could actually have is the only kind you can walk towards.
  *
- * DICTATION IS THE KEYBOARD'S, on purpose. The design shows a microphone, and a speech-to-text
- * library would be a NATIVE dependency — which changes the build's fingerprint and cuts the partner's
- * phone off from every over-the-air update we publish (Open Work §3.1). Every iOS and Android
- * keyboard already has a microphone that dictates into any text field, so the tool says so and costs
- * nothing. If a recorded VOICE is wanted later — the audio itself, kept and played back — that is a
- * different feature and a real native decision, not a swap for this one.
+ * DICTATION IS STILL THE KEYBOARD'S, even now that recording exists. Every phone keyboard has a
+ * microphone that dictates into any text field, in every language the phone speaks, and the text
+ * never leaves the device. Speech-to-TEXT of a recording is a different thing again: on-device
+ * recognition costs another permission and is markedly worse in Hebrew, and cloud transcription
+ * costs money per minute and would send the most personal audio the app holds across the network.
+ * Neither is scheduled — see `11_Engineering_Bible/Engineering_Decisions.md` E6.
+ *
+ * A RECORDED VOICE, on the other hand, is here (2026-08-21): {@link ../../components/tools/AttachmentStrip}
+ * adds a photo or a voice note, and both are files on this device that travel with the letter.
  *
  * NOTHING BECOMES A DREAM WITHOUT BEING TYPED BY THE PERSON. The founder's rule for this exercise is
  * explicit — confirmation before any Dream is created — and this goes one step further than the Life
@@ -33,10 +36,12 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AttachmentStrip } from '@/components/tools/AttachmentStrip';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { displayFont } from '@/constants/displayFont';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import type { Attachment } from '@/core/media/MediaGateway';
 import {
   REFLECTION_EXERCISES,
   buildReflection,
@@ -64,6 +69,7 @@ export default function BestYearScreen() {
   const [horizon, setHorizon] = useState<number>(EXERCISE.horizons[0]);
   const [keepCheckpoint, setKeepCheckpoint] = useState(true);
   const [sections, setSections] = useState<Record<string, string>>({});
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [prompt, setPrompt] = useState<string>(EXERCISE.prompts[0]);
   const [dreamTitle, setDreamTitle] = useState('');
   const [dreamAdded, setDreamAdded] = useState(false);
@@ -83,6 +89,7 @@ export default function BestYearScreen() {
       exercise: 'bestYear',
       writtenAt: Date.now(),
       sections,
+      attachments,
       horizonDays: horizon,
       keepCheckpoint,
     });
@@ -258,9 +265,13 @@ export default function BestYearScreen() {
                 {t('bestYear.write.dictate')}
               </ThemedText>
 
+              {/* A photo or a voice note, when this build can offer them. A letter with one photo
+                  and no words is still a letter. */}
+              <AttachmentStrip attachments={attachments} onChange={setAttachments} />
+
               <Cta
                 label={t('values.reduce.continue')}
-                disabled={!hasContent(sections)}
+                disabled={!hasContent(sections, attachments)}
                 onPress={() => setStep('deliver')}
               />
             </>

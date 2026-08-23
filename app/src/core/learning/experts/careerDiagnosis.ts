@@ -40,8 +40,52 @@
  * Pure TypeScript — no React, no i18n at module level, no clock reads, no vendor imports.
  */
 
-/** The four things this tree can establish, in the order it establishes them. */
-export type CareerDiagnosisSignal = 'target' | 'proof' | 'access' | 'searchProcess';
+/**
+ * The signals a Career diagnosis can establish — the partner's own names, from
+ * `07_Assets/Partner_Packages/Career_v1.2_2026-08-23/02_Career_Interview_Diagnosis_Mapping_v1.2.json`.
+ *
+ * WHY HIS NAMES AND NOT OURS. Until 2026-08-23 this file had four signals of its own invention
+ * (`target`, `proof`, `access`, `searchProcess`) which happened to line up with four of his. Keeping
+ * two vocabularies for one thing is how a mapping quietly drifts: he authors the questions and the
+ * meaning of each answer, and if his `visibleProofMissing` and our `proof` diverge by one case,
+ * nobody notices until somebody is routed to the wrong Journey. There is now one vocabulary and it
+ * is his.
+ *
+ * The eleven core signals plus the conditional ones for transitions and growth. Not every signal has
+ * a question in every tree — a tree asks what it needs.
+ */
+export const CAREER_SIGNALS = [
+  // Core (C1–C11).
+  'careerDirectionClarity',
+  'activeJobSearch',
+  'targetClarity',
+  'existingRelevantExperience',
+  'visibleProofMissing',
+  'peopleAccess',
+  'recentInterviewEvidence',
+  'searchHistorySufficient',
+  'targetStillMeaningful',
+  'realisticCapacity',
+  'socialSupportFit',
+  // Conditional — transition (T1–T2) and growth / current role (G1–G3).
+  'transitionType',
+  'transitionPrimaryGap',
+  'concretePromotionTarget',
+  'growthSubBottleneck',
+  'currentRoleFitLever',
+] as const;
+export type CareerDiagnosisSignal = (typeof CAREER_SIGNALS)[number];
+
+/**
+ * What is already known about a person, by signal.
+ *
+ * THIS IS THE "LISTEN FIRST" HALF, and it is the partner's first principle: *do not ask a question
+ * when the opening message already supports a signal value*. Values arrive from a model classifying
+ * what somebody wrote in their own words — his `means` field is the contract for that classification
+ * — or from an earlier answer. Either way they land here as closed values, and a question whose
+ * signal is already known is not asked.
+ */
+export type CareerKnownSignals = Readonly<Partial<Record<CareerDiagnosisSignal, string>>>;
 
 /**
  * Where a diagnosis lands. Either it names the family to route to — a `subtype` + `bottleneck` pair
@@ -70,6 +114,13 @@ export type UnresolvedReason =
 export interface CareerDiagnosisOption {
   /** The closed value this answer records. Stable; safe to persist and to classify text into. */
   value: string;
+  /**
+   * The value this answer implies for the question's SIGNAL, in the partner's vocabulary — so an
+   * answer heard in conversation ("I'm applying for three different kinds of role") can be matched
+   * to the option it corresponds to without the person being asked again. Absent ⇒ this option
+   * cannot be inferred from a signal and only counts when it is actually chosen.
+   */
+  signalValue?: string;
   /** Authored English, and its key in the `library` translation cache. */
   label: string;
   labelKey: string;
@@ -111,12 +162,13 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
   questions: [
     {
       id: `${K}.target`,
-      signal: 'target',
+      signal: 'targetClarity',
       prompt: 'What kinds of roles are you applying for at the moment?',
       promptKey: `${K}.target.prompt`,
       options: [
         {
           value: 'broad',
+          signalValue: 'broad',
           label: 'Several different kinds of role',
           labelKey: `${K}.target.broad`,
           // A broad target makes every later reading meaningless, so this ends the diagnosis here.
@@ -124,6 +176,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         },
         {
           value: 'clear',
+          signalValue: 'clear',
           label: 'One fairly clear kind of role',
           labelKey: `${K}.target.clear`,
         },
@@ -131,7 +184,13 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
     },
     {
       id: `${K}.proof`,
-      signal: 'proof',
+      /**
+       * His `visibleProofMissing` (C5). This ONE question also carries `existingRelevantExperience`
+       * (C4): its first answer is "I cannot do the work yet", which is C4 = no and is the reason the
+       * diagnosis stops rather than routing to a proof Journey. Asking them separately would make a
+       * person say the same thing twice, so the tree asks once and the mapping is recorded here.
+       */
+      signal: 'visibleProofMissing',
       prompt:
         'Think of two or three central requirements of that role. Do you have real examples showing you have already done something like them?',
       promptKey: `${K}.proof.prompt`,
@@ -146,12 +205,14 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         },
         {
           value: 'cannotShow',
+          signalValue: 'missing',
           label: 'I can do it, but it is hard to show',
           labelKey: `${K}.proof.cannotShow`,
           outcome: { kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'PROOF_GAP' },
         },
         {
           value: 'haveExamples',
+          signalValue: 'available',
           label: 'Yes, I have clear relevant examples',
           labelKey: `${K}.proof.haveExamples`,
         },
@@ -159,12 +220,13 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
     },
     {
       id: `${K}.access`,
-      signal: 'access',
+      signal: 'peopleAccess',
       prompt: 'How do most of your opportunities reach you?',
       promptKey: `${K}.access.prompt`,
       options: [
         {
           value: 'applicationsOnly',
+          signalValue: 'no',
           label: 'Almost entirely through open applications',
           labelKey: `${K}.access.applicationsOnly`,
           outcome: {
@@ -175,6 +237,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         },
         {
           value: 'peopleToo',
+          signalValue: 'yes',
           label: 'Through conversations and people who know me, too',
           labelKey: `${K}.access.peopleToo`,
         },
@@ -182,13 +245,18 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
     },
     {
       id: `${K}.searchProcess`,
-      signal: 'searchProcess',
+      /**
+       * His `searchHistorySufficient` (C8). The "I reach interviews and it stops there" answer is
+       * also `recentInterviewEvidence` = yes (C7); see that option.
+       */
+      signal: 'searchHistorySufficient',
       prompt:
         'With a clear target, relevant proof and reasonable access, how much focused searching have you actually done, and where does it break?',
       promptKey: `${K}.searchProcess.prompt`,
       options: [
         {
           value: 'barelyStarted',
+          signalValue: 'no',
           label: 'I have barely started',
           labelKey: `${K}.searchProcess.barelyStarted`,
           outcome: { kind: 'unresolved', reason: 'notEnoughEvidence' },
@@ -220,6 +288,28 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
   ],
 };
 
+/**
+ * How many questions this tree still needs, given what is known. Used by a caller that wants to say
+ * "two more short questions" rather than opening an interview of unknown length.
+ */
+export function remainingQuestionCount(
+  tree: CareerDiagnosisTree,
+  answers: CareerDiagnosisAnswers,
+  known: CareerKnownSignals = {},
+): number {
+  const merged = applyKnownSignals(tree, answers, known);
+  let count = 0;
+  for (const question of tree.questions) {
+    const answer = merged[question.id];
+    if (answer === undefined) {
+      count += 1;
+      continue;
+    }
+    if (optionFor(question, answer)?.outcome) break;
+  }
+  return count;
+}
+
 /** Answers gathered so far, keyed by question id. Values are the closed option `value` strings. */
 export type CareerDiagnosisAnswers = Readonly<Record<string, string>>;
 
@@ -232,18 +322,53 @@ export function optionFor(
 }
 
 /**
+ * Fold what is ALREADY KNOWN into the answers, so a question whose signal the person has effectively
+ * answered in conversation is never put to them again.
+ *
+ * This is the partner's first principle made mechanical (`…Mapping_v1.2.json`, `principles[0]`):
+ * *do not ask a question when the opening message already supports a signal value*. A known signal
+ * is matched to the option that declares it (`signalValue`); a value no option declares — including
+ * his explicit `unknown` — is ignored, because "we could not tell" is not an answer and must leave
+ * the question askable.
+ *
+ * An answer the person actually gave always wins over an inferred one. A classifier reading free
+ * text is a guess with a confidence; a tapped option is not.
+ */
+export function applyKnownSignals(
+  tree: CareerDiagnosisTree,
+  answers: CareerDiagnosisAnswers,
+  known: CareerKnownSignals = {},
+): CareerDiagnosisAnswers {
+  const merged: Record<string, string> = { ...answers };
+  for (const question of tree.questions) {
+    if (merged[question.id] !== undefined) continue;
+    const value = known[question.signal];
+    if (value === undefined) continue;
+    const option = question.options.find((o) => o.signalValue === value);
+    if (option) merged[question.id] = option.value;
+  }
+  return merged;
+}
+
+/**
  * The next question to ask, or `null` when there is nothing left to ask.
  *
  * THE STOP RULE, which is the partner's and is the reason this is not just "walk the list": as soon
  * as one answer settles the diagnosis, every remaining question is a question whose answer cannot
  * change what we choose — and asking it is exactly the form-filling the coach is meant not to be.
+ *
+ * With `known`, the rule gets its other half: a question whose signal is already supported is
+ * treated as answered and skipped. Between the two, the coach asks only what is both unknown AND
+ * still able to change the routing.
  */
 export function nextQuestion(
   tree: CareerDiagnosisTree,
   answers: CareerDiagnosisAnswers,
+  known: CareerKnownSignals = {},
 ): CareerDiagnosisQuestion | null {
+  const merged = applyKnownSignals(tree, answers, known);
   for (const question of tree.questions) {
-    const answer = answers[question.id];
+    const answer = merged[question.id];
     if (answer === undefined) return question;
     // An answer we do not recognise settles nothing; ask the next question rather than trusting it.
     if (optionFor(question, answer)?.outcome) return null;
@@ -259,9 +384,11 @@ export function nextQuestion(
 export function outcomeOf(
   tree: CareerDiagnosisTree,
   answers: CareerDiagnosisAnswers,
+  known: CareerKnownSignals = {},
 ): CareerDiagnosisOutcome | null {
+  const merged = applyKnownSignals(tree, answers, known);
   for (const question of tree.questions) {
-    const answer = answers[question.id];
+    const answer = merged[question.id];
     if (answer === undefined) return null;
     const outcome = optionFor(question, answer)?.outcome;
     if (outcome) return outcome;

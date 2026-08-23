@@ -14,8 +14,10 @@
  */
 import {
   APPLY_NO_RESPONSE,
+  applyKnownSignals,
   nextQuestion,
   outcomeOf,
+  remainingQuestionCount,
   routesToFamily,
   type CareerDiagnosisAnswers,
 } from '../careerDiagnosis';
@@ -38,11 +40,17 @@ function walk(...values: string[]): CareerDiagnosisAnswers {
 describe('careerDiagnosis — the order', () => {
   it('opens on the target, because a broad target makes every later answer unreadable', () => {
     expect(nextQuestion(APPLY_NO_RESPONSE, {})).toBe(TARGET);
-    expect(TARGET.signal).toBe('target');
+    // The signal names are the PARTNER's since v1.2 (2026-08-23) — one vocabulary, his.
+    expect(TARGET.signal).toBe('targetClarity');
   });
 
   it('asks target → proof → access → process, and nothing else', () => {
-    expect(Q.map((q) => q.signal)).toEqual(['target', 'proof', 'access', 'searchProcess']);
+    expect(Q.map((q) => q.signal)).toEqual([
+      'targetClarity',
+      'visibleProofMissing',
+      'peopleAccess',
+      'searchHistorySufficient',
+    ]);
   });
 
   it('asks the proof question before the access question', () => {
@@ -203,5 +211,75 @@ describe('careerDiagnosis — the copy contract', () => {
       const values = question.options.map((o) => o.value);
       expect(new Set(values).size).toBe(values.length);
     }
+  });
+});
+
+/**
+ * LISTEN FIRST — the partner's v1.2 principle, and the thing he asked us to verify: that a mapping
+ * from free conversation to signals sits on this mechanism.
+ *
+ * A signal arrives already supported (a model classified what the person wrote, using his `means`
+ * field). The tree must then skip that question rather than asking somebody what they just said.
+ */
+describe('careerDiagnosis — what the person already told us', () => {
+  it('does not ask a question whose signal is already known', () => {
+    // "I'm applying for one kind of role" → targetClarity = clear. The target question is settled,
+    // so the next thing asked is the proof question.
+    const next = nextQuestion(APPLY_NO_RESPONSE, {}, { targetClarity: 'clear' });
+    expect(next).toBe(PROOF);
+  });
+
+  it('routes on a known signal alone, with nothing asked at all', () => {
+    // A broad target settles the diagnosis by itself, in his mapping and in ours.
+    const outcome = outcomeOf(APPLY_NO_RESPONSE, {}, { targetClarity: 'broad' });
+    expect(outcome).toEqual({ kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'DIRECTION_GAP' });
+    expect(nextQuestion(APPLY_NO_RESPONSE, {}, { targetClarity: 'broad' })).toBeNull();
+  });
+
+  it('skips several questions at once when the conversation covered them', () => {
+    const known = { targetClarity: 'clear', visibleProofMissing: 'available', peopleAccess: 'yes' };
+    expect(nextQuestion(APPLY_NO_RESPONSE, {}, known)).toBe(PROCESS);
+    expect(remainingQuestionCount(APPLY_NO_RESPONSE, {}, known)).toBe(1);
+  });
+
+  it('ignores his `unknown` — "we could not tell" is not an answer', () => {
+    expect(nextQuestion(APPLY_NO_RESPONSE, {}, { targetClarity: 'unknown' })).toBe(TARGET);
+  });
+
+  it('ignores a signal value no option declares', () => {
+    expect(nextQuestion(APPLY_NO_RESPONSE, {}, { peopleAccess: 'sometimes' })).toBe(TARGET);
+  });
+
+  it('ignores a signal this tree never asks about', () => {
+    expect(nextQuestion(APPLY_NO_RESPONSE, {}, { realisticCapacity: 'light' })).toBe(TARGET);
+  });
+
+  it('lets a real answer win over an inferred one', () => {
+    // The person tapped "one clear kind of role"; a classifier had guessed "several". What they
+    // chose stands — a guess with a confidence never overrides a person's own answer.
+    const answers = { [TARGET.id]: 'clear' };
+    const merged = applyKnownSignals(APPLY_NO_RESPONSE, answers, { targetClarity: 'broad' });
+    expect(merged[TARGET.id]).toBe('clear');
+    expect(outcomeOf(APPLY_NO_RESPONSE, answers, { targetClarity: 'broad' })).not.toEqual({
+      kind: 'family',
+      subtype: 'LAND_ROLE',
+      bottleneck: 'DIRECTION_GAP',
+    });
+  });
+
+  it('counts what is left to ask, so a coach can say how much is coming', () => {
+    expect(remainingQuestionCount(APPLY_NO_RESPONSE, {})).toBe(4);
+    expect(remainingQuestionCount(APPLY_NO_RESPONSE, {}, { targetClarity: 'broad' })).toBe(0);
+  });
+
+  it('every option that can be inferred declares a value in his vocabulary', () => {
+    // A tree whose options carry no `signalValue` cannot be listened into — the mapping would exist
+    // on paper and do nothing. Only the two answers that mean "I cannot do this work yet" and "I
+    // reach interviews" are deliberately not inferable: they belong to signals this question does
+    // not carry (his C4 and C7), and guessing them from C5/C8 would be a mis-route.
+    const inferable = APPLY_NO_RESPONSE.questions.flatMap((q) =>
+      q.options.filter((o) => o.signalValue !== undefined),
+    );
+    expect(inferable.length).toBeGreaterThanOrEqual(APPLY_NO_RESPONSE.questions.length);
   });
 });

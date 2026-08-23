@@ -1,0 +1,31 @@
+{
+  "version": "1.2",
+  "status": "Integration-focused handoff",
+  "alreadyInApp": {
+    "journeyCount": 18,
+    "goalFamilies": [
+      "CAR_G01",
+      "CAR_G02",
+      "CAR_G03",
+      "CAR_G08",
+      "CAR_G09",
+      "CAR_G10"
+    ],
+    "contentAction": "No resend required unless Guy wants diffs; these are already in the app."
+  },
+  "nextBatch": {
+    "journeyCount": 9,
+    "goalFamilies": [
+      "CAR_G11",
+      "CAR_G12",
+      "CAR_G13"
+    ],
+    "sourceFile": "06_G11_G13_9_Journeys_EN_v1.0.json",
+    "correction": "CAR_G12 primaryBottleneck is INTERVIEW_STAGE_GAP."
+  },
+  "totalRoutableScopeAfterBatch": 27,
+  "futureCareerContent": {
+    "status": "Hold for later review; do not ask for ingestion yet.",
+    "note": "Additional Career Journeys authored on our side are intentionally outside this handoff because diagnosis/routing is the current bottleneck."
+  }
+}

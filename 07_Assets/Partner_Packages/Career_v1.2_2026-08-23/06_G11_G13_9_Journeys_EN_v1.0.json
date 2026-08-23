@@ -1,0 +1,734 @@
+{
+  "sourceLanguage": "English",
+  "note": "New authoring source for the next integration batch. Journeys carry arcs only; cadence is intentionally absent.",
+  "families": [
+    {
+      "goalFamilyId": "CAR_G11",
+      "goal": "Build a job search I can keep going",
+      "subtype": "LAND_ROLE",
+      "primaryBottleneck": "SEARCH_PROCESS_GAP",
+      "axis": {
+        "id": "search_structure",
+        "placementQuestion": "Which kind of search is most realistic for you to keep going: a very explicit process, a simple weekly rhythm, or a flexible minimum that still works in a busy week?"
+      },
+      "journeys": [
+        {
+          "authoringJourneyKey": "search_staged_pipeline",
+          "axisPosition": "high_structure",
+          "title": "Build a job-search pipeline you can repeat",
+          "description": "Turn the search into a small explicit process, find the point that breaks, simplify it, and create a minimum version for busy weeks.",
+          "durationDays": 28,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I have a simple, explicit search process"
+            },
+            {
+              "order": 1,
+              "title": "I ran it once and found where it breaks"
+            },
+            {
+              "order": 2,
+              "title": "I simplified one weak point and ran it again"
+            },
+            {
+              "order": 3,
+              "title": "I have a minimum version for a busy week"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Write the four stages of your search",
+              "description": "Finding opportunities, checking fit, applying or reaching out, and following up is enough.",
+              "isStarterStep": true,
+              "estimatedDuration": 8,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Choose one small weekly target for each stage",
+              "description": "Set targets for a normal week, not an ideal one.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Run the process once",
+              "description": "The goal is to test the process, not to do a large volume of searching.",
+              "isStarterStep": false,
+              "estimatedDuration": 35,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Mark where the process broke down",
+              "description": "Choose one bottleneck, not five.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Simplify one stage",
+              "description": "Use a template, a short checklist, or a clearer rule for what you will not pursue.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Run the process again",
+              "description": "Check whether the revised version is easier to execute.",
+              "isStarterStep": false,
+              "estimatedDuration": 35,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Define the minimum version for a busy week",
+              "description": "What is the smallest version that keeps the search alive without creating overload?",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 3
+            }
+          ]
+        },
+        {
+          "authoringJourneyKey": "search_simple_rhythm",
+          "axisPosition": "simple_rhythm",
+          "title": "Build a simple weekly job-search rhythm",
+          "description": "Replace a complicated system with two small search moments you can realistically repeat.",
+          "durationDays": 28,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I chose two realistic search moments"
+            },
+            {
+              "order": 1,
+              "title": "I completed one full week of that rhythm"
+            },
+            {
+              "order": 2,
+              "title": "I adjusted one thing based on what worked"
+            },
+            {
+              "order": 3,
+              "title": "I have a rhythm I can keep using"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose two realistic search moments",
+              "description": "Pick windows that are likely to happen in your real week.",
+              "isStarterStep": true,
+              "estimatedDuration": 8,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Give each moment one job",
+              "description": "For example: one moment to find and filter, one to apply or reach out.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Do both search moments this week",
+              "description": "Missing one does not turn the week into a reset.",
+              "isStarterStep": false,
+              "estimatedDuration": 40,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Notice what made one moment easier than the other",
+              "description": "Time of day, task type, preparation, or something else.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Change one detail only",
+              "description": "Do not redesign the whole rhythm.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Do the two search moments again",
+              "description": "Check whether the adjusted rhythm is easier to keep.",
+              "isStarterStep": false,
+              "estimatedDuration": 40,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Choose the rhythm you will carry forward",
+              "description": "Decide what stays stable and what is allowed to move.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 3
+            }
+          ]
+        },
+        {
+          "authoringJourneyKey": "search_minimum_effective",
+          "axisPosition": "minimum_effective",
+          "title": "Keep the search alive even in a very busy week",
+          "description": "Start from a minimum action that is genuinely sustainable, then add only when capacity is available.",
+          "durationDays": 28,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I defined one minimum search action"
+            },
+            {
+              "order": 1,
+              "title": "I kept the search alive without overloading the week"
+            },
+            {
+              "order": 2,
+              "title": "I adjusted the minimum to what is actually sustainable"
+            },
+            {
+              "order": 3,
+              "title": "I have a return rule after a missed week"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose a search action that takes ten minutes or less",
+              "description": "Pick something small enough to keep the search alive.",
+              "isStarterStep": true,
+              "estimatedDuration": 5,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Do it once",
+              "description": "The minimum counts as success on its own.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Add one more action only if there is capacity",
+              "description": "Do not turn a good week into the new minimum.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Write down what was actually possible",
+              "description": "Use the time and energy you really had, not what you hoped to have.",
+              "isStarterStep": false,
+              "estimatedDuration": 8,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Adjust the minimum if it is still too large",
+              "description": "The minimum is supposed to protect continuity, not prove commitment.",
+              "isStarterStep": false,
+              "estimatedDuration": 8,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Use the same rule in another week",
+              "description": "Minimum first; add more only if the week allows it.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Write a return rule for a missed week",
+              "description": "Return to the minimum instead of trying to make up everything you missed.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "goalFamilyId": "CAR_G12",
+      "goal": "Get better at interviews when I am reaching interviews but not progressing",
+      "subtype": "LAND_ROLE",
+      "primaryBottleneck": "INTERVIEW_STAGE_GAP",
+      "axis": {
+        "id": "interview_learning_method",
+        "placementQuestion": "What would help you learn most right now: analyzing a real interview, practicing your answers, or preparing a small bank of strong examples from your experience?"
+      },
+      "journeys": [
+        {
+          "authoringJourneyKey": "interview_analysis",
+          "axisPosition": "analysis_first",
+          "title": "Learn from a real interview and improve one pattern",
+          "description": "Reconstruct a recent interview, separate evidence from guesses, choose one pattern to change, and test that change in the next interview.",
+          "durationDays": 21,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I reconstructed one recent interview"
+            },
+            {
+              "order": 1,
+              "title": "I identified one interview pattern worth changing"
+            },
+            {
+              "order": 2,
+              "title": "I practiced one targeted change"
+            },
+            {
+              "order": 3,
+              "title": "I tested the change in a real interview"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Reconstruct the last interview in three moments",
+              "description": "One moment that went well, one that felt weak, and one question that surprised you.",
+              "isStarterStep": true,
+              "estimatedDuration": 10,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Separate what you know from what you are guessing",
+              "description": "For example, 'I spoke for four minutes' is evidence; 'they were bored' is a guess.",
+              "isStarterStep": false,
+              "estimatedDuration": 12,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Compare with any real feedback you have",
+              "description": "If you have no feedback, do not invent it.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Choose one pattern to improve",
+              "description": "For example: answers that run too long, weak examples, or unclear structure.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Prepare one small change",
+              "description": "For example: a three-part answer structure or one stronger example.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Practice one or two questions with the change",
+              "description": "A short rehearsal is enough.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Use the change in your next interview",
+              "description": "Measure whether the pattern changed, not only whether you got an offer.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 3
+            }
+          ]
+        },
+        {
+          "authoringJourneyKey": "interview_practice",
+          "axisPosition": "practice_first",
+          "title": "Improve interview performance through short practice",
+          "description": "Create a baseline, improve one answer at a time, get focused feedback, and use the new structure in a real interview.",
+          "durationDays": 21,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I created a baseline for two interview answers"
+            },
+            {
+              "order": 1,
+              "title": "I improved the clarity and evidence in one answer"
+            },
+            {
+              "order": 2,
+              "title": "I practiced and got focused feedback"
+            },
+            {
+              "order": 3,
+              "title": "I used the change in a real interview"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose two interview questions that keep coming up",
+              "description": "Use questions you have actually been asked.",
+              "isStarterStep": true,
+              "estimatedDuration": 8,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Answer both once without special preparation",
+              "description": "This is your baseline.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Check one answer for three things",
+              "description": "Is it clear, focused, and supported by a concrete example?",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Build a shorter version of that answer",
+              "description": "Keep the story true; remove details that do not help the point.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Practice the two questions again",
+              "description": "See whether you can get to the point faster.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Ask one person for focused feedback on one answer",
+              "description": "Ask what they understood about your ability from the answer.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Use the structure in your next interview",
+              "description": "Right after the interview, note whether it was easier to stay focused.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 3
+            }
+          ]
+        },
+        {
+          "authoringJourneyKey": "interview_story_bank",
+          "axisPosition": "story_bank",
+          "title": "Build a small bank of examples you can retrieve under pressure",
+          "description": "Organize real experience around the abilities the target role looks for, then practice retrieving the right example when the question changes.",
+          "durationDays": 21,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I mapped real examples to the abilities the target role requires"
+            },
+            {
+              "order": 1,
+              "title": "I turned those examples into concise interview evidence"
+            },
+            {
+              "order": 2,
+              "title": "I practiced retrieving the right example for different questions"
+            },
+            {
+              "order": 3,
+              "title": "I used at least one example in a real interview"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose three abilities that repeat across your target roles",
+              "description": "For example: stakeholder management, prioritization, or process improvement.",
+              "isStarterStep": true,
+              "estimatedDuration": 8,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Find one real story for each ability",
+              "description": "Use an example with your action and a real outcome or change.",
+              "isStarterStep": false,
+              "estimatedDuration": 25,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Reduce each story to four parts",
+              "description": "Context, your action, a trade-off or decision, and the result or learning.",
+              "isStarterStep": false,
+              "estimatedDuration": 25,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Choose the weakest story",
+              "description": "Do not rewrite all of them at once.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Strengthen it with evidence you already have",
+              "description": "Add a concrete decision, action, or outcome without inventing numbers.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Practice retrieving the stories from different questions",
+              "description": "The goal is flexible retrieval, not memorization.",
+              "isStarterStep": false,
+              "estimatedDuration": 20,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Use at least one story in your next interview",
+              "description": "Afterward, note whether it was easier to retrieve a strong example in the moment.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "goalFamilyId": "CAR_G13",
+      "goal": "Return to action after repeated rejection",
+      "subtype": "LAND_ROLE",
+      "primaryBottleneck": "SELF_EFFICACY_PERSISTENCE_GAP",
+      "axis": {
+        "id": "momentum_rebuild",
+        "placementQuestion": "What would help you return to action most: starting extremely small, following a short explicit return path, or rebuilding one piece of competence evidence before going back out?"
+      },
+      "journeys": [
+        {
+          "authoringJourneyKey": "rejection_minimum_action",
+          "axisPosition": "minimum_action",
+          "title": "Return to the search through actions small enough to start",
+          "description": "Restore movement before trying to fix the whole search, then create a simple return rule for the next rejection.",
+          "durationDays": 21,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I returned to one small search action"
+            },
+            {
+              "order": 1,
+              "title": "I proved I can restart without a burst of effort"
+            },
+            {
+              "order": 2,
+              "title": "I carried a small search rhythm into another period"
+            },
+            {
+              "order": 3,
+              "title": "I have a return rule for the next rejection"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose one search action that takes ten minutes or less",
+              "description": "Pick something small enough that it does not require getting fully 'back into search mode'.",
+              "isStarterStep": true,
+              "estimatedDuration": 5,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Do it once",
+              "description": "The goal is movement, not fixing the entire search.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Choose one more action at the same difficulty",
+              "description": "Keep it deliberately small.",
+              "isStarterStep": false,
+              "estimatedDuration": 5,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Do that action too",
+              "description": "Notice what was easier than you expected.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Choose two short search moments for the next period",
+              "description": "Do not raise the load quickly just because restarting went well.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Complete at least one of them",
+              "description": "Missing the other one is not a reset.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Write your return rule for the next rejection",
+              "description": "Return to one small action instead of trying to compensate for everything.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 3
+            }
+          ]
+        },
+        {
+          "authoringJourneyKey": "rejection_structured_return",
+          "axisPosition": "structured_return",
+          "title": "Return to the search through a short, explicit restart path",
+          "description": "Choose two familiar return actions, complete them without compensating for lost time, and carry one small action into the next period.",
+          "durationDays": 21,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I have a two-action return path"
+            },
+            {
+              "order": 1,
+              "title": "I completed both return actions without trying to make up everything I missed"
+            },
+            {
+              "order": 2,
+              "title": "I carried the search into another period at a small load"
+            },
+            {
+              "order": 3,
+              "title": "I have a clear return rule for the next rejection"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose two search actions you already know how to do",
+              "description": "For example: one outreach and checking two roles. Do not add a new preparation project.",
+              "isStarterStep": true,
+              "estimatedDuration": 8,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Put them in the order that is easiest to start",
+              "description": "The goal is a simple entry path, not a full search plan.",
+              "isStarterStep": false,
+              "estimatedDuration": 5,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Complete the first return action",
+              "description": "Do not add extra actions to make up for lost time.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Complete the second return action",
+              "description": "Keep it the same size even if the week is busy.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Choose one search action for the next period",
+              "description": "Keep it small enough that it does not require a burst of motivation.",
+              "isStarterStep": false,
+              "estimatedDuration": 8,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Complete the action you chose",
+              "description": "The goal is continuity into another period, not higher volume.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Write the return rule you will use next time",
+              "description": "For example: after a rejection, return to one of the two known actions instead of trying to compensate for everything.",
+              "isStarterStep": false,
+              "estimatedDuration": 8,
+              "milestoneOrder": 3
+            }
+          ]
+        },
+        {
+          "authoringJourneyKey": "rejection_mastery_rebuild",
+          "axisPosition": "mastery_rebuild",
+          "title": "Rebuild one piece of competence evidence, then return to the market",
+          "description": "Restore a concrete sense of capability through one small proof action, then reconnect it immediately to real search activity.",
+          "durationDays": 21,
+          "milestones": [
+            {
+              "order": 0,
+              "title": "I identified evidence that my capability did not disappear with the rejection"
+            },
+            {
+              "order": 1,
+              "title": "I created one small, usable piece of competence evidence"
+            },
+            {
+              "order": 2,
+              "title": "I used it in a real search action"
+            },
+            {
+              "order": 3,
+              "title": "I returned to outward action with a rule that protects competence"
+            }
+          ],
+          "steps": [
+            {
+              "title": "Choose one thing from the recent search that still proves growth or capability",
+              "description": "For example: an interview you reached, a skill you used, a connection you built, or a piece of work you improved.",
+              "isStarterStep": true,
+              "estimatedDuration": 8,
+              "milestoneOrder": 0
+            },
+            {
+              "title": "Choose one small competence action you control",
+              "description": "Pick something that can produce evidence, not just more preparation.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 0,
+              "dependsOnStepIndex": 0
+            },
+            {
+              "title": "Bring it to a usable version",
+              "description": "Aim for usable, not perfect.",
+              "isStarterStep": false,
+              "estimatedDuration": 30,
+              "milestoneOrder": 1
+            },
+            {
+              "title": "Use it in one real search action",
+              "description": "Do not let preparation become avoidance.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Notice what changed in your sense of readiness",
+              "description": "You do not need fear or doubt to disappear before acting.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 2
+            },
+            {
+              "title": "Do one more outward search action",
+              "description": "Keep the load small enough to remain sustainable.",
+              "isStarterStep": false,
+              "estimatedDuration": 15,
+              "milestoneOrder": 3
+            },
+            {
+              "title": "Choose one rule for protecting competence during rejection",
+              "description": "For example: use one small proof-building action when needed, without stopping the search itself.",
+              "isStarterStep": false,
+              "estimatedDuration": 10,
+              "milestoneOrder": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

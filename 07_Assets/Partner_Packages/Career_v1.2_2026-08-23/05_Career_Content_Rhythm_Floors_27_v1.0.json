@@ -1,0 +1,362 @@
+{
+  "version": "1.0",
+  "scope": "27 Career Journeys: the 18 already in app plus G11–G13",
+  "principle": "The library Journey carries an arc, not a cadence. These are content floors only: invariants below which the arc stops meaning what it claims.",
+  "schedulerRule": "The coach chooses rate from profile and available time. When capacity conflicts with a floor, lengthen the Journey rather than drop below the floor.",
+  "journeyConstraints": {
+    "career_direction_clarity_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_direction_action_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_direction_hybrid": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_two_options_criteria_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_two_options_test_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        },
+        {
+          "type": "distinct_evidence_requirement",
+          "rule": "Complete a real micro-test for each option before the comparison/choice Milestone."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_two_options_conversation_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        },
+        {
+          "type": "distinct_evidence_requirement",
+          "rule": "Get reality evidence about both options before the choice Milestone; do not infer one option from a conversation about the other."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_fit_test_work_sample": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_fit_test_conversation": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        },
+        {
+          "type": "minimum_distinct_sources",
+          "rule": "Use at least two distinct perspectives before treating conversational evidence as a pattern."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "career_fit_test_real_context": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        },
+        {
+          "type": "real_context_before_conclusion",
+          "rule": "The real-context task and feedback must occur before the fit conclusion Milestone."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "job_target_criteria_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "job_target_postings_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "job_target_conversation_first": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "proof_extract_existing": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "proof_build_artifact": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        },
+        {
+          "type": "feedback_before_use",
+          "rule": "Get at least one relevance/clarity check before treating the artifact as usable proof."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "proof_role_story_translation": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "This arc is made of discrete evidence/action Steps; content does not require a fixed weekly cadence."
+        },
+        {
+          "type": "listener_check",
+          "rule": "At least one story should be tested with another person before the set is treated as ready."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "access_warm_network": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "The arc does not require a fixed weekly cadence; it requires real access attempts."
+        },
+        {
+          "type": "minimum_attempts",
+          "rule": "Make at least two genuine warm-contact attempts before judging the channel unusable."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "access_repeated_community": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "The arc does not require a fixed weekly cadence; it requires real access attempts."
+        },
+        {
+          "type": "separate_occasions",
+          "rule": "Community exposure must happen on at least two separate occasions; one event is not enough to test a repeated-community route."
+        },
+        {
+          "type": "time_conflict",
+          "rule": "If event timing makes this impossible inside the default duration, extend the Journey rather than collapse the two occasions into one."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "access_targeted_conversations": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "The arc does not require a fixed weekly cadence; it requires real access attempts."
+        },
+        {
+          "type": "minimum_attempts",
+          "rule": "Make at least two targeted outreach attempts before evaluating the route."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "search_staged_pipeline": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "minimum_repetitions",
+          "rule": "Run the search process at least twice before declaring the revised pipeline sustainable."
+        },
+        {
+          "type": "separate_periods",
+          "rule": "The two runs should occur on separate search occasions; if capacity is low, extend the Journey rather than count one long session as two runs."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "search_simple_rhythm": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "minimum_weekly_touches",
+          "rule": "During the test phase, complete two distinct search moments in a week."
+        },
+        {
+          "type": "minimum_observation_window",
+          "rule": "Repeat the rhythm across at least two separate weeks before the final sustainability Milestone."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "search_minimum_effective": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "minimum_weekly_touches",
+          "rule": "Complete at least one minimum search action in each test week."
+        },
+        {
+          "type": "minimum_observation_window",
+          "rule": "Test the minimum across at least two separate weeks before finalizing the return rule."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "interview_analysis": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "There is no fixed weekly cadence requirement."
+        },
+        {
+          "type": "real_interview_required",
+          "rule": "The final application Milestone requires a real target-relevant interview. If no interview occurs in the default duration, extend the Journey; do not substitute practice alone for that Milestone."
+        },
+        {
+          "type": "evidence_order",
+          "rule": "Analyze one real interview before selecting the improvement to practice."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "interview_practice": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "There is no fixed weekly cadence requirement."
+        },
+        {
+          "type": "real_interview_required",
+          "rule": "The final application Milestone requires a real target-relevant interview. If no interview occurs in the default duration, extend the Journey; do not substitute practice alone for that Milestone."
+        },
+        {
+          "type": "practice_before_real_test",
+          "rule": "Complete at least one deliberate practice round before the next real interview."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "interview_story_bank": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "no_weekly_frequency_floor",
+          "rule": "There is no fixed weekly cadence requirement."
+        },
+        {
+          "type": "real_interview_required",
+          "rule": "The final application Milestone requires a real target-relevant interview. If no interview occurs in the default duration, extend the Journey; do not substitute practice alone for that Milestone."
+        },
+        {
+          "type": "retrieval_practice",
+          "rule": "Practice retrieving stories against more than one question before the real interview test."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "rejection_minimum_action": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "minimum_distinct_actions",
+          "rule": "Complete at least two small search actions on separate occasions before calling momentum restored."
+        },
+        {
+          "type": "follow_on_period",
+          "rule": "Complete at least one additional search action in a later week/period before finalizing the return rule."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "rejection_structured_return": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "minimum_distinct_actions",
+          "rule": "Complete the two return actions as separate actions rather than one bundled session."
+        },
+        {
+          "type": "minimum_observation_window",
+          "rule": "Show continuity into a later week/period before the final return-rule Milestone."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    },
+    "rejection_mastery_rebuild": {
+      "cadenceInLibrary": null,
+      "advisoryFloors": [
+        {
+          "type": "outward_action_required",
+          "rule": "After the competence-building proof action, reconnect it to the market with at least two outward search actions before completion."
+        }
+      ],
+      "capacityConflictRule": "Lengthen the Journey rather than remove an invariant that is necessary for the arc to mean what it claims."
+    }
+  }
+}

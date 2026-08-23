@@ -1,0 +1,376 @@
+{
+  "version": "1.2",
+  "language": "English source; coach translates at runtime",
+  "principles": [
+    "Listen before asking: do not ask a question when the opening message already supports a signal value with enough confidence.",
+    "Ask in natural language; answerKinds are classifier guidance, not mandatory UI cards.",
+    "The means field is the semantic contract for interpreting free-text answers.",
+    "Do not force a value when the answer does not support one. Use unknown where the signal allows it, or ask one high-information follow-up.",
+    "Stop when enough signals exist to change Goal-Family routing and Journey selection."
+  ],
+  "coreDiagnosisQuestions": [
+    {
+      "id": "C1",
+      "question": "How clear are you about the direction or kind of role you are aiming for right now?",
+      "signal": "careerDirectionClarity",
+      "askWhen": "The opening message does not already make direction clarity obvious.",
+      "answerKinds": {
+        "unclear": {
+          "means": "The person cannot name one coherent direction or role family, names several materially different possibilities, or says the main task is figuring out what they want next.",
+          "value": "unclear"
+        },
+        "partial": {
+          "means": "The person has one or two plausible directions but is still comparing, testing, or unable to choose between them.",
+          "value": "partial"
+        },
+        "clear": {
+          "means": "The person can name one reasonably coherent direction or role family and describe the kind of work they are trying to move toward.",
+          "value": "clear"
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "question": "Are you already actively looking or applying for work, or are you still deciding and preparing?",
+      "signal": "activeJobSearch",
+      "askWhen": "The opening message does not already show whether an active search is underway.",
+      "answerKinds": {
+        "active": {
+          "means": "The person is currently applying, reaching out, interviewing, or otherwise pursuing external roles now.",
+          "value": "yes"
+        },
+        "not_active": {
+          "means": "The person is still choosing a direction, preparing, building readiness, or thinking about a future move without an active search yet.",
+          "value": "no"
+        }
+      }
+    },
+    {
+      "id": "C3",
+      "question": "What kinds of roles are you applying for right now?",
+      "signal": "targetClarity",
+      "askWhen": "activeJobSearch=yes.",
+      "answerKinds": {
+        "broad": {
+          "means": "Applications span materially different role families, the target changes from posting to posting, or the person cannot describe one reasonably coherent target.",
+          "value": "broad"
+        },
+        "clear": {
+          "means": "Most current applications belong to one reasonably defined role family and the person can explain what that target is.",
+          "value": "clear"
+        }
+      }
+    },
+    {
+      "id": "C4",
+      "question": "Looking at the work you want to do next, what have you already done that is genuinely similar?",
+      "signal": "existingRelevantExperience",
+      "askWhen": "A target direction or role is clear enough to compare against.",
+      "answerKinds": {
+        "yes": {
+          "means": "The person can point to at least one concrete example from work, a project, volunteering, study, or an adjacent role where they performed a meaningful part of the target work.",
+          "value": "yes"
+        },
+        "no": {
+          "means": "The person cannot point to a real example of doing the core target work yet; the gap is likely capability or first exposure rather than presentation alone.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "The answer is too vague to tell whether the experience is actually relevant, or the person is unsure what the target work requires.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "C5",
+      "question": "When you do have relevant experience, how easy is it to show that with a concrete example someone else could understand?",
+      "signal": "visibleProofMissing",
+      "askWhen": "existingRelevantExperience=yes.",
+      "answerKinds": {
+        "missing": {
+          "means": "The person says they can do the work but their CV/profile only lists responsibilities, their strongest examples are hard to explain or inaccessible, or they struggle to make the evidence credible to someone who was not there.",
+          "value": "yes"
+        },
+        "available": {
+          "means": "The person already has concrete, understandable examples or artifacts that make the relevant ability visible to an outsider.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "There is not enough detail yet to judge whether the problem is missing proof or something else.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "C6",
+      "question": "How much access do you have to people in the field or to real conversations around the opportunities you want?",
+      "signal": "peopleAccess",
+      "askWhen": "The route may depend on opportunity/access rather than target or proof.",
+      "answerKinds": {
+        "yes": {
+          "means": "The person can name relevant people, communities, former colleagues, warm connections, or realistic channels through which a real conversation or introduction can happen.",
+          "value": "yes"
+        },
+        "no": {
+          "means": "The search depends almost entirely on anonymous applications or passive browsing, and the person cannot currently name realistic people or channels they can reach.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "The person has not tried to use people/channels yet or cannot tell what access is realistically available.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "C7",
+      "question": "Have you had a recent interview for the kind of role you are trying to get?",
+      "signal": "recentInterviewEvidence",
+      "askWhen": "The user reports interview difficulty or the coach needs evidence about the interview stage.",
+      "answerKinds": {
+        "yes": {
+          "means": "There is a recent, target-relevant interview the person can still reconstruct well enough to learn from.",
+          "value": "yes"
+        },
+        "no": {
+          "means": "There has not been a recent interview for the current target, or the available interview is too old or too different to be useful evidence.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "It is unclear whether the interview was recent or relevant enough to the current target.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "C8",
+      "question": "Have you done enough focused searching with the same target to see a real pattern yet?",
+      "signal": "searchHistorySufficient",
+      "askWhen": "The coach is tempted to diagnose a search failure from a small or mixed sample.",
+      "answerKinds": {
+        "yes": {
+          "means": "There have been several comparable attempts with a reasonably stable target and process, enough that the same failure point has repeated and is not just one isolated outcome.",
+          "value": "yes"
+        },
+        "no": {
+          "means": "There are too few attempts, the target has changed too much, or the search actions are too different to support a reliable diagnosis yet.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "The person cannot reconstruct enough of the recent search to tell whether a stable pattern exists.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "C9",
+      "question": "After what you have tried, does this still feel like something you genuinely want to pursue?",
+      "signal": "targetStillMeaningful",
+      "askWhen": "Persistence, repeated rejection, or a stalled transition is becoming the main issue.",
+      "answerKinds": {
+        "yes": {
+          "means": "The person still wants the outcome for reasons that matter to them, even if the current tactic or pace needs to change.",
+          "value": "yes"
+        },
+        "no": {
+          "means": "The person is mainly continuing because of sunk cost, external pressure, identity, or fear of stopping, and would not clearly choose the target again now.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "The answer is genuinely ambivalent or the person cannot separate desire for the goal from pressure around it.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "question": "How much time and energy can you realistically protect for this in a normal week?",
+      "signal": "realisticCapacity",
+      "source": "core_onboarding_or_interview_if_unknown",
+      "askWhen": "The opening message and onboarding do not already answer it.",
+      "answerKinds": {
+        "very_light": {
+          "means": "The person can reliably offer only very short bursts and cannot protect a full hour most weeks.",
+          "value": "very_light"
+        },
+        "light": {
+          "means": "The person can usually protect up to about one hour per week.",
+          "value": "light"
+        },
+        "moderate": {
+          "means": "The person can usually protect about one to three hours per week.",
+          "value": "moderate"
+        },
+        "substantial": {
+          "means": "The person can usually protect more than three hours per week.",
+          "value": "substantial"
+        },
+        "variable": {
+          "means": "Capacity swings enough from week to week that one stable weekly number would be misleading.",
+          "value": "variable"
+        }
+      }
+    },
+    {
+      "id": "C11",
+      "question": "For this goal, would involving other people make it easier to move, or would it mostly add friction?",
+      "signal": "socialSupportFit",
+      "askWhen": "A Journey may rely on conversations, feedback, community, accountability, or another person's involvement.",
+      "answerKinds": {
+        "helpful": {
+          "means": "The person generally finds that the right other person makes action easier, clearer, or more likely to happen.",
+          "value": "helpful"
+        },
+        "neutral": {
+          "means": "Other people are acceptable but are not an important source of momentum or friction.",
+          "value": "neutral"
+        },
+        "friction": {
+          "means": "Coordination, exposure, asking for help, or being observed tends to make the person delay, avoid, or disengage from this goal.",
+          "value": "friction"
+        },
+        "depends": {
+          "means": "Whether people help depends strongly on who is involved or on the type of interaction.",
+          "value": "depends"
+        }
+      }
+    }
+  ],
+  "conditionalRoutingQuestions": [
+    {
+      "id": "T1",
+      "question": "What kind of transition are you actually making: a new field or function, a new industry in the same kind of work, a new function in the same industry, returning after a break, or planning an exit?",
+      "signal": "transitionType",
+      "answerKinds": {
+        "new_field_or_function": {
+          "means": "The target changes the core professional field or function.",
+          "value": "new_field_or_function"
+        },
+        "new_industry_same_function": {
+          "means": "The person wants essentially the same kind of work in a different industry.",
+          "value": "new_industry_same_function"
+        },
+        "new_function_same_industry": {
+          "means": "The industry stays roughly the same but the function/role changes.",
+          "value": "new_function_same_industry"
+        },
+        "reentry": {
+          "means": "The person is returning to the labor market after a meaningful break.",
+          "value": "reentry"
+        },
+        "planned_exit": {
+          "means": "The immediate goal is to leave the current role in a staged, non-panic way before or while deciding the next move.",
+          "value": "planned_exit"
+        }
+      }
+    },
+    {
+      "id": "T2",
+      "question": "What is the main bridge missing right now: ability to do the work, proof that you can do it, access to the right people or opportunities, clarity about the direction, or a life constraint that has to be respected first?",
+      "signal": "transitionPrimaryGap",
+      "answerKinds": {
+        "capability": {
+          "means": "The person genuinely cannot yet perform enough of the target work at a usable baseline.",
+          "value": "capability"
+        },
+        "proof": {
+          "means": "The person can do relevant work but cannot yet make that ability visible or credible to the target market.",
+          "value": "proof"
+        },
+        "access": {
+          "means": "The target and ability are plausible, but the person lacks realistic channels to people, opportunities, or exposure.",
+          "value": "access"
+        },
+        "direction": {
+          "means": "The person is not yet clear enough on which transition target to build toward.",
+          "value": "direction"
+        },
+        "context_constraint": {
+          "means": "Time, money, caregiving, health, geography, legal/work status, or another real-world constraint currently determines feasibility more than content does.",
+          "value": "context_constraint"
+        }
+      }
+    },
+    {
+      "id": "G1",
+      "question": "Is there a specific next level, role, or promotion you are aiming for, or do you mainly want more growth in your current role?",
+      "signal": "concretePromotionTarget",
+      "answerKinds": {
+        "yes": {
+          "means": "The person can name a concrete next level/role/promotion target that exists in their context.",
+          "value": "yes"
+        },
+        "no": {
+          "means": "The person wants growth, learning, or more responsibility but is not pursuing one specific next level.",
+          "value": "no"
+        },
+        "unknown": {
+          "means": "The person suspects a next step exists but cannot yet define it clearly enough to route as a concrete promotion target.",
+          "value": "unknown"
+        }
+      }
+    },
+    {
+      "id": "G2",
+      "question": "What is actually blocking growth where you are now: not enough responsibility, a capability you still need, not enough visibility or access, or a limit in the role or workplace itself?",
+      "signal": "growthSubBottleneck",
+      "answerKinds": {
+        "responsibility_scope": {
+          "means": "The person is capable of more but their current scope does not give them enough ownership or stretch.",
+          "value": "responsibility_scope"
+        },
+        "capability": {
+          "means": "A real skill/capability gap prevents the next level of work.",
+          "value": "capability"
+        },
+        "access_visibility": {
+          "means": "The ability may exist, but the person lacks visibility, sponsorship, stakeholder access, or an opportunity to demonstrate it.",
+          "value": "access_visibility"
+        },
+        "context_constraint": {
+          "means": "The workplace or role itself does not offer a realistic path for the desired growth.",
+          "value": "context_constraint"
+        }
+      }
+    },
+    {
+      "id": "G3",
+      "question": "If the main problem is fit in your current role, what would most improve it: the mix of work you do, how you work with people, or how much learning and growth the role gives you?",
+      "signal": "currentRoleFitLever",
+      "answerKinds": {
+        "task_mix": {
+          "means": "The main mismatch is the type or proportion of tasks and responsibilities.",
+          "value": "task_mix"
+        },
+        "collaboration": {
+          "means": "The main mismatch is how the person works with colleagues, manager, stakeholders, or team interfaces.",
+          "value": "collaboration"
+        },
+        "learning_growth": {
+          "means": "The work is tolerable but feels stagnant because there is too little learning, stretch, or development.",
+          "value": "learning_growth"
+        },
+        "context_constraint": {
+          "means": "The problem is not realistically changeable through task, collaboration, or growth redesign inside the current context.",
+          "value": "context_constraint"
+        }
+      }
+    }
+  ],
+  "nonSignalPlanningPrompts": [
+    {
+      "purpose": "completion_state",
+      "question": "What would count as a real change here — something we could recognize in the world, not only feel?",
+      "note": "Planning/personalization prompt, not a fixed routing signal."
+    },
+    {
+      "purpose": "past_attempts",
+      "question": "What have you already tried around this, and what happened?",
+      "note": "Free-text evidence used to avoid repeating a failed tactic and to choose follow-ups; do not coerce it into one fixed signal."
+    },
+    {
+      "purpose": "constraints",
+      "question": "What does this plan have to respect to be realistic in your life right now?",
+      "note": "Store as free-text constraints and feasibility context. Domain-specific signals may be emitted when the answer clearly matches one."
+    }
+  ]
+}

@@ -4,6 +4,56 @@ Status: Living Document
 
 ---
 
+# 2026-08-24 — the bell, the Inbox, encrypted messages, and a coach that finally has a voice
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 2250 / 206 suites**.
+iOS build 6 and an installable Android build cut from this work.
+
+## The Notification Center
+
+The bell sits beside the mail button with its own count. One chronological list of what other PEOPLE
+did — cheer, nudge, friend request, Support-Circle invitation. Seen means a row actually reached the
+screen, not that the screen opened; a request stays actionable after it has been seen, because `new`
+and `unresolved` are different things. Accept is the one filled action; Decline is quiet text.
+
+## The Inbox, realigned
+
+Chats · Groups, visible and locked · Requests. The old mixed feed is gone: none of it was a message.
+The two surfaces now never count the same object, which is the rule that lets a badge mean something.
+
+## Messages nobody but two people can read
+
+X25519 + XSalsa20-Poly1305 per device, the secret half in the OS secure store, every message sealed
+twice — to the recipient and to the sender — so the server stores two sealed boxes and no key. RLS
+lets a participant see only their own conversations, refuses a send into a blocked one, and stops a
+sender marking their own message read. The schema has no column anywhere that could hold a plaintext
+body, deliberately.
+
+**Its limits are in the file, not implied:** one device per account, no forward secrecy, no key
+verification between people. A message this device cannot open says so and never shows ciphertext.
+
+**A bug caught before it reached anybody:** `tweetnacl` binds its random source at import and finds
+one in Node but not in Hermes — the first message on a real phone would have thrown, and no test
+would ever have seen it. Wired explicitly, with an all-zero check.
+
+## The coach's voice
+
+The Communication Style questionnaire has shipped since 2026-08-12 and changed nothing audible: the
+orchestrator was fixed to `steady`, and three of the four voices were empty stubs that resolved back
+to steady anyway. Both fixed — the user's choice now reaches the coach, and direct, warm and
+energizing are written from the PRD's §4, each carrying the limit §4 states for it.
+
+## The audit against the Engineering Bible
+
+Ran at the founder's request, against the Required/Avoid lists in all five files. Holding: no React
+in `core/`, SDK access confined to gateway files, no key in the client bundle, encryption at rest and
+in transit, minimisation on the outbound model call with a test asserting what may not travel,
+configuration-before-code, offline behaviour, and tests that cover refusals rather than only happy
+paths. **Not holding, and now recorded rather than assumed:** no monitoring of any kind, and no
+gradual rollout — every update reaches everyone at once. Four decisions taken over 23–24 August were
+missing from the Decision Log and are now written up with their alternatives and tradeoffs (D70–D72,
+E7).
+
 # 2026-08-23 — the privacy contract, seven more tools, eight rooms, and two real bugs
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 2199 / 202 suites** (from 2014 / 190).

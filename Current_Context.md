@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-23** — start at the **"⛳ START HERE — 2026-08-23"** block
+Last updated: **2026-08-24** — start at the **"⛳ START HERE — 2026-08-24"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
 history of the same session's earlier half. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
@@ -35,7 +35,48 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-23: the privacy contract, seven more tools, eight rooms, two real bugs
+# ⛳ START HERE — 2026-08-24: the bell, the Inbox, encrypted messages, and the coach's voice
+
+On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2250 / 206 suites**.
+Full detail: `00_Foundation/CHANGELOG.md`.
+
+## What shipped in this cycle
+
+**The Notification Center** — the bell beside the mail button, its own count, a chronological list of
+what other PEOPLE did. Seen means a row reached the screen, not that the screen opened.
+
+**The Inbox, realigned to his PRD** — Chats · Groups (visible, locked, "Soon") · Requests. Cheers,
+friend requests and Support-Circle invitations left for the bell, so the two counters can never claim
+the same object.
+
+**Direct messages, end-to-end encrypted.** X25519 + XSalsa20-Poly1305 per device, keys in the OS
+secure store, every message sealed twice so the server holds two sealed boxes and no key. The
+migration is applied to the project and has no column that could hold a plaintext body. Its limits
+are written in `core/messaging/crypto.ts`: one device per account, no forward secrecy, no key
+verification between people.
+
+**The coach speaks in the user's chosen voice** — the Communication Style PRD's Acceptance Criterion
+#4, missing since the questionnaire shipped. Three of the four voices were empty stubs; they are
+written now, each with the limit its §4 states.
+
+## ▶ Specs that are READY and still NOT built — with the reason, so nobody re-checks
+
+- **Account Inactivity Freeze** — needs the SERVER-authoritative evaluator its PRD specifies. The
+  shipped POC is a client-side approximation. Needs a backend job, not an afternoon.
+- **Dream Management** — the coach-led Dream authoring conversation. Its PRD says a joint founder
+  design session is required, and the open questions are still open.
+- **Coach Context Summaries** — approved, but its own §4 makes jurisdiction-specific legal review a
+  release gate, and it needs a consent flow the privacy policy does not exist to back yet.
+- **Weekly Review Contributions 02** — explicitly "not a build request"; seven open questions.
+- **Invite Friend** — the interim share IS shipped (Circle → Invite). Everything beyond it is blocked
+  on real authentication, backend linking and a web destination.
+- **Smart Notification Timing** — built and DARK behind `EXPO_PUBLIC_SMART_TIMING`. Turning it on
+  changes when notifications arrive, which is the founder's call and not an engineering one.
+- **Mirror Feedback** — complete except sending; its §18 blockers are four founder decisions.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-23: the privacy contract, seven more tools, eight rooms, two real bugs
 
 On `feat/buddy-3d-and-reminders`, committed and pushed, with `feat/native-media` MERGED IN.
 `tsc` clean, **jest 2230 / 204 suites**.

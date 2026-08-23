@@ -78,3 +78,27 @@ describe('sealing a message', () => {
     expect(JSON.stringify(sealed)).not.toContain('secret');
   });
 });
+
+/**
+ * The PRNG wiring — the bug a test suite running on Node would otherwise never see.
+ *
+ * `tweetnacl` binds its random source at import time. Node has Web Crypto so it finds one; Hermes
+ * does not, and without the explicit `setPRNG` in `crypto.ts` the first message sent on a real phone
+ * would throw "no PRNG". This asserts sealing works and produces real entropy in whatever
+ * environment the suite is running in.
+ */
+describe('the random source', () => {
+  it('produces high-entropy nonces rather than zeros', () => {
+    const alice = generateDeviceKeys();
+    const bob = generateDeviceKeys();
+    const sealed = seal('hi', alice.secretKey, alice.publicKey, bob.publicKey);
+    const nonceBytes = fromBase64(sealed.nonce);
+    expect(nonceBytes.length).toBe(24);
+    expect(nonceBytes.every((b) => b === 0)).toBe(false);
+  });
+
+  it('generates distinct keypairs, which a broken source would not', () => {
+    const pairs = new Set(Array.from({ length: 20 }, () => generateDeviceKeys().publicKey));
+    expect(pairs.size).toBe(20);
+  });
+});

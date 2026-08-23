@@ -25,7 +25,33 @@
  *
  * Pure TypeScript over `tweetnacl` — no React, no storage, no network. The key STORE is injected.
  */
+import * as ExpoCrypto from 'expo-crypto';
 import nacl from 'tweetnacl';
+
+/**
+ * GIVE TWEETNACL A REAL RANDOM SOURCE, before anything asks it for one.
+ *
+ * `tweetnacl` looks for Web Crypto at import time and, finding none, leaves itself with NO generator
+ * — every `randomBytes` then throws "no PRNG". Node has Web Crypto, so the test suite would never
+ * see it; Hermes does not, so the FIRST message sent on a real phone would have. This is exactly the
+ * class of bug a test cannot catch, which is why the source is wired here explicitly rather than
+ * assumed.
+ *
+ * The bytes come from `expo-crypto`'s `getRandomValues` — deliberately not `getRandomBytes`, which
+ * documents a `Math.random()` fallback while remote debugging is attached. An all-zero return means
+ * a stubbed or unlinked native module, and it throws rather than sealing a message with a nonce an
+ * attacker already knows.
+ */
+if (!(globalThis as { crypto?: { getRandomValues?: unknown } }).crypto?.getRandomValues) {
+  nacl.setPRNG((buffer, length) => {
+    const bytes = new Uint8Array(length);
+    ExpoCrypto.getRandomValues(bytes);
+    if (bytes.every((b) => b === 0)) {
+      throw new Error('messaging: the random source returned all-zero bytes');
+    }
+    buffer.set(bytes);
+  });
+}
 
 /** A device's keypair. The secret half must never be logged, synced or exported. */
 export interface DeviceKeyPair {

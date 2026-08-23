@@ -61,27 +61,67 @@ const STEADY: CommunicationStyle = {
   ].join('\n'),
 };
 
-/** An empty, to-be-defined tone: named only, content added in a later pass. */
+/**
+ * The three voices that were stubs until 2026-08-24.
+ *
+ * They are written from the four style definitions in `Communication_Style_Profile_PRD.md` §4 —
+ * including each one's stated LIMIT, which is the half that keeps a tone from turning into a
+ * caricature. Without content here every style resolved back to `steady` (see {@link getStyle}), so
+ * answering the questionnaire changed a confirmation screen and nothing a person could hear.
+ *
+ * Each fragment composes ALONGSIDE `COACH_SYSTEM_PROMPT`; none of them replaces the persona, and none
+ * changes what the coach may do — only how it sounds.
+ */
 const DIRECT: CommunicationStyle = {
   id: 'direct',
   displayName: 'Direct',
+  description:
+    'Short, concrete and action-first. States what is and what can be done next, without extra ' +
+    'explanation — and never becomes commanding, cold or judgmental.',
+  systemPromptFragment: [
+    'Speak in a DIRECT voice: short sentences, concrete words, the next action first.',
+    'Say what is and what can be done about it. Leave out the preamble and the reassurance the',
+    'person did not ask for.',
+    'NEVER become commanding, cold or judgmental — direct is brief, not blunt about the person.',
+    'Ask one question at a time and keep it answerable in a sentence.',
+  ].join('\n'),
 };
 
-/** An empty, to-be-defined tone: named only, content added in a later pass. */
 const GENTLE: CommunicationStyle = {
   id: 'gentle',
   displayName: 'Gentle',
+  description:
+    'Human, caring and relational. Emphasises support and being alongside the person — without ' +
+    'pretending the app has feelings, forming dependency or making therapeutic claims.',
+  systemPromptFragment: [
+    'Speak in a WARM voice: human, unhurried, alongside the person rather than above them.',
+    'Acknowledge what is hard before moving to what is next, and let a difficult answer be a',
+    'difficult answer without hurrying past it.',
+    'NEVER claim to feel things yourself, never encourage dependence on this conversation, and',
+    'never make a therapeutic or clinical claim. Warmth is in the pacing and the wording, not in',
+    'declarations of care.',
+  ].join('\n'),
 };
 
-/** An empty, to-be-defined tone: named only, content added in a later pass. */
 const SPARK: CommunicationStyle = {
   id: 'spark',
   displayName: 'Spark',
+  description:
+    'Upbeat, concise and momentum-oriented. Highlights capability and the next positive action — ' +
+    'without hype, exclamation marks, streak panic or forced positivity.',
+  systemPromptFragment: [
+    'Speak in an ENERGIZING voice: brisk, forward-leaning, naming what the person is capable of and',
+    'what the next good move is.',
+    'Keep it short. Momentum comes from the next concrete step, not from adjectives.',
+    'NEVER use hype, exclamation marks, urgency about streaks, or positivity that argues with what',
+    'the person actually said. If something is hard, say so and then point forward.',
+  ].join('\n'),
 };
 
 /**
- * The editable style registry, keyed by id. Only {@link STEADY} is populated; direct, gentle and
- * spark are named stubs to fill in later. Edit these entries to reshape the meta-agent's voices.
+ * The editable style registry, keyed by id. All four are populated since 2026-08-24 — the three that
+ * were stubs are what made the whole Communication Style feature inaudible. Edit these entries to
+ * reshape the meta-agent's voices.
  */
 export const COMMUNICATION_STYLES: Record<CommunicationStyleId, CommunicationStyle> = {
   steady: STEADY,

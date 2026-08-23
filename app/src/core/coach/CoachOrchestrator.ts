@@ -64,7 +64,7 @@ import {
   buildLocaleDirective,
   buildTriageDirective,
 } from './coachPrompts';
-import { DEFAULT_STYLE_ID, getStyle } from './communicationStyles';
+import { DEFAULT_STYLE_ID, getStyle, type CommunicationStyleId } from './communicationStyles';
 import { horizonQuestion } from './horizonQuestion';
 import { deriveConstraints, journeyShapeFor } from './goalSpecToJourney';
 import { variantInterviewQuestions } from './variantQuestions';
@@ -278,6 +278,17 @@ export interface CoachOrchestratorOptions {
    * degraded one.
    */
   profile?: CoachOnboardingSummary | null;
+  /**
+   * The VOICE the coach speaks in — the user's own choice, mapped from their communication profile
+   * through `profileToCoachStyle`.
+   *
+   * Until 2026-08-24 this was fixed to `steady` for everybody, which meant the whole Communication
+   * Style feature changed nothing a person could hear: they answered six comparisons, saw a
+   * confirmation screen, and the coach went on talking exactly as before. That is the PRD's own
+   * Acceptance Criterion #4, and it was the one thing missing. Absent ⇒ `steady`, which is both the
+   * old behaviour and the right default for somebody who has not chosen.
+   */
+  styleId?: CommunicationStyleId;
 }
 
 // ── The orchestrator ────────────────────────────────────────────────────────────
@@ -331,7 +342,7 @@ export class CoachOrchestrator {
     this.guard = options.guard;
     this.locale = options.locale;
     this.profile = options.profile;
-    this.styleFragment = getStyle(DEFAULT_STYLE_ID).systemPromptFragment ?? '';
+    this.styleFragment = getStyle(options.styleId ?? DEFAULT_STYLE_ID).systemPromptFragment ?? '';
   }
 
   /** The opening greeting, which asks the user for their goal in free text. No model call. */

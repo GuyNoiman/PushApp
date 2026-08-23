@@ -41,6 +41,7 @@ import {
   type BudgetState,
   type BudgetZone,
 } from '@/core/llm/conversationBudget';
+import { getCommunicationProfile, profileToCoachStyle } from '@/core/communication/communicationProfile';
 import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
 import type { CoachOnboardingSummary } from '@/core/onboarding/model';
 
@@ -182,6 +183,11 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         // has answered (D62). Read once, at construction: an interview is one conversation, and a
         // profile edited mid-interview must not change the questions under the user.
         profile: options?.profile,
+        // THE USER'S OWN VOICE (Communication_Style_Profile_PRD §9, AC#4). Until this line the
+        // coach spoke `steady` to everybody, which made the whole style questionnaire change
+        // nothing anyone could hear. Read once at construction for the same reason as the profile:
+        // a voice that changed mid-conversation would read as a different person answering.
+        styleId: profileToCoachStyle(getCommunicationProfile()),
       });
   }
 

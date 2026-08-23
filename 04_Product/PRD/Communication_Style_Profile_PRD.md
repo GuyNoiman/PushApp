@@ -1,23 +1,15 @@
 # PRD — Communication Style Profile
 
-Status: **Ready for MVP implementation — partially implemented, NOT moved to `Done/`.**
-Founder-approved mechanism consolidated 2026-08-12. **Built (commit `8313fc7`, D40):** the six-comparison
-quiz, the four styles, tie-break handling, the plain-language result/confirmation screen, Settings
-retake/reset, and account-level persistence (included in export/delete, an existing O1/GDPR gap fixed in
-the same commit). **NOT built — and this is this PRD's core purpose per §9 and Acceptance Criterion #4, not
-a peripheral deferral:** the saved style does not yet change anything the user sees. `profileToCoachStyle()`
-is an implemented-but-explicitly-"not-yet-wired" seam (see the code comment in
-`core/communication/communicationProfile.ts`) into the live Coach, and `CommunicationScheduler` does not yet
-call `buildNotificationContent` to apply style to notification copy (tracked in `Current_Context.md`'s
-▶ NEXT queue). Until one of those lands, selecting a style only changes a confirmation screen. Kept in the
-PRD root, not `Done/`, until at least one consumption path is wired — see `04_Product/PRD/README.md`'s
-Done-tracking rule. (Flagging this because this file was pointed to as a likely-Done candidate; verification
-against the code found the reverse — the visible artifact is built, but the feature's actual effect is not.)
-Stage: **MVP**, after the onboarding shell and core notification events exist.
-Owner: founder + AI product team.
-Related: `Onboarding_Questionnaire_PRD.md`, Settings, Coach voice, notification content,
-`Smart_Notification_Timing_PRD.md`, `Weekly_Review_PRD.md`, form of address, and Support Circle.
-Research: `../../05_Research/Communication_Style_Personalization_Research.md`.
+Status: **IMPLEMENTED (MVP scope) — 2026-08-24.** Founder-approved mechanism consolidated 2026-08-12;
+the quiz, the four styles, the result screen, Settings retake/reset and account-level persistence
+shipped in commit `8313fc7` (D40). **The consumption paths — this PRD's Acceptance Criterion #4, and
+the thing that was missing — are now wired:** reminder copy has resolved through the user's style
+since the notification-content service landed (`core/notify/reminderCopy.ts`), and on 2026-08-24 the
+LIVE COACH began speaking in the chosen voice (`CoachOrchestrator` took a `styleId`;
+`useLiveCoach` passes `profileToCoachStyle(getCommunicationProfile())`). The three voices that were
+named stubs — direct, gentle, spark — were written from §4, each with the limit §4 states for it;
+until then every style resolved back to `steady` and the questionnaire changed only a confirmation
+screen. Ready to move to `Done/` once the founder confirms the voices read right on a device.
 
 ---
 

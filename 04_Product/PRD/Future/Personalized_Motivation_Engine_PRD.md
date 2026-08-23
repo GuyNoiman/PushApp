@@ -6,7 +6,8 @@ Owner: founder + AI product team.
 Related: `Adaptive_Communication_Engine_PRD.md`, `../Communication_Style_Profile_PRD.md`,
 `../Smart_Notification_Timing_PRD.md`, Dream and Journey context, domain experts, Coach, notification
 content, on-call tools, and outcome metrics.
-Research reference: `../../../05_Research/Competitive_Landscape.md`.
+Research references: `../../../05_Research/Competitive_Landscape.md` and
+`../../../05_Research/Rega_Motivation_and_Coaching_Review_2026-08-24.md`.
 
 ---
 
@@ -104,6 +105,26 @@ The engine does not independently increase notification frequency. Every deliver
 Hours, Journey eligibility, notification permissions, privacy-safe lock-screen rules, cooldowns, and the
 communication scheduler. Silence is always a valid selection.
 
+### 5.1 Message-to-action contract
+
+Competitive review of Rega reinforced that useful motivation is often embedded in a path the user can act on,
+not presented as an isolated quote. Each motivational candidate may therefore include **at most one optional
+door** to a contextually relevant destination:
+
+- today's relevant Step;
+- a truthful progress detail;
+- an appropriate Tool;
+- a conversation with the Coach;
+- a separately governed immediate-support surface.
+
+The action is not mandatory. The engine must omit it when no genuinely useful destination exists, and it must
+never add a call to action merely to increase opens or time in the app. Opening the destination is not proof
+that the message helped.
+
+Each candidate should keep structured fields for its eligibility reason, intended meaning, optional door,
+privacy-safe lock-screen version, Communication Style variants, and safety/cooldown rules. This is a product
+requirement; the final storage schema remains an architecture decision.
+
 The exact triggers remain open. Candidate moments include sustained progress, approaching a difficult Step,
 recovery after a miss, a meaningful milestone, or a user-invoked request for encouragement.
 
@@ -200,6 +221,10 @@ hosting, cost, and sync behavior remain open.
 - a new content item has no feedback;
 - malicious accounts coordinate likes/dislikes;
 - a message is duplicated across Coach, Home, and notification surfaces;
+- the suggested destination is no longer available when the message is opened;
+- the user completed the suggested Step on another device after the message was selected;
+- a motivational message has no genuinely useful action and must remain text-only;
+- a high-distress or crisis signal is mistakenly offered to the ordinary ranking engine;
 - the Journey is frozen, completed, abandoned, deleted, or unlinked from a Dream;
 - the app is offline when feedback is submitted;
 - two devices submit opposite feedback;
@@ -222,6 +247,8 @@ hosting, cost, and sync behavior remain open.
 10. May users ask for “motivate me now,” and does that use the same ranking model?
 11. Which health-related computed statements are permitted, and who reviews their evidence and localization?
 12. How are quotes sourced, licensed, attributed, translated, retired, and challenged?
+13. Should every eligible item offer a destination, or only when a genuinely useful action exists?
+14. Is the first user-invoked surface an explicit “encourage me now” action, a Home card, or neither?
 
 ## 12. Open architecture questions
 
@@ -258,4 +285,3 @@ Before development:
 - Achievements, XP, Coins, Missions, and Leveling;
 - automatic changes to a weekly plan;
 - medical treatment, diagnosis, or crisis intervention.
-

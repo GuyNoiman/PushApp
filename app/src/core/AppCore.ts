@@ -1065,6 +1065,50 @@ export class AppCore {
     return JSON.stringify(payload, null, 2);
   }
 
+  // ── Account: the backup that survives a lost phone ──────────────────────────
+
+  /**
+   * The state as JSON, for the account backup.
+   *
+   * Deliberately the STATE ALONE, not the export wrapper: a backup is restored back into this app
+   * and the wrapper's metadata (app version, export time) belongs to a file a person downloads, not
+   * to a copy the app keeps of itself. The on-device-only logs are included — they are what makes a
+   * restore an actual restore rather than a shell of one, and the founder chose the model where the
+   * account holds them (2026-08-24).
+   */
+  backupStateJson(): string {
+    return JSON.stringify({
+      ...this.state,
+      reasonLog: this.state.reasonLog ?? [],
+      behaviorLog: this.state.behaviorLog ?? [],
+    });
+  }
+
+  /**
+   * Replace everything with a backup, on a device that has just signed in.
+   *
+   * It goes through the SAME migration a load does, so a backup written by an older build arrives in
+   * the shape this one expects — a restore path that skipped migration would be a crash waiting for
+   * whoever upgrades last. Returns false when the JSON cannot be read at all, and changes nothing:
+   * a corrupt backup must never empty a device that already holds a life.
+   */
+  async restoreFromBackup(json: string): Promise<boolean> {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(json);
+    } catch {
+      return false;
+    }
+    if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as AppState).journeys)) {
+      return false;
+    }
+    this.state = migrateState(parsed as AppState);
+    this.persist();
+    await this.flushSaves();
+    this.notify();
+    return true;
+  }
+
   /**
    * Wipe ALL local data and return to a clean first-run state (O1). Clears the
    * Repository (which destroys the encryption key), marks the first-run seed

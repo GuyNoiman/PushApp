@@ -28,6 +28,7 @@ import { LifeWheelProvider } from '@/state/LifeWheelStore';
 import { ToolsShelfProvider } from '@/state/ToolsShelf';
 import { PassionMapProvider } from '@/state/PassionMapStore';
 import { MessagingProvider } from '@/state/MessagingProvider';
+import { StateBackupProvider } from '@/state/StateBackupProvider';
 import { ToolRecordsProvider } from '@/state/ToolRecordsStore';
 import { ReflectionsProvider } from '@/state/ReflectionsStore';
 import { ValuesProvider } from '@/state/ValuesStore';
@@ -150,6 +151,9 @@ export default function RootLayout() {
                             language, form of address or communication style changes (D40). It sits
                             here because it needs the core, the language provider AND the profile. */}
                         <NotificationCopySync />
+                        {/* Renders nothing: restores this account's state on a new device and keeps
+                            the server copy current. The reason a lost phone is survivable (D73). */}
+                        <StateBackupProvider />
                         <ThemedChrome />
                             </ToolRecordsProvider>
                             </MessagingProvider>

@@ -619,6 +619,24 @@ describe('reconcile — apply through the ReminderEngine', () => {
    * form-of-address or style change reaches reminders that are already scheduled.
    */
   describe('reminder copy resolution', () => {
+    /**
+     * Since smart timing was switched on (2026-08-24) the scheduled content also carries an
+     * attribution payload, so these assert the COPY rather than the whole object — and this one
+     * guards what the payload may contain, which is the part that matters: ids, never words.
+     */
+    it('attaches ids only — never a title, a body or anything the user wrote', async () => {
+      const scheduler = await reconcilerWith(({ journeyId, journeyTitle }) => ({
+        title: `resolved:${journeyTitle}`,
+        body: `resolved:${journeyId}`,
+      }));
+      await scheduler.reconcile();
+      const data = (scheduledContent() as { data?: Record<string, unknown> }).data;
+      expect(data).toBeDefined();
+      expect(Object.keys(data!).sort()).toEqual(['journeyId', 'kind', 'ruleId']);
+      expect(JSON.stringify(data)).not.toContain('Run 5km');
+      expect(JSON.stringify(data)).not.toContain('resolved:');
+    });
+
     /** A ready scheduler over one rule + its Journey, optionally given a copy builder. */
     async function reconcilerWith(buildCopy?: ReminderCopyBuilder) {
       const engine = new ReminderEngine();
@@ -652,7 +670,7 @@ describe('reconcile — apply through the ReminderEngine', () => {
       }));
 
       await scheduler.reconcile();
-      expect(scheduledContent()).toEqual({
+      expect(scheduledContent()).toMatchObject({
         title: 'resolved:Run 5km',
         body: 'resolved:journey_1',
       });
@@ -662,7 +680,7 @@ describe('reconcile — apply through the ReminderEngine', () => {
       const scheduler = await reconcilerWith();
       await scheduler.reconcile();
       // Byte-identical to what the shipped app sends: the rule's own title/body.
-      expect(scheduledContent()).toEqual({
+      expect(scheduledContent()).toMatchObject({
         title: 'Time to move',
         body: 'Your Journey is waiting.',
       });
@@ -671,7 +689,7 @@ describe('reconcile — apply through the ReminderEngine', () => {
     it('falls back to the baked copy when the builder returns null', async () => {
       const scheduler = await reconcilerWith(() => null);
       await expect(scheduler.reconcile()).resolves.toBeUndefined();
-      expect(scheduledContent()).toEqual({
+      expect(scheduledContent()).toMatchObject({
         title: 'Time to move',
         body: 'Your Journey is waiting.',
       });
@@ -683,7 +701,7 @@ describe('reconcile — apply through the ReminderEngine', () => {
       });
       await expect(scheduler.reconcile()).resolves.toBeUndefined();
       expect(mockScheduleNotificationAsync).toHaveBeenCalledTimes(1);
-      expect(scheduledContent()).toEqual({
+      expect(scheduledContent()).toMatchObject({
         title: 'Time to move',
         body: 'Your Journey is waiting.',
       });

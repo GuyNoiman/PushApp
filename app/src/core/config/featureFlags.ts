@@ -115,7 +115,13 @@ export const featureFlags = {
    * scheduled notifications carry no `data` payload — production behaviour is bit-identical. The
    * learned evidence is ON-DEVICE ONLY (G1).
    */
-  smartTiming: Boolean(process.env.EXPO_PUBLIC_SMART_TIMING),
+  /**
+   * ON since 2026-08-24 — the founder approved it after the device QA it was waiting for. The env
+   * var stays readable so it can still be forced on in a build that has the flag off for any other
+   * reason, but the default is now true: the timing model runs, the tap listener is registered, and
+   * scheduled notifications carry their (ids-only) attribution payload.
+   */
+  smartTiming: true,
   /**
    * DEV-ONLY (Miss-Recovery slice). Turns on the in-memory mock gateways that let
    * a developer/founder exercise the recovery loop end-to-end in Expo Go at $0:

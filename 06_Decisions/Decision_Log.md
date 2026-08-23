@@ -10,6 +10,48 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-24 — A lost phone stops meaning starting over
+
+### D73 — The account holds the state, the way the large apps do
+**Decision (founder, 2026-08-24):**
+
+> אני רוצה שיעבוד כמו באפליקציות גדולות אחרות, כמו אינסטגרם
+
+**The question it answers:** everything a person built — Dreams, Journeys, history, Buddy — lived
+encrypted on ONE device and nowhere else. A lost phone meant starting over, which he called
+unreasonable, and he was right: no product that asks somebody to invest a year of their life may
+also stake that year on one piece of glass.
+
+**What was chosen:** the Instagram model. The account's state is stored on the server and restored by
+signing in. No recovery passphrase, no key for the user to lose, no ceremony.
+
+**The cost, stated rather than buried:** the service CAN read that row. Our protection is access
+control (row-level security: your own row, no exceptions), transport encryption, and the promise not
+to read, mine or sell — which is what the large apps promise. It is a weaker guarantee than "we
+could not read it if we wanted to", and §0 of the privacy contract now says so in the user's own
+words instead of the old sentence about everything staying on the phone.
+
+**Alternatives considered:** a user-held recovery passphrase (true zero-knowledge, rejected because a
+forgotten passphrase means the data is gone for good and there is nobody who can help); a key escrowed
+in the OS keychain and carried by the platform's own backup (rejected: it restores an iPhone from an
+iPhone and strands anybody moving between platforms).
+
+**What did NOT move, deliberately:** direct messages stay end-to-end encrypted — they are another
+person's words as well as this person's — and the Tools' raw answers stay on the device under the
+Tool Addition Protocol's standing rule.
+
+**What it is NOT:** multi-device sync. Newer write wins, ties go to the device in front of the person,
+and simultaneous edits on two devices are a case it does not resolve. Written as a backup, described
+as a backup.
+
+**Where it lives:** `supabase/migrations/0004_account_state_backup.sql`, `core/backup/`,
+`state/StateBackupProvider.tsx`.
+
+### D74 — Smart notification timing is on
+**Decision (founder, 2026-08-24):** approved. The timing model, the tap listener and the ids-only
+attribution payload are live for everybody rather than behind an env flag. A test asserts the payload
+carries ids and never a word the user wrote.
+
 ## 2026-08-23/24 — Eight rooms, the promise made once, and messages nobody but two people can read
 
 > Founder decisions taken while the seven new tools, the Notification Center and the Inbox were

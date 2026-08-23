@@ -25,8 +25,13 @@ Draft copy for the consent screen and the top of the policy. Plain, short, true.
 > PushApp holds the most personal thing you have: what you are trying to change about yourself, and
 > why. So the rule is simple.
 >
-> What you write stays on your phone. Your goals, your reasons, your notes when a day goes wrong,
-> your answers in the tools. None of it is sent anywhere by default.
+> Your Journeys and your history are kept in your account, so that losing your phone does not mean
+> losing years of your life. We can reach them the way any service can reach what you store with it,
+> and we do not read them, mine them or sell them.
+>
+> Some things never leave your phone at all — your answers in the tools, and the things you write in
+> them. And your messages to another person are encrypted end to end: we could not read those even
+> if we wanted to.
 >
 > When something does have to leave the phone, it leaves as little as possible, only for a reason you
 > chose, and only to the people you named. A friend you invite sees your progress, not your words.
@@ -60,6 +65,21 @@ Draft copy for the consent screen and the top of the policy. Plain, short, true.
 
 ## 1. What we hold today
 
+### THE 2026-08-24 CHANGE, and it is the largest one in this document
+
+The founder decided (D73) that a lost phone must not mean starting over, and chose the model the
+large apps use: **the account's own state — Dreams, Journeys, Steps, history, Buddy, the reason log
+and the behaviour log — is stored on the server and restored by signing in.** It is reachable by
+that account and no other (row-level security), it is not read, mined or sold, and it is not
+end-to-end encrypted: we hold it the way Instagram holds what you post there.
+
+What did NOT move: **direct messages stay end-to-end encrypted** (they are another person's words as
+well as yours), and **the Tools' raw answers stay on the device** — the Tool Addition Protocol's
+standing rule, unchanged.
+
+The rows below marked "on the device" were written before that decision. They are marked, and the
+table is corrected underneath.
+
 ### Group A — on the device, never sent anywhere
 
 Persisted as one encrypted JSON blob through `EncryptedLocalRepository`, plus the profile blob noted
@@ -67,10 +87,10 @@ below.
 
 | Data | Why we hold it | Who may read it | Expiry |
 |---|---|---|---|
-| Dreams, Journeys, Milestones, Steps and their titles | The product itself | The app, on device | Until deleted |
-| The user's **"why"** | Motivation, coach framing | On-device coach context only | Until deleted |
-| `reasonLog` (Miss Recovery), including free-text notes | Adapts the plan after a miss | On-device engines | Rolling window, to define |
-| `behaviorLog` (raw behavioural records) | The adaptive coach's signal | On-device engines | Rolling window, to define |
+| Dreams, Journeys, Milestones, Steps and their titles | The product itself | The app, and the account's own backup row (D73) | Until deleted |
+| The user's **"why"** | Motivation, coach framing | On-device coach context, and the account backup (D73) | Until deleted |
+| `reasonLog` (Miss Recovery), including free-text notes | Adapts the plan after a miss | On-device engines, and the account backup (D73) | Rolling window, to define |
+| `behaviorLog` (raw behavioural records) | The adaptive coach's signal | On-device engines, and the account backup (D73) | Rolling window, to define |
 | `onboardingAnswers` | Shapes the first plan | On-device engines | Until re-answered |
 | Timing evidence store | Smart notification timing | On-device engines | Rolling window |
 | Buddy stage, XP, Coins, streak, Grace Tokens | Progression | On device; a coarse summary may go out as `buddy_summary` | Until deleted |
@@ -95,6 +115,8 @@ below.
 | `progress_snapshots` | coarse progress summary | The owner and accepted Allies | Never the "why", the reflections, or step detail |
 | `cheers` | from, to, journey, kind | The two people involved | |
 | `entitlements` | tier | The owner, read-only | Written server-side only; carries no PII |
+| `account_state` | the whole app state as JSON (D73, 2026-08-24) | The owner, and nobody else — RLS allows exactly one row per account | The backup that survives a lost phone. Readable by the service; not end-to-end encrypted, and the promise about it is the one in §0: not read, not mined, not sold |
+| `conversations`, `messages` | who talked to whom and when; the bodies as SEALED BOXES | Participants; the server cannot read a body | End-to-end encrypted (E7). No column can hold plaintext |
 
 ### Group C — sent to a third party
 

@@ -22,6 +22,7 @@ import { useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { checkBackendHealth } from '@/core/social/backendHealth';
+import { getStateBackupGateway } from '@/core/backup';
 import { ACCOUNT_STORAGE_KEYS, mergeProfileIntoExport } from '@/state/accountExport';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
@@ -118,6 +119,14 @@ export function useAccountActions() {
     // 2) Remote is gone (or there was never a remote account). Now wipe local, in order.
     await Notifications.cancelAllScheduledNotificationsAsync();
     await signOut();
+    // The account's server-side backup goes with the account (D73). Before the local wipe, so a
+    // failure here is visible rather than leaving a copy nobody can see or reach.
+    try {
+      await getStateBackupGateway().clear();
+    } catch {
+      // A backup we could not delete belongs to an account that is being deleted anyway — the
+      // cascade on `profiles` removes the row with it.
+    }
     await core.resetToFirstRun();
     await AsyncStorage.multiRemove([...ACCOUNT_STORAGE_KEYS]);
   }, [enabled, user, deleteRemote, signOut, core]);

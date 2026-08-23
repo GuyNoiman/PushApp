@@ -55,6 +55,7 @@ import {
   type ToolDefinition,
 } from '@/core/tools/catalog';
 import { ago, recentlyUsed, recommended, savedTools, searchTools } from '@/core/tools/shelf';
+import { paletteOfRoom } from '@/core/tools/rooms';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useToolsShelf } from '@/state/ToolsShelf';
@@ -252,8 +253,12 @@ export default function ToolsScreen() {
                 </>
               ) : null}
 
-              {/* ── Five rooms. A category is what a tool does FOR you, which is what turns eight
-                  tools into a place instead of a drawer. ── */}
+              {/* ── The founder's eight rooms (2026-08-23). A room is what a tool does FOR you,
+                  which is what turns a list of tools into a place instead of a drawer. Each room
+                  wears its own colour (`core/tools/rooms`), and the two that hold nothing yet are
+                  SHOWN and labelled "coming soon" rather than hidden — his call: a room a person can
+                  see is a promise about where the product is going, and an empty one that is honest
+                  about being empty says more than a gap in the row. ── */}
               <SectionTitle>{t('sections.categories')}</SectionTitle>
               <ScrollView
                 horizontal
@@ -261,25 +266,45 @@ export default function ToolsScreen() {
                 contentContainerStyle={styles.rail}>
                 {TOOL_CATEGORY_IDS.map((id) => {
                   const count = toolsInCategory(id).length;
+                  const empty = count === 0;
+                  const palette = paletteOfRoom(id);
+                  const accent = theme[palette.accent];
+                  const tint = theme[palette.tint];
                   return (
                     <Pressable
                       key={id}
                       accessibilityRole="button"
-                      accessibilityLabel={`${t(`categories.${id}`)}, ${t('count', { count })}`}
+                      accessibilityState={{ disabled: empty }}
+                      disabled={empty}
+                      accessibilityLabel={`${t(`categories.${id}`)}, ${
+                        empty ? t('soon') : t('count', { count })
+                      }`}
                       onPress={() => setOpenCategory(id)}
                       style={({ pressed }) => [
                         styles.categoryCard,
-                        { backgroundColor: theme.tealWash, borderColor: theme.hairline },
+                        {
+                          backgroundColor: empty ? theme.backgroundElement : tint,
+                          borderColor: empty ? theme.hairline : accent,
+                          opacity: empty ? 0.6 : 1,
+                        },
                         pressed && styles.pressed,
                       ]}>
-                      <View style={[styles.glyph, { backgroundColor: theme.tealTint }]}>
-                        <Ionicons name={CATEGORY_ICON[id]} size={17} color={theme.tealStrong} />
+                      <View
+                        style={[
+                          styles.glyph,
+                          { backgroundColor: empty ? theme.backgroundSelected : theme.background },
+                        ]}>
+                        <Ionicons
+                          name={CATEGORY_ICON[id]}
+                          size={17}
+                          color={empty ? theme.textMuted : accent}
+                        />
                       </View>
                       <ThemedText type="displaySmall" numberOfLines={2} style={styles.categoryTitle}>
                         {t(`categories.${id}`)}
                       </ThemedText>
                       <ThemedText type="small" style={{ color: theme.textMuted }}>
-                        {t('count', { count })}
+                        {empty ? t('soon') : t('count', { count })}
                       </ThemedText>
                     </Pressable>
                   );
@@ -344,11 +369,14 @@ export default function ToolsScreen() {
 
 /** Category glyphs. Here rather than in the catalogue: a room's icon is a screen decision. */
 const CATEGORY_ICON: Record<ToolCategoryId, keyof typeof Ionicons.glyphMap> = {
-  know: 'person-outline',
-  reflect: 'book-outline',
-  calm: 'leaf-outline',
-  focus: 'locate-outline',
-  relate: 'heart-outline',
+  selfKnowledge: 'person-outline',
+  direction: 'compass-outline',
+  action: 'walk-outline',
+  records: 'book-outline',
+  immediate: 'heart-outline',
+  patterns: 'repeat-outline',
+  support: 'people-outline',
+  body: 'pulse-outline',
 };
 
 function SectionTitle({ children }: { children: string }) {

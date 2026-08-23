@@ -88,6 +88,15 @@ const light = {
   /** Pink — legacy, retuned to a muted rose. */
   pink: '#B05C79',
   pinkTint: '#F1E5EA',
+  /**
+   * Clay — the eighth room's accent (גוף ואנרגיה), chosen by the founder on 2026-08-23 from four
+   * rendered candidates and then pushed one step redder. It is the only accent added since the
+   * mature redesign, and it exists because the rooms needed eight distinct hues and the palette had
+   * seven. Deliberately warmer and redder than `coral` (which marks immediate care) and nowhere near
+   * `danger`: a room colour must never read as a warning.
+   */
+  clay: '#A4523E',
+  clayTint: '#F5E6E1',
   /** Cream — a warm neutral wash. */
   cream: '#F3EFE7',
   /** Legacy Buddy/Home scene (archived) — kept as calm neutrals. */
@@ -168,6 +177,13 @@ const dark: Palette = {
   /** Pink — legacy, muted rose. */
   pink: '#CE8AA0',
   pinkTint: '#2E1F26',
+  /**
+   * Clay on dark — AUTHORED, not the light value lightened. On the deep teal-ink ground the light
+   * clay turns muddy and drops under AA against `text`, so the dark side takes a warmer, brighter
+   * terracotta and a deep desaturated fill behind it.
+   */
+  clay: '#D98368',
+  clayTint: '#33211B',
   /** Cream — a warm neutral wash. */
   cream: '#221E17',
   /** Legacy Buddy/Home scene (archived) — calm dark neutrals. */

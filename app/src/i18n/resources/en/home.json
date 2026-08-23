@@ -85,7 +85,9 @@
     "stat": "{{value}} {{label}}",
     "inbox": "Inbox",
     "inboxWaiting_one": "Inbox, {{count}} waiting",
-    "inboxWaiting_other": "Inbox, {{count}} waiting"
+    "inboxWaiting_other": "Inbox, {{count}} waiting",
+    "bell": "Activity",
+    "bellNew": "Activity, {{count}} new"
   },
   "swipe": {
     "postponeA11y": "Postpone this step",

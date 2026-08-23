@@ -56,7 +56,7 @@ import type { WeekReviewOutcome } from '@/core/AppCore';
 import { currentMilestone } from '@/core/util/milestones';
 // From its own module rather than the barrel: the barrel reaches the gateway and its storage, and a
 // pure count has no business dragging those into a screen (or into a test that stubs them).
-import { inboxWaitingCount } from '@/core/social/inboxWaiting';
+import { useNotificationActivity } from '@/hooks/useNotificationActivity';
 import { isRunning } from '@/core/util/journeyStatus';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
@@ -433,18 +433,17 @@ export default function HomeScreen() {
     [t],
   );
 
-  // How much is waiting in the Inbox — the badge on the mail button that replaced the Inbox tab.
-  // The count comes from the SAME derivation the Inbox's own heading uses, so the badge and the
-  // screen can never disagree about how much is waiting.
-  const waiting = useMemo(
-    () =>
-      inboxWaitingCount({
-        incomingCheers: social.incomingCheers,
-        friends: social.friends,
-        incomingAllyInvites: social.incomingAllyInvites,
-      }),
-    [social.incomingCheers, social.friends, social.incomingAllyInvites],
-  );
+  /**
+   * The BELL's count — what other people did that this person has not seen yet.
+   *
+   * It used to be the mail button's badge, counting cheers, friend requests and Support-Circle
+   * invites. None of those is a message, and both approved specifications say the same thing: those
+   * belong to the Notification Center, and the two counters must never claim the same object
+   * (Notification Center PRD §4.1, Inbox PRD §5). So the bell takes them, and the mail badge stays
+   * at zero until the Inbox holds real conversations — a number that counts nothing is worse than
+   * no number at all.
+   */
+  const activity = useNotificationActivity();
 
   // YOUR JOURNEYS — one card per RUNNING Journey, swiped through. Frozen, future and finished
   // Journeys are absent by construction: the card is about what is moving right now, and a paused
@@ -565,7 +564,8 @@ export default function HomeScreen() {
           xpIntoLevel={snapshot.buddy.xpIntoLevel}
           xpForNextLevel={snapshot.buddy.xpForNextLevel}
           streak={snapshot.streak}
-          waiting={waiting}
+          activity={activity}
+          onOpenNotifications={() => router.push('/notifications' as Href)}
           onOpenInbox={() => router.push('/inbox' as Href)}
         />
 

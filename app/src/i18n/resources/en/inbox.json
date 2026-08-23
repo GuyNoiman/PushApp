@@ -1,6 +1,12 @@
 {
   "title": "Inbox",
-  "newMessage": "New message",
+  "newMessage": {
+    "title": "New message",
+    "searchPlaceholder": "Search by name",
+    "friend": "In your Support Circle",
+    "ally": "You support them",
+    "empty": "Nobody to write to yet. People you connect with appear here."
+  },
   "newMessageA11y": "New message. Coming later.",
   "comingSoon": {
     "title": "Messages are coming later",
@@ -13,10 +19,10 @@
   "decline": "Decline",
   "now": "now",
   "tabs": {
-    "friends": "Friends",
-    "allies": "Allies",
+    "chats": "Chats",
     "groups": "Groups",
-    "requested": "Requested"
+    "soon": "Soon",
+    "requests": "Requests"
   },
   "preview": {
     "nudge": "Sent you a nudge",
@@ -29,21 +35,13 @@
     "allyCompanion": "Wants you to follow their Journey as a Companion. You'll see the step names and their status."
   },
   "empty": {
-    "requested": {
+    "chats": {
+      "title": "No conversations yet",
+      "body": "When you write to someone, or they write to you, it will be here."
+    },
+    "requests": {
       "title": "No requests",
-      "subtitle": "When someone asks to join your Support Circle, it lands here."
-    },
-    "allies": {
-      "title": "No Allies yet",
-      "subtitle": "When a friend makes you an Ally on a Journey, their progress shows here."
-    },
-    "groups": {
-      "title": "No groups yet",
-      "subtitle": "Group threads aren't here yet. This is where your Circle's shared spaces will live."
-    },
-    "messages": {
-      "title": "No messages yet",
-      "subtitle": "Add a friend from your Circle and start your Support Circle."
+      "body": "A message from someone you have not spoken to yet waits here first."
     }
   },
   "noMatches": {
@@ -51,5 +49,44 @@
     "body": "No conversations match \"{{query}}\"."
   },
   "unreadCount_one": "{{count}} waiting",
-  "unreadCount_other": "{{count}} waiting"
+  "unreadCount_other": "{{count}} waiting",
+  "someone": "Someone",
+  "compose": "New message",
+  "searchPlaceholder": "Search conversations",
+  "chats": {
+    "preview": "Open the conversation"
+  },
+  "groups": {
+    "title": "Groups are on the way",
+    "body": "A place for a few people to hold something together. It is not built yet, and we would rather show you where it will live than pretend it is here."
+  },
+  "request": {
+    "preview": "Would like to write to you",
+    "accept": "Accept",
+    "delete": "Delete",
+    "privateToRead": "Reading this is private — they are not told. Accepting lets them write to you, and does not make you friends."
+  },
+  "conversation": {
+    "placeholder": "Write a message",
+    "send": "Send",
+    "more": "More",
+    "mute": "Mute this conversation",
+    "block": "Block",
+    "encrypted": "Messages here are encrypted. Only the two of you can read them.",
+    "unavailable": "This message cannot be opened on this device.",
+    "state": {
+      "sending": "Sending",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Not sent"
+    }
+  },
+  "send": {
+    "empty": "Write something first.",
+    "blocked": "This conversation is closed.",
+    "expired": "This request has expired.",
+    "tooLong": "That is longer than {{max}} characters.",
+    "rateLimited": "You can write again after {{time}}."
+  }
 }

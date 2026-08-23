@@ -52,5 +52,23 @@
   "journeyClosed": {
     "title": "A Journey has stopped",
     "body": "One of {{name}}'s Journeys has stopped."
+  },
+  "center": {
+    "title": "Activity",
+    "newCount": "{{count}} new",
+    "new": "new",
+    "empty": "All quiet for now. When friends cheer you, need support, or send you a request, it will appear here.",
+    "accept": "Accept",
+    "decline": "Not now",
+    "kinds": {
+      "cheer": "{{name}} cheered you on",
+      "nudge": "{{name}} gave you a nudge",
+      "friendRequest": "{{name}} would like to connect",
+      "allyInvite": "{{name}} asked you to support a Journey"
+    },
+    "bundles": {
+      "encourager": "You would see the progress, not the details",
+      "companion": "You would see the progress and the steps"
+    }
   }
 }

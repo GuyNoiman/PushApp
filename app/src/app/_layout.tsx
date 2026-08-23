@@ -27,6 +27,7 @@ import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
 import { LifeWheelProvider } from '@/state/LifeWheelStore';
 import { ToolsShelfProvider } from '@/state/ToolsShelf';
 import { PassionMapProvider } from '@/state/PassionMapStore';
+import { MessagingProvider } from '@/state/MessagingProvider';
 import { ToolRecordsProvider } from '@/state/ToolRecordsStore';
 import { ReflectionsProvider } from '@/state/ReflectionsStore';
 import { ValuesProvider } from '@/state/ValuesStore';
@@ -141,6 +142,9 @@ export default function RootLayout() {
                             <ReflectionsProvider>
                             {/* What the record-keeping tools write (the 2026-08-21 set). ON-DEVICE
                                 ONLY, and several of them read by nothing at all (D66). */}
+                            {/* Direct conversations. Everything it holds is sealed on the device
+                                before it leaves (`core/messaging/crypto.ts`). */}
+                            <MessagingProvider>
                             <ToolRecordsProvider>
                         {/* Renders nothing: re-resolves pending reminder copy whenever the
                             language, form of address or communication style changes (D40). It sits
@@ -148,6 +152,7 @@ export default function RootLayout() {
                         <NotificationCopySync />
                         <ThemedChrome />
                             </ToolRecordsProvider>
+                            </MessagingProvider>
                             </ReflectionsProvider>
                             </PassionMapProvider>
                           </ValuesProvider>

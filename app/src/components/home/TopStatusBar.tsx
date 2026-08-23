@@ -62,6 +62,8 @@ export function TopStatusBar({
   streak,
   waiting = 0,
   onOpenInbox,
+  activity = 0,
+  onOpenNotifications,
 }: {
   level: number;
   /** XP earned inside the current level — fills the progress bar. */
@@ -73,6 +75,14 @@ export function TopStatusBar({
   waiting?: number;
   /** Opens the Inbox. Omitted only in tests/stories that render the strip alone. */
   onOpenInbox?: () => void;
+  /**
+   * How many NEW things are in the Notification Center — what other people did. A separate count
+   * from `waiting`, and deliberately so: the bell and the mail must never both claim the same
+   * object, or the two numbers stop meaning anything (Notification Center PRD §4.1).
+   */
+  activity?: number;
+  /** Opens the Notification Center. */
+  onOpenNotifications?: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('home');
@@ -118,6 +128,33 @@ export function TopStatusBar({
         valueColor={theme.text}
         label={t('status.streak')}
       />
+
+      {onOpenNotifications ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            activity > 0 ? t('status.bellNew', { count: activity }) : t('status.bell')
+          }
+          onPress={onOpenNotifications}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.mail,
+            { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
+            pressed && styles.pressed,
+          ]}>
+          <Ionicons name="notifications-outline" size={16} color={theme.text} />
+          {activity > 0 ? (
+            <View
+              style={[styles.badge, { backgroundColor: theme.tint, borderColor: theme.backgroundSelected }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants">
+              <ThemedText type="smallBold" style={[styles.badgeText, { color: theme.background }]}>
+                {activity > 99 ? '99+' : activity}
+              </ThemedText>
+            </View>
+          ) : null}
+        </Pressable>
+      ) : null}
 
       {onOpenInbox ? (
         <Pressable

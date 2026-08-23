@@ -10,6 +10,71 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-23/24 — Eight rooms, the promise made once, and messages nobody but two people can read
+
+> Founder decisions taken while the seven new tools, the Notification Center and the Inbox were
+> built. Engineering detail: `00_Foundation/CHANGELOG.md`; the privacy consequences are folded into
+> `04_Product/Privacy_Contract_With_The_User.md`.
+
+### D70 — The Tools tab has eight rooms, and colour belongs to the room
+**Decision (founder, 2026-08-23):** the five rooms become eight — להכיר את עצמי · לבחור כיוון ·
+לעבור לפעולה · תיעוד והתבוננות · עזרה ברגע הזה · שינוי דפוסים ודחפים · קשרים ותמיכה · גוף ואנרגיה —
+and each carries its own colour, which the first screen of every tool inside it wears.
+
+**Alternatives considered:** keeping the five rooms and mapping the new tools onto them (rejected: the
+names were ours, the rooms are his product); hiding the two rooms that hold nothing yet (rejected by
+him — a room a person can see is a promise about where this is going, so they show "coming soon").
+
+**Tradeoff accepted:** eight rooms needed eight hues and the palette had seven, so one new accent
+token was added (`clay`, #A4523E, chosen from rendered swatches and then pushed redder). A new colour
+in a mature palette is a real cost; the alternative was two rooms a person could not tell apart.
+
+**Where it lives:** `app/src/core/tools/catalog.ts`, `app/src/core/tools/rooms.ts`.
+
+### D71 — We do not narrate what is sent, and we do not ask again
+**Decision (founder, 2026-08-23):**
+
+> אנחנו לא מדברים אף פעם עם המשתמש על מה נשלח ומבקשים אישור — אנחנו מבטיחים שלא נמסור מידע גולמי
+> שהוא כתב ולא מידע רגיש, ופה זה נגמר.
+
+**What this settles:** the per-action disclosure that had been added above the coach-refinement button
+is removed. The promise is made ONCE, at sign-up, and it is a promise about substance: raw text a
+person wrote is not handed on, and neither is sensitive content.
+
+**Tradeoff accepted, stated plainly:** keeping the promise becomes entirely an engineering
+responsibility, because the user is no longer asked to re-approve it at the moment of use. That is why
+the outbound requests are the narrowest possible and why tests assert what they may NOT contain — see
+`core/tools/obstacleToAction/refine.ts` and its test.
+
+### D72 — Requests and cheers leave the Inbox for the bell
+**Decision (founder, 2026-08-23, and both approved PRDs):** the Inbox holds human conversation only.
+Cheers, nudges, friend requests and Support-Circle invitations move to the Notification Center.
+
+**Why it matters more than it sounds:** the two surfaces had been sharing one count. A badge that can
+be satisfied from two different screens teaches people that badges mean nothing.
+
+**Consequence:** the mail badge counts unread conversations and open message requests, and shows zero
+until there are conversations. The bell counts what other people did. Neither ever counts the same
+object.
+
+### E7 — Direct messages are end-to-end encrypted, on one device, honestly
+**Decision (engineering, within the founder's approved Inbox PRD §14, 2026-08-24):** message bodies
+are sealed on the device with X25519 + XSalsa20-Poly1305 (`tweetnacl`). Each device holds a keypair
+in the OS secure store and publishes only its public half; every message is sealed twice, to the
+recipient and to the sender, so the server stores two sealed boxes and no key.
+
+**Alternatives considered:** shipping messaging unencrypted and adding encryption later (rejected: the
+PRD's §14.1 is a promise to a user, and a promise added later is a lie told in between); a full
+multi-device protocol with key distribution and ratcheting (deferred: it is a security build in its
+own right, and the PRD delegates the protocol choice to architecture).
+
+**Limits, recorded so nobody has to discover them:** one device per account — a second device cannot
+read old messages, which is exactly what §14.2 anticipates; no forward secrecy; no key verification
+between people. Each of these is written in `core/messaging/crypto.ts` where the code is.
+
+**Where it lives:** `core/messaging/crypto.ts`, `supabase/migrations/0003_direct_messaging.sql` — a
+schema with no column anywhere that could hold a plaintext body.
+
 ## 2026-08-20 — The partner's package, in English, at a rhythm the coach decides
 
 > Founder decisions taken while reviewing the partner's Career Expert candidate v1.1

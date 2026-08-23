@@ -15,7 +15,13 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type InboxTabKey = 'friends' | 'allies' | 'groups' | 'requested';
+/**
+ * The three tabs of the realigned Inbox (Inbox PRD §6.2, 2026-08-23). `friends` and `allies` are
+ * gone: a person who is both would have had the same thread in two places, and relationship type
+ * never changed what a conversation IS. Cheers, friend requests and Support-Circle invitations moved
+ * to the Notification Center, where they were always meant to be.
+ */
+export type InboxTabKey = 'chats' | 'groups' | 'requests';
 
 export interface InboxTab {
   key: InboxTabKey;
@@ -24,6 +30,10 @@ export interface InboxTab {
   count?: number;
   /** Danger dot on the tab when it has an unread item underneath. */
   unread?: boolean;
+  /** A tab that is visible but cannot be opened — Groups, until it exists (PRD §18). */
+  locked?: boolean;
+  /** The word shown after a locked tab's label. */
+  lockedLabel?: string;
 }
 
 export function InboxTabs({
@@ -45,10 +55,12 @@ export function InboxTabs({
           <Pressable
             key={tab.key}
             accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={tab.label}
+            // A locked tab announces itself as disabled BEFORE it is activated, so a screen-reader
+            // user is not told "Groups" and then handed nothing (PRD §22).
+            accessibilityState={{ selected: on, disabled: tab.locked }}
+            accessibilityLabel={tab.locked ? `${tab.label}, ${tab.lockedLabel ?? ''}`.trim() : tab.label}
             onPress={() => onSelect(tab.key)}
-            style={({ pressed }) => [styles.tab, pressed && styles.pressed]}>
+            style={({ pressed }) => [styles.tab, pressed && styles.pressed, tab.locked && styles.locked]}>
             <View style={styles.labelRow}>
               <ThemedText
                 type="smallBold"
@@ -56,6 +68,9 @@ export function InboxTabs({
                 style={styles.label}>
                 {tab.label}
               </ThemedText>
+              {tab.locked ? (
+                <ThemedText type="small" themeColor="textMuted">{tab.lockedLabel}</ThemedText>
+              ) : null}
               {tab.count ? (
                 <ThemedText type="smallBold" themeColor="textMuted" style={styles.count}>
                   {tab.count}
@@ -73,6 +88,7 @@ export function InboxTabs({
 }
 
 const styles = StyleSheet.create({
+  locked: { opacity: 0.55 },
   row: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.four,

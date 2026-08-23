@@ -87,7 +87,9 @@
     "stat": "{{value}} {{label}}",
     "inbox": "תיבת ההודעות",
     "inboxWaiting_one": "תיבת ההודעות, {{count}} ממתין",
-    "inboxWaiting_other": "תיבת ההודעות, {{count}} ממתינים"
+    "inboxWaiting_other": "תיבת ההודעות, {{count}} ממתינים",
+    "bell": "פעילות",
+    "bellNew": "פעילות, {{count}} חדשים"
   },
   "swipe": {
     "postponeA11y": "לדחות את הצעד הזה",

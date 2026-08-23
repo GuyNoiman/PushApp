@@ -1,32 +1,27 @@
 /**
- * Inbox — the messages surface, an Instagram-DM layout with our category tabs
- * restored (founder feedback 2026-08-07, reversing the previous Primary/Requested
- * split). A header ("Inbox" + a "New message" pill that is honest about messaging
- * still being deferred, see ComposeButton below), a rounded
- * search field, and a four-tab switch:
- *   · FRIENDS   — accepted friends + received cheers / nudges (the conversations).
- *   · ALLIES    — Journeys the user is an Ally of (a friend's shared progress).
- *   · GROUPS    — group threads (not a POC feature yet → calm empty state).
- *   · REQUESTED — incoming connection requests, each an actionable row
- *     (Accept / Decline), mirroring IG's message requests.
- * Rows are clean IG-DM lines — a round monogram avatar, name, preview, tabular
- * timestamp, unread dot. The search field filters the current list by name,
- * client-side (no backend).
+ * The Inbox — human correspondence, and nothing else.
  *
- * Presentational only (Engineering Bible §19): it reads SocialProvider state and
- * derives each list from REAL social data —
- *   · incoming friend REQUESTS surface under Requested (Accept / Decline).
- *   · accepted friends + received CHEERS / nudges surface under Friends.
- *   · Journeys the user is an Ally of surface under Allies.
- * When a list's real data is empty, that tab shows a calm empty state; Groups has
- * no POC data and shows its own empty state.
+ * WHAT LEFT, and why it is the whole point of this rewrite (Inbox PRD §5). This screen used to mix
+ * accepted friends, received cheers, Ally progress, friend requests and Support-Circle invitations.
+ * None of those is a message. They are things other people DID, they now live in the Notification
+ * Center, and the two surfaces never count the same object — which is the rule that lets a badge
+ * mean something again.
+ *
+ * THREE TABS (§6.2): Chats · Groups, visible and locked · Requests. There is deliberately no Friends
+ * tab and no Allies tab: somebody who is both would have had one conversation in two places, and the
+ * type of a relationship never changed what a conversation is.
+ *
+ * GROUPS IS LOCKED, NOT HIDDEN. The founder wants the future space legible, so the tab is there,
+ * dimmed, labelled, and tapping it explains rather than opening an empty list (§18).
+ *
+ * PRIVACY: this screen never asks the server to search a message body, and the search field filters
+ * names only — bodies are sealed and stay that way (§6.3).
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
-import type { TFunction } from 'i18next';
-import { useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { InboxEmpty } from '@/components/inbox/InboxEmpty';
@@ -34,409 +29,185 @@ import { InboxRow, type InboxRowData } from '@/components/inbox/InboxRow';
 import { InboxTabs, type InboxTab, type InboxTabKey } from '@/components/inbox/InboxTabs';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { TabScrollView } from '@/components/ui/TabScrollView';
-import { BottomTabInset, FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-// From its own module rather than the barrel: the barrel reaches the gateway and its storage, and a
-// pure count has no business dragging those into a screen (or into a test that stubs them).
-import { inboxWaitingCount } from '@/core/social/inboxWaiting';
-import type { AllyProgress, Cheer, Friend, SocialProfile } from '@/core/social';
+import { displayFont, displayScale } from '@/constants/displayFont';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { unreadFor, type ConversationRow } from '@/core/messaging';
 import { useTheme } from '@/hooks/use-theme';
-import { START_TEXT_ALIGN } from '@/i18n/rtl';
+import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
+import { useAuth } from '@/state/AuthProvider';
+import { useMessaging } from '@/state/MessagingProvider';
 import { useSocial } from '@/state/SocialProvider';
 
-/** A friend's display name: their Buddy name if set, else their @handle. */
-function friendName(friend: Friend): string {
-  return profileName(friend.profile);
-}
-
-/** A profile's display name: their Buddy name if set, else their @handle. */
-function profileName(profile: SocialProfile): string {
-  return profile.buddySummary?.name?.trim() || `@${profile.handle}`;
-}
-
 export default function InboxScreen() {
-  const social = useSocial();
   const theme = useTheme();
-  const router = useRouter();
   const { t } = useTranslation('inbox');
-  const [selected, setSelected] = useState<InboxTabKey>('friends');
+  const messaging = useMessaging();
+  const social = useSocial();
+  const { user } = useAuth();
+  const me = user?.id ?? '';
+
+  const [selected, setSelected] = useState<InboxTabKey>('chats');
   const [query, setQuery] = useState('');
 
-  // ── Derive each list's rows from real social state ─────────────────────────
-  const incoming = useMemo(
-    () => social.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming'),
-    [social.friends],
+  const nameOf = useCallback(
+    (conversation: ConversationRow) => {
+      const otherId =
+        conversation.participantIds[0] === me
+          ? conversation.participantIds[1]
+          : conversation.participantIds[0];
+      const friend = social.friends.find((f) => f.profile.id === otherId);
+      return friend
+        ? friend.profile.buddySummary?.name?.trim() || `@${friend.profile.handle}`
+        : t('someone');
+    },
+    [social.friends, me, t],
   );
-  const accepted = useMemo(
-    () => social.friends.filter((f) => f.status === 'accepted'),
-    [social.friends],
-  );
 
-  // FRIENDS — accepted friends + received cheers / nudges (the conversations).
-  const friendsRowsReal = useMemo<InboxRowData[]>(() => {
-    const cheers: InboxRowData[] = social.incomingCheers.map((cheer: Cheer) => {
-      const from = social.friends.find((f) => f.profile.id === cheer.fromId);
-      const name = from ? friendName(from) : t('aBuddy');
-      return {
-        id: `cheer:${cheer.id}`,
-        name,
-        preview: cheer.kind === 'nudge' ? t('preview.nudge') : t('preview.cheer'),
-        timestamp: relativeTime(cheer.createdAt, t),
-        unread: true,
-        // Only when the sender resolves to someone in the Support Circle — a cheer from an
-        // unknown/removed sender has no profile to open.
-        profileId: from?.status === 'accepted' ? from.profile.id : undefined,
-      };
-    });
-
-    const buddies: InboxRowData[] = accepted.map((f) => ({
-      id: `friend:${f.profile.id}`,
-      name: friendName(f),
-      preview: t('preview.inCircle'),
-      profileId: f.profile.id,
-    }));
-
-    // Unread (cheers) sort to the top (Inbox_Screen.md).
-    return [...cheers, ...buddies];
-  }, [social.incomingCheers, social.friends, accepted, t]);
-
-  // ALLIES — Journeys the user is an Ally of: a friend's shared progress.
-  const alliesRowsReal = useMemo<InboxRowData[]>(
+  const chatRows = useMemo<InboxRowData[]>(
     () =>
-      social.allyProgress.map((ap: AllyProgress) => ({
-        id: `ally:${ap.journeyId}`,
-        name: profileName(ap.owner),
-        preview: ap.title
-          ? t('preview.journeyProgress', { title: ap.title, pct: Math.round(ap.progress * 100) })
-          : t('preview.sharingJourney', { pct: Math.round(ap.progress * 100) }),
-        timestamp: relativeTime(ap.updatedAt, t),
+      messaging.chats.map((conversation) => ({
+        id: conversation.id,
+        name: nameOf(conversation),
+        preview: t('chats.preview'),
+        unread: false,
       })),
-    [social.allyProgress, t],
+    [messaging.chats, nameOf, t],
   );
 
-  // REQUESTED — incoming connection requests, each actionable.
-  const requestedRowsReal = useMemo<InboxRowData[]>(
+  const requestRows = useMemo<InboxRowData[]>(
     () =>
-      incoming.map((f) => ({
-        id: `req:${f.profile.id}`,
-        name: friendName(f),
-        preview: t('preview.wantsToJoin'),
-        unread: true,
-        actions: [
-          { label: t('accept'), onPress: () => void social.respondToFriend(f.profile.id, true) },
-          {
-            label: t('decline'),
-            variant: 'ghost',
-            onPress: () => void social.respondToFriend(f.profile.id, false),
-          },
-        ],
-      })),
-    [incoming, social, t],
-  );
-
-  // REQUESTED — incoming Support-Circle (Ally) invites, each actionable (D2). The preview states
-  // exactly what accepting will expose (Encourager vs Companion), so the recipient consents knowingly.
-  const allyInviteRowsReal = useMemo<InboxRowData[]>(
-    () =>
-      social.incomingAllyInvites.map((inv) => ({
-        id: `allyreq:${inv.owner.id}:${inv.journeyId}`,
-        name: profileName(inv.owner),
-        preview: inv.bundle === 'companion' ? t('preview.allyCompanion') : t('preview.allyEncourager'),
+      messaging.requests.map((conversation) => ({
+        id: conversation.id,
+        name: nameOf(conversation),
+        preview: t('request.preview'),
         unread: true,
         actions: [
           {
-            label: t('accept'),
-            onPress: () => void social.respondToAllyInvite(inv.journeyId, inv.owner.id, true),
+            label: t('request.accept'),
+            onPress: () => void messaging.approve(conversation.id),
           },
           {
-            label: t('decline'),
+            label: t('request.delete'),
             variant: 'ghost',
-            onPress: () => void social.respondToAllyInvite(inv.journeyId, inv.owner.id, false),
+            onPress: () => void messaging.block(conversation.id),
           },
         ],
       })),
-    [social, t],
+    [messaging, nameOf, t],
   );
-
-  // Each tab reads its REAL data; an empty list shows the calm per-tab empty state below.
-  const friendsRows = friendsRowsReal;
-  const alliesRows = alliesRowsReal;
-  // Friend requests + Ally invites share the Requested tab; both are real, actionable rows.
-  const requestedRows = useMemo(
-    () => [...requestedRowsReal, ...allyInviteRowsReal],
-    [requestedRowsReal, allyInviteRowsReal],
-  );
-
-  // What is actually waiting — the line under the title, from the SAME derivation the mail button's
-  // badge reads (`core/social/inboxWaiting`). A badge and a heading that disagree about how much is
-  // waiting is the kind of small dishonesty that teaches people to trust neither.
-  const unreadCount = inboxWaitingCount({
-    incomingCheers: social.incomingCheers,
-    friends: social.friends,
-    incomingAllyInvites: social.incomingAllyInvites,
-  });
 
   const tabs: InboxTab[] = [
-    { key: 'friends', label: t('tabs.friends'), unread: friendsRows.some((r) => r.unread) },
-    { key: 'allies', label: t('tabs.allies') },
-    { key: 'groups', label: t('tabs.groups') },
-    { key: 'requested', label: t('tabs.requested'), count: requestedRows.length || undefined },
+    { key: 'chats', label: t('tabs.chats') },
+    { key: 'groups', label: t('tabs.groups'), locked: true, lockedLabel: t('tabs.soon') },
+    { key: 'requests', label: t('tabs.requests'), count: requestRows.length || undefined },
   ];
 
-  const rows =
-    selected === 'friends'
-      ? friendsRows
-      : selected === 'allies'
-        ? alliesRows
-        : selected === 'requested'
-          ? requestedRows
-          : []; // groups — no POC data yet
-
-  // Client-side name filter (Instagram-style search — no backend).
+  const rows = selected === 'chats' ? chatRows : selected === 'requests' ? requestRows : [];
   const q = query.trim().toLowerCase();
   const visibleRows = q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows;
+
+  const onSelectTab = useCallback(
+    (key: InboxTabKey) => {
+      if (key === 'groups') {
+        // Explains rather than opening an empty list (PRD §18).
+        Alert.alert(t('groups.title'), t('groups.body'));
+        return;
+      }
+      setSelected(key);
+    },
+    [t],
+  );
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <View style={styles.headerText}>
-            <ThemedText type="display" numberOfLines={1}>
-              {t('title')}
-            </ThemedText>
-            {/* The count of what is actually waiting, under the title — the mockup's line, and the
-                one thing a person opens this tab to know. Silent when nothing is unread. */}
-            {unreadCount > 0 ? (
-              <ThemedText type="small" style={{ color: theme.tint }}>
-                {t('unreadCount', { count: unreadCount })}
-              </ThemedText>
-            ) : null}
-          </View>
-          <ComposeButton
-            onPress={() =>
-              // Honest, not dead: it says what it can't do yet and offers the thing that DOES
-              // exist today (a Cheer, from Circle).
-              Alert.alert(t('comingSoon.title'), t('comingSoon.body'), [
-                { text: t('comingSoon.openCircle'), onPress: () => router.push('/friends' as Href) },
-                { text: t('close', { ns: 'common' }), style: 'cancel' },
-              ])
-            }
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('back', { ns: 'common' })}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+            hitSlop={8}
+            style={({ pressed }) => [styles.icon, pressed && styles.pressed]}>
+            <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={22} color={theme.text} />
+          </Pressable>
+          <ThemedText
+            style={[
+              styles.title,
+              { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(22 * displayScale()) },
+            ]}>
+            {t('title')}
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('compose')}
+            onPress={() => router.push('/new-message' as never)}
+            hitSlop={8}
+            style={({ pressed }) => [styles.icon, pressed && styles.pressed]}>
+            <Ionicons name="create-outline" size={22} color={theme.tint} />
+          </Pressable>
         </View>
 
         <View style={styles.searchWrap}>
-          <View style={[styles.searchField, { backgroundColor: theme.backgroundSelected }]}>
-            <Ionicons name="search" size={18} color={theme.textMuted} />
+          <View style={[styles.search, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
+            <Ionicons name="search" size={16} color={theme.textMuted} />
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder={t('search', { ns: 'common' })}
+              placeholder={t('searchPlaceholder')}
               placeholderTextColor={theme.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-              accessibilityLabel={t('searchA11y')}
-              textAlign={START_TEXT_ALIGN}
-              style={[styles.searchInput, { color: theme.text }]}
+              accessibilityLabel={t('searchPlaceholder')}
+              style={[styles.searchInput, { color: theme.text, textAlign: START_TEXT_ALIGN }]}
             />
-            {q ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('clearSearch', { ns: 'common' })}
-                hitSlop={8}
-                onPress={() => setQuery('')}>
-                <Ionicons name="close-circle" size={18} color={theme.textMuted} />
-              </Pressable>
-            ) : null}
           </View>
         </View>
 
-        <InboxTabs tabs={tabs} selected={selected} onSelect={setSelected} />
+        <InboxTabs tabs={tabs} selected={selected} onSelect={onSelectTab} />
 
-        {social.error && (
-          <ThemedView
-            type="backgroundElement"
-            style={[styles.errorBanner, { borderColor: theme.hairline }]}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {social.error}
-            </ThemedText>
-          </ThemedView>
-        )}
-
-        {visibleRows.length === 0 ? (
-          q ? (
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          {visibleRows.length === 0 ? (
             <InboxEmpty
-              emoji=""
-              title={t('noMatches.title')}
-              subtitle={t('noMatches.body', { query: query.trim() })}
+              emoji={selected === 'requests' ? '📬' : '💬'}
+              title={selected === 'requests' ? t('empty.requests.title') : t('empty.chats.title')}
+              subtitle={selected === 'requests' ? t('empty.requests.body') : t('empty.chats.body')}
             />
           ) : (
-            <InboxEmpty
-              emoji=""
-              title={emptyTitle(selected, t)}
-              subtitle={emptySubtitle(selected, t)}
-            />
-          )
-        ) : (
-          // Keyboard-safe: search filters this list, so the rows under the keyboard stay
-          // reachable and a row opens on the first tap (Device QA A3).
-          <TabScrollView
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}>
-            {/* An accepted friend's row opens their Friend Profile (Friend_Profile_PRD §8
-                criterion 1). A pending REQUEST row carries no profileId, so it stays inert —
-                someone who hasn't accepted yet is not a friend whose profile may be opened. */}
-            {visibleRows.map((row) => (
+            visibleRows.map((row) => (
               <InboxRow
                 key={row.id}
                 row={row}
-                onPress={row.profileId ? () => router.push(`/friend/${row.profileId}` as Href) : undefined}
+                onPress={() => router.push(`/conversation/${row.id}` as never)}
               />
-            ))}
-          </TabScrollView>
-        )}
+            ))
+          )}
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
 }
 
-/**
- * "New message" — one pill, icon AND label inside it, the same shape as Circle's Invite / Add
- * buttons (founder device pass 2026-08-17: the label used to sit outside a button that wasn't even
- * pressable).
- *
- * Direct messaging is deferred post-MVP (D29 / D40) and the Friend Profile PRD is explicit that we
- * must not ship a dead or misleading message action. So this is a REAL button that does a real
- * thing: it says plainly that messages aren't here yet and points at the way you can reach someone
- * today (a Cheer, from Circle). The a11y label carries "coming later" too, so a screen-reader user
- * knows BEFORE they press, not after.
- */
-function ComposeButton({ onPress }: { onPress: () => void }) {
-  const theme = useTheme();
-  const { t } = useTranslation('inbox');
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t('newMessageA11y')}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.composeButton,
-        { backgroundColor: theme.tealTint },
-        pressed && styles.pressed,
-      ]}>
-      <Ionicons name="create-outline" size={16} color={theme.tealStrong} />
-      <ThemedText type="smallBold" style={{ color: theme.tealStrong }}>
-        {t('newMessage')}
-      </ThemedText>
-    </Pressable>
-  );
-}
-
-/** Translated title for an empty tab. */
-function emptyTitle(tab: InboxTabKey, t: TFunction<'inbox'>): string {
-  switch (tab) {
-    case 'requested':
-      return t('empty.requested.title');
-    case 'allies':
-      return t('empty.allies.title');
-    case 'groups':
-      return t('empty.groups.title');
-    default:
-      return t('empty.messages.title');
-  }
-}
-
-/** Translated sub-line for an empty tab. */
-function emptySubtitle(tab: InboxTabKey, t: TFunction<'inbox'>): string {
-  switch (tab) {
-    case 'requested':
-      return t('empty.requested.subtitle');
-    case 'allies':
-      return t('empty.allies.subtitle');
-    case 'groups':
-      return t('empty.groups.subtitle');
-    default:
-      return t('empty.messages.subtitle');
-  }
-}
-
-/** Compact relative time for a cheer's timestamp, e.g. "2h" · "1d" · "now". */
-function relativeTime(ms: number, t: TFunction<'inbox'>): string {
-  const diff = Date.now() - ms;
-  if (diff < 60_000) return t('now');
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  safeArea: {
-    flex: 1,
-    maxWidth: MaxContentWidth,
-    alignSelf: 'stretch',
-  },
-  headerText: {
-    flexShrink: 1,
-    minWidth: 0,
-    gap: 2,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
-    paddingBottom: Spacing.three,
-  },
-  // Same pill as Circle's header buttons: icon + label inside one 44pt-tall target.
-  composeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.one,
-    minHeight: 44,
-    borderRadius: Radius.pill,
-    paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
-  pressed: {
-    opacity: 0.6,
-  },
-  searchWrap: {
-    paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
-  },
-  searchField: {
+  icon: { padding: Spacing.two, minWidth: 38 },
+  title: { flex: 1, textAlign: 'center' },
+  searchWrap: { paddingHorizontal: Spacing.four, paddingBottom: Spacing.two },
+  search: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
     borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.three,
-    height: 40,
+    paddingVertical: Spacing.two,
   },
-  searchInput: {
-    flex: 1,
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 15,
-    paddingVertical: 0,
-  },
-  errorBanner: {
-    marginHorizontal: Spacing.four,
-    marginTop: Spacing.three,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    padding: Spacing.three,
-  },
-  list: {
-    paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.four,
-  },
+  searchInput: { flex: 1, fontSize: 15 },
+  list: { padding: Spacing.three, gap: Spacing.two },
+  pressed: { opacity: 0.75 },
 });

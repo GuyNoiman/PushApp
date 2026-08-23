@@ -2,7 +2,6 @@
   "title": "Tools",
   "subtitle": "Find what can help you right now.",
   "soon": "Coming",
-  "footnote": "New tools show up here as they land. Anything marked coming does not exist yet, which is why it does not open.",
   "items": {
     "questionnaire": "My questionnaire",
     "communication": "How to talk to me",
@@ -1215,5 +1214,6 @@
     "seconds": "{{count}}s",
     "denied": "Your phone has that turned off for PushApp. Settings can change it whenever you want.",
     "failed": "That did not work. Nothing was saved."
-  }
+  },
+  "more": "More"
 }

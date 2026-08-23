@@ -38,7 +38,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -56,6 +56,7 @@ import {
 } from '@/core/tools/catalog';
 import { ago, recentlyUsed, recommended, savedTools, searchTools } from '@/core/tools/shelf';
 import { paletteOfRoom } from '@/core/tools/rooms';
+import { useOnTabPress } from '@/hooks/use-tab-press';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 import { useToolsShelf } from '@/state/ToolsShelf';
@@ -74,6 +75,18 @@ export default function ToolsScreen() {
   const [query, setQuery] = useState('');
   /** Which category is expanded. Null ⇒ the page's own order, which is the default view. */
   const [openCategory, setOpenCategory] = useState<ToolCategoryId | null>(null);
+
+  /**
+   * Tapping the Tools tab while inside a room leaves the room (founder, 2026-08-24). The gesture
+   * already means "back to the start of this tab" — it returns a long screen to its top — and being
+   * inside a room is the same kind of "inside" as being scrolled down.
+   */
+  useOnTabPress(
+    useCallback(() => {
+      setOpenCategory(null);
+      setQuery('');
+    }, []),
+  );
 
   const label = useCallback((tool: ToolDefinition) => t(`items.${tool.key}`), [t]);
 
@@ -358,9 +371,6 @@ export default function ToolsScreen() {
             </>
           )}
 
-          <ThemedText type="small" themeColor="textMuted" style={styles.foot}>
-            {t('footnote')}
-          </ThemedText>
         </TabScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -432,23 +442,15 @@ function ToolList({
                 ? { backgroundColor: theme.backgroundElement }
                 : { borderStyle: 'dashed' as const },
             ]}>
+            {/* NO PER-TOOL ICON since 2026-08-24 (founder). A glyph per row was decoration that
+                cost the width the SENTENCE needs — and the sentence is the thing that lets somebody
+                choose. It is now shown in full, never truncated. */}
             <Pressable
               accessibilityRole={live ? 'button' : 'text'}
               accessibilityLabel={live ? name : `${name}. ${t('soon')}`}
               disabled={!live}
               onPress={() => onOpen(tool)}
               style={styles.rowMain}>
-              <View
-                style={[
-                  styles.glyph,
-                  { backgroundColor: live ? theme.tealTint : theme.backgroundSelected },
-                ]}>
-                <Ionicons
-                  name={tool.icon as keyof typeof Ionicons.glyphMap}
-                  size={17}
-                  color={live ? theme.tealStrong : theme.textMuted}
-                />
-              </View>
               <View style={styles.rowText}>
                 <ThemedText
                   type="displaySmall"
@@ -460,30 +462,42 @@ function ToolList({
                   }}>
                   {name}
                 </ThemedText>
-                <ThemedText type="small" numberOfLines={2} style={{ color: theme.textMuted }}>
+                <ThemedText type="small" style={{ color: theme.textMuted }}>
                   {live
                     ? t(`blurbs.${tool.key}`)
                     : `${t('soon')} · ${t(`blurbs.${tool.key}`)}`}
                 </ThemedText>
+                {tool.minutes && live ? (
+                  <View style={styles.rowTime}>
+                    <Ionicons name="time-outline" size={13} color={theme.textMuted} />
+                    <ThemedText type="small" style={{ color: theme.textMuted }}>
+                      {t('minutes', { count: tool.minutes })}
+                    </ThemedText>
+                  </View>
+                ) : null}
               </View>
-              {tool.minutes && live ? (
-                <ThemedText type="small" style={{ color: theme.textMuted }}>
-                  {t('minutes', { count: tool.minutes })}
-                </ThemedText>
-              ) : null}
             </Pressable>
 
-            {/* Saving a tool that does not exist would be saving a promise. */}
+            {/* An OVERFLOW, not a bookmark. Saving is one thing a person might want to do with a
+                tool and sharing is another; a single-purpose button had no room to grow (founder,
+                2026-08-24). The menu holds what exists today and is where the rest will land. */}
             {live ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityState={{ selected: saved }}
-                accessibilityLabel={`${saved ? t('unsave') : t('save')}: ${name}`}
-                onPress={() => shelf.toggleSaved(tool.key)}
+                accessibilityLabel={`${t('more')}: ${name}`}
+                onPress={() =>
+                  Alert.alert(name, undefined, [
+                    {
+                      text: saved ? t('unsave') : t('save'),
+                      onPress: () => shelf.toggleSaved(tool.key),
+                    },
+                    { text: t('cancel', { ns: 'common' }), style: 'cancel' },
+                  ])
+                }
                 hitSlop={10}
                 style={styles.saveButton}>
                 <Ionicons
-                  name={saved ? 'bookmark' : 'bookmark-outline'}
+                  name={saved ? 'bookmark' : 'ellipsis-horizontal'}
                   size={17}
                   color={saved ? theme.tint : theme.textMuted}
                 />
@@ -605,6 +619,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
   },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
+  rowTime: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, marginTop: 2 },
   saveButton: { padding: Spacing.two },
   backRow: {
     flexDirection: 'row',
@@ -614,6 +629,5 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
   },
   empty: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four },
-  foot: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four },
   pressed: { opacity: 0.7 },
 });

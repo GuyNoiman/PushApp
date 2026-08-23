@@ -28,7 +28,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { isolate } from '@/i18n/rtl';
 
 /** A compact icon + number stat (coins, streak) — no caption. */
 function Stat({
@@ -103,24 +102,19 @@ export function TopStatusBar({
         <ThemedText type="smallBold" style={[styles.value, { color: theme.text }]}>
           {level}
         </ThemedText>
-        <View style={styles.xp}>
-          <View style={[styles.track, { backgroundColor: theme.hairline }]}>
-            <View
-              style={[styles.fill, { backgroundColor: theme.tint, width: `${pct * 100}%` }]}
-            />
-          </View>
-          {/* Isolated: two number runs around a NEUTRAL "/" swap places under RTL, so a Hebrew
-              reader would see "250 / 120" and think they had overshot the level (RTL sweep). */}
-          <ThemedText style={[styles.xpText, { color: theme.textMuted }]}>
-            {isolate(`${xpIntoLevel} / ${xpForNextLevel}`)}
-          </ThemedText>
+        {/* The bar alone, without the "250 / 400" readout beside it.
+            The strip carries five things now that the bell has joined it, and on a phone that read
+            as clutter (founder, 2026-08-24). The numbers were the most droppable: the bar already
+            says how far along the level is, the exact figures live on the profile, and the SPOKEN
+            label above still carries them for a screen reader — so nothing was lost except width. */}
+        <View style={[styles.track, { backgroundColor: theme.hairline }]}>
+          <View style={[styles.fill, { backgroundColor: theme.tint, width: `${pct * 100}%` }]} />
         </View>
       </View>
 
       {/* COINS — HIDDEN in the initial version (Decision Log D29): the RewardEngine keeps accruing
           Coins on `buddy.coins`, but with the Shop archived there is no sink, so we don't surface
           them yet. Re-add the Stat here (+ its divider) when Coins get a real role. */}
-      <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
       <Stat
         icon="flame"
         value={streak}
@@ -223,7 +217,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two + 2,
-    gap: Spacing.three,
+    // Tighter than the old three-step gap: five clusters at that spacing pushed the two round
+    // buttons into each other's edge on a narrow phone.
+    gap: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   // The level cluster takes the free width so its progress bar can stretch.
@@ -245,7 +241,11 @@ const styles = StyleSheet.create({
   // device pass 2026-08-17) — enough to read progress at a glance while the streak and level
   // keep their room and the strip keeps its calm proportions.
   track: {
-    width: 80,
+    // Stretches into the width the numeric readout used to occupy, so progress is EASIER to read
+    // than it was before, not harder.
+    flex: 1,
+    minWidth: 56,
+    maxWidth: 132,
     height: 5,
     borderRadius: Radius.pill,
     overflow: 'hidden',
@@ -253,10 +253,6 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: Radius.pill,
-  },
-  xpText: {
-    fontSize: 10.5,
-    fontVariant: ['tabular-nums'],
   },
   stat: {
     flexDirection: 'row',

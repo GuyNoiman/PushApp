@@ -1,6 +1,6 @@
 {
   "title": "Journeys",
-  "createJourney": "Create journey",
+  "createJourney": "New",
   "createA11y": "Create a new Journey",
   "myDreamsA11y": "See My Dreams",
   "tabs": {
@@ -76,5 +76,6 @@
       "confirm": "Remove"
     }
   },
-  "subtitle": "Purposeful journeys. Real progress."
+  "subtitle": "Purposeful journeys. Real progress.",
+  "dreams": "Dreams"
 }

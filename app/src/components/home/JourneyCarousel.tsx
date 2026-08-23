@@ -182,18 +182,34 @@ export function JourneyCarousel({ cards }: { cards: readonly JourneyCard[] }) {
         ))}
       </ScrollView>
 
+      {/* THE ROW HAS TO SAY IT CAN BE DRAGGED (founder, 2026-08-24). Dots alone only read as "there
+          is more" to somebody who already knows the convention, and at six near-invisible pixels
+          they barely read at all. Now: a chevron on each side that EXISTS only when there is a card
+          that way — the plainest possible "more over here" — around dots with real contrast, the
+          current one widened into a pill so the position is legible at a glance. */}
       {cards.length > 1 ? (
         <View style={styles.pager} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Ionicons
+            name={isRTL() ? 'chevron-forward' : 'chevron-back'}
+            size={14}
+            color={index > 0 ? theme.textMuted : 'transparent'}
+          />
           {cards.map((card, i) => (
             <View
               key={card.id}
               testID="pager-dot"
               style={[
                 styles.pagerDot,
-                { backgroundColor: i === index ? theme.tint : theme.backgroundSelected },
+                i === index && styles.pagerDotCurrent,
+                { backgroundColor: i === index ? theme.tint : theme.hairline },
               ]}
             />
           ))}
+          <Ionicons
+            name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+            size={14}
+            color={index < cards.length - 1 ? theme.textMuted : 'transparent'}
+          />
         </View>
       ) : null}
     </View>
@@ -303,14 +319,19 @@ const styles = StyleSheet.create({
   },
   pager: {
     flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'center',
     gap: Spacing.one,
     paddingTop: Spacing.three,
   },
   pagerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  /** The current card's dot is a short pill — position readable without counting. */
+  pagerDotCurrent: {
+    width: 18,
   },
   pressed: {
     opacity: 0.85,

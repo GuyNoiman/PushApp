@@ -190,8 +190,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.two,
+    // Tightened 2026-08-24: the tiles came out taller than the founder's design on a real phone,
+    // and a day with four Steps became a scroll. The frame and the spacing still separate them —
+    // it is the same tile, just not padded like a card.
+    paddingVertical: Spacing.two + 2,
+    paddingHorizontal: Spacing.three,
     borderRadius: Radius.card,
     borderWidth: 1,
   },

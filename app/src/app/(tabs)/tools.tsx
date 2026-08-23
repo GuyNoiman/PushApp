@@ -260,10 +260,10 @@ export default function ToolsScreen() {
                   see is a promise about where the product is going, and an empty one that is honest
                   about being empty says more than a gap in the row. ── */}
               <SectionTitle>{t('sections.categories')}</SectionTitle>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.rail}>
+              {/* A GRID, not a rail (founder, 2026-08-24). Eight rooms behind a horizontal drag is a
+                  menu you have to work to read; the whole point of rooms is that a person sees the
+                  shape of the place at a glance. Two columns, every name in full. */}
+              <View style={styles.categoryGrid}>
                 {TOOL_CATEGORY_IDS.map((id) => {
                   const count = toolsInCategory(id).length;
                   const empty = count === 0;
@@ -300,7 +300,7 @@ export default function ToolsScreen() {
                           color={empty ? theme.textMuted : accent}
                         />
                       </View>
-                      <ThemedText type="displaySmall" numberOfLines={2} style={styles.categoryTitle}>
+                      <ThemedText type="displaySmall" style={styles.categoryTitle}>
                         {t(`categories.${id}`)}
                       </ThemedText>
                       <ThemedText type="small" style={{ color: theme.textMuted }}>
@@ -309,7 +309,7 @@ export default function ToolsScreen() {
                     </Pressable>
                   );
                 })}
-              </ScrollView>
+              </View>
 
               {/* ── At most two, LIVE only, for the person who does not know where to start ── */}
               {suggested.length > 0 ? (
@@ -549,14 +549,22 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   recentTitle: { minHeight: 40 },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
   categoryCard: {
-    width: 128,
+    // Two per row, whatever the screen width. `48%` rather than a pixel width so a long room name
+    // has room to wrap instead of being cut.
+    width: '48%',
     padding: Spacing.three,
     borderRadius: Radius.card,
     borderWidth: StyleSheet.hairlineWidth,
     gap: Spacing.two,
   },
-  categoryTitle: { minHeight: 40 },
+  categoryTitle: {},
   glyph: {
     width: 34,
     height: 34,

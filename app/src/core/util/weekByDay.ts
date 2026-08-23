@@ -224,6 +224,12 @@ function carryForward(
 }
 
 /**
+ * How far ahead an offer is still an OFFER. Beyond this it is somebody's plan for next week, and
+ * putting it under "you could also do today" is noise rather than an opportunity.
+ */
+export const PULL_FORWARD_HORIZON_DAYS = 3;
+
+/**
  * The Steps of LATER days that could be done now — the "you could also do today" list, shown at the
  * end of every day and not only a finished one.
  *
@@ -231,20 +237,48 @@ function carryForward(
  * be offered here as an optional extra, which would let the app ask for the same thing twice in two
  * different tones. A locked Step (an unmet dependency) is not offered either — it is not something
  * the user can choose to do early.
+ *
+ * THREE RULES ADDED 2026-08-24, from what the founder actually saw on his phone: the list offered
+ * him the same thing three times, offered something his day already held, and offered something from
+ * the far end of the week.
+ *
+ *  1. **One Step per Journey.** A Journey with three identical sessions this week is ONE offer. Three
+ *     rows reading "workout · workout · workout" are the same ask wearing three hats.
+ *  2. **Nothing from a Journey the day already carries.** If today already asks something of a
+ *     Journey, offering more of it is not an extra — it is the app asking twice, which is exactly
+ *     what the carry rule refuses to do one function above.
+ *  3. **A horizon.** Only the next {@link PULL_FORWARD_HORIZON_DAYS} days. Tomorrow is an offer; next
+ *     Sunday is a plan.
+ *
+ * `todaysSteps` is what the day itself is showing. It is a parameter rather than something derived
+ * here because the day's list is built by {@link buildWeekByDay} with its own carry rules, and this
+ * function must exclude what the person is ACTUALLY looking at, not what it recomputes.
  */
 export function pullForwardCandidates(
   steps: readonly TodayStep[],
   dayStart: number,
   limit = 3,
+  todaysSteps: readonly TodayStep[] = [],
 ): TodayStep[] {
   const after = startOfNextLocalDay(dayStart);
+  const horizonEnd = dayStart + (PULL_FORWARD_HORIZON_DAYS + 1) * DAY_MS;
+  const journeysAlreadyToday = new Set(todaysSteps.map((item) => item.journeyId));
+  const offeredJourneys = new Set<string>();
+
   return steps
     .filter((item) => {
       if (item.step.done || item.step.dropped || item.locked) return false;
+      if (journeysAlreadyToday.has(item.journeyId)) return false;
       const planned = plannedDay(item);
-      return planned !== undefined && planned >= after;
+      return planned !== undefined && planned >= after && planned < horizonEnd;
     })
     .sort((a, b) => (a.step.plannedFor ?? 0) - (b.step.plannedFor ?? 0))
+    .filter((item) => {
+      // Soonest wins the Journey's single slot, because the sort above put it first.
+      if (offeredJourneys.has(item.journeyId)) return false;
+      offeredJourneys.add(item.journeyId);
+      return true;
+    })
     .slice(0, limit);
 }
 

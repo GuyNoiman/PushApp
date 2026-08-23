@@ -2097,8 +2097,8 @@ export class AppCore {
    * today" list. Always available, not a reward for finishing the day: someone with time this
    * evening should not have to complete today before being offered the next thing.
    */
-  pullForward(dayStart: number, limit?: number): TodayStep[] {
-    return pullForwardCandidates(this.journeyEngine.getWeekSteps(), dayStart, limit);
+  pullForward(dayStart: number, limit?: number, todaysSteps: readonly TodayStep[] = []): TodayStep[] {
+    return pullForwardCandidates(this.journeyEngine.getWeekSteps(), dayStart, limit, todaysSteps);
   }
 
   /**

@@ -161,17 +161,18 @@ export default function JourneysScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        {/* Two rows since 2026-08-24. With both actions carrying a word, the title and the subtitle
+            no longer fit beside them, and the subtitle wrapped mid-phrase for no reason (founder).
+            The subtitle now owns a full-width line under the title, where it cannot be squeezed. */}
         <View style={styles.header}>
-          <View style={styles.headerText}>
-            <ThemedText type="display" numberOfLines={1}>
+          <View style={styles.headerTop}>
+            <ThemedText type="display" numberOfLines={1} style={styles.headerTitle}>
               {t('title')}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('subtitle')}
-            </ThemedText>
-          </View>
-          <View style={styles.headerActions}>
-            {/* My Dreams entry (T0-a) — Dreams are the "who I'm becoming" behind these Journeys. */}
+            <View style={styles.headerActions}>
+            {/* My Dreams entry (T0-a) — Dreams are the "who I'm becoming" behind these Journeys.
+                It CARRIES ITS WORD now: an icon-only button here was unreadable, and its sparkles
+                glyph was the same one two tools use (founder, 2026-08-24). */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('myDreamsA11y')}
@@ -182,7 +183,10 @@ export default function JourneysScreen() {
                 { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
                 pressed && styles.pressed,
               ]}>
-              <Ionicons name="sparkles-outline" size={18} color={theme.teal} />
+              <Ionicons name="telescope-outline" size={18} color={theme.teal} />
+              <ThemedText type="smallBold" style={{ color: theme.teal }}>
+                {t('dreams')}
+              </ThemedText>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -198,7 +202,11 @@ export default function JourneysScreen() {
                 {t('createJourney')}
               </ThemedText>
             </Pressable>
+            </View>
           </View>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.headerSubtitle}>
+            {t('subtitle')}
+          </ThemedText>
         </View>
 
         {/* Underlined segmented control (Current · Completed · Future) — the active
@@ -520,9 +528,11 @@ function JourneyCard({
         )}
 
         {/* The footer carries a date or a projection. A canceled Journey gets its stop date and
-            never an "ends in…" projection — and nothing at all when that date is unknown. */}
+            never an "ends in…" projection — and nothing at all when that date is unknown.
+            NO RULE ABOVE IT since 2026-08-24 (founder): the progress bar and the date are two lines
+            of the same small card, and a line between them divided a thing that was never two. */}
         {foot != null && (
-          <View style={[styles.foot, { borderTopColor: theme.hairline }]}>
+          <View style={styles.foot}>
             <ThemedText type="small" themeColor="textMuted">
               {foot}
             </ThemedText>
@@ -545,14 +555,19 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
+    gap: Spacing.one,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
   },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  headerTitle: { flexShrink: 1, minWidth: 0 },
+  headerSubtitle: {},
   // The title and its line share a column so the actions stay pinned to the top of the block and do
   // not drift down when the subtitle wraps in a longer language.
   headerText: {
@@ -572,8 +587,10 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   dreamsButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.half,
     borderWidth: 1,
     borderRadius: Radius.button,
     paddingVertical: Spacing.one,
@@ -698,9 +715,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   foot: {
-    borderTopWidth: 1,
-    paddingTop: Spacing.two,
-    marginTop: Spacing.one,
+    marginTop: Spacing.two,
   },
   pressed: {
     opacity: 0.7,

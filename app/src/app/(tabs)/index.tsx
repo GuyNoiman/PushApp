@@ -24,7 +24,7 @@
  * one pure derivation behind it (`core/util/weekByDay`); this screen only decides what a day's
  * cards look like. The Dream a Step serves moved ONTO the card, because the day's list is flat.
  */
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +57,7 @@ import { currentMilestone } from '@/core/util/milestones';
 // From its own module rather than the barrel: the barrel reaches the gateway and its storage, and a
 // pure count has no business dragging those into a screen (or into a test that stubs them).
 import { useNotificationActivity } from '@/hooks/useNotificationActivity';
+import { useProfile } from '@/state/ProfileProvider';
 import { isRunning } from '@/core/util/journeyStatus';
 import { isInClosedWeek } from '@/core/util/week';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
@@ -127,6 +128,7 @@ function initialsOf(name: string): string {
 export default function HomeScreen() {
   const { core, snapshot, ready } = useApp();
   const social = useSocial();
+  const { profile } = useProfile();
   const router = useRouter();
   const theme = useTheme();
   const { t } = useTranslation('home');
@@ -319,16 +321,36 @@ export default function HomeScreen() {
   const connection = useServerConnection();
   const [connectionDismissed, setConnectionDismissed] = useState(false);
 
-  const hour = new Date().getHours();
+  /**
+   * The greeting FOLLOWS THE CLOCK. It used to be read once at render, so an app left open since
+   * the morning went on saying "good morning" into the evening — which is what the founder saw on
+   * 2026-08-24. It re-reads when the screen regains focus and on a timer that fires at the next
+   * boundary, so the words are true whenever somebody is actually looking.
+   */
+  const [hour, setHour] = useState(() => new Date().getHours());
+  useFocusEffect(useCallback(() => setHour(new Date().getHours()), []));
+  useEffect(() => {
+    const now = new Date();
+    const msToNextHour =
+      (60 - now.getMinutes()) * 60_000 - now.getSeconds() * 1000 - now.getMilliseconds();
+    const timer = setTimeout(() => setHour(new Date().getHours()), Math.max(1000, msToNextHour));
+    return () => clearTimeout(timer);
+  }, [hour]);
   const greeting = t(`greeting.${greetingKeyForHour(hour)}`);
-  // The greeting prefers the (simulated) signed-in user's first name, then a public
-  // handle, then a warm fallback. TODO(auth): the sim is a dev stand-in for a real
-  // Google/Apple sign-in (see core/profile/simulatedUser).
+
+  /**
+   * The name, from the person's own profile first.
+   *
+   * WHEN THERE IS NO NAME THE GREETING DROPS IT ENTIRELY rather than inventing one. "Good morning,
+   * there" reads worse than "Good morning" and it is also a small lie about knowing somebody — the
+   * founder's note, 2026-08-24. The placeholder is gone.
+   */
   const simUser = getSimulatedUser();
   const name =
+    profile.displayName?.trim() ||
     (simUser.signedIn ? firstName(simUser.name) : '') ||
     social.profile?.handle?.trim() ||
-    t('greeting.fallbackName');
+    '';
 
   const journeyById = useMemo(() => {
     const map = new Map<string, Journey>();
@@ -478,7 +500,12 @@ export default function HomeScreen() {
   // Steps of LATER days that could be done now. Shown at the END of every day and not only a
   // finished one: someone with time this evening should not have to complete the day first.
   const alsoToday = useMemo(
-    () => (ready && snapshot && day ? core.pullForward(day.dayStart) : []),
+    () =>
+      ready && snapshot && day
+        ? // The day's OWN Steps go in, so nothing the person is already looking at is offered back
+          // to them as an extra (founder, 2026-08-24).
+          core.pullForward(day.dayStart, undefined, day.steps.map((s) => s.item))
+        : [],
     [core, ready, snapshot, day],
   );
 
@@ -601,7 +628,7 @@ export default function HomeScreen() {
                   styles.hi,
                   { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(25 * displayScale()) },
                 ]}>
-                {t('greeting.line', { greeting, name })}
+                {name ? t('greeting.line', { greeting, name }) : greeting}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
                 {t('greeting.tagline')}

@@ -11,7 +11,12 @@ import type { TodayStep } from '../../engines/JourneyEngine';
 import type { Journey, Step } from '../../types/domain';
 import { startOfLocalDay } from '../date';
 import { setWeekStartDay } from '../week';
-import { buildWeekByDay, pullForwardCandidates, summariseWeek } from '../weekByDay';
+import {
+  buildWeekByDay,
+  PULL_FORWARD_HORIZON_DAYS,
+  pullForwardCandidates,
+  summariseWeek,
+} from '../weekByDay';
 
 const DAY = 24 * 60 * 60 * 1000;
 // A Wednesday, mid-morning, in a week that starts on Sunday — so there are days on both sides.
@@ -175,15 +180,43 @@ describe('a Step that was done', () => {
 });
 
 describe('what can be pulled forward', () => {
+  // One per Journey now, so the fixture gives each Step its own Journey; the same-Journey case has
+  // its own test below.
   const steps = [
-    todayStep({ id: 'a', plannedFor: TODAY + DAY }),
-    todayStep({ id: 'b', plannedFor: TODAY + 2 * DAY }),
-    todayStep({ id: 'c', plannedFor: TODAY + 3 * DAY }),
-    todayStep({ id: 'd', plannedFor: TODAY + 4 * DAY }),
+    todayStep({ id: 'a', plannedFor: TODAY + DAY }, 'j1'),
+    todayStep({ id: 'b', plannedFor: TODAY + 2 * DAY }, 'j2'),
+    todayStep({ id: 'c', plannedFor: TODAY + 3 * DAY }, 'j3'),
+    todayStep({ id: 'd', plannedFor: TODAY + 4 * DAY }, 'j4'),
   ];
 
   it('offers later Steps, soonest first, and never more than the limit', () => {
     expect(pullForwardCandidates(steps, TODAY).map((s) => s.step.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  /**
+   * The three rules added 2026-08-24, from what the founder saw on his own phone: the same thing
+   * offered three times, something his day already held, and something from the far end of the week.
+   */
+  it('offers one Step per Journey — three identical sessions are ONE offer', () => {
+    const sameJourney = [
+      todayStep({ id: 'first', plannedFor: TODAY + DAY }, 'j1'),
+      todayStep({ id: 'second', plannedFor: TODAY + 2 * DAY }, 'j1'),
+      todayStep({ id: 'third', plannedFor: TODAY + 3 * DAY }, 'j1'),
+    ];
+    expect(pullForwardCandidates(sameJourney, TODAY).map((s) => s.step.id)).toEqual(['first']);
+  });
+
+  it('offers nothing from a Journey the day already carries', () => {
+    const todays = [todayStep({ id: 'todays', plannedFor: TODAY }, 'j2')];
+    const ids = pullForwardCandidates(steps, TODAY, 3, todays).map((s) => s.step.id);
+    expect(ids).not.toContain('b'); // 'b' belongs to j2, which today already asks something of
+    expect(ids).toContain('a');
+  });
+
+  it('stops at the horizon — next Sunday is a plan, not an offer', () => {
+    const faraway = [todayStep({ id: 'far', plannedFor: TODAY + 6 * DAY }, 'j9')];
+    expect(pullForwardCandidates(faraway, TODAY)).toEqual([]);
+    expect(PULL_FORWARD_HORIZON_DAYS).toBe(3);
   });
 
   it('never offers a missed Step as an optional extra — the carry rule already handles it', () => {

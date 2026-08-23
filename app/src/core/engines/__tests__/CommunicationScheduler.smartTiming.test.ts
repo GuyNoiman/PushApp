@@ -55,6 +55,11 @@ function makeScheduler() {
       return ['notif_1'];
     },
     async cancel() {},
+    // The scheduler sweeps the OS before it rebuilds (the duplicate-reminder fix, 2026-08-23).
+    // Nothing is pending in this fake, so the sweep finds nothing — it just has to exist.
+    async cancelRepeating() {
+      return 0;
+    },
   } as unknown as ReminderEngine;
 
   const state = {

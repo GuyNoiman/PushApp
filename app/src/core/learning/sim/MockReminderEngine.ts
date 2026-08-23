@@ -3,8 +3,8 @@
  * by the closed-loop simulation (S1.14). The real engine is the only file that touches
  * expo-notifications; in a pure Node simulation we don't want the OS, so this mock records what
  * the {@link ../../engines/CommunicationScheduler} ASKED it to schedule/cancel instead of talking
- * to a device. It implements exactly the two methods the scheduler calls (`scheduleRule`,
- * `cancel`), so it can be passed where a ReminderEngine is expected.
+ * to a device. It implements exactly the methods the scheduler calls (`scheduleRule`, `cancel`,
+ * `cancelRepeating`), so it can be passed where a ReminderEngine is expected.
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
@@ -38,6 +38,16 @@ export class MockReminderEngine {
   /** Record a cancel (no real OS call). */
   async cancel(id: string): Promise<void> {
     this.cancelled.push(id);
+  }
+
+  /**
+   * The pre-schedule sweep. In the simulation there is no OS holding notifications from a previous
+   * launch, so there is nothing to find — but the method has to exist, because the scheduler calls
+   * it on every reconcile and an absent one would make the sim diverge from the device.
+   */
+  async cancelRepeating(): Promise<number> {
+    this.cancelled.push('sweep');
+    return 0;
   }
 
   /** Take and clear everything scheduled since the last call — one reconcile's worth. */

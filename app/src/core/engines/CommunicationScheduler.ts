@@ -216,11 +216,18 @@ export class CommunicationScheduler {
     await this.apply(planned);
   }
 
-  /** Cancel owned notifications, then schedule the planned set (tracking new ids). */
+  /**
+   * Cancel what is pending, then schedule the planned set (tracking new ids).
+   *
+   * THE TEARDOWN GOES THROUGH THE OS, not through `ownedIds`. Tracking ids in memory looked right
+   * and was wrong in the one case that matters: a cold start begins with an empty list, so the
+   * rebuild cancelled nothing and scheduled a second copy of every daily reminder — and a third the
+   * next morning (founder's phone, 2026-08-23: three identical notifications at once). `ownedIds`
+   * is still cleared afterwards, but the sweep is what makes the rebuild idempotent, and it also
+   * cleans up the copies that earlier launches already left behind.
+   */
   private async apply(planned: PlannedNotification[]): Promise<void> {
-    for (const id of this.ownedIds) {
-      await this.reminderEngine.cancel(id);
-    }
+    await this.reminderEngine.cancelRepeating();
     this.ownedIds = [];
     for (const p of planned) {
       // The attribution payload rides ALONGSIDE the synthesized rule rather than inside it: it is

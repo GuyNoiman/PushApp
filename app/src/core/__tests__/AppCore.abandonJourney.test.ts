@@ -15,6 +15,10 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 const mockSchedule = jest.fn(async () => `notif_${Math.random().toString(36).slice(2)}`);
 const mockCancel = jest.fn(async (_id?: string) => {});
 const mockCancelAll = jest.fn(async () => {});
+// What the OS is holding. The scheduler's teardown reads it (the duplicate-reminder fix,
+// 2026-08-23) instead of trusting ids it remembered, so a mock with nothing pending would show a
+// working teardown as a silent no-op.
+const mockPending: { identifier: string; trigger: unknown }[] = [];
 jest.mock('expo-notifications', () => ({
   __esModule: true,
   SchedulableTriggerInputTypes: { DAILY: 'daily', WEEKLY: 'weekly', DATE: 'date' },
@@ -22,6 +26,7 @@ jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(async () => ({ granted: true })),
   requestPermissionsAsync: jest.fn(async () => ({ granted: true })),
   scheduleNotificationAsync: () => mockSchedule(),
+  getAllScheduledNotificationsAsync: async () => [...mockPending],
   cancelScheduledNotificationAsync: (id: string) => mockCancel(id),
   cancelAllScheduledNotificationsAsync: () => mockCancelAll(),
 }));
@@ -179,6 +184,8 @@ describe('AppCore.abandonJourney — reminders', () => {
     expect(mockSchedule).toHaveBeenCalled(); // the rule is live while the Journey runs
     mockSchedule.mockClear();
     mockCancel.mockClear();
+    // The Journey's daily reminder, as the OS is holding it before the abandon.
+    mockPending.push({ identifier: 'pending_daily', trigger: { type: 'daily', repeats: true } });
 
     core.abandonJourney(journey.id);
     await flush();
@@ -194,6 +201,8 @@ describe('AppCore.abandonJourney — reminders', () => {
     const notifId = liveJourney(core, journey.id)!.steps[0].postponeNotificationId;
     expect(notifId).toBeTruthy();
     mockCancel.mockClear();
+    // The Journey's daily reminder, as the OS is holding it before the abandon.
+    mockPending.push({ identifier: 'pending_daily', trigger: { type: 'daily', repeats: true } });
 
     core.abandonJourney(journey.id);
     await flush();

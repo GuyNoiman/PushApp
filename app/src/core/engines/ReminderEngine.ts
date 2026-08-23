@@ -295,6 +295,40 @@ export class ReminderEngine {
     return ids;
   }
 
+  /**
+   * Cancel every REPEATING notification the app has pending, whoever scheduled it.
+   *
+   * WHY THIS EXISTS (bug, founder's phone, 2026-08-23: three identical reminders at once). The
+   * CommunicationScheduler tears down before it rebuilds, but it tracked the ids it owned IN
+   * MEMORY — so after a cold start it knew about nothing, cancelled nothing, and scheduled the same
+   * daily reminder again. Every launch added another copy of the same notification, and the OS
+   * delivered them all. The ids are gone; the notifications are not, so nothing that reads our own
+   * bookkeeping can clean them up. The OS is the only place that still knows.
+   *
+   * WHAT IT DOES NOT TOUCH: one-shot DATE notifications. Those are the per-occurrence postpone
+   * reminders (D37), each scheduled deliberately for one instant, and they are not the scheduler's
+   * to cancel. Only repeating triggers — the daily and weekly sends this app plans from rules — are
+   * swept.
+   *
+   * Returns how many were cancelled (for the log/test); never throws.
+   */
+  async cancelRepeating(): Promise<number> {
+    try {
+      const pending = await Notifications.getAllScheduledNotificationsAsync();
+      let cancelled = 0;
+      for (const request of pending ?? []) {
+        if (!isRepeatingTrigger((request as { trigger?: unknown })?.trigger)) continue;
+        const id = (request as { identifier?: unknown })?.identifier;
+        if (typeof id !== 'string') continue;
+        await this.cancel(id);
+        cancelled += 1;
+      }
+      return cancelled;
+    } catch {
+      return 0;
+    }
+  }
+
   /** Cancel every OS notification a rule scheduled (its stored ids). */
   async cancelRule(rule: ReminderRule): Promise<void> {
     for (const id of rule.scheduledNotificationIds) {
@@ -333,6 +367,22 @@ export class ReminderEngine {
  */
 function toNotificationPayload(data: ReminderNotificationData): Record<string, unknown> {
   return { ruleId: data.ruleId, journeyId: data.journeyId, kind: data.kind };
+}
+
+/**
+ * Whether a pending notification's trigger REPEATS.
+ *
+ * The shape differs by platform and by SDK version — Android reports a typed trigger
+ * (`type: 'daily' | 'weekly'`), iOS reports a calendar trigger carrying `repeats: true` — so both
+ * are recognised, and anything unrecognised is treated as NOT repeating. Erring that way is
+ * deliberate: the cost of missing one is a duplicate that the next sweep catches, and the cost of
+ * guessing wrong the other way is silently cancelling somebody's one-shot reminder.
+ */
+export function isRepeatingTrigger(trigger: unknown): boolean {
+  if (!trigger || typeof trigger !== 'object') return false;
+  const t = trigger as { type?: unknown; repeats?: unknown };
+  if (t.repeats === true) return true;
+  return t.type === 'daily' || t.type === 'weekly';
 }
 
 function readNotificationData(raw: unknown): ReminderNotificationData | null {

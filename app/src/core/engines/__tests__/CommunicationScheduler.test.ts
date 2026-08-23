@@ -8,11 +8,25 @@
  */
 
 // Mock the SDK before importing anything that loads ReminderEngine.
+//
+// The mock keeps a real PENDING LIST, because the scheduler's teardown now goes through the OS
+// (`getAllScheduledNotificationsAsync`) rather than through ids it remembered — which is the fix
+// for the duplicate reminders on the founder's phone (2026-08-23). A mock that forgot what it
+// scheduled could not tell a working sweep from a broken one.
+const pendingNotifications: { identifier: string; trigger: unknown }[] = [];
+
 const mockScheduleNotificationAsync = jest.fn(
-  async (_req: { content: unknown; trigger: unknown }) =>
-    `notif_${Math.random().toString(36).slice(2)}`,
+  async (req: { content: unknown; trigger: unknown }) => {
+    const identifier = `notif_${pendingNotifications.length}_${Math.random().toString(36).slice(2)}`;
+    pendingNotifications.push({ identifier, trigger: req.trigger });
+    return identifier;
+  },
 );
-const mockCancelScheduledNotificationAsync = jest.fn(async (_id: string) => {});
+const mockGetAllScheduledNotificationsAsync = jest.fn(async () => [...pendingNotifications]);
+const mockCancelScheduledNotificationAsync = jest.fn(async (id: string) => {
+  const index = pendingNotifications.findIndex((n) => n.identifier === id);
+  if (index >= 0) pendingNotifications.splice(index, 1);
+});
 const mockCancelAllScheduledNotificationsAsync = jest.fn(async () => {});
 const mockGetPermissionsAsync = jest.fn(async () => ({ granted: true }));
 const mockRequestPermissionsAsync = jest.fn(async () => ({ granted: true }));
@@ -28,6 +42,7 @@ jest.mock('expo-localization', () => ({
 jest.mock('expo-notifications', () => ({
   __esModule: true,
   SchedulableTriggerInputTypes: { DAILY: 'daily', WEEKLY: 'weekly' },
+  getAllScheduledNotificationsAsync: () => mockGetAllScheduledNotificationsAsync(),
   setNotificationHandler: (arg: unknown) => mockSetNotificationHandler(arg),
   getPermissionsAsync: () => mockGetPermissionsAsync(),
   requestPermissionsAsync: () => mockRequestPermissionsAsync(),
@@ -108,7 +123,10 @@ function planner(bus = new EventBus()) {
   return { scheduler, bus };
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  pendingNotifications.length = 0;
+});
 
 describe('planSchedule — aggregation', () => {
   it('excludes disabled rules, completed Journeys, and rules with no Journey', () => {
@@ -554,6 +572,45 @@ describe('reconcile — apply through the ReminderEngine', () => {
     await scheduler.reconcile();
     expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledTimes(1);
     expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The bug this pair exists to keep fixed (founder's phone, 2026-08-23): three identical reminders
+   * arriving at once. Each cold start built a NEW scheduler whose list of owned ids began empty, so
+   * the teardown cancelled nothing and the rebuild scheduled a second copy of the same daily — then
+   * a third the next morning. The teardown now sweeps the OS instead of trusting our own memory.
+   */
+  function coldStart(getState: () => AppState) {
+    const engine = new ReminderEngine();
+    return new CommunicationScheduler(
+      new EventBus(),
+      getState,
+      engine,
+      { location: NullLocationGateway, calendar: NullCalendarGateway },
+      () => NOW,
+    );
+  }
+
+  it('does not add a second copy of the same reminder on the next cold start', async () => {
+    const state = stateWith([rule()], [journey()]);
+
+    for (const _launch of [1, 2, 3]) {
+      const scheduler = coldStart(() => state);
+      await scheduler.reconcile();
+    }
+
+    // One rule, one pending notification — not one per launch.
+    expect(pendingNotifications).toHaveLength(1);
+  });
+
+  it('leaves a one-shot notification alone — that is somebody’s postponed Step', async () => {
+    // The shape `scheduleOneShot` produces (D37): a DATE trigger that does not repeat.
+    pendingNotifications.push({ identifier: 'one_shot', trigger: { type: 'date', repeats: false } });
+    const state = stateWith([rule()], [journey()]);
+
+    await coldStart(() => state).reconcile();
+
+    expect(pendingNotifications.some((n) => n.identifier === 'one_shot')).toBe(true);
   });
 
   /**

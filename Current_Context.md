@@ -37,7 +37,36 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 # ⛳ START HERE — 2026-08-23: the privacy contract, seven more tools, eight rooms, two real bugs
 
-On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2199 / 202 suites**.
+On `feat/buddy-3d-and-reminders`, committed and pushed, with `feat/native-media` MERGED IN.
+`tsc` clean, **jest 2230 / 204 suites**.
+
+## ▶ THE BUILD, and the one step it still needs
+
+**The over-the-air update is published** (2026-08-23) to the `production` branch for runtime
+`df6c2127…` — everything from this session reaches build 3 on the next launch, the duplicate-reminder
+sweep included.
+
+**Build 4 is FINISHED on EAS** — iOS, production profile, build number 4, from commit `1e56c62`
+(runtime `503102a4…`, the media fingerprint).
+`https://expo.dev/accounts/guynoiman/projects/pushapp/builds/e1a428c5-0baf-4a3d-b552-cd7a32ffab62`
+
+**It is not on TestFlight yet, and cannot be sent there without the founder.** `eas submit` refuses
+non-interactively because the submit profile has no `ascAppId`, and finding that number needs an
+Apple sign-in — which is his and only his. One of:
+  · `npx eas-cli@latest submit --platform ios --latest` from `app/`, and answer the Apple prompts; or
+  · the "Submit to App Store" button on the build page above.
+Once the number is known, put it in `app/eas.json` under `submit.production.ios.ascAppId` and every
+later submission is one non-interactive command.
+
+## What is NOT in build 4, and must not be described as if it were
+
+- **The Notification Center's bell.** Its feed engine is built and tested; there is no UI yet.
+  `04_Product/PRD/Notification_Center_PRD.md` is approved and is the next thing to build.
+- **The Inbox.** `04_Product/PRD/Inbox_Direct_Messaging_PRD.md` arrived on 2026-08-23 and is a large
+  feature — end-to-end encryption, message requests, blocking, muting, offline. Only the pure engine
+  (`app/src/core/messaging/model.ts`, 25 tests) exists. No surface, no server tables, no crypto.
+- **The 3D Buddy.** Validated as a spike in July, not wired to any screen. The founder confirmed on
+  2026-08-23 that it is not MVP.
 The ordering decision in the block below is UNCHANGED and still first: **publish → merge → build.**
 Full detail: `00_Foundation/CHANGELOG.md`, the 2026-08-21 (evening) entry.
 

@@ -1,6 +1,9 @@
 # Week-by-day view on Home — PRD
 
-Status: **Approved in full by the founder, 2026-08-19 (later session). NOT built.** This file is the
+Status: **BUILT — 2026-08-19/20** (`app/src/core/util/weekByDay.ts` + `components/home/WeekDayStrip.tsx`,
+and Home renders it). The line below is kept as the record of what was approved and when; the "NOT
+built" in it was true when written and stopped being true the same week. Corrected 2026-08-24.
+Originally: **Approved in full by the founder, 2026-08-19 (later session). NOT built.** This file is the
 specification he approved in conversation, moved into the repo so it cannot be lost between sessions.
 Every point is decided: the one clause that was open in §6 was answered by the founder the same
 evening and is recorded there with his own wording.

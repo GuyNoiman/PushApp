@@ -65,11 +65,16 @@ version are you on" has an answer on the device.
 
 ## ▶ WHAT IS LEFT, AND WHY IT STOPPED HERE
 
-- **The invite landing page.** Still waiting on him: WHERE it is hosted. Free options to offer —
-  GitHub Pages (needs a public repo or a paid plan), Netlify, Vercel, EAS Hosting.
-- **The builds for both platforms.** Deliberately NOT started: a build spends real quota, and
-  constitution §10 says ask first. Everything above is JavaScript and is already on both phones
-  through the update.
+- ~~**The invite landing page.**~~ **DONE (2026-08-24):** he chose a free option, so it is on **EAS
+  Hosting's free tier**, on the Expo account the app already uses — no new account, no new billing
+  relationship. **https://pushapp-invite.expo.app**, one static file at `app/landing/index.html`.
+  Redeploy: `npx eas-cli@latest deploy --prod --export-dir landing` from `app/`. When the app is in
+  the stores, the two URLs in its `LINKS` object are the only change it needs.
+- **The builds for both platforms.** The founder answered on 2026-08-24: **not needed for now.**
+  Everything built since build 6 is JavaScript and reaches both phones through `eas update`. A build
+  becomes necessary again the moment something NATIVE changes (a new native module, an app.json
+  permission, an SDK bump) — that is what moves the runtime-version fingerprint and cuts the update
+  off from the installed builds.
 - **The Weekly Review contributions conversation** — his, not a build.
 
 ## ▶ THE TWO AUDIT FINDINGS ARE STILL TRUE

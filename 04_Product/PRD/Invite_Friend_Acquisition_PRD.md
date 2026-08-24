@@ -9,6 +9,13 @@ Related: authentication (E1), friendship requests (D1), Circle, account onboardi
 links/App Links, abuse prevention, privacy, store publication, and
 `../../05_Research/Invite_Friend_Competitive_Research_2026-08-13.md`.
 
+**Implementation note (2026-08-24):** the interim stage's WEB DESTINATION now exists —
+`https://pushapp-invite.expo.app`, one static file at `app/landing/index.html`, hosted on EAS Hosting's
+free tier on the Expo account the app already uses (the founder asked for a free option). It carries
+the two install links and displays a `?code=` prominently, which is §2.1.4's iOS baseline rather than
+a stand-in for it. What is still missing for the full feature: the server-issued opaque token (§2.2),
+Universal Links / App Links, and the Play Install Referrer path. Nothing in this PRD changed.
+
 ---
 
 ## 1. Purpose

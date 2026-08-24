@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PushApp</title>
+    <meta name="description" content="PushApp — closing the gap between intention and action." />
+    <meta name="robots" content="noindex" />
+    <meta property="og:title" content="PushApp" />
+    <meta property="og:description" content="הזמנה להתנסות ב-PushApp" />
+    <style>
+      /*
+        The invitation landing page.
+
+        WHAT IT IS FOR (founder, 2026-08-24): somebody is handed a link and has to end up with the app
+        on their phone. Today that means a TestFlight build on iOS and an installable file on Android;
+        when the app is in the stores, only the two URLs below change and nothing else here does.
+
+        WHY THE CODE IS SHOWN SO PROMINENTLY: Invite_Friend_Acquisition_PRD §2.1 — on iOS there is no
+        reliable post-install attribution without a third-party SDK we deliberately are not adding, so
+        the short code IS the mechanism. A page that buried it would be quietly relying on something
+        that does not exist.
+
+        No trackers, no analytics, no cookies, no external requests. Nothing here needs them and every
+        one of them would be a thing to disclose.
+      */
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfaf8;
+        --card: #ffffff;
+        --text: #14161c;
+        --muted: #6b7280;
+        --hairline: #e6e2dc;
+        --teal: #1f8a80;
+        --teal-tint: #e7f3f1;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101216;
+          --card: #171a20;
+          --text: #f2f1ee;
+          --muted: #9aa1ad;
+          --hairline: #262b33;
+          --teal: #4fb3a7;
+          --teal-tint: #14312e;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.55;
+      }
+      main { width: 100%; max-width: 420px; }
+      .mark {
+        width: 56px; height: 56px; border-radius: 18px;
+        background: var(--teal-tint); color: var(--teal);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; font-weight: 700; margin-bottom: 20px;
+      }
+      h1 { font-size: 28px; line-height: 1.25; margin: 0 0 10px; letter-spacing: -0.01em; }
+      p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+      .card {
+        background: var(--card); border: 1px solid var(--hairline);
+        border-radius: 18px; padding: 18px; margin: 22px 0;
+      }
+      .code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 26px; letter-spacing: 0.14em; color: var(--text); margin: 6px 0 0;
+        direction: ltr; unicode-bidi: isolate;
+      }
+      a.button {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        height: 54px; border-radius: 16px; text-decoration: none;
+        font-weight: 600; font-size: 16px; margin-bottom: 10px;
+        background: var(--teal); color: #ffffff;
+      }
+      a.button.secondary { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+      .small { font-size: 13px; color: var(--muted); }
+      .steps { margin: 0; padding: 0 18px 0 0; color: var(--muted); font-size: 14px; }
+      html[dir="ltr"] .steps { padding: 0 0 0 18px; }
+      .steps li { margin-bottom: 6px; }
+      footer { margin-top: 26px; font-size: 12px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark">P</div>
+      <h1 data-i18n="title">להיות מי שבחרת להיות</h1>
+      <p data-i18n="lead">
+        PushApp סוגר את הפער בין הכוונה לבין המעשה. הוזמנת להתנסות בגרסה מוקדמת.
+      </p>
+
+      <section class="card" id="codeCard" hidden>
+        <div class="small" data-i18n="codeLabel">קוד ההזמנה שלך</div>
+        <div class="code" id="code"></div>
+        <p class="small" style="margin-top:10px" data-i18n="codeHelp">
+          שמור/י אותו. אחרי ההתקנה מזינים אותו באפליקציה כדי להתחבר למי שהזמין אותך.
+        </p>
+      </section>
+
+      <a class="button" id="primary" href="#" rel="noopener">
+        <span id="primaryLabel">התקנה</span>
+      </a>
+      <a class="button secondary" id="secondary" href="#" rel="noopener">
+        <span id="secondaryLabel"></span>
+      </a>
+
+      <section class="card">
+        <div class="small" style="margin-bottom:8px" data-i18n="stepsTitle">איך זה עובד</div>
+        <ol class="steps">
+          <li data-i18n="step1">מתקינים את האפליקציה מהקישור למעלה.</li>
+          <li data-i18n="step2">פותחים אותה ובוחרים שפה.</li>
+          <li data-i18n="step3">מדברים עם המאמן על מה שרוצים לשנות. הוא בונה את המסע.</li>
+        </ol>
+      </section>
+
+      <footer>
+        <span data-i18n="footer">גרסת בדיקה. לא נאסף עליך שום מידע בדף הזה.</span>
+      </footer>
+    </main>
+
+    <script>
+      /*
+        Two destinations, one per platform, and the page picks by user agent because a person who was
+        sent a link should not have to know which of two buttons is theirs. Both stay visible: the
+        detection is a convenience and is allowed to be wrong.
+
+        WHEN THE APP IS IN THE STORES, these two are the only lines that change.
+      */
+      var LINKS = {
+        ios: 'https://testflight.apple.com/',
+        android:
+          'https://expo.dev/accounts/guynoiman/projects/pushapp/builds/539f0ac7-a4a8-4fe7-a0b9-ebb1acc38a8a',
+      };
+
+      var STRINGS = {
+        he: {
+          title: 'להיות מי שבחרת להיות',
+          lead: 'PushApp סוגר את הפער בין הכוונה לבין המעשה. הוזמנת להתנסות בגרסה מוקדמת.',
+          codeLabel: 'קוד ההזמנה שלך',
+          codeHelp: 'שמור/י אותו. אחרי ההתקנה מזינים אותו באפליקציה כדי להתחבר למי שהזמין אותך.',
+          stepsTitle: 'איך זה עובד',
+          step1: 'מתקינים את האפליקציה מהקישור למעלה.',
+          step2: 'פותחים אותה ובוחרים שפה.',
+          step3: 'מדברים עם המאמן על מה שרוצים לשנות. הוא בונה את המסע.',
+          footer: 'גרסת בדיקה. לא נאסף עליך שום מידע בדף הזה.',
+          ios: 'התקנה לאייפון',
+          android: 'התקנה לאנדרואיד',
+        },
+        en: {
+          title: 'Become who you choose to be',
+          lead: 'PushApp closes the gap between intention and action. You have been invited to try an early version.',
+          codeLabel: 'Your invitation code',
+          codeHelp: 'Keep it. After installing, enter it in the app to connect with whoever invited you.',
+          stepsTitle: 'How it works',
+          step1: 'Install the app from the link above.',
+          step2: 'Open it and choose your language.',
+          step3: 'Tell the coach what you want to change. It builds the Journey.',
+          footer: 'A test version. This page collects nothing about you.',
+          ios: 'Install for iPhone',
+          android: 'Install for Android',
+        },
+      };
+
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+
+        // Language: whatever they asked for, else what their browser says, else Hebrew.
+        var lang = params.get('lang');
+        if (lang !== 'he' && lang !== 'en') {
+          lang = (navigator.language || 'he').toLowerCase().indexOf('he') === 0 ? 'he' : 'en';
+        }
+        var t = STRINGS[lang];
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+        document.querySelectorAll('[data-i18n]').forEach(function (node) {
+          var key = node.getAttribute('data-i18n');
+          if (t[key]) node.textContent = t[key];
+        });
+
+        // The code, when the link carries one. Shown, never sent anywhere.
+        var code = (params.get('code') || '').trim().toUpperCase().slice(0, 12);
+        if (/^[A-Z0-9-]{4,12}$/.test(code)) {
+          document.getElementById('code').textContent = code;
+          document.getElementById('codeCard').hidden = false;
+        }
+
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var order = isIOS ? ['ios', 'android'] : ['android', 'ios'];
+
+        var primary = document.getElementById('primary');
+        var secondary = document.getElementById('secondary');
+        primary.href = LINKS[order[0]];
+        document.getElementById('primaryLabel').textContent = t[order[0]];
+        secondary.href = LINKS[order[1]];
+        document.getElementById('secondaryLabel').textContent = t[order[1]];
+      })();
+    </script>
+  </body>
+</html>

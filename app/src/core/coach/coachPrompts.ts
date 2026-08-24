@@ -356,3 +356,63 @@ export function buildDreamDirective(
 export function dreamGreeting(): string {
   return 'Tell me about the direction you want your life to take, or what you would change about the Dreams you already have.';
 }
+
+// ── Reading a spoken answer during the diagnosis ──────────────────────────────────────────────
+
+/**
+ * ONE CALL PER MESSAGE, not per question (founder, 2026-08-21: fewer closed cards, more of a real
+ * conversation).
+ *
+ * A person answering the diagnosis in their own words usually answers more than the question in front
+ * of them — "I apply to anything remotely close and I have never had an interview" has just settled
+ * the target AND the interview evidence. Classifying the whole sentence in one call is what lets the
+ * tree skip everything it covered, and it is why the partner wrote `means` lines rather than UI
+ * labels: they are a semantic contract for exactly this.
+ *
+ * The prohibition on guessing is the load-bearing line. A wrongly-read signal SKIPS a question the
+ * person would have answered differently, which is worse than asking — so an absent signal is always
+ * the right answer when the sentence does not clearly support one.
+ */
+export const DIAGNOSIS_SIGNAL_SYSTEM_PROMPT = [
+  "You are the PushApp coach's signal-reading step. A person is answering a question about their job",
+  'search in their own words. Read the WHOLE message and report every signal it clearly supports —',
+  'including ones the question did not ask about. Do not coach, do not reply, do not ask anything.',
+  '',
+  'Return ONLY JSON: {"signals": { … }}',
+  ...CAREER_SIGNAL_HINTS.map((hint) => `  ${hint.signal}: ${hint.values.join(' | ')} — ${hint.means}`),
+  '',
+  'Omit any signal the message does not clearly support, and return {"signals":{}} when it supports',
+  'none. A guessed signal skips a question the person would have answered differently, so silence is',
+  'always better than a guess. Never invent a value outside the ones listed.',
+].join('\n');
+
+/** Prefix marking the hidden signal-reading turn. */
+export const DIAGNOSIS_DIRECTIVE_PREFIX = '[diagnosis]';
+
+/** Hand the signal-reading step the question that was on screen and what the person said to it. */
+export function buildDiagnosisDirective(questionPrompt: string, answer: string): string {
+  return [
+    `${DIAGNOSIS_DIRECTIVE_PREFIX} They were asked: "${questionPrompt}"`,
+    `They answered: "${answer}"`,
+    'Report every signal this answer supports, per your instructions.',
+  ].join('\n');
+}
+
+/** Read the signal-reading step's answer. Unreadable output is no signals, never an error. */
+export function parseDiagnosisSignals(text: string): Record<string, string> {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return {};
+  try {
+    const parsed = JSON.parse(match[0]) as { signals?: unknown };
+    const raw = parsed.signals;
+    if (!raw || typeof raw !== 'object') return {};
+    const out: Record<string, string> = {};
+    for (const hint of CAREER_SIGNAL_HINTS) {
+      const value = (raw as Record<string, unknown>)[hint.signal];
+      if (typeof value === 'string' && hint.values.includes(value)) out[hint.signal] = value;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}

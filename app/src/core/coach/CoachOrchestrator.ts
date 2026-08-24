@@ -70,6 +70,9 @@ import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/ex
 import type { GoalInput } from '../learning/types';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
 import {
+  DIAGNOSIS_SIGNAL_SYSTEM_PROMPT,
+  buildDiagnosisDirective,
+  parseDiagnosisSignals,
   COACH_SYSTEM_PROMPT,
   TRIAGE_SYSTEM_PROMPT,
   buildLocaleDirective,
@@ -466,7 +469,50 @@ export class CoachOrchestrator {
     if (!question.allowOther) {
       throw new Error(`Question "${question.id}" does not allow a free-text answer`);
     }
-    return this.record(question, text.trim());
+    const answer = text.trim();
+    // ONE CALL PER MESSAGE (founder, 2026-08-21). During the diagnosis a sentence usually answers more
+    // than the question in front of it, so it is read for EVERY signal it supports and the tree skips
+    // all of them at once. Everywhere else a free-text answer is stored verbatim, exactly as before.
+    if (this.phase === 'diagnosis') return this.readSpokenDiagnosisAnswer(question, answer);
+    return this.record(question, answer);
+  }
+
+  /**
+   * Read a spoken answer during the diagnosis: one call, every signal it supports, then continue.
+   *
+   * WHY THIS EXISTS AT ALL, and it is not only polish: before it, typing instead of tapping recorded
+   * nothing. The tree could not match a sentence to a closed option, so the diagnosis simply ended
+   * with no outcome — the person had answered and the coach had heard nothing.
+   *
+   * A call that fails changes nothing rather than guessing: the same question is asked again, with
+   * the cards still there. That is a worse conversation and a correct one.
+   */
+  private async readSpokenDiagnosisAnswer(
+    question: DomainQuestion,
+    answer: string,
+  ): Promise<CoachTurn> {
+    this.history.push({ role: 'user', content: answer });
+    let signals: Record<string, string> = {};
+    try {
+      const result = await this.llm.complete({
+        system: DIAGNOSIS_SIGNAL_SYSTEM_PROMPT,
+        json: true,
+        temperature: 0,
+        messages: [
+          { role: 'user', content: buildDiagnosisDirective(question.prompt, answer) },
+        ],
+      });
+      signals = parseDiagnosisSignals(result.text);
+    } catch {
+      // No session, no network, a provider error. Nothing was understood, and nothing is invented.
+      signals = {};
+    }
+
+    this.knownSignals = { ...this.knownSignals, ...signals };
+    const tree = this.diagnosisTree;
+    if (!tree) return this.settleDiagnosis();
+    const next = nextDiagnosisQuestion(tree, this.diagnosisAnswers, this.knownSignals);
+    return next ? this.askDiagnosisQuestion(next) : this.settleDiagnosis();
   }
 
   // ── internals ──────────────────────────────────────────────────────────────

@@ -117,6 +117,56 @@ describe('the diagnosis runs first', () => {
   });
 });
 
+describe('answering in your own words', () => {
+  /** Understanding first, then the signal-reading call — one per message, in order. */
+  function speakingMock(signals: Record<string, string>): MockLlmClient {
+    let call = 0;
+    return new MockLlmClient(() => {
+      call += 1;
+      return call === 1
+        ? JSON.stringify({ goals: [{ title: 'find a new job', kind: 'process', domain: 'career' }] })
+        : JSON.stringify({ signals });
+    });
+  }
+
+  it('reads every signal the sentence supports, not just the one asked about', async () => {
+    const orchestrator = new CoachOrchestrator({
+      llm: speakingMock({ targetClarity: 'clear', visibleProofMissing: 'no' }),
+    });
+    orchestrator.start();
+    await orchestrator.triage('I apply and nobody answers');
+
+    // They were asked about the target and answered that AND the proof question in one breath.
+    const turn = await orchestrator.answerOther(
+      'I only go for backend roles and my CV has real projects on it',
+    );
+
+    // So the tree skipped both and is on access — one call, two questions saved.
+    expect(turn.question?.id).toContain('access');
+  });
+
+  it('settles the diagnosis when a sentence answers everything left', async () => {
+    const orchestrator = new CoachOrchestrator({ llm: speakingMock({ targetClarity: 'broad' }) });
+    orchestrator.start();
+    await orchestrator.triage('I apply and nobody answers');
+
+    const turn = await orchestrator.answerOther('honestly I apply to anything that looks close');
+
+    expect(turn.state.spec.diagnosis).toEqual({ subtype: 'LAND_ROLE', bottleneck: 'DIRECTION_GAP' });
+  });
+
+  it('asks again rather than guessing when the sentence supported nothing', async () => {
+    const orchestrator = new CoachOrchestrator({ llm: speakingMock({}) });
+    orchestrator.start();
+    const first = await orchestrator.triage('I apply and nobody answers');
+
+    const turn = await orchestrator.answerOther('it is complicated');
+
+    expect(turn.question?.id).toBe(first.question?.id);
+    expect(turn.state.spec.diagnosis).toBeUndefined();
+  });
+});
+
 describe('signals read from the opening message', () => {
   it('keeps only the values the vocabulary declares', async () => {
     const orchestrator = new CoachOrchestrator({

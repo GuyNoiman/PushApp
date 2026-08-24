@@ -75,6 +75,26 @@ more until the diagnosis contract is validated in the app.
 the remaining ones in a single natural sentence is the next layer. And the labels of the diagnosis
 options are OURS (his answers are categories); they were meant to go back to him for correction.
 
+## ▶ THE FULL "SPEC READY, NOT BUILT" AUDIT (2026-08-24) — and it is now EMPTY
+
+Every PRD's status line was read against the code. What was genuinely approved-and-unbuilt:
+
+1. **The career diagnosis wiring** — BUILT (E9).
+2. **Account Inactivity Freeze, the server-authoritative half** — BUILT. It was blocked on "needs the
+   backend", and the backend has existed since the social pillar landed.
+3. **"One call per message" in the coach** — BUILT. It was not only polish: typing instead of tapping
+   recorded nothing at all.
+
+Everything else in `04_Product/PRD/` is one of: shipped (the `Done/` and `Backfill/` folders, plus the
+three stale status lines corrected today), a DRAFT that has not been founder-approved (Strength
+Evidence, Passion Map's accept-proposal UI, Values Sort's influence contract, Original Visual
+Check-In), `Future/`-staged, or waiting on the founder (Weekly Review Contributions).
+
+**So the answer to "is there anything else ready to build" is no — not until something is approved.**
+The nearest candidates, all needing his approval first: Strength Evidence (it blocks two things —
+Direction Statement's "what I bring" drawer is deliberately empty until it exists, and a Mirror result
+has nowhere to be imported to), and the Passion Map's accept-a-proposal UI.
+
 ## ▶ WHAT IS LEFT, AND WHY IT STOPPED HERE
 
 - ~~**The invite landing page.**~~ **DONE (2026-08-24):** he chose a free option, so it is on **EAS

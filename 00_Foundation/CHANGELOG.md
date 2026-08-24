@@ -4,6 +4,39 @@ Status: Living Document
 
 ---
 
+# 2026-08-24 (continued, 3) — the account's clock moved to the server, and the coach listens to sentences
+
+`tsc` clean · **jest 2343 / 219 suites**.
+
+## Account Inactivity Freeze, the half that was actually specified
+
+The freeze was decided on the device, on the device's own clock, on the next time the app happened to
+be opened — so a wrong date could decide somebody had been away for a month, two phones could
+disagree, and "21 days have passed" was only ever noticed when the person came back. The PRD asked
+for a server-side evaluator throughout; it was waiting on a backend we now have.
+
+`migrations/0007_account_activity.sql`: the account's `last_active_at` on server time, a heartbeat
+that returns the verdict standing on arrival (so a device applies a freeze it slept through), and a
+nightly `pg_cron` evaluator that is idempotent by construction. The client can say "someone is here"
+and nothing else — not when, not frozen. A verdict never unfreezes: returning is the user's move. The
+local sweep stays as the offline fallback, with a parity test on the threshold.
+
+## One call per message
+
+Answering the diagnosis in your own words used to record nothing: the tree could not match a sentence
+to a closed option, so the diagnosis ended with no outcome — the person had answered and the coach had
+heard nothing. A spoken answer is now read once for EVERY signal it supports, so "I only go for
+backend roles and my CV has real projects on it" settles two questions in one call. A sentence that
+supports nothing asks again rather than guessing, because a wrongly-read signal skips a question the
+person would have answered differently.
+
+## Three PRD status lines that had gone stale
+
+Dream authoring and Journey abandonment both shipped while their headers still said they had not;
+Week-by-Day Home said "NOT built" and was built the same week it was written.
+
+---
+
 # 2026-08-24 (continued, 2) — the coach can finally reach the library, and the invite link leads somewhere
 
 `tsc` clean · **jest 2331 / 217 suites**. Decision: E9.

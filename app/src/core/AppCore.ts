@@ -81,6 +81,7 @@ import {
   type WeekByDay,
   type WeekSummary,
 } from './util/weekByDay';
+import { redactForBackup } from './backup/redactForBackup';
 import { defaultAdaptivePolicy } from './config/adaptivePolicy';
 import type { GoalInput, PlanConstraints, ReplanAdjustment } from './learning/types';
 import { featureFlags } from './config/featureFlags';
@@ -1077,11 +1078,15 @@ export class AppCore {
    * account holds them (2026-08-24).
    */
   backupStateJson(): string {
-    return JSON.stringify({
+    // Everything except the person's own words. The founder's rule (2026-08-24): the raw wording
+    // stays on the device, our reading of it goes up — so a new phone keeps the picture of a life
+    // without our servers ever holding the sentences. See `redactForBackup` for what that means
+    // field by field, and the cost it accepts.
+    return JSON.stringify(redactForBackup({
       ...this.state,
       reasonLog: this.state.reasonLog ?? [],
       behaviorLog: this.state.behaviorLog ?? [],
-    });
+    }));
   }
 
   /**

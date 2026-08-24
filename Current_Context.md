@@ -40,7 +40,23 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 On `feat/buddy-3d-and-reminders`, **committed and pushed** through `c4351ad`. `tsc` clean,
 **jest 2268 / 207 suites**. Full detail: `00_Foundation/CHANGELOG.md` and the Decision Log (D70–D74, E7).
 
-## ▶ THE FIRST THING TO KNOW: what is in the builds, and what is not
+## ▶ TASK 0 — DO THIS FIRST, BEFORE ANY OTHER WORK
+
+**Publish the over-the-air update.** The founder asked explicitly (2026-08-24) that this be written
+into the plan so it cannot be missed again: the builds on his and his partner's phones predate two
+full passes of work, and every one of those changes is JavaScript.
+
+```bash
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch production --message "<what changed>"
+```
+
+Then confirm to him what it carries — the design pass across Home, Journeys and Tools; the account
+backup; Mirror's sending; the coach's voice; smart timing — and that opening the app is all either
+of them has to do.
+
+**Only after that** does the queue below start, and a new BUILD is what closes it, not what opens it.
+
+## ▶ THE SECOND THING: what is in the builds, and what is not
 
 **iOS build 6 and the Android APK were both cut from `f9698d1`.** Everything after it — the founder's
 whole design pass, the account backup, and Mirror's sending — is pushed but **not in any build**.
@@ -75,9 +91,8 @@ a build. The founder has asked twice about this; offer it before offering a buil
 
 ## ▶ WAITING ON THE FOUNDER
 
-- **The most personal free text in the backup.** The "why" and the miss-recovery notes currently go
-  up with the account state (D73). He was asked whether they should stay device-only and has not
-  answered. One line either way.
+- ~~The most personal free text in the backup.~~ **ANSWERED (D75, 2026-08-24):** the raw wording
+  stays on the device and our reading of it goes up. Implemented in `core/backup/redactForBackup.ts`.
 - **Weekly Review Contributions** — he agreed it is a separate conversation, not a build.
 - Mirror's §18 items are CLOSED: he answered them (delivery via the Notification Center, paid
   provider, expiry discussed).

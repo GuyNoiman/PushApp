@@ -68,8 +68,19 @@ Draft copy for the consent screen and the top of the policy. Plain, short, true.
 ### THE 2026-08-24 CHANGE, and it is the largest one in this document
 
 The founder decided (D73) that a lost phone must not mean starting over, and chose the model the
-large apps use: **the account's own state — Dreams, Journeys, Steps, history, Buddy, the reason log
-and the behaviour log — is stored on the server and restored by signing in.** It is reachable by
+large apps use: **the account's own state — Dreams, Journeys, Steps, history, Buddy and the CLOSED
+classification of every miss — is stored on the server and restored by signing in.**
+
+**And then he drew the line inside it (D75, 2026-08-24):** *the raw wording stays on the device; our
+reading of it goes up.* So what does NOT travel is the person's own words — the `why` behind a
+Journey, the note somebody writes when a day went wrong, the note at the end of a Journey, and the
+coach's raw behavioural log. What travels beside them is the closed `reasonId` that classifies the
+same event, which is the reading rather than the words. A new phone keeps the whole picture of a
+life; the sentences stay where they were written. `core/backup/redactForBackup.ts` is where that is
+enforced, and a test asserts it field by field.
+
+The one honest cost: the `why` has no derived counterpart yet, so a restored device shows a Journey
+without the sentence behind it until such a reading exists. It is reachable by
 that account and no other (row-level security), it is not read, mined or sold, and it is not
 end-to-end encrypted: we hold it the way Instagram holds what you post there.
 
@@ -88,9 +99,10 @@ below.
 | Data | Why we hold it | Who may read it | Expiry |
 |---|---|---|---|
 | Dreams, Journeys, Milestones, Steps and their titles | The product itself | The app, and the account's own backup row (D73) | Until deleted |
-| The user's **"why"** | Motivation, coach framing | On-device coach context, and the account backup (D73) | Until deleted |
-| `reasonLog` (Miss Recovery), including free-text notes | Adapts the plan after a miss | On-device engines, and the account backup (D73) | Rolling window, to define |
-| `behaviorLog` (raw behavioural records) | The adaptive coach's signal | On-device engines, and the account backup (D73) | Rolling window, to define |
+| The raw wording a person writes — the `why`, the miss note, the end-of-Journey note, the behaviour log | Their own reflection | ON DEVICE ONLY. Excluded from the backup by `redactForBackup` (D75) | Until deleted |
+| The user's **"why"** | Motivation, coach framing | On-device only — NOT in the backup (D75) | Until deleted |
+| `reasonLog` (Miss Recovery) | Adapts the plan after a miss | The closed `reasonId` is in the backup; the free-text `note` is on-device only (D75) | Rolling window, to define |
+| `behaviorLog` (raw behavioural records) | The adaptive coach's signal | On-device only — never in the backup (D75) | Rolling window, to define |
 | `onboardingAnswers` | Shapes the first plan | On-device engines | Until re-answered |
 | Timing evidence store | Smart notification timing | On-device engines | Rolling window |
 | Buddy stage, XP, Coins, streak, Grace Tokens | Progression | On device; a coarse summary may go out as `buddy_summary` | Until deleted |

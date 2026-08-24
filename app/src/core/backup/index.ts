@@ -6,6 +6,7 @@ import { NullStateBackupGateway, type StateBackupGateway } from './StateBackupGa
 import { SupabaseStateBackupGateway } from './SupabaseStateBackupGateway';
 
 export * from './backupPolicy';
+export * from './redactForBackup';
 export * from './StateBackupGateway';
 
 let gateway: StateBackupGateway | null = null;

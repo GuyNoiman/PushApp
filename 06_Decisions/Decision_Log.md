@@ -47,6 +47,28 @@ as a backup.
 **Where it lives:** `supabase/migrations/0004_account_state_backup.sql`, `core/backup/`,
 `state/StateBackupProvider.tsx`.
 
+### D75 — The raw wording stays on the device; our reading of it goes up
+**Decision (founder, 2026-08-24), correcting D73 before it shipped to anybody:**
+
+> את המידע הגולמי של ה"למה" אנחנו לא שומרים בשרת — אנחנו נשמור את הניתוח שלנו למה שהמשתמש אמר
+> בשרת אבל את הניסוח הגולמי נשאיר במכשיר… ככה לא נעביר מידע רגיש ולא נאבד מידע כאשר נתחיל ממכשיר חדש
+
+**Why it is a better rule than either extreme:** backing everything up would put the most personal
+sentences in the product on a server we can read; backing nothing up would lose a life's work with a
+phone. The split gives both — the picture survives, the words do not travel.
+
+**It maps onto the domain exactly, which is why it is cheap:** this app already stores a closed
+`reasonId` beside every free-text `note`. The classification IS the reading. So the backup carries
+`reasonId`, dates, statuses, Steps, Dreams, Buddy and streak, and strips `Journey.why`,
+`reasonLog[].note`, `Journey.feedback.note` and the whole `behaviorLog`.
+
+**The cost, recorded rather than discovered later:** `why` has no derived counterpart today, so a
+restored device shows a Journey without the sentence behind it until one exists. Building that
+reading is a later task and a good one.
+
+**Where it lives:** `core/backup/redactForBackup.ts`, enforced by a test that asserts field by field
+and would fail on a new free-text field added later.
+
 ### D74 — Smart notification timing is on
 **Decision (founder, 2026-08-24):** approved. The timing model, the tap listener and the ids-only
 attribution payload are live for everybody rather than behind an env flag. A test asserts the payload

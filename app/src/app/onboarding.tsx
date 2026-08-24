@@ -59,7 +59,7 @@ import { useSocial } from '@/state/SocialProvider';
 
 export default function OnboardingScreen() {
   const { core } = useApp();
-  const { t } = useTranslation('onboarding');
+  const { t, i18n } = useTranslation('onboarding');
 
   // Seed from the core so an interrupted flow resumes at the same page + language (PRD §8).
   const [step, setStep] = useState<OnboardingStep>(() => core.getOnboardingStep());
@@ -194,7 +194,18 @@ export default function OnboardingScreen() {
     // Advance to the notifications pre-prompt (persist the resume point) rather than finishing here,
     // so the gate stays closed and the final step is reachable/resumable after an interruption.
     const skippedAll = ONBOARDING_QUESTION_IDS.every((id) => answers.skipped.includes(id));
-    return <CompletionStep skippedAll={skippedAll} onStart={() => go('notifications')} />;
+    return <CompletionStep skippedAll={skippedAll} onStart={() => go('coachMemory')} />;
+  }
+
+  if (step === 'coachMemory') {
+    return (
+      <CoachMemoryStep
+        onAnswer={(granted) => {
+          core.setCoachMemoryConsent(granted ? 'granted' : 'declined', i18n.language);
+          go('notifications');
+        }}
+      />
+    );
   }
 
   // notifications — the final soft pre-prompt; both actions finish onboarding and open Home.
@@ -442,6 +453,44 @@ function CompletionStep({ skippedAll, onStart }: { skippedAll: boolean; onStart:
 /** K1 — final soft pre-prompt: a value-framed reminders ask AFTER completion, right before Home
  *  opens. "Turn on reminders" requests OS permission in context; "Not now" declines. Either action
  *  finishes onboarding — permission denial or declining must NEVER block completion. */
+/**
+ * The Coach-memory consent page (Coach_Context_Summaries_PRD §4).
+ *
+ * ── WHAT MAKES THIS A CONSENT AND NOT A NOTICE ─────────────────────────────────────────────────
+ *
+ * Both answers are real. "Not now" is a full-size button next to the other one, nothing about the
+ * product gets worse if it is chosen, and it is never asked again — the PRD forbids repeated
+ * prompting, and a screen that comes back until it hears yes is not asking anything.
+ *
+ * The bullets say what is kept, what is NOT kept, where it lives, and what happens if they say no.
+ * Including the uncomfortable one: today this stays on this phone, so a new phone starts the coach
+ * fresh. That is true until the encrypted sync in PRD §9 exists, and a consent screen that glossed
+ * over it would be collecting agreement to something else.
+ */
+function CoachMemoryStep({ onAnswer }: { onAnswer: (granted: boolean) => void }) {
+  const { t } = useTranslation('onboarding');
+  const points = t('coachMemory.points', { returnObjects: true }) as string[];
+  return (
+    <OnboardingScaffold
+      footer={
+        <>
+          <OnboardingPrimaryButton label={t('coachMemory.primary')} onPress={() => onAnswer(true)} />
+          <OnboardingSecondaryButton label={t('coachMemory.secondary')} onPress={() => onAnswer(false)} />
+        </>
+      }>
+      <ThemedText type="title">{t('coachMemory.title')}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('coachMemory.body')}
+      </ThemedText>
+      {points.map((point) => (
+        <ThemedText key={point} type="small" themeColor="textSecondary">
+          {`· ${point}`}
+        </ThemedText>
+      ))}
+    </OnboardingScaffold>
+  );
+}
+
 function NotificationsStep({ onTurnOn, onNotNow }: { onTurnOn: () => void; onNotNow: () => void }) {
   const { t } = useTranslation('onboarding');
   // Guard the async permission request from a double-tap; the choice still resolves to finish().

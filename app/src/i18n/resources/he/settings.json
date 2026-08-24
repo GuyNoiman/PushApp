@@ -66,7 +66,15 @@
     "celebrations": "חגיגות קטנות",
     "celebrationsDetail": "הבזק קצר בכל פעם שמשלימים צעד. חגיגת סיום המסע תמיד נשארת פעילה.",
     "celebrationsOn": "פעיל",
-    "celebrationsOff": "כבוי"
+    "celebrationsOff": "כבוי",
+    "coachMemory": "מה המאמן זוכר",
+    "coachMemoryDetail": "כמה שורות קצרות לכל מסע, נשמרות בטלפון הזה",
+    "coachMemoryOn": "פועל",
+    "coachMemoryOff": "כבוי",
+    "coachMemoryTurnOn": "להפעיל",
+    "coachMemoryTurnOff": "לכבות ולמחוק את מה שנשמר",
+    "coachMemoryOffNow": "כבוי. שום דבר לא נשמר.",
+    "coachMemoryOnNow": "פועל. כל מה שנשמר נמצא רק בטלפון הזה."
   },
   "activeHours": {
     "title": "שעות פעילות",

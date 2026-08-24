@@ -98,3 +98,35 @@ describe('the guard', () => {
     expect(backupCarriesRawText(redactForBackup(state()))).toBe(false);
   });
 });
+
+describe('coach memory', () => {
+  it('never travels — not even though it is a reading rather than raw wording', () => {
+    const withMemory = state({
+      coachMemory: {
+        consent: { state: 'granted', version: '2026-08-24', locale: 'he', at: 5 },
+        dreams: [],
+        journeys: [
+          {
+            kind: 'journey',
+            id: 'j1',
+            schemaVersion: 1,
+            updatedAt: 5,
+            provenance: 'approvedChange',
+            outcome: 'Run three times a week',
+            reasons: ['so I can keep up with my daughter'],
+            constraints: [],
+            obstacleCategories: [],
+            adaptationRationale: [],
+            assumptions: [],
+          },
+        ],
+      },
+    });
+
+    // The rule this one is enforcing is NOT "no raw text" — it is PRD §9: a summary may leave the
+    // device only under end-to-end encryption that has passed a security review. Until then, out.
+    expect(backupCarriesRawText(withMemory)).toBe(true);
+    expect(redactForBackup(withMemory).coachMemory).toBeUndefined();
+    expect(JSON.stringify(redactForBackup(withMemory))).not.toContain('keep up with my daughter');
+  });
+});

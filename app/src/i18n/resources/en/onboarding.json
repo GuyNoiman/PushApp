@@ -169,5 +169,18 @@
     "body": "Reminders help you show up when it matters, a gentle nudge at the right moment so your progress doesn't slip. The timing is up to you, and you can turn them off anytime in Settings.",
     "primary": "Turn on reminders",
     "secondary": "Not now"
+  },
+  "coachMemory": {
+    "title": "Should the coach remember?",
+    "body": "So it stops asking you the same things every time.",
+    "points": [
+      "It keeps a few short lines for each Dream and each Journey: what you are going for, why it matters to you, and what shapes the plan.",
+      "It never keeps the conversation itself.",
+      "For now it stays on this phone. If you move to a new phone, the coach starts fresh.",
+      "You can turn it off whenever you like, and everything it kept is deleted.",
+      "If you say no, nothing else changes. The coach simply asks again when it needs to know something."
+    ],
+    "primary": "Yes, remember",
+    "secondary": "Not now"
   }
 }

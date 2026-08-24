@@ -31,6 +31,13 @@ export type OnboardingStep =
   | 'q8'
   | 'q9'
   | 'completion'
+  /**
+   * The Coach-memory consent page (Coach_Context_Summaries_PRD §4). It sits at the END, beside the
+   * notification pre-prompt, because both are the same kind of question — a permission asked in
+   * context, once, with a real "not now" — and because asking it before somebody has seen what the
+   * coach IS would be asking them to consent to a stranger.
+   */
+  | 'coachMemory'
   | 'notifications';
 
 /**

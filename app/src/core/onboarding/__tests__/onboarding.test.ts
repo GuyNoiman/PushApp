@@ -73,13 +73,17 @@ describe('onboarding config (PRD §6)', () => {
     expect(questionNumber('completion')).toBe(0);
   });
 
-  it('places the notifications soft pre-prompt AFTER completion as the terminal step (K1)', () => {
-    // "Maybe later" converges on completion first, then the ask — and the flow ends at notifications.
-    expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.indexOf('completion') + 1]).toBe('notifications');
+  it('ends with the two asks — coach memory, then notifications (K1 + Coach Context Summaries §4)', () => {
+    // "Maybe later" converges on completion first, then the asks — and the flow still ends at
+    // notifications. The coach-memory consent page was added between them on 2026-08-24: both are
+    // permissions asked in context at the end, and neither blocks finishing onboarding.
+    expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.indexOf('completion') + 1]).toBe('coachMemory');
     expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.length - 1]).toBe('notifications');
-    expect(nextStep('completion')).toBe('notifications');
+    expect(nextStep('completion')).toBe('coachMemory');
+    expect(nextStep('coachMemory')).toBe('notifications');
     expect(nextStep('notifications')).toBe('notifications'); // terminal (clamped)
-    expect(prevStep('notifications')).toBe('completion');
+    expect(prevStep('notifications')).toBe('coachMemory');
+    expect(isQuestionStep('coachMemory')).toBe(false);
     expect(isQuestionStep('notifications')).toBe(false);
   });
 });

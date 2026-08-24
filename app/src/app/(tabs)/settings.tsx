@@ -331,6 +331,16 @@ export default function SettingsScreen() {
               value={celebrationsEnabled ? t('app.celebrationsOn') : t('app.celebrationsOff')}
               onPress={() => setCelebrationsEnabled(!celebrationsEnabled)}
             />
+            {/* What the coach may remember between conversations (Coach Context Summaries §4). The
+                row states the answer rather than hiding it: a memory nobody can see the switch for
+                is not a memory anybody consented to. */}
+            <SettingsRow
+              icon="bookmark-outline"
+              label={t('app.coachMemory')}
+              detail={t('app.coachMemoryDetail')}
+              value={core.coachMemoryActive() ? t('app.coachMemoryOn') : t('app.coachMemoryOff')}
+              onPress={() => router.push('/settings/coach-memory' as Href)}
+            />
             <SettingsRow
               icon="time-outline"
               label={t('activeHours.title')}

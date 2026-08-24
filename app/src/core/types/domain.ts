@@ -8,6 +8,7 @@
 import type { Entitlement } from './entitlement';
 // Type-only cross-import (erased at runtime — no cycle): the on-device onboarding record (K2). The
 // answer/step shapes + logic live under core/onboarding; AppState only stores them.
+import type { CoachMemoryState } from '../coach/context/types';
 import type { OnboardingAnswers, OnboardingStep } from '../onboarding/model';
 // Type-only cross-import (erased at runtime — no cycle): a Weekly Review proposal carries the
 // SAME coarse adjustment kinds + per-Step diff the AdaptivePlanner already speaks.
@@ -1129,6 +1130,18 @@ export interface AppState {
    * A SENSITIVE-domain goal is never parked (filtered at capture). In scope for account deletion/export.
    */
   parkedGoals?: ParkedGoal[];
+  /**
+   * What the coach is allowed to REMEMBER between conversations (Coach Context Summaries PRD) —
+   * the versioned consent, plus one short bounded summary per Dream and per Journey. Undefined on
+   * an account that has never been asked; absent entirely when consent was declined or withdrawn.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY, and more strictly than its neighbours: it is stripped
+   * from the account BACKUP as well (`backup/redactForBackup`), not only from the social path. PRD
+   * §9 allows a summary to leave the device only under end-to-end encryption whose key design has
+   * had a security review, and that review has not happened. Until it does, this stays here. In
+   * scope for account deletion/export.
+   */
+  coachMemory?: CoachMemoryState;
   /**
    * The adaptive coach's ON-DEVICE raw behaviour log (adaptive coach, S1.16). Optional so
    * an older snapshot loads without it (backfilled to `[]` in AppCore.migrateState). Only

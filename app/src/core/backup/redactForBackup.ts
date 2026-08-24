@@ -16,6 +16,12 @@
  *    at the end of a Journey.
  *  · `behaviorLog` — the coach's raw minute-by-minute signal, on-device-only by G1 since it was
  *    written; it is a portrait of a life and it has never been ours to hold.
+ *  · `coachMemory` — what the coach remembers between conversations. This one is stripped for a
+ *    different reason from the others: it is already a READING rather than raw wording, so the rule
+ *    above would let it travel. Its own PRD (§9) does not: a summary may leave the device only under
+ *    end-to-end encryption whose key design has passed a security review, and that has not happened.
+ *    Server-side encryption at rest is explicitly not enough. So it stays, the consent text says so,
+ *    and this is the line to delete on the day the crypto lands — not before.
  *
  * WHAT SURVIVES, so a restore is still a restore: every Journey, Step, date, status and report; the
  * closed `reasonId` of every miss and every piece of feedback; Dreams, Buddy, streak, missions,
@@ -55,6 +61,9 @@ export function redactForBackup(state: AppState): AppState {
     }),
     // The coach's raw behavioural signal has never been allowed to leave the device (G1).
     behaviorLog: [],
+    // What the coach remembers. Undefined rather than an empty object: a restored device has never
+    // been asked for consent, which is exactly true and is what the consent screen needs to know.
+    coachMemory: undefined,
   };
 }
 
@@ -68,5 +77,8 @@ export function backupCarriesRawText(state: AppState): boolean {
   if ((state.reasonLog ?? []).some((entry) => 'note' in entry && entry.note !== undefined)) return true;
   if ((state.behaviorLog ?? []).length > 0) return true;
   if (state.journeys.some((journey) => journey.feedback?.note !== undefined)) return true;
+  // Coach memory is a reading rather than raw wording, so it does not fail the rule above — it is
+  // barred by its own PRD (§9) until the encrypted-sync design has had a security review.
+  if (state.coachMemory !== undefined) return true;
   return false;
 }

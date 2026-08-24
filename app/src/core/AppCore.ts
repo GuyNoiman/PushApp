@@ -38,6 +38,18 @@ import {
   parkedGoalToSpec,
 } from './coach/goalSpecToJourney';
 import { isSensitiveDomain } from './coach/sensitiveDomains';
+import {
+  briefFor,
+  consentActive,
+  dreamContextFrom,
+  emptyCoachMemory,
+  journeyContextFrom,
+  needsAsking,
+  recordConsent,
+  type CoachContextBrief,
+  type CoachMemoryConsent,
+  type CoachMemoryState,
+} from './coach/context';
 import { companionStepsFor, isCompanionEligible } from './social/companion';
 import { getSocialGateway } from './social';
 import type { CompanionStepInput, SocialGateway } from './social/SocialGateway';
@@ -409,6 +421,10 @@ function migrateState(state: AppState): AppState {
       processType: g.processType,
       domain: g.domain,
     })),
+    // Coach memory (Coach Context Summaries) — carried over as-is, and deliberately NOT backfilled
+    // to an empty object: "never asked" and "asked, and they said no" are different states, and only
+    // the absence of the field can mean the first one.
+    ...(state.coachMemory ? { coachMemory: state.coachMemory } : {}),
     // Adaptive-coach on-device signal (S1.16) — backfill the raw log to [] for a snapshot
     // that predates it, so hydrate never dereferences an absent field. The derived
     // insightModel carries over untouched (undefined until first recomputed). ON-DEVICE
@@ -666,6 +682,10 @@ export class AppCore {
     // the MissionEngine starts so that a rollover on start() (which can auto-claim
     // earned Coins) is persisted through the same path.
     this.bus.on('JourneyCreated', this.onChanged);
+    // Coach memory is written off the EVENT rather than at a call site, so every way a Journey can
+    // come into existence — the coach, a parked goal, manual creation, a Future Journey activating —
+    // is remembered the same way. Nothing is written unless consent is active.
+    this.bus.on('JourneyCreated', ({ journey }) => this.rememberApprovedJourney(journey));
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
     // Daily Step Reporting reversal (D36): persist the cleared report; a reopened Journey also
@@ -784,6 +804,10 @@ export class AppCore {
   }
 
   private readonly onChanged = (): void => {
+    // Deletion cascades for coach memory happen HERE rather than at each delete site (PRD §11): a
+    // context belongs to a Dream or a Journey, so the moment the object is gone the memory of it is
+    // gone too — whether it was deleted, abandoned, or merged away. One place to be right about.
+    this.pruneCoachMemory();
     this.persist();
     this.notify();
   };
@@ -1263,7 +1287,13 @@ export class AppCore {
     const signal = dreamSignalFromSpec(spec);
     if (signal) {
       const dream = this.journeyEngine.createOrReuseDream(signal);
-      if (dream) this.journeyEngine.linkJourneyToDream(journey.id, dream.id, { primary: true });
+      if (dream) {
+        this.journeyEngine.linkJourneyToDream(journey.id, dream.id, { primary: true });
+        // The Dream was linked AFTER the JourneyCreated event that wrote the memory, so the memory
+        // does not know about it yet. Written here rather than by moving the event, because the
+        // event order is load-bearing for reminders and persistence.
+        this.rememberApprovedJourney(journey, dream.id);
+      }
     }
     return journey;
   }
@@ -1371,6 +1401,103 @@ export class AppCore {
     if (isSensitiveDomain(parked[index].domain)) return null;
     const [goal] = parked.splice(index, 1); // remove first so the JourneyCreated save reflects it
     return this.createJourneyFromGoalSpec(parkedGoalToSpec(goal));
+  }
+
+
+  // ── Coach Context Summaries (PRD Coach_Context_Summaries) ───────────────────────────────────
+  //
+  // The coach may remember a little between conversations so it stops asking what it was already
+  // told. What it may remember is BOUNDED and ATTACHED to a Dream or a Journey; what it may NOT
+  // remember is the conversation. Consent is affirmative, versioned, and revocable, and revoking it
+  // deletes what was kept rather than merely stopping the next write.
+  //
+  // ON-DEVICE ONLY, and unlike its neighbours also stripped from the account BACKUP: PRD §9 lets a
+  // summary leave the device only under end-to-end encryption whose key design has passed a security
+  // review, and that review has not happened yet.
+
+  /** Everything remembered, or undefined when this account has never been asked. */
+  getCoachMemory(): CoachMemoryState | undefined {
+    return this.state.coachMemory;
+  }
+
+  /** True when the consent screen should be shown — never true again after a decline. */
+  coachMemoryNeedsAsking(): boolean {
+    return needsAsking(this.state.coachMemory?.consent);
+  }
+
+  /** Is the coach allowed to keep anything right now? */
+  coachMemoryActive(): boolean {
+    return consentActive(this.state.coachMemory?.consent);
+  }
+
+  /**
+   * Record the answer to the consent question.
+   *
+   * A `declined` or `withdrawn` answer DELETES every summary in the same breath. Stopping future
+   * writes while keeping what was already collected is the shape of promise that gets companies
+   * fined, and more to the point it is not what the person meant.
+   */
+  setCoachMemoryConsent(state: CoachMemoryConsent['state'], locale: string): void {
+    const consent = recordConsent(state, locale, Date.now());
+    const memory = this.state.coachMemory ?? emptyCoachMemory();
+    this.state.coachMemory =
+      state === 'granted'
+        ? { ...memory, consent }
+        : { ...emptyCoachMemory(), consent };
+    this.onChanged();
+  }
+
+  /**
+   * The minimum context for one request, or null.
+   *
+   * Null whenever consent is not active — the check is inside {@link briefFor}, at the boundary the
+   * data would cross, so a caller that forgets about consent gets nothing rather than everything.
+   */
+  getCoachContextBrief(ref: { dreamId?: string; journeyId?: string }): CoachContextBrief | null {
+    return briefFor(this.state.coachMemory, ref);
+  }
+
+  /**
+   * Remember an APPROVED Journey (and the Dream it serves, when it has one).
+   *
+   * Called from the one place a Journey is approved into existence. It writes only what the approved
+   * objects already say — the outcome and the person's own Why — because approval of a plan is not
+   * permission to infer anything else about them (PRD §6). No consent, nothing written, and the
+   * caller does not need to know that.
+   */
+  private rememberApprovedJourney(journey: Journey, dreamId?: string): void {
+    if (!this.coachMemoryActive()) return;
+    const memory = (this.state.coachMemory ??= emptyCoachMemory());
+    const at = Date.now();
+
+    const context = journeyContextFrom(journey, at, { sourceId: journey.id });
+    const index = memory.journeys.findIndex((j) => j.id === journey.id);
+    if (index >= 0) memory.journeys[index] = context;
+    else memory.journeys.push(context);
+
+    const dream = dreamId ? this.state.dreams.find((d) => d.id === dreamId) : undefined;
+    if (dream && !memory.dreams.some((d) => d.id === dream.id)) {
+      memory.dreams.push(dreamContextFrom(dream, at, { sourceId: journey.id }));
+    }
+  }
+
+  /**
+   * Drop every summary whose Dream or Journey no longer exists, and everything at all when consent
+   * is not active. Idempotent, cheap, and run on every change — see {@link onChanged}.
+   */
+  private pruneCoachMemory(): void {
+    const memory = this.state.coachMemory;
+    if (!memory) return;
+    if (!consentActive(memory.consent)) {
+      if (memory.dreams.length > 0 || memory.journeys.length > 0) {
+        this.state.coachMemory = { ...emptyCoachMemory(), ...(memory.consent ? { consent: memory.consent } : {}) };
+      }
+      return;
+    }
+    const dreamIds = new Set(this.state.dreams.map((d) => d.id));
+    const journeyIds = new Set(this.state.journeys.map((j) => j.id));
+    memory.dreams = memory.dreams.filter((d) => dreamIds.has(d.id));
+    memory.journeys = memory.journeys.filter((j) => journeyIds.has(j.id));
   }
 
   /** Dismiss a parked goal (L1) without building it. Returns whether one was removed; persists + notifies. */

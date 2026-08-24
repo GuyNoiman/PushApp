@@ -46,12 +46,23 @@ export interface JourneyEditOrchestratorOptions {
   context: JourneyEditContext;
   /** Optional outbound safety guard applied to the greeting; defaults to identity. */
   guard?: CoachMessageGuard;
+  /**
+   * WHAT THE COACH ALREADY KNOWS about this Journey — the rendered Coach Context Summary
+   * (`coach/context/brief`), or absent when there is nothing or consent is not active.
+   *
+   * This is the ONE place remembered context reaches a model today, and it is the right first one:
+   * an edit conversation is where somebody says "make it lighter on Tuesdays" and does not expect to
+   * re-explain why the Journey exists. Absent is a perfectly good state — the coach asks, which is
+   * what it did before this feature and is never wrong, only slower.
+   */
+  memoryBrief?: string;
 }
 
 export class JourneyEditOrchestrator {
   private readonly llm: LlmClient;
   private readonly context: JourneyEditContext;
   private readonly guard?: CoachMessageGuard;
+  private readonly memoryBrief: string;
 
   /** The visible dialogue so far (greeting + change requests) — ON-DEVICE-ONLY context for the model. */
   private readonly history: LlmMessage[] = [];
@@ -60,6 +71,7 @@ export class JourneyEditOrchestrator {
     this.llm = options.llm;
     this.context = options.context;
     this.guard = options.guard;
+    this.memoryBrief = options.memoryBrief?.trim() ?? '';
   }
 
   /** The scoped greeting naming the Journey. No model call. */
@@ -91,7 +103,11 @@ export class JourneyEditOrchestrator {
   private async understand(changeText: string): Promise<JourneyEdit> {
     try {
       const result = await this.llm.complete({
-        system: EDIT_SYSTEM_PROMPT,
+        // The remembered context goes FIRST and the rules second, so nothing a summary happens to
+        // contain can read as an instruction that outranks them.
+        system: this.memoryBrief
+          ? `${this.memoryBrief}\n\n${EDIT_SYSTEM_PROMPT}`
+          : EDIT_SYSTEM_PROMPT,
         json: true,
         temperature: 0,
         messages: [...this.history, { role: 'user', content: buildEditDirective(this.context, changeText) }],

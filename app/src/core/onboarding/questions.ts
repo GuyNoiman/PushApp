@@ -217,6 +217,7 @@ export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'q8',
   'q9',
   'completion',
+  'coachMemory',
   'notifications',
 ];
 

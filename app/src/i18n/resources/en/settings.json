@@ -64,7 +64,15 @@
     "celebrations": "Small celebrations",
     "celebrationsDetail": "A short burst when you finish a step. The Journey completion celebration always stays on.",
     "celebrationsOn": "On",
-    "celebrationsOff": "Off"
+    "celebrationsOff": "Off",
+    "coachMemory": "What the coach remembers",
+    "coachMemoryDetail": "A few short lines per Journey, kept on this phone",
+    "coachMemoryOn": "On",
+    "coachMemoryOff": "Off",
+    "coachMemoryTurnOn": "Turn it on",
+    "coachMemoryTurnOff": "Turn it off and delete what was kept",
+    "coachMemoryOffNow": "It is off. Nothing is being kept.",
+    "coachMemoryOnNow": "It is on. Everything it kept lives on this phone only."
   },
   "activeHours": {
     "title": "Active Hours",

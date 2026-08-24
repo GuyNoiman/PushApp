@@ -23,6 +23,7 @@ import {
   type JourneyEditProposal,
 } from '@/core/coach/JourneyEditOrchestrator';
 import type { JourneyEditContext } from '@/core/coach/journeyEdit';
+import { renderBrief } from '@/core/coach/context';
 import { SafetyLayer } from '@/core/coach/SafetyLayer';
 import type { Journey } from '@/core/types/domain';
 import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
@@ -111,10 +112,13 @@ export function useJourneyEditCoach(options: UseJourneyEditCoachOptions): UseJou
         context,
         llm: makeCoachLlm(),
         guard: new SafetyLayer().messageGuard(),
+        // What the coach was told about this Journey before, so it does not ask again (Coach Context
+        // Summaries). Empty unless the person granted consent AND something was actually kept.
+        memoryBrief: renderBrief(core.getCoachContextBrief({ journeyId: journey.id })),
       });
     orchestratorRef.current.start(); // advances the orchestrator's history; the UI shows a localized line
     setItems([{ kind: 'coach', text: t('edit.greeting', { title: journey.title }) }]);
-  }, [journey, options.orchestrator, t]);
+  }, [core, journey, options.orchestrator, t]);
 
   const sendChange = useCallback(
     (text: string) => {

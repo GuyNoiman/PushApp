@@ -51,6 +51,8 @@
     "appearance": "מראה",
     "appearanceDetail": "ערכת נושא",
     "about": "אודות",
+    "aboutUpdated": "עודכן {{date}} · {{id}}",
+    "aboutEmbedded": "הגרסה שהגיעה עם ההתקנה",
     "language": "שפה",
     "addressForm": "כיצד לפנות אליך",
     "addressFormDetail": "לשון פנייה (רלוונטי בעברית)",

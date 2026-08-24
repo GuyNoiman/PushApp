@@ -40,6 +40,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
+import { readRunningBundle, shortUpdateId } from '@/core/util/buildInfo';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
@@ -116,6 +117,31 @@ export default function SettingsScreen() {
 
   // App version for the About row — read from the Expo config (app.json), never hard-coded.
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+
+  /**
+   * WHICH COPY OF THE APP IS THIS (founder, 2026-08-24). The version above belongs to the BUILD and
+   * does not move when an over-the-air update lands, so on its own it cannot answer the first
+   * question a tester's "it doesn't work" raises. The detail line names the running update and the
+   * day it was published — or says plainly that the phone is still on the bundle the build shipped
+   * with, which is what "it still looks the same" usually means. In development there is no update
+   * mechanism at all and the row stays as it was.
+   */
+  const bundle = useMemo(() => readRunningBundle(), []);
+  const aboutDetail = useMemo(() => {
+    if (bundle.kind === 'development') return undefined;
+    if (bundle.kind === 'embedded') return t('app.aboutEmbedded');
+    return t('app.aboutUpdated', {
+      date: bundle.createdAt
+        ? bundle.createdAt.toLocaleString(language, {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '—',
+      id: shortUpdateId(bundle.id),
+    });
+  }, [bundle, language, t]);
 
   // Local JSON export via the OS share sheet; a failure surfaces a calm alert
   // rather than crashing (the temp file is always cleaned up by the hook).
@@ -312,7 +338,12 @@ export default function SettingsScreen() {
               value={activeHoursValue}
               onPress={() => router.push('/settings/active-hours' as Href)}
             />
-            <SettingsRow icon="information-circle-outline" label={t('app.about')} value={`v${appVersion}`} />
+            <SettingsRow
+              icon="information-circle-outline"
+              label={t('app.about')}
+              detail={aboutDetail}
+              value={`v${appVersion}`}
+            />
           </SettingsSection>
 
           {/* Your data — the two wired account actions (O1). Export is local-only;

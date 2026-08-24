@@ -49,6 +49,8 @@
     "appearance": "Appearance",
     "appearanceDetail": "Theme",
     "about": "About",
+    "aboutUpdated": "Updated {{date}} · {{id}}",
+    "aboutEmbedded": "The version this build was installed with",
     "language": "Language",
     "addressForm": "How we address you",
     "addressFormDetail": "Grammatical form (matters in Hebrew)",

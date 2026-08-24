@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-24** — start at the **"⛳ START HERE — 2026-08-24"** block
+Last updated: **2026-08-24 (late)** — start at the **"⛳ START HERE — 2026-08-24 (late)"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
 history of the same session's earlier half. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
@@ -35,7 +35,72 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-24: the bell, the Inbox, encrypted messages, and the coach's voice
+# ⛳ START HERE — 2026-08-24 (late): everything through Mirror's sending, and the exact queue
+
+On `feat/buddy-3d-and-reminders`, **committed and pushed** through `c4351ad`. `tsc` clean,
+**jest 2268 / 207 suites**. Full detail: `00_Foundation/CHANGELOG.md` and the Decision Log (D70–D74, E7).
+
+## ▶ THE FIRST THING TO KNOW: what is in the builds, and what is not
+
+**iOS build 6 and the Android APK were both cut from `f9698d1`.** Everything after it — the founder's
+whole design pass, the account backup, and Mirror's sending — is pushed but **not in any build**.
+
+- Android, installable, no store, no cost:
+  `https://expo.dev/accounts/guynoiman/projects/pushapp/builds/539f0ac7-a4a8-4fe7-a0b9-ebb1acc38a8a`
+- iOS goes to TestFlight through `eas submit`, which now works non-interactively: `ascAppId` is in
+  `app/eas.json`, and the last build used `--auto-submit` successfully.
+
+**Everything since is JavaScript**, so a `eas update --branch production` reaches both phones without
+a build. The founder has asked twice about this; offer it before offering a build.
+
+## ▶ THE QUEUE, in the order it was agreed
+
+1. **Mirror's confidential synthesis.** Everything else in the tool is done. The synthesis MUST run
+   server-side (an Edge Function on the `gemini-proxy` pattern, service role): if it ran on the
+   requester's device, that device would hold the contributors' raw words — the exact thing the RLS
+   in `0005_mirror_feedback.sql` exists to prevent. It writes to `mirror_synthesis`, which no client
+   can write to. `core/tools/mirror/synthesis.ts` and `synthesisPrompt.ts` already hold the rules.
+   **A visible round already works end to end; a confidential one collects answers and returns nothing yet.**
+2. **Coach Context Summaries** (`PRD/Coach_Context_Summaries_PRD.md`). The founder cleared the
+   blocker: build the initial version with its consent screen, and the legal points go into the
+   privacy contract unformulated for now, as agreed.
+3. **Dream authoring** (`PRD/Dream_Management_PRD.md`). Its "Open Questions" section says **None** —
+   the old status line claiming a design session was needed is stale, and the core is already built
+   (a coach conversation that produces a Dream signal creates and links the Dream, D40). Missing:
+   starting a Dream conversation FROM My Dreams (that screen is view-only), and rewording/merging.
+4. **The invite landing page.** The founder wants a page with a download button for testing that
+   ultimately routes to the device's app store. **Hosting is not chosen** — offer free options
+   (GitHub Pages needs a public repo or a paid plan; Netlify/Vercel/EAS Hosting free tiers).
+5. **Then build both platforms.**
+
+## ▶ WAITING ON THE FOUNDER
+
+- **The most personal free text in the backup.** The "why" and the miss-recovery notes currently go
+  up with the account state (D73). He was asked whether they should stay device-only and has not
+  answered. One line either way.
+- **Weekly Review Contributions** — he agreed it is a separate conversation, not a build.
+- Mirror's §18 items are CLOSED: he answered them (delivery via the Notification Center, paid
+  provider, expiry discussed).
+
+## What landed in this stretch
+
+**The bell** (Notification Center) with its own count beside the mail button, seen-on-render, inline
+accept/decline. **The Inbox** realigned to Chats · Groups (locked) · Requests. **Direct messages,
+end-to-end encrypted** — X25519 per device, sealed twice, a schema with no column that can hold
+plaintext. **The coach speaks in the user's chosen voice**, and the three empty voices were written.
+**The account backup** — a lost phone no longer means starting over (D73, and the privacy contract
+changed with it). **Smart notification timing is on** (D74). **Mirror sends.** Plus the founder's
+design pass across Home, Journeys and Tools.
+
+## Two things the Engineering Bible audit found NOT holding
+
+**No monitoring of any kind** — no crash reporting, no performance signal. **No gradual rollout** —
+every update reaches everyone at once. Both are fine at two users and stop being fine at twenty. The
+founder has an open question about analytics from 2026-08-23 that this belongs to.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-24: the bell, the Inbox, encrypted messages, and the coach's voice
 
 On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2250 / 206 suites**.
 Full detail: `00_Foundation/CHANGELOG.md`.

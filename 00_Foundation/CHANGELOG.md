@@ -4,6 +4,53 @@ Status: Living Document
 
 ---
 
+# 2026-08-24 (late) — the founder's design pass, a backup, and Mirror finally sends
+
+Branch `feat/buddy-3d-and-reminders`, pushed through `c4351ad`. `tsc` clean · **jest 2268 / 207 suites**.
+Continues the earlier 2026-08-24 entry below.
+
+## The founder's pass on build 6
+
+Home: the greeting followed the clock only at first render, so an app left open since morning went on
+saying "good morning" into the evening — it re-reads on focus and at the hour boundary now, and it
+stops inventing a name. "You could also do today" was offering the same thing three times, offering
+what the day already held, and offering next Sunday; three rules fixed it — one Step per Journey,
+nothing from a Journey today already carries, a three-day horizon. Step tiles tightened. The carousel
+says it can be dragged. The top strip lost the numeric XP readout and a divider.
+
+Journeys: two header rows so the subtitle stops wrapping, both buttons carry a word, and the rule
+between the progress bar and the date is gone.
+
+Tools: the eight rooms are a grid rather than a horizontal rail; per-tool icons removed so the
+DESCRIPTION can show in full; time beside a clock; the bookmark became an overflow; the footnote
+removed; and tapping the tab while inside a room leaves the room.
+
+## A lost phone stops meaning starting over (D73)
+
+Everything a person built lived encrypted on one device and nowhere else. The founder chose the model
+the large apps use: the account's state is on the server and signing in restores it. **The service can
+read that row** — access control, transport encryption and the promise not to read, mine or sell are
+what protect it, and §0 of the privacy contract now says that in the user's own words. Direct messages
+did not move: they stay end-to-end encrypted. It is a backup, not sync, and it is described as one.
+
+## Mirror sends (and what still does not)
+
+Choose contributors from the Support Circle, send, and the round opens. The guarantee lives in the
+policies: in a confidential round there is no policy under which the requester can read a
+contributor's raw words, and the synthesis table has no client insert path at all. The contributor's
+screen states which promise applies before they write anything, and a confidential round refuses to
+send to fewer than five people.
+
+**Still not built: the confidential synthesis itself.** It must run server-side for the same reason
+the policies exist — a device that computes it would hold the raw answers. A visible round works end
+to end today.
+
+## Also
+
+The coach speaks in the user's chosen voice, and the three voices that were empty stubs are written
+(§4 of its PRD, each with the limit that PRD states). Smart notification timing is on (D74), with a
+test asserting its payload carries ids and never a word anybody wrote.
+
 # 2026-08-24 — the bell, the Inbox, encrypted messages, and a coach that finally has a voice
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 2250 / 206 suites**.

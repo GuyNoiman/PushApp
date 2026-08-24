@@ -26,14 +26,22 @@
  * 4. **VERSIONED.** Schema version on the record, text version on the consent. A material change to
  *    what we keep means asking again, and that is only possible if we wrote down what was agreed to.
  *
- * ── AND THE ONE THING THIS INITIAL VERSION DOES NOT DO (2026-08-24) ────────────────────────────
+ * ── WHERE IT LIVES (founder, 2026-08-25 — this reversed the first build) ───────────────────────
  *
- * It does not SYNC. PRD §9 requires end-to-end encryption for synchronised summaries and says in as
- * many words that Claude must propose the key-management design for security review first. Until
- * that review happens, these records stay on the device that made them: excluded from the account
- * backup ({@link ../../backup/redactForBackup}), from every social payload, and from export-by-sync.
- * The honest consequence is written into the consent text — a lost phone means the coach starts
- * fresh — because a consent screen that implies otherwise is worse than no screen at all.
+ * **It syncs, minus the person's own sentences.** The first version kept everything on the device,
+ * reasoning from the PRD's §9 (end-to-end encryption before any summary travels). The founder
+ * corrected it with the rule he had already given for the backup (D75), which is the same rule seen
+ * from the other side: *the raw material stays on the device; the insights the coach draws from it go
+ * to the server.* A summary IS the insight. Keeping it on one phone was protecting the wrong half —
+ * and it cost the thing the feature exists for, because a coach that forgets on a new phone is the
+ * problem this was built to solve.
+ *
+ * So the memory travels in the account backup, and `../../backup/redactForBackup` empties the ONE
+ * field inside it that is a verbatim copy rather than a reading ({@link JourneyCoachContext.reasons},
+ * which is `Journey.why`). Any field added later that holds somebody's own wording belongs on that
+ * list too. What the server holds is protected by row-level security and the promise not to read it,
+ * exactly as D73 decided for everything else in the account — a weaker guarantee than §9's, stated
+ * plainly in the privacy contract rather than implied.
  *
  * Pure TypeScript — no React, no storage, no clock reads.
  */

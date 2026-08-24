@@ -72,7 +72,7 @@
     "coachMemoryTurnOn": "Turn it on",
     "coachMemoryTurnOff": "Turn it off and delete what was kept",
     "coachMemoryOffNow": "It is off. Nothing is being kept.",
-    "coachMemoryOnNow": "It is on. Everything it kept lives on this phone only."
+    "coachMemoryOnNow": "It is on. The coach keeps its reading with your account; your own sentences stay on this phone."
   },
   "activeHours": {
     "title": "Active Hours",

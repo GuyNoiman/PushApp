@@ -16,12 +16,13 @@
  *    at the end of a Journey.
  *  · `behaviorLog` — the coach's raw minute-by-minute signal, on-device-only by G1 since it was
  *    written; it is a portrait of a life and it has never been ours to hold.
- *  · `coachMemory` — what the coach remembers between conversations. This one is stripped for a
- *    different reason from the others: it is already a READING rather than raw wording, so the rule
- *    above would let it travel. Its own PRD (§9) does not: a summary may leave the device only under
- *    end-to-end encryption whose key design has passed a security review, and that has not happened.
- *    Server-side encryption at rest is explicitly not enough. So it stays, the consent text says so,
- *    and this is the line to delete on the day the crypto lands — not before.
+ *  · `coachMemory.journeys[].reasons` — and ONLY that field of the coach's memory. The founder
+ *    corrected this on 2026-08-25, and the correction is the rule stated again: *the raw material
+ *    stays on the device; the insights the coach draws from it go to the server.* A summary IS the
+ *    insight, so it travels. But `reasons` is not an insight — it is a verbatim copy of
+ *    `Journey.why`, the same sentences stripped two lines above, arriving by another door. So the
+ *    memory syncs and that one field is emptied. Any future field that holds somebody's own wording
+ *    belongs on this list too; a field that holds our reading of it does not.
  *
  * WHAT SURVIVES, so a restore is still a restore: every Journey, Step, date, status and report; the
  * closed `reasonId` of every miss and every piece of feedback; Dreams, Buddy, streak, missions,
@@ -61,9 +62,16 @@ export function redactForBackup(state: AppState): AppState {
     }),
     // The coach's raw behavioural signal has never been allowed to leave the device (G1).
     behaviorLog: [],
-    // What the coach remembers. Undefined rather than an empty object: a restored device has never
-    // been asked for consent, which is exactly true and is what the consent screen needs to know.
-    coachMemory: undefined,
+    // What the coach remembers TRAVELS — it is the reading, not the wording (founder, 2026-08-25) —
+    // minus the one field inside it that is a verbatim copy of the person's own sentences.
+    ...(state.coachMemory
+      ? {
+          coachMemory: {
+            ...state.coachMemory,
+            journeys: state.coachMemory.journeys.map((context) => ({ ...context, reasons: [] })),
+          },
+        }
+      : {}),
   };
 }
 
@@ -77,8 +85,7 @@ export function backupCarriesRawText(state: AppState): boolean {
   if ((state.reasonLog ?? []).some((entry) => 'note' in entry && entry.note !== undefined)) return true;
   if ((state.behaviorLog ?? []).length > 0) return true;
   if (state.journeys.some((journey) => journey.feedback?.note !== undefined)) return true;
-  // Coach memory is a reading rather than raw wording, so it does not fail the rule above — it is
-  // barred by its own PRD (§9) until the encrypted-sync design has had a security review.
-  if (state.coachMemory !== undefined) return true;
+  // The coach's memory may travel; the person's own sentences inside it may not.
+  if ((state.coachMemory?.journeys ?? []).some((context) => context.reasons.length > 0)) return true;
   return false;
 }

@@ -308,6 +308,17 @@ notifications, native build, G1 sign-off, RTL/gendered visual QA), or new spec w
 (the Invite feature). See `Current_Context.md` → the top "⭐ HANDOFF SNAPSHOT — 2026-08-13 (SESSION —
 MVP-ready sweep)" for the full ▶ NEXT queue.
 
+## R. Added by the founder on 2026-08-25 — IN, and urgent where marked
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| **R1** | **Smart Notification Timing — the aggregate** | ⛔ **URGENT — founder: "בהחלט צריך להיכנס ל-MVP"** | The learning loop shipped (D74): the app learns when a person actually acts and moves reminders toward it. What is missing is the piece that BUNDLES several Journeys into one notification instead of firing one per Journey — which is the difference between a coach and a nagging app once somebody has three Journeys running. It is roughly as large as everything else in Smart Timing combined, and it carries the sharpest deviation from the spec: a local notification cannot be cancelled at the moment it fires, so "suppress it if nothing is pending" is approximated by cancelling on the next reconcile. That approximation needs to be stated in the PRD rather than discovered. See `PRD/Smart_Notification_Timing_PRD.md` and Open Questions §3.5 (now answered: build it). |
+| **R2** | **Journey resume / re-plan — its own PRD** | ⛔ Spec to write | The founder's re-plan answer grew a question inside the postponement spec into a full mechanism: the resume instant becomes the start of the remainder, every unlived Step is recalculated, and the coach may ask what happened first. It is not a clause of Step Postponement any more. Founder decision, 2026-08-25: **split it out** — one PRD, one feature (`PRD/Journey_Resume_Replan_PRD.md`). It governs BOTH manual (J3) and inactivity (J5) resumes, which today share a path and no document. |
+| **R3** | **Journey length: up to 60 days, any number inside it** | ✅ Built 2026-08-25 | The wizard offered 30 / 60 / 90 and the coach's horizon question offered the same three, against the founder's own guidance of up to two months. Decision (founder, 2026-08-25): **60 is the ceiling, and any number up to it is valid — ten days is a Journey and fifty days is a Journey.** One constant now (`core/config/journeyLength.ts`) read by both surfaces, a typed field beside the two one-tap chips, and a clamp that corrects rather than refuses. The ceiling is a PLANNING limit, not a lifetime one: an approved extension still has no cap (Step_Postponement_02). |
+| **R4** | **Public privacy policy** | ⛔ In progress | Founder, 2026-08-25: write it, **at the level of Instagram or a serious competitor — study theirs first.** Source material is `Privacy_Contract_With_The_User.md`, which is current. It has somewhere to be hosted now (the invite site). Closes two store gates at once: the policy itself and the Google Play account-deletion URL. |
+| **R5** | **PRDs for the four tools that shipped without an approved one** | ⛔ Founder writing | Life Wheel, Values Clarification, My Best Possible Year and the Passion Map are live under drafts that were never approved. The founder said on 2026-08-25 that he will write them. Nothing blocks on this, but the repo and the product disagree until it is done. |
+
+
 ## How this list is tracked
 
 Mirrored into the harness Task tool for live status during the build; **this doc is the durable

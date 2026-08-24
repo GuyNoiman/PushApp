@@ -51,7 +51,33 @@ one natural sentence) is still open: the tree asks one at a time.
 
 ## 2026-08-24 (late) — the confidential synthesis, and how much the coach may remember
 
+### D77 — The coach's INSIGHTS go to the server; the raw material stays on the phone
+**Decision (founder, 2026-08-25), correcting D76 below:**
+
+> הזיכרון של הקואצ׳ לא מנוהל במכשיר, לפחות לא באופן מלא. המידע הגולמי נשמר במכשיר אבל התובנות
+> שמפיק הקואצ׳ מהשיחה נשמרות בשרת.
+
+**What it settles:** D76 kept the whole of Coach Context Summaries on the device, reasoning from the
+PRD's §9 (end-to-end encryption before any summary may travel). That protected the wrong half. The
+founder's rule — already given for the backup as D75 — is the same rule seen from the other side: the
+raw material is what must not leave, and a summary is not raw material, it is the reading. Keeping the
+reading on one phone cost exactly what the feature exists for: a coach that forgets when you change
+phones is the problem it was built to solve.
+
+**What changed in the code:** `backup/redactForBackup` now carries `coachMemory` and empties the ONE
+field inside it that is a verbatim copy rather than a reading — `reasons`, which is `Journey.why`, the
+same sentences D75 already strips. Any field added later that holds somebody's own wording belongs on
+that list; a field holding our reading of it does not. The consent screen says the true thing now:
+your sentences stay on this phone, what the coach understood is kept with your account.
+
+**The cost, stated rather than buried:** what the server holds is protected by row-level security and
+the promise not to read it — D73's guarantee, not §9's. That is weaker than "we could not read it if
+we wanted to", and the privacy contract says so in the user's own words.
+
 ### D76 — The coach's memory ships on-device only, and the consent screen says so
+**SUPERSEDED by D77 (founder, 2026-08-25).** Kept in full below as the record of what was decided and
+why, and of what it cost: the reasoning was sound about §9 and wrong about which half of the data the
+rule was protecting.
 **Decision (AI product team, inside the founder's approved PRD and his 2026-08-24 instruction to
 "build the initial version with its consent screen"):** Coach Context Summaries ship storing their
 bounded summaries **on the device that made them** — excluded from the account backup as well as from

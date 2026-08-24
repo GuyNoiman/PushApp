@@ -15,7 +15,7 @@
  * Out of POC scope and intentionally omitted: Phases, public/creator, Support.
  */
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -37,6 +37,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
+import {
+  clampJourneyDays,
+  MAX_JOURNEY_DAYS,
+  OFFERED_JOURNEY_DAYS,
+} from '@/core/config/journeyLength';
 import type { NewStepInput } from '@/core/engines/JourneyEngine';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
 import type { Cadence, Journey, Rhythm, SchedulingPrefs } from '@/core/types/domain';
@@ -64,7 +69,10 @@ const STAGE_KEYS = ['name', 'why', 'duration', 'steps', 'reminders', 'summary'] 
 // Option *values* live here (config-before-code); their labels resolve via `t`
 // inside the component so nothing user-facing is hard-coded in English.
 const RHYTHM_VALUES: Rhythm[] = ['daily', 'few-times-week', 'weekly'];
-const DURATION_VALUES = [30, 60, 90];
+// The one-tap lengths. Any number up to the ceiling is reachable through the field beside them
+// (founder, 2026-08-25: "up to 60 means 10 and 50 too"), and the ceiling itself lives in
+// `core/config/journeyLength` so the wizard and the coach can never offer different maximums.
+const DURATION_VALUES = OFFERED_JOURNEY_DAYS;
 const CADENCE_VALUES: Cadence[] = ['once', 'daily', 'weekly'];
 const REMINDER_SLOTS = [
   { hour: 8, minute: 0, key: 'morning' },
@@ -176,6 +184,17 @@ export default function NewJourneyScreen() {
     () => DURATION_VALUES.map((value) => ({ value, label: t(`new.duration.${value}`) })),
     [t],
   );
+  /** What is being typed in the "or a number of days" field, before it is applied. */
+  const [durationDraft, setDurationDraft] = useState('');
+  const applyDurationDraft = useCallback(() => {
+    const typed = Number.parseInt(durationDraft, 10);
+    setDurationDraft('');
+    if (!Number.isFinite(typed)) return;
+    // Clamped, never refused: somebody who types 90 gets 60 and can see that they did, which is a
+    // better answer than an error message about a rule they did not know.
+    setDurationDays(clampJourneyDays(typed));
+    setEditingField(null);
+  }, [durationDraft]);
   const cadenceOptions = useMemo(
     () => CADENCE_VALUES.map((value) => ({ value, label: t(`new.cadence.${value}`) })),
     [t],
@@ -554,6 +573,23 @@ export default function NewJourneyScreen() {
                             setEditingField(null);
                           }}
                         />
+                        {/* Any number up to the ceiling. A life does not round to the nearest month. */}
+                        <View style={styles.durationCustom}>
+                          <TextInput
+                            value={durationDraft}
+                            onChangeText={setDurationDraft}
+                            onBlur={applyDurationDraft}
+                            onSubmitEditing={applyDurationDraft}
+                            keyboardType="number-pad"
+                            maxLength={2}
+                            placeholder={t('new.duration.customPlaceholder')}
+                            placeholderTextColor={theme.textMuted}
+                            style={[styles.input, styles.durationInput, { borderColor: theme.hairline, color: theme.text }]}
+                          />
+                          <ThemedText type="small" themeColor="textMuted">
+                            {t('new.duration.customHint', { max: MAX_JOURNEY_DAYS })}
+                          </ThemedText>
+                        </View>
                       </View>
                     )}
                   </View>
@@ -1158,6 +1194,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  durationCustom: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.two },
+  durationInput: { width: 72, textAlign: 'center' },
   rowEditInput: {
     marginTop: Spacing.two,
   },

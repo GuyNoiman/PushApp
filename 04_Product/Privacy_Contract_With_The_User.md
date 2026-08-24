@@ -109,7 +109,7 @@ below.
 | **Tool raw answers** (Life Wheel, Values Clarification, My Best Possible Year, Direction Statement, Passion Map, reflections) | The tool's own result | On device only. Raw answers never leave, by standing rule (Tool Protocol §2.3) | Per tool's staleness rule |
 | Tool derived summaries | The influence contract: what the app learns | Only the readers each tool names, one by one, with a reason | Per tool's staleness rule |
 | Reminder schedule and local notification content | Reminders | The OS notification scheduler, on device | Until changed |
-| **What the coach remembers** (`coachMemory`): the versioned consent, plus a few bounded lines per Dream and per Journey — the outcome, the person's own reasons, constraints, obstacle categories, assumptions | So the coach stops asking what it was already told (Coach_Context_Summaries_PRD) | On device only. Excluded from the backup as well as from every social path, because PRD §9 allows a summary to leave the device only under end-to-end encryption whose key design has passed a security review — and that review has not happened. Relevant lines are sent to the AI provider during an active coach request | Deleted with its Dream/Journey, on withdrawal of consent, and with the account |
+| **What the coach remembers** (`coachMemory`): the versioned consent, plus a few bounded lines per Dream and per Journey — the outcome, constraints, obstacle categories, assumptions | So the coach stops asking what it was already told (Coach_Context_Summaries_PRD) | **In the account backup (D77, 2026-08-25)** — it is the coach's READING, and the founder's rule is that the reading may travel while the raw material may not. The one verbatim field inside it (`reasons`, a copy of the Journey's `why`) is emptied on the way out by `redactForBackup`, exactly like `why` itself. Protected on the server by row-level security and the promise not to read it — D73's guarantee, not end-to-end encryption. Relevant lines are also sent to the AI provider during an active coach request | Deleted with its Dream/Journey, on withdrawal of consent, and with the account |
 | Private profile blob (`pushapp.profile`): **country, birth date, form of address, communication style** | Language, tone, week boundary | On device | Until changed |
 
 > **Known gap, must be fixed or disclosed:** the profile blob is stored in **plaintext** today and is
@@ -202,8 +202,10 @@ Written down here because it is a consent, and a consent is agreement to *words*
   line is truncated and every list is capped on the way in.
 - It is written only from something the person **said** or a change they **approved**. Behaviour may
   shape a suggestion today; it never becomes memory.
-- It **stays on this phone** in this version. A new phone starts the coach fresh. The consent text
-  says so in as many words, and this is the line that changes when the encrypted sync lands.
+- **The sentences a person writes stay on this phone; what the coach understood from them is kept
+  with the account** (D77). So a new phone finds the coach still knowing them. What the server holds
+  is protected by access control and our promise, not by encryption we could not break — the same
+  trade D73 made for everything else in the account, and the consent text does not imply otherwise.
 - Saying no costs nothing else, and is **never asked again** — only a material change to what we keep
   reopens the question, which is what the consent's version field is for.
 - Turning it off **deletes** what was kept, rather than only stopping the next write.

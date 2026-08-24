@@ -22,6 +22,7 @@
  */
 import i18n from '../../i18n';
 import { addressContext } from '../../i18n/addressForm';
+import { MAX_JOURNEY_DAYS } from '../config/journeyLength';
 import type { DomainQuestion } from '../learning/DomainExpert';
 
 /** The question's stable id, keyed into `InterviewAnswers` like any expert question. */
@@ -31,8 +32,14 @@ export const HORIZON_QUESTION_ID = 'shared.horizon';
  * The lengths offered, in days, aligned by index with the `interview.horizon.options` copy.
  * `undefined` is the open-ended choice. Kept as CONFIG so the offer can be tuned without touching
  * the resolution logic below.
+ *
+ * THREE MONTHS IS GONE (founder, 2026-08-25). It contradicted his own guidance that a Journey is
+ * planned for up to two months, and it was never a considered exception — it was the third option in
+ * a row of three. The ceiling now lives in one place ({@link ../config/journeyLength}); a Journey can
+ * still RUN longer, by an explicit extension, which is a decision made with the plan in hand rather
+ * than before it started.
  */
-export const HORIZON_DAYS: readonly (number | undefined)[] = [30, 60, 90, undefined];
+export const HORIZON_DAYS: readonly (number | undefined)[] = [30, MAX_JOURNEY_DAYS, undefined];
 
 /** The shared question, in the active language and form of address. */
 export function horizonQuestion(): DomainQuestion {

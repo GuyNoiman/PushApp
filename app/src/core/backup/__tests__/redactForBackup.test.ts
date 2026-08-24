@@ -100,7 +100,7 @@ describe('the guard', () => {
 });
 
 describe('coach memory', () => {
-  it('never travels — not even though it is a reading rather than raw wording', () => {
+  it('travels as a reading, without the sentences it was read from', () => {
     const withMemory = state({
       coachMemory: {
         consent: { state: 'granted', version: '2026-08-24', locale: 'he', at: 5 },
@@ -123,10 +123,15 @@ describe('coach memory', () => {
       },
     });
 
-    // The rule this one is enforcing is NOT "no raw text" — it is PRD §9: a summary may leave the
-    // device only under end-to-end encryption that has passed a security review. Until then, out.
+    // The founder's rule, stated again on 2026-08-25: the raw material stays on the device, the
+    // insight the coach drew from it goes up. So the memory TRAVELS…
+    const backed = redactForBackup(withMemory);
+    expect(backed.coachMemory?.journeys).toHaveLength(1);
+    expect(backed.coachMemory?.journeys[0].outcome).toBe('Run three times a week');
+    // …and the one field inside it that is a verbatim copy of the person's own sentence does not.
+    expect(backed.coachMemory?.journeys[0].reasons).toEqual([]);
+    expect(JSON.stringify(backed)).not.toContain('keep up with my daughter');
     expect(backupCarriesRawText(withMemory)).toBe(true);
-    expect(redactForBackup(withMemory).coachMemory).toBeUndefined();
-    expect(JSON.stringify(redactForBackup(withMemory))).not.toContain('keep up with my daughter');
+    expect(backupCarriesRawText(backed)).toBe(false);
   });
 });

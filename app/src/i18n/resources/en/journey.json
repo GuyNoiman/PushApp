@@ -307,7 +307,8 @@
       "days": "{{count}} days",
       "30": "1 month",
       "60": "2 months",
-      "90": "3 months"
+      "customPlaceholder": "days",
+      "customHint": "or any number up to {{max}}"
     },
     "rhythm": {
       "label": "How often",

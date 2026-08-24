@@ -1,7 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-24 (late)** — start at the **"⛳ START HERE — 2026-08-24 (late)"** block
+Last updated: **2026-08-24 (continued)** — start at the **"⛳ START HERE — 2026-08-24 (continued)"**
+block, which supersedes (but does not replace) the "(late)" block under it.
+Prior pointer: **2026-08-24 (late)** — the **"⛳ Previous START HERE — 2026-08-24 (late)"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
 history of the same session's earlier half. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
 2026-08-19 blocks under it — night, evening, afternoon and morning — are accurate history of that
@@ -35,7 +37,51 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-24 (late): everything through Mirror's sending, and the exact queue
+# ⛳ START HERE — 2026-08-24 (continued): three queue items done, and what is left
+
+On `feat/buddy-3d-and-reminders`. `tsc` clean, **jest 2317 / 214 suites**. Detail:
+`00_Foundation/CHANGELOG.md` and the Decision Log (D76, E8).
+
+## ▶ WHAT THE FOUNDER ASKED FOR, AND WHAT HAPPENED
+
+He asked for the queue to be run without him. Task 0 first: **the over-the-air update is published**,
+to `production` AND to `preview`. That second one matters — the Android build on the partner's phone
+is a `preview`-profile build listening to the `preview` channel, which was empty, so the first
+publish would have reached the iPhone and nobody else.
+
+Then the queue, in order:
+
+1. **Mirror's confidential synthesis — DONE and DEPLOYED.** `supabase/functions/mirror-synthesis`
+   (service role) produces it; migration `0006` adds the per-question outcome column and the nightly
+   retention sweep; both are applied to the project. Mirror also has the screen you come back to now.
+2. **Coach Context Summaries — DONE**, in the initial version D76 describes: everything except the
+   sync, which its own PRD gates behind a security review of the key design. Consent page at the end
+   of onboarding, a Settings row, deletion on withdrawal.
+3. **Dream authoring — DONE.** My Dreams and each Dream now open a conversation that can reword,
+   merge, remove, link and unlink.
+
+Plus one small thing he asked for directly: **the About row names the running update**, so "which
+version are you on" has an answer on the device.
+
+## ▶ WHAT IS LEFT, AND WHY IT STOPPED HERE
+
+- **The invite landing page.** Still waiting on him: WHERE it is hosted. Free options to offer —
+  GitHub Pages (needs a public repo or a paid plan), Netlify, Vercel, EAS Hosting.
+- **The builds for both platforms.** Deliberately NOT started: a build spends real quota, and
+  constitution §10 says ask first. Everything above is JavaScript and is already on both phones
+  through the update.
+- **The Weekly Review contributions conversation** — his, not a build.
+
+## ▶ THE TWO AUDIT FINDINGS ARE STILL TRUE
+
+No monitoring of any kind, and no gradual rollout. He is writing the monitoring task himself with
+Codex; the guiding questions for it were given in the session (what we monitor, what must never leave
+the device given coach conversations and Mirror's contributors, a random uid or none, consent and the
+off switch, free-tier ceiling, store privacy labels, and whether it needs a native build).
+
+---
+
+# ⛳ Previous START HERE — 2026-08-24 (late): everything through Mirror's sending, and the exact queue
 
 On `feat/buddy-3d-and-reminders`, **committed and pushed** through `c4351ad`. `tsc` clean,
 **jest 2268 / 207 suites**. Full detail: `00_Foundation/CHANGELOG.md` and the Decision Log (D70–D74, E7).

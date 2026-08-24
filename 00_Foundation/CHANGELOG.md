@@ -4,6 +4,59 @@ Status: Living Document
 
 ---
 
+# 2026-08-24 (continued) — Mirror gives something back, the coach remembers, and Dreams have a door
+
+Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 2317 / 214 suites**. Decisions: D76, E8.
+
+## The over-the-air update, first
+
+Two full passes of work were sitting in the repo and in no build. Published to `production` — and
+then to `preview` as well, which is what the Android phone actually listens to: the first publish
+would have reached the iPhone and nobody else. Both channels now carry the same code.
+
+## Mirror's confidential round finally gives something back (E8)
+
+The tool could collect answers under a promise of confidentiality and had nothing to hand over.
+Producing the summary means reading the contributors' raw words, so it happens in an Edge Function
+with the service role and the client may only ask. The server decides everything that matters: that
+the round is over, that every question cleared five answers, what the model is told, and whether its
+answer leaked a source word. A question that produced nothing is recorded as such, so a round is
+never produced — or paid for — twice.
+
+Also the screen you come back to: opening Mirror used to start a new round every time, including for
+somebody who came to read what came of the last one. And the raw answers now actually expire — D68
+said seven days, and nothing in the system read that constant until now (a nightly `pg_cron` sweep,
+plus an opportunistic one in the function).
+
+## The coach remembers what you told it, if you say it may (D76)
+
+A few bounded lines per Dream and per Journey — the outcome, the person's own reasons, what shapes the
+plan. Never the transcript, never a profile, never anything inferred from behaviour alone. The bounds
+are code rather than instruction. Consent is a real question at the end of onboarding: both answers
+are full-size buttons, a no is never asked again, and turning it off deletes what was kept.
+
+It stays on this phone, and the consent text says what that costs. PRD §9 allows a summary to leave
+the device only under end-to-end encryption whose key design has passed a security review; until that
+happens it is stripped from the account backup too.
+
+## The Dream layer has a door into the conversation that owns it
+
+My Dreams could be read and not changed, while the coach owns Dream wording by D40 — so the person
+who wanted a new Dream had to guess that mentioning it inside a Journey conversation was the way.
+There is one door now, from My Dreams and from a Dream's own screen, and it opens a conversation
+rather than a form. It can reword, merge, remove, link and unlink; an id that does not exist is
+dropped rather than repaired; removing a Dream never leaves a running Journey with no Dream at all;
+and a removed Dream is hidden, never deleted, so a finished Journey keeps what it was part of.
+
+## The About row can say which copy of the app you are on
+
+The version in `app.json` belongs to the build and never moves when an update lands, so neither
+Android's App info nor our own About row could answer the first question a tester's "it doesn't work"
+raises. The row now names the running update and when it was published, or says plainly that the
+phone is still on the bundle the build shipped with.
+
+---
+
 # 2026-08-24 (late) — the founder's design pass, a backup, and Mirror finally sends
 
 Branch `feat/buddy-3d-and-reminders`, pushed through `c4351ad`. `tsc` clean · **jest 2268 / 207 suites**.

@@ -10,6 +10,71 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+## 2026-08-24 (late) — the confidential synthesis, and how much the coach may remember
+
+### D76 — The coach's memory ships on-device only, and the consent screen says so
+**Decision (AI product team, inside the founder's approved PRD and his 2026-08-24 instruction to
+"build the initial version with its consent screen"):** Coach Context Summaries ship storing their
+bounded summaries **on the device that made them** — excluded from the account backup as well as from
+every social path — and the consent text tells the user the consequence in plain words: a new phone
+starts the coach fresh.
+
+**The question it answers:** the PRD's §9 requires end-to-end encryption for synchronised summaries
+and says in as many words that the key-management design must pass a security review *before*
+implementation. Meanwhile D73 had just put the account's state on the server under access control
+rather than under encryption we could not read. Putting the coach's memory in that same row would
+have been the easy thing and would have quietly downgraded a promise the PRD makes explicitly.
+
+**What was chosen instead:** ship the whole feature except the sync. Consent, the bounded summaries,
+the write on approval, the deletion cascade, the withdrawal-deletes-everything rule, and the read path
+into the coach are all live; only travel is withheld, and `redactForBackup` enforces it with a test.
+
+**Alternatives considered:** (a) put the summaries in the backup row like everything else — rejected,
+it contradicts a written PRD requirement and would have been discovered by the security review rather
+than decided by anyone; (b) hold the whole feature until the crypto design exists — rejected, the
+coach re-asking the same questions is a real daily cost and none of the other parts depend on sync;
+(c) sync it encrypted with a key derived on device now — rejected, that IS the design the PRD wants
+reviewed, and inventing it in passing is how key management goes wrong.
+
+**What this costs, stated:** somebody who changes phones loses what the coach remembered. The consent
+screen says so before they answer, which is the difference between a limitation and a broken promise.
+
+**Where it lives:** `app/src/core/coach/context/`, `app/src/core/backup/redactForBackup.ts`,
+`app/src/app/onboarding.tsx` (the consent page), `app/src/app/settings/coach-memory.tsx`, and the
+privacy contract's Group A + its new "what a user is actually agreeing to" section. The line to delete
+on the day the crypto lands is marked in `redactForBackup`.
+
+### E8 — Mirror's confidential synthesis runs server-side, and the device never holds the answers
+**Decision (engineering, within the approved Mirror Feedback PRD §11):** the confidential synthesis is
+produced by a Supabase Edge Function holding the service role
+(`app/supabase/functions/mirror-synthesis`). The client may only ASK, by round id, and then read the
+`mirror_synthesis` table its own policies allow.
+
+**Why it cannot be on the phone:** producing the summary means reading the contributors' raw words. A
+device that computed it would hold those words — in memory, in a network response, and in whatever a
+crash reporter picked up — on the phone belonging to the one person the round promised would never
+see them. `0005_mirror_feedback.sql` already says the same thing in policy: no rule lets a requester
+select raw responses from a confidential round.
+
+**What the server decides, not the client:** that the round is over (a result that appeared as answers
+arrived would tell the requester WHEN each person answered, and against a list they wrote themselves,
+timing is an identity); that every question cleared the five-answer threshold; what the model is told;
+and whether the answer leaked a source word. A question that produced nothing is RECORDED as such —
+otherwise the round is produced, and paid for, again on the next open.
+
+**The duplication, deliberately:** Deno cannot import the app's modules, and taking the prompt or the
+question text from the client would let the person a round is about write the instructions that
+summarise other people's answers about them. So the prompt, the question bank and the thresholds are
+copied into the function, and `edgeFunctionParity.test.ts` fails when the copies drift.
+
+**Alternatives considered:** running it on the device behind a "we promise not to look" (rejected — the
+whole tool is the opposite of that); a second model call to review the first for leaks (rejected: it
+doubles the cost and asks a model to catch a model, while a set intersection against the source words
+is free, deterministic, and runs on the side of the wall that holds the sources).
+
+**What was deleted:** `core/tools/mirror/runSynthesis.ts`, the device-side runner written before the
+transport existed. It never had a caller; its reasoning moved into the Edge Function's header.
+
 ## 2026-08-24 — A lost phone stops meaning starting over
 
 ### D73 — The account holds the state, the way the large apps do

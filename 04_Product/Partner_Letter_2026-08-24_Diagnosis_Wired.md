@@ -81,6 +81,14 @@ Nothing errors. We now check every signal and value against your file automatica
 drift again. If the two ever want to be the same word, that would remove the trap entirely — your
 call.
 
+## One planning constraint worth knowing for future content
+
+A Journey is now planned for **up to sixty days**, and any length inside that (founder decision,
+2026-08-25). Nothing you have sent is affected — every arc in the twenty-seven runs 21 to 35 days,
+which we checked rather than assumed. It matters only for what gets authored next: an arc that needs
+more than sixty days to make its claim true is an arc the creation flow cannot offer as-is. A Journey
+may still RUN longer through an explicit extension, which is a decision made with the plan in hand.
+
 ## Content: still no ask
 
 You said not to send more Career content until the diagnosis contract is validated in the app, and we

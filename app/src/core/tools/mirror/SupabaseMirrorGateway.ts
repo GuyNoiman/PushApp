@@ -10,9 +10,11 @@ import { supabase } from '../../social/supabaseClient';
 import type {
   MirrorGateway,
   MirrorInvitationRow,
+  MirrorRejection,
   MirrorResponseRow,
   MirrorRoundRow,
   MirrorSynthesisRow,
+  MirrorSynthesisStatus,
 } from './MirrorGateway';
 import type { MirrorMode } from './round';
 
@@ -173,14 +175,55 @@ export class SupabaseMirrorGateway implements MirrorGateway {
   async synthesis(roundId: string): Promise<MirrorSynthesisRow[]> {
     const { data, error } = await this.client()
       .from('mirror_synthesis')
-      .select('round_id, question_id, body')
+      .select('round_id, question_id, body, rejection')
       .eq('round_id', roundId);
     if (error) throw error;
     return (data ?? []).map((row: any) => ({
       roundId: row.round_id,
       questionId: row.question_id,
       body: row.body,
+      ...(row.rejection ? { rejection: row.rejection as MirrorRejection } : {}),
     }));
+  }
+
+  /**
+   * Ask the Edge Function for the confidential result.
+   *
+   * All this sends is a round id. Everything the answer depends on is read server-side from the
+   * round row, because a client that could describe its own round could describe someone else's.
+   *
+   * A failure is `unavailable` and never an exception: this is called from a screen a person opened
+   * hoping to read something, and "we could not produce it right now" is a sentence that screen has.
+   */
+  async requestSynthesis(roundId: string): Promise<MirrorSynthesisStatus> {
+    try {
+      const { data, error } = await this.client().functions.invoke('mirror-synthesis', {
+        body: { roundId },
+      });
+      if (error) return 'unavailable';
+      const status = (data as { status?: string } | null)?.status;
+      return status === 'collecting' || status === 'delivered' || status === 'notEnough'
+        ? status
+        : 'unavailable';
+    } catch {
+      return 'unavailable';
+    }
+  }
+
+  /**
+   * Close the round early.
+   *
+   * Only the owner's policy allows this, and closing is all it does — producing the result is a
+   * separate ask, and one the server decides on its own terms.
+   */
+  async closeRound(roundId: string): Promise<void> {
+    const owner = await this.requireUid();
+    const { error } = await this.client()
+      .from('mirror_rounds')
+      .update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', roundId)
+      .eq('owner_id', owner);
+    if (error) throw error;
   }
 
   async answeredCount(roundId: string): Promise<number> {

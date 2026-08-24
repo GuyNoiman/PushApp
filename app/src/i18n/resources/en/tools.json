@@ -639,7 +639,18 @@
       "notEnoughBody": "That is not a failure of yours. Confidential feedback needs five answers to every question before it can be shown safely, and the responses that did come in have been deleted.",
       "sealed": "Results open only after the confidentiality threshold is met.",
       "neverRaw": "Raw responses are never shown to you.",
-      "noPattern": "No shared pattern was strong enough to show safely."
+      "noPattern": "No shared pattern was strong enough to show safely.",
+      "collectingVisible": "{{count}} answers so far",
+      "openUntil": "Open until {{date}}",
+      "producing": "Putting your result together…",
+      "unavailable": "We could not put the result together just now.",
+      "retry": "Try again",
+      "newRound": "Start a new round",
+      "visibleTitle": "What people wrote",
+      "someone": "Someone in your Circle",
+      "closing": "Closing…",
+      "leakedNote": "This one came too close to somebody’s own wording, so it is not shown.",
+      "emptyNote": "Nothing usable came back for this question."
     },
     "sent": {
       "title": "The invitations are out",

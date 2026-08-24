@@ -24,7 +24,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,9 +42,16 @@ import {
   reviewCustomQuestion,
   type QuestionCategory,
 } from '@/core/tools/mirror/questionBank';
-import { getMirrorGateway } from '@/core/tools/mirror';
+import {
+  getMirrorGateway,
+  type MirrorResponseRow,
+  type MirrorRoundRow,
+  type MirrorSynthesisRow,
+  type MirrorSynthesisStatus,
+} from '@/core/tools/mirror';
 import {
   CONFIDENTIAL_THRESHOLD,
+  NUDGE_AFTER_DAYS,
   ROUND_OPEN_DAYS,
   type MirrorMode,
 } from '@/core/tools/mirror/round';
@@ -53,7 +60,7 @@ import { useSocial } from '@/state/SocialProvider';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 
-type Step = 'mode' | 'pick' | 'custom' | 'review' | 'sent';
+type Step = 'round' | 'mode' | 'pick' | 'custom' | 'review' | 'sent';
 
 /** A question in the round: one from the bank, or one the person wrote. */
 interface Chosen {
@@ -72,6 +79,35 @@ export default function MirrorScreen() {
   const [category, setCategory] = useState<QuestionCategory>('moments');
 
   const social = useSocial();
+
+  /**
+   * THE ROUND YOU ALREADY HAVE COMES FIRST (PRD §4).
+   *
+   * Opening this tool used to start a new round every time, which is wrong in the one case that
+   * matters: somebody who asked five people a week ago comes back here to READ what came of it, and
+   * was met by the first question of a fresh setup. So the newest round that was actually sent takes
+   * the screen, and starting another is a deliberate choice made from there.
+   */
+  const [round, setRound] = useState<MirrorRoundRow | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      const gateway = getMirrorGateway();
+      if (!gateway.enabled) return;
+      try {
+        const rounds = await gateway.myRounds();
+        const latest = rounds.find((r) => r.status !== 'draft');
+        if (!mounted || !latest) return;
+        setRound(latest);
+        setStep('round');
+      } catch {
+        // Offline: the wizard is a perfectly good place to be, and it says so when Send fails.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   /**
    * WHO CAN BE ASKED: the Support Circle, and nobody else. Somebody outside the app needs the shared
@@ -147,7 +183,7 @@ export default function MirrorScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('back', { ns: 'common' })}
             onPress={() =>
-              step === 'mode'
+              step === 'mode' || step === 'round'
                 ? router.canGoBack()
                   ? router.back()
                   : router.replace('/(tabs)/tools')
@@ -164,6 +200,18 @@ export default function MirrorScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {step === 'round' && round ? (
+            <RoundStep
+              round={round}
+              onNewRound={() => {
+                setRound(null);
+                setChosen([]);
+                setContributors([]);
+                setStep('mode');
+              }}
+            />
+          ) : null}
+
           {step === 'mode' ? (
             <ModeStep mode={mode} setMode={setMode} onContinue={() => setStep('pick')} />
           ) : null}
@@ -221,6 +269,236 @@ export default function MirrorScreen() {
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+/**
+ * THE ROUND THAT WAS ALREADY SENT — while it collects, and once it is over.
+ *
+ * ── WHAT THIS SCREEN IS NOT ALLOWED TO SHOW ────────────────────────────────────────────────────
+ *
+ * While a confidential round collects, a COUNT and nothing else: not who answered, not who did not,
+ * not when any of it happened. Against a list of people the requester chose themselves, a timestamp
+ * is a name. That is also why nothing at all opens before the round closes, even when the fifth
+ * answer arrived on the first evening.
+ *
+ * ── AND WHAT IT ASKS FOR RATHER THAN DOES ──────────────────────────────────────────────────────
+ *
+ * The result is produced by `supabase/functions/mirror-synthesis`, because producing it means
+ * reading the contributors' raw words and this device belongs to the one person who must never see
+ * them. All this screen does is ask, and read back the paragraphs the server decided were safe to
+ * publish. A question that produced nothing says so plainly, in its own words — that is a legitimate
+ * outcome and not an error to hide.
+ */
+function RoundStep({ round, onNewRound }: { round: MirrorRoundRow; onNewRound: () => void }) {
+  const theme = useTheme();
+  const { t } = useTranslation('tools');
+  const social = useSocial();
+
+  const [current, setCurrent] = useState(round);
+  const [answered, setAnswered] = useState(0);
+  const [status, setStatus] = useState<MirrorSynthesisStatus | null>(null);
+  const [syntheses, setSyntheses] = useState<MirrorSynthesisRow[]>([]);
+  const [responses, setResponses] = useState<MirrorResponseRow[]>([]);
+  const [busy, setBusy] = useState(true);
+  const [closing, setClosing] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  const over =
+    current.status === 'closed' || (current.closesAt !== undefined && Date.now() >= current.closesAt);
+
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      const gateway = getMirrorGateway();
+      setBusy(true);
+      try {
+        if (!over) {
+          const count = await gateway.answeredCount(current.id);
+          if (mounted) setAnswered(count);
+        } else if (current.mode === 'visible') {
+          const rows = await gateway.visibleResponses(current.id);
+          if (mounted) setResponses(rows);
+        } else {
+          const result = await gateway.requestSynthesis(current.id);
+          if (!mounted) return;
+          setStatus(result);
+          if (result === 'delivered') {
+            const rows = await gateway.synthesis(current.id);
+            if (mounted) setSyntheses(rows);
+          }
+        }
+      } catch {
+        if (mounted) setStatus('unavailable');
+      } finally {
+        if (mounted) setBusy(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [current, over, attempt]);
+
+  /** The five, in the order every contributor saw them. */
+  const questions = useMemo(
+    () => [
+      ...current.questionIds.map((id) => ({ id, text: t(`mirror.bank.${id}`) })),
+      ...current.customQuestions.map((text, index) => ({ id: `custom:${index}`, text })),
+    ],
+    [current, t],
+  );
+
+  /** Visible mode only: the contributor agreed to be named, so name them. */
+  const nameFor = useCallback(
+    (id: string) => {
+      const friend = social.friends.find((f) => f.profile.id === id);
+      if (!friend) return t('mirror.round.someone');
+      return friend.profile.buddySummary?.name?.trim() || `@${friend.profile.handle}`;
+    },
+    [social.friends, t],
+  );
+
+  /** Three days in and still short: say the number, never who is missing. */
+  const nudge =
+    !over &&
+    current.mode === 'confidential' &&
+    current.openedAt !== undefined &&
+    Date.now() >= current.openedAt + NUDGE_AFTER_DAYS * 24 * 60 * 60 * 1000 &&
+    answered < CONFIDENTIAL_THRESHOLD;
+
+  const close = useCallback(async () => {
+    setClosing(true);
+    try {
+      await getMirrorGateway().closeRound(current.id);
+      setCurrent((r) => ({ ...r, status: 'closed', closedAt: Date.now() }));
+    } catch {
+      // It stays open, and nothing on screen claims otherwise.
+    } finally {
+      setClosing(false);
+    }
+  }, [current.id]);
+
+  const card = { borderColor: theme.hairline, backgroundColor: theme.backgroundElement };
+
+  return (
+    <>
+      <Title>{t('mirror.title')}</Title>
+
+      <View style={[styles.card, card]}>
+        <View style={styles.rowHead}>
+          <Ionicons
+            name={current.mode === 'visible' ? 'people-outline' : 'shield-checkmark-outline'}
+            size={18}
+            color={theme.tealStrong}
+          />
+          <ThemedText type="smallBold" style={styles.flex}>
+            {t(`mirror.mode.${current.mode}`)}
+          </ThemedText>
+        </View>
+        {current.mode === 'confidential' ? (
+          <ThemedText type="small" style={{ color: theme.textMuted }}>
+            {t('mirror.round.neverRaw')}
+          </ThemedText>
+        ) : null}
+      </View>
+
+      {/* Still collecting. A number, a promise about timing, and the one action that is theirs. */}
+      {!over ? (
+        <>
+          <ThemedText type="displaySmall">
+            {current.mode === 'confidential'
+              ? t('mirror.round.collecting', { count: answered, needed: CONFIDENTIAL_THRESHOLD })
+              : t('mirror.round.collectingVisible', { count: answered })}
+          </ThemedText>
+          <Body>{t('mirror.round.collectingNote')}</Body>
+          {nudge ? <Body>{t('mirror.round.nudge')}</Body> : null}
+          <Cta
+            label={closing ? t('mirror.round.closing') : t('mirror.round.close')}
+            disabled={closing}
+            onPress={() => void close()}
+          />
+        </>
+      ) : null}
+
+      {/* Visible mode: their words, as they wrote them, with their name on them. */}
+      {over && current.mode === 'visible' ? (
+        <>
+          <ThemedText type="displaySmall">{t('mirror.round.visibleTitle')}</ThemedText>
+          {questions.map((q) => {
+            const written = responses.filter((r) => r.questionId === q.id);
+            return (
+              <View key={q.id} style={[styles.card, card]}>
+                <ThemedText type="smallBold">{q.text}</ThemedText>
+                {written.length === 0 ? (
+                  <ThemedText type="small" style={{ color: theme.textMuted }}>
+                    {t('mirror.round.emptyNote')}
+                  </ThemedText>
+                ) : (
+                  written.map((r) => (
+                    <View key={`${r.contributorId}:${r.questionId}`} style={styles.answer}>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                        {nameFor(r.contributorId)}
+                      </ThemedText>
+                      <ThemedText type="small" style={{ color: theme.text, lineHeight: 21 }}>
+                        {r.body}
+                      </ThemedText>
+                    </View>
+                  ))
+                )}
+              </View>
+            );
+          })}
+        </>
+      ) : null}
+
+      {/* Confidential mode: patterns, or an honest reason there are none. */}
+      {over && current.mode === 'confidential' ? (
+        busy ? (
+          <Body>{t('mirror.round.producing')}</Body>
+        ) : status === 'delivered' ? (
+          <>
+            <ThemedText type="displaySmall">{t('mirror.round.delivered')}</ThemedText>
+            <Body>{t('mirror.round.deliveredNote')}</Body>
+            {questions.map((q) => {
+              const row = syntheses.find((sy) => sy.questionId === q.id);
+              const published = row && !row.rejection ? row.body : null;
+              const note =
+                row?.rejection === 'noPattern'
+                  ? t('mirror.round.noPattern')
+                  : row?.rejection === 'leaked'
+                    ? t('mirror.round.leakedNote')
+                    : t('mirror.round.emptyNote');
+              return (
+                <View key={q.id} style={[styles.card, card]}>
+                  <ThemedText type="smallBold">{q.text}</ThemedText>
+                  <ThemedText
+                    type="small"
+                    style={{ color: published ? theme.text : theme.textMuted, lineHeight: 21 }}>
+                    {published ?? note}
+                  </ThemedText>
+                </View>
+              );
+            })}
+          </>
+        ) : status === 'notEnough' ? (
+          <>
+            <ThemedText type="displaySmall">{t('mirror.round.notEnough')}</ThemedText>
+            <Body>{t('mirror.round.notEnoughBody')}</Body>
+          </>
+        ) : status === 'collecting' ? (
+          // The server disagrees about the deadline and the server is right — its clock is the one
+          // the contributors are answering against.
+          <Body>{t('mirror.round.collectingNote')}</Body>
+        ) : (
+          <>
+            <Body>{t('mirror.round.unavailable')}</Body>
+            <Cta label={t('mirror.round.retry')} onPress={() => setAttempt((n) => n + 1)} />
+          </>
+        )
+      ) : null}
+
+      {over ? <Cta label={t('mirror.round.newRound')} onPress={onNewRound} /> : null}
+    </>
   );
 }
 
@@ -726,6 +1004,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  answer: { gap: Spacing.one, paddingTop: Spacing.one },
   flex: { flex: 1 },
   tabs: { flexDirection: 'row', gap: Spacing.two, paddingTop: Spacing.two, flexWrap: 'wrap' },
   tab: {

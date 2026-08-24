@@ -38,12 +38,31 @@ export interface MirrorResponseRow {
   createdAt: number;
 }
 
+/**
+ * Why a question produced no synthesis. Every one of these is an honest thing to show, and each is
+ * RECORDED — a question that produced nothing is still a result, and a round whose outcome was not
+ * written down would be produced again (and paid for again) the next time the screen opened.
+ */
+export type MirrorRejection = 'leaked' | 'noPattern' | 'empty';
+
 /** One de-identified paragraph. What a confidential round gives back. */
 export interface MirrorSynthesisRow {
   roundId: string;
   questionId: string;
   body: string;
+  /** Absent when `body` is a published synthesis; otherwise why there is none. */
+  rejection?: MirrorRejection;
 }
+
+/**
+ * What asking for a confidential result got you.
+ *
+ * `collecting` — the week is still running, and nothing is produced before it ends (that timing is
+ * itself information about the contributors). `notEnough` — it closed short, so no result exists and
+ * the answers that did arrive are gone. `unavailable` — we could not reach the thing that produces
+ * it, which is a temporary state and not a result.
+ */
+export type MirrorSynthesisStatus = 'collecting' | 'delivered' | 'notEnough' | 'unavailable';
 
 export interface MirrorGateway {
   readonly enabled: boolean;
@@ -76,6 +95,19 @@ export interface MirrorGateway {
   /** The de-identified result of a confidential round, when it has been produced. */
   synthesis(roundId: string): Promise<MirrorSynthesisRow[]>;
 
+  /**
+   * Ask the server to produce the confidential result.
+   *
+   * The client can only ASK. Everything that matters — that the round is over, that every question
+   * cleared the threshold, what the model is told, and whether its answer leaked a source word —
+   * is decided by `supabase/functions/mirror-synthesis`, which is the only thing in the system
+   * allowed to read the raw answers. This method never sees one.
+   */
+  requestSynthesis(roundId: string): Promise<MirrorSynthesisStatus>;
+
+  /** End the collecting week early. The owner's decision; contributors can no longer answer. */
+  closeRound(roundId: string): Promise<void>;
+
   /** How many people have answered — a COUNT, never who. Safe in both modes. */
   answeredCount(roundId: string): Promise<number>;
 }
@@ -98,5 +130,7 @@ export const NullMirrorGateway: MirrorGateway = {
   async declineInvitation() {},
   async visibleResponses() { return []; },
   async synthesis() { return []; },
+  async requestSynthesis() { return 'unavailable' as const; },
+  async closeRound() {},
   async answeredCount() { return 0; },
 };

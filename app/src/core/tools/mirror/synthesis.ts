@@ -36,6 +36,19 @@
  * personality type, a motive, a history, or anything about a person who is not the subject. Those
  * are in the prompt as prohibitions, and the ones that can be checked are checked.
  *
+ * ── WHERE THIS ACTUALLY RUNS (2026-08-24) ──────────────────────────────────────────────────────
+ *
+ * On the SERVER, in `supabase/functions/mirror-synthesis`, and nowhere else. There used to be a
+ * `runSynthesis.ts` next to this file that composed a model client and ran the round from the
+ * device; it was written before the transport existed, it never had a caller, and it was deleted
+ * rather than wired up — because the device that would have run it belongs to the one person the
+ * round promised would never see the contributors' words. Its reasoning is not lost: the cost note,
+ * the one-call-per-round argument and the deliberate absence of a redacting layer all live in the
+ * Edge Function's header now, where the code they describe actually is.
+ *
+ * This file stays because the RULES are worth having in one testable place, and because the Edge
+ * Function's copy of them is checked against it (`__tests__/edgeFunctionParity.test.ts`).
+ *
  * Pure TypeScript — no React, no network, no vendor. The transport is the caller's; this file is the
  * contract, the local check, and the reasons.
  */

@@ -618,10 +618,14 @@
       "questions": "{{count}} selected questions",
       "edit": "Edit",
       "people": "{{count}} people selected",
-      "send": "Send invitations",
-      "saveDraft": "Save draft",
-      "notYet": "Invitations cannot be sent yet",
-      "notYetBody": "Delivery needs the Inbox and push work that is in progress. Everything else here is finished, and the moment that lands this button works. Nothing has been sent and nobody has been contacted."
+      "send": "Send the invitations",
+      "whoTitle": "Who would you like to ask?",
+      "noFriends": "Nobody is in your Support Circle yet. Mirror asks people who already know you, so this is where it starts.",
+      "visibleAnyNumber": "Even one person is enough for a visible round.",
+      "needMore": "A confidential round needs at least {{count}} people, so that no single answer can be recognised.",
+      "sending": "Sending…",
+      "failed": "That did not go out. Nothing was sent, and nothing was lost — try again.",
+      "offline": "This needs a connection. Nothing was sent."
     },
     "round": {
       "collecting": "{{count}} of {{needed}} responses so far",
@@ -636,6 +640,35 @@
       "sealed": "Results open only after the confidentiality threshold is met.",
       "neverRaw": "Raw responses are never shown to you.",
       "noPattern": "No shared pattern was strong enough to show safely."
+    },
+    "sent": {
+      "title": "The invitations are out",
+      "visible": "{{count}} people were asked. Their answers appear here as they arrive, with their names on them, and the round closes in {{days}} days.",
+      "confidential": "{{count}} people were asked. Nothing will be shown until enough of them have answered — and then it comes back as a pattern, never as somebody's words. The round closes in {{days}} days.",
+      "done": "Done"
+    },
+    "answer": {
+      "header": "Mirror",
+      "title": "Somebody asked what you see",
+      "mode": {
+        "visible": "They will read your answers, with your name",
+        "visibleBody": "Write what you would say to them directly. They see your words as you wrote them.",
+        "confidential": "Nobody will ever see what you wrote",
+        "confidentialBody": "Not even the person who asked. Your answer joins several others and only a shared pattern comes back — so you can be completely honest."
+      },
+      "privateReading": "Reading this is private. They are not told that you opened it, and only sending changes anything.",
+      "placeholder": "Only if you have something to say…",
+      "send": "Send my answers",
+      "sending": "Sending…",
+      "decline": "Not this time",
+      "next": "{{count}} more waiting",
+      "none": "Nothing is waiting for you right now.",
+      "nothingWritten": "Nothing was written yet.",
+      "failed": "That did not go through. Nothing was sent.",
+      "loadFailed": "Could not load right now.",
+      "thanks": "Sent. Thank you.",
+      "thanksBody": "What you wrote is on its way, exactly as the promise above said it would be.",
+      "close": "Close"
     }
   },
   "opening": {

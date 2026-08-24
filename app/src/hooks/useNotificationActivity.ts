@@ -12,15 +12,17 @@
  *
  * Presentational glue (Engineering Bible §19): no business rules here — the engine owns them.
  */
-import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { notificationReadStore } from '@/core/social/notificationReads';
+import { useFocusRefresh } from '@/hooks/use-focus-refresh';
 import { buildNotifications, unreadNotificationCount } from '@/core/social/notifications';
+import { useMirrorInvites } from '@/hooks/useMirrorInvites';
 import { useSocial } from '@/state/SocialProvider';
 
 export function useNotificationActivity(): number {
   const social = useSocial();
+  const mirrorInvites = useMirrorInvites();
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
 
   const load = useCallback(() => {
@@ -34,8 +36,8 @@ export function useNotificationActivity(): number {
     };
   }, []);
 
-  useEffect(load, [load]);
-  useFocusEffect(load);
+  // Refreshes when the screen comes back into view, and works in a bare test render.
+  useFocusRefresh(load);
 
   return useMemo(
     () =>
@@ -44,9 +46,10 @@ export function useNotificationActivity(): number {
           receivedCheers: social.incomingCheers,
           friends: social.friends,
           incomingAllyInvites: social.incomingAllyInvites,
+          mirrorInvites,
           readIds,
         }),
       ),
-    [social.incomingCheers, social.friends, social.incomingAllyInvites, readIds],
+    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, readIds],
   );
 }

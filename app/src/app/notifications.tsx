@@ -39,12 +39,14 @@ import {
 import { notificationReadStore } from '@/core/social/notificationReads';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
+import { useMirrorInvites } from '@/hooks/useMirrorInvites';
 import { useSocial } from '@/state/SocialProvider';
 
 export default function NotificationsScreen() {
   const theme = useTheme();
   const { t } = useTranslation('notify');
   const social = useSocial();
+  const mirrorInvites = useMirrorInvites();
 
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
   const [ready, setReady] = useState(false);
@@ -71,9 +73,10 @@ export default function NotificationsScreen() {
         receivedCheers: social.incomingCheers,
         friends: social.friends,
         incomingAllyInvites: social.incomingAllyInvites,
+        mirrorInvites,
         readIds,
       }),
-    [social.incomingCheers, social.friends, social.incomingAllyInvites, readIds],
+    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, readIds],
   );
 
   /**
@@ -171,9 +174,15 @@ export default function NotificationsScreen() {
                     : undefined
               }
               onOpen={
-                item.actionable
-                  ? undefined
-                  : () => router.push(`/friends/${item.actorId}` as never)
+                item.kind === 'mirrorInvite'
+                  ? // A Mirror invitation is not an inline yes/no: the promise about what happens to
+                    // what you write has to be read before you answer, so the row opens the screen
+                    // that carries it (Notification Center PRD §8.2 — anything needing review opens
+                    // detail instead of offering quick actions).
+                    () => router.push('/mirror-answer' as never)
+                  : item.actionable
+                    ? undefined
+                    : () => router.push(`/friends/${item.actorId}` as never)
               }
             />
           ))}

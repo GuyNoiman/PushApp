@@ -26,8 +26,8 @@
  */
 import type { AllyBundle, AllyInvite, Cheer, Friend } from './SocialGateway';
 
-/** What kind of thing a person did. Extended by tool invitations when that delivery path lands. */
-export type NotificationKind = 'cheer' | 'nudge' | 'friendRequest' | 'allyInvite';
+/** What kind of thing a person did. */
+export type NotificationKind = 'cheer' | 'nudge' | 'friendRequest' | 'allyInvite' | 'mirrorInvite';
 
 /**
  * One thing a person did for this user.
@@ -62,6 +62,15 @@ export interface NotificationFeedInput {
   friends: readonly Friend[];
   /** Support-Circle invites awaiting this user's answer. */
   incomingAllyInvites: readonly AllyInvite[];
+  /**
+   * Mirror rounds this person has been asked to answer and has not yet.
+   *
+   * It arrives here rather than in the Inbox because it is a REQUEST — something a person did,
+   * addressed to this one — and that is what this centre is for (Notification Center PRD §5). The
+   * row carries the asker and the round id and NOTHING about the questions: what a person chose to
+   * ask about themselves is not lock-screen material, and it is not feed material either.
+   */
+  mirrorInvites?: readonly { roundId: string; ownerId: string; invitedAt: number }[];
   /** Ids already marked read, from `notificationReads`. */
   readIds: ReadonlySet<string>;
 }
@@ -74,6 +83,11 @@ export function cheerNotificationId(cheer: Cheer): string {
 /** The id of an incoming friend request. Carries the ask's time — a second ask is a second row. */
 export function friendRequestNotificationId(profileId: string, requestedAt: number): string {
   return `friendreq:${profileId}:${requestedAt}`;
+}
+
+/** The id of a Mirror invitation. Per round and asker; a round is asked once. */
+export function mirrorInviteNotificationId(roundId: string, ownerId: string): string {
+  return `mirror:${ownerId}:${roundId}`;
 }
 
 /** The id of an incoming Support-Circle invite, per owner + Journey + the time of the ask. */
@@ -136,6 +150,18 @@ export function buildNotifications(input: NotificationFeedInput): AppNotificatio
       actionable: true,
       journeyId: invite.journeyId,
       bundle: invite.bundle,
+      read: input.readIds.has(id),
+    });
+  }
+
+  for (const invite of input.mirrorInvites ?? []) {
+    const id = mirrorInviteNotificationId(invite.roundId, invite.ownerId);
+    items.push({
+      id,
+      kind: 'mirrorInvite',
+      actorId: invite.ownerId,
+      at: invite.invitedAt,
+      actionable: true,
       read: input.readIds.has(id),
     });
   }

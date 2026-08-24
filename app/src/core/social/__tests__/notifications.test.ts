@@ -128,6 +128,34 @@ describe('buildNotifications', () => {
   });
 });
 
+describe('a Mirror invitation', () => {
+  it('appears as an actionable row, carrying the asker and nothing about the questions', () => {
+    const feed = buildNotifications({
+      ...empty,
+      mirrorInvites: [{ roundId: 'r1', ownerId: 'ann', invitedAt: 400 }],
+    });
+    expect(feed).toHaveLength(1);
+    expect(feed[0]).toMatchObject({ kind: 'mirrorInvite', actorId: 'ann', actionable: true });
+    // What a person chose to ask about themselves is not feed material.
+    expect(JSON.stringify(feed[0])).not.toContain('question');
+  });
+
+  it('is one row per round, so a re-render cannot duplicate it', () => {
+    const invite = { roundId: 'r1', ownerId: 'ann', invitedAt: 400 };
+    const feed = buildNotifications({ ...empty, mirrorInvites: [invite, invite] });
+    expect(new Set(feed.map((n) => n.id)).size).toBe(1);
+  });
+
+  it('sorts with everything else, by when it happened', () => {
+    const feed = buildNotifications({
+      ...empty,
+      receivedCheers: [cheer('c1', 500)],
+      mirrorInvites: [{ roundId: 'r1', ownerId: 'ann', invitedAt: 100 }],
+    });
+    expect(feed.map((n) => n.kind)).toEqual(['cheer', 'mirrorInvite']);
+  });
+});
+
 describe('pruneReadIds', () => {
   it('drops marks whose event has left the feed and keeps the rest', () => {
     const feed = buildNotifications({ ...empty, receivedCheers: [cheer('c1', 1)] });

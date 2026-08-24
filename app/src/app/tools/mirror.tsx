@@ -24,7 +24,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,11 +42,18 @@ import {
   reviewCustomQuestion,
   type QuestionCategory,
 } from '@/core/tools/mirror/questionBank';
-import { CONFIDENTIAL_THRESHOLD, type MirrorMode } from '@/core/tools/mirror/round';
+import { getMirrorGateway } from '@/core/tools/mirror';
+import {
+  CONFIDENTIAL_THRESHOLD,
+  ROUND_OPEN_DAYS,
+  type MirrorMode,
+} from '@/core/tools/mirror/round';
+import { createId } from '@/core/util/id';
+import { useSocial } from '@/state/SocialProvider';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 
-type Step = 'mode' | 'pick' | 'custom' | 'review';
+type Step = 'mode' | 'pick' | 'custom' | 'review' | 'sent';
 
 /** A question in the round: one from the bank, or one the person wrote. */
 interface Chosen {
@@ -63,6 +70,72 @@ export default function MirrorScreen() {
   const [mode, setMode] = useState<MirrorMode>('visible');
   const [chosen, setChosen] = useState<Chosen[]>([]);
   const [category, setCategory] = useState<QuestionCategory>('moments');
+
+  const social = useSocial();
+
+  /**
+   * WHO CAN BE ASKED: the Support Circle, and nobody else. Somebody outside the app needs the shared
+   * invitation path that does not exist yet, and offering them here would promise a delivery we
+   * cannot make.
+   */
+  const friends = useMemo(
+    () =>
+      social.friends
+        .filter((f) => f.status === 'accepted')
+        .map((f) => ({
+          id: f.profile.id,
+          name: f.profile.buddySummary?.name?.trim() || `@${f.profile.handle}`,
+        })),
+    [social.friends],
+  );
+  const [contributors, setContributors] = useState<string[]>([]);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const toggleContributor = useCallback((id: string) => {
+    setContributors((current) =>
+      current.includes(id) ? current.filter((c) => c !== id) : [...current, id],
+    );
+  }, []);
+
+  /**
+   * Open the round and send the invitations.
+   *
+   * A CONFIDENTIAL round needs enough people to answer before it can say anything at all, so asking
+   * fewer than the threshold is refused HERE, before anybody is invited — inviting three people to
+   * something that can never produce a result would waste their time and the requester's hope.
+   */
+  const send = useCallback(async () => {
+    const gateway = getMirrorGateway();
+    setSendError(null);
+    if (mode === 'confidential' && contributors.length < CONFIDENTIAL_THRESHOLD) {
+      setSendError(t('mirror.review.needMore', { count: CONFIDENTIAL_THRESHOLD }));
+      return;
+    }
+    if (!gateway.enabled) {
+      setSendError(t('mirror.review.offline'));
+      return;
+    }
+    setSending(true);
+    try {
+      await gateway.openRound({
+        id: createId('mirror'),
+        mode,
+        // A bank question travels as its ID (the copy is authored and localised at read time); a
+        // custom one travels as the person's own words, because there is nowhere else they exist.
+        questionIds: chosen.filter((q) => q.text === undefined).map((q) => q.id),
+        customQuestions: chosen.filter((q) => q.text !== undefined).map((q) => q.text as string),
+        contributorIds: contributors,
+        closesAt: Date.now() + ROUND_OPEN_DAYS * 24 * 60 * 60 * 1000,
+      });
+      setStep('sent');
+    } catch {
+      // Never a false success: the round is not open, and the screen says so.
+      setSendError(t('mirror.review.failed'));
+    } finally {
+      setSending(false);
+    }
+  }, [mode, contributors, chosen, t]);
 
   const label = (q: Chosen) => q.text ?? t(`mirror.bank.${q.id}`);
 
@@ -119,7 +192,31 @@ export default function MirrorScreen() {
           ) : null}
 
           {step === 'review' ? (
-            <ReviewStep mode={mode} chosen={chosen} label={label} onEdit={() => setStep('pick')} />
+            <ReviewStep
+              mode={mode}
+              chosen={chosen}
+              label={label}
+              onEdit={() => setStep('pick')}
+              friends={friends}
+              contributors={contributors}
+              onToggleContributor={toggleContributor}
+              onSend={() => void send()}
+              sending={sending}
+              sendError={sendError}
+            />
+          ) : null}
+
+          {/* The round is open and the invitations are out. What this screen must NOT do is promise
+              a result: a confidential round says nothing at all until enough people have answered,
+              and saying "you'll have it soon" would be a guess about other people's evenings. */}
+          {step === 'sent' ? (
+            <>
+              <Title>{t('mirror.sent.title')}</Title>
+              <ThemedText type="small" style={{ color: theme.textSecondary, lineHeight: 21 }}>
+                {t(`mirror.sent.${mode}`, { count: contributors.length, days: ROUND_OPEN_DAYS })}
+              </ThemedText>
+              <Cta label={t('mirror.sent.done')} onPress={() => router.replace('/(tabs)/tools')} />
+            </>
           ) : null}
         </ScrollView>
       </SafeAreaView>
@@ -436,11 +533,23 @@ function ReviewStep({
   chosen,
   label,
   onEdit,
+  friends,
+  contributors,
+  onToggleContributor,
+  onSend,
+  sending,
+  sendError,
 }: {
   mode: MirrorMode;
   chosen: Chosen[];
   label: (q: Chosen) => string;
   onEdit: () => void;
+  friends: { id: string; name: string }[];
+  contributors: string[];
+  onToggleContributor: (id: string) => void;
+  onSend: () => void;
+  sending: boolean;
+  sendError: string | null;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('tools');
@@ -486,18 +595,43 @@ function ReviewStep({
         </ThemedText>
       ))}
 
-      {/* The one thing that cannot be built yet, said plainly rather than shown as a broken button. */}
-      <View style={[styles.card, { borderColor: theme.hairline, backgroundColor: theme.goldTint }]}>
-        <View style={styles.rowHead}>
-          <Ionicons name="time-outline" size={18} color={theme.goldStrong} />
-          <ThemedText type="smallBold" style={styles.flex}>
-            {t('mirror.review.notYet')}
-          </ThemedText>
-        </View>
-        <ThemedText type="small" style={{ color: theme.textSecondary, lineHeight: 20 }}>
-          {t('mirror.review.notYetBody')}
+      {/* WHO IS ASKED. Only people already in the Support Circle: somebody outside the app cannot be
+          invited yet (that needs the shared invitation path), and offering it would promise a
+          delivery we cannot make. */}
+      <ThemedText type="smallBold">{t('mirror.review.whoTitle')}</ThemedText>
+      {friends.length === 0 ? (
+        <ThemedText type="small" style={{ color: theme.textMuted, lineHeight: 20 }}>
+          {t('mirror.review.noFriends')}
         </ThemedText>
-      </View>
+      ) : (
+        friends.map((friend) => {
+          const picked = contributors.includes(friend.id);
+          return (
+            <Pressable
+              key={friend.id}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: picked }}
+              accessibilityLabel={friend.name}
+              onPress={() => onToggleContributor(friend.id)}
+              style={[
+                styles.card,
+                {
+                  borderColor: picked ? theme.tint : theme.hairline,
+                  backgroundColor: picked ? theme.tealTint : theme.backgroundElement,
+                },
+              ]}>
+              <View style={styles.rowHead}>
+                <Ionicons
+                  name={picked ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={18}
+                  color={picked ? theme.tint : theme.textMuted}
+                />
+                <ThemedText type="small" style={styles.flex}>{friend.name}</ThemedText>
+              </View>
+            </Pressable>
+          );
+        })
+      )}
 
       {mode === 'confidential' ? (
         <ThemedText type="small" style={{ color: theme.textMuted, lineHeight: 20 }}>
@@ -505,10 +639,20 @@ function ReviewStep({
         </ThemedText>
       ) : null}
       <ThemedText type="small" style={{ color: theme.textMuted }}>
-        {t('mirror.review.people', { count: CONFIDENTIAL_THRESHOLD })}
+        {mode === 'confidential'
+          ? t('mirror.review.people', { count: CONFIDENTIAL_THRESHOLD })
+          : t('mirror.review.visibleAnyNumber')}
       </ThemedText>
 
-      <Cta label={t('mirror.review.saveDraft')} onPress={() => router.replace('/(tabs)/tools')} />
+      {sendError ? (
+        <ThemedText type="small" style={{ color: theme.danger }}>{sendError}</ThemedText>
+      ) : null}
+
+      <Cta
+        label={sending ? t('mirror.review.sending') : t('mirror.review.send')}
+        disabled={sending || contributors.length === 0}
+        onPress={onSend}
+      />
     </>
   );
 }

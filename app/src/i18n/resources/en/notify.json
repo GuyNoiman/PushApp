@@ -64,7 +64,8 @@
       "cheer": "{{name}} cheered you on",
       "nudge": "{{name}} gave you a nudge",
       "friendRequest": "{{name}} would like to connect",
-      "allyInvite": "{{name}} asked you to support a Journey"
+      "allyInvite": "{{name}} asked you to support a Journey",
+      "mirrorInvite": "{{name}} asked what you see in them"
     },
     "bundles": {
       "encourager": "You would see the progress, not the details",

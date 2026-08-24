@@ -76,7 +76,8 @@
       "cheer": "{{name}} עודד אתכם",
       "nudge": "{{name}} שלח לכם דחיפה קטנה",
       "friendRequest": "{{name}} רוצה להתחבר",
-      "allyInvite": "{{name}} ביקש שתתמכו במסע"
+      "allyInvite": "{{name}} ביקש שתתמכו במסע",
+      "mirrorInvite": "{{name}} שאל מה אתם רואים בו"
     },
     "bundles": {
       "encourager": "תראו את ההתקדמות, בלי הפרטים",

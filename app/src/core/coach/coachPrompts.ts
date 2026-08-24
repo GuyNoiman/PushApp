@@ -265,3 +265,70 @@ export function buildExtractDirective(focus: ExtractionField): string {
 export function buildQuestionDirective(cue: string): string {
   return `${COACH_DIRECTIVE_PREFIX} ${cue}`;
 }
+
+// ── The Dream layer (Dream Management §7, D40) ────────────────────────────────────────────────
+
+/**
+ * The Dream conversation's understanding step.
+ *
+ * WHY IT IS SO NARROW. A Dream is a sentence about who somebody is becoming, and this step exists to
+ * translate what they just said into changes to that sentence and its links — not to have opinions
+ * about their life. The prohibition on inventing a change is the load-bearing line: the coach applies
+ * what comes back (D40 removed the approval gate), so a helpful-sounding extra change is a change
+ * nobody asked for landing in somebody's list.
+ */
+export const DREAM_SYSTEM_PROMPT = [
+  "You are the PushApp coach's DREAM understanding step. A Dream is who the person is becoming; a",
+  'Journey is finite work toward one. The user has just told you, in their own words, something they',
+  'want about their Dreams. Translate it into structured changes. Do not coach, do not ask questions',
+  'here, and never invent a change they did not ask for.',
+  '',
+  'Return ONLY JSON: {"changes":[…],"reply":"one short warm sentence"}',
+  'Each change is one of:',
+  '  {"kind":"create","title":string,"why"?:string}    — a new Dream, in their own direction',
+  '  {"kind":"reword","dreamId":string,"title":string,"why"?:string}',
+  '  {"kind":"merge","keepId":string,"mergedId":string} — two Dreams that are one',
+  '  {"kind":"remove","dreamId":string}                 — out of the visible list',
+  '  {"kind":"link","journeyId":string,"dreamId":string,"primary":boolean}',
+  '  {"kind":"unlink","journeyId":string,"dreamId":string}',
+  '',
+  'Every id MUST come from the lists you are given — never a title, never an invented id.',
+  'A Dream is never "completed" and removing one is not an achievement: do not congratulate.',
+  'A rewording changes the wording ONLY. Never propose changes to a Journey\'s name, steps or schedule.',
+  'Before removing a Dream that is the only Dream of a running Journey, link that Journey to another',
+  'Dream in the same set of changes, or the removal will not happen.',
+  'If the message asks for nothing that maps to a change, return {"changes":[],"reply":"…"}.',
+].join('\n');
+
+/** Prefix marking the hidden Dream directive turn. */
+export const DREAM_DIRECTIVE_PREFIX = '[dream]';
+
+/**
+ * Hand the understanding step what EXISTS — the visible Dreams and the Journeys with the Dreams they
+ * serve — plus what the person said. Titles and ids only: no Steps, no history, no reason notes.
+ */
+export function buildDreamDirective(
+  context: {
+    dreams: { id: string; title: string }[];
+    journeys: { id: string; title: string; dreamIds: string[] }[];
+  },
+  message: string,
+): string {
+  const dreams = context.dreams.map((d) => `    - id "${d.id}": ${d.title}`).join('\n');
+  const journeys = context.journeys
+    .map((j) => `    - id "${j.id}": ${j.title}${j.dreamIds.length > 0 ? ` (dreams: ${j.dreamIds.join(', ')})` : ' (no dream)'}`)
+    .join('\n');
+  return [
+    `${DREAM_DIRECTIVE_PREFIX} The person's Dreams:`,
+    dreams.length > 0 ? dreams : '    (none yet)',
+    '  Their Journeys:',
+    journeys.length > 0 ? journeys : '    (none yet)',
+    '',
+    `They said: "${message}". Return the JSON per your instructions, using the ids above.`,
+  ].join('\n');
+}
+
+/** The coach's opening line in a Dream conversation. Editable copy; the UI localizes its own. */
+export function dreamGreeting(): string {
+  return 'Tell me about the direction you want your life to take, or what you would change about the Dreams you already have.';
+}

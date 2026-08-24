@@ -116,6 +116,23 @@ export default function DreamDetailScreen() {
                 </View>
               ))
             )}
+
+            {/* The way to change any of this (§4.2, §7): a conversation. There is no edit control
+                here and there is not meant to be one — the coach owns the wording and the links. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('detail.discuss')}
+              onPress={() => router.push('/dream-coach' as Href)}
+              style={({ pressed }) => [
+                styles.discuss,
+                { borderColor: theme.tint, backgroundColor: theme.tealTint },
+                pressed && styles.pressed,
+              ]}>
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.teal} />
+              <ThemedText type="smallBold" style={{ color: theme.teal }}>
+                {t('detail.discuss')}
+              </ThemedText>
+            </Pressable>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -207,6 +224,16 @@ function Header({
 }
 
 const styles = StyleSheet.create({
+  discuss: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.four,
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+  },
   container: { flex: 1, flexDirection: 'row', justifyContent: 'center' },
   safeArea: { flex: 1, maxWidth: MaxContentWidth, alignSelf: 'stretch' },
   header: {

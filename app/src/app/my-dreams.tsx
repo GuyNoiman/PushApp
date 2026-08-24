@@ -3,9 +3,12 @@
  * who the user is becoming; each Journey is the finite work toward one. Opened from the Settings
  * profile area.
  *
- * VIEW-ONLY by design (D40): the coach OWNS Dream creation/editing, so there are deliberately no
- * add/edit/delete controls here — the user shapes Dreams through conversation, and this screen only
- * displays what the coach has formed. A calm first-run empty state explains that.
+ * NO EDIT CONTROLS by design (D40): the coach OWNS Dream creation and wording, so there are
+ * deliberately no add/edit/delete buttons here — and until 2026-08-24 that also meant there was no
+ * way IN. A screen that can only be read, describing something only a conversation can change, with
+ * no door to that conversation, is a dead end: the person who wanted a new Dream had to guess that
+ * mentioning it inside a Journey conversation was the way. So there is one door, and it opens the
+ * Dream conversation (`/dream-coach`) rather than a form.
  *
  * Presentational only (Engineering Bible §19): reads `snapshot.dreams` + `snapshot.journeys` and
  * derives each Dream's linked-Journey count via the framework-free `core/dreams` selector. Dreams
@@ -71,7 +74,10 @@ export default function MyDreamsScreen() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {rows.length === 0 ? (
-            <EmptyState title={t('empty.title')} body={t('empty.body')} intro={t('intro')} />
+            <>
+              <EmptyState title={t('empty.title')} body={t('empty.body')} intro={t('intro')} />
+              <StartConversation label={t('startConversation')} onPress={() => router.push('/dream-coach' as Href)} />
+            </>
           ) : (
             <>
               <ThemedText type="small" themeColor="textSecondary" style={styles.intro}>
@@ -87,11 +93,33 @@ export default function MyDreamsScreen() {
                   />
                 ))}
               </View>
+              <StartConversation label={t('startConversation')} onPress={() => router.push('/dream-coach' as Href)} />
             </>
           )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+/** The one door into the conversation that owns this layer. Not a form, and not an edit button. */
+function StartConversation({ label, onPress }: { label: string; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.startConversation,
+        { borderColor: theme.tint, backgroundColor: theme.tealTint },
+        pressed && styles.pressed,
+      ]}>
+      <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.teal} />
+      <ThemedText type="smallBold" style={{ color: theme.teal }}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -226,5 +254,15 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  startConversation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
   },
 });

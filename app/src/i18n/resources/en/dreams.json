@@ -25,5 +25,15 @@
     "completed": "Completed",
     "future": "Upcoming",
     "canceled": "Stopped"
-  }
+  },
+  "coach": {
+    "header": "Your Dreams",
+    "greeting": "Tell me about the direction you want to take, or what you would change about a Dream you already have.",
+    "placeholder": "Say what changed",
+    "thinking": "Thinking…",
+    "changed": "What changed",
+    "unavailable": "I could not reach the coach just now, so nothing changed. Try again in a moment.",
+    "nothingChanged": "Nothing changed from that. Tell me a little more and I will."
+  },
+  "startConversation": "Talk about my Dreams"
 }

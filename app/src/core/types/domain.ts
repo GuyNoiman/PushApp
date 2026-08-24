@@ -412,6 +412,18 @@ export interface Dream {
   title: string;
   /** Optional "why this matters" — the meaning behind the aspiration. */
   description?: string;
+  /**
+   * When the user asked the coach to take this Dream out of their list (Dream Management §7.2), or
+   * absent while it is visible. It is REMOVED, never "completed" — nothing is awarded and no archive
+   * screen exists (§7.2 is explicit that there is none, now or in the vision).
+   *
+   * The row survives rather than being deleted, for one reason: a frozen, completed or abandoned
+   * Journey keeps its historical attribution, and a Journey pointing at a Dream that no longer
+   * exists would render as a Journey that was never part of anything. So the record stays for
+   * referential integrity and history, and every visible surface reads `snapshot.dreams`, which does
+   * not include it.
+   */
+  removedAt?: number;
 }
 
 /** The user's companion. Not the user, not merely an avatar. Grows with XP; holds Coins. */

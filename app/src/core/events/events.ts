@@ -167,6 +167,21 @@ export interface JourneyDreamUnlinked {
 }
 
 /**
+ * A Dream's WORDING changed, or two Dreams were merged, or one was taken out of the visible list
+ * (Dream Management §7). Ids only — the new wording is private on-device data and never rides an
+ * event (G1), exactly like {@link DreamCreated}.
+ *
+ * `mergedInto` is present on a merge and names the Dream that survived, so a reader can tell "this
+ * wording changed" apart from "this Dream is now that one" without holding either text.
+ */
+export interface DreamChanged {
+  type: 'DreamChanged';
+  dreamId: string;
+  change: 'reworded' | 'merged' | 'removed';
+  mergedInto?: string;
+}
+
+/**
  * The local {@link InactivityEngine} detected a long absence and FROZE the account's active Journeys
  * (Account Inactivity Freeze, J5, LOCAL-FIRST POC). Reuses the SAME J3 frozen path (each Journey also
  * emits its own {@link JourneyFrozen}); this account-level event drives persistence + the return UI.
@@ -465,6 +480,7 @@ export type DomainEvent =
   | DreamCreated
   | JourneyDreamLinked
   | JourneyDreamUnlinked
+  | DreamChanged
   | AccountInactivityFrozen
   | AccountInactivityReturned
   | RewardGranted

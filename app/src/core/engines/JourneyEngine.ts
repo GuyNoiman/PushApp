@@ -607,6 +607,97 @@ export class JourneyEngine {
   }
 
   /**
+   * REWORD a Dream (Dream Management §7) — the wording only.
+   *
+   * A rewording never touches a single Journey: not its title, not its Steps, not its links. The PRD
+   * says so in as many words, and it is the whole reason a person can let the coach improve the
+   * sentence without wondering what else moved. Returns false on an unknown id or an empty title.
+   */
+  rewordDream(dreamId: string, input: NewDreamInput): boolean {
+    const dream = this.getState().dreams.find((d) => d.id === dreamId);
+    if (!dream) return false;
+    const title = normalizeDreamTitle(input.title);
+    if (!title) return false;
+    dream.title = title;
+    const why = input.why === undefined ? undefined : normalizeDreamWhy(input.why);
+    if (why !== undefined) {
+      if (why) dream.description = why;
+      else delete dream.description;
+    }
+    this.bus.emit({ type: 'DreamChanged', dreamId, change: 'reworded' });
+    return true;
+  }
+
+  /**
+   * MERGE two Dreams (Dream Management §7.1): every relationship from both survives on the one that
+   * is kept, duplicates collapse, and the superseded Dream leaves the visible list.
+   *
+   * Journey history is untouched — a Journey keeps its id, its Steps and its reports, and only the
+   * Dream it points at changes. A Journey whose PRIMARY was the merged Dream gets the kept Dream as
+   * its primary; one that held it as a secondary gets the kept Dream as a secondary, unless the kept
+   * Dream is already its primary, in which case there is nothing to add.
+   */
+  mergeDreams(keepId: string, mergedId: string): boolean {
+    const state = this.getState();
+    if (keepId === mergedId) return false;
+    const keep = state.dreams.find((d) => d.id === keepId && !d.removedAt);
+    const merged = state.dreams.find((d) => d.id === mergedId && !d.removedAt);
+    if (!keep || !merged) return false;
+
+    for (const journey of state.journeys) {
+      const wasPrimary = journey.dreamId === mergedId;
+      const wasSecondary = journey.secondaryDreamIds?.includes(mergedId) ?? false;
+      if (!wasPrimary && !wasSecondary) continue;
+      this.unlinkJourneyFromDream(journey.id, mergedId);
+      // `linkJourneyToDream` refuses a duplicate on its own, so re-linking is safe either way.
+      this.linkJourneyToDream(journey.id, keepId, { primary: wasPrimary && !journey.dreamId });
+      if (wasPrimary && journey.dreamId !== keepId) {
+        this.linkJourneyToDream(journey.id, keepId, { primary: true });
+      }
+    }
+
+    merged.removedAt = Date.now();
+    this.bus.emit({ type: 'DreamChanged', dreamId: mergedId, change: 'merged', mergedInto: keepId });
+    return true;
+  }
+
+  /**
+   * REMOVE a Dream from the visible list (Dream Management §7.2).
+   *
+   * Removed, never "completed" — nothing is awarded and nothing celebrates. The row itself survives
+   * so a finished Journey does not become a Journey that was part of nothing; every visible surface
+   * reads the filtered list instead.
+   *
+   * The one hard rule: a RUNNING Journey may not be orphaned by this. The caller is expected to have
+   * reassigned it first (that is what the coach's proposal does); if one would be left with no Dream
+   * at all, this refuses and changes nothing.
+   */
+  removeDream(dreamId: string): boolean {
+    const state = this.getState();
+    const dream = state.dreams.find((d) => d.id === dreamId && !d.removedAt);
+    if (!dream) return false;
+
+    const orphaned = state.journeys.some(
+      (j) =>
+        isRunning(j) &&
+        j.dreamId === dreamId &&
+        (j.secondaryDreamIds ?? []).length === 0,
+    );
+    if (orphaned) return false;
+
+    for (const journey of state.journeys) {
+      // A finished, frozen or abandoned Journey KEEPS its attribution — that is history, and history
+      // is not edited because somebody tidied their list today.
+      if (!isRunning(journey)) continue;
+      this.unlinkJourneyFromDream(journey.id, dreamId);
+    }
+
+    dream.removedAt = Date.now();
+    this.bus.emit({ type: 'DreamChanged', dreamId, change: 'removed' });
+    return true;
+  }
+
+  /**
    * Remove a Journey↔Dream relationship (Dream Management, D40). Unlinking the PRIMARY promotes the
    * first secondary to primary when one exists (keeping the Journey linked deterministically), else
    * clears the primary so the Journey becomes unlinked (allowed — linking is not a hard gate). The

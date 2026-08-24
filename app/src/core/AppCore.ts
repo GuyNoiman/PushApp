@@ -39,6 +39,12 @@ import {
 } from './coach/goalSpecToJourney';
 import { isSensitiveDomain } from './coach/sensitiveDomains';
 import {
+  summarizeDreamEdit,
+  type DreamChange,
+  type DreamEdit,
+  type DreamEditContext,
+} from './dreams/dreamEdit';
+import {
   briefFor,
   consentActive,
   dreamContextFrom,
@@ -1500,6 +1506,82 @@ export class AppCore {
     memory.journeys = memory.journeys.filter((j) => journeyIds.has(j.id));
   }
 
+
+  // ── Reshaping the Dream layer (Dream Management §7, D40) ────────────────────────────────────
+  //
+  // There is no edit button anywhere, by design: a person says what changed and the coach does it.
+  // Which means the safety lives in two places — `dreams/dreamEdit` validates every id against what
+  // actually exists, and the ORDER below makes the one dangerous sequence safe.
+
+  /** What the coach may refer to: the visible Dreams and the Journeys, by id. */
+  getDreamEditContext(): DreamEditContext {
+    return {
+      dreams: this.state.dreams.filter((d) => !d.removedAt).map((d) => ({ id: d.id, title: d.title })),
+      journeys: this.state.journeys.map((j) => ({
+        id: j.id,
+        title: j.title,
+        dreamIds: [j.dreamId, ...(j.secondaryDreamIds ?? [])].filter((id): id is string => !!id),
+      })),
+    };
+  }
+
+  /**
+   * Apply a validated Dream edit, and report back what actually landed.
+   *
+   * ORDER, NOT INPUT ORDER. Creates and rewordings first, then links, then unlinks, then merges, and
+   * removals last. It is the only ordering under which "move this Journey to the other Dream and
+   * then drop this one" works whichever way round the model happened to list the two changes — and
+   * removal refuses to orphan a running Journey, so getting that order wrong would silently turn a
+   * granted request into a half-done one.
+   *
+   * Everything lands in ONE save (a single `onChanged`), so a person never sees a half-applied list.
+   */
+  applyDreamEdit(edit: DreamEdit): DreamChange[] {
+    const order: DreamChange['kind'][] = ['create', 'reword', 'link', 'unlink', 'merge', 'remove'];
+    const sorted = [...edit.changes].sort(
+      (a, b) => order.indexOf(a.kind) - order.indexOf(b.kind),
+    );
+
+    const applied: DreamChange[] = [];
+    for (const change of sorted) {
+      let ok = false;
+      switch (change.kind) {
+        case 'create':
+          ok = this.journeyEngine.createDream({ title: change.title, ...(change.why ? { why: change.why } : {}) }) !== null;
+          break;
+        case 'reword':
+          ok = this.journeyEngine.rewordDream(change.dreamId, {
+            title: change.title,
+            ...(change.why !== undefined ? { why: change.why } : {}),
+          });
+          break;
+        case 'merge':
+          ok = this.journeyEngine.mergeDreams(change.keepId, change.mergedId);
+          break;
+        case 'remove':
+          ok = this.journeyEngine.removeDream(change.dreamId);
+          break;
+        case 'link':
+          ok = this.journeyEngine.linkJourneyToDream(change.journeyId, change.dreamId, {
+            primary: change.primary,
+          });
+          break;
+        case 'unlink':
+          ok = this.journeyEngine.unlinkJourneyFromDream(change.journeyId, change.dreamId);
+          break;
+      }
+      if (ok) applied.push(change);
+    }
+
+    if (applied.length > 0) this.onChanged();
+    return applied;
+  }
+
+  /** One line per change that actually landed — built from the applied list, never from model prose. */
+  describeDreamChanges(changes: DreamChange[], context: DreamEditContext): string[] {
+    return summarizeDreamEdit({ changes }, context);
+  }
+
   /** Dismiss a parked goal (L1) without building it. Returns whether one was removed; persists + notifies. */
   removeParkedGoal(id: string): boolean {
     const parked = this.state.parkedGoals ?? [];
@@ -1736,9 +1818,14 @@ export class AppCore {
   // user-approval gate (D40); the coach drives creation/linking. Dreams are private on-device data
   // — never added to any social/ProgressSummary/analytics payload (PRD §8, G2).
 
-  /** The user's Dreams (private, on-device). Also surfaced on {@link Snapshot.dreams} for the UI. */
+  /**
+   * The user's VISIBLE Dreams (private, on-device). Also surfaced on {@link Snapshot.dreams}.
+   *
+   * A Dream the user asked to remove (§7.2) is filtered out here as well: its row survives only so a
+   * finished Journey keeps its attribution, and nothing that lists Dreams should ever show it again.
+   */
   getDreams(): Dream[] {
-    return this.state.dreams;
+    return this.state.dreams.filter((d) => !d.removedAt);
   }
 
   /** Every Journey linked to a Dream (primary OR secondary), across all lifecycle states. */
@@ -2959,7 +3046,9 @@ export class AppCore {
       // Step done on Home left the Journeys card reading 0% until the screen remounted (Device QA
       // 2026-08-17, A2). A new array identity per snapshot is what makes "recomputed on every
       // change" true. Shallow by design — the entries are still the live domain objects.
-      dreams: [...this.state.dreams],
+      // Removed Dreams (§7.2) are filtered out HERE, once, rather than at each screen: the row
+      // survives so a finished Journey keeps its attribution, and every visible surface reads this.
+      dreams: this.state.dreams.filter((d) => !d.removedAt),
       journeys: [...this.state.journeys],
       parkedGoals: [...(this.state.parkedGoals ?? [])],
       futureCapacity: futureCapacity(this.state.journeys),

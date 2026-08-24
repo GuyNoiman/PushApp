@@ -49,6 +49,58 @@ one natural sentence) is still open: the tree asks one at a time.
 (the signal block), `core/learning/experts/careerDiagnosis` (`CAREER_SIGNAL_HINTS`), `core/AppCore`
 (`diagnosedDefinition` + `matchVariant`), `core/coach/goalSpecToJourney` (`authoredArcFor`).
 
+## 2026-08-25 — three tool and social decisions, and one idea declined
+
+### D78 — The Passion Map ends with a RESULT, and running it again recomputes one
+**Decision (founder, 2026-08-25):**
+
+> מפת התשוקה צריכה להיות כלי שבסיומו של תוצאה. אם המשתמש בוחר להפעיל את התרגיל מחדש אז התוצאה
+> מתאפסת ומחושבת מחדש בסוף הריצה החדשה.
+
+**The question it answers:** the map's live-discovery half produced *refinement proposals* — "you have
+come back to teaching across four different days, worth adding to your map?" — and there was no way to
+accept one. The open item was "build the accept UI: the diff, Accept / Edit / Not now, and a history".
+
+**What was chosen instead, and why it is better:** the buttons are not built, because the thing they
+were for stops existing. A run of the exercise now ENDS with a result, computed once, frozen. The
+signals a person records afterwards are not a proposal awaiting approval — they are material the NEXT
+result is computed from. So the map stops drifting underneath somebody between two openings of the
+same screen, and the app stops noticing something out loud while offering nothing to do about it.
+
+**The consequence that had to be decided rather than assumed:** signals are SPENT when they are folded
+into a result. Carrying them forward would let one good week keep voting in every result afterwards.
+
+**Where it lives:** `core/tools/passionMap/model.ts` (`PassionMapResult`, `confirmMap(state, at,
+carriedSignals)`), `app/tools/passion-map.tsx`. The three now-unused proposal action labels were
+removed from the copy.
+
+### D79 — An Ally learns about a pause from a NOTIFICATION, not from a new field
+**Decision (founder, 2026-08-25):**
+
+> אני מבין את כוונתך ואני חושב שזה טוב להראות את סטטוס המסע של החברים אבל אולי אפשר להסתפק בהתחלה
+> בהתראה במקום שדה נוסף על המסע
+
+**The question it answers:** what leaves the device for an Ally is a whitelist of exactly four fields,
+and it has no status in it — so a paused Journey silently DISAPPEARS from their view and reappears on
+resume, which is the opposite of what was asked for. Showing a tag means widening that whitelist, and
+every widening is a privacy decision.
+
+**Why the notification is the better first move:** an event is narrower than a state. A tag is
+something an Ally can read at any time, for as long as it lasts, and it turns "paused" into a
+permanent property of a shared object; a notification says it once, at the moment the person chose it,
+to the people who are already allowed to know the Journey exists. It also needs no change to the
+whitelist at all, which means it needs no re-examination of what an Ally can see.
+
+**Stage:** approved, not built. Task **R6**. The design: a small server-side event row per
+pause/resume, readable by that Journey's Allies, feeding the existing bell — ids and a timestamp
+only, no reason, no note, no free text.
+
+### Declined — Original Visual Check-In
+The founder, 2026-08-25: *"אני לא מעוניין בזה."* The PRD moved to
+`04_Product/PRD/Tools_Documentation/Not_Planned/` with its reasoning intact. Worth recording where it
+came from: the tools competitive research of 2026-08-20 wrote a PRD for every candidate it found, and
+a document existing is not the same as somebody wanting the thing.
+
 ## 2026-08-24 (late) — the confidential synthesis, and how much the coach may remember
 
 ### D77 — The coach's INSIGHTS go to the server; the raw material stays on the phone

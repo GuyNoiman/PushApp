@@ -242,7 +242,32 @@ describe('arranging', () => {
   it('nothing is the map until Save my map', () => {
     const s = arranged();
     expect(s.confirmed).toBe(false);
-    expect(confirmMap(s).confirmed).toBe(true);
+    expect(confirmMap(s, NOON).confirmed).toBe(true);
+  });
+
+  it('Save my map is the END of the run: it computes the result, once', () => {
+    // The founder's model (2026-08-25): the exercise ends with a result, and running it again
+    // recomputes one at the end of the NEW run. So the result is a thing the run produced, not a
+    // live derivation that drifts underneath somebody between two openings of the same screen.
+    const s = confirmMap(arranged(), NOON);
+    expect(s.result?.at).toBe(NOON);
+    expect(s.result?.themes).toEqual(s.themes);
+    expect(s.result?.refinements).toEqual([]); // a first run has lived no days yet
+  });
+
+  it('folds the days since the last run into the new result, and spends them', () => {
+    // Three signals about the same thing across two days is the pattern threshold.
+    let carried = startMap();
+    const day = 24 * 60 * 60 * 1000;
+    carried = addSignal(carried, { text: 'teaching', energy: 'energized', pull: 'return', at: NOON });
+    carried = addSignal(carried, { text: 'teaching', energy: 'energized', pull: 'return', at: NOON + 60_000 });
+    carried = addSignal(carried, { text: 'teaching', energy: 'energized', pull: 'return', at: NOON + day });
+
+    const s = confirmMap(arranged(), NOON + 2 * day, carried.signals);
+
+    expect(s.result?.refinements.map((r) => r.subject)).toEqual(['teaching']);
+    // Spent: they shaped this result and do not vote again in the next one.
+    expect(s.signals).toEqual([]);
   });
 });
 

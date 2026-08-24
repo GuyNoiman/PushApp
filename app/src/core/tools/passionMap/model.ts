@@ -124,6 +124,40 @@ export interface PassionMapState {
   confirmed: boolean;
   /** Dated moments from live discovery. */
   signals: readonly DailySignal[];
+  /**
+   * WHAT THE RUN PRODUCED — computed once, when the run ends, and never quietly rewritten
+   * (founder, 2026-08-25). Absent until the map is confirmed.
+   */
+  result?: PassionMapResult;
+}
+
+/**
+ * The result of one run of the exercise.
+ *
+ * ── WHY A FROZEN RESULT AND NOT A LIVE ONE (founder, 2026-08-25) ───────────────────────────────
+ *
+ * The screen used to recompute everything on every render, which turned the map into something that
+ * drifted underneath the person: patterns appeared and disappeared as days passed, and the refinement
+ * proposals sat there with no way to accept them — the app noticing something out loud and offering
+ * nothing to do about it.
+ *
+ * His decision removes the whole problem rather than adding the missing buttons: **the exercise ENDS
+ * with a result. Running it again resets the result, and a new one is computed at the end of the new
+ * run.** So there is nothing to accept, because a refinement is not a proposal to approve — it is
+ * material the NEXT result is computed from.
+ */
+export interface PassionMapResult {
+  /** When the run ended. */
+  at: number;
+  /** The arrangement as it stood at that moment. */
+  themes: readonly Theme[];
+  /**
+   * What the days between this run and the previous one said. Empty on a first run, which is not a
+   * failure — it is a person who has not lived any days with the map yet.
+   */
+  refinements: readonly RefinementProposal[];
+  /** True when the run was too thin to be more than early clues (§: honest labelling). */
+  earlyClues: boolean;
 }
 
 export function startMap(): PassionMapState {
@@ -269,9 +303,30 @@ export function moveSpark(
   return { ...state, themes: themes.filter((t) => t.sparkIds.length > 0) };
 }
 
-/** Save my map. Nothing before this is the map. */
-export function confirmMap(state: PassionMapState): PassionMapState {
-  return { ...state, confirmed: true };
+/**
+ * Save my map — the END of a run, and the only moment a result is computed.
+ *
+ * `carriedSignals` are the daily signals gathered since the LAST run. They are folded into this
+ * result and deliberately not carried into the new map's `signals`: they have been spent, and
+ * counting them again in the next result would let one good week keep voting forever.
+ */
+export function confirmMap(
+  state: PassionMapState,
+  at: number,
+  carriedSignals: readonly DailySignal[] = [],
+): PassionMapState {
+  const forRefinement = carriedSignals.length > 0 ? { ...state, signals: carriedSignals } : state;
+  return {
+    ...state,
+    confirmed: true,
+    signals: [],
+    result: {
+      at,
+      themes: state.themes,
+      refinements: refinementProposals(forRefinement),
+      earlyClues: isEarlyClues(state),
+    },
+  };
 }
 
 // ── Live discovery ────────────────────────────────────────────────────────────────────────────

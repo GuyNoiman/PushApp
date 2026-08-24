@@ -523,7 +523,8 @@
       "addSignal": "Add today's signal",
       "edit": "Edit my map",
       "startOver": "Start over",
-      "done": "Done"
+      "done": "Done",
+      "feedsNextRun": "{{count}} moments recorded since. They shape the result the next time you run this."
     },
     "signal": {
       "title": "What stood out today?",
@@ -546,11 +547,7 @@
     },
     "proposal": {
       "strengthen": "{{subject}} has energized you across {{days}} different days. Worth adding to your map?",
-      "question": "{{subject}} has drained you across {{days}} different days. Worth a second look at what it means?",
-      "accept": "Add it",
-      "edit": "Edit",
-      "notNow": "Not now",
-      "note": "Nothing changes on your map until you say so."
+      "question": "{{subject}} has drained you across {{days}} different days. Worth a second look at what it means?"
     }
   },
   "mirror": {

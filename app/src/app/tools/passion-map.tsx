@@ -49,7 +49,6 @@ import {
   narrow,
   nextPrompt,
   proposeThemes,
-  refinementProposals,
   removeSpark,
   renameTheme,
   setThemes,
@@ -149,7 +148,10 @@ export default function PassionMapScreen() {
               run={run}
               update={update}
               onSave={() => {
-                const confirmed = confirmMap(run);
+                // The END of the run: the result is computed here, once, from this run's themes plus
+                // whatever the days since the LAST run said (founder, 2026-08-25). Those signals are
+                // spent in the process — they shape this result and do not vote again in the next.
+                const confirmed = confirmMap(run, Date.now(), store.map?.signals ?? []);
                 store.confirm(confirmed);
                 setRun(confirmed);
                 setScreen('map');
@@ -601,8 +603,10 @@ function MapSummary({
   const theme = useTheme();
   const { t } = useTranslation('tools');
   const evidence = evidenceCount(map);
-  const proposals = useMemo(() => refinementProposals(map), [map]);
-  const early = isEarlyClues(map);
+  // The result is what the RUN produced, not a live recomputation: the map must not drift underneath
+  // somebody between two openings of the same screen.
+  const result = map.result;
+  const early = result?.earlyClues ?? isEarlyClues(map);
 
   return (
     <>
@@ -630,25 +634,28 @@ function MapSummary({
         </View>
       ))}
 
-      {/* A proposal, never an applied change. Nothing moves until the person says so. */}
-      {proposals.map((p) => (
+      {/* What the days before this run said — part of the RESULT, not a proposal awaiting approval. */}
+      {(result?.refinements ?? []).map((p) => (
         <View
           key={`${p.kind}-${p.subject}`}
           style={[styles.group, { borderColor: theme.tint, backgroundColor: theme.tealWash }]}>
           <ThemedText type="small" style={{ color: theme.text, lineHeight: 21 }}>
             {t(`passionMap.proposal.${p.kind}`, { subject: p.subject, days: p.days })}
           </ThemedText>
-          <ThemedText type="small" style={{ color: theme.textMuted }}>
-            {t('passionMap.proposal.note')}
-          </ThemedText>
         </View>
       ))}
 
+      {/* And what the days SINCE it are saying, which is material for the next run rather than a
+          change being offered now. */}
       {evidence.moments === 0 ? (
         <ThemedText type="small" style={{ color: theme.textMuted }}>
           {t('passionMap.result.noInsightYet')}
         </ThemedText>
-      ) : null}
+      ) : (
+        <ThemedText type="small" style={{ color: theme.textMuted }}>
+          {t('passionMap.result.feedsNextRun', { count: evidence.moments })}
+        </ThemedText>
+      )}
 
       <ThemedText type="small" style={{ color: theme.textSecondary }}>
         {t('passionMap.result.clues')}

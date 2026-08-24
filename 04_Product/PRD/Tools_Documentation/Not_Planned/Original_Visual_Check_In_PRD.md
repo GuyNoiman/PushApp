@@ -1,6 +1,16 @@
 # PRD — Original Visual Check-In
 
-Status: **Draft concept; not approved for implementation.**
+Status: **DECLINED by the founder, 2026-08-25** — "אני לא מעוניין בזה". Moved to `Not_Planned/` and kept
+in full, because a declined idea with its reasoning is worth more than a deleted one: if the same need
+comes back (a low-language way to open a conversation), this is what was already thought through and
+what it would have cost — original artwork and a licensing question before it could be anything.
+
+**Where it came from, since it was never asked for:** the tools competitive research of 2026-08-20
+(§3.10), not from the founder. It reached a PRD because the research pass wrote one for every
+candidate it found. That is worth noticing as a process point: a document existing is not the same as
+somebody wanting the thing.
+
+Previous status: **Draft concept; not approved for implementation.**
 Stage: **Future / rights and emotional-safety gated.**
 Type: **Conversation opener**, not an assessment.
 Research: `../../../05_Research/Coaching_Tools_Digitization_Competitive_Research_2026-08-20.md` §3.10.

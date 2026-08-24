@@ -4,6 +4,35 @@ Status: Living Document
 
 ---
 
+# 2026-08-24 (continued, 2) — the coach can finally reach the library, and the invite link leads somewhere
+
+`tsc` clean · **jest 2331 / 217 suites**. Decision: E9.
+
+## The diagnosis is wired (E9)
+
+Twenty-seven authored Career Journeys have been sitting in the library, correct and unreachable,
+because nothing called the diagnosis and nothing could build from an authored arc. Both rungs exist
+now. A career conversation runs the partner's diagnosis first — it decides which JOURNEY somebody
+gets, while the expert's own questions only shape one — and the family it names selects the plan.
+
+Listening comes before asking: the understanding call now also reads the partner's closed career
+signals out of the opening message, so a question it already answered is never put to the person. An
+authored arc is built ONLY when the diagnosis chose it, so an undiagnosed career goal still gets the
+generic plan rather than whichever Journey happens to be first in the file.
+
+A silent drift was caught doing it: the partner's answer-kind NAMES are not the values they carry, and
+our tree had followed the readable half. Nothing would have errored — the value would simply have been
+dropped and the coach would have gone back to asking. There is a parity test against his file now.
+
+## The invitation link leads somewhere
+
+`https://pushapp-invite.expo.app` — one static file, EAS Hosting's free tier, on the Expo account
+that already builds the app. It picks the platform's install link, keeps both visible, and shows a
+`?code=` prominently because on iOS the short code IS the attribution mechanism until there is a
+server. No trackers, no external requests.
+
+---
+
 # 2026-08-24 (continued) — Mirror gives something back, the coach remembers, and Dreams have a door
 
 Branch `feat/buddy-3d-and-reminders`. `tsc` clean · **jest 2317 / 214 suites**. Decisions: D76, E8.

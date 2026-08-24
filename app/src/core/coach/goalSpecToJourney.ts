@@ -37,7 +37,8 @@ import {
   DEFAULT_RECURRING_APPROACH,
   recurringSetupCount,
 } from '../learning/library/recurringApproaches';
-import { RECURRING_GENERIC } from '../learning/library/definitions';
+import { buildProcessStructure, type AuthoredArc } from '../learning/library/authoredArc';
+import { journeyDefinition, RECURRING_GENERIC } from '../learning/library/definitions';
 import type { LibraryRef } from '../learning/library/journeyDefinition';
 import type { GoalInput, JourneyShape, PlanConstraints } from '../learning/types';
 import type { JourneyEngine, NewJourneyInput } from '../engines/JourneyEngine';
@@ -178,11 +179,44 @@ export function buildJourneyInput(
     };
   }
 
+  // A PROCESS goal the library was actually chosen for builds from the AUTHORED ARC — the partner's
+  // Milestones and Steps, in the user's language — instead of from the expert's generic arc. This is
+  // the last rung of the route the diagnosis opens: the matcher named a Journey, and this is where
+  // that Journey's content reaches the person. Without it the twenty-seven authored Career Journeys
+  // were selectable and still unbuildable, which is the state this file was in until 2026-08-24.
+  const authored = authoredArcFor(spec);
+  if (authored) {
+    return {
+      ...planJourneyFromStructure(goal, constraints, buildProcessStructure(authored), {
+        ...options,
+        ...(authored.suggestedDurationDays !== undefined
+          ? { durationDays: authored.suggestedDurationDays }
+          : {}),
+      }),
+      ...(spec.libraryRef ? { libraryRef: spec.libraryRef } : {}),
+    };
+  }
+
   if (hasAnswers(spec.answers) && expert.buildStructure) {
     const structure = expert.buildStructure(goal, spec.answers, constraints);
     return planJourneyFromStructure(goal, constraints, structure, options);
   }
   return planJourney(goal, constraints, expert, options);
+}
+
+/**
+ * The authored arc this spec is being built from, or undefined.
+ *
+ * Resolved through the stamped {@link LibraryRef} rather than by re-deciding anything: the matcher
+ * already chose, and a second decision here could disagree with the one whose provenance is on the
+ * Journey. Undefined for every spec the library did not choose a process Journey for — which is most
+ * of them, and is why the caller falls through to the expert's own arc.
+ */
+function authoredArcFor(spec: GoalSpec): AuthoredArc | undefined {
+  const ref = spec.libraryRef;
+  if (!ref) return undefined;
+  const variant = journeyDefinition(ref.definitionId)?.variants.find((v) => v.id === ref.variantId);
+  return variant?.build.kind === 'process' ? variant.build.arc : undefined;
 }
 
 /**

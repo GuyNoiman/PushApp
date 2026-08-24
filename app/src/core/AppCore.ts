@@ -73,7 +73,9 @@ import { RecoveryEngine, type SubmitReasonInput } from './recovery/RecoveryEngin
 import { setMockBusy, setMockLocation, type MockPlace } from './recovery/mockEnv';
 import { BehaviorModelEngine } from './learning/BehaviorModelEngine';
 import { profileSignals } from './learning/library/matchApproach';
-import { journeyDefinitionsFor } from './learning/library/definitions';
+import { goalFamilyForDiagnosis, journeyDefinition, journeyDefinitionsFor } from './learning/library/definitions';
+import type { JourneyDefinition } from './learning/library/journeyDefinition';
+import { selectJourney } from './learning/library/goalFamily';
 import { selectVariant } from './learning/library/selectVariant';
 import { rateLibrary, variantScores } from './learning/library/variantRatings';
 import { axisAnswersFrom } from './coach/variantQuestions';
@@ -1313,16 +1315,22 @@ export class AppCore {
    * ever compare on completion rate — which is how a learning loop starts recommending whatever is
    * easiest to finish.
    *
-   * Only a RECURRING plan can be built from the library today, so that is the only kind of plan
-   * allowed to claim provenance from it. The Career section (`learning/library/career`) holds
-   * eighteen process Journeys with real Milestone arcs, but nothing routes a conversation to them
-   * yet — the plan still comes from the domain expert's own arc. Stamping a `libraryRef` on it
-   * anyway would attribute a plan to a Journey whose content was never used, and every verdict that
-   * Journey later earned would be evidence about something else.
+   * A DIAGNOSED goal takes the other door, and it is the one that was missing (2026-08-24). When the
+   * expert named a subtype and a bottleneck, the pair identifies exactly one GOAL FAMILY, and the
+   * choice is made INSIDE that family — the three Journeys authored for that goal — rather than by
+   * taking the first Journey of the right shape. That is what turns twenty-seven authored Career
+   * Journeys from correct into reachable: until this line existed, `journeyDefinitionsFor(...)[0]`
+   * returned the generic recurring Journey for every process goal and the whole library sat unused.
+   *
+   * A process plan may now claim provenance too, because there is finally a path that BUILDS from an
+   * authored arc (`goalSpecToJourney` → `buildProcessStructure`). What is still refused is stamping a
+   * ref on a plan the library did not build: an unattributable plan must not be credited to a version
+   * whose content never reached the user.
    */
   private matchVariant(spec: GoalSpec): GoalSpec {
     const shape = journeyShapeFor(spec.processType, spec.cadence);
-    const definition = journeyDefinitionsFor(shape, spec.domain)[0];
+    const diagnosed = this.diagnosedDefinition(spec);
+    const definition = diagnosed ?? journeyDefinitionsFor(shape, spec.domain)[0];
     if (!definition) return spec;
 
     const choice = selectVariant(definition, {
@@ -1330,9 +1338,41 @@ export class AppCore {
       signals: profileSignals(this.getOnboardingCoachSummary()),
       ratings: variantScores(rateLibrary(this.state.journeys), definition.id),
     });
-    if (choice.variant.build.kind !== 'recurring') return spec;
     const libraryRef = { definitionId: choice.definitionId, variantId: choice.variantId, version: choice.version };
-    return { ...spec, approach: choice.variant.build.approach, libraryRef };
+
+    // A RECURRING version names an approach the builder reads, and any goal of that shape may have
+    // one: the library's recurring Journey is generic by design.
+    if (choice.variant.build.kind === 'recurring') {
+      return { ...spec, approach: choice.variant.build.approach, libraryRef };
+    }
+
+    // A PROCESS version carries a whole authored arc, and it is built ONLY when the diagnosis chose
+    // it. Without that guard, `journeyDefinitionsFor(shape, 'career')[0]` would hand every
+    // undiagnosed career goal the first Career Journey in the file — somebody who wants a promotion
+    // would be given "narrow your search target", which is the exact mistake the diagnosis exists to
+    // prevent, made automatic.
+    return diagnosed ? { ...spec, libraryRef } : spec;
+  }
+
+  /**
+   * The Journey the DIAGNOSIS points at, or undefined when nothing was diagnosed — or when the pair
+   * names a family whose content has not been authored yet.
+   *
+   * That second case is deliberately silent rather than a fallback to "something career-ish": an
+   * expert may legitimately diagnose a bottleneck we have no Journeys for, and handing the person
+   * the nearest family instead would be treating the wrong thing on purpose.
+   */
+  private diagnosedDefinition(spec: GoalSpec): JourneyDefinition | undefined {
+    if (!spec.diagnosis) return undefined;
+    const family = goalFamilyForDiagnosis(spec.domain, spec.diagnosis.subtype, spec.diagnosis.bottleneck);
+    if (!family) return undefined;
+    // No answers are passed, and that is not an omission: nothing ASKS a family's axis question yet
+    // (the coach's next rung), so the choice is made from what onboarding already knows about this
+    // person, and falls back to the family's named default. `via` records which of the two it was.
+    const choice = selectJourney(family, {
+      signals: profileSignals(this.getOnboardingCoachSummary()),
+    });
+    return journeyDefinition(choice.definitionId);
   }
 
   // ── Future Journeys (Future Journey Management) ─────────────────────────────

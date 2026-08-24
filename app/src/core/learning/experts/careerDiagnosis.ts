@@ -77,6 +77,76 @@ export const CAREER_SIGNALS = [
 export type CareerDiagnosisSignal = (typeof CAREER_SIGNALS)[number];
 
 /**
+ * The signals the coach may read STRAIGHT OUT of what somebody wrote, with the closed values each
+ * one may take — the partner's first principle made into a prompt (`…Mapping_v1.2.json`,
+ * `principles[0]`: *do not ask a question when the opening message already supports a signal value*).
+ *
+ * These seven are the ones the "I apply and nobody answers" tree can act on, not all eleven he
+ * authored: a classifier line for a signal no question consumes costs tokens on every conversation
+ * in the app and cannot change a single routing decision. The rest are here in {@link CAREER_SIGNALS}
+ * and become classifiable the day a tree asks for them.
+ *
+ * The `means` lines are HIS, condensed to one sentence each. That is the semantic contract for
+ * classifying free text, and shortening it is the one liberty taken — so
+ * `__tests__/careerSignalParity.test.ts` checks every signal and every value against the package,
+ * and fails when either drifts.
+ */
+export const CAREER_SIGNAL_HINTS: readonly {
+  signal: CareerDiagnosisSignal;
+  values: readonly string[];
+  means: string;
+}[] = [
+  {
+    signal: 'activeJobSearch',
+    // HIS value strings, which are not his answer-kind NAMES: the kinds are `active`/`not_active`
+    // and the values they carry are `yes`/`no`. Following the kinds instead — the readable half —
+    // is exactly the drift the parity test caught on 2026-08-24, and it would have failed silently:
+    // a value nothing recognises is dropped, the signal reads as absent, and the coach goes back to
+    // asking a question it did not need to ask.
+    values: ['yes', 'no'],
+    means:
+      'yes = they are applying, reaching out or interviewing NOW; no = still choosing a direction or preparing.',
+  },
+  {
+    signal: 'targetClarity',
+    values: ['broad', 'clear'],
+    means:
+      'broad = applications span materially different role families or the target changes from posting to posting; clear = most applications belong to one role family they can describe.',
+  },
+  {
+    signal: 'existingRelevantExperience',
+    values: ['yes', 'no'],
+    means:
+      'yes = they can point to a concrete example of doing the core target work; no = they cannot do that work yet.',
+  },
+  {
+    signal: 'visibleProofMissing',
+    // Read the signal NAME with the value: `yes` means the proof is missing.
+    values: ['yes', 'no'],
+    means:
+      'yes = they can do the work but it is hard to show; no = they already have concrete examples an outsider could understand.',
+  },
+  {
+    signal: 'peopleAccess',
+    values: ['yes', 'no'],
+    means:
+      'yes = they can name relevant people or realistic channels for a real conversation; no = the search is almost entirely anonymous applications.',
+  },
+  {
+    signal: 'recentInterviewEvidence',
+    values: ['yes', 'no'],
+    means:
+      'yes = a recent, target-relevant interview they could still reconstruct; no = no recent interview for this target.',
+  },
+  {
+    signal: 'searchHistorySufficient',
+    values: ['yes', 'no'],
+    means:
+      'yes = several comparable attempts with a stable target, enough for the same failure point to have repeated; no = too few attempts or the target keeps changing.',
+  },
+];
+
+/**
  * What is already known about a person, by signal.
  *
  * THIS IS THE "LISTEN FIRST" HALF, and it is the partner's first principle: *do not ask a question
@@ -205,14 +275,15 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         },
         {
           value: 'cannotShow',
-          signalValue: 'missing',
+          // His value, not a word of ours: `visibleProofMissing: yes` means the proof IS missing.
+          signalValue: 'yes',
           label: 'I can do it, but it is hard to show',
           labelKey: `${K}.proof.cannotShow`,
           outcome: { kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'PROOF_GAP' },
         },
         {
           value: 'haveExamples',
-          signalValue: 'available',
+          signalValue: 'no',
           label: 'Yes, I have clear relevant examples',
           labelKey: `${K}.proof.haveExamples`,
         },

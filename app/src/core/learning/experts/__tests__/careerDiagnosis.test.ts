@@ -237,7 +237,11 @@ describe('careerDiagnosis — what the person already told us', () => {
   });
 
   it('skips several questions at once when the conversation covered them', () => {
-    const known = { targetClarity: 'clear', visibleProofMissing: 'available', peopleAccess: 'yes' };
+    // `visibleProofMissing: 'no'` is HIS value string for "the proof is there" — read the signal
+    // name with the value. It was `'available'` here until 2026-08-24, when the parity test against
+    // his package showed we had been following his answer-kind names rather than the values they
+    // carry.
+    const known = { targetClarity: 'clear', visibleProofMissing: 'no', peopleAccess: 'yes' };
     expect(nextQuestion(APPLY_NO_RESPONSE, {}, known)).toBe(PROCESS);
     expect(remainingQuestionCount(APPLY_NO_RESPONSE, {}, known)).toBe(1);
   });

@@ -325,6 +325,22 @@ export interface GoalSpec {
    * carries none at all.
    */
   libraryRef?: LibraryRef;
+  /**
+   * WHAT THE EXPERT DIAGNOSED — the rung between a real conversation and the authored library
+   * (`../learning/experts/careerDiagnosis`).
+   *
+   * A `subtype` + `bottleneck` pair names exactly one {@link ../learning/library/goalFamily.GoalFamily},
+   * and the matcher chooses inside that family instead of taking the first Journey of the right
+   * shape. Absent ⇒ nothing was diagnosed and the old behaviour stands, which is what every domain
+   * without a diagnosis still gets.
+   */
+  diagnosis?: { subtype: string; bottleneck: string };
+  /**
+   * Why the diagnosis stopped WITHOUT naming a family, when it did. Recorded rather than swallowed:
+   * the partner's rule is that the coach must not motivate past an unresolved diagnosis, and a plan
+   * built after one is a plan that should say so. A closed enum value, never free text.
+   */
+  diagnosisUnresolved?: string;
   /** Whether the user accepted the closing Support-Circle recommendation. */
   wantsSupportCircle?: boolean;
 

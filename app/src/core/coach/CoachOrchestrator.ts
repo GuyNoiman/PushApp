@@ -55,6 +55,17 @@ import type {
   FeasibilityAssessment,
   InterviewAnswers,
 } from '../learning/DomainExpert';
+import {
+  APPLY_NO_RESPONSE,
+  CAREER_SIGNAL_HINTS,
+  nextQuestion as nextDiagnosisQuestion,
+  outcomeOf,
+  type CareerDiagnosisAnswers,
+  type CareerDiagnosisQuestion,
+  type CareerDiagnosisTree,
+  type CareerKnownSignals,
+} from '../learning/experts/careerDiagnosis';
+import { arcCopy } from '../learning/library/authoredArc';
 import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/experts/registry';
 import type { GoalInput } from '../learning/types';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
@@ -196,6 +207,8 @@ export type CoachPhase =
   | 'goal'
   | 'focus'
   | 'processType'
+  /** The expert's DIAGNOSIS — which family of Journeys this goal actually belongs to. */
+  | 'diagnosis'
   | 'questions'
   | 'scheduling'
   | 'done';
@@ -315,6 +328,14 @@ export class CoachOrchestrator {
   private expert?: DomainExpert;
   private activeExpert?: ActiveExpert;
   private goal?: GoalInput;
+
+  // ── The diagnosis (career, today) ────────────────────────────────────────────
+  /** The tree being walked, or undefined when this goal has no diagnosis to run. */
+  private diagnosisTree?: CareerDiagnosisTree;
+  /** Answers to the tree's questions so far, keyed by question id. Closed values only. */
+  private diagnosisAnswers: CareerDiagnosisAnswers = {};
+  /** What the opening message already established, so those questions are never asked. */
+  private knownSignals: CareerKnownSignals = {};
   private questions: DomainQuestion[] = [];
   private questionIndex = 0;
   private readonly answers: InterviewAnswers = {};
@@ -496,12 +517,83 @@ export class CoachOrchestrator {
   private activateGoal(goal: UnderstoodGoal, deferred: UnderstoodGoal[]): CoachTurn {
     this.spec.title = goal.title;
     this.spec.domain = goal.domain;
+    // What their own message already said. Read before anything is asked, which is the point.
+    this.knownSignals = goal.signals ?? {};
     this.spec.processType = goal.kind; // INFERRED from understanding: 'recurring' | 'process'
     this.spec.isHabit = goal.kind === 'recurring';
     if (deferred.length > 0) {
       this.spec.deferredGoals = deferred.map(
         (g): DeferredGoal => ({ title: g.title, processType: g.kind, domain: g.domain }),
       );
+    }
+    return this.beginDiagnosis() ?? this.beginExpertQuestions();
+  }
+
+  /**
+   * Run the expert's DIAGNOSIS first, when the domain has one and this goal is what it diagnoses.
+   *
+   * ── WHY THIS COMES BEFORE THE EXPERT'S OWN QUESTIONS ───────────────────────────────────────────
+   *
+   * Because it decides which JOURNEY the person gets, and the expert's questions only shape one. Up
+   * to now the Career expert asked four fixed questions and everybody got the same arc, while
+   * twenty-seven authored Career Journeys sat in the library unreachable — "I apply and nobody
+   * answers" is a symptom with at least five different causes, and treating the wrong one is exactly
+   * how a job search stays busy and stays stuck.
+   *
+   * ── AND WHY IT IS GATED ON AN ACTIVE SEARCH ────────────────────────────────────────────────────
+   *
+   * The one authored tree diagnoses a job search. Running it on "I want to be promoted" would ask
+   * somebody about applications they are not sending. So it runs when the opening message said the
+   * search is active — and when the message said nothing either way, the tree's own first question
+   * (the target) is a fair thing to ask a career goal, so it still runs. `activeJobSearch: no` is the
+   * only answer that skips it, because that is the one case we know it is wrong for.
+   *
+   * Returns null when there is no diagnosis to run, so the caller falls through unchanged.
+   */
+  private beginDiagnosis(): CoachTurn | null {
+    if (this.spec.domain !== 'career') return null;
+    if (this.knownSignals.activeJobSearch === 'no') return null;
+
+    this.diagnosisTree = APPLY_NO_RESPONSE;
+    this.diagnosisAnswers = {};
+    const question = nextDiagnosisQuestion(this.diagnosisTree, this.diagnosisAnswers, this.knownSignals);
+    // Everything it would have asked was already answered in the opening message — which is the best
+    // possible outcome and not a failure: settle it now and go straight on.
+    if (!question) return this.settleDiagnosis();
+
+    this.phase = 'diagnosis';
+    return this.askDiagnosisQuestion(question);
+  }
+
+  /** Surface one diagnosis question, in the partner's own words plus the free-text escape. */
+  private askDiagnosisQuestion(question: CareerDiagnosisQuestion): CoachTurn {
+    const surfaced = diagnosisQuestionAsDomainQuestion(question);
+    const coachMessage = this.applyGuard(surfaced.prompt);
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      done: false,
+      question: cloneQuestion(surfaced),
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /**
+   * Record what the diagnosis concluded and move on to the expert's questions.
+   *
+   * BOTH outcomes are recorded, including the unresolved ones. The partner's rule is that the coach
+   * must not motivate past an unresolved diagnosis — a plan built after "they cannot do the target
+   * work yet" is a plan that should say so — and the only way anything downstream can respect that is
+   * if the reason is on the spec rather than swallowed here.
+   */
+  private settleDiagnosis(): CoachTurn {
+    const tree = this.diagnosisTree;
+    const outcome = tree ? outcomeOf(tree, this.diagnosisAnswers, this.knownSignals) : null;
+    if (outcome?.kind === 'family') {
+      this.spec.diagnosis = { subtype: outcome.subtype, bottleneck: outcome.bottleneck };
+    } else if (outcome?.kind === 'unresolved') {
+      this.spec.diagnosisUnresolved = outcome.reason;
     }
     return this.beginExpertQuestions();
   }
@@ -601,6 +693,12 @@ export class CoachOrchestrator {
         return this.focusQuestion;
       case 'processType':
         return PROCESS_TYPE_QUESTION;
+      case 'diagnosis': {
+        const question = this.diagnosisTree
+          ? nextDiagnosisQuestion(this.diagnosisTree, this.diagnosisAnswers, this.knownSignals)
+          : null;
+        return question ? diagnosisQuestionAsDomainQuestion(question) : undefined;
+      }
       case 'questions':
         return this.questions[this.questionIndex];
       case 'scheduling':
@@ -625,6 +723,8 @@ export class CoachOrchestrator {
         this.spec.isHabit =
           this.spec.processType === 'recurring' || this.spec.processType === 'fixed';
         return this.beginExpertQuestions();
+      case 'diagnosis':
+        return this.recordDiagnosisAnswer(question, answer);
       case 'questions':
         this.answers[question.id] = answer;
         this.questionIndex++;
@@ -639,6 +739,31 @@ export class CoachOrchestrator {
       default:
         throw new Error('There is no question to answer right now');
     }
+  }
+
+  /**
+   * Record one diagnosis answer and ask the next question, or settle.
+   *
+   * A LABEL the person tapped maps back to its closed value; anything else — free text, or a label
+   * from a question that is no longer current — settles nothing, and the honest thing is to move on
+   * rather than to read a value into a sentence we did not parse. The tree then asks its next
+   * question, which is a better outcome than a wrong route.
+   */
+  private recordDiagnosisAnswer(question: DomainQuestion, answer: string | string[]): CoachTurn {
+    const tree = this.diagnosisTree;
+    if (!tree) return this.beginExpertQuestions();
+    const current = nextDiagnosisQuestion(tree, this.diagnosisAnswers, this.knownSignals);
+    if (!current || current.id !== question.id) return this.settleDiagnosis();
+
+    const chosen = Array.isArray(answer) ? answer[0] : answer;
+    const value = diagnosisValueFor(current, chosen);
+    if (value) this.diagnosisAnswers = { ...this.diagnosisAnswers, [current.id]: value };
+
+    const next = nextDiagnosisQuestion(tree, this.diagnosisAnswers, this.knownSignals);
+    // No option matched AND nothing left to ask would loop; settling is the only way out and it is
+    // also the correct one — an unreadable answer is not evidence.
+    if (!next || (!value && next.id === current.id)) return this.settleDiagnosis();
+    return this.askDiagnosisQuestion(next);
   }
 
   /**
@@ -788,6 +913,44 @@ export interface UnderstoodGoal {
   kind: GoalKind;
   /** The classified domain (validated to a known {@link DomainId}, else `general`). */
   domain: DomainId;
+  /**
+   * What the opening message ALREADY said about a career search, as closed signal values — so the
+   * diagnosis never asks a question the person has effectively answered already. Absent whenever the
+   * message supported nothing, which is the ordinary case and is not a failure.
+   */
+  signals?: CareerKnownSignals;
+}
+
+/**
+ * A diagnosis question, as the interview surfaces it.
+ *
+ * The OPTIONS ARE THE PARTNER'S ANSWER KINDS, worded as somebody would say them — and `allowOther` is
+ * true because the whole move the founder asked for on 2026-08-21 is fewer closed cards and more of a
+ * conversation. Tapping is free, typing is a call; the cards stay underneath as an offer rather than
+ * as the only way through.
+ *
+ * `intent: 'baseline'` because that is what a diagnosis question IS — where you are right now — and
+ * the surfaced prompt is the authored one rather than a meta-voiced template: these words are the
+ * partner's clinical instrument, not a phrasing choice.
+ */
+function diagnosisQuestionAsDomainQuestion(question: CareerDiagnosisQuestion): DomainQuestion {
+  return {
+    id: question.id,
+    intent: 'baseline',
+    // The user's own language, through the same `library` cache the authored Journeys use — the
+    // authored English is the fallback, never the thing a Hebrew speaker is shown.
+    prompt: arcCopy(question.promptKey, question.prompt),
+    options: question.options.map((option) => arcCopy(option.labelKey, option.label)),
+    allowOther: true,
+  };
+}
+
+/** The closed value behind a label the person tapped, in whatever language they read it in. */
+function diagnosisValueFor(
+  question: CareerDiagnosisQuestion,
+  chosen: string,
+): string | undefined {
+  return question.options.find((option) => arcCopy(option.labelKey, option.label) === chosen)?.value;
 }
 
 /** A defensive copy of a {@link DomainQuestion} (fresh `options` array). */
@@ -883,9 +1046,28 @@ export function extractGoals(text: string): UnderstoodGoal[] {
     if (!title) continue; // never invent a goal with no title
     const domain: DomainId = isDomainId(rec.domain) ? rec.domain : 'general';
     const kind: GoalKind = rec.kind === 'recurring' ? 'recurring' : 'process';
-    goals.push({ title, kind, domain });
+    const signals = extractCareerSignals((rec as { careerSignals?: unknown }).careerSignals);
+    goals.push({ title, kind, domain, ...(signals ? { signals } : {}) });
   }
   return goals;
+}
+
+/**
+ * Read the career signals the understanding step reported, keeping ONLY what the vocabulary allows.
+ *
+ * Every name must be a signal we declared and every value must be one that signal may take. A model
+ * that returns `targetClarity: "unsure"` has said something real about a person and something this
+ * system has no place to put — and inventing a place for it is how a closed enum stops being closed.
+ * Dropped, and the question stays askable, which is the correct outcome of not knowing.
+ */
+function extractCareerSignals(raw: unknown): CareerKnownSignals | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const out: Record<string, string> = {};
+  for (const hint of CAREER_SIGNAL_HINTS) {
+    const value = (raw as Record<string, unknown>)[hint.signal];
+    if (typeof value === 'string' && hint.values.includes(value)) out[hint.signal] = value;
+  }
+  return Object.keys(out).length > 0 ? (out as CareerKnownSignals) : undefined;
 }
 
 /**

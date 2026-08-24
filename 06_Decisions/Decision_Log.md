@@ -10,6 +10,45 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+### E9 — The diagnosis is wired, and twenty-seven authored Journeys became reachable
+**Decision (engineering, inside the partner's approved v1.2 contract, 2026-08-24):** a career
+conversation now runs the partner's DIAGNOSIS before the expert's own questions, and the family it
+names selects the Journey the person is actually built.
+
+**What was broken, stated plainly:** the Career library has held nine goal families and twenty-seven
+authored Journeys since 2026-08-20, all validated and translated. Every career conversation still
+produced the same four generic Milestones, because two rungs were missing: nothing called
+`careerDiagnosis`, and nothing could BUILD from an authored arc (`matchVariant` bailed on any
+non-recurring version, so `journeyDefinitionsFor(shape, domain)[0]` was as far as the library ever
+got). Content that cannot be reached is content that does not exist.
+
+**The three layers, in the founder's order (2026-08-21: fewer closed cards, more of a conversation):**
+listen first — the understanding call now also reads the partner's closed career signals out of the
+opening message, so a question it already answered is never asked; ask only what can still change the
+routing — the tree's own stop rule; and the cards stay underneath as an offer, with free text always
+allowed.
+
+**The guard that matters:** an authored process arc is built ONLY when the diagnosis chose it.
+Without that, the first Career Journey in the file would have been handed to every undiagnosed career
+goal — somebody wanting a promotion would get "narrow your search target", which is the exact mistake
+the diagnosis exists to prevent, made automatic.
+
+**A drift caught on the way, worth recording because it fails silently:** his mapping's answer-KIND
+names are not the values they carry (`activeJobSearch` has kinds `active`/`not_active` whose values
+are `yes`/`no`; `visibleProofMissing` has `missing`/`available` carrying `yes`/`no`). Our tree had
+followed the readable half. A value nothing recognises is dropped, the signal reads as absent, and
+the coach quietly goes back to asking a question it did not need to ask — nothing errors.
+`__tests__/careerSignalParity.test.ts` now checks every signal and value against his file.
+
+**What was NOT done, deliberately:** no more Career content was ingested. His v1.2 handoff asks us not
+to — the routable scope is 27 until the diagnosis contract is validated in the app, and the rest of
+what they authored stays on their side. And "one call per message" (asking the remaining questions in
+one natural sentence) is still open: the tree asks one at a time.
+
+**Where it lives:** `core/coach/CoachOrchestrator` (the `diagnosis` phase), `core/coach/coachPrompts`
+(the signal block), `core/learning/experts/careerDiagnosis` (`CAREER_SIGNAL_HINTS`), `core/AppCore`
+(`diagnosedDefinition` + `matchVariant`), `core/coach/goalSpecToJourney` (`authoredArcFor`).
+
 ## 2026-08-24 (late) — the confidential synthesis, and how much the coach may remember
 
 ### D76 — The coach's memory ships on-device only, and the consent screen says so

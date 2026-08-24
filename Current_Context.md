@@ -63,6 +63,18 @@ Then the queue, in order:
 Plus one small thing he asked for directly: **the About row names the running update**, so "which
 version are you on" has an answer on the device.
 
+## ▶ ADDED AFTER THAT, SAME DAY
+
+**The invite landing page** (see below) and **the career diagnosis, wired (E9)** — the biggest of the
+"spec is ready, nobody built it" items. The partner's v1.2 package (2026-08-23) answered the 2026-08-21
+letter with the interview→signal mapping, and the 18-of-30 ingest note in the older Open_Work doc is
+STALE: all 27 Journeys and 9 families are in the app, and his handoff explicitly asks us NOT to ingest
+more until the diagnosis contract is validated in the app.
+
+**Still open on that thread:** "one call per MESSAGE" — the tree asks one question at a time; asking
+the remaining ones in a single natural sentence is the next layer. And the labels of the diagnosis
+options are OURS (his answers are categories); they were meant to go back to him for correction.
+
 ## ▶ WHAT IS LEFT, AND WHY IT STOPPED HERE
 
 - ~~**The invite landing page.**~~ **DONE (2026-08-24):** he chose a free option, so it is on **EAS

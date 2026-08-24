@@ -19,6 +19,7 @@
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
 import { findLanguage } from '../../i18n/languages';
+import { CAREER_SIGNAL_HINTS } from '../learning/experts/careerDiagnosis';
 import { DOMAIN_IDS } from '../learning/experts/registry';
 import type { ExtractionField } from './interviewPlaybook';
 
@@ -94,6 +95,27 @@ export const EXTRACTION_SYSTEM_PROMPT = [
  * The orchestrator composes this with the STEADY {@link ./communicationStyles} voice so the
  * meta-agent stays in-persona; the understanding itself returns strict JSON. Editable config.
  */
+/**
+ * The career-signal block appended to the understanding step.
+ *
+ * LISTEN BEFORE ASKING (the partner's first principle). Somebody's opening message usually already
+ * answers one or two of the diagnosis's questions — "I apply to anything that looks close and nobody
+ * answers" has said what their target looks like — and asking anyway is exactly the form-filling the
+ * coach is meant not to be. Reading them here costs nothing: it rides the one call we already make.
+ *
+ * ONLY WHEN THE MESSAGE ACTUALLY SUPPORTS ONE. A guessed signal skips a question the person would
+ * have answered differently, which is worse than asking — so the instruction says omit, twice, and
+ * the tree treats an absent signal as askable.
+ */
+const CAREER_SIGNALS_BLOCK = [
+  '',
+  'careerSignals — ONLY for a goal whose domain is "career", and ONLY when the message itself clearly',
+  'supports a value. Omit any signal you are not sure about, and omit the whole object when the',
+  'message says nothing about the search. Guessing here makes the coach skip a question the person',
+  'would have answered differently. Never invent a value outside the ones listed.',
+  ...CAREER_SIGNAL_HINTS.map((hint) => `  ${hint.signal}: ${hint.values.join(' | ')} — ${hint.means}`),
+].join('\n');
+
 export const TRIAGE_SYSTEM_PROMPT = [
   "You are the PushApp coach's understanding step. The user has just told you, in their own words,",
   'what they want to work on. Their message may describe MORE THAN ONE distinct goal at once. Your',
@@ -102,7 +124,8 @@ export const TRIAGE_SYSTEM_PROMPT = [
   'or reply conversationally.',
   '',
   'Return ONLY a JSON object of the form',
-  `  {"goals": [{"title": string, "kind": "recurring" | "process", "domain": ${DOMAIN_UNION}}]}`,
+  `  {"goals": [{"title": string, "kind": "recurring" | "process", "domain": ${DOMAIN_UNION},`,
+  '            "careerSignals"?: { …see below… }}]}',
   '— no prose, no fences. List ONE entry per distinct goal, in the order the user mentioned them. If',
   'the user described only one goal, return a single-entry list. Never merge two clearly different',
   'goals into one entry, and never invent a goal the user did not mention. Keep each "title" short and',
@@ -122,6 +145,7 @@ export const TRIAGE_SYSTEM_PROMPT = [
   '  career         — direction, skills, job search, growth at work.',
   '  general        — anything else, or when you are not sure.',
   'NEVER invent a domain outside this list.',
+  CAREER_SIGNALS_BLOCK,
 ].join('\n');
 
 /**

@@ -63,21 +63,32 @@ export function toggleSelection(
 }
 
 /**
- * Set (or clear) a question's free text. Trims; an empty result removes the key. Any non-empty text
- * un-skips the question (the user engaged with it). Free text is stored verbatim (PRD §3).
+ * Set (or clear) a question's free text. Blank removes the key; any non-blank text un-skips the
+ * question (the user engaged with it). Free text is stored VERBATIM (PRD §3).
+ *
+ * ── WHY THIS DOES NOT TRIM (founder, 2026-08-25) ───────────────────────────────────────────────
+ *
+ * It used to, and it broke the space bar. This is called on EVERY KEYSTROKE, so trimming here meant
+ * that the moment somebody typed a space at the end of a word it was cut off — and the next letter
+ * landed against the previous word. Typing "I want to run" produced "Iwanttorun", and it looked like
+ * the keyboard was broken rather than like the app was deleting the character.
+ *
+ * A trailing space is not something to clean up while somebody is still typing; it is the middle of
+ * a word they have not finished. The trim belongs at the BOUNDARY instead, where the text is read
+ * into something durable — {@link toCoachSummary} does it, once, on the way out.
  */
 export function setFreeText(
   answers: OnboardingAnswers,
   id: OnboardingQuestionId,
   text: string,
 ): OnboardingAnswers {
-  const trimmed = text.trim();
   const freeText = { ...answers.freeText };
-  if (trimmed.length === 0) {
+  if (text.trim().length === 0) {
+    // Blank is blank whether it is empty or three spaces — the key goes, and nothing is stored.
     delete freeText[id];
     return { ...answers, freeText };
   }
-  freeText[id] = trimmed;
+  freeText[id] = text;
   return { ...answers, freeText, skipped: unskip(answers.skipped, id) };
 }
 
@@ -102,6 +113,18 @@ export function markSkipped(
   return { ...answers, selections, freeText, skipped };
 }
 
+/** Every stored free-text answer, edge-trimmed. Blank-after-trim entries are dropped entirely. */
+function trimmedFreeText(
+  freeText: OnboardingAnswers['freeText'],
+): OnboardingAnswers['freeText'] {
+  const out: OnboardingAnswers['freeText'] = {};
+  for (const [id, value] of Object.entries(freeText)) {
+    const trimmed = value?.trim();
+    if (trimmed) out[id as OnboardingQuestionId] = trimmed;
+  }
+  return out;
+}
+
 /**
  * The minimal, named Coach-handoff summary (PRD §9). Maps the generic answer store onto the named
  * fields the first Coach conversation reads. Absent fields = skipped/unanswered; `skipped` + `version`
@@ -109,7 +132,11 @@ export function markSkipped(
  * question only. Pure: safe to rebuild any time an answer changes (PRD §10 "rebuild the summary").
  */
 export function toCoachSummary(answers: OnboardingAnswers): CoachOnboardingSummary {
-  const { selections, freeText } = answers;
+  const { selections } = answers;
+  // THE TRIM LIVES HERE, at the boundary, and not on every keystroke — see {@link setFreeText} for
+  // the space bar this broke. Whatever a person typed is stored exactly; what the coach reads is the
+  // tidied version, and the tidying happens once, on the way out.
+  const freeText = trimmedFreeText(answers.freeText);
   return {
     version: answers.version,
     areas: selections.q1 ?? [],

@@ -124,12 +124,35 @@ describe('multi-select limit (PRD "select up to two")', () => {
 });
 
 describe('free text (Other + Q2 + Q6 add-on)', () => {
-  it('trims and clears on empty; never translated (stored verbatim)', () => {
+  it('stores exactly what was typed, and clears when it is blank', () => {
     let a = emptyOnboardingAnswers();
     a = setFreeText(a, 'q2', '  אני רוצה יותר אנרגיה  ');
-    expect(a.freeText.q2).toBe('אני רוצה יותר אנרגיה');
+    // VERBATIM, spaces included. This used to trim, and because it is called on every keystroke the
+    // space bar stopped working: the trailing space was cut the moment it was typed and the next
+    // letter landed against the previous word (founder, 2026-08-25 — "one long word").
+    expect(a.freeText.q2).toBe('  אני רוצה יותר אנרגיה  ');
     a = setFreeText(a, 'q2', '   ');
     expect(a.freeText.q2).toBeUndefined();
+  });
+
+  it('lets somebody type a space at the end of a word without losing it', () => {
+    // The bug, as a person actually meets it: type a word, a space, then the next word.
+    let a = emptyOnboardingAnswers();
+    for (const keystroke of ['I', 'I ', 'I w', 'I wa', 'I want']) {
+      a = setFreeText(a, 'q2', keystroke);
+    }
+    expect(a.freeText.q2).toBe('I want');
+  });
+
+  it('hands the coach the tidied version — the trim happens at the boundary, once', () => {
+    let a = emptyOnboardingAnswers();
+    a = setFreeText(a, 'q2', '  more energy  ');
+    expect(toCoachSummary(a).outcome).toBe('more energy');
+  });
+
+  it('drops a whitespace-only answer on the way to the coach', () => {
+    const a = { ...emptyOnboardingAnswers(), freeText: { q2: '   ' } };
+    expect(toCoachSummary(a).outcome).toBeUndefined();
   });
 });
 

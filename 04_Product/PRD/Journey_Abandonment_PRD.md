@@ -4,8 +4,11 @@ Status: **Founder-specified 2026-08-13.** Two rounds of founder decisions on thi
 (initial framing, closed) and §12 (a second pass — reversibility and four more questions resolved; see
 D46). The mechanics below are grounded in the shipped code. **Two open questions remain** — §12.4 (how
 loudly stopping is affirmed, and whether the Support Circle ever gets an owner-initiated note) and §12.6
-(whether canceled Journeys ever appear under their Dream) — neither is blocking. Nothing here is a
-shipped feature yet.
+(whether canceled Journeys ever appear under their Dream) — neither is blocking. ~~Nothing here is a
+shipped feature yet.~~ **CORRECTION 2026-08-24: it shipped.** `AppCore.abandonJourney`, the
+`CancelJourneySheet` confirmation on the Journey screen, the canceled bucket in Journeys and the
+`CanceledPill` are all live; §12.6 answered itself in the build (a canceled Journey DOES appear under
+its Dream, labelled). The status line above was written before the build and was never updated.
 Stage: **MVP.**
 Owner: founder + AI product team.
 Source: founder spec, 2026-08-13 — "add to the Journey detail page the option to abandon a Journey,

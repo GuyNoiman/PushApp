@@ -10,6 +10,14 @@ this is this PRD's core mechanism, not a peripheral deferral:** the Coach-led Dr
 conversation itself (§5, §7 — the Coach actually forming and persisting Dream wording from a conversation).
 Without it there is no way to create a first Dream or edit one; the shipped slice is read-only surfacing of
 data that must still be seeded another way. Needs a joint founder design session (open questions remain).
+
+**UPDATE 2026-08-24 — the authoring conversation SHIPPED.** §14's Open Questions section says *None*, so
+the design session that line asks for was already answered. `app/src/app/dream-coach.tsx` +
+`core/coach/DreamCoachOrchestrator` + `core/dreams/dreamEdit` implement §5 and §7: create, reword,
+merge, remove, link and unlink, applied directly as part of the conversation per D40. Entry points are
+My Dreams and each Dream's own screen. Every id is validated against what exists before anything is
+applied, removal never orphans a running Journey, and a removed Dream is hidden rather than deleted so
+a finished Journey keeps its attribution.
 Kept in the PRD root, not `Done/`, until that authoring flow ships — see `04_Product/PRD/README.md`'s
 Done-tracking rule (a file moves only once its approved/current scope is implemented).
 Stage: **MVP**.

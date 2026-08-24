@@ -15,6 +15,19 @@ freeze). The shipped POC is a client-only approximation (evaluated lazily on for
 no cross-device consistency) — a reasonable stopgap, but not this PRD's specified model. Needs the backend.
 Kept in the PRD root, not `Done/`, until the server-authoritative version ships — see
 `04_Product/PRD/README.md`'s Done-tracking rule.
+
+**UPDATE 2026-08-24 — the server-authoritative half SHIPPED.** `supabase/migrations/0007_account_activity.sql`
+holds `last_active_at` on server time, `touch_account_activity()` records an authenticated foreground
+session and returns the verdict that was standing on arrival, and a nightly `pg_cron` job
+(`evaluate_account_inactivity`) applies the 21-day threshold whether or not any device is open —
+idempotent by construction (it only touches rows where `frozen_at is null`). The device applies the
+verdict through `InactivityEngine.applyServerVerdict`: the server's timestamp REPLACES the local
+anchor, a freeze the device slept through is applied on arrival, and a verdict carrying no freeze
+never unfreezes anything (§7 — returning is the user's move). The local `tick` remains as the offline
+fallback, and `core/inactivity/__tests__/inactivityParity.test.ts` fails if the two thresholds drift.
+STILL NOT DONE from this PRD's scope: the Ally lifecycle notices tied to the server-side freeze (§5),
+and freezing a Journey remains a device-side action — the server records the ACCOUNT's lifecycle and
+the device applies it, which is a deliberate boundary rather than a gap.
 Stage: **MVP**.
 Owner: founder + AI product team.
 Related: J3 Journey Freeze/Resume, `Future_Journey_Management_PRD.md`,

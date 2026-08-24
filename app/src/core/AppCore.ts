@@ -21,6 +21,7 @@ import {
 } from './engines/MissionEngine';
 import { EntitlementEngine } from './engines/EntitlementEngine';
 import { InactivityEngine } from './engines/InactivityEngine';
+import { getInactivityGateway } from './inactivity';
 import { FutureJourneyEngine } from './engines/FutureJourneyEngine';
 import {
   ReminderEngine,
@@ -196,6 +197,9 @@ export interface ExportMeta {
   uid?: string | null;
   handle?: string | null;
 }
+
+/** How often at most this process tells the server an authenticated person is in the foreground. */
+const ACTIVITY_TOUCH_INTERVAL_MS = 60 * 60 * 1000;
 
 /** A Buddy enriched with derived progression for display. */
 export interface BuddyView extends Buddy {
@@ -523,6 +527,8 @@ export class AppCore {
    * and always constructed — it seeds a grace anchor on first sight, so it never freezes a fresh user.
    */
   private readonly inactivity: InactivityEngine;
+  /** When this process last told the server somebody is here — in memory only, never persisted. */
+  private lastActivityTouchAt?: number;
   /**
    * Future Journey Management: the clock reconciler that STARTS a scheduled Journey once its
    * approved instant has arrived, on the same lifecycle beats as {@link inactivity}. It drives the
@@ -804,6 +810,11 @@ export class AppCore {
     // whose persisted anchor is older than the threshold it freezes their active Journeys here, so the
     // return experience is ready the moment Home mounts.
     this.inactivity.tick(Date.now());
+    // …and then ASK THE SERVER, which is the authoritative clock (PRD §2/§3/§10). Deliberately not
+    // awaited: a launch must not wait on the network, and the local sweep above has already put the
+    // app in a correct-enough state. When the verdict lands it corrects the anchor and applies a
+    // freeze this device slept through.
+    void this.syncAccountActivity();
     // Future Journey Management (§9): reconcile the scheduled starts that came due while the app was
     // closed, BEFORE the first snapshot is read — so a Journey whose instant passed is already
     // running when Home mounts (no flicker from Future to Active). Runs AFTER the inactivity sweep on
@@ -1753,7 +1764,33 @@ export class AppCore {
     }
   }
 
-  // ── Account Inactivity Freeze (J5, LOCAL-FIRST POC) ─────────────────────────
+  /**
+   * Tell the server an authenticated person is here, and apply what it says back.
+   *
+   * WHAT THIS FIXES, and it is three things the device could not (PRD §2, §3, §10): a phone whose
+   * clock is wrong or has travelled no longer decides how long somebody has been away; two phones can
+   * no longer disagree about whether the account is frozen; and the threshold is evaluated on a
+   * schedule rather than only being noticed when the person happens to come back — which is the one
+   * moment it should already have been true.
+   *
+   * Silent on failure, on purpose. No session, no network, or a project without the migration all
+   * mean "no verdict", and a missing verdict is not an error state — the local sweep already ran.
+   */
+  private async syncAccountActivity(): Promise<void> {
+    const gateway = getInactivityGateway();
+    if (!gateway.enabled) return;
+    const now = Date.now();
+    if (this.lastActivityTouchAt !== undefined && now - this.lastActivityTouchAt < ACTIVITY_TOUCH_INTERVAL_MS) {
+      return;
+    }
+    this.lastActivityTouchAt = now;
+    const verdict = await gateway.touch();
+    if (!verdict) return;
+    this.inactivity.applyServerVerdict(verdict);
+    this.onChanged();
+  }
+
+  // ── Account Inactivity Freeze (J5) ──────────────────────────────────────────
   // The return experience after the local InactivityEngine froze the account's Journeys for a long
   // absence. Freezing reused the J3 path (provenance-tagged), so these methods only READ the marker
   // and RESUME away-frozen Journeys. NO method auto-resumes; a manually-paused or Future Journey is
@@ -2505,6 +2542,11 @@ export class AppCore {
     // Account Inactivity Freeze (J5): run the detector FIRST, so any Journey newly frozen for a long
     // absence is already `frozen` when the reconcile below cancels its reminders in the same beat.
     this.inactivity.tick(Date.now());
+    // …and tell the server the person is here, at most hourly. Every foreground beat would be a
+    // network write on somebody's battery for a fact that changes meaning once a day; an hour is far
+    // finer than the 21-day threshold it feeds and still means an app opened once a fortnight keeps
+    // the account alive on the authoritative clock rather than on this device's.
+    void this.syncAccountActivity();
     // Future Journey Management (§9): then start any scheduled Journey whose instant has arrived, so
     // the reconcile below plans its reminders in this same beat. Order matters — a freeze detected
     // just above blocks activation here (Inactivity PRD §3.3).

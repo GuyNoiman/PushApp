@@ -12,6 +12,55 @@ this file is a proposal; it is only a list of what still needs deciding.
 
 ---
 
+# ⏱ RE-AUDIT 2026-08-25 — what has since been answered, and what is genuinely still open
+
+This list was compiled on 2026-08-14 and about a third of it has been overtaken by the build. Rather
+than deleting those lines (they are the record of what was considered), here is what is no longer a
+question, verified against the code and the deployed project:
+
+**Closed by shipping, not by a decision:**
+- **2.2 Server-side LLM proxy** — `gemini-proxy` is deployed and ACTIVE; the key is server-side, every
+  call is attributed to a uid and metered, and a byte cap exists.
+- **2.6 `delete-account` Edge Function** — deployed and ACTIVE. What is still missing is only the
+  PUBLIC deletion URL Google Play requires, which now has somewhere to live (see below).
+- **2.7 Apple Developer account** — exists; iOS build 6 went to TestFlight, `ascAppId` is in `eas.json`.
+- **§6 "Codex's PRD drafts are untracked"** — they are in the repo; `Future_Journey_Management_PRD.md`
+  is tracked beside the code that implements it.
+- **§6 "the interim share needs a stable download destination"** — `https://pushapp-invite.expo.app`
+  (2026-08-24). The same site is the obvious home for the privacy policy and the Play deletion URL.
+
+**Still open and VERIFIED still true (checked in code on 2026-08-25):**
+- **1.2 — the wizard still offers 90 days** (`app/src/app/journey/new.tsx`, `DURATION_VALUES = [30, 60,
+  90]`) against the "up to two months" guidance. One of the two has to move.
+- **2.1 Privacy policy** — still does not exist as a public document. `Privacy_Contract_With_The_User.md`
+  is the internal source it would be written from, and it is current as of 2026-08-24.
+- **2.5 Quarantine recovery** — `data-recovery.tsx` preserves the unreadable copy and explains it, and
+  offers "try again" and "start fresh". Nothing can READ the copy back, so the exit still destroys it.
+- **2.8 Support Circle live-DB authorization QA** — still needs a second real account.
+- **3.1 Ally paused/active tag** — the four-field whitelist is unchanged; a paused Journey still
+  disappears from an Ally's view rather than showing a status.
+- **3.5 Smart Notification Timing aggregate** — the learning loop shipped (D74); nothing bundles several
+  Journeys into one notification.
+- **§4 Weekly Review contributions (7 questions)** — untouched; 4.1 is still the one that decides whether
+  the partner's content is expressible at all.
+
+**Added since, and needing an answer:**
+- **Analytics / monitoring** — the open question from 2026-08-23. There is no crash reporting, no
+  performance signal, and no gradual rollout: every update reaches everyone at once. The founder is
+  drafting the task with Codex; the guiding questions were given on 2026-08-24.
+- **D76 (2026-08-24) was decided in his absence** and he may want to ratify it: the coach's memory ships
+  ON-DEVICE ONLY, and the consent screen says a new phone starts the coach fresh. The alternative —
+  putting it in the account backup row like everything else — would have quietly downgraded a promise
+  the PRD makes explicitly.
+- **The diagnosis answer WORDINGS are ours, not the partner's.** The ask is written and ready to send in
+  `Partner_Letter_2026-08-24_Diagnosis_Wired.md`.
+
+**And the reason this list matters more than it did:** as of 2026-08-25 there is nothing left in
+`04_Product/PRD/` that is founder-approved and unbuilt. The build is now gated on the decisions below
+rather than on engineering time.
+
+---
+
 ## 1. Blocking implementation right now
 
 These four sit in front of `Step_Postponement_02_PRD.md` (Journey extension + resume re-plan). The

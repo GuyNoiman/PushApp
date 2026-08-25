@@ -239,7 +239,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         {
           value: 'broad',
           signalValue: 'broad',
-          label: 'Several different kinds of role',
+          label: 'My search spans several different kinds of roles',
           labelKey: `${K}.target.broad`,
           // A broad target makes every later reading meaningless, so this ends the diagnosis here.
           outcome: { kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'DIRECTION_GAP' },
@@ -247,7 +247,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         {
           value: 'clear',
           signalValue: 'clear',
-          label: 'One fairly clear kind of role',
+          label: 'Most of my search is focused on one kind of role',
           labelKey: `${K}.target.clear`,
         },
       ],
@@ -267,7 +267,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
       options: [
         {
           value: 'cannotYet',
-          label: 'Honestly, I cannot do that work yet',
+          label: 'I haven’t really done that kind of work yet',
           labelKey: `${K}.proof.cannotYet`,
           // NOT a proof gap. Sending someone who cannot yet do the work to "make your experience
           // visible" asks them to evidence something that is not there.
@@ -277,14 +277,14 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
           value: 'cannotShow',
           // His value, not a word of ours: `visibleProofMissing: yes` means the proof IS missing.
           signalValue: 'yes',
-          label: 'I can do it, but it is hard to show',
+          label: 'I can do it, but it’s hard to show with clear examples',
           labelKey: `${K}.proof.cannotShow`,
           outcome: { kind: 'family', subtype: 'LAND_ROLE', bottleneck: 'PROOF_GAP' },
         },
         {
           value: 'haveExamples',
           signalValue: 'no',
-          label: 'Yes, I have clear relevant examples',
+          label: 'I have clear examples that show I can do it',
           labelKey: `${K}.proof.haveExamples`,
         },
       ],
@@ -298,7 +298,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         {
           value: 'applicationsOnly',
           signalValue: 'no',
-          label: 'Almost entirely through open applications',
+          label: 'Most of my search relies on open applications',
           labelKey: `${K}.access.applicationsOnly`,
           outcome: {
             kind: 'family',
@@ -309,7 +309,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         {
           value: 'peopleToo',
           signalValue: 'yes',
-          label: 'Through conversations and people who know me, too',
+          label: 'I have people or channels I can realistically reach',
           labelKey: `${K}.access.peopleToo`,
         },
       ],
@@ -328,7 +328,7 @@ export const APPLY_NO_RESPONSE: CareerDiagnosisTree = {
         {
           value: 'barelyStarted',
           signalValue: 'no',
-          label: 'I have barely started',
+          label: 'Not yet — there have been too few or too different attempts',
           labelKey: `${K}.searchProcess.barelyStarted`,
           outcome: { kind: 'unresolved', reason: 'notEnoughEvidence' },
         },

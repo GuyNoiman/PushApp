@@ -16,10 +16,19 @@ import { join } from 'path';
 
 import { CAREER_SIGNALS, CAREER_SIGNAL_HINTS } from '../careerDiagnosis';
 
+const CARD_COPY = join(
+  __dirname,
+  '../../../../../../07_Assets/Partner_Packages/Career_v1.3_2026-08-25/03_Career_Diagnosis_Card_Copy_v1.0.json',
+);
+
 const MAPPING = join(
   __dirname,
-  '../../../../../../07_Assets/Partner_Packages/Career_v1.2_2026-08-23/02_Career_Interview_Diagnosis_Mapping_v1.2.json',
+  '../../../../../../07_Assets/Partner_Packages/Career_v1.3_2026-08-25/02_Career_Interview_Diagnosis_Mapping_v1.3.json',
 );
+
+interface CardCopy {
+  copy: Record<string, Record<string, { en: string; he: string }>>;
+}
 
 interface MappingQuestion {
   id: string;
@@ -32,6 +41,7 @@ const mapping = JSON.parse(readFileSync(MAPPING, 'utf8')) as {
   conditionalRoutingQuestions: MappingQuestion[];
 };
 const authored = [...mapping.coreDiagnosisQuestions, ...mapping.conditionalRoutingQuestions];
+const cards = (JSON.parse(readFileSync(CARD_COPY, 'utf8')) as CardCopy).copy;
 
 describe('career signal parity with the partner package', () => {
   it('names only signals he authored', () => {
@@ -64,6 +74,46 @@ describe('career signal parity with the partner package', () => {
     const classified = new Set(CAREER_SIGNAL_HINTS.map((h) => h.signal));
     for (const question of APPLY_NO_RESPONSE.questions) {
       expect(classified.has(question.signal)).toBe(true);
+    }
+  });
+});
+
+describe('the words on the cards are HIS', () => {
+  /**
+   * Our option value → the (signal, contract value) whose approved wording it carries. The three
+   * options not listed are ours rather than his: they split `searchHistorySufficient: yes` further
+   * than his mapping does, because "the search falls apart" and "I reach interviews and it stops
+   * there" route to two different families. He has been told they are ours.
+   */
+  const CARD_FOR: Record<string, [signal: string, value: string]> = {
+    broad: ['targetClarity', 'broad'],
+    clear: ['targetClarity', 'clear'],
+    cannotYet: ['existingRelevantExperience', 'no'],
+    cannotShow: ['visibleProofMissing', 'yes'],
+    haveExamples: ['visibleProofMissing', 'no'],
+    applicationsOnly: ['peopleAccess', 'no'],
+    peopleToo: ['peopleAccess', 'yes'],
+    barelyStarted: ['searchHistorySufficient', 'no'],
+  };
+
+  it('matches the approved card copy word for word', () => {
+    // The wording IS the routing: a card somebody misreads is a person routed to the wrong Journey,
+    // which is a content decision and therefore his. We asked him to write these; this is what stops
+    // us drifting away from what he wrote.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { APPLY_NO_RESPONSE } = require('../careerDiagnosis');
+    for (const question of APPLY_NO_RESPONSE.questions) {
+      for (const option of question.options) {
+        const card = CARD_FOR[option.value];
+        if (!card) continue;
+        expect(option.label).toBe(cards[card[0]][card[1]].en);
+      }
+    }
+  });
+
+  it('has an approved Hebrew card for every English one we use', () => {
+    for (const [signal, value] of Object.values(CARD_FOR)) {
+      expect(cards[signal][value].he.length).toBeGreaterThan(0);
     }
   });
 });

@@ -6,6 +6,9 @@ Scope: Names proposed during the founder/Codex naming discussion. Search covered
 products, and mobile applications, with extra weight given to personal growth, coaching, wellness,
 goals, habits, and social-support products.
 
+> The complete living list—including unscreened and reconstructed candidates—is maintained in
+> `05_Research/Product_Name_Candidate_Register.md`. This file records only the 2026-08-12 screening pass.
+
 ## How to read the result
 
 - **Reject** — exact or near-exact active name in a directly overlapping category.

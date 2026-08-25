@@ -1,0 +1,259 @@
+{
+  "version": "1.0",
+  "purpose": "Approved user-facing card wording for Career diagnosis. Keys are signal -> contract value.",
+  "rule": "Use the contract value as the answer key. Do not use a separate readable kind identifier.",
+  "copy": {
+    "careerDirectionClarity": {
+      "unclear": {
+        "en": "I’m still figuring out what direction fits me",
+        "he": "אני עדיין מנסה להבין לאן נכון לי לכוון"
+      },
+      "partial": {
+        "en": "I have a couple of directions I’m considering",
+        "he": "יש לי כמה כיוונים על הפרק"
+      },
+      "clear": {
+        "en": "I have a fairly clear direction in mind",
+        "he": "יש לי כיוון די ברור"
+      }
+    },
+    "activeJobSearch": {
+      "yes": {
+        "en": "I’m already in an active job search",
+        "he": "אני כבר בתוך חיפוש עבודה פעיל"
+      },
+      "no": {
+        "en": "I’m still deciding or preparing",
+        "he": "אני עדיין בשלב של החלטה או הכנה"
+      }
+    },
+    "targetClarity": {
+      "broad": {
+        "en": "My search spans several different kinds of roles",
+        "he": "החיפוש שלי מתפרס על כמה סוגי תפקידים שונים"
+      },
+      "clear": {
+        "en": "Most of my search is focused on one kind of role",
+        "he": "רוב החיפוש שלי ממוקד בסוג תפקיד אחד"
+      }
+    },
+    "existingRelevantExperience": {
+      "yes": {
+        "en": "I’ve already done work that is genuinely similar",
+        "he": "כבר עשיתי עבודה שבאמת דומה למה שאני רוצה לעשות"
+      },
+      "no": {
+        "en": "I haven’t really done that kind of work yet",
+        "he": "עוד לא באמת עשיתי עבודה מהסוג הזה"
+      },
+      "unknown": {
+        "en": "I’m not sure what in my experience is actually relevant",
+        "he": "לא ברור לי מה מתוך הניסיון שלי באמת רלוונטי"
+      }
+    },
+    "visibleProofMissing": {
+      "yes": {
+        "en": "I can do it, but it’s hard to show with clear examples",
+        "he": "יש לי יכולת, אבל קשה לי להראות אותה בדוגמאות ברורות"
+      },
+      "no": {
+        "en": "I have clear examples that show I can do it",
+        "he": "יש לי דוגמאות ברורות שמראות את היכולת שלי"
+      },
+      "unknown": {
+        "en": "I’m not sure how convincing my examples are",
+        "he": "לא ברור לי עד כמה הדוגמאות שלי באמת משכנעות"
+      }
+    },
+    "peopleAccess": {
+      "yes": {
+        "en": "I have people or channels I can realistically reach",
+        "he": "יש לי אנשים או ערוצים שבאמת אפשר להגיע דרכם להזדמנויות"
+      },
+      "no": {
+        "en": "Most of my search relies on open applications",
+        "he": "רוב החיפוש שלי נשען על הגשות פתוחות"
+      },
+      "unknown": {
+        "en": "I haven’t really tested this route yet",
+        "he": "עוד לא באמת בדקתי את הערוץ הזה"
+      }
+    },
+    "recentInterviewEvidence": {
+      "yes": {
+        "en": "I’ve had a relevant interview recently",
+        "he": "היה לי לאחרונה ראיון רלוונטי"
+      },
+      "no": {
+        "en": "I haven’t had a relevant interview recently",
+        "he": "לא היה לי ראיון רלוונטי לאחרונה"
+      },
+      "unknown": {
+        "en": "I’m not sure my last interview is relevant enough",
+        "he": "לא ברור לי אם הראיון האחרון מספיק רלוונטי"
+      }
+    },
+    "searchHistorySufficient": {
+      "yes": {
+        "en": "I’ve done enough similar searching to see a pattern",
+        "he": "עשיתי מספיק חיפוש דומה כדי לראות דפוס"
+      },
+      "no": {
+        "en": "Not yet — there have been too few or too different attempts",
+        "he": "עוד לא — היו מעט מדי ניסיונות או שהם היו שונים מדי"
+      },
+      "unknown": {
+        "en": "I can’t really tell from what I’ve done so far",
+        "he": "קשה לי לדעת ממה שעשיתי עד עכשיו"
+      }
+    },
+    "targetStillMeaningful": {
+      "yes": {
+        "en": "Yes — this is still something I genuinely want",
+        "he": "כן — זה עדיין משהו שאני באמת רוצה"
+      },
+      "no": {
+        "en": "Not really — I’m mostly continuing because I’ve already invested in it",
+        "he": "לא ממש — בעיקר קשה לי לשחרר אחרי שכבר השקעתי בזה"
+      },
+      "unknown": {
+        "en": "I’m genuinely not sure anymore",
+        "he": "לא ברור לי כרגע אם זה עדיין באמת חשוב לי"
+      }
+    },
+    "realisticCapacity": {
+      "very_light": {
+        "en": "Only short bursts — less than an hour most weeks",
+        "he": "רק פרקי זמן קצרים — פחות משעה ברוב השבועות"
+      },
+      "light": {
+        "en": "About an hour a week",
+        "he": "בערך שעה בשבוע"
+      },
+      "moderate": {
+        "en": "About 1–3 hours a week",
+        "he": "בערך 1–3 שעות בשבוע"
+      },
+      "substantial": {
+        "en": "More than 3 hours a week",
+        "he": "יותר מ־3 שעות בשבוע"
+      },
+      "variable": {
+        "en": "It changes a lot from week to week",
+        "he": "זה משתנה מאוד משבוע לשבוע"
+      }
+    },
+    "socialSupportFit": {
+      "helpful": {
+        "en": "The right person usually helps me move",
+        "he": "מעורבות של האדם הנכון בדרך כלל עוזרת לי להתקדם"
+      },
+      "neutral": {
+        "en": "It usually doesn’t make much difference",
+        "he": "בדרך כלל זה לא משנה לי הרבה"
+      },
+      "friction": {
+        "en": "Involving other people usually makes it harder",
+        "he": "מעורבות של אנשים אחרים בדרך כלל מקשה עליי"
+      },
+      "depends": {
+        "en": "It really depends on who is involved and how",
+        "he": "זה מאוד תלוי במי מעורב ובאיזו דרך"
+      }
+    },
+    "transitionType": {
+      "new_field_or_function": {
+        "en": "I want to move into a different field or function",
+        "he": "אני רוצה לעבור לתחום או לפונקציה אחרת"
+      },
+      "new_industry_same_function": {
+        "en": "The same kind of work, in a different industry",
+        "he": "אותו סוג עבודה, בתעשייה אחרת"
+      },
+      "new_function_same_industry": {
+        "en": "A different kind of role, in the same industry",
+        "he": "סוג תפקיד אחר, באותה תעשייה"
+      },
+      "reentry": {
+        "en": "My goal is to return to work after a break",
+        "he": "המטרה שלי היא לחזור לשוק העבודה אחרי הפסקה"
+      },
+      "planned_exit": {
+        "en": "I want to leave my current role in a planned way",
+        "he": "אני רוצה לצאת מהתפקיד הנוכחי בצורה מסודרת"
+      }
+    },
+    "transitionPrimaryGap": {
+      "capability": {
+        "en": "I still need to build some of the ability the move requires",
+        "he": "עדיין חסרה לי חלק מהיכולת שהמעבר דורש"
+      },
+      "proof": {
+        "en": "I can do relevant work, but I need stronger evidence of it",
+        "he": "יש לי יכולת רלוונטית, אבל חסרות לי הוכחות ברורות"
+      },
+      "access": {
+        "en": "The direction makes sense, but I’m not reaching the right people or opportunities",
+        "he": "הכיוון הגיוני, אבל אני לא מגיע לאנשים או להזדמנויות הנכונים"
+      },
+      "direction": {
+        "en": "I’m still not clear enough on the transition target",
+        "he": "עדיין לא ברור לי מספיק לאיזה יעד במעבר אני מכוון"
+      },
+      "context_constraint": {
+        "en": "A real-life constraint is shaping what is possible right now",
+        "he": "אילוץ אמיתי בחיים כרגע קובע מה אפשרי"
+      }
+    },
+    "concretePromotionTarget": {
+      "yes": {
+        "en": "I’m aiming for a specific next level or role",
+        "he": "אני מכוון לרמה או לתפקיד הבא באופן די ברור"
+      },
+      "no": {
+        "en": "I mainly want to grow where I am",
+        "he": "אני בעיקר רוצה לגדול בתוך התפקיד הנוכחי"
+      },
+      "unknown": {
+        "en": "I think there is a next step, but it isn’t clear yet",
+        "he": "נראה שיש צעד הבא, אבל הוא עדיין לא ברור"
+      }
+    },
+    "growthSubBottleneck": {
+      "responsibility_scope": {
+        "en": "What I’m missing is more responsibility or scope",
+        "he": "מה שחסר לי הוא יותר אחריות או היקף"
+      },
+      "capability": {
+        "en": "I need to build a capability before the next step",
+        "he": "חסרה לי יכולת שצריך לבנות לפני הצעד הבא"
+      },
+      "access_visibility": {
+        "en": "I can probably do more, but I’m not getting the visibility or opportunity",
+        "he": "כנראה יש לי יכולת ליותר, אבל חסרה לי נראות או הזדמנות"
+      },
+      "context_constraint": {
+        "en": "The role or workplace itself limits the growth I want",
+        "he": "התפקיד או מקום העבודה עצמם מגבילים את הצמיחה שאני רוצה"
+      }
+    },
+    "currentRoleFitLever": {
+      "task_mix": {
+        "en": "The work itself and the mix of tasks",
+        "he": "העבודה עצמה ותמהיל המשימות"
+      },
+      "collaboration": {
+        "en": "How the work happens with the people around me",
+        "he": "איך העבודה מתנהלת מול האנשים סביבי"
+      },
+      "learning_growth": {
+        "en": "How much learning and growth the role gives me",
+        "he": "רמת הלמידה והצמיחה שיש לי בתפקיד"
+      },
+      "context_constraint": {
+        "en": "The role or workplace cannot realistically change enough",
+        "he": "התפקיד או מקום העבודה לא באמת ניתנים לשינוי מספיק"
+      }
+    }
+  }
+}

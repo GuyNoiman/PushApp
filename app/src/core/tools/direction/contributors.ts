@@ -11,9 +11,12 @@
  *  · **Values Clarification, top five → "what draws me".** Not an approximation of a Passion Map: it
  *    is a person's own answer to "which five do you want to live by, now", already narrowed and
  *    already ranked by them. It is the strongest material in the app for this drawer.
- *  · **Nothing at all → "what I bring".** Deliberately empty until Strength Evidence exists. Guessing
- *    at somebody's strengths from what they value would be the app telling a person what they are
- *    good at, which is the one thing this drawer must never do. So it starts empty and they type.
+ *  · **Strength Evidence's confirmed labels → "what I bring"** (2026-08-25). This drawer was
+ *    deliberately EMPTY until that tool existed, and the reason it was empty is the reason it can be
+ *    filled now: guessing at somebody's strengths from what they VALUE would be the app telling a
+ *    person what they are good at, while a confirmed strength is a label they wrote themselves about
+ *    a pattern in their own stories. The person is the author either way — that is the whole test.
+ *    Nothing arrives here unless they confirmed the result AND allowed it to be used.
  *
  * A contributor NEVER offers something the person has not already confirmed elsewhere. The founder's
  * own words for this tool are that it combines *approved* results — a phrase arriving in a drawer
@@ -27,6 +30,12 @@ import type { Chip } from './model';
 export interface ContributorInput {
   /** The Values Clarification's final five, in the person's order, already resolved to labels. */
   values?: readonly { key: string; label: string }[];
+  /**
+   * Strength Evidence's confirmed labels, in the person's order. Absent when the tool has not been
+   * done, when the result is not confirmed, or when personalisation was never allowed or was
+   * revoked — the caller reads them through `derivedSummary`, which returns null in all three cases.
+   */
+  strengths?: readonly { key: string; label: string }[];
 }
 
 /**
@@ -42,7 +51,15 @@ export function contributedChips(input: ContributorInput): Chip[] {
     chips.push({ id: `values-${value.key}`, drawer: 'draws', text: value.label, source: 'values' });
   }
 
-  // "What I bring" has no contributor yet, on purpose — see the header.
+  for (const strength of input.strengths ?? []) {
+    chips.push({
+      id: `strength-${strength.key}`,
+      drawer: 'brings',
+      text: strength.label,
+      source: 'strengthEvidence',
+    });
+  }
+
   return chips;
 }
 

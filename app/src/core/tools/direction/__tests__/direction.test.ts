@@ -174,3 +174,26 @@ describe('the words worth explaining', () => {
     expect(s.glosses.growth).toBeUndefined();
   });
 });
+
+describe('the "what I bring" drawer, once Strength Evidence exists (2026-08-25)', () => {
+  it('offers confirmed strengths, and still nothing derived from what they value', () => {
+    const chips = contributedChips({
+      values: [{ key: 'growth', label: 'Growth' }],
+      strengths: [{ key: 's1', label: 'Steady when it matters' }],
+    });
+
+    const brings = chips.filter((c) => c.drawer === 'brings');
+    expect(brings.map((c) => c.text)).toEqual(['Steady when it matters']);
+    // The person authored both, which is the whole test: a value is what they chose to live by, and
+    // a confirmed strength is their own word for a pattern in their own stories. Neither is us
+    // telling them what they are good at — and a VALUE still never lands in this drawer.
+    expect(brings.every((c) => c.source === 'strengthEvidence')).toBe(true);
+  });
+
+  it('is empty when the tool was never done, or the result never confirmed and allowed', () => {
+    // `strengths` is absent in exactly those cases: the caller reads them through `derivedSummary`,
+    // which returns null when it is unconfirmed, unpermitted, or revoked.
+    const chips = contributedChips({ values: [{ key: 'growth', label: 'Growth' }] });
+    expect(chips.filter((c) => c.drawer === 'brings')).toEqual([]);
+  });
+});

@@ -97,6 +97,33 @@ which we checked rather than assumed. It matters only for what gets authored nex
 more than sixty days to make its claim true is an arc the creation flow cannot offer as-is. A Journey
 may still RUN longer through an explicit extension, which is a decision made with the plan in hand.
 
+## Putting it on your Android phone
+
+You should be able to see the thing you have been authoring for. It is not in the Play Store yet, so
+the install is a direct one — three minutes, and Android will ask you to confirm something along the
+way, which is normal for an app that did not come from the store.
+
+1. On the **phone itself** (not a desktop), open **https://pushapp-invite.expo.app**
+2. Tap **Install for Android**. It opens the build page and downloads the file.
+3. Android will say it does not usually allow installs from this source and offer a **Settings**
+   button. Allow it for the browser you are using, then come back and confirm the install. That
+   permission is per-app and you can switch it off afterwards.
+4. Open PushApp, choose your language on the first screen, and the questionnaire follows.
+
+Two things worth knowing before you judge what you see:
+
+- **The interface is fully translated into Hebrew and English.** The Career content itself is in
+  English, as authored.
+- **Updates arrive on their own.** When we publish, opening the app downloads it in the background
+  and it takes effect the next time you open it. So if something looks wrong, close it completely and
+  open it again before telling us — you may be a version behind.
+
+And if something IS wrong, there is now a way to say so from inside the app: **Settings → Help and
+feedback**. It sends us the category, what you wrote, and the version you were running, and nothing
+from your own Journeys, tools or conversations. That is a better channel than email for anything you
+hit while using it, because the version is attached automatically and we can tell exactly which copy
+of the app you were looking at.
+
 ## Content: still no ask
 
 You said not to send more Career content until the diagnosis contract is validated in the app, and we

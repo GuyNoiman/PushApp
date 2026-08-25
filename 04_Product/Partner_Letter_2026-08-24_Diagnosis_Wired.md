@@ -1,6 +1,6 @@
 # Letter to the coaching partner — the diagnosis is wired, and one thing needs your correction
 
-Status: **Ready to send.** Written 2026-08-24. It follows
+Status: **Ready to send.** Written 2026-08-24, updated 2026-08-25 (the free-text reading, and the sixty-day ceiling). It follows
 `Partner_Letter_2026-08-21_Tools_And_Next_Package.md`, whose §2.1 ask he ANSWERED in the
 `Career_v1.2_2026-08-23` package — so that letter's main request is closed and is not repeated here.
 
@@ -38,6 +38,14 @@ further is asked.
 We also kept your rule that an unresolved diagnosis is a legitimate result. `capabilityGap`,
 `notEnoughEvidence` and `noClearPattern` are recorded on the plan rather than smoothed into the
 nearest family.
+
+**And your `means` field earned its keep in a way we did not expect.** Somebody answering in their
+own words used to record nothing at all — we could not match a sentence to a closed option, so the
+diagnosis quietly ended with no outcome. Now one call reads the whole sentence for every signal it
+supports, using your `means` lines as the contract, so "I only go for backend roles and my CV has
+real projects on it" settles two questions at once. A sentence that supports nothing makes the coach
+ask again rather than guess. That is the cards-first-to-conversation-first shift actually working,
+and it works because you wrote meanings rather than labels.
 
 ## What we need from you — the wording of the answers
 

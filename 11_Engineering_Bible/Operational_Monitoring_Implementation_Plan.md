@@ -43,7 +43,27 @@ whole set** — it exists because a person chose to write it, which is the entir
 Retention (§12) runs as a nightly `pg_cron` job in the same file, the third one in this project after
 Mirror's raw answers and the inactivity evaluator.
 
-## 2. Stage 2 — report intake in the app (no build)
+## 2. Stage 2 — report intake in the app (no build) — **BUILT 2026-08-25, minus the screenshot**
+
+**Shipped:** Settings → *Help and feedback* → category, description, an optional reply address, and
+the allowlisted diagnostics of §8.3. The screen states what travels with the report before it is
+sent, and a failure to send is said out loud — a report that silently vanished is worse than a form
+that admits it failed, because the person believes they told us.
+
+**Two things the build made concrete:**
+
+1. **The screenshot is NOT shipped, and the reason is the contract rather than the effort.** §8.4
+   requires metadata stripping including location, which means re-encoding the file, which means
+   `expo-image-manipulator` — a native module, and therefore a build. `expo-image-picker` is already
+   in the build, so a picker would have been easy and would have shipped a promise we are not
+   keeping. It arrives with the same build that carries the crash SDK.
+2. **The contact email cannot be prefilled** (§8.3 says "when available"). It is not available:
+   `AuthUser` holds an id, an anonymous flag and provider names, and never the address — the PII
+   boundary (red-line R1). The field starts empty and the hint says why it is worth filling. That is
+   the cost of a boundary chosen on purpose, and the right place to pay it is here rather than by
+   widening the boundary.
+
+### The original plan for this stage
 
 Settings → *Help and feedback*, plus the in-context error states. This is the highest user-visible
 value in the whole PRD and it needs neither a vendor nor a build: today a person who hits something

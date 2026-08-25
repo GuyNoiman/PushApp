@@ -6,7 +6,8 @@
     "account": "Account",
     "app": "App",
     "data": "Your data",
-    "developer": "Developer"
+    "developer": "Developer",
+    "help": "Help"
   },
   "dreams": {
     "rowDetail": "The Dreams behind your Journeys, shaped by your coach."
@@ -138,5 +139,35 @@
     "signOutDetail": "Your record stays on this phone.",
     "disconnected": "Not connected to the server",
     "disconnectedDetail": "Your Journeys are safe on this device. The coach and your Circle will not work until the connection is back."
+  },
+  "report": {
+    "title": "Help and feedback",
+    "rowLabel": "Help and feedback",
+    "rowDetail": "Tell us what is wrong, or what would help",
+    "intro": "If something is broken, confusing, or missing, tell us here. A person reads every one of these.",
+    "categoryLabel": "What is this about?",
+    "category": {
+      "not_working": "Something is not working",
+      "account": "Account problem",
+      "content": "Incorrect or inappropriate content",
+      "other_user": "Problem with another person",
+      "suggestion": "Improvement suggestion",
+      "feedback": "General feedback",
+      "other": "Other"
+    },
+    "descriptionLabel": "What happened?",
+    "descriptionPlaceholder": "What were you doing, and what did you expect instead?",
+    "emailLabel": "Where should we reply?",
+    "emailPlaceholder": "you@example.com",
+    "emailHint": "Optional. We only use it to answer this report, and it changes nothing about your account.",
+    "whatWeSend": "Sent with this: your app version, the update running, your platform and OS version, and your language. Nothing from your Journeys, your Tools, your coach conversations or your messages.",
+    "send": "Send",
+    "sending": "Sending…",
+    "badEmail": "That address does not look right.",
+    "failed": "We could not send it just now. Try again in a moment.",
+    "sentTitle": "Thank you",
+    "sentWithEmail": "We have it, and we will write to you at that address.",
+    "sentNoEmail": "We have it. You did not leave an address, so we cannot write back — that is fine, and it still helps.",
+    "done": "Done"
   }
 }

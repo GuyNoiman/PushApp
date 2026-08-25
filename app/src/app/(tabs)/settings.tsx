@@ -356,6 +356,19 @@ export default function SettingsScreen() {
             />
           </SettingsSection>
 
+          {/* Help and feedback — the one way a person can tell us something is wrong (Operational
+              Monitoring PRD §8.1). It sits above "Your data" because it is the row somebody looks
+              for when the app has just disappointed them, and that is not a moment to make them
+              scroll past a delete button. */}
+          <SettingsSection title={t('sections.help')}>
+            <SettingsRow
+              icon="chatbox-ellipses-outline"
+              label={t('report.rowLabel')}
+              detail={t('report.rowDetail')}
+              onPress={() => router.push('/settings/report' as Href)}
+            />
+          </SettingsSection>
+
           {/* Your data — the two wired account actions (O1). Export is local-only;
               Delete is destructive and gated behind an explicit confirmation. */}
           <SettingsSection title={t('sections.data')}>

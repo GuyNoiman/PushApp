@@ -32,6 +32,10 @@ export const TOOL_RECORD_KEYS = [
   'obstacleToAction',
   'supportMap',
   'selfCompassion',
+  // Strength Evidence keeps ONE record, not a list: the map a person is building or has confirmed.
+  // It is stored here anyway, because the alternative is an eighth provider that would have to get
+  // persistence, corruption handling and account deletion right on its own.
+  'strengthEvidence',
 ] as const;
 export type ToolRecordKey = (typeof TOOL_RECORD_KEYS)[number];
 

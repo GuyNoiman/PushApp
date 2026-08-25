@@ -17,7 +17,8 @@
     "decisionClarity": "What really matters to me",
     "currentLoad": "What am I carrying right now",
     "obstacle": "From obstacle to action",
-    "supportMap": "My support map"
+    "supportMap": "My support map",
+    "strengthEvidence": "Strength Evidence"
   },
   "questionnaire": {
     "save": "Save my answers"
@@ -72,7 +73,8 @@
     "decisionClarity": "Lays out the four sides of a hard decision without deciding for you.",
     "currentLoad": "Turns a heavy week into something you can actually look at.",
     "obstacle": "Turns the thing that keeps stopping you into one sentence you can act on.",
-    "supportMap": "Shows who you would want beside you, and in which moments."
+    "supportMap": "Shows who you would want beside you, and in which moments.",
+    "strengthEvidence": "Name what you are good at, with real moments behind each one."
   },
   "lifeWheel": {
     "title": "Life Wheel",
@@ -1256,5 +1258,100 @@
     "denied": "Your phone has that turned off for PushApp. Settings can change it whenever you want.",
     "failed": "That did not work. Nothing was saved."
   },
-  "more": "More"
+  "more": "More",
+  "strengthEvidence": {
+    "stepLabel": "Strength Evidence",
+    "addMoment": "Add this moment",
+    "skipPrompt": "Skip this one",
+    "savedAsYouGo": "Saved as you write. You can leave and come back.",
+    "opening": {
+      "title": "What you are actually good at",
+      "lead": "Not a test and not a label. You collect a few real moments, and then you name what keeps showing up in them.",
+      "outcome": "Up to five strengths, each one standing on a moment you can point at",
+      "time": "About 12 minutes",
+      "start": "Start"
+    },
+    "prompts": {
+      "earlyMemory": {
+        "label": "An early memory",
+        "question": "Think back before work and study. What is something you remember doing that felt like you?",
+        "placeholder": "What happened, and what did you do?",
+        "help": "Childhood or your teens is fine. Small is fine."
+      },
+      "workOrLearning": {
+        "label": "Work or learning",
+        "question": "When did you do something at work or in study that went genuinely well?",
+        "placeholder": "What was it, and what did you actually do?",
+        "help": "Not the outcome — what you did."
+      },
+      "relationships": {
+        "label": "With people",
+        "question": "When were you useful to somebody in a way that stayed with them?",
+        "placeholder": "What did you do for them?",
+        "help": "A friend, a colleague, a stranger."
+      },
+      "peopleAskMe": {
+        "label": "What people ask you for",
+        "question": "What do people come to you for, without you offering?",
+        "placeholder": "What is it they ask, and why you?",
+        "help": "The thing you find ordinary is usually the answer."
+      },
+      "hardSituation": {
+        "label": "A hard moment",
+        "question": "When did something go wrong and you handled it better than you expected?",
+        "placeholder": "What happened, and what did you do?",
+        "help": "Handled well does not mean it ended well."
+      },
+      "feltNatural": {
+        "label": "Something that felt natural",
+        "question": "What have you done that others found hard and you did not?",
+        "placeholder": "What was it?",
+        "help": "This is the one people skip. It is worth not skipping."
+      }
+    },
+    "review": {
+      "question": "Your moments",
+      "help_one": "{{count}} moment so far.",
+      "help_other": "{{count}} moments so far.",
+      "continue": "Continue",
+      "addAnother": "Add another",
+      "remove": "Remove"
+    },
+    "mode": {
+      "question": "How would you like to find the patterns?",
+      "help": "Both work. Doing it yourself keeps everything on this phone.",
+      "manual": "I will find them myself",
+      "coach": "Ask the coach to look",
+      "coachSoon": "The coach reading your moments is not switched on yet, so this takes you to doing it yourself."
+    },
+    "group": {
+      "question": "What keeps showing up?",
+      "help": "Name it in your own words, then attach the moments it came from. Up to {{max}}.",
+      "placeholder": "For example: steady when it matters",
+      "add": "Add",
+      "attached_one": "{{count}} moment attached",
+      "attached_other": "{{count}} moments attached",
+      "remove": "Remove this one",
+      "continue": "Continue"
+    },
+    "apply": {
+      "question": "{{label}}",
+      "help": "Two optional lines. They are reflection, not judgement.",
+      "helpsWhen": "When does this help you?",
+      "helpsPlaceholder": "In what kind of situation",
+      "tooMuchWhen": "When can too much of it get in the way?",
+      "tooMuchPlaceholder": "Optional",
+      "continue": "Continue"
+    },
+    "result": {
+      "title": "Your evidence map",
+      "lead": "Yours to edit whenever it stops being true.",
+      "evidence_one": "Standing on {{count}} moment",
+      "evidence_other": "Standing on {{count}} moments",
+      "permission": "Let the coach use these",
+      "permissionOn": "On. The coach sees the names and how many moments are behind each — never the moments themselves.",
+      "permissionOff": "Off. Nothing from here reaches the coach.",
+      "done": "Done"
+    }
+  }
 }

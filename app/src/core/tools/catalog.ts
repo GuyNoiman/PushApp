@@ -69,6 +69,7 @@ export const TOOL_CATALOG: readonly ToolDefinition[] = [
   { key: 'lifeWheel', category: 'selfKnowledge', icon: 'pie-chart-outline', route: '/tools/life-wheel', minutes: 8 },
   { key: 'passionMap', category: 'selfKnowledge', icon: 'sparkles-outline', route: '/tools/passion-map', minutes: 7 },
   { key: 'currentLoad', category: 'selfKnowledge', icon: 'grid-outline', route: '/tools/current-load', minutes: 8 },
+  { key: 'strengthEvidence', category: 'selfKnowledge', icon: 'ribbon-outline', route: '/tools/strength-evidence', minutes: 12 },
 
   // ── לבחור כיוון ──────────────────────────────────────────────────────────
   { key: 'valuesClarity', category: 'direction', icon: 'compass-outline', route: '/tools/values', minutes: 5 },

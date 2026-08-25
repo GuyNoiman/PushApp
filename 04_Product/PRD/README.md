@@ -44,6 +44,12 @@ error states.
 
 ## Index
 
+- `Operational_Monitoring_Admin_Console_PRD.md` — one internal web console for System Health, approved
+  product KPIs, User Reports, and Versions; mandatory privacy-allowlisted crash diagnostics, separate KPI
+  consent, multi-role access, report screenshots/email follow-up, release correlation, strict zero-overage
+  controls, and Sentry as the only new initial vendor over existing Supabase + Expo/EAS sources. **Stage: MVP
+  release-safety foundation · Status: Approved product specification; ready for architecture planning and a
+  required native build; Gradual Release remains a separate follow-up PRD.**
 - `Coach_Conversation_PRD.md` — one rolling Coach thread with typed context from Journey edit, miss recovery,
   real-time support, Journey creation, and general reflection; protected history, seven-day unfinished drafts,
   explicit proposal approval, and production safety/failure rules. **Stage: MVP · Status: approved product

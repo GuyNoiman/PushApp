@@ -77,14 +77,13 @@ Two things must also become TRUE in the app before publication, not merely writt
 that holds a birth date is encrypted or stops holding a full date, and in-app account deletion is
 verified end to end against the live database.
 
-## ▶ THE ONE THING TO DO FIRST, NEXT SESSION
+## ▶ THE UPDATE IS ALREADY PUBLISHED
 
-**Publish the over-the-air update, to BOTH channels.** R10 and R6 are JavaScript and reach both
-phones without a build; a publish to `production` alone reaches the iPhone and nobody else.
+Done at the end of this session, to **BOTH** channels — `production` AND `preview`, because the
+Android build listens to `preview` and a production-only publish reaches the iPhone and nobody else.
+R10 and R6 are JavaScript, so opening the app is all either of them has to do.
 
-```bash
-cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch production --message "<what changed>" --non-interactive
-```
+Task 0 for the NEXT session is the same thing for whatever it builds.
 
 ## ▶ WHAT IS LEFT, AND WHO IT IS WAITING ON
 

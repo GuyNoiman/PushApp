@@ -42,6 +42,9 @@ function sampleParams<T extends NotificationType>(type: T): NotificationParamsBy
   return { name: 'Dana' } as NotificationParamsByType[T];
 }
 
+/** The four communication styles, in PRD §4 order. */
+const STYLES = ['direct', 'explanatory', 'warm', 'energizing'] as const;
+
 describe('buildNotificationContent', () => {
   afterEach(async () => {
     await changeLanguage('en');
@@ -134,12 +137,52 @@ describe('buildNotificationContent', () => {
       expect(warm.body).not.toContain('{{');
     });
 
-    it('falls back to base copy for a type that has no toned variant yet', () => {
-      // The social types have no toned variants authored yet — every style resolves the base copy.
+    it('EVERY toneable type speaks in all four voices, in both languages (D84)', async () => {
+      // The founder's decision of 2026-08-26: the style a person chose shapes the wording of every
+      // notification, not only the reminder. Before this, ten types were base-only — someone who
+      // picked "direct" still got the neutral sentence everywhere but their reminder.
+      const toneable = NOTIFICATION_TYPE_IDS.filter((t) => !NOTIFICATION_TYPES[t].neverToned);
+      for (const lang of ['en', 'he'] as const) {
+        await changeLanguage(lang);
+        for (const type of toneable) {
+          const params = sampleParams(type);
+          const base = buildNotificationContent(type, params, { addressForm: 'neutral' });
+          const voices = STYLES.map((styleId) =>
+            buildNotificationContent(type, params, { addressForm: 'neutral', styleId }),
+          );
+          for (const voice of voices) {
+            expect(voice.title).not.toContain('{{');
+            expect(voice.body).not.toContain('{{');
+            // A voice that resolved to the base copy means its variant is missing from the file.
+            expect(`${voice.title}|${voice.body}`).not.toBe(`${base.title}|${base.body}`);
+          }
+          // And the four are distinct from EACH OTHER — four keys pointing at one sentence would
+          // pass the check above and still leave the choice meaningless.
+          const distinct = new Set(voices.map((v) => `${v.title}|${v.body}`));
+          expect(distinct.size).toBe(STYLES.length);
+        }
+      }
+    });
+
+    it('still falls back to base copy when a variant is genuinely missing', () => {
+      // The safety net that makes authoring incremental: a missing key resolves the base sentence,
+      // never a raw i18n key on somebody's lock screen.
       const base = buildNotificationContent('ally_request', { name: 'Dana' }, { addressForm: 'neutral' });
-      for (const styleId of ['direct', 'explanatory', 'warm', 'energizing'] as const) {
-        const toned = buildNotificationContent('ally_request', { name: 'Dana' }, { addressForm: 'neutral', styleId });
+      i18n.removeResourceBundle('en', 'notify');
+      i18n.addResourceBundle('en', 'notify', {
+        ...enNotify,
+        allyRequest: { title: enNotify.allyRequest.title, body: enNotify.allyRequest.body },
+      });
+      try {
+        const toned = buildNotificationContent(
+          'ally_request',
+          { name: 'Dana' },
+          { addressForm: 'neutral', styleId: 'warm' },
+        );
         expect(toned).toEqual(base);
+      } finally {
+        i18n.removeResourceBundle('en', 'notify');
+        i18n.addResourceBundle('en', 'notify', enNotify);
       }
     });
 

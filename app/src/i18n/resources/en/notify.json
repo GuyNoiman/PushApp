@@ -19,35 +19,99 @@
   },
   "allyRequest": {
     "title": "New Support Circle request",
-    "body": "{{name}} would like to support you."
+    "body": "{{name}} would like to support you.",
+    "title_direct": "New Support Circle request",
+    "body_direct": "{{name}} asked to support you. Review it now.",
+    "title_explanatory": "A new Support Circle request",
+    "body_explanatory": "{{name}} would like to support one of your Journeys. Open the request to accept or decline.",
+    "title_warm": "Someone would like to walk with you",
+    "body_warm": "{{name}} asked to support you. Take a look and see if it feels right.",
+    "title_energizing": "Your Support Circle may be growing",
+    "body_energizing": "{{name}} wants to support you. Open the request and choose."
   },
   "allyAccepted": {
     "title": "You have a new Ally",
-    "body": "{{name}} accepted your request."
+    "body": "{{name}} accepted your request.",
+    "title_direct": "{{name}} accepted",
+    "body_direct": "They are now in your Support Circle.",
+    "title_explanatory": "Your request was accepted",
+    "body_explanatory": "{{name}} accepted your request and is now an Ally on that Journey.",
+    "title_warm": "You are not doing this alone",
+    "body_warm": "{{name}} said yes. They are with you on that Journey now.",
+    "title_energizing": "You have a new Ally",
+    "body_energizing": "{{name}} is in. Your Support Circle just grew."
   },
   "allyDeclined": {
     "title": "Support Circle update",
-    "body": "{{name}} isn't able to join right now."
+    "body": "{{name}} isn't able to join right now.",
+    "title_direct": "Request declined",
+    "body_direct": "{{name}} is not joining right now.",
+    "title_explanatory": "Your request was not accepted",
+    "body_explanatory": "{{name}} is not able to join right now. You can ask someone else whenever you like.",
+    "title_warm": "Not this time",
+    "body_warm": "{{name}} is not able to join right now. It says nothing about you, and there are other people you can ask.",
+    "title_energizing": "Support Circle update",
+    "body_energizing": "{{name}} is not joining this time. Someone else might be the right fit."
   },
   "allyPermissionChanged": {
     "title": "Sharing updated",
-    "body": "{{name}} changed what they share with you."
+    "body": "{{name}} changed what they share with you.",
+    "title_direct": "Sharing changed",
+    "body_direct": "{{name}} changed what they share with you.",
+    "title_explanatory": "What {{name}} shares has changed",
+    "body_explanatory": "They updated what you can see of their Journey. Open their profile for the current view.",
+    "title_warm": "{{name}} adjusted what they share",
+    "body_warm": "What you can see of their Journey has changed. That part is always theirs to decide.",
+    "title_energizing": "Sharing updated",
+    "body_energizing": "{{name}} changed what you can see. Take a look."
   },
   "allyRemoved": {
     "title": "Support Circle update",
-    "body": "{{name}} stepped back from a Journey."
+    "body": "{{name}} stepped back from a Journey.",
+    "title_direct": "A Journey lost an Ally",
+    "body_direct": "{{name}} stepped back.",
+    "title_explanatory": "{{name}} stepped back",
+    "body_explanatory": "They are no longer supporting that Journey. Nothing else about it has changed.",
+    "title_warm": "{{name}} stepped back for now",
+    "body_warm": "They are no longer supporting that Journey. People come and go, and the Journey is still yours.",
+    "title_energizing": "Support Circle update",
+    "body_energizing": "{{name}} stepped back from a Journey. Yours keeps going."
   },
   "journeyFrozen": {
     "title": "A Journey is on pause",
-    "body": "{{name}} paused a Journey for now."
+    "body": "{{name}} paused a Journey for now.",
+    "title_direct": "{{name}} paused a Journey",
+    "body_direct": "It is on hold for now.",
+    "title_explanatory": "A Journey is on pause",
+    "body_explanatory": "{{name}} paused a Journey you support. Nothing is lost; it continues when they resume.",
+    "title_warm": "{{name}} is taking a pause",
+    "body_warm": "A Journey you support is on hold. A pause is part of it.",
+    "title_energizing": "A Journey is on pause",
+    "body_energizing": "{{name}} paused a Journey. It will be there when they come back."
   },
   "journeyResumed": {
     "title": "A Journey is moving again",
-    "body": "{{name}} picked a Journey back up."
+    "body": "{{name}} picked a Journey back up.",
+    "title_direct": "{{name}} resumed a Journey",
+    "body_direct": "It is moving again.",
+    "title_explanatory": "A Journey is moving again",
+    "body_explanatory": "{{name}} picked a Journey back up, from where it stopped.",
+    "title_warm": "{{name}} is back on the road",
+    "body_warm": "A Journey you support is moving again. A good moment for a word.",
+    "title_energizing": "{{name}} is back",
+    "body_energizing": "A Journey you support is moving again. Cheer them on."
   },
   "journeyCompleted": {
     "title": "A Journey is complete",
-    "body": "{{name}} reached the end of a Journey."
+    "body": "{{name}} reached the end of a Journey.",
+    "title_direct": "{{name}} completed a Journey",
+    "body_direct": "It is done.",
+    "title_explanatory": "A Journey is complete",
+    "body_explanatory": "{{name}} reached the end of a Journey you supported.",
+    "title_warm": "{{name}} made it",
+    "body_warm": "A Journey you supported is complete. You were part of that.",
+    "title_energizing": "{{name}} finished it",
+    "body_energizing": "A Journey you supported is complete. Send them something."
   },
   "journeyClosed": {
     "title": "A Journey has stopped",

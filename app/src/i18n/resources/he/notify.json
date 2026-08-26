@@ -31,35 +31,99 @@
   },
   "allyRequest": {
     "title": "בקשה חדשה למעגל התמיכה",
-    "body": "התקבלה בקשת תמיכה מ{{name}}."
+    "body": "התקבלה בקשת תמיכה מ{{name}}.",
+    "title_direct": "בקשה חדשה למעגל התמיכה",
+    "body_direct": "{{name}} ביקש לתמוך בכם. אפשר לאשר או לדחות.",
+    "title_explanatory": "בקשה חדשה למעגל התמיכה",
+    "body_explanatory": "{{name}} רוצה ללוות אחד מהמסעות שלכם. פתיחת הבקשה תראה בדיוק מה ייחשף.",
+    "title_warm": "מישהו רוצה ללכת אתכם",
+    "body_warm": "{{name}} ביקש לתמוך בכם. אפשר להסתכל ולראות אם זה מתאים.",
+    "title_energizing": "מעגל התמיכה שלכם אולי גדל",
+    "body_energizing": "{{name}} רוצה לתמוך בכם. הבקשה מחכה."
   },
   "allyAccepted": {
     "title": "יש לך בעל ברית חדש",
-    "body": "{{name}} עכשיו במעגל התמיכה שלך."
+    "body": "{{name}} עכשיו במעגל התמיכה שלך.",
+    "title_direct": "{{name}} אישר",
+    "body_direct": "מעכשיו במעגל התמיכה שלכם.",
+    "title_explanatory": "הבקשה שלכם אושרה",
+    "body_explanatory": "{{name}} אישר את הבקשה, ומלווה מעכשיו את המסע הזה.",
+    "title_warm": "אתם לא לבד בזה",
+    "body_warm": "{{name}} אמר כן. הוא אתכם במסע הזה מעכשיו.",
+    "title_energizing": "יש לכם בעל ברית חדש",
+    "body_energizing": "{{name}} נכנס פנימה. מעגל התמיכה שלכם גדל."
   },
   "allyDeclined": {
     "title": "עדכון ממעגל התמיכה",
-    "body": "הבקשה שלך ל{{name}} לא התקבלה כרגע."
+    "body": "הבקשה שלך ל{{name}} לא התקבלה כרגע.",
+    "title_direct": "הבקשה נדחתה",
+    "body_direct": "{{name}} לא מצטרף כרגע.",
+    "title_explanatory": "הבקשה שלכם לא אושרה",
+    "body_explanatory": "{{name}} לא יכול להצטרף כרגע. אפשר לבקש ממישהו אחר מתי שתרצו.",
+    "title_warm": "לא הפעם",
+    "body_warm": "{{name}} לא יכול להצטרף כרגע. זה לא אומר עליכם כלום, ויש עוד אנשים שאפשר לבקש מהם.",
+    "title_energizing": "עדכון ממעגל התמיכה",
+    "body_energizing": "{{name}} לא מצטרף הפעם. אולי מישהו אחר יתאים בדיוק."
   },
   "allyPermissionChanged": {
     "title": "עדכון שיתוף",
-    "body": "השיתוף של {{name}} עודכן."
+    "body": "השיתוף של {{name}} עודכן.",
+    "title_direct": "השיתוף השתנה",
+    "body_direct": "{{name}} שינה מה הוא משתף אתכם.",
+    "title_explanatory": "מה ש{{name}} משתף השתנה",
+    "body_explanatory": "מה שאתם רואים מהמסע שלו עודכן. בפרופיל שלו אפשר לראות את התמונה הנוכחית.",
+    "title_warm": "{{name}} שינה מה הוא משתף",
+    "body_warm": "מה שאתם רואים מהמסע שלו השתנה. זה תמיד ההחלטה שלו.",
+    "title_energizing": "השיתוף עודכן",
+    "body_energizing": "{{name}} שינה מה אתם רואים. שווה מבט."
   },
   "allyRemoved": {
     "title": "עדכון ממעגל התמיכה",
-    "body": "{{name}} כבר לא מלווה מסע."
+    "body": "{{name}} כבר לא מלווה מסע.",
+    "title_direct": "עדכון ממעגל התמיכה",
+    "body_direct": "{{name}} הפסיק ללוות מסע.",
+    "title_explanatory": "{{name}} סיים ללוות",
+    "body_explanatory": "הוא כבר לא מלווה את המסע הזה. שום דבר אחר בו לא השתנה.",
+    "title_warm": "{{name}} עשה צעד אחורה",
+    "body_warm": "הוא כבר לא מלווה את המסע הזה. אנשים באים והולכים, והמסע עדיין שלכם.",
+    "title_energizing": "עדכון ממעגל התמיכה",
+    "body_energizing": "{{name}} הפסיק ללוות מסע. שלכם ממשיך."
   },
   "journeyFrozen": {
     "title": "מסע בהשהיה",
-    "body": "המסע של {{name}} בהשהיה כרגע."
+    "body": "המסע של {{name}} בהשהיה כרגע.",
+    "title_direct": "{{name}} השהה מסע",
+    "body_direct": "המסע בהמתנה כרגע.",
+    "title_explanatory": "מסע בהשהיה",
+    "body_explanatory": "{{name}} השהה מסע שאתם מלווים. שום דבר לא אבד, והוא ימשיך כשיחזור.",
+    "title_warm": "{{name}} לוקח הפסקה",
+    "body_warm": "מסע שאתם מלווים בהמתנה. הפסקה היא חלק מהדרך.",
+    "title_energizing": "מסע בהשהיה",
+    "body_energizing": "{{name}} השהה מסע. הוא יחכה לו עד שיחזור."
   },
   "journeyResumed": {
     "title": "מסע חוזר לתנועה",
-    "body": "המסע של {{name}} חזר לתנועה."
+    "body": "המסע של {{name}} חזר לתנועה.",
+    "title_direct": "{{name}} חידש מסע",
+    "body_direct": "המסע בתנועה שוב.",
+    "title_explanatory": "מסע חוזר לתנועה",
+    "body_explanatory": "{{name}} חזר למסע מהנקודה שבה עצר.",
+    "title_warm": "{{name}} חזר לדרך",
+    "body_warm": "מסע שאתם מלווים בתנועה שוב. רגע טוב למילה טובה.",
+    "title_energizing": "{{name}} חזר",
+    "body_energizing": "מסע שאתם מלווים בתנועה שוב. שווה לעודד."
   },
   "journeyCompleted": {
     "title": "מסע הושלם",
-    "body": "המסע של {{name}} הושלם."
+    "body": "המסע של {{name}} הושלם.",
+    "title_direct": "{{name}} השלים מסע",
+    "body_direct": "המסע הסתיים.",
+    "title_explanatory": "מסע הושלם",
+    "body_explanatory": "{{name}} הגיע לסוף מסע שליוויתם.",
+    "title_warm": "{{name}} עשה את זה",
+    "body_warm": "מסע שליוויתם הושלם. הייתם חלק מזה.",
+    "title_energizing": "{{name}} סגר את זה",
+    "body_energizing": "מסע שליוויתם הושלם. שווה לשלוח לו משהו."
   },
   "journeyClosed": {
     "title": "מסע נעצר",

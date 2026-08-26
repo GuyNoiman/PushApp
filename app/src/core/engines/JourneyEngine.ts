@@ -185,6 +185,10 @@ export class JourneyEngine {
       why: input.why,
       durationDays: input.durationDays,
       rhythm: input.rhythm,
+      // The Planner's weekly session target for a frequency-based plan. It was computed and then
+      // silently dropped here until 2026-08-27, which meant the capacity answer (D82) moved a number
+      // on a plan that no longer carried it by the time anyone could see it.
+      ...(input.sessionsPerWeek != null ? { sessionsPerWeek: input.sessionsPerWeek } : {}),
       steps,
       createdAt: now,
       // `status` is authoritative for the Journeys-tab bucketing and for freeze/resume (J3); it is

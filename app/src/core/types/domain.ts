@@ -194,6 +194,17 @@ export interface Journey {
   why: string[];
   durationDays: number;
   rhythm: Rhythm;
+  /**
+   * The weekly session target for a FREQUENCY-BASED plan — one whose Steps carry no dates because
+   * they may be done on any day (Planner: `deriveSessionsPerWeek`). Undefined whenever the Steps ARE
+   * dated, which is the majority; the dates say it better than a number could.
+   *
+   * It is stored rather than recomputed because it is the plan's own answer, derived once from the
+   * constraints that built it — including the account's capacity answer (D82). Recomputing it later
+   * from a Journey that has since been re-planned would produce a different number than the one the
+   * user approved. Optional and additive: a Journey created before this existed simply has none.
+   */
+  sessionsPerWeek?: number;
   steps: Step[];
   createdAt: number;
   completedAt?: number;

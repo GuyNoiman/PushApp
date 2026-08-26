@@ -25,6 +25,7 @@
 import type { Cadence, Journey, JourneyStart, ParkedGoal } from '../types/domain';
 import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
+import { weeklyMinutesForCapacity } from '../onboarding/capacity';
 import { getExpert } from '../learning/experts/registry';
 import {
   planJourney,
@@ -62,9 +63,10 @@ const TIME_BUCKET_MINUTES = [30, 120, 240, 360] as const;
 export function goalSpecToPlan(
   spec: GoalSpec,
   expert: DomainExpert = getExpert(spec.domain),
+  accountCapacity?: string,
 ): GoalPlanInputs {
   const goal = goalInputFrom(spec);
-  return { goal, constraints: deriveConstraints(spec, expert, goal) };
+  return { goal, constraints: deriveConstraints(spec, expert, goal, accountCapacity) };
 }
 
 /** Build the {@link GoalInput} half of the plan from a spec (habit vs finite goal, description, pace). */
@@ -114,18 +116,26 @@ export function journeyShapeFor(processType: ProcessType, cadence?: Cadence): Jo
 }
 
 /**
- * Derive the real-world {@link PlanConstraints} the Planner lays Steps within. Weekly availability
- * comes from explicit interview timing when present, else from the active expert's `time`-intent
- * answer bucket; day-part, preferred days and any target date map across from the captured timing.
+ * Derive the real-world {@link PlanConstraints} the Planner lays Steps within. Day-part, preferred
+ * days and any target date map across from the captured timing.
+ *
+ * Weekly availability asks three sources in order of how much they know about THIS Journey:
+ * explicit interview timing, then the active expert's `time`-intent answer bucket, then — new with
+ * D82 — the account's onboarding capacity answer. The order is the whole point: the interview's
+ * answers were given about this Journey, now, and a profile answer given once about life in general
+ * must never overrule them. It only speaks when they are silent, which before D82 meant a plan that
+ * needed five hours a week could be handed to somebody who had told us they had one.
+ *
  * Exported so the orchestrator can assess feasibility against the SAME constraints it will plan with.
  */
 export function deriveConstraints(
   spec: GoalSpec,
   expert: DomainExpert = getExpert(spec.domain),
   goal: GoalInput = goalInputFrom(spec),
+  accountCapacity?: string,
 ): PlanConstraints {
   return {
-    weeklyAvailabilityMinutes: weeklyMinutes(spec, expert, goal),
+    weeklyAvailabilityMinutes: weeklyMinutes(spec, expert, goal, accountCapacity),
     preferredDays: [...(spec.timing.preferredDays ?? [])],
     daypart: spec.timing.daypart ?? 'either',
     ...(spec.timing.targetDate != null ? { targetDate: spec.timing.targetDate } : {}),
@@ -145,7 +155,7 @@ export function buildJourneyInput(
   options?: PlanOptions,
 ): NewJourneyInput {
   const goal = goalInputFrom(spec);
-  const constraints = deriveConstraints(spec, expert, goal);
+  const constraints = deriveConstraints(spec, expert, goal, options?.accountCapacity);
 
   // A RECURRING goal takes the shape path, BEFORE any expert is consulted for structure. This is
   // the protein-shake fix: the expert's staged content is the wrong answer for "drink a protein
@@ -324,16 +334,23 @@ function hasAnswers(answers: InterviewAnswers | undefined): answers is Interview
 }
 
 /**
- * Weekly availability minutes for the plan. Explicit interview timing wins (session length ×
- * frequency); otherwise the active expert's `time`-intent answer maps to a bucket; otherwise 0 (the
- * Planner reads that as "one Step per preferred day"), so a partial interview never invents time.
+ * Weekly availability minutes for the plan, from the most Journey-specific source that has an
+ * answer. Explicit interview timing wins (session length × frequency); then the active expert's
+ * `time`-intent answer bucket; then the account's onboarding capacity (D82), which is the only one
+ * of the three that was not asked about this Journey and so speaks last; otherwise 0 (the Planner
+ * reads that as "one Step per preferred day"), so a partial interview never invents time.
  */
-function weeklyMinutes(spec: GoalSpec, expert: DomainExpert, goal: GoalInput): number {
+function weeklyMinutes(
+  spec: GoalSpec,
+  expert: DomainExpert,
+  goal: GoalInput,
+  accountCapacity?: string,
+): number {
   const { sessionMinutes, sessionsPerWeek } = spec.timing;
   if (sessionMinutes != null && sessionsPerWeek != null) {
     return Math.max(0, sessionMinutes * sessionsPerWeek);
   }
-  return weeklyFromAnswers(spec.answers, expert, goal) ?? 0;
+  return weeklyFromAnswers(spec.answers, expert, goal) ?? weeklyMinutesForCapacity(accountCapacity) ?? 0;
 }
 
 /**

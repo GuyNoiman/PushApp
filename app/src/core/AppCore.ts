@@ -85,7 +85,7 @@ import { selectJourney } from './learning/library/goalFamily';
 import { selectVariant } from './learning/library/selectVariant';
 import { rateLibrary, variantScores } from './learning/library/variantRatings';
 import { axisAnswersFrom } from './coach/variantQuestions';
-import { planJourney } from './learning/Planner';
+import { planJourney, type PlanOptions } from './learning/Planner';
 import { GeneralExpert } from './learning/DomainExpert';
 import { replan } from './learning/AdaptivePlanner';
 import { applyReplan } from './learning/applyReplan';
@@ -1307,7 +1307,14 @@ export class AppCore {
     // as it is — the match is a starting point, never an override of a choice the user made.
     const matched: GoalSpec = spec.approach ? spec : this.matchVariant(spec);
 
-    const options = start.mode === 'scheduled' ? { now: start.at } : undefined;
+    // The account's capacity answer (onboarding Q6, D82) rides along so the plan is bounded by what
+    // this person told us they realistically have. It is the WEAKEST time signal by design — this
+    // Journey's own interview answers outrank it, because they were given about this Journey, now.
+    const capacity = this.getOnboardingCoachSummary()?.capacity;
+    const options: PlanOptions = {
+      ...(start.mode === 'scheduled' ? { now: start.at } : {}),
+      ...(capacity ? { accountCapacity: capacity } : {}),
+    };
     const journey = createJourneyFromGoalSpec(this.journeyEngine, matched, undefined, options, start);
     // At the Future cap nothing was created — return null untouched (no Dream is minted for a
     // Journey that does not exist).

@@ -884,7 +884,15 @@ export class CoachOrchestrator {
 
     let feasibility: FeasibilityAssessment | undefined;
     if (this.expert?.assessFeasibility && this.goal) {
-      const constraints = deriveConstraints(this.spec, this.expert, this.goal);
+      // The SAME account capacity the builder will plan with (D82) — the profile is already here
+      // for the variant questions. Reading it in only one of the two places would let the coach
+      // call a plan feasible against a wider week than the one it then builds against.
+      const constraints = deriveConstraints(
+        this.spec,
+        this.expert,
+        this.goal,
+        this.profile?.capacity,
+      );
       feasibility = this.expert.assessFeasibility(this.answers, constraints);
       this.spec.feasibility = feasibility;
     }

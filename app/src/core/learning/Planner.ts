@@ -32,6 +32,13 @@ export interface PlanOptions {
    * out of its Steps and any deadline. Defaults to {@link RECURRING_DEFAULT_DAYS}.
    */
   durationDays?: number;
+  /**
+   * The ACCOUNT-level capacity answer from onboarding's Q6 (D82), passed through so the constraint
+   * derivation can fall back to it. It is the weakest of the three time signals on purpose: this
+   * Journey's own interview answers were given about THIS Journey, now, and outrank a profile
+   * answer given once about life in general. Absent ⇒ nothing changes.
+   */
+  accountCapacity?: string;
 }
 
 /**

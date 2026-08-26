@@ -64,6 +64,48 @@ async function planFor(friction?: string): Promise<string[]> {
   return core.createJourneyFromGoalSpec(SHAKE).steps.map((s) => s.title);
 }
 
+/** A core whose onboarding answered ONLY Q6 — the capacity question (D82). */
+async function coreWithCapacity(capacity?: string) {
+  const core = new AppCore(memRepo());
+  await core.start();
+  if (capacity) {
+    core.completeOnboarding({ version: 1, selections: { q6: [capacity] }, freeText: {}, skipped: [] });
+  }
+  return core;
+}
+
+describe('onboarding Q6 reaches the Journey BUILDER (D82)', () => {
+  // Until this landed, the capacity answer reached nothing: it was collected, stored, exported and
+  // deleted with the account, and never changed a plan. Somebody who said they had a few minutes a
+  // day could still be handed a plan that needed five hours a week.
+  /** A frequency-based goal — the shape whose weekly pace the capacity answer moves. */
+  const COOK: GoalSpec = {
+    title: 'Learn to cook',
+    domain: 'general',
+    processType: 'progressive',
+    isHabit: false,
+    cadence: 'weekly',
+    milestones: [],
+    failureRisks: [],
+    timing: {},
+  };
+
+  it('carries the answer all the way from onboarding to the built Journey', async () => {
+    const few = (await coreWithCapacity('fewMinutes')).createJourneyFromGoalSpec(COOK);
+    const half = (await coreWithCapacity('halfHour')).createJourneyFromGoalSpec(COOK);
+    const none = (await coreWithCapacity()).createJourneyFromGoalSpec(COOK);
+
+    expect(few.sessionsPerWeek).toBeLessThan(none.sessionsPerWeek!);
+    expect(half.sessionsPerWeek).toBeGreaterThan(none.sessionsPerWeek!);
+  });
+
+  it('an answer that names no ceiling changes nothing', async () => {
+    const vague = (await coreWithCapacity('changesWeekly')).createJourneyFromGoalSpec(COOK);
+    const none = (await coreWithCapacity()).createJourneyFromGoalSpec(COOK);
+    expect(vague.sessionsPerWeek).toBe(none.sessionsPerWeek);
+  });
+});
+
 describe('the onboarding answers shape the plan', () => {
   it('builds a DIFFERENT plan for someone who said "too much at once"', async () => {
     const tooMuch = await planFor('tooMuchAtOnce');

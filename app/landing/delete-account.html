@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PushApp — מחיקת חשבון / Delete your account</title>
+    <meta name="description" content="How to delete your PushApp account and what happens to your data." />
+    <style>
+      /*
+        The public account-deletion page.
+
+        WHY IT EXISTS AS A PAGE and not only as a button: Google Play requires a publicly reachable
+        URL where somebody can find out how to delete their account and what is deleted, and Apple
+        requires it in addition to the in-app path. Both must be reachable WITHOUT installing the app
+        — which is the whole point: a person who has already deleted the app still has an account.
+
+        It says what deletion CANNOT reach as plainly as what it can. A deletion page that only lists
+        wins is the kind of promise somebody discovers is untrue at the worst moment.
+
+        No trackers, no cookies, no external requests.
+      */
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfaf8; --card: #ffffff; --text: #14161c; --muted: #6b7280;
+        --hairline: #e6e2dc; --teal: #1f8a80; --teal-tint: #e7f3f1;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101216; --card: #171a20; --text: #f2f1ee; --muted: #9aa1ad;
+          --hairline: #262b33; --teal: #4fb3a7; --teal-tint: #14312e;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 24px 20px 64px; background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.65;
+      }
+      main { max-width: 680px; margin: 0 auto; }
+      h1 { font-size: 26px; line-height: 1.25; margin: 16px 0 4px; letter-spacing: -0.3px; }
+      h2 { font-size: 18px; margin: 32px 0 8px; }
+      p, li { font-size: 15.5px; }
+      ol, ul { padding-inline-start: 22px; }
+      .card { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; margin: 16px 0; }
+      .card.warn { background: var(--teal-tint); }
+      a { color: var(--teal); }
+      .switch { display: inline-flex; gap: 6px; border: 1px solid var(--hairline); border-radius: 999px; padding: 4px; background: var(--card); }
+      .switch button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 4px 14px; border-radius: 999px; cursor: pointer; }
+      .switch button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+      .todo { background: #fff3cd; color: #5c4600; border-radius: 4px; padding: 0 5px; font-weight: 600; }
+      @media (prefers-color-scheme: dark) { .todo { background: #4a3b00; color: #ffe28a; } }
+      [hidden] { display: none !important; }
+      footer { margin-top: 44px; color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="switch" role="group" aria-label="Language">
+        <button id="btn-he" aria-pressed="true">עברית</button>
+        <button id="btn-en" aria-pressed="false">English</button>
+      </div>
+
+      <section id="sec-he">
+        <h1>מחיקת חשבון PushApp</h1>
+        <p>אפשר למחוק את החשבון בעצמכם, מתוך האפליקציה, בלי לבקש מאיתנו רשות ובלי לחכות לתשובה.</p>
+
+        <h2>מתוך האפליקציה</h2>
+        <ol>
+          <li>פתחו את PushApp.</li>
+          <li>עברו ל<strong>הגדרות</strong> ← <strong>החשבון שלי</strong>.</li>
+          <li>בחרו <strong>מחיקת חשבון</strong> ואשרו.</li>
+        </ol>
+        <div class="card">
+          <p>
+            לפני שמוחקים, אפשר לקחת עותק: <strong>הגדרות ← החשבון שלי ← ייצוא</strong> נותן קובץ עם
+            כל מה שהאפליקציה מחזיקה עליכם. אחרי המחיקה אין מאיפה לייצא.
+          </p>
+        </div>
+
+        <h2>אם כבר מחקתם את האפליקציה</h2>
+        <p>
+          החשבון עדיין קיים. כתבו ל<span class="todo">[[CONTACT_EMAIL]]</span> מהכתובת שאיתה נכנסתם,
+          או ציינו את הכינוי שבחרתם באפליקציה, ונמחק אותו בשבילכם. נאשר לכם כשזה נעשה.
+        </p>
+
+        <h2>מה נמחק</h2>
+        <ul>
+          <li>הקובץ המוצפן שעל המכשיר, והמפתח שלו — מושמד, לא רק נמחק.</li>
+          <li>הגיבוי של החשבון בשרת: החלומות, המסעות, אבני הדרך, הצעדים, ההיסטוריה והבאדי.</li>
+          <li>הפרופיל, הכינוי, החברויות, מעגלי התמיכה, ההתקדמות המשותפת, העידודים ורמת החשבון.</li>
+          <li>מה שהמאמן זכר.</li>
+          <li>תוצאות הכלים והמשוב שלכם, שממילא היו רק על המכשיר.</li>
+        </ul>
+
+        <h2>מה מחיקה לא יכולה להגיע אליו</h2>
+        <div class="card warn">
+          <p>
+            דברים ששייכים גם למישהו אחר. <strong>הודעה ששלחתם</strong> קיימת גם בשיחה של האדם השני,
+            ומחיקת החשבון שלכם לא מוחקת את העותק שלו. <strong>מה שכתב מי שענה לכם במראה</strong> הוא
+            התשובה שלו לא פחות מהתוצאה שלכם. ואם דווח על התעללות, הראיות נשמרות בנפרד תחת חריג
+            ההתעללות. אנחנו אומרים את זה כאן ולא מגלים לכם אחר כך.
+          </p>
+        </div>
+        <p>המחיקה סופית. אין שחזור, ואין תקופת חסד שבה אפשר להתחרט.</p>
+
+        <p>
+          פרטים מלאים על מה מוחזק ואיפה: <a href="./privacy.html">מדיניות הפרטיות</a>.
+          שאלות: <span class="todo">[[CONTACT_EMAIL]]</span>
+        </p>
+        <footer><a href="./">← חזרה לעמוד ההזמנה</a></footer>
+      </section>
+
+      <section id="sec-en" hidden>
+        <h1>Delete your PushApp account</h1>
+        <p>You can delete your account yourself, from inside the app, without asking us and without waiting for a reply.</p>
+
+        <h2>From the app</h2>
+        <ol>
+          <li>Open PushApp.</li>
+          <li>Go to <strong>Settings</strong> → <strong>My account</strong>.</li>
+          <li>Choose <strong>Delete account</strong> and confirm.</li>
+        </ol>
+        <div class="card">
+          <p>
+            Before you delete, you can take a copy: <strong>Settings → My account → Export</strong>
+            gives you a file with everything the app holds about you. After deletion there is nothing
+            left to export from.
+          </p>
+        </div>
+
+        <h2>If you have already removed the app</h2>
+        <p>
+          The account still exists. Write to <span class="todo">[[CONTACT_EMAIL]]</span> from the
+          address you signed in with, or tell us the handle you chose in the app, and we will delete
+          it for you. We will confirm when it is done.
+        </p>
+
+        <h2>What gets deleted</h2>
+        <ul>
+          <li>The encrypted file on your device, and its key — destroyed, not merely removed.</li>
+          <li>Your account backup on the server: Dreams, Journeys, Milestones, Steps, history and Buddy.</li>
+          <li>Your profile, handle, friendships, Support Circles, shared progress, cheers and account tier.</li>
+          <li>What the coach remembered.</li>
+          <li>Your Tool results and your feedback, which were only ever on the device anyway.</li>
+        </ul>
+
+        <h2>What deletion cannot reach</h2>
+        <div class="card warn">
+          <p>
+            Things that are also someone else's. <strong>A message you sent</strong> lives in the
+            other person's conversation too, and deleting your account does not delete their copy.
+            <strong>What a Mirror contributor wrote</strong> is their answer as much as it is your
+            result. And if abuse was reported, that evidence is kept separately under the abuse
+            exception. We say this here rather than letting you find it out afterwards.
+          </p>
+        </div>
+        <p>Deletion is final. There is no restore, and no grace period in which to change your mind.</p>
+
+        <p>
+          Full detail of what is held and where: <a href="./privacy.html">our privacy policy</a>.
+          Questions: <span class="todo">[[CONTACT_EMAIL]]</span>
+        </p>
+        <footer><a href="./">← Back to the invitation page</a></footer>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        var he = document.getElementById('sec-he');
+        var en = document.getElementById('sec-en');
+        var btnHe = document.getElementById('btn-he');
+        var btnEn = document.getElementById('btn-en');
+        function show(lang) {
+          var hebrew = lang !== 'en';
+          he.hidden = !hebrew;
+          en.hidden = hebrew;
+          btnHe.setAttribute('aria-pressed', String(hebrew));
+          btnEn.setAttribute('aria-pressed', String(!hebrew));
+          document.documentElement.lang = hebrew ? 'he' : 'en';
+          document.documentElement.dir = hebrew ? 'rtl' : 'ltr';
+          try { localStorage.setItem('pushapp.policy.lang', hebrew ? 'he' : 'en'); } catch (e) {}
+        }
+        btnHe.addEventListener('click', function () { show('he'); });
+        btnEn.addEventListener('click', function () { show('en'); });
+        var stored = null;
+        try { stored = localStorage.getItem('pushapp.policy.lang'); } catch (e) {}
+        if (!stored) stored = (navigator.language || '').slice(0, 2) === 'he' ? 'he' : 'en';
+        show(stored);
+      })();
+    </script>
+  </body>
+</html>

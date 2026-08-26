@@ -235,6 +235,14 @@ wording. None of them changes what the code does; all of them have to match it.
 
 ## 4. The clauses the legal policy will have to contain
 
+> **WRITTEN, 2026-08-27 (R4).** The policy itself is now `04_Product/Privacy_Policy.md`, and it is
+> live in both languages at **https://pushapp-invite.expo.app/privacy.html**, with the
+> store-required account-deletion page at **https://pushapp-invite.expo.app/delete-account**.
+> Every clause on the checklist below is covered except the five blanks only the founder can fill —
+> the controller, the contact address, the minimum age, the behavioural-log window and the Mirror
+> region (§6 below). They are marked `[[…]]` and highlighted on the page so they cannot ship
+> unnoticed. The checklist stays as the standard the policy is measured against.
+
 A checklist for whoever writes the real thing.
 
 **The policy itself**
@@ -305,7 +313,7 @@ A checklist for whoever writes the real thing.
 - [ ] A consent moment exists for the coach, in the user's words, before the first message leaves.
 - [ ] Separate contributor consent copy for Mirror's two modes.
 - [ ] The in-app Delete account path is verified end to end, including the server rows.
-- [ ] A public account-deletion page exists.
+- [x] A public account-deletion page exists. **DONE 2026-08-27** — https://pushapp-invite.expo.app/delete-account
 - [ ] A data export path, or a documented decision that there is none yet and why.
 - [ ] Purpose strings written for every permission in §2 that ships.
 - [ ] This document reviewed by security-privacy and store-compliance, then converted to legal wording.

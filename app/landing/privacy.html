@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PushApp — מדיניות פרטיות / Privacy Policy</title>
+    <meta name="description" content="PushApp privacy policy — what we hold, where it lives, and what you can do about it." />
+    <style>
+      /*
+        The public privacy policy (R4).
+
+        WHY IT IS BILINGUAL IN ONE FILE: two audiences have to read it and neither is optional — the
+        people using the app, who read Hebrew, and a store reviewer, who reads English. A policy
+        somebody cannot read is not a promise, and a second URL is a second thing to keep in step.
+        The toggle swaps `lang`/`dir` on the root, so RTL and LTR are both real rather than approximated.
+
+        No trackers, no analytics, no cookies, no external requests, no fetched fonts. On a privacy
+        policy of all pages, every one of those would be a thing to disclose.
+
+        The canonical text is `04_Product/Privacy_Policy.md` — edit there first, then mirror here.
+      */
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfaf8; --card: #ffffff; --text: #14161c; --muted: #6b7280;
+        --hairline: #e6e2dc; --teal: #1f8a80; --teal-tint: #e7f3f1;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101216; --card: #171a20; --text: #f2f1ee; --muted: #9aa1ad;
+          --hairline: #262b33; --teal: #4fb3a7; --teal-tint: #14312e;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 24px 20px 64px; background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.65;
+      }
+      main { max-width: 760px; margin: 0 auto; }
+      h1 { font-size: 28px; line-height: 1.25; margin: 16px 0 4px; letter-spacing: -0.3px; }
+      h2 { font-size: 19px; margin: 36px 0 8px; letter-spacing: -0.2px; }
+      h3 { font-size: 16px; margin: 24px 0 6px; color: var(--muted); }
+      p, li { font-size: 15.5px; }
+      ul { padding-inline-start: 22px; }
+      .updated { color: var(--muted); font-size: 14px; margin: 0 0 8px; }
+      .lead { background: var(--teal-tint); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; margin: 20px 0 8px; }
+      .lead p { margin: 0; }
+      table { width: 100%; border-collapse: collapse; margin: 12px 0; display: block; overflow-x: auto; }
+      th, td { border: 1px solid var(--hairline); padding: 8px 10px; text-align: start; font-size: 14.5px; vertical-align: top; }
+      th { background: var(--card); font-weight: 600; }
+      a { color: var(--teal); }
+      .switch { display: inline-flex; gap: 6px; border: 1px solid var(--hairline); border-radius: 999px; padding: 4px; background: var(--card); }
+      .switch button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 4px 14px; border-radius: 999px; cursor: pointer; }
+      .switch button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+      .todo { background: #fff3cd; color: #5c4600; border-radius: 4px; padding: 0 5px; font-weight: 600; }
+      @media (prefers-color-scheme: dark) { .todo { background: #4a3b00; color: #ffe28a; } }
+      [hidden] { display: none !important; }
+      footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="switch" role="group" aria-label="Language">
+        <button id="btn-he" aria-pressed="true">עברית</button>
+        <button id="btn-en" aria-pressed="false">English</button>
+      </div>
+
+      <!-- ── HEBREW ─────────────────────────────────────────────────────────── -->
+      <section id="sec-he">
+        <h1>מדיניות הפרטיות של PushApp</h1>
+        <p class="updated">עודכן לאחרונה: 27 באוגוסט 2026</p>
+
+        <div class="lead">
+          <p>
+            לפני הפרטים, דבר אחד שמעצב את כל השאר: <strong>PushApp לא מרוויח מתשומת הלב שלכם.</strong>
+            אין פרסומות, אין מזהה פרסומי, אין מעקב בין אפליקציות, ושום דבר עליכם לא נמכר ולא משותף
+            לצורכי שיווק של אף אחד. אין באפליקציה כלי אנליטיקה ואין כלי דיווח קריסות. אנחנו לא מודדים
+            כמה זמן אתם נשארים.
+          </p>
+        </div>
+
+        <h2>1. מי אנחנו</h2>
+        <p>
+          <span class="todo">[[CONTROLLER]]</span> הוא הגורם האחראי על המידע המתואר כאן. אפשר להגיע
+          לאדם אמיתי בכתובת <span class="todo">[[CONTACT_EMAIL]]</span>.
+        </p>
+
+        <h2>2. מה אנחנו מחזיקים, ואיפה זה נמצא</h2>
+        <p>המידע יושב בארבעה מקומות שונים, והמקום שבו משהו נמצא חשוב יותר מכל משפט שנוכל לכתוב עליו.</p>
+
+        <h3>2.1 על הטלפון שלכם, ובשום מקום אחר</h3>
+        <p>נשמר בקובץ מוצפן על המכשיר. <strong>שום דבר מזה לא נשלח לשום מקום:</strong></p>
+        <ul>
+          <li><strong>המילים שאתם כותבים.</strong> ה"למה" שמאחורי מסע, מה שכתבתם כשיום לא הסתדר, והמשפט בסוף המסע.</li>
+          <li><strong>התשובות שלכם בכלים</strong> — גלגל החיים, בירור ערכים, השנה הטובה ביותר, הצהרת הכיוון, מפת התשוקות, עדויות חוזק וכל רפלקציה. התשובות הגולמיות לא עוזבות את המכשיר. רק התוצאה המזוקקת של כל כלי משמשת, ורק את החלקים באפליקציה שאותו כלי מציין בשמם.</li>
+          <li><strong>יומן ההתנהגות</strong> שהמאמן המסתגל קורא — מתי פתחתם, על מה דיווחתם ומתי.</li>
+          <li><strong>תשובות ההיכרות הראשונה</strong>, שמעצבות את התוכנית הראשונה שלכם.</li>
+          <li><strong>נתוני התזמון</strong> שמאחורי התזכורות החכמות, ולוח התזכורות שלכם.</li>
+          <li><strong>המשוב שלכם על כרטיסי המוטיבציה</strong> — מזהה של פריט והאם עזר. שום דבר שהקלדתם.</li>
+        </ul>
+        <p>התזכורות הן <strong>התראות מקומיות</strong> שנקבעות על המכשיר. אין ברשותנו טוקן דחיפה ואנחנו לא יכולים לשלוח לכם דבר משרת.</p>
+
+        <h3>2.2 בחשבון שלכם, על השרת שלנו</h3>
+        <p>
+          כדי שטלפון שאבד לא יהיה התחלה מחדש, מצב החשבון שלכם נשמר בשרת (Supabase) ומשוחזר בכניסה:
+          החלומות, המסעות, אבני הדרך, הצעדים, ההיסטוריה, הבאדי, וסיווג סגור של כל צעד שהוחמץ.
+        </p>
+        <p>
+          <strong>והקו שנמתח בתוך זה, והוא החשוב: הניסוח הגולמי שלכם נשאר על הטלפון; הקריאה שלנו בו
+          עולה.</strong> כשצעד מוחמץ ואתם כותבים למה, מה שנוסע הוא הקטגוריה ("לא היה זמן", "היה קשה
+          מדי") — לעולם לא המשפט שכתבתם. אותו הדבר נכון ל"למה" של מסע, למשפט בסוף מסע, וליומן ההתנהגות
+          הגולמי של המאמן. זה נאכף בקוד, במקום אחד, עם בדיקה שעוברת שדה־שדה.
+        </p>
+        <p>בשרת נמצאים גם, מרגע שאתם משתמשים בחלק החברתי:</p>
+        <table>
+          <tr><th>מה</th><th>שדות</th><th>מי יכול לקרוא</th></tr>
+          <tr><td>החשבון</td><td>מזהה משתמש; כתובת מייל <strong>רק</strong> אם בחרתם להיכנס עם Google או Apple</td><td>אתם, והשירות שלנו</td></tr>
+          <tr><td>הפרופיל</td><td>הכינוי שבחרתם, וסיכום כללי של הבאדי</td><td>אתם, ואנשים במעגל התמיכה שלכם</td></tr>
+          <tr><td>חברויות</td><td>מי ביקש ממי, והסטטוס</td><td>שני האנשים המעורבים</td></tr>
+          <tr><td>מעגל תמיכה</td><td>בעלים, בעל ברית, מסע, מה משותף, סטטוס</td><td>שני האנשים המעורבים</td></tr>
+          <tr><td>התקדמות משותפת</td><td>סיכום התקדמות כללי — לעולם לא ה"למה", לא הרפלקציות ולא פירוט הצעדים</td><td>אתם ובעלי הברית שאישרתם</td></tr>
+          <tr><td>צעדי מלווה</td><td>שמות צעדים שהמערכת יצרה, למסעות שנבנו עם המאמן בלבד. מסע שהקלדתם בעצמכם לעולם לא ישותף כך</td><td>אתם והמלווים שאישרתם</td></tr>
+          <tr><td>עידודים ודחיפות</td><td>מי שלח מה, ומתי</td><td>שני האנשים המעורבים</td></tr>
+          <tr><td>רמת החשבון</td><td>חינם / ניסיון / מנוי</td><td>אתם, לקריאה בלבד. נכתב רק בצד השרת</td></tr>
+          <tr><td>אירועי השהיה של מסע</td><td>שמסע ששיתפתם הושהה או חודש, ומתי. בלי סיבה, בלי הערה</td><td>אתם ובעלי הברית של אותו מסע</td></tr>
+          <tr><td>הודעות אישיות</td><td>מי דיבר עם מי ומתי. <strong>התוכן אטום</strong></td><td>רק שני המשתתפים</td></tr>
+        </table>
+        <p><strong>הודעות אישיות מוצפנות מקצה לקצה.</strong> השרת שלנו שומר אותן כקופסאות אטומות ואינו יכול לקרוא אותן. אין עמודה שיכולה להחזיק הודעה קריאה.</p>
+        <p>
+          כל השאר בטבלה מוגן בהרשאות ברמת השורה — מסד הנתונים עצמו מסרב להחזיר שורות של חשבון אחר —
+          ובהבטחה שלנו: <strong>אנחנו לא קוראים את זה, לא כורים אותו ולא מוכרים אותו.</strong> הוא לא
+          מוצפן מקצה לקצה. אנחנו מחזיקים אותו כפי שאפליקציה גדולה מחזיקה את מה שאתם מפרסמים בה.
+        </p>
+
+        <h3>2.3 מה נשלח לגורם שלישי</h3>
+        <table>
+          <tr><th>מי</th><th>מה נשלח</th><th>מה מותר להם לעשות</th></tr>
+          <tr><td><strong>Google (Gemini), למאמן</strong></td><td>השיחה שלכם עם המאמן, המטרה שאתם מתארים, והסיכומים הקצרים שהמאמן רשאי לזכור</td><td>אנחנו משתמשים ברמה <strong>בתשלום</strong>, שתנאיה <strong>אינם מאמנים מודלים על התוכן</strong>. מזהים אישיים מובהקים (כתובות מייל, מספרי טלפון) מוסרים מהבקשה לפני שהיא יוצאת</td></tr>
+          <tr><td><strong>שירות הסינתזה של המראה</strong></td><td>התשובות שאנשים אחרים נתנו עליכם, כדי להסיר מהן זיהוי ולסנתז</td><td>מחזיר סינתזה. תשובות גולמיות לעולם לא חוזרות אליכם ונמחקות (ראו סעיף 5). אזור: <span class="todo">[[MIRROR_REGION]]</span></td></tr>
+          <tr><td><strong>כניסה עם Apple / Google</strong></td><td>רק מה שאישרתם במסך המערכת</td><td>אופציונלי. כניסה אנונימית היא ברירת המחדל, ואפשר להשתמש ב-PushApp בלי שום מזהה</td></tr>
+          <tr><td><strong>Expo / EAS</strong> (בנייה ועדכונים)</td><td>האפליקציה עצמה. מסירת עדכון כרוכה בכתובת ה-IP של המכשיר ביומנים שלהם</td><td>תשתית בלבד. שום תוכן שלכם לא נשלח</td></tr>
+        </table>
+        <p>אנחנו לא משתמשים בשום מעבד נוסף. אם זה ישתנה, הטבלה הזאת תשתנה איתו, וסעיף 10 מסביר איך תדעו.</p>
+
+        <h3>2.4 מה אנשים אחרים מספרים עלינו</h3>
+        <p>
+          <strong>המראה</strong> מאפשרת לבקש מאנשים שמכירים אתכם לומר מה הם רואים בכם. זה יוצר מידע של
+          שני אנשים בבת אחת — שלכם ושלהם — ולכן יש לו כללים משלו:
+        </p>
+        <ul>
+          <li>במצב <strong>חסוי</strong> אתם לעולם לא רואים את התשובות הגולמיות. לא באפליקציה, לא בייצוא, לא דרך המאמן, לא בהתראה ולא בהודעת שגיאה. אתם רואים סינתזה בלבד.</li>
+          <li>מי ענה נשמר בנפרד ממה שהוא ענה.</li>
+          <li>תשובות חסויות גולמיות נמחקות לא יאוחר מ<strong>שבעה ימים</strong> אחרי הסינתזה או סגירת הסבב. רק הסינתזה, ללא מזהים, שורדת.</li>
+          <li>מי שענה יכול לחזור בו לפני הסינתזה, והחזרה מכובדת.</li>
+          <li>למי שעונה נאמר, במילים שלו, באיזה מצב הוא עונה. גלוי וחסוי הן הבטחות שונות ולעולם לא חולקות ניסוח אחד.</li>
+        </ul>
+
+        <h2>3. מה אנחנו בכוונה לא אוספים</h2>
+        <p>הרשימה הזאת היא חלק מהמדיניות, לא שיווק:</p>
+        <ul>
+          <li><strong>אין אנליטיקה ואין כלי דיווח קריסות.</strong> בכלל. לא Sentry, לא Amplitude, לא PostHog, לא Mixpanel ולא מקבילותיהם.</li>
+          <li><strong>אין מזהה פרסומי, אין מעקב בין אפליקציות, אין פרסומות.</strong> בקשת המעקב של Apple לא מוצגת, כי אין על מה לשאול.</li>
+          <li><strong>אין טוקני דחיפה.</strong> התזכורות נקבעות מקומית על המכשיר.</li>
+          <li><strong>אין מיקום.</strong> יש בקוד תפר רדום בלי דבר מאחוריו; לא מתבקשת הרשאת מיקום ולא נקרא מיקום.</li>
+          <li><strong>אין גישה ליומן.</strong> אותו הדבר: תפר, בלי דבר מאחוריו.</li>
+          <li><strong>אין אנשי קשר.</strong> מוצאים חבר לפי הכינוי שהוא בחר.</li>
+          <li><strong>אין מיקרופון, מצלמה או גלריה.</strong></li>
+          <li><strong>שום דבר לא נמכר, ושום דבר לא משותף לשיווק של אף אחד.</strong></li>
+        </ul>
+
+        <h2>4. למה אנחנו משתמשים בכל דבר, ועל סמך מה</h2>
+        <table>
+          <tr><th>מה</th><th>למה</th><th>בסיס חוקי (אירופה/בריטניה)</th></tr>
+          <tr><td>החלומות, המסעות והצעדים</td><td>כדי להיות המוצר שפתחתם. בלעדיהם אין כלום</td><td>ביצוע חוזה</td></tr>
+          <tr><td>הגיבוי של החשבון</td><td>כדי שטלפון שאבד לא יאבד את התוכנית של החיים שלכם</td><td>ביצוע חוזה</td></tr>
+          <tr><td>תשובות ההיכרות, תוצאות הכלים ויומן ההתנהגות</td><td>כדי לעצב תוכנית סביבכם ולא תוכנית גנרית</td><td>אינטרס לגיטימי, ואפשר לכבות את החלקים המסתגלים</td></tr>
+          <tr><td>השיחה עם המאמן</td><td>כדי לענות לכם</td><td>ביצוע חוזה. <strong>הזיכרון של המאמן מקבל הסכמה נפרדת</strong>, וביטולה מוחק את מה שהחזיק</td></tr>
+          <tr><td>חברויות, מעגל תמיכה, התקדמות משותפת</td><td>כי הזמנתם מישהו, והוא אישר</td><td>הסכמה, משני הצדדים</td></tr>
+          <tr><td>המראה</td><td>כי ביקשתם מאנשים שאלה עליכם</td><td>הסכמה, שלכם ושל כל מי שעונה</td></tr>
+          <tr><td>תזכורות</td><td>כי הגדרתם אותן</td><td>הסכמה (הרשאת מערכת ההפעלה)</td></tr>
+          <tr><td>רמת החשבון</td><td>כדי לדעת מה החשבון שלכם כולל</td><td>ביצוע חוזה</td></tr>
+        </table>
+
+        <h2>5. כמה זמן אנחנו שומרים</h2>
+        <table>
+          <tr><th>מה</th><th>נשמר</th></tr>
+          <tr><td>כל מה שעל המכשיר</td><td>עד שתמחקו. מחיקת החשבון מוחקת את הקובץ ומשמידה את המפתח שלו</td></tr>
+          <tr><td>גיבוי החשבון והשורות החברתיות</td><td>לאורך חיי החשבון; נמחקות כשמוחקים אותו</td></tr>
+          <tr><td>תשובות גולמיות חסויות במראה</td><td>שבעה ימים מהסינתזה או מסגירת הסבב, ואז נמחקות</td></tr>
+          <tr><td>ראיות על התעללות, אם דווחה</td><td>נשמרות בנפרד, תחת חריג ההתעללות, לתקופה מרבית מתועדת. אנחנו אומרים את זה בקול כי מחיקה לא מגיעה לשם</td></tr>
+          <tr><td>תוכן השיחה עם המאמן אצל הספק</td><td>חלון השמירה של הספק ברמה בתשלום</td></tr>
+          <tr><td>אירועי השהיה שמשותפים לבעלי הברית</td><td>30 יום, ואז נמחקים אוטומטית</td></tr>
+          <tr><td>יומן ההתנהגות של המאמן</td><td><span class="todo">[[BEHAVIOUR_LOG_WINDOW]]</span></td></tr>
+          <tr><td>סיכומי הכלים</td><td>עד שתוצאת הכלי מתיישנת, או עד שתעשו אותו שוב</td></tr>
+        </table>
+
+        <h2>6. הזכויות שלכם</h2>
+        <p>
+          אפשר לבקש מאיתנו עותק של המידע שלכם, לתקן אותו, למחוק אותו, לקבל אותו בפורמט נייד, להתנגד
+          לשימוש בו או לחזור מהסכמה שנתתם. כתבו ל<span class="todo">[[CONTACT_EMAIL]]</span>.
+        </p>
+        <p>שתיים מהן לא צריך לבקש — הן כפתורים באפליקציה:</p>
+        <ul>
+          <li><strong>ייצוא</strong>: הגדרות ← החשבון שלכם ← ייצוא עותק של המידע.</li>
+          <li><strong>מחיקה</strong>: הגדרות ← החשבון שלכם ← מחיקת חשבון. זה מוחק את הקובץ במכשיר, משמיד את המפתח שלו, ומוחק את השורות שלכם מהשרת. אי אפשר לבטל.</li>
+        </ul>
+        <p>יש גם עמוד ציבורי לבקשת מחיקה, כי חנויות האפליקציות דורשות אחד: <a href="./delete-account.html">מחיקת חשבון</a></p>
+        <p>אם אתם באיחוד האירופי או בבריטניה, אפשר גם להתלונן לרשות להגנת המידע במדינתכם.</p>
+        <p>
+          <strong>לאן מחיקה לא מגיעה</strong>, ועדיף שנאמר מאשר שתגלו: דברים ששייכים גם למישהו אחר.
+          הודעה ששלחתם קיימת גם בשיחה של האדם השני. מה שכתב מי שענה במראה הוא התשובה שלו לא פחות
+          מהתוצאה שלכם. ראיות על התעללות נשמרות תחת החריג שלמעלה.
+        </p>
+
+        <h2>7. ילדים</h2>
+        <p>
+          PushApp אינו מיועד לילדים. הגיל המינימלי הוא <span class="todo">[[MIN_AGE]]</span>. אנחנו לא
+          אוספים ביודעין מידע ממי שצעיר מכך; אם נגלה שכן, נמחק את החשבון. אם נראה לכם שילד משתמש
+          באפליקציה, כתבו ל<span class="todo">[[CONTACT_EMAIL]]</span>.
+        </p>
+
+        <h2>8. איך אנחנו מגנים על זה</h2>
+        <ul>
+          <li>כל מה שעל המכשיר נשמר ב<strong>קובץ מוצפן</strong>, כשהמפתח נמצא במאגר המאובטח של המכשיר (Keychain / Keystore).</li>
+          <li>כל מה שבתנועה עובר ב-<strong>TLS</strong>.</li>
+          <li>לכל טבלה בשרת יש <strong>הרשאות ברמת השורה</strong>: מסד הנתונים מסרב להחזיר שורות של חשבון אחר, מה שהאפליקציה לא תבקש.</li>
+          <li><strong>הודעות אישיות מוצפנות מקצה לקצה</strong> ולשרת אין מפתח שיכול לפתוח אחת.</li>
+          <li>ההתראות כתובות כך שמה שמופיע על מסך הנעילה לעולם לא מכיל שם צעד, "למה" של מסע, רפלקציה או טקסט פרטי של אדם אחר.</li>
+        </ul>
+        <p>שום מערכת אינה מושלמת, ואנחנו מעדיפים לומר לכם מה מגן על מה מאשר להבטיח שזה לא יכול להיכשל.</p>
+
+        <h2>9. האם משהו מחליט עליכם אוטומטית?</h2>
+        <p>
+          כן, באופן מוגבל וגלוי: המאמן מתאים את התוכנית שלכם למה שאתם מדווחים, והאפליקציה לומדת מתי
+          אתם נוטים לפעול כדי שתזכורת תגיע בשעה שמתאימה לכם. אלה הצעות לגבי התוכנית שלכם עצמכם.
+          <strong>אין להן תוקף משפטי ואין להן השפעה משמעותית דומה</strong>, הן גלויות באפליקציה,
+          ואפשר לשנות או לכבות אותן. מה שהמאמן אומר אינו ייעוץ מקצועי, רפואי, פסיכולוגי, משפטי או
+          פיננסי. PushApp לא מאבחן דבר ואינו כלי קליני; מטרות בתחום ההתמכרויות או מערכת יחסים במשבר
+          מועברות בכוונה לאדם ולא הופכות לתוכנית.
+        </p>
+
+        <h2>10. העברות בין מדינות, ושינויים במדיניות</h2>
+        <p>
+          השרת שלנו רץ על תשתית שמפעילה Supabase; ספק ה-AI ושירות הבנייה פועלים בינלאומית. במקום שבו
+          מידע עוזב את האזור הכלכלי האירופי או את בריטניה, הוא עושה זאת תחת סעיפי החוזה התקניים
+          שאותם ספקים מפרסמים.
+        </p>
+        <p>
+          אם המדיניות הזאת תשתנה באופן שנוגע לכם, האפליקציה תספר לכם בפעם הבאה שתפתחו אותה, והתאריך
+          בראש העמוד ישתנה. אנחנו לא מבצעים שינוי מהותי בשקט.
+        </p>
+
+        <h2>11. יצירת קשר</h2>
+        <p><span class="todo">[[CONTROLLER]]</span> · <span class="todo">[[CONTACT_EMAIL]]</span></p>
+        <footer><a href="./">← חזרה לעמוד ההזמנה</a></footer>
+      </section>
+
+      <!-- ── ENGLISH ────────────────────────────────────────────────────────── -->
+      <section id="sec-en" hidden>
+        <h1>PushApp Privacy Policy</h1>
+        <p class="updated">Last updated: 27 August 2026</p>
+
+        <div class="lead">
+          <p>
+            Before the detail, one thing that shapes all of it: <strong>PushApp makes no money from
+            your attention.</strong> There is no advertising, no advertising identifier, no cross-app
+            tracking, and nothing about you is sold or shared for anyone else's marketing. There is no
+            analytics SDK and no crash-reporting SDK in the app. We are not measuring how long you stay.
+          </p>
+        </div>
+
+        <h2>1. Who we are</h2>
+        <p>
+          <span class="todo">[[CONTROLLER]]</span> is the controller of the personal data described
+          here. You can reach a person at <span class="todo">[[CONTACT_EMAIL]]</span>.
+        </p>
+
+        <h2>2. What we hold, and where it lives</h2>
+        <p>
+          PushApp keeps things in four different places, and which place something is in matters more
+          than any sentence we could write about it.
+        </p>
+
+        <h3>2.1 On your phone, and nowhere else</h3>
+        <p>Stored in an encrypted file on your device. <strong>None of this is sent anywhere:</strong></p>
+        <ul>
+          <li><strong>The words you write.</strong> The "why" behind a Journey, the note you leave when a day went wrong, the note at the end of a Journey.</li>
+          <li><strong>Your answers to the app's Tools</strong> — Life Wheel, Values Clarification, My Best Possible Year, the Direction Statement, the Passion Map, Strength Evidence and any reflection. The raw answers never leave the device. Only each Tool's short derived result is used, and only by the parts of the app that Tool names.</li>
+          <li><strong>The behavioural log</strong> the adaptive coach reads — when you opened the app, what you reported, and when.</li>
+          <li><strong>Your onboarding answers</strong>, which shape your first plan.</li>
+          <li><strong>The timing evidence</strong> behind smart reminders, and your reminder schedule.</li>
+          <li><strong>Your motivation-card feedback</strong> — an item id and whether you found it helpful. Nothing you typed.</li>
+        </ul>
+        <p>
+          Your reminders are <strong>local notifications</strong>, scheduled on the device. We hold no
+          push token and we cannot send you anything from a server.
+        </p>
+
+        <h3>2.2 In your account, on our server</h3>
+        <p>
+          So that a lost phone does not mean starting over, your account's own state is stored on our
+          backend (Supabase) and restored when you sign in: your Dreams, Journeys, Milestones, Steps,
+          your history, your Buddy, and a closed classification of each missed Step.
+        </p>
+        <p>
+          <strong>The line we drew inside that, and it is the important one: your raw wording stays on
+          the phone; our reading of it goes up.</strong> When you miss a Step and write why, what
+          travels is the category ("no time", "too hard") — never the sentence you wrote. The same is
+          true of a Journey's "why", the note at the end of a Journey, and the coach's raw behavioural
+          log. This is enforced in code, in one place, with a test that checks it field by field.
+        </p>
+        <p>Also on the server, once you use the social features:</p>
+        <table>
+          <tr><th>What</th><th>Fields</th><th>Who can read it</th></tr>
+          <tr><td>Your account</td><td>A user id; an email address <strong>only</strong> if you chose to sign in with Google or Apple</td><td>You, and our service</td></tr>
+          <tr><td>Your profile</td><td>Your chosen handle, and a coarse Buddy summary</td><td>You, and people in your Support Circle</td></tr>
+          <tr><td>Friendships</td><td>Who asked whom, and the status</td><td>The two people involved</td></tr>
+          <tr><td>Support Circle</td><td>Owner, Ally, Journey, what is shared, and the status</td><td>The two people involved</td></tr>
+          <tr><td>Shared progress</td><td>A coarse progress summary — never your "why", your reflections or your Step detail</td><td>You and your accepted Allies</td></tr>
+          <tr><td>Companion Steps</td><td>System-generated Step names for coach-built Journeys only. A Journey you typed yourself can never be shared this way</td><td>You and your accepted Companions</td></tr>
+          <tr><td>Cheers and nudges</td><td>Who sent what, and when</td><td>The two people involved</td></tr>
+          <tr><td>Account tier</td><td>Free / trial / subscriber</td><td>You, read-only. Written only server-side</td></tr>
+          <tr><td>Journey pause events</td><td>That a Journey you share was paused or resumed, and when. No reason, no note</td><td>You and that Journey's Allies</td></tr>
+          <tr><td>Direct messages</td><td>Who talked to whom and when. <strong>The bodies are sealed</strong></td><td>Only the two participants</td></tr>
+        </table>
+        <p>
+          <strong>Direct messages are end-to-end encrypted.</strong> Our server stores them as sealed
+          boxes and cannot read them. There is no column that can hold a readable message.
+        </p>
+        <p>
+          Everything else in that table is protected by row-level security — the database itself
+          refuses to return another account's rows — and by our promise: <strong>we do not read it,
+          mine it, or sell it.</strong> It is not end-to-end encrypted. We hold it the way a large app
+          holds what you post there.
+        </p>
+
+        <h3>2.3 What we send to someone else</h3>
+        <table>
+          <tr><th>Who</th><th>What we send</th><th>What they may do with it</th></tr>
+          <tr><td><strong>Google (Gemini), for the AI coach</strong></td><td>Your conversation with the coach, the goal you are describing, and the short derived summaries the coach is allowed to remember</td><td>We use the <strong>paid</strong> tier, whose terms <strong>do not train models on the content sent to it</strong>. Obvious personal identifiers (email addresses, phone numbers) are stripped from the outbound request before it leaves</td></tr>
+          <tr><td><strong>The Mirror synthesis service</strong></td><td>The answers other people gave about you, so they can be de-identified and synthesised</td><td>It returns a synthesis. Raw contributor answers are never returned to you and are deleted (see §5). Region: <span class="todo">[[MIRROR_REGION]]</span></td></tr>
+          <tr><td><strong>Apple / Google sign-in</strong></td><td>Only what you approve at the system sheet</td><td>Optional. Signing in anonymously is the default, and you can use PushApp with no identifier at all</td></tr>
+          <tr><td><strong>Expo / EAS</strong> (app builds and updates)</td><td>The app itself. Delivering an update involves your device's IP address in their logs</td><td>Infrastructure only. No content of yours is sent</td></tr>
+        </table>
+        <p>We do not use any other processor. If that changes, this table changes with it, and §10 says how you will hear about it.</p>
+
+        <h3>2.4 What other people tell us about you</h3>
+        <p>
+          The <strong>Mirror</strong> feature lets you ask people who know you what they see in you.
+          That creates two people's data at once — yours and theirs — so it has its own rules:
+        </p>
+        <ul>
+          <li>In <strong>confidential</strong> mode you never see the raw answers. Not in the app, not by export, not through the coach, not in a notification, not in an error message. You see only a synthesis.</li>
+          <li>Who answered is stored separately from what they answered.</li>
+          <li>Raw confidential answers are deleted no later than <strong>seven days</strong> after the synthesis is made or the round closes. Only the de-identified synthesis survives.</li>
+          <li>A contributor can withdraw before synthesis, and their withdrawal is honoured.</li>
+          <li>Contributors are told, in their own words, which mode they are answering in. Visible and confidential are different promises and never share one wording.</li>
+        </ul>
+
+        <h2>3. What we deliberately do not collect</h2>
+        <p>This list is part of the policy, not marketing:</p>
+        <ul>
+          <li><strong>No analytics and no crash-reporting SDK.</strong> None. Not Sentry, not Amplitude, not PostHog, not Mixpanel, not their equivalents.</li>
+          <li><strong>No advertising identifier, no cross-app tracking, no ads.</strong> Apple's App Tracking Transparency prompt is therefore not shown, because there is nothing to ask about.</li>
+          <li><strong>No push tokens.</strong> Reminders are scheduled locally on your device.</li>
+          <li><strong>No location.</strong> The code has an inert seam for it with nothing behind it; it asks for no location permission and reads no location.</li>
+          <li><strong>No calendar access.</strong> The same: a seam, nothing behind it.</li>
+          <li><strong>No contacts.</strong> You find a friend by typing the handle they chose.</li>
+          <li><strong>No microphone, camera or photo library.</strong></li>
+          <li><strong>Nothing is sold, and nothing is shared for anyone else's marketing.</strong></li>
+        </ul>
+
+        <h2>4. Why we use each thing, and on what basis</h2>
+        <table>
+          <tr><th>What</th><th>Why</th><th>Legal basis (EU/UK)</th></tr>
+          <tr><td>Your Dreams, Journeys and Steps</td><td>To be the product you opened. Without them there is nothing</td><td>Performance of a contract</td></tr>
+          <tr><td>Your account backup</td><td>So a lost phone does not lose your life's plan</td><td>Performance of a contract</td></tr>
+          <tr><td>Onboarding answers, Tool results, behavioural log</td><td>To shape a plan around you rather than a generic one</td><td>Legitimate interest, and you can turn the adaptive parts off</td></tr>
+          <tr><td>Your conversation with the coach</td><td>To answer you</td><td>Performance of a contract. <strong>The coach's memory is separately consented</strong>, and withdrawing it deletes what it held</td></tr>
+          <tr><td>Friendships, Support Circle, shared progress</td><td>Because you invited someone, and they accepted</td><td>Consent, on both sides</td></tr>
+          <tr><td>Mirror</td><td>Because you asked people a question about yourself</td><td>Consent, yours and each contributor's</td></tr>
+          <tr><td>Reminders</td><td>Because you set them</td><td>Consent (the OS permission)</td></tr>
+          <tr><td>Account tier</td><td>To know what your account includes</td><td>Performance of a contract</td></tr>
+        </table>
+
+        <h2>5. How long we keep things</h2>
+        <table>
+          <tr><th>What</th><th>Kept</th></tr>
+          <tr><td>Everything on your device</td><td>Until you delete it. Deleting your account wipes the file and destroys its key</td></tr>
+          <tr><td>Your account backup and social rows</td><td>For the life of the account; deleted when you delete it</td></tr>
+          <tr><td>Mirror confidential raw answers</td><td>Seven days from synthesis or round closure, then deleted</td></tr>
+          <tr><td>Mirror abuse evidence, if any is reported</td><td>Kept separately, under the abuse exception, for a documented maximum. We say this out loud because deletion does not reach it</td></tr>
+          <tr><td>Coach conversation content at the provider</td><td>The provider's own retention window for the paid tier</td></tr>
+          <tr><td>Journey pause events shared with your Allies</td><td>30 days, then deleted automatically</td></tr>
+          <tr><td>The coach's behavioural log</td><td><span class="todo">[[BEHAVIOUR_LOG_WINDOW]]</span></td></tr>
+          <tr><td>Tool derived summaries</td><td>Until the Tool's own result goes stale, or you redo it</td></tr>
+        </table>
+
+        <h2>6. Your rights</h2>
+        <p>
+          You can ask us to give you a copy of your data, correct it, delete it, hand it to you in a
+          portable form, object to a use of it, or withdraw a consent you gave. Write to
+          <span class="todo">[[CONTACT_EMAIL]]</span>.
+        </p>
+        <p>Two of those you do not have to ask for — they are buttons in the app:</p>
+        <ul>
+          <li><strong>Export</strong>: Settings → your account → export a copy of your data.</li>
+          <li><strong>Delete</strong>: Settings → your account → delete account. It wipes the device file, destroys its key, and deletes your rows from our server. It cannot be undone.</li>
+        </ul>
+        <p>There is also a public page for the deletion request, because the app stores require one: <a href="./delete-account.html">Delete your account</a></p>
+        <p>If you are in the EU or the UK, you may also complain to your national data protection authority.</p>
+        <p>
+          <strong>What deletion cannot reach</strong>, and we would rather say it than have you
+          discover it: things that are also someone else's. A message you sent lives in the other
+          person's conversation too. What a Mirror contributor wrote is their answer as well as your
+          result. Abuse evidence is retained under the exception above.
+        </p>
+
+        <h2>7. Children</h2>
+        <p>
+          PushApp is not for children. You must be at least <span class="todo">[[MIN_AGE]]</span> to
+          use it. We do not knowingly collect data from anyone younger; if we learn that we have, we
+          delete the account. If you believe a child is using PushApp, write to
+          <span class="todo">[[CONTACT_EMAIL]]</span>.
+        </p>
+
+        <h2>8. How we protect it</h2>
+        <ul>
+          <li>Everything on your device is stored in an <strong>encrypted file</strong>, with the key held in the device's own secure store (Keychain / Keystore).</li>
+          <li>Everything in transit uses <strong>TLS</strong>.</li>
+          <li>Every table on our server has <strong>row-level security</strong>: the database refuses to return another account's rows, whatever the app asks for.</li>
+          <li><strong>Direct messages are end-to-end encrypted</strong> and the server holds no key that could open one.</li>
+          <li>Notifications are written so that what appears on your lock screen never contains a Step title, a Journey "why", a reflection, or another person's private text.</li>
+        </ul>
+        <p>No system is perfect, and we would rather tell you what protects what than promise you it cannot fail.</p>
+
+        <h2>9. Does anything decide about you automatically?</h2>
+        <p>
+          Yes, in a limited and visible way: the coach adapts your plan from what you report, and the
+          app learns when you tend to act so a reminder can arrive at a time that suits you. Those are
+          suggestions about your own plan. <strong>They have no legal effect and no similarly
+          significant effect on you</strong>, they are visible in the app, and you can change or turn
+          them off. The coach's output is not professional, medical, psychological, legal or financial
+          advice. PushApp does not diagnose anything and is not a clinical tool; goals about addiction
+          or a relationship in difficulty are deliberately handed to a person rather than turned into
+          a plan.
+        </p>
+
+        <h2>10. Transfers, and changes to this policy</h2>
+        <p>
+          Our backend runs on infrastructure operated by Supabase; the AI provider and the build
+          service operate internationally. Where data leaves the EEA or the UK, it does so under the
+          standard contractual clauses those providers publish.
+        </p>
+        <p>
+          If this policy changes in a way that affects you, the app tells you the next time you open
+          it, and the date at the top of this page changes. We do not make a material change quietly.
+        </p>
+
+        <h2>11. Contact</h2>
+        <p><span class="todo">[[CONTROLLER]]</span> · <span class="todo">[[CONTACT_EMAIL]]</span></p>
+        <footer><a href="./">← Back to the invitation page</a></footer>
+      </section>
+    </main>
+
+    <script>
+      // The language toggle. `lang` and `dir` move with it so RTL is genuinely RTL rather than
+      // Hebrew text laid out left to right, and the choice is remembered per browser — a reader who
+      // switched to English once should not have to switch again to re-read a section.
+      (function () {
+        var he = document.getElementById('sec-he');
+        var en = document.getElementById('sec-en');
+        var btnHe = document.getElementById('btn-he');
+        var btnEn = document.getElementById('btn-en');
+
+        function show(lang) {
+          var hebrew = lang !== 'en';
+          he.hidden = !hebrew;
+          en.hidden = hebrew;
+          btnHe.setAttribute('aria-pressed', String(hebrew));
+          btnEn.setAttribute('aria-pressed', String(!hebrew));
+          document.documentElement.lang = hebrew ? 'he' : 'en';
+          document.documentElement.dir = hebrew ? 'rtl' : 'ltr';
+          try { localStorage.setItem('pushapp.policy.lang', hebrew ? 'he' : 'en'); } catch (e) {}
+        }
+
+        btnHe.addEventListener('click', function () { show('he'); });
+        btnEn.addEventListener('click', function () { show('en'); });
+
+        var stored = null;
+        try { stored = localStorage.getItem('pushapp.policy.lang'); } catch (e) {}
+        // No stored choice: follow the browser. A store reviewer arrives on English without hunting
+        // for the toggle, and everyone the invite went to arrives on Hebrew.
+        if (!stored) stored = (navigator.language || '').slice(0, 2) === 'he' ? 'he' : 'en';
+        show(stored);
+      })();
+    </script>
+  </body>
+</html>

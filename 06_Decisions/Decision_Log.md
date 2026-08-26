@@ -49,6 +49,62 @@ one natural sentence) is still open: the tree asks one at a time.
 (the signal block), `core/learning/experts/careerDiagnosis` (`CAREER_SIGNAL_HINTS`), `core/AppCore`
 (`diagnosedDefinition` + `matchVariant`), `core/coach/goalSpecToJourney` (`authoredArcFor`).
 
+## 2026-08-26 — how much the app is allowed to say, and in whose voice
+
+### D80 — An aggregate REPLACES the smart reminders it covers; a reminder somebody set by hand always fires
+**Decision (founder, 2026-08-26):**
+
+> איגוד מחליף ולא מתווסף · כן, אם אדם קבע תזכורת קבועה היא תופיע בזמן שהאדם קבע
+
+**The question it answers:** `Smart_Notification_Timing_PRD` §3 caps the adaptive aggregate at one a
+day but never says what happens to the per-Journey reminders already scheduled for that day. Both
+readings were available, and one of them makes the feature pointless: an aggregate arriving BESIDE
+three reminders is a fourth interruption, so the thing built to make the app quieter would have made
+it louder.
+
+**What was chosen:** the aggregate is the send. The smart rules whose slot it covers produce nothing
+of their own that day.
+
+**And the boundary that keeps it honest:** a FIXED reminder — one a person set at a time they chose —
+is untouchable. Cancelling it to keep a count tidy would be the app overruling an explicit
+instruction, which is the one thing the scheduler may never do. Fixed rules are not even an input to
+the aggregate planner, so it cannot reach them.
+
+### D81 — Smart is a mode the user CHOOSES, per Journey
+**Decision (founder, 2026-08-26):**
+
+> המנגנון שאנחנו מדברים עליו הוא מנגנון חכם - כלומר שהמשתמש בוחר במנגנון חכם ולא בידני
+
+Adaptive timing and the aggregate apply to a Journey whose reminder mode is **smart**. `fixed` keeps
+today's behaviour exactly — the time the person set, on the days they chose. The field already exists
+(`ReminderRule.mode`, reserved since Journey Reminder Management) and becomes selectable with this
+slice. Nobody is moved into smart mode without choosing it.
+
+### D82 — Onboarding Q6 (capacity) belongs to the Journey BUILDER, not to notification volume
+**Decision (founder, 2026-08-26):**
+
+> שאלה 6 אמורה לשרת את הסוכן שבונה מסעות כדי שיידע כמה זמן פנוי נותר למשתמש ולא להעמיס עליו מסעות
+> כבדים מידי
+
+**Why it matters:** the answer had no consumer at all (`Partner_Onboarding_Spec_and_Flow_2026-08-26`
+§13.3 lists it as a gap), and the tempting fix was to let it decide how many notifications somebody
+gets. That would answer a question about somebody's WEEK with a fact about their ATTENTION. Its real
+job is to stop the coach building a Journey that does not fit the hours they actually have.
+
+### D83 — Two windows are separate at three hours
+**Decision (founder, 2026-08-26):** a second aggregate in one day is allowed when at least **three
+hours** separate the two groups. Below that it is one send.
+
+### D84 — Communication style shapes WORDING, never volume; and it shapes every notification
+**Decision (founder, 2026-08-26):**
+
+> סוג התקשורת משפיע על נוסח ולא על כמות · כן יש להרחיב את כל ההתראות על פי סגנונות התקשורת השונים
+
+Today only the reminder has all four voices; ally requests, freeze, resume, Journey completion and the
+notification centre all speak in one default. That is now a gap to close rather than a design: every
+notification the app sends should be in the voice the person chose. Volume is a separate axis and is
+not derived from style — somebody who likes warm wording does not necessarily want more of it.
+
 ## 2026-08-25 — three tool and social decisions, and one idea declined
 
 ### D78 — The Passion Map ends with a RESULT, and running it again recomputes one

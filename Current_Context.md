@@ -65,16 +65,14 @@ once a day, absent on most days, grounded in a number the app counted itself, wi
 helpful. `04_Product/PRD/Motivation_First_Slice_PRD.md` answers the Future PRD's 24 open questions
 for this slice and marks the ones that stay open.
 
-## ▶ THE ONE THING TO DO FIRST, NEXT SESSION
+## ▶ THE UPDATE IS ALREADY PUBLISHED
 
-**Publish the over-the-air update, to BOTH channels.** Everything above is JavaScript, so it reaches
-both phones without a build — and a publish to `production` alone reaches the iPhone and nobody
-else, because the Android build listens to `preview`.
+Done at the end of this session, to **BOTH** channels (`production` AND `preview` — a publish to
+`production` alone reaches the iPhone and nobody else, because the Android build listens to
+`preview`). Commit `29f03d0`. Everything above is JavaScript, so opening the app is all either of
+them has to do; no new build is needed.
 
-```bash
-cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch production --message "the aggregate, every notification in your voice, and the first motivation card"
-cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch preview --message "the aggregate, every notification in your voice, and the first motivation card"
-```
+Task 0 for the NEXT session is the same thing for whatever it builds.
 
 ## ▶ WHAT IS WORTH TELLING THE FOUNDER ABOUT R9
 

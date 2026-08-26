@@ -4,6 +4,75 @@ Status: Living Document
 
 ---
 
+# 2026-08-26 (later) — three tasks, in the founder's order: the aggregate, every voice, and the first true sentence
+
+`tsc` clean · **jest 2462 / 232 suites**. Decision: D85.
+
+## R7 — the aggregate, wired end to end
+
+The planner landed earlier the same day; this is everything that turns it into something a person
+can choose and receive. The scheduler now partitions by the mode on the rule. A `fixed` reminder
+expands exactly as it always has and is **never an input to the aggregate**, which is how "a reminder
+somebody set by hand fires at the time they set" is guaranteed structurally rather than remembered.
+A `smart` reminder hands its time to the planner and produces nothing of its own, because the
+aggregate replaces it — three Journeys become one send instead of four interruptions.
+
+The two suppression rules are implemented at the two places they are actually true. "The app is
+already foregrounded" is EXACT: the notification handler only ever runs in the foreground, so an
+aggregate is simply not shown there — while a per-Journey reminder still is, because silencing that
+one would be a hidden schedule change. "Nothing is pending" is honest rather than exact: a local
+notification cannot be recalled once the OS holds it, so a Journey with no pending Step is left out
+at plan time and the next reconcile cancels what was pending. The gap that leaves — finishing
+everything after the day's last reconcile — is written down rather than discovered.
+
+Smart stops being a "coming soon" chip. Choosing it hides the time field, because the app picks that
+and showing a time we are free to move would promise something we do not mean, and keeps the day
+picker, because which days somebody is reachable stays theirs to say.
+
+With no aggregate copy builder injected, none of it happens and a smart rule expands like a fixed
+one. That is a test, not a hope.
+
+## R8 — every notification in the chosen voice (D84)
+
+Ten types were base-only, so somebody who picked "direct" heard it in their reminder and nowhere
+else. No mechanism was missing; this is authoring — eight types × four voices × two languages,
+written against the register the questionnaire's own preview examples set, so what a person is shown
+while choosing is what they get.
+
+Two things stay untoned on purpose. `journey_closed` stays neutral for everyone, as it has since
+D40: a warm or energizing spin on somebody else's setback is the forced positivity the product
+refuses, and the catalogue enforces that structurally. And the in-app Activity list stays factual —
+it is a feed of what happened, not a send.
+
+## R9 — motivation, the first slice (D85)
+
+The Future PRD keeps every promise it makes. What ships is the part that needs no backend, no new
+permission, no metered model and no cost: **one card on Home, at most once a day, absent on most
+days, grounded in a number the app counted itself.** No push, no quotations, no health statements, no
+money figures — each excluded for a stated reason rather than cut.
+
+Truth is structural. An item declares the facts its sentence needs; a fact the app cannot answer
+comes back undefined; an item missing one is not eligible. It cannot be selected without its facts,
+so it can never be shown with a hole or an invention in it. A count of zero is a known fact and a
+pointless sentence.
+
+Feedback is one binary signal, and "not now" is not one of its values: it hides the card for the day
+and records no opinion. A "not helpful" retires that item for that person at that VERSION, so a
+rewritten meaning gets a fresh hearing rather than inheriting a verdict about a different sentence.
+The whole record is an id, a theme, a version and a verdict, inside `AppState` — covered by the
+export and the account wipe with no code of its own.
+
+`04_Product/PRD/Motivation_First_Slice_PRD.md` answers the Future PRD's §11/§12 for this slice and
+marks every question that stays open.
+
+## One thing found by running it
+
+Answering the card made the engine go silent for the day — correctly — which meant the card vanished
+from under the thumb that had just tapped it, and the "noted, thank you" line was unreachable code.
+It now holds an acknowledgement in place. Caught in the browser preview, not in review.
+
+---
+
 # 2026-08-26 — the partner's words, a tool that ships, and a bug the platform caused
 
 `tsc` clean · **jest 2394 / 225 suites**. Decisions: D80–D84.

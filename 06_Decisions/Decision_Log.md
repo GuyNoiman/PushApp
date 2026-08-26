@@ -49,6 +49,56 @@ one natural sentence) is still open: the tree asks one at a time.
 (the signal block), `core/learning/experts/careerDiagnosis` (`CAREER_SIGNAL_HINTS`), `core/AppCore`
 (`diagnosedDefinition` + `matchVariant`), `core/coach/goalSpecToJourney` (`authoredArcFor`).
 
+## 2026-08-26 (later) — the first thing the app says that is not a reminder
+
+### D85 — Motivation ships as a SLICE, and the slice says only what the app already counted
+**Decision (AI product team, 2026-08-26; the founder asked for R9 next and for the work to run
+without further approval).** The full Personalized Motivation Engine keeps every promise it makes —
+nothing in `PRD/Future/Personalized_Motivation_Engine_PRD.md` is cut. What ships now is the part of
+it that needs no backend, no new permission, no metered model and no cost, and it is scoped by one
+line: **say only what the app already knows for certain, only where the person is already looking.**
+
+**What that means concretely, and why each exclusion is real rather than laziness:**
+- **In-app only. No motivational push, at all.** The app's notification budget is already spent on
+  reminders and the aggregate that landed the same day; a second voice on the lock screen before the
+  first has been lived with is the app talking more, not better.
+- **No quotations** — sourcing, licensing, attribution and translation provenance are unresolved
+  (Future PRD §11 Q12), and an unattributed internet quote is exactly what that section forbids.
+- **No health statements** — they need a reviewed source and a jurisdiction/language check that
+  nobody has done (§11 Q11).
+- **No money or consumption figures** — they rest on a baseline the user enters and can edit, which
+  is its own feature with its own screen. Estimating one would be the app inventing a number, which
+  §3.1 forbids in as many words.
+- **What is left is the half that actually makes motivation land:** a number about this person,
+  counted by the app, that they can check.
+
+**The truth rule is structural, not a convention.** An item declares the facts its sentence needs; a
+fact the app cannot answer comes back undefined; an item missing one of its facts is not eligible.
+It therefore cannot be *selected* without its facts, so it can never be *shown* with a hole or an
+invention in it. A count of zero is treated as a known fact and a pointless sentence.
+
+**Silence is the default.** One card a day at most, only in four moments, with a 21-day item
+cooldown and a 7-day theme cooldown. Most days say nothing, and that is the intended behaviour.
+
+**Feedback is one binary signal, and "not now" is not one of its values.** A dismissal hides the card
+for the day and records no opinion; lack of an answer is not a dislike. A "not helpful" retires that
+item for that person at that VERSION, so a rewritten meaning gets a fresh hearing rather than
+inheriting a verdict about a different sentence.
+
+**Privacy:** the record is an item id, a theme, a version and a verdict. No Journey title, no Step
+title, no Dream text, no free text — which is why it lives inside `AppState` and is covered by the
+account export and the account wipe with no code of its own.
+
+**Two things were answered for this slice and stay OPEN for the engine:** the catalog is bundled in
+the app (Option A, chosen with its stated weakness understood — it is JavaScript, so a correction
+travels by `eas update` without a store release, and with no cross-user ranking there is nothing that
+must update centrally; **Option D remains the recommendation** the moment ranking crosses users); and
+ranking is "never-answered first, then longest-ago", an honest placeholder for the confidence-aware
+model the vision describes.
+
+**Reflected in:** `04_Product/PRD/Motivation_First_Slice_PRD.md` (the full answer set against §11/§12),
+`app/src/core/motivation/*`, `app/src/components/home/MotivationCard.tsx`.
+
 ## 2026-08-26 — how much the app is allowed to say, and in whose voice
 
 ### D80 — An aggregate REPLACES the smart reminders it covers; a reminder somebody set by hand always fires

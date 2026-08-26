@@ -1,8 +1,10 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-26** — start at the **"⛳ START HERE — 2026-08-26"** block, which supersedes
-(but does not replace) every block under it.
+Last updated: **2026-08-26 (later)** — start at the **"⛳ START HERE — 2026-08-26 (later)"** block,
+which supersedes (but does not replace) every block under it, including the earlier same-day block
+that named the three tasks. That earlier block is kept as accurate history of what was picked; this
+one records what happened to all three.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
 Prior pointer: **2026-08-24 (late)** — the **"⛳ Previous START HERE — 2026-08-24 (late)"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
@@ -38,7 +40,74 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-26: where the work stands, and the three things next
+# ⛳ START HERE — 2026-08-26 (later): all three tasks are done, and what is actually left
+
+On `feat/buddy-3d-and-reminders`, committed. `tsc` clean, **jest 2462 / 232 suites**. Detail:
+`00_Foundation/CHANGELOG.md` (2026-08-26, later) and the Decision Log (D85).
+
+## ▶ THE THREE TASKS THE FOUNDER PICKED — ALL THREE BUILT
+
+**1. R7 — the aggregate. DONE.** The scheduler partitions by mode; a `fixed` reminder is never an
+input to the aggregate (so "a reminder somebody set by hand always fires" is structural, not
+remembered); a `smart` reminder produces nothing of its own because the aggregate replaces it; the
+copy builder is injected at the composition root, and injecting it is what turns the feature on;
+Smart is a real, selectable mode in the Journey editor. Suppression: "already foregrounded" is
+EXACT, in the notification handler; "nothing pending" is the reconcile approximation, and its
+remaining gap is now written into the code rather than discovered later.
+
+**2. R8 — every notification in the chosen voice (D84). DONE.** Eight types × four voices × two
+languages. `journey_closed` and the in-app Activity list stay untoned, both for the same stated
+reason.
+
+**3. R9 — the Personalized Motivation Engine. FIRST SLICE DONE (D85).** The vision is uncut; what
+ships is the part that needs no backend, no permission, no model and no cost. One Home card, at most
+once a day, absent on most days, grounded in a number the app counted itself, with Helpful / Not
+helpful. `04_Product/PRD/Motivation_First_Slice_PRD.md` answers the Future PRD's 24 open questions
+for this slice and marks the ones that stay open.
+
+## ▶ THE ONE THING TO DO FIRST, NEXT SESSION
+
+**Publish the over-the-air update, to BOTH channels.** Everything above is JavaScript, so it reaches
+both phones without a build — and a publish to `production` alone reaches the iPhone and nobody
+else, because the Android build listens to `preview`.
+
+```bash
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch production --message "the aggregate, every notification in your voice, and the first motivation card"
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch preview --message "the aggregate, every notification in your voice, and the first motivation card"
+```
+
+## ▶ WHAT IS WORTH TELLING THE FOUNDER ABOUT R9
+
+Three exclusions are decisions he may want to revisit, and each is a real blocker rather than a
+preference: **quotations** need sourcing and licensing; **health statements** need a reviewed source
+and a jurisdiction check; **money and consumption figures** need a baseline the user enters and can
+edit, which is its own feature with its own screen. Estimating one would be the app inventing a
+number. All three stay in the Future PRD.
+
+Two more are ours and are placeholders by design: the catalog is **bundled in the app** (tolerable
+only because it is JavaScript and travels by `eas update`, and because nothing crosses users yet —
+Option D is still the recommendation once ranking does), and ranking is "never-answered first, then
+longest-ago" rather than a confidence-aware model.
+
+## ▶ EVERYTHING ELSE STILL OPEN (unchanged from the block below, minus the three)
+
+**Mine, approved, waiting for a slot:** R10 (onboarding Q6 → the Journey builder, ready) · R6, the
+Ally notification on pause/resume (D79) · finish Strength Evidence (the server-side analysis that
+retains no story, and importing a Mirror result) · the monitoring console, stage 3 · the
+privacy-policy draft (R4) · a PRD for Journey resume/replan (R2) · a continuation to the frozen
+onboarding PRD.
+
+**Waiting on the founder:** a subdomain for the console · a Sentry account + DSN, and the one build
+that carries the SDK · PRDs for the four tools already live without one (R5) · the seven Weekly
+Review Contributions questions · EU trader status · whether Q1–Q3 should visibly shape the coach's
+first reply · whether to author diagnosis trees beyond Career.
+
+**Waiting on a human, not a decision:** the Android keyboard fix wants confirmation on a real device
+· Support Circle authorisation against the live database needs a second real account.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-26 (earlier): where the work stood, and the three things picked
 
 On `feat/buddy-3d-and-reminders`, everything committed and pushed. `tsc` clean, **jest 2394 / 225
 suites**. Published to BOTH channels (`production` and `preview`) — the Android build listens to

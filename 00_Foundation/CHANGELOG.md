@@ -4,6 +4,47 @@ Status: Living Document
 
 ---
 
+# 2026-08-26 — the partner's words, a tool that ships, and a bug the platform caused
+
+`tsc` clean · **jest 2394 / 225 suites**. Decisions: D80–D84.
+
+## The keyboard bug the partner found (Android)
+
+Writing to the coach, the keyboard sat on top of the composer and you could not see what you were
+typing. Every screen with a pinned input passed `Platform.OS === 'ios' ? 'padding' : undefined`, and
+`undefined` means no avoidance at all — which was CORRECT while Android resized its window for the
+keyboard. Edge-to-edge ended that in SDK 54: the window draws behind the system bars and no longer
+resizes. Nothing in our code changed; an assumption that had been safe for a year became a bug
+without a commit. Fixed in one shared `KeyboardSafeView`, adopted by nine screens, with a test that
+reads the source and fails if any screen decides it alone again. **Unverified on a real device.**
+
+## Strength Evidence ships
+
+Six prompts collecting moments, the moments as editable cards, then naming what keeps showing up and
+attaching the moments it came from. A strength standing on nothing cannot be confirmed; fewer than
+five is a result rather than filler; deleting a story does not delete the strength it held up. What
+leaves the tool is one shape — a label and a count — and only after the person confirms the result
+AND allows it. "What I bring" in the Direction Statement stops being deliberately empty.
+
+## The partner's v1.3, ingested and live
+
+His user-facing card wording, in English and Hebrew, keyed by signal and contract value. Eight of our
+eleven options carry his words verbatim; three are ours and he was told which. He also removed the
+trap we hit — answer kinds are keyed by the contract value now, with the readable names kept only as
+legacy metadata — and adopted the sixty-day planning ceiling for future content.
+
+## Five decisions about how much the app may say (D80–D84)
+
+An aggregate REPLACES the smart reminders it covers, and a reminder somebody set by hand always
+fires. Smart is a mode the user chooses per Journey. Onboarding's capacity question belongs to the
+Journey builder, not to notification volume. Two windows are separate at three hours. Style shapes
+wording and never volume — and every notification should eventually speak in the chosen voice, not
+only the reminder.
+
+The aggregate's planner is built and tested; wiring it into the scheduler is the next task (R7).
+
+---
+
 # 2026-08-24 (continued, 3) — the account's clock moved to the server, and the coach listens to sentences
 
 `tsc` clean · **jest 2343 / 219 suites**.

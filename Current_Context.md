@@ -1,8 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-24 (continued)** — start at the **"⛳ START HERE — 2026-08-24 (continued)"**
-block, which supersedes (but does not replace) the "(late)" block under it.
+Last updated: **2026-08-26** — start at the **"⛳ START HERE — 2026-08-26"** block, which supersedes
+(but does not replace) every block under it.
+Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
 Prior pointer: **2026-08-24 (late)** — the **"⛳ Previous START HERE — 2026-08-24 (late)"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
 history of the same session's earlier half. The 2026-08-20 morning block under it is accurate history of the same day's earlier session. The
@@ -37,7 +38,65 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-24 (continued): three queue items done, and what is left
+# ⛳ START HERE — 2026-08-26: where the work stands, and the three things next
+
+On `feat/buddy-3d-and-reminders`, everything committed and pushed. `tsc` clean, **jest 2394 / 225
+suites**. Published to BOTH channels (`production` and `preview`) — the Android build listens to
+`preview`, and a publish to `production` alone reaches the iPhone and nobody else.
+
+## ▶ THE THREE TASKS THE FOUNDER PICKED, IN HIS ORDER
+
+**1. R7 — the aggregate (in progress).** Every open question is answered (D80–D83). Built:
+`app/src/core/notify/aggregatePlan.ts` + its tests — the pure planner that groups a day's SMART
+reminders into at most two sends, three hours apart, firing at the earliest time in each group and
+naming the rules it replaces. **Still to build**, in order:
+   - partition by `ReminderRule.mode` in `CommunicationScheduler.planSchedule`: `fixed` expands
+     exactly as today, `smart` goes to the planner and produces NO per-rule notification;
+   - an `AggregateCopyBuilder` over the `notify` namespace (counts + Journey titles, never Step
+     titles), injected at the composition root — with none injected, nothing changes;
+   - the `smart` option in the Journey reminder UI (the field is reserved already);
+   - suppression at send time: nothing pending, or the app already foregrounded;
+   - tests: "three Journeys become one send", and "a fixed reminder still fires that day".
+
+**2. R8 — every notification in the chosen voice (D84).** Only `reminder` has the four styles today;
+ten other notification types are base-only. The mechanism exists (`notificationContent.ts` resolves a
+`_<styleId>` suffix and falls back), so this is authoring: ~20 strings × 4 voices × 2 languages, plus
+the gendered Hebrew forms.
+
+**3. R9 — the Personalized Motivation Engine.** The founder wants it right after the aggregate. Its
+PRD is Future Vision with **open product and architecture questions (§11, §12)** — those have to be
+answered before code. No new permission, no native build, which is why it beat calendar/location.
+
+## ▶ WHAT THE FOUNDER DECIDED ON 2026-08-26 (D80–D84, full text in the Decision Log)
+
+An aggregate REPLACES the smart reminders it covers · a reminder somebody set BY HAND always fires at
+the time they set · smart is a mode the user chooses, per Journey · onboarding Q6 (capacity) belongs
+to the Journey BUILDER and not to notification volume (that is **R10**, ready) · two windows are
+separate at three hours · communication style shapes wording and never volume.
+
+## ▶ EVERYTHING ELSE STILL OPEN
+
+**Mine, approved, waiting for a slot:** finish Strength Evidence (the server-side analysis that
+retains no story, and importing a Mirror result) · R6, the Ally notification on pause/resume (D79) ·
+the monitoring console, stage 3 · the privacy-policy draft (study Instagram and two competitors
+first) · a PRD for Journey resume/replan (R2) · a continuation to the frozen onboarding PRD.
+
+**Waiting on the founder:** a subdomain for the console (recommended: its own, not a path on the
+invite site) · a Sentry account + DSN, and the one build that carries the SDK · PRDs for the four
+tools already live without one · the seven Weekly Review Contributions questions · EU trader status ·
+whether Q1–Q3 should visibly shape the coach's first reply · whether to author diagnosis trees beyond
+Career.
+
+**Waiting on a human, not a decision:** the Android keyboard fix wants confirmation on a real device
+(the partner reported it; the fix is published but unverified) · Support Circle authorisation against
+the live database needs a second real account.
+
+**Owed to the partner:** nothing. He delivered v1.3 — the card wording in both languages, and the
+schema trap removed. What we owe him is evidence from a real person meeting the diagnosis.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-24 (continued): three queue items done, and what is left
 
 On `feat/buddy-3d-and-reminders`. `tsc` clean, **jest 2317 / 214 suites**. Detail:
 `00_Foundation/CHANGELOG.md` and the Decision Log (D76, E8).

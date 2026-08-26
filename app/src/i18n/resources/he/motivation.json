@@ -1,0 +1,130 @@
+{
+  "weekPace": {
+    "title": "השבוע בתנועה",
+    "body": "דיווחתם על {{stepsDoneThisWeek}} צעדים מתחילת השבוע.",
+    "title_direct": "{{stepsDoneThisWeek}} צעדים השבוע",
+    "body_direct": "זה מה שיש עד עכשיו. ממשיכים.",
+    "title_explanatory": "השבוע שלכם עד כה",
+    "body_explanatory": "דיווחתם על {{stepsDoneThisWeek}} צעדים מאז שהשבוע התחיל. זה מה שנרשם, לא הערכה.",
+    "title_warm": "השבוע מחזיק",
+    "body_warm": "{{stepsDoneThisWeek}} צעדים מתחילתו. זה אמיתי, מה שלא יביא ההמשך.",
+    "title_energizing": "{{stepsDoneThisWeek}} צעדים כבר מאחוריכם השבוע",
+    "body_energizing": "השבוע שלכם. תמשיכו לזוז."
+  },
+  "streakDays": {
+    "title": "{{streakDays}} ימים ברצף",
+    "body": "בכל אחד מהם הופעתם.",
+    "title_direct": "{{streakDays}} ימים ברצף",
+    "body_direct": "היום ממשיך את זה.",
+    "title_explanatory": "{{streakDays}} ימים רצופים",
+    "body_explanatory": "הרצף נספר ביום שבו מדווח משהו כבוצע. הוא עומד על {{streakDays}}.",
+    "title_warm": "{{streakDays}} ימים, אחד אחרי השני",
+    "body_warm": "זה קצב, לא מזל.",
+    "title_energizing": "{{streakDays}} ברצף",
+    "body_energizing": "שהיום לא יהיה החור."
+  },
+  "stepsTotal": {
+    "title": "{{stepsDoneTotal}} צעדים מאחוריכם",
+    "body": "כל אחד מהם היה החלטה שלכם.",
+    "title_direct": "{{stepsDoneTotal}} צעדים בוצעו",
+    "body_direct": "זה הסך הכול עד עכשיו.",
+    "title_explanatory": "{{stepsDoneTotal}} צעדים הושלמו בסך הכול",
+    "body_explanatory": "נספרו על פני כל המסעות שלכם. כל אחד מהם דווח על ידיכם.",
+    "title_warm": "תראו מה כבר מאחוריכם",
+    "body_warm": "{{stepsDoneTotal}} צעדים. אף אחד מהם לא קרה מעצמו.",
+    "title_energizing": "{{stepsDoneTotal}} וממשיכים",
+    "body_energizing": "המספר הזה הולך רק לכיוון אחד. תוסיפו לו היום."
+  },
+  "journeyShare": {
+    "title": "{{journeyTitle}} ב־{{journeyProgressPct}}%",
+    "body": "זה החלק שכבר חייתם.",
+    "title_direct": "{{journeyTitle}}: {{journeyProgressPct}}%",
+    "body_direct": "אפשר להיכנס ולקחת את הצעד הבא.",
+    "title_explanatory": "{{journeyTitle}} הושלם ב־{{journeyProgressPct}}%",
+    "body_explanatory": "זה החלק מהצעדים שדיווחתם שבוצעו, מתוך אלה שעדיין בתוכנית.",
+    "title_warm": "{{journeyTitle}} רחוק יותר ממה שזה מרגיש",
+    "body_warm": "{{journeyProgressPct}} אחוז ממנו כבר מאחוריכם.",
+    "title_energizing": "{{journeyProgressPct}}% מ{{journeyTitle}} מאחוריכם",
+    "body_energizing": "השאר זו אותה עבודה בדיוק. תמשיכו."
+  },
+  "daysMoving": {
+    "title": "{{daysMoving}} ימים עם {{journeyTitle}}",
+    "body": "זה כבר זמן מה חלק מהחיים שלכם.",
+    "title_direct": "{{daysMoving}} ימים על {{journeyTitle}}",
+    "body_direct": "עדיין רץ.",
+    "title_explanatory": "{{journeyTitle}} רץ כבר {{daysMoving}} ימים",
+    "body_explanatory": "נספר מהיום שבו התחיל. הוא עדיין פתוח, ועדיין שלכם להזיז.",
+    "title_warm": "{{daysMoving}} ימים של {{journeyTitle}}",
+    "body_warm": "זה כבר זמן מה אתכם. יש לזה משקל.",
+    "title_energizing": "{{daysMoving}} ימים בתוך {{journeyTitle}}",
+    "body_energizing": "מספיק זמן כדי שזה יהיה אמיתי. תמשיכו."
+  },
+  "milestoneNear": {
+    "title": "אבן הדרך קרובה",
+    "body": "נשארו בה {{stepsToMilestone}} צעדים.",
+    "title_direct": "{{stepsToMilestone}} צעדים לאבן הדרך",
+    "body_direct": "התוכנית של היום פתוחה.",
+    "title_explanatory": "אתם בסוף אבן דרך",
+    "body_explanatory": "נשארו {{stepsToMilestone}} צעדים באבן הדרך שאתם עוברים עכשיו.",
+    "title_warm": "כמעט דרך אבן הדרך הזאת",
+    "body_warm": "{{stepsToMilestone}} צעדים. בלי למהר, זה קרוב.",
+    "title_energizing": "{{stepsToMilestone}} צעדים מאבן הדרך",
+    "body_energizing": "זה גמיר. קחו אחד."
+  },
+  "backAfterMiss": {
+    "title": "חזרתם",
+    "body": "לחזור זה החלק שקובע.",
+    "title_direct": "חזרתם",
+    "body_direct": "התוכנית של היום פתוחה.",
+    "title_explanatory": "הרמתם את זה שוב",
+    "body_explanatory": "פער לא מבטל את מה שהיה לפניו. התוכנית ממשיכה מכאן.",
+    "title_warm": "חזרתם",
+    "body_warm": "זה החלק הקשה, והוא כבר מאחוריכם.",
+    "title_energizing": "שוב בפנים",
+    "body_energizing": "התוכנית מחכה. קחו את הבא."
+  },
+  "returnCounts": {
+    "title": "שום דבר לא הלך לאיבוד",
+    "body": "{{stepsDoneTotal}} צעדים עדיין מאחוריכם.",
+    "title_direct": "{{stepsDoneTotal}} צעדים עדיין נספרים",
+    "body_direct": "אף אחד מהם לא נעלם.",
+    "title_explanatory": "הרישום שלכם שלם",
+    "body_explanatory": "{{stepsDoneTotal}} הצעדים שדיווחתם עליהם עדיין נספרים. הפסקה לא מאפסת אותם.",
+    "title_warm": "הכול עדיין שם",
+    "body_warm": "{{stepsDoneTotal}} צעדים מאחוריכם. פער לא מוחק אותם.",
+    "title_energizing": "{{stepsDoneTotal}} צעדים עומדים במקומם",
+    "body_energizing": "אתם לא מתחילים מהתחלה. תמשיכו."
+  },
+  "quietDoorOpen": {
+    "title": "מתי שתרצו",
+    "body": "התוכנית של היום כאן כשתרצו אותה.",
+    "title_direct": "התוכנית פתוחה",
+    "body_direct": "צעד אחד מספיק.",
+    "title_explanatory": "שום דבר לא פג",
+    "body_explanatory": "התוכנית עדיין כאן ולא השתנתה. אפשר להרים אותה מאיפה שהיא נעצרה.",
+    "title_warm": "בלי למהר",
+    "body_warm": "זה כאן כשתרצו. צעד אחד זה בהחלט מספיק.",
+    "title_energizing": "צעד אחד מספיק",
+    "body_energizing": "זה כל מה שהיום צריך להיות."
+  },
+  "quietStillYours": {
+    "title": "{{journeyTitle}} עדיין שלכם",
+    "body": "הוא מחכה, לא פג.",
+    "title_direct": "{{journeyTitle}} עדיין פתוח",
+    "body_direct": "שום דבר לא אבד.",
+    "title_explanatory": "{{journeyTitle}} לא הלך לשום מקום",
+    "body_explanatory": "הוא נשאר בדיוק כפי שהשארתם אותו, עד שתזיזו, תשהו או תסגרו.",
+    "title_warm": "{{journeyTitle}} עדיין שלכם",
+    "body_warm": "הוא מחכה, ולא הולך לשום מקום.",
+    "title_energizing": "{{journeyTitle}} מחכה",
+    "body_energizing": "היכנסו ובחרו צעד אחד."
+  },
+  "card": {
+    "helpful": "עזר לי",
+    "notHelpful": "לא עזר",
+    "dismiss": "לא עכשיו",
+    "thanks": "נרשם, תודה",
+    "doorJourney": "למסע",
+    "doorToday": "לתוכנית של היום"
+  }
+}

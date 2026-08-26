@@ -65,6 +65,10 @@ import {
   deliverCircleNotice,
   type CircleNotice,
 } from './notify/circleNotice';
+import { deriveMotivationFacts } from './motivation/facts';
+import { buildMotivationCard, type MotivationCard } from './motivation/motivationCopy';
+import { appendMotivationLog, motivationDayKey, selectMotivation } from './motivation/select';
+import type { MotivationLogEntry } from './motivation/types';
 import { buildAggregateCopy } from './notify/aggregateCopy';
 import { buildReminderCopy } from './notify/reminderCopy';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
@@ -341,6 +345,7 @@ function emptyState(): AppState {
     missions: { progress: {}, dailyResetKey: '', weeklyResetKey: '' },
     login: { lastClaimedKey: null, dayIndex: 0 },
     reminderRules: [],
+    motivationLog: [],
     communicationPrefs: defaultCommunicationPrefs(),
     schedulingPrefs: defaultSchedulingPrefs(),
     weekReviewAt: {},
@@ -453,6 +458,9 @@ function migrateState(state: AppState): AppState {
     // the flag off they simply stay empty. ON-DEVICE ONLY (G1).
     timingModels: state.timingModels ?? [],
     timingTrials: state.timingTrials ?? [],
+    // Motivation cards — backfill to [] for a snapshot that predates them, so the selection path
+    // never dereferences an absent field. ON-DEVICE ONLY, and holds no user-authored text (G1).
+    motivationLog: state.motivationLog ?? [],
     // Streak (D26.4) — backfill for a snapshot that predates the StreakEngine: no counted
     // history yet, so start at 0 with no active day. On-device only, no PII.
     streak: state.streak ?? 0,
@@ -2760,6 +2768,86 @@ export class AppCore {
       enabled: true,
       mode: 'fixed',
     });
+  }
+
+  // ── Motivation, the first slice (Motivation_First_Slice_PRD.md) ──────────────────────────
+  //
+  // In-app only: this slice sends no notification of any kind. Every number it speaks was counted
+  // by the app rather than estimated, and the whole feedback record is ids and verdicts — which is
+  // why it can live in AppState and be covered by the export and the wipe for free.
+
+  /**
+   * The motivation card for right now, or `null` for silence — which is the normal answer on most
+   * days. Pure read: it derives the facts, asks the (framework-free) selector, and hands the result
+   * to the copy adapter. Nothing is recorded here; showing it is a separate, deliberate call, so a
+   * card that is merely computed during a render never burns the day's one slot.
+   */
+  getMotivationCard(): MotivationCard | null {
+    const now = Date.now();
+    const facts = deriveMotivationFacts(this.state, now);
+    return buildMotivationCard(selectMotivation(facts, this.state.motivationLog ?? [], now));
+  }
+
+  /**
+   * Record that a card actually reached the screen. This is what spends the day's one slot — and
+   * what makes the same card come back unchanged for the rest of the day rather than being
+   * re-rolled on every render. Idempotent: a second call for the same item on the same day does
+   * nothing.
+   */
+  noteMotivationShown(card: Pick<MotivationCard, 'itemId' | 'version' | 'theme'>): void {
+    const now = Date.now();
+    const log = this.state.motivationLog ?? [];
+    const today = motivationDayKey(now);
+    if (log.some((e) => e.itemId === card.itemId && motivationDayKey(e.at) === today)) return;
+    this.state.motivationLog = appendMotivationLog(log, {
+      itemId: card.itemId,
+      theme: card.theme,
+      version: card.version,
+      at: now,
+    });
+    this.persist();
+    this.notify();
+  }
+
+  /**
+   * The on-device motivation record — ids, themes, versions and verdicts, nothing else. Read by the
+   * tests and by any future surface that wants to show or reset it.
+   */
+  getMotivationLog(): readonly MotivationLogEntry[] {
+    return this.state.motivationLog ?? [];
+  }
+
+  /**
+   * Forget every verdict this person has given, so retired items get another hearing
+   * (`Future/Personalized_Motivation_Engine_PRD.md` §9: "reset personal feedback"). The SHOWN
+   * history goes with it — keeping it would leave the cooldowns silently enforcing a past the
+   * person just asked us to forget.
+   */
+  resetMotivationFeedback(): void {
+    if ((this.state.motivationLog ?? []).length === 0) return;
+    this.state.motivationLog = [];
+    this.persist();
+    this.notify();
+  }
+
+  /**
+   * Record what the person said about today's card.
+   *
+   * `'dismissed'` is "not now" and carries NO opinion about the content — it hides the card for the
+   * rest of the day and is never read as a dislike (PRD §3 Q7). A `'notHelpful'` verdict, by
+   * contrast, retires that item for this person permanently — at that version, so a rewritten
+   * meaning gets a fresh hearing rather than inheriting a verdict about a different sentence.
+   */
+  rateMotivation(itemId: string, verdict: 'helpful' | 'notHelpful' | 'dismissed'): void {
+    const log = this.state.motivationLog ?? [];
+    const today = motivationDayKey(Date.now());
+    const index = log.map((e, i) => ({ e, i })).filter(({ e }) => e.itemId === itemId && motivationDayKey(e.at) === today).pop()?.i;
+    if (index === undefined) return;
+    const next = [...log];
+    next[index] = { ...next[index], verdict };
+    this.state.motivationLog = next;
+    this.persist();
+    this.notify();
   }
 
   /**

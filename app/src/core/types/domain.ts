@@ -9,6 +9,7 @@ import type { Entitlement } from './entitlement';
 // Type-only cross-import (erased at runtime — no cycle): the on-device onboarding record (K2). The
 // answer/step shapes + logic live under core/onboarding; AppState only stores them.
 import type { CoachMemoryState } from '../coach/context/types';
+import type { MotivationLogEntry } from '../motivation/types';
 import type { OnboardingAnswers, OnboardingStep } from '../onboarding/model';
 // Type-only cross-import (erased at runtime — no cycle): a Weekly Review proposal carries the
 // SAME coarse adjustment kinds + per-Step diff the AdaptivePlanner already speaks.
@@ -1078,6 +1079,18 @@ export interface AppState {
   login: LoginState;
   /** User-defined reminders (on-device local notifications). */
   reminderRules: ReminderRule[];
+  /**
+   * The motivation card history — what was shown, and what the person said about it
+   * (`Motivation_First_Slice_PRD.md` §5). Optional so an older snapshot loads without it
+   * (backfilled to `[]` in AppCore.migrateState).
+   *
+   * SECURITY-PRIVACY: item ids, a theme, a version and a verdict. NO Journey title, no Step title,
+   * no Dream text, no free text — the param contract of {@link MotivationLogEntry} exposes none. It
+   * lives here rather than in its own store precisely so account export carries it and account
+   * deletion removes it with no extra line in either path. ON-DEVICE ONLY; nothing syncs it, because
+   * this slice has no backend at all.
+   */
+  motivationLog?: MotivationLogEntry[];
   /** How the user wants to be contacted (reminders / social / opt-ins). */
   communicationPrefs: CommunicationPrefs;
   /** How the user wants reminders timed (window / day-part / weekdays). */

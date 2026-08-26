@@ -43,6 +43,7 @@ import { WeeklyReviewCard } from '@/components/home/WeeklyReviewCard';
 import { TopStatusBar } from '@/components/home/TopStatusBar';
 import { JourneyCarousel, type JourneyCard } from '@/components/home/JourneyCarousel';
 import { WeekDayStrip } from '@/components/home/WeekDayStrip';
+import { MotivationCard } from '@/components/home/MotivationCard';
 import { WeekSummaryCard } from '@/components/home/WeekSummaryCard';
 import { StepRow } from '@/components/home/StepRow';
 import { ThemedText } from '@/components/themed-text';
@@ -779,6 +780,13 @@ export default function HomeScreen() {
             <WeekSummaryCard done={summary.done} total={summary.total} streak={snapshot.streak} />
           </View>
 
+          {/* ── Motivation — at most once a day, and absent on most of them. It sits AFTER the week
+               summary on purpose: it comments on what the numbers above already said, and a card
+               that spoke before them would be commentary on something the reader had not read. ── */}
+          <View style={styles.motivation}>
+            <MotivationCard />
+          </View>
+
           {/* ── Your Journeys — one card at a time, swiped through ── */}
           {journeyCards.length > 0 ? (
             <>
@@ -930,6 +938,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.one,
   },
   summary: {
+    paddingTop: Spacing.four,
+  },
+  motivation: {
     paddingTop: Spacing.four,
   },
   calmCard: {

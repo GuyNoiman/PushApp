@@ -31,6 +31,7 @@ import enInbox from './resources/en/inbox.json';
 import enLibrary from './resources/en/library.json';
 import enJourney from './resources/en/journey.json';
 import enJourneys from './resources/en/journeys.json';
+import enMotivation from './resources/en/motivation.json';
 import enNotify from './resources/en/notify.json';
 import enOnboarding from './resources/en/onboarding.json';
 import enRecovery from './resources/en/recovery.json';
@@ -51,6 +52,7 @@ import heInbox from './resources/he/inbox.json';
 import heLibrary from './resources/he/library.json';
 import heJourney from './resources/he/journey.json';
 import heJourneys from './resources/he/journeys.json';
+import heMotivation from './resources/he/motivation.json';
 import heNotify from './resources/he/notify.json';
 import heSettings from './resources/he/settings.json';
 import heTools from './resources/he/tools.json';
@@ -60,12 +62,12 @@ import heOnboarding from './resources/he/onboarding.json';
 import heRecovery from './resources/he/recovery.json';
 
 /** Every namespace we split copy into. `common` is the default. */
-export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'friendProfile', 'explore', 'weeklyReview', 'dreams', 'notify', 'onboarding', 'communication', 'celebration', 'inactivity', 'recovery', 'library', 'tools'] as const;
+export const NAMESPACES = ['common', 'settings', 'home', 'journeys', 'journey', 'coach', 'coachContent', 'circle', 'inbox', 'friendProfile', 'explore', 'weeklyReview', 'dreams', 'notify', 'motivation', 'onboarding', 'communication', 'celebration', 'inactivity', 'recovery', 'library', 'tools'] as const;
 export const DEFAULT_NAMESPACE = 'common';
 
 export const resources = {
-  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, friendProfile: enFriendProfile, explore: enExplore, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, onboarding: enOnboarding, communication: enCommunication, celebration: enCelebration, inactivity: enInactivity, recovery: enRecovery, library: enLibrary, tools: enTools },
-  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, friendProfile: heFriendProfile, explore: heExplore, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, onboarding: heOnboarding, communication: heCommunication, celebration: heCelebration, inactivity: heInactivity, recovery: heRecovery, library: heLibrary, tools: heTools },
+  en: { common: enCommon, settings: enSettings, home: enHome, journeys: enJourneys, journey: enJourney, coach: enCoach, coachContent: enCoachContent, circle: enCircle, inbox: enInbox, friendProfile: enFriendProfile, explore: enExplore, weeklyReview: enWeeklyReview, dreams: enDreams, notify: enNotify, motivation: enMotivation, onboarding: enOnboarding, communication: enCommunication, celebration: enCelebration, inactivity: enInactivity, recovery: enRecovery, library: enLibrary, tools: enTools },
+  he: { common: heCommon, settings: heSettings, home: heHome, journeys: heJourneys, journey: heJourney, coach: heCoach, coachContent: heCoachContent, circle: heCircle, inbox: heInbox, friendProfile: heFriendProfile, explore: heExplore, weeklyReview: heWeeklyReview, dreams: heDreams, notify: heNotify, motivation: heMotivation, onboarding: heOnboarding, communication: heCommunication, celebration: heCelebration, inactivity: heInactivity, recovery: heRecovery, library: heLibrary, tools: heTools },
 } as const;
 
 /**

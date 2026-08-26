@@ -1,0 +1,130 @@
+{
+  "weekPace": {
+    "title": "This week is moving",
+    "body": "You have reported {{stepsDoneThisWeek}} Steps done since the week began.",
+    "title_direct": "{{stepsDoneThisWeek}} Steps done this week",
+    "body_direct": "That is what the week holds so far. Keep going.",
+    "title_explanatory": "Your week so far",
+    "body_explanatory": "You have reported {{stepsDoneThisWeek}} Steps done since the week began. That is the record, not an estimate.",
+    "title_warm": "The week is holding",
+    "body_warm": "{{stepsDoneThisWeek}} Steps done since it began. That is real, whatever the rest of it brings.",
+    "title_energizing": "{{stepsDoneThisWeek}} down this week",
+    "body_energizing": "The week is yours so far. Keep it moving."
+  },
+  "streakDays": {
+    "title": "{{streakDays}} days in a row",
+    "body": "You have shown up every one of them.",
+    "title_direct": "{{streakDays}} days in a row",
+    "body_direct": "Today keeps it going.",
+    "title_explanatory": "{{streakDays}} consecutive days",
+    "body_explanatory": "Your streak counts a day the moment you report anything done. It stands at {{streakDays}}.",
+    "title_warm": "{{streakDays}} days, one after another",
+    "body_warm": "That is a rhythm, not luck.",
+    "title_energizing": "{{streakDays}} in a row",
+    "body_energizing": "Do not let today be the gap."
+  },
+  "stepsTotal": {
+    "title": "{{stepsDoneTotal}} Steps behind you",
+    "body": "Every one of them was a decision you made.",
+    "title_direct": "{{stepsDoneTotal}} Steps done",
+    "body_direct": "That is the total so far.",
+    "title_explanatory": "{{stepsDoneTotal}} Steps completed in total",
+    "body_explanatory": "Counted across every Journey you have run. Each one is a Step you reported yourself.",
+    "title_warm": "Look at what is already behind you",
+    "body_warm": "{{stepsDoneTotal}} Steps. None of them happened on their own.",
+    "title_energizing": "{{stepsDoneTotal}} and counting",
+    "body_energizing": "The number only goes one way. Add to it today."
+  },
+  "journeyShare": {
+    "title": "{{journeyTitle}} is {{journeyProgressPct}}% done",
+    "body": "That is the part you have already lived.",
+    "title_direct": "{{journeyTitle}}: {{journeyProgressPct}}%",
+    "body_direct": "Open it and take the next Step.",
+    "title_explanatory": "{{journeyTitle}} is {{journeyProgressPct}}% complete",
+    "body_explanatory": "That is the share of its Steps you have reported done, out of the ones still in the plan.",
+    "title_warm": "{{journeyTitle}} is further than it feels",
+    "body_warm": "{{journeyProgressPct}}% of it is already behind you.",
+    "title_energizing": "{{journeyProgressPct}}% of {{journeyTitle}} is done",
+    "body_energizing": "The rest is the same kind of work. Keep going."
+  },
+  "daysMoving": {
+    "title": "{{daysMoving}} days with {{journeyTitle}}",
+    "body": "It has been part of your life for a while now.",
+    "title_direct": "{{daysMoving}} days on {{journeyTitle}}",
+    "body_direct": "Still running.",
+    "title_explanatory": "{{journeyTitle}} has been running {{daysMoving}} days",
+    "body_explanatory": "Counted from the day it started. It is still open, and still yours to move.",
+    "title_warm": "{{daysMoving}} days of {{journeyTitle}}",
+    "body_warm": "It has been with you a while. That counts for something.",
+    "title_energizing": "{{daysMoving}} days in on {{journeyTitle}}",
+    "body_energizing": "Long enough to be real. Keep it moving."
+  },
+  "milestoneNear": {
+    "title": "Your Milestone is close",
+    "body": "{{stepsToMilestone}} Steps left in it.",
+    "title_direct": "{{stepsToMilestone}} Steps to your Milestone",
+    "body_direct": "Open today's plan.",
+    "title_explanatory": "You are near the end of a Milestone",
+    "body_explanatory": "{{stepsToMilestone}} Steps remain in the Milestone you are working through right now.",
+    "title_warm": "Nearly through this Milestone",
+    "body_warm": "{{stepsToMilestone}} Steps left. No rush, it is close.",
+    "title_energizing": "{{stepsToMilestone}} Steps from the Milestone",
+    "body_energizing": "That is finishable. Go and take one."
+  },
+  "backAfterMiss": {
+    "title": "You are back",
+    "body": "Picking it up again is the part that matters.",
+    "title_direct": "You are back",
+    "body_direct": "Today's plan is open.",
+    "title_explanatory": "You picked it back up",
+    "body_explanatory": "A gap does not undo what came before it. The plan continues from here.",
+    "title_warm": "You came back",
+    "body_warm": "That is the hard part, and it is done.",
+    "title_energizing": "Back in it",
+    "body_energizing": "The plan is waiting. Take the next one."
+  },
+  "returnCounts": {
+    "title": "Nothing was lost",
+    "body": "{{stepsDoneTotal}} Steps are still behind you.",
+    "title_direct": "{{stepsDoneTotal}} Steps still count",
+    "body_direct": "None of them went anywhere.",
+    "title_explanatory": "Your record is intact",
+    "body_explanatory": "The {{stepsDoneTotal}} Steps you have reported done are still counted. A pause does not reset them.",
+    "title_warm": "It is all still there",
+    "body_warm": "{{stepsDoneTotal}} Steps behind you. A gap does not erase them.",
+    "title_energizing": "{{stepsDoneTotal}} Steps still stand",
+    "body_energizing": "You are not starting over. Keep going."
+  },
+  "quietDoorOpen": {
+    "title": "Whenever you are ready",
+    "body": "Today's plan is here when you want it.",
+    "title_direct": "Your plan is open",
+    "body_direct": "One Step is enough.",
+    "title_explanatory": "Nothing has expired",
+    "body_explanatory": "Your plan is still here and unchanged. You can pick it up from wherever you left it.",
+    "title_warm": "No rush",
+    "body_warm": "It is here when you want it. One Step is plenty.",
+    "title_energizing": "One Step is enough",
+    "body_energizing": "That is all today has to be."
+  },
+  "quietStillYours": {
+    "title": "{{journeyTitle}} is still yours",
+    "body": "It is waiting, not expiring.",
+    "title_direct": "{{journeyTitle}} is still open",
+    "body_direct": "Nothing has been lost.",
+    "title_explanatory": "{{journeyTitle}} has not gone anywhere",
+    "body_explanatory": "It stays exactly as you left it until you move it, pause it, or close it.",
+    "title_warm": "{{journeyTitle}} is still yours",
+    "body_warm": "It is waiting, and it is not going anywhere.",
+    "title_energizing": "{{journeyTitle}} is waiting",
+    "body_energizing": "Open it and pick one Step."
+  },
+  "card": {
+    "helpful": "Helpful",
+    "notHelpful": "Not helpful",
+    "dismiss": "Not now",
+    "thanks": "Noted, thank you",
+    "doorJourney": "Open the Journey",
+    "doorToday": "Open today's plan"
+  }
+}

@@ -97,6 +97,16 @@ describe('MotivationCard', () => {
     expect(mockCore.rateMotivation).toHaveBeenCalledWith('weekPace', 'dismissed');
   });
 
+  it('keeps an acknowledgement in place when the engine goes silent right after an answer', () => {
+    // The real engine returns null the moment a verdict lands. Without this the card would vanish
+    // from under the thumb that just tapped it, with no sign anything registered.
+    mockCore.getMotivationCard.mockReturnValueOnce(aCard()).mockReturnValue(null);
+    const root = render();
+    press(root, 'card.helpful');
+    expect(root.toJSON()).not.toBeNull();
+    expect(root.root.findAllByProps({ accessibilityLabel: 'card.helpful' })).toHaveLength(0);
+  });
+
   it('shows no door when the item has none', () => {
     mockCore.getMotivationCard.mockReturnValue(aCard());
     const root = render();

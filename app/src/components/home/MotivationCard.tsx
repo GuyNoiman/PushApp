@@ -47,9 +47,22 @@ export function MotivationCard() {
     if (card) core.noteMotivationShown(card);
   }, [core, card?.itemId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Answering makes the engine go silent for the rest of the day — correctly, it has been heard.
+  // But that means `card` turns null on the very next render, and without this the card would
+  // vanish from under the thumb that just tapped it, with no sign it registered. So once somebody
+  // has answered we keep a small acknowledgement in its place until they leave the screen.
   const [answered, setAnswered] = useState(false);
 
-  if (!card) return null;
+  if (!card) {
+    return answered ? (
+      <View
+        style={[styles.card, { borderColor: theme.hairline, backgroundColor: theme.backgroundElement }]}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('card.thanks')}
+        </ThemedText>
+      </View>
+    ) : null;
+  }
 
   const rate = (verdict: 'helpful' | 'notHelpful' | 'dismissed') => {
     setAnswered(true);

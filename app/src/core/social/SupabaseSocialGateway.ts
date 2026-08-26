@@ -24,6 +24,7 @@ import {
   type CompanionStepInput,
   type Friend,
   type FriendProfileView,
+  type JourneyStatusEvent,
   type SocialGateway,
   type SocialProfile,
   type UnfriendImpact,
@@ -508,6 +509,50 @@ export class SupabaseSocialGateway implements SocialGateway {
       journeyId: r.journey_id,
       kind: r.kind,
       createdAt: new Date(r.created_at).getTime(),
+    }));
+  }
+
+  // ── Journey status events (R6, D79) ─────────────────────────────────────────────────────────
+
+  /**
+   * Record that this user paused or resumed one of their own Journeys.
+   *
+   * THE INSERT IS THE PRIVACY BOUNDARY, and it is written as a closed literal on purpose: three
+   * fields, all of them ids or an enum. There is no spread, no options bag and no caller-supplied
+   * object, so a later change cannot quietly add a reason to it — and the SQL has no column for one
+   * either (migration 0009). Two locks, because this is the row an Ally reads.
+   */
+  async publishJourneyStatusEvent(journeyId: string, kind: 'paused' | 'resumed'): Promise<void> {
+    const ownerId = await this.requireUid();
+    const { error } = await this.client()
+      .from('journey_status_events')
+      .insert({ owner_id: ownerId, journey_id: journeyId, kind });
+    if (error) throw error;
+  }
+
+  /**
+   * Pause/resume events on Journeys this user is an Ally of, within the last `days`.
+   *
+   * The query asks for every row it is allowed to see and RLS answers with exactly the Journeys
+   * this user is an accepted Ally of — plus their OWN, which are filtered out here: somebody does
+   * not need a notification about a button they just pressed.
+   */
+  async allyJourneyStatusEvents(days: number): Promise<JourneyStatusEvent[]> {
+    const uid = await this.requireUid();
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await this.client()
+      .from('journey_status_events')
+      .select('id, owner_id, journey_id, kind, created_at')
+      .neq('owner_id', uid)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((r: any): JourneyStatusEvent => ({
+      id: r.id,
+      ownerId: r.owner_id,
+      journeyId: r.journey_id,
+      kind: r.kind,
+      at: new Date(r.created_at).getTime(),
     }));
   }
 

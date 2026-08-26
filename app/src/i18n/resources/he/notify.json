@@ -169,7 +169,9 @@
       "nudge": "{{name}} שלח לכם דחיפה קטנה",
       "friendRequest": "{{name}} רוצה להתחבר",
       "allyInvite": "{{name}} ביקש שתתמכו במסע",
-      "mirrorInvite": "{{name}} שאל מה אתם רואים בו"
+      "mirrorInvite": "{{name}} שאל מה אתם רואים בו",
+      "journeyPaused": "{{name}} השהה מסע שאתם מלווים",
+      "journeyResumed": "{{name}} חזר למסע שאתם מלווים"
     },
     "bundles": {
       "encourager": "תראו את ההתקדמות, בלי הפרטים",

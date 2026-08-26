@@ -142,6 +142,28 @@ export interface Cheer {
   createdAt: number;
 }
 
+/**
+ * One pause or resume of a Journey, as an Ally of that Journey sees it (R6, D79).
+ *
+ * WHY THIS IS AN EVENT AND NOT A FIELD: what leaves a device for an Ally is a whitelist of exactly
+ * four fields, and it has no status in it — so a paused Journey silently vanished from their view
+ * and reappeared on resume. Adding a status would make "paused" a permanent property of a shared
+ * object, readable at any time; this says one thing once, at the moment the owner chose it, to
+ * people already allowed to know the Journey exists. Nothing an Ally sees AT REST changes.
+ *
+ * PRIVACY: ids, a kind and a timestamp. There is no reason and no note, and the SQL column for one
+ * does not exist — see `supabase/migrations/0009_journey_status_events.sql`.
+ */
+export interface JourneyStatusEvent {
+  id: string;
+  /** The person who paused or resumed it. */
+  ownerId: string;
+  journeyId: string;
+  kind: 'paused' | 'resumed';
+  /** Epoch ms, from the server. Never guessed. */
+  at: number;
+}
+
 // ── Friend Profile (Friend_Profile_PRD.md) ──────────────────────────────────
 
 /**
@@ -327,6 +349,19 @@ export interface SocialGateway {
   listReceivedCheers(days: number): Promise<Cheer[]>;
   /** Realtime updates to Journeys the user is an Ally of. Returns an unsubscribe fn. */
   subscribeToAllyUpdates(onUpdate: (progress: AllyProgress) => void): () => void;
+
+  // ── Journey status events (R6, D79) ───────────────────────────────────────
+  /**
+   * Record that the signed-in user paused or resumed one of their own Journeys, so its Allies can
+   * be told. Best-effort by contract: the pause is a LOCAL transition that has already committed,
+   * and telling people about it must never be able to fail it.
+   */
+  publishJourneyStatusEvent(journeyId: string, kind: JourneyStatusEvent['kind']): Promise<void>;
+  /**
+   * Pause/resume events on Journeys this user is an Ally of, within the last `days`. Bounded by a
+   * window rather than unbounded, because an event is only interesting while it is news.
+   */
+  allyJourneyStatusEvents(days: number): Promise<JourneyStatusEvent[]>;
 }
 
 /**
@@ -371,4 +406,8 @@ export const NullSocialGateway: SocialGateway = {
   subscribeToCheers() { return () => {}; },
   async listReceivedCheers() { return []; },
   subscribeToAllyUpdates() { return () => {}; },
+  // Inert with the pillar off, like every other write, and empty rather than throwing: an activity
+  // feed with no server behind it is legitimately empty, not broken.
+  async publishJourneyStatusEvent() {},
+  async allyJourneyStatusEvents() { return []; },
 };

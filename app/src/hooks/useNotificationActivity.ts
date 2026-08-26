@@ -47,9 +47,10 @@ export function useNotificationActivity(): number {
           friends: social.friends,
           incomingAllyInvites: social.incomingAllyInvites,
           mirrorInvites,
+          journeyStatusEvents: social.journeyStatusEvents,
           readIds,
         }),
       ),
-    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, readIds],
+    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, social.journeyStatusEvents, readIds],
   );
 }

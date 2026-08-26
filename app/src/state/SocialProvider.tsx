@@ -29,10 +29,18 @@ import type {
   CheerKind,
   Friend,
   FriendProfileView,
+  JourneyStatusEvent,
   SocialProfile,
   UnfriendImpact,
 } from '@/core/social';
 import { isRunning } from '@/core/util/journeyStatus';
+
+/**
+ * How far back the bell looks for pause/resume events (R6, D79). A pause is news; a pause from six
+ * weeks ago is history, and history belongs on the Journey, not in an activity feed. The server
+ * prunes to the same horizon, so the two cannot drift into disagreeing about what still exists.
+ */
+const JOURNEY_STATUS_EVENT_DAYS = 30;
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 
@@ -49,6 +57,11 @@ export interface SocialContextValue {
   incomingCheers: Cheer[];
   /** Incoming Support-Circle invites awaiting this user's decision (Inbox → Requested, D2). */
   incomingAllyInvites: AllyInvite[];
+  /**
+   * Recent pause/resume events on Journeys this user is an Ally of (R6, D79). Bounded to the last
+   * {@link JOURNEY_STATUS_EVENT_DAYS} days: an event is only interesting while it is news.
+   */
+  journeyStatusEvents: JourneyStatusEvent[];
   /** True once signed in but no public handle has been chosen yet. */
   needsHandle: boolean;
   /** Last gateway error, for the UI to surface. Null when healthy. */
@@ -95,6 +108,7 @@ const EMPTY: SocialContextValue = {
   allies: [],
   incomingCheers: [],
   incomingAllyInvites: [],
+  journeyStatusEvents: [],
   needsHandle: false,
   error: null,
   setHandle: async () => {},
@@ -144,6 +158,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const [circleMembers, setCircleMembers] = useState<AllyMember[]>([]);
   const [incomingCheers, setIncomingCheers] = useState<Cheer[]>([]);
   const [incomingAllyInvites, setIncomingAllyInvites] = useState<AllyInvite[]>([]);
+  const [journeyStatusEvents, setJourneyStatusEvents] = useState<JourneyStatusEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const profileRef = useRef<SocialProfile | null>(null);
@@ -182,18 +197,22 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     await guard(async () => {
-      const [p, f, ap, invites, members] = await Promise.all([
+      const [p, f, ap, invites, members, statusEvents] = await Promise.all([
         gateway.currentProfile(),
         gateway.listFriends(),
         gateway.allyProgress(),
         gateway.incomingAllyInvites(),
         gateway.listAllAllies(),
+        // Best-effort on its own: a pause notice failing to load must not take the whole circle
+        // down with it, which is what an unguarded rejection inside Promise.all would do.
+        gateway.allyJourneyStatusEvents(JOURNEY_STATUS_EVENT_DAYS).catch(() => []),
       ]);
       setProfile(p);
       setFriends(f);
       setAllyProgress(ap);
       setIncomingAllyInvites(invites);
       setCircleMembers(members);
+      setJourneyStatusEvents(statusEvents);
     });
   }, [gateway, guard]);
 
@@ -213,6 +232,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
       setAllyProgress([]);
       setIncomingCheers([]);
       setIncomingAllyInvites([]);
+      setJourneyStatusEvents([]);
       setCircleMembers([]);
       return;
     }
@@ -546,6 +566,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
     allies,
     incomingCheers,
     incomingAllyInvites,
+    journeyStatusEvents,
     needsHandle: profile === null,
     error,
     setHandle,

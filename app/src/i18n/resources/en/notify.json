@@ -157,7 +157,9 @@
       "nudge": "{{name}} gave you a nudge",
       "friendRequest": "{{name}} would like to connect",
       "allyInvite": "{{name}} asked you to support a Journey",
-      "mirrorInvite": "{{name}} asked what you see in them"
+      "mirrorInvite": "{{name}} asked what you see in them",
+      "journeyPaused": "{{name}} paused a Journey you support",
+      "journeyResumed": "{{name}} picked a Journey back up"
     },
     "bundles": {
       "encourager": "You would see the progress, not the details",

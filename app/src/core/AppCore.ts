@@ -1700,7 +1700,9 @@ export class AppCore {
    * {@link resumeJourney}.
    */
   freezeJourney(journeyId: string): Journey | null {
-    return this.journeyEngine.freezeJourney(journeyId);
+    const frozen = this.journeyEngine.freezeJourney(journeyId);
+    if (frozen) this.tellAlliesAboutStatus(journeyId, 'paused');
+    return frozen;
   }
 
   /**
@@ -1710,7 +1712,32 @@ export class AppCore {
    * or the Journey is not currently frozen.
    */
   resumeJourney(journeyId: string): Journey | null {
-    return this.journeyEngine.resumeJourney(journeyId);
+    const resumed = this.journeyEngine.resumeJourney(journeyId);
+    if (resumed) this.tellAlliesAboutStatus(journeyId, 'resumed');
+    return resumed;
+  }
+
+  /**
+   * Tell this Journey's Allies that it paused or resumed (R6, D79).
+   *
+   * WHY IT IS AN EVENT AND NOT A SHARED FIELD: what leaves the device for an Ally is a whitelist of
+   * exactly four fields with no status in it, so a paused Journey used to simply VANISH from their
+   * view and reappear on resume — the opposite of what supporting somebody means. Widening the
+   * whitelist would make "paused" a permanent property of a shared object, readable at any time;
+   * this says one thing once, at the moment the person chose it. Nothing an Ally sees at rest
+   * changes.
+   *
+   * Fire-and-forget, and every failure swallowed. The pause is a LOCAL transition that has already
+   * committed by the time this runs and must work offline; telling people about it is a consequence
+   * of the pause, never a gate on it. With the pillar off (Null gateway) or signed out, inert.
+   *
+   * What may ride the row is an id, a kind and a timestamp. No reason, no note — and the SQL column
+   * for one does not exist (migration 0009), so this cannot grow one by accident.
+   */
+  private tellAlliesAboutStatus(journeyId: string, kind: 'paused' | 'resumed'): void {
+    const gateway = getSocialGateway();
+    if (!gateway.enabled) return;
+    void gateway.publishJourneyStatusEvent(journeyId, kind).catch(() => {});
   }
 
   /**

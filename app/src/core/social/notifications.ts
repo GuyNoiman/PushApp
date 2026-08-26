@@ -24,10 +24,23 @@
  * Pure TypeScript — no React, no vendor imports, no storage. The read marks live in
  * `notificationReads.ts`; the gateway supplies the rows.
  */
-import type { AllyBundle, AllyInvite, Cheer, Friend } from './SocialGateway';
+import type { AllyBundle, AllyInvite, Cheer, Friend, JourneyStatusEvent } from './SocialGateway';
 
 /** What kind of thing a person did. */
-export type NotificationKind = 'cheer' | 'nudge' | 'friendRequest' | 'allyInvite' | 'mirrorInvite';
+export type NotificationKind =
+  | 'cheer'
+  | 'nudge'
+  | 'friendRequest'
+  | 'allyInvite'
+  | 'mirrorInvite'
+  /**
+   * A Journey this user supports was paused or resumed by its owner (R6, D79). It belongs here and
+   * not in the app's own voice: a person chose it, and this bell's one rule is that everything in
+   * it is something a HUMAN did. Before it existed, a paused Journey simply vanished from an Ally's
+   * view with no explanation, and reappeared the same way.
+   */
+  | 'journeyPaused'
+  | 'journeyResumed';
 
 /**
  * One thing a person did for this user.
@@ -71,6 +84,11 @@ export interface NotificationFeedInput {
    * ask about themselves is not lock-screen material, and it is not feed material either.
    */
   mirrorInvites?: readonly { roundId: string; ownerId: string; invitedAt: number }[];
+  /**
+   * Pause/resume events on Journeys this user is an Ally of (R6, D79). Ids, a kind and a timestamp
+   * — the row carries nothing else, and the SQL has no column for a reason.
+   */
+  journeyStatusEvents?: readonly JourneyStatusEvent[];
   /** Ids already marked read, from `notificationReads`. */
   readIds: ReadonlySet<string>;
 }
@@ -97,6 +115,11 @@ export function allyInviteNotificationId(
   requestedAt: number,
 ): string {
   return `allyinv:${ownerId}:${journeyId}:${requestedAt}`;
+}
+
+/** The id of a pause/resume event. Uuid-backed on the server, so it is stable on its own. */
+export function journeyStatusNotificationId(event: JourneyStatusEvent): string {
+  return `journeystatus:${event.id}`;
 }
 
 /**
@@ -150,6 +173,21 @@ export function buildNotifications(input: NotificationFeedInput): AppNotificatio
       actionable: true,
       journeyId: invite.journeyId,
       bundle: invite.bundle,
+      read: input.readIds.has(id),
+    });
+  }
+
+  for (const event of input.journeyStatusEvents ?? []) {
+    const id = journeyStatusNotificationId(event);
+    items.push({
+      id,
+      kind: event.kind === 'paused' ? 'journeyPaused' : 'journeyResumed',
+      actorId: event.ownerId,
+      at: event.at,
+      // Nothing is being asked of the reader. A pause is news, not a request, and putting an
+      // action on it would turn "my friend needed a break" into something to respond to.
+      actionable: false,
+      journeyId: event.journeyId,
       read: input.readIds.has(id),
     });
   }

@@ -331,6 +331,45 @@ create policy "cheers_read" on public.cheers for select to authenticated
 create policy "cheers_send_ally" on public.cheers for insert to authenticated
   with check (from_id = auth.uid() and public.is_ally(journey_id, to_id, auth.uid()));
 
+-- ── 5c. JOURNEY STATUS EVENTS (R6, D79) ─────────────────────────────────────
+-- An Ally learns that a Journey paused or resumed from an EVENT, not from a new
+-- field on the shared object. The whitelist of what an Ally can see AT REST is
+-- unchanged; this says one thing once, at the moment the owner chose it.
+--
+-- What may ride this row is ids, a kind and a timestamp. There is no reason
+-- column, no note column and no free-text column of any shape — not reserved,
+-- not nullable. A column that does not exist cannot be filled by a later commit
+-- that forgot why.
+create table if not exists public.journey_status_events (
+  id         uuid primary key default gen_random_uuid(),
+  owner_id   uuid not null references public.profiles(id) on delete cascade,
+  journey_id text not null,
+  kind       text not null check (kind in ('paused','resumed')),
+  created_at timestamptz not null default now()
+);
+alter table public.journey_status_events enable row level security;
+
+drop policy if exists "journey_status_owner_insert" on public.journey_status_events;
+drop policy if exists "journey_status_read"          on public.journey_status_events;
+drop policy if exists "journey_status_owner_delete"  on public.journey_status_events;
+create policy "journey_status_owner_insert" on public.journey_status_events
+  for insert to authenticated with check (owner_id = auth.uid());
+-- The owner, and an ACCEPTED Ally of that exact Journey who is still a friend —
+-- `is_ally` carries both gates, so this cannot drift from every other Ally read.
+create policy "journey_status_read" on public.journey_status_events
+  for select to authenticated
+  using (owner_id = auth.uid() or public.is_ally(journey_id, owner_id, auth.uid()));
+-- No UPDATE policy on purpose: an event is a record of a moment, not a value.
+create policy "journey_status_owner_delete" on public.journey_status_events
+  for delete to authenticated using (owner_id = auth.uid());
+
+-- Events are only interesting while they are news; anything older than 30 days goes.
+create or replace function public.prune_journey_status_events()
+returns void language sql security definer set search_path = public as $$
+  delete from public.journey_status_events where created_at < now() - interval '30 days';
+$$;
+revoke all on function public.prune_journey_status_events() from public, anon, authenticated;
+
 -- ── 5b. ENTITLEMENTS (account tier) ─────────────────────────────────────────
 -- One row per user describing their account tier (free / trial / subscriber).
 -- This is the $0 foundation for multi-user account management; it is NOT billing.
@@ -380,6 +419,8 @@ create index if not exists idx_allies_incoming   on public.journey_allies (ally_
 create index if not exists idx_companion_owner_journey on public.companion_steps (owner_id, journey_id);
 create index if not exists idx_snapshots_owner   on public.progress_snapshots (owner_id);
 create index if not exists idx_friendships_addr  on public.friendships (addressee_id);
+create index if not exists idx_journey_status_owner_journey on public.journey_status_events (owner_id, journey_id, created_at desc);
+create index if not exists idx_journey_status_created on public.journey_status_events (created_at desc);
 
 -- Done. RLS ON everywhere; the publishable key reaches only what these policies
 -- allow; visibility is enforced by the DB. Nothing here can incur a Free-tier charge.

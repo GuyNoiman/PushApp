@@ -1,13 +1,19 @@
 /**
- * JourneyReminderCard — the managed Off/Fixed reminder surface for one Journey
- * (Journey Reminder Management, D40). Shows the current state (Off, or "Fixed · 09:00 ·
- * Mon, Tue") and opens an editor to switch mode, pick a time, and choose weekdays
- * (ordered by the user's `weekStartDay`, D33). Smart is shown as a disabled "Coming soon"
- * affordance — deferred until Weekly Review lands. When notification permission is denied
+ * JourneyReminderCard — the managed Off/Fixed/Smart reminder surface for one Journey
+ * (Journey Reminder Management, D40). Shows the current state (Off, "Fixed · 09:00 ·
+ * Mon, Tue", or "Smart · Mon, Tue") and opens an editor to switch mode, pick a time, and choose
+ * weekdays (ordered by the user's `weekStartDay`, D33). When notification permission is denied
  * it surfaces a calm "Reminders are off" state that deep-links to OS Settings.
  *
+ * SMART is a real choice now (founder, 2026-08-26): the person hands the app the WHEN, and the
+ * scheduler answers with ONE send for all their smart Journeys rather than one per Journey
+ * (Smart_Notification_Timing_PRD §3). So the editor hides the time field in Smart mode — showing a
+ * time the app is free to move would be promising something we do not mean — and keeps the day
+ * picker, because which days somebody is reachable stays theirs to say.
+ *
  * Presentational only (Engineering Bible §19): it reads/writes through the AppCore facade
- * (getJourneyReminder / setJourneyReminderFixed / setJourneyReminderOff) and holds no
+ * (getJourneyReminder / setJourneyReminderFixed / setJourneyReminderSmart / setJourneyReminderOff)
+ * and holds no
  * scheduling logic. A lightweight HH:MM field is used (a wheel picker is a ux-designer
  * follow-up), matching the Active Hours editor.
  */
@@ -83,7 +89,9 @@ export function JourneyReminderCard({ journey }: { journey: Journey }) {
   const summary =
     reminder.mode === 'off'
       ? t('detail.reminders.off')
-      : `${t('detail.reminders.fixed')} · ${fmtTime(reminder.hour, reminder.minute)} · ${daysLabel}`;
+      : reminder.mode === 'smart'
+        ? `${t('detail.reminders.smart')} · ${daysLabel}`
+        : `${t('detail.reminders.fixed')} · ${fmtTime(reminder.hour, reminder.minute)} · ${daysLabel}`;
 
   return (
     <View style={styles.block}>
@@ -145,7 +153,7 @@ export function JourneyReminderCard({ journey }: { journey: Journey }) {
   );
 }
 
-/** The Off/Fixed editor modal. Holds local draft state; saves through the AppCore facade. */
+/** The Off/Fixed/Smart editor modal. Holds local draft state; saves through the AppCore facade. */
 function ReminderEditor({
   journey,
   initial,
@@ -163,8 +171,7 @@ function ReminderEditor({
   const { t } = useTranslation('journey');
   const { core } = useApp();
 
-  // Smart is never selectable here; a stored 'smart' shows as Fixed for editing.
-  const [mode, setMode] = useState<'off' | 'fixed'>(initial.mode === 'off' ? 'off' : 'fixed');
+  const [mode, setMode] = useState<ReminderMode>(initial.mode);
   const [timeText, setTimeText] = useState(fmtTime(initial.hour, initial.minute));
   // Empty stored weekdays = every day → all selected in the editor.
   const [days, setDays] = useState<number[]>(
@@ -172,7 +179,9 @@ function ReminderEditor({
   );
 
   const parsed = parseTime(timeText);
-  const canSave = mode === 'off' || (!!parsed && days.length > 0);
+  // Smart needs no time — the app chooses it — so only the days have to hold up.
+  const canSave =
+    mode === 'off' || (days.length > 0 && (mode === 'smart' || !!parsed));
 
   const toggleDay = (d: number) =>
     setDays((prev) => {
@@ -184,13 +193,18 @@ function ReminderEditor({
     });
 
   const onSave = async () => {
+    const weekdaysToSave = days.length === 7 ? [] : days;
     if (mode === 'off') {
       await core.setJourneyReminderOff(journey.id);
+    } else if (mode === 'smart') {
+      await core.setJourneyReminderSmart(journey.id, weekdaysToSave, {
+        title: t('new.reminders.notificationTitle', { title: journey.title }),
+        body: t('new.reminders.notificationBody'),
+      });
     } else if (parsed) {
-      const weekdays = days.length === 7 ? [] : days;
       await core.setJourneyReminderFixed(
         journey.id,
-        { hour: parsed.hour, minute: parsed.minute, weekdays },
+        { hour: parsed.hour, minute: parsed.minute, weekdays: weekdaysToSave },
         {
           title: t('new.reminders.notificationTitle', { title: journey.title }),
           body: t('new.reminders.notificationBody'),
@@ -215,61 +229,64 @@ function ReminderEditor({
               active={mode === 'fixed'}
               onPress={() => setMode('fixed')}
             />
-            <View style={[styles.modeChip, styles.modeChipDisabled, { borderColor: theme.hairline }]}>
-              <ThemedText type="small" themeColor="textMuted">
-                {t('detail.reminders.modeSmart')}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textMuted" style={styles.comingSoon}>
-                {t('detail.reminders.comingSoon')}
-              </ThemedText>
-            </View>
+            <ModeChip
+              label={t('detail.reminders.modeSmart')}
+              active={mode === 'smart'}
+              onPress={() => setMode('smart')}
+            />
           </View>
 
-          {mode === 'fixed' && (
-            <>
-              <View style={styles.field}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  {t('detail.reminders.time')}
-                </ThemedText>
-                <TextInput
-                  value={timeText}
-                  onChangeText={setTimeText}
-                  keyboardType="numbers-and-punctuation"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={5}
-                  textAlign="center"
-                  style={[styles.timeInput, { color: theme.text, borderColor: theme.hairline, backgroundColor: theme.background }]}
-                />
-              </View>
+          {mode === 'smart' && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('detail.reminders.smartExplain')}
+            </ThemedText>
+          )}
 
-              <View style={styles.field}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  {t('detail.reminders.days')}
-                </ThemedText>
-                <View style={styles.daysRow}>
-                  {dayOrder.map((d) => {
-                    const active = days.includes(d);
-                    return (
-                      <Pressable
-                        key={d}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: active }}
-                        accessibilityLabel={weekdayNames[d]}
-                        onPress={() => toggleDay(d)}
-                        style={[
-                          styles.dayChip,
-                          { borderColor: active ? theme.teal : theme.hairline, backgroundColor: active ? theme.teal : 'transparent' },
-                        ]}>
-                        <ThemedText type="small" style={{ color: active ? theme.background : theme.textSecondary }}>
-                          {weekdayNames[d].slice(0, 2)}
-                        </ThemedText>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+          {mode === 'fixed' && (
+            <View style={styles.field}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {t('detail.reminders.time')}
+              </ThemedText>
+              <TextInput
+                value={timeText}
+                onChangeText={setTimeText}
+                keyboardType="numbers-and-punctuation"
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={5}
+                textAlign="center"
+                style={[styles.timeInput, { color: theme.text, borderColor: theme.hairline, backgroundColor: theme.background }]}
+              />
+            </View>
+          )}
+
+          {mode !== 'off' && (
+            <View style={styles.field}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {mode === 'smart' ? t('detail.reminders.smartDays') : t('detail.reminders.days')}
+              </ThemedText>
+              <View style={styles.daysRow}>
+                {dayOrder.map((d) => {
+                  const active = days.includes(d);
+                  return (
+                    <Pressable
+                      key={d}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      accessibilityLabel={weekdayNames[d]}
+                      onPress={() => toggleDay(d)}
+                      style={[
+                        styles.dayChip,
+                        { borderColor: active ? theme.teal : theme.hairline, backgroundColor: active ? theme.teal : 'transparent' },
+                      ]}>
+                      <ThemedText type="small" style={{ color: active ? theme.background : theme.textSecondary }}>
+                        {weekdayNames[d].slice(0, 2)}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
               </View>
-            </>
+            </View>
           )}
 
           <View style={styles.actions}>
@@ -374,8 +391,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     alignItems: 'center',
   },
-  modeChipDisabled: { opacity: 0.6, alignItems: 'center' },
-  comingSoon: { marginTop: 1 },
   field: { gap: Spacing.two },
   timeInput: {
     height: 44,

@@ -120,12 +120,14 @@
       "modeOff": "כבוי",
       "modeFixed": "קבוע",
       "modeSmart": "חכם",
-      "comingSoon": "בקרוב",
       "time": "שעה",
       "days": "ימים",
       "permissionOff": "התזכורות כבויות",
       "permissionOffBody": "כדי לקבל תזכורות, הפעילו התראות בהגדרות.",
-      "openSettings": "פתיחת ההגדרות"
+      "openSettings": "פתיחת ההגדרות",
+      "smart": "חכם",
+      "smartExplain": "אנחנו נבחר את השעה, ונחבר את המסעות שלכם לתזכורת אחת במקום כמה.",
+      "smartDays": "בימים שנוחים לכם"
     }
   },
   "dream": {

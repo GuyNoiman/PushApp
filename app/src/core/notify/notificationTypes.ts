@@ -21,11 +21,13 @@
  */
 
 /**
- * Every notification kind. Nine Support-Circle types (Journey_Support_Circle_PRD §7) plus `reminder`
- * (the shipped per-Journey nudge). More types are coming (D40) — add them here first.
+ * Every notification kind. Nine Support-Circle types (Journey_Support_Circle_PRD §7), `reminder`
+ * (the shipped per-Journey nudge) and `aggregate` (the one send that speaks for several Journeys).
+ * More types are coming (D40) — add them here first.
  */
 export type NotificationType =
   | 'reminder'
+  | 'aggregate'
   | 'ally_request'
   | 'ally_accepted'
   | 'ally_declined'
@@ -46,6 +48,12 @@ export type NotificationPrivacy = 'lock-safe' | 'owner-content';
  */
 export interface NotificationParamsByType {
   reminder: { journeyTitle?: string; stepTitle?: string };
+  /**
+   * The ADAPTIVE AGGREGATE (Smart_Notification_Timing_PRD §3): one send speaking for several
+   * Journeys. Owner-content, like `reminder` — the titles are the user's own words on their own
+   * device — but deliberately COUNTS and Journey titles only, never a Step title (PRD §6 Q3).
+   */
+  aggregate: { journeyTitles: string[]; journeyCount: number; pendingStepCount: number };
   ally_request: { name: string };
   ally_accepted: { name: string };
   ally_declined: { name: string };
@@ -91,6 +99,12 @@ const SOCIAL_PARAMS = ['name'] as const;
  */
 export const NOTIFICATION_TYPES: Record<NotificationType, NotificationTypeSpec> = {
   reminder: { id: 'reminder', keyGroup: 'reminder', params: [], privacy: 'owner-content' },
+  aggregate: {
+    id: 'aggregate',
+    keyGroup: 'aggregate',
+    params: ['journeys', 'journeyCount', 'pendingStepCount'],
+    privacy: 'owner-content',
+  },
   ally_request: { id: 'ally_request', keyGroup: 'allyRequest', params: SOCIAL_PARAMS, privacy: 'lock-safe' },
   ally_accepted: { id: 'ally_accepted', keyGroup: 'allyAccepted', params: SOCIAL_PARAMS, privacy: 'lock-safe' },
   ally_declined: { id: 'ally_declined', keyGroup: 'allyDeclined', params: SOCIAL_PARAMS, privacy: 'lock-safe' },

@@ -53,6 +53,34 @@
     "title": "A Journey has stopped",
     "body": "One of {{name}}'s Journeys has stopped."
   },
+  "listSeparator": ", ",
+  "andMore": "{{list}} and {{rest}} more",
+  "aggregate": {
+    "one": {
+      "title": "{{journeys}} is waiting",
+      "body": "There is at least one Step still open. A small moment gets it moving.",
+      "title_direct": "{{journeys}}",
+      "body_direct": "{{pendingStepCount}} Steps are open. You can start now.",
+      "title_explanatory": "Your reminder for {{journeys}}",
+      "body_explanatory": "You asked us to choose the time, and this one looks right. {{pendingStepCount}} Steps are still open.",
+      "title_warm": "A moment for {{journeys}}",
+      "body_warm": "This Journey is still here, and so are we. Whenever it suits you.",
+      "title_energizing": "Ready for {{journeys}}?",
+      "body_energizing": "{{pendingStepCount}} Steps are waiting. Take one now."
+    },
+    "many": {
+      "title": "{{journeyCount}} Journeys are waiting",
+      "body": "{{journeys}}. {{pendingStepCount}} Steps open in total.",
+      "title_direct": "{{journeyCount}} Journeys are open",
+      "body_direct": "{{journeys}}. {{pendingStepCount}} Steps are waiting.",
+      "title_explanatory": "One update instead of several",
+      "body_explanatory": "Rather than a reminder for each Journey, here they are together: {{journeys}}. {{pendingStepCount}} Steps are open.",
+      "title_warm": "A few things that matter to you are waiting",
+      "body_warm": "{{journeys}}. You do not need all of it today, one Step is enough.",
+      "title_energizing": "{{journeyCount}} Journeys, one Step to begin",
+      "body_energizing": "{{journeys}}. {{pendingStepCount}} Steps are waiting, pick one."
+    }
+  },
   "center": {
     "title": "Activity",
     "newCount": "{{count}} new",

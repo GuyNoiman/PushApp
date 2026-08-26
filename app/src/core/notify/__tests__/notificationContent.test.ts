@@ -19,13 +19,25 @@ jest.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: 'en', languageTag: 'en-US', textDirection: 'ltr' }],
 }));
 
-/** The nine Support-Circle types (everything but the shipped reminder). */
-const SOCIAL_TYPES = NOTIFICATION_TYPE_IDS.filter((t): t is NotificationType => t !== 'reminder');
+/** The two OWNER-CONTENT types: a person's own Journeys, on their own device. */
+const OWNER_TYPES: NotificationType[] = ['reminder', 'aggregate'];
+
+/** The nine Support-Circle types (everything the owner's own content does not reach). */
+const SOCIAL_TYPES = NOTIFICATION_TYPE_IDS.filter(
+  (t): t is NotificationType => !OWNER_TYPES.includes(t),
+);
 
 /** Sample params for any type — social types get a display name; reminder gets owner Journey/Step text. */
 function sampleParams<T extends NotificationType>(type: T): NotificationParamsByType[T] {
   if (type === 'reminder') {
     return { journeyTitle: 'Run every morning', stepTitle: 'Lace up and jog 10 min' } as NotificationParamsByType[T];
+  }
+  if (type === 'aggregate') {
+    return {
+      journeyTitles: ['Run every morning', 'Read at night'],
+      journeyCount: 2,
+      pendingStepCount: 3,
+    } as NotificationParamsByType[T];
   }
   return { name: 'Dana' } as NotificationParamsByType[T];
 }
@@ -183,6 +195,7 @@ describe('buildNotificationContent', () => {
 
     it('only the reminder is owner-content; every social type is lock-safe', () => {
       expect(NOTIFICATION_TYPES.reminder.privacy).toBe('owner-content');
+      expect(NOTIFICATION_TYPES.aggregate.privacy).toBe('owner-content');
       expect(SOCIAL_TYPES.every((t) => NOTIFICATION_TYPES[t].privacy === 'lock-safe')).toBe(true);
     });
   });

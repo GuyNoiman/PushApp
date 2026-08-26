@@ -120,12 +120,14 @@
       "modeOff": "Off",
       "modeFixed": "Fixed",
       "modeSmart": "Smart",
-      "comingSoon": "Coming soon",
       "time": "Time",
       "days": "Days",
       "permissionOff": "Reminders are off",
       "permissionOffBody": "Turn on notifications in Settings to get your reminders.",
-      "openSettings": "Open Settings"
+      "openSettings": "Open Settings",
+      "smart": "Smart",
+      "smartExplain": "We pick the time, and your Journeys arrive together in one reminder instead of several.",
+      "smartDays": "On the days that suit you"
     }
   },
   "dream": {

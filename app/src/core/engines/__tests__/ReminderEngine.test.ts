@@ -74,6 +74,39 @@ describe('ReminderEngine.init', () => {
   });
 });
 
+describe('ReminderEngine — the foreground handler (Smart_Notification_Timing_PRD §3)', () => {
+  /** The handler expo was configured with; it only ever runs while the app IS in the foreground. */
+  async function handler() {
+    const engine = new ReminderEngine();
+    await engine.init();
+    const arg = mockSetNotificationHandler.mock.calls.at(-1)?.[0] as {
+      handleNotification: (n: unknown) => Promise<{ shouldShowBanner: boolean; shouldShowList: boolean }>;
+    };
+    return arg.handleNotification;
+  }
+
+  const notification = (data: unknown) => ({ request: { content: { data } } });
+
+  it('suppresses an AGGREGATE — telling somebody who is already here to come back is noise', async () => {
+    const h = await handler();
+    const result = await h(notification({ kind: 'aggregate', ruleId: 'aggregate:*:8:0', journeyId: 'j1' }));
+    expect(result.shouldShowBanner).toBe(false);
+    expect(result.shouldShowList).toBe(false);
+  });
+
+  it('still shows a reminder the user set: silencing it would be a hidden schedule change', async () => {
+    const h = await handler();
+    const result = await h(notification({ kind: 'reminder', ruleId: 'r1', journeyId: 'j1' }));
+    expect(result.shouldShowBanner).toBe(true);
+  });
+
+  it('shows anything with no payload at all — scheduled before this existed, or by someone else', async () => {
+    const h = await handler();
+    expect((await h(notification(undefined))).shouldShowBanner).toBe(true);
+    expect((await h({})).shouldShowBanner).toBe(true);
+  });
+});
+
 describe('ReminderEngine.scheduleRule — fixedTime', () => {
   it('schedules ONE daily notification when no weekdays are given', async () => {
     const engine = await grantedEngine();

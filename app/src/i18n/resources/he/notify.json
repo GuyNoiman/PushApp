@@ -65,6 +65,34 @@
     "title": "מסע נעצר",
     "body": "אחד המסעות של {{name}} נעצר."
   },
+  "listSeparator": ", ",
+  "andMore": "{{list}} ועוד {{rest}}",
+  "aggregate": {
+    "one": {
+      "title": "{{journeys}} מחכה לכם",
+      "body": "יש עוד צעד אחד לפחות שמחכה שם. רגע קטן וזה זז.",
+      "title_direct": "{{journeys}}",
+      "body_direct": "{{pendingStepCount}} צעדים פתוחים. אפשר להתחיל עכשיו.",
+      "title_explanatory": "התזכורת שלכם ל{{journeys}}",
+      "body_explanatory": "בחרתם שנבחר את השעה, וזאת נראית לנו שעה טובה. {{pendingStepCount}} צעדים עדיין פתוחים.",
+      "title_warm": "רגע קטן בשביל {{journeys}}",
+      "body_warm": "המסע הזה עדיין כאן, וגם אנחנו. כשמתאים לכם.",
+      "title_energizing": "מוכנים ל{{journeys}}?",
+      "body_energizing": "{{pendingStepCount}} צעדים מחכים. קדימה, אחד מהם עכשיו."
+    },
+    "many": {
+      "title": "{{journeyCount}} מסעות מחכים לכם",
+      "body": "{{journeys}}. {{pendingStepCount}} צעדים פתוחים בסך הכול.",
+      "title_direct": "{{journeyCount}} מסעות פתוחים",
+      "body_direct": "{{journeys}}. {{pendingStepCount}} צעדים ממתינים.",
+      "title_explanatory": "עדכון אחד במקום כמה",
+      "body_explanatory": "במקום תזכורת לכל מסע, אספנו הכול לכאן: {{journeys}}. {{pendingStepCount}} צעדים פתוחים.",
+      "title_warm": "כמה דברים שחשובים לכם מחכים",
+      "body_warm": "{{journeys}}. לא צריך הכול היום, מספיק צעד אחד.",
+      "title_energizing": "{{journeyCount}} מסעות, צעד אחד להתחיל",
+      "body_energizing": "{{journeys}}. {{pendingStepCount}} צעדים מחכים לכם, בחרו אחד."
+    }
+  },
   "center": {
     "title": "פעילות",
     "newCount": "{{count}} חדשים",

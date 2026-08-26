@@ -26,6 +26,16 @@ export interface ReminderNotificationData {
   kind: 'reminder' | 'aggregate';
 }
 
+/**
+ * Whether an incoming notification is an adaptive AGGREGATE, read from the opaque payload we
+ * attached at schedule time. Defensive by design: anything scheduled before the payload existed,
+ * or by anyone else, reads as `false` and is shown normally.
+ */
+function isAggregateNotification(notification: { request?: { content?: { data?: unknown } } }): boolean {
+  const data = notification?.request?.content?.data;
+  return !!data && typeof data === 'object' && (data as { kind?: unknown }).kind === 'aggregate';
+}
+
 export interface DailyReminderInput {
   title: string;
   body: string;
@@ -86,12 +96,20 @@ export class ReminderEngine {
       // Configure how notifications present — lazily, only when the user opts in,
       // so expo-notifications isn't pulled into cold start for everyone.
       Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldPlaySound: false,
-          shouldSetBadge: false,
-          shouldShowBanner: true,
-          shouldShowList: true,
-        }),
+        // This runs ONLY while the app is in the foreground, which makes it the exact place for
+        // "if the app is already foregrounded, suppress it" (Smart_Notification_Timing_PRD §3).
+        // An AGGREGATE is a nudge to come back — telling somebody who is already here to come back
+        // is the app talking to itself. A per-Journey reminder is left alone: a person set that
+        // time on purpose, and silencing it here would be a hidden schedule change (PRD §2).
+        handleNotification: async (notification) => {
+          const suppressed = isAggregateNotification(notification);
+          return {
+            shouldPlaySound: false,
+            shouldSetBadge: false,
+            shouldShowBanner: !suppressed,
+            shouldShowList: !suppressed,
+          };
+        },
       });
       const settings = await Notifications.getPermissionsAsync();
       let granted = settings.granted;

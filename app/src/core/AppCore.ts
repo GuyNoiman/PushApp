@@ -65,6 +65,7 @@ import {
   deliverCircleNotice,
   type CircleNotice,
 } from './notify/circleNotice';
+import { buildAggregateCopy } from './notify/aggregateCopy';
 import { buildReminderCopy } from './notify/reminderCopy';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
 import { futureCapacity, type FutureCapacity } from './journeys/futureJourneys';
@@ -610,6 +611,10 @@ export class AppCore {
       { location, calendar },
       undefined, // clock: the real one (only tests inject a fixed clock)
       buildReminderCopy,
+      // The ADAPTIVE AGGREGATE's words (Smart_Notification_Timing_PRD §3). Injecting it here is
+      // also what TURNS THE AGGREGATE ON: with no builder the scheduler plans none at all and a
+      // smart rule expands exactly like a fixed one, which is what shipped before this existed.
+      buildAggregateCopy,
     );
     this.shopEngine = new ShopEngine(this.bus, getState, SHOP_ITEMS);
     this.missionEngine = new MissionEngine(this.bus, getState, MISSIONS, LOGIN_REWARD);
@@ -2754,6 +2759,59 @@ export class AppCore {
       body: copy.body,
       enabled: true,
       mode: 'fixed',
+    });
+  }
+
+  /**
+   * Set a Journey's reminder to **Smart** — the user hands the app the WHEN.
+   *
+   * A smart rule is not scheduled on its own: the Communication Scheduler routes it through the
+   * adaptive aggregate, so a person with three smart Journeys gets one send rather than three
+   * (Smart_Notification_Timing_PRD §3, founder's decisions of 2026-08-26). The rule still carries a
+   * concrete time, because the aggregate has to start somewhere and the learning loop moves that
+   * anchor toward when this person actually acts. The anchor is DERIVED, never asked for — the
+   * plan's own first Step, else the account's Active Hours — which is exactly what the app already
+   * answers when it creates a Journey's default reminder.
+   *
+   * `weekdays` is empty for every day. The baked copy is a fallback that a smart rule will rarely
+   * use (the aggregate builds its own words), but it is kept so a build with no aggregate builder
+   * degrades to a normal, readable reminder rather than a blank one.
+   */
+  async setJourneyReminderSmart(
+    journeyId: string,
+    weekdays: number[],
+    copy: { title: string; body: string },
+  ): Promise<ReminderRule | undefined> {
+    const journey = this.state.journeys.find((j) => j.id === journeyId);
+    if (!journey) return undefined;
+    const { hour, minute } = defaultReminderTimeFor(journey, this.state.schedulingPrefs);
+    const trigger: ReminderTrigger = {
+      kind: 'fixedTime',
+      hour,
+      minute,
+      weekdays: weekdays.length > 0 ? [...weekdays].sort((a, b) => a - b) : undefined,
+    };
+    const existing = this.state.reminderRules.find(
+      (r) => r.journeyId === journeyId && r.trigger.kind === 'fixedTime',
+    );
+    if (existing) {
+      return (
+        (await this.updateReminderRule(existing.id, {
+          trigger,
+          title: copy.title,
+          body: copy.body,
+          enabled: true,
+          mode: 'smart',
+        })) ?? undefined
+      );
+    }
+    return this.addReminderRule({
+      journeyId,
+      trigger,
+      title: copy.title,
+      body: copy.body,
+      enabled: true,
+      mode: 'smart',
     });
   }
 

@@ -24,6 +24,26 @@ import { NOTIFICATION_TYPES, type NotificationParamsByType, type NotificationTyp
 /** The i18n namespace all notification copy lives in. */
 const NS = 'notify';
 
+/**
+ * How many Journey titles an aggregate may NAME before the rest become a count. Three is what fits
+ * a lock-screen banner without being cut mid-word; past that, "and 2 more" says the same thing and
+ * stays readable. Config, not a magic number in the sentence.
+ */
+const MAX_NAMED_JOURNEYS = 3;
+
+/**
+ * Join an aggregate's Journey titles into one localized fragment, naming at most
+ * {@link MAX_NAMED_JOURNEYS} and summarizing the remainder as a count. Blank titles are dropped
+ * rather than rendered as an empty slot in the list.
+ */
+function joinJourneyTitles(titles: readonly string[]): string {
+  const named = titles.map((t) => t.trim()).filter(Boolean);
+  const head = named.slice(0, MAX_NAMED_JOURNEYS);
+  const rest = named.length - head.length;
+  const list = head.join(i18n.t('listSeparator', { ns: NS }));
+  return rest > 0 ? i18n.t('andMore', { ns: NS, list, rest }) : list;
+}
+
 /** A built notification's user-facing strings. */
 export interface NotificationContent {
   title: string;
@@ -94,6 +114,27 @@ export function buildNotificationContent<T extends NotificationType>(
         ? i18n.t(tonedKeys('reminder.titleFor', tone), { ns: NS, context, journeyTitle })
         : i18n.t(tonedKeys('reminder.title', tone), { ns: NS, context }),
       body: p.stepTitle?.trim() || i18n.t(tonedKeys('reminder.body', tone), { ns: NS, context }),
+    };
+  }
+
+  if (type === 'aggregate') {
+    const p = params as NotificationParamsByType['aggregate'];
+    const journeys = joinJourneyTitles(p.journeyTitles);
+    const options = {
+      ns: NS,
+      context,
+      journeys,
+      journeyCount: p.journeyCount,
+      pendingStepCount: p.pendingStepCount,
+    };
+    // ONE Journey reads as a sentence about that Journey; several read as a list. They are separate
+    // keys rather than a plural form because the two sentences differ in more than a number, and
+    // because stacking i18next's plural suffix on top of the tone suffix AND the form-of-address
+    // context would multiply this block into dozens of keys nobody would keep in step.
+    const group = p.journeyCount <= 1 ? 'aggregate.one' : 'aggregate.many';
+    return {
+      title: i18n.t(tonedKeys(`${group}.title`, tone), options),
+      body: i18n.t(tonedKeys(`${group}.body`, tone), options),
     };
   }
 

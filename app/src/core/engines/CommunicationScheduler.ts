@@ -34,6 +34,7 @@ import type { EventBus } from '../events/EventBus';
 import type { CalendarGateway } from '../calendar/CalendarGateway';
 import type { LocationGateway } from '../location/LocationGateway';
 import type { AggregateCopyBuilder } from '../notify/aggregateCopy';
+import { planAggregatesForDay, type AggregateInput } from '../notify/aggregatePlan';
 import type { ReminderCopyBuilder } from '../notify/reminderCopy';
 import type { AppState, Journey, ReminderRule, SchedulingPrefs } from '../types/domain';
 import { clampScheduleMinute, dayAvailability, isDayUniform } from '../util/availability';
@@ -68,6 +69,29 @@ export interface PlannedNotification {
    * sends byte-identical notifications to what shipped.
    */
   data?: ReminderNotificationData;
+  /**
+   * Set ONLY on an adaptive aggregate (Smart_Notification_Timing_PRD §3). Its presence is what
+   * tells the apply layer to ask the {@link AggregateCopyBuilder} for words instead of the
+   * per-Journey {@link ReminderCopyBuilder} — and to send NOTHING when that builder declines,
+   * because an aggregate has no baked copy to fall back to.
+   */
+  aggregate?: AggregateSend;
+}
+
+/**
+ * What one planned ADAPTIVE AGGREGATE speaks for: the smart rules it REPLACES, the Journeys it
+ * names, and how many actionable Steps are pending across them. Present only on an aggregate; a
+ * per-Journey reminder never carries it.
+ *
+ * The counts and titles are computed by the PURE planner and handed to the copy builder at apply
+ * time, which is what keeps the words out of the timing algorithm (Engineering Bible §19).
+ */
+export interface AggregateSend {
+  /** The smart rules this send replaces — none of them is scheduled on its own. */
+  ruleIds: string[];
+  journeys: { journeyId: string; journeyTitle: string }[];
+  /** Actionable pending Steps across those Journeys — a count, never a title (PRD §6 Q3). */
+  pendingStepCount: number;
 }
 
 /** Gateways for the DORMANT calendar/location trigger kinds (both Null today). */
@@ -89,6 +113,8 @@ interface Candidate {
   journeyCreatedAt: number;
   /** Minutes from `now` until this candidate next fires (sooner ⇒ higher priority). */
   fireOffset: number;
+  /** Present only on an aggregate candidate — see {@link AggregateSend}. */
+  aggregate?: AggregateSend;
 }
 
 export class CommunicationScheduler {
@@ -145,12 +171,27 @@ export class CommunicationScheduler {
       return !!journey && isRunning(journey);
     });
 
-    // 2/3. Expand each active rule into candidate notifications.
+    // 2. Partition by the user's chosen MODE (D40 `ReminderRule.mode`, founder 2026-08-26).
+    //
+    //    A `fixed` rule is one a PERSON set, so it expands exactly as it always has and is never an
+    //    input to the aggregate — that is how "a reminder somebody set by hand always fires at the
+    //    time they set" is guaranteed structurally rather than remembered.
+    //
+    //    A `smart` rule hands its time to the aggregate planner and produces NO notification of its
+    //    own: the aggregate REPLACES it. Without an injected copy builder there would be no words
+    //    for that aggregate, so in that case smart rules simply expand like fixed ones — which is
+    //    byte-for-byte what this scheduler did before the aggregate existed.
+    const canAggregate = !!this.buildAggregateCopy;
+    const smart = canAggregate ? active.filter((r) => r.mode === 'smart') : [];
+    const direct = canAggregate ? active.filter((r) => r.mode !== 'smart') : active;
+
+    // 3. Expand each directly-scheduled rule into candidate notifications.
     const candidates: Candidate[] = [];
-    for (const rule of active) {
+    for (const rule of direct) {
       const journey = byId.get(rule.journeyId)!;
       candidates.push(...this.candidatesFor(rule, journey, prefs, now));
     }
+    candidates.push(...this.aggregateCandidates(smart, byId, prefs, now));
 
     // 4. Priority: earlier Journey, then sooner fire time, then fewer occurrences.
     const occurrences = new Map<string, number>();
@@ -167,20 +208,33 @@ export class CommunicationScheduler {
       minute: c.minute,
       weekday: c.weekday,
       priority: candidates.length - i,
+      ...(c.aggregate ? { aggregate: c.aggregate } : {}),
       // Attribution ids, and ONLY while Smart Timing is on — a build with the flag off puts nothing
       // new on the lock screen. Building them here keeps the planner pure: they are copied from the
       // rule, not read from anywhere.
       ...(featureFlags.smartTiming
-        ? { data: { ruleId: c.ruleId, journeyId: c.journeyId, kind: 'reminder' as const } }
+        ? {
+            data: {
+              ruleId: c.ruleId,
+              journeyId: c.journeyId,
+              kind: (c.aggregate ? 'aggregate' : 'reminder') as 'reminder' | 'aggregate',
+            },
+          }
         : {}),
     }));
 
     // Coalesce duplicates (same weekday+hour+minute → one), keeping the best (the
     // list is already sorted best-first, so the first occurrence per key wins).
+    //
+    // An aggregate lives in its OWN key space. Sharing one would mean a hand-set reminder that
+    // happens to land on the same minute silently loses to an aggregate for other Journeys —
+    // exactly the overruling of an explicit instruction the founder's rule forbids. Two sends in
+    // the same minute is the honest outcome: one is the time a person chose, the other speaks for
+    // the Journeys that asked us to choose.
     const seen = new Set<string>();
     const coalesced: PlannedNotification[] = [];
     for (const p of planned) {
-      const key = `${p.weekday ?? '*'}|${p.hour}|${p.minute}`;
+      const key = `${p.aggregate ? 'agg' : 'one'}|${p.weekday ?? '*'}|${p.hour}|${p.minute}`;
       if (seen.has(key)) continue;
       seen.add(key);
       coalesced.push(p);
@@ -230,9 +284,14 @@ export class CommunicationScheduler {
     await this.reminderEngine.cancelRepeating();
     this.ownedIds = [];
     for (const p of planned) {
+      const rule = this.toRule(p);
+      // An aggregate has no baked copy to fall back to — its words exist only if the injected
+      // builder produced them. Nothing is better than a blank banner, so it is dropped silently
+      // and the Journeys it spoke for are simply quiet today.
+      if (p.aggregate && !rule.title && !rule.body) continue;
       // The attribution payload rides ALONGSIDE the synthesized rule rather than inside it: it is
       // transport metadata for one send, not part of the rule the user configured and we persist.
-      const ids = await this.reminderEngine.scheduleRule(this.toRule(p), p.data);
+      const ids = await this.reminderEngine.scheduleRule(rule, p.data);
       this.ownedIds.push(...ids);
     }
   }
@@ -261,6 +320,8 @@ export class CommunicationScheduler {
       },
       title: resolved?.title ?? p.title,
       body: resolved?.body ?? p.body,
+      // `enabled: true` below is what makes the ReminderEngine act on this synthesized rule; an
+      // aggregate the builder declined is filtered out in `apply` before it gets here.
       enabled: true,
       scheduledNotificationIds: [],
     };
@@ -272,6 +333,19 @@ export class CommunicationScheduler {
    * not abort the whole reconcile and leave the user with no reminders at all.
    */
   private resolveCopy(p: PlannedNotification): { title: string; body: string } | null {
+    // An aggregate asks its OWN builder, and gets no per-Journey fallback: it speaks for several
+    // Journeys, so there is no single one whose reminder copy would be true.
+    if (p.aggregate) {
+      if (!this.buildAggregateCopy) return null;
+      try {
+        return this.buildAggregateCopy({
+          journeys: p.aggregate.journeys,
+          pendingStepCount: p.aggregate.pendingStepCount,
+        });
+      } catch {
+        return null;
+      }
+    }
     if (!this.buildCopy) return null;
     try {
       const journey = this.getState().journeys.find((j) => j.id === p.journeyId);
@@ -280,6 +354,103 @@ export class CommunicationScheduler {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Turn the SMART rules into at most two aggregate candidates per day (Smart_Notification_Timing
+   * PRD §3, founder's decisions of 2026-08-26). The rules themselves produce nothing else — this
+   * send replaces them.
+   *
+   * Three things happen here, in this order, and each is doing real work:
+   *
+   *  1. **A Journey with nothing pending is not in the aggregate at all.** This is the planning
+   *     half of "if nothing is pending at send time, suppress it" (§3). A local notification cannot
+   *     be recalled once the OS holds it, so the honest mechanism is that the next reconcile — and
+   *     one runs whenever a Step is completed — simply stops planning it, and the teardown cancels
+   *     what was pending. The gap it leaves is real: finishing everything AFTER the last reconcile
+   *     of the day still lets today's send arrive. The foreground half is exact, and lives in the
+   *     {@link ReminderEngine} notification handler.
+   *  2. **Each rule expands through the very same {@link candidatesFor} the fixed path uses**, so
+   *     preferred days, per-day Active Hours and the location constraint apply identically. The
+   *     aggregate decides who is spoken to TOGETHER; it never widens when someone is reachable.
+   *  3. **Grouping is per real day.** When every smart rule is a plain daily, one group covers all
+   *     seven days and one daily notification carries it. The moment any rule is weekday-specific,
+   *     the dailies fan out to explicit weekdays too — otherwise a daily group and a Monday group
+   *     would both fire on Monday, which is the third interruption this whole feature exists to
+   *     prevent.
+   */
+  private aggregateCandidates(
+    rules: ReminderRule[],
+    byId: Map<string, Journey>,
+    prefs: SchedulingPrefs,
+    now: Date,
+  ): Candidate[] {
+    if (rules.length === 0) return [];
+
+    const pendingByJourney = new Map<string, number>();
+    const inputs: AggregateInput[] = [];
+    for (const rule of rules) {
+      const journey = byId.get(rule.journeyId)!;
+      const pending = journey.steps.filter((s) => !s.done && !s.dropped).length;
+      if (pending === 0) continue;
+      pendingByJourney.set(journey.id, pending);
+      for (const c of this.candidatesFor(rule, journey, prefs, now)) {
+        inputs.push({
+          ruleId: c.ruleId,
+          journeyId: c.journeyId,
+          journeyTitle: journey.title,
+          hour: c.hour,
+          minute: c.minute,
+          ...(c.weekday !== undefined ? { weekday: c.weekday } : {}),
+        });
+      }
+    }
+    if (inputs.length === 0) return [];
+
+    const anyWeekday = inputs.some((i) => i.weekday !== undefined);
+    const byDay = new Map<string, AggregateInput[]>();
+    for (const input of inputs) {
+      const days: (number | undefined)[] =
+        input.weekday !== undefined ? [input.weekday] : anyWeekday ? [0, 1, 2, 3, 4, 5, 6] : [undefined];
+      for (const weekday of days) {
+        const key = weekday === undefined ? '*' : String(weekday);
+        const list = byDay.get(key) ?? [];
+        list.push(weekday === input.weekday ? input : { ...input, weekday });
+        byDay.set(key, list);
+      }
+    }
+
+    const out: Candidate[] = [];
+    for (const [key, dayInputs] of byDay) {
+      for (const slot of planAggregatesForDay(dayInputs)) {
+        const pendingStepCount = slot.journeys.reduce(
+          (sum, j) => sum + (pendingByJourney.get(j.journeyId) ?? 0),
+          0,
+        );
+        const createdAt = Math.min(
+          ...slot.journeys.map((j) => byId.get(j.journeyId)?.createdAt ?? Number.MAX_SAFE_INTEGER),
+        );
+        out.push({
+          // A synthetic id: this send belongs to no single rule, and the ReminderEngine uses the id
+          // only for the dormant location/calendar kinds. Stable across reconciles for the same
+          // slot, so logs and taps read consistently.
+          ruleId: `aggregate:${key}:${slot.hour}:${slot.minute}`,
+          // A tap has to open SOMETHING; the earliest Journey in the slot is the honest answer, and
+          // the send itself opens Home / Today's Focus.
+          journeyId: slot.journeys[0].journeyId,
+          // Deliberately empty: the words are built at apply time, never in this pure planner.
+          title: '',
+          body: '',
+          hour: slot.hour,
+          minute: slot.minute,
+          weekday: slot.weekday,
+          journeyCreatedAt: createdAt,
+          fireOffset: nextFireOffsetMinutes(now, slot.hour, slot.minute, slot.weekday),
+          aggregate: { ruleIds: slot.ruleIds, journeys: slot.journeys, pendingStepCount },
+        });
+      }
+    }
+    return out;
   }
 
   /**

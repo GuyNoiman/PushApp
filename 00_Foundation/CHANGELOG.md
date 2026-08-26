@@ -4,6 +4,66 @@ Status: Living Document
 
 ---
 
+# 2026-08-27 — the rest of the queue: capacity, a pause an Ally can see, the policy, and the replan spec
+
+`tsc` clean · **jest 2490 / 235 suites**. Migration 0009 applied to the live project.
+
+## R10 — the capacity answer finally reaches something
+
+Onboarding asks how much room somebody realistically has, and the answer reached nothing at all:
+collected, stored, exported and deleted with the account, and never once changing a plan. It now sits
+LAST among the three time signals — explicit interview timing, then the expert's own time question,
+then this — because the interview's answers were given about THIS Journey, now, and a profile answer
+given once about life in general must never overrule them.
+
+Three of the six options map to a number and three deliberately map to nothing. "I can invest more
+when needed" says there is no ceiling, not that there is a large one. "It changes a lot from week to
+week" says a single number is the wrong shape, and the average would quietly plan for a week this
+person may not get. "I do not know yet" is not a quantity.
+
+Found while proving it actually bites: the Planner computes `sessionsPerWeek` for a frequency-based
+plan and the engine dropped it on the floor, so for that whole shape the capacity answer moved a
+number the Journey no longer carried. It is persisted now.
+
+## R6 — an Ally learns about a pause
+
+A paused Journey used to vanish from an Ally's view and reappear on resume, with nothing said either
+way. The obvious fix — a status field on the shared object — is the one the founder declined: it
+would make "paused" a permanent property readable at any time, and every widening of that whitelist
+is a privacy decision to be made again. An event is narrower. It says one thing once, at the moment
+the person chose it, and nothing an Ally sees at rest changes.
+
+Most of the test file is the negative test, because this is one step away from becoming a channel for
+"why". The insert is a closed literal of three fields; the row type has no field that could hold a
+sentence; and a test reads the SQL and fails if a column named reason, note, message, comment or body
+ever appears in that table.
+
+## R4 — the privacy policy, and the deletion page
+
+Written from the privacy contract, which is the only place that knows what is true, and checked
+against the section structure of a serious policy. Live in Hebrew and English at
+pushapp-invite.expo.app/privacy.html, with the store-required deletion page at /delete-account.
+
+Bilingual in one file because two audiences have to read it and neither is optional: the people using
+the app, and a store reviewer. The deletion page says what deletion CANNOT reach as plainly as what it
+can — a message you sent lives in the other person's conversation, a Mirror contributor's answer is
+theirs too, reported abuse evidence is kept. A page that lists only wins is a promise somebody
+discovers is untrue at the worst moment.
+
+**Five blanks remain and they are the founder's**, marked and highlighted so they cannot ship
+unnoticed: the controller entity, a support address a human reads, the minimum age, the
+behavioural-log window, and the Mirror provider's region.
+
+## R2 — the resume/replan PRD
+
+Split out of the postponement PRD, where it had grown from one question into a mechanism. It governs
+both the manual pause/resume and the inactivity return, which shared a code path and had no document
+between them. Almost nothing in it is new thinking — the work was extraction, reorganisation, and
+checking field by field what exists in the code. The answer is nothing, and §11 says so field by
+field so nobody has to re-check.
+
+---
+
 # 2026-08-26 (later) — three tasks, in the founder's order: the aggregate, every voice, and the first true sentence
 
 `tsc` clean · **jest 2462 / 232 suites**. Decision: D85.

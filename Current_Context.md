@@ -1,10 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-26 (later)** — start at the **"⛳ START HERE — 2026-08-26 (later)"** block,
-which supersedes (but does not replace) every block under it, including the earlier same-day block
-that named the three tasks. That earlier block is kept as accurate history of what was picked; this
-one records what happened to all three.
+Last updated: **2026-08-27** — start at the **"⛳ START HERE — 2026-08-27"** block, which supersedes
+(but does not replace) every block under it. The two 2026-08-26 blocks below it are accurate history
+of that day's two halves.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
 Prior pointer: **2026-08-24 (late)** — the **"⛳ Previous START HERE — 2026-08-24 (late)"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
@@ -40,7 +39,71 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-26 (later): all three tasks are done, and what is actually left
+# ⛳ START HERE — 2026-08-27: the queue is empty of things that were mine
+
+On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2490 / 235 suites**.
+Detail: `00_Foundation/CHANGELOG.md` (2026-08-27) and the Decision Log (D85).
+
+## ▶ WHAT WAS BUILT SINCE THE LAST BLOCK
+
+**R10 — onboarding's capacity answer reaches the Journey builder.** Last of the three time signals, so
+this Journey's own interview always outranks it. Three of the six options map to a number and three
+deliberately map to none. Found on the way: the Planner computed `sessionsPerWeek` and the engine
+dropped it, so that whole plan shape was moving a number nobody kept. Persisted now.
+
+**R6 — an Ally is told when a Journey pauses or resumes.** Migration 0009 is **applied to the live
+project**. An event, not a field, so nothing an Ally sees at rest changed. Most of the test file is
+the negative test, including one that reads the SQL and fails if a column that could hold a reason
+ever appears.
+
+**R4 — the privacy policy and the account-deletion page, live in Hebrew and English.**
+https://pushapp-invite.expo.app/privacy.html and /delete-account.
+
+**R2 — the resume/replan PRD**, split out of the postponement PRD with a six-step build order and a
+field-by-field statement of what exists in the code today (nothing).
+
+## ▶ THE FIVE BLANKS IN THE PRIVACY POLICY ARE HIS, AND ONLY HIS
+
+They are marked `[[…]]` and highlighted yellow on the live page. Until they are filled the policy
+cannot be submitted anywhere:
+
+1. **The controller** — which legal entity publishes the app, in which country. Everything hangs on it.
+2. **A support email** a human reads. It goes in the policy AND in both stores.
+3. **The minimum age** — and whether to keep asking for a full birth date at all.
+4. **How long the coach's behavioural log is kept.** A product decision, not an engineering one.
+5. **The Mirror provider's region.**
+
+Two things must also become TRUE in the app before publication, not merely written: the profile blob
+that holds a birth date is encrypted or stops holding a full date, and in-app account deletion is
+verified end to end against the live database.
+
+## ▶ THE ONE THING TO DO FIRST, NEXT SESSION
+
+**Publish the over-the-air update, to BOTH channels.** R10 and R6 are JavaScript and reach both
+phones without a build; a publish to `production` alone reaches the iPhone and nobody else.
+
+```bash
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest update --branch production --message "<what changed>" --non-interactive
+```
+
+## ▶ WHAT IS LEFT, AND WHO IT IS WAITING ON
+
+**Mine, and buildable now:** finish Strength Evidence (the server-side analysis that retains no story,
+and importing a Mirror result) · the monitoring console, stage 3 · a continuation to the frozen
+onboarding PRD · the first slice of R2 now that it has a PRD (steps 1–4 of its build order).
+
+**Waiting on the founder:** the five privacy blanks above · a subdomain for the console · a Sentry
+account + DSN, and the one build that carries the SDK · PRDs for the four tools already live without
+one (R5) · the seven Weekly Review Contributions questions · EU trader status · whether Q1–Q3 should
+visibly shape the coach's first reply · whether to author diagnosis trees beyond Career.
+
+**Waiting on a human, not a decision:** the Android keyboard fix wants confirmation on a real device ·
+Support Circle authorisation against the live database needs a second real account — which is also
+what would prove R6 end to end, since one account cannot be its own Ally.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-26 (later): the three picked tasks, all done
 
 On `feat/buddy-3d-and-reminders`, committed. `tsc` clean, **jest 2462 / 232 suites**. Detail:
 `00_Foundation/CHANGELOG.md` (2026-08-26, later) and the Decision Log (D85).

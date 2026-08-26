@@ -9,9 +9,10 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
@@ -52,9 +53,8 @@ export function PartialNoteSheet({
       {/* The sheet sits on the bottom edge, so the keyboard would cover the note field outright —
           lift the whole sheet above it (Device QA A3). A ScrollView's keyboard inset can't help
           here: there is no scroll body, so KeyboardAvoidingView is the right tool. */}
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardSafeView
+        style={styles.flex}>
         <Pressable
           accessibilityLabel={t('dismiss', { ns: 'common' })}
           style={styles.backdrop}
@@ -114,7 +114,7 @@ export function PartialNoteSheet({
             </View>
           </Pressable>
         </Pressable>
-      </KeyboardAvoidingView>
+      </KeyboardSafeView>
     </Modal>
   );
 }

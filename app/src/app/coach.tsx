@@ -16,12 +16,13 @@
  */
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { CoachBubble } from '@/components/coach/CoachBubble';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
 import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { CoachInsight, CoachJourneyCard } from '@/components/coach/CoachJourneyCard';
@@ -252,9 +253,8 @@ function LiveCoachScreen() {
           <ThemedText type="smallBold">{t('header')}</ThemedText>
         </View>
 
-        <KeyboardAvoidingView
+        <KeyboardSafeView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}>
           <ScrollView
             ref={scrollRef}
@@ -400,7 +400,7 @@ function LiveCoachScreen() {
               </Pressable>
             </View>
           )}
-        </KeyboardAvoidingView>
+        </KeyboardSafeView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -506,9 +506,8 @@ function ScriptedCoachScreen() {
           <ThemedText type="smallBold">{t('header')}</ThemedText>
         </View>
 
-        <KeyboardAvoidingView
+        <KeyboardSafeView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}>
           <ScrollView
             ref={scrollRef}
@@ -617,7 +616,7 @@ function ScriptedCoachScreen() {
               </Pressable>
             </View>
           )}
-        </KeyboardAvoidingView>
+        </KeyboardSafeView>
       </SafeAreaView>
     </ThemedView>
   );

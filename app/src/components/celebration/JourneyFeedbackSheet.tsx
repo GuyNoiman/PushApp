@@ -20,9 +20,10 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
 import type { FeedbackHost, Helped } from '@/core/celebration/journeyFeedback';
 import { reasonLabel, REASONS } from '@/core/config/reasons';
@@ -71,7 +72,7 @@ export function JourneyFeedbackSheet({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardSafeView style={styles.flex}>
         <Pressable accessibilityLabel={t('dismiss', { ns: 'common' })} style={styles.backdrop} onPress={onDismiss}>
           <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
             <ThemedText type="subtitle" style={styles.title}>
@@ -171,7 +172,7 @@ export function JourneyFeedbackSheet({
             </View>
           </Pressable>
         </Pressable>
-      </KeyboardAvoidingView>
+      </KeyboardSafeView>
     </Modal>
   );
 }

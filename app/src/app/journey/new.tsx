@@ -18,7 +18,6 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
   Pressable,
@@ -33,6 +32,7 @@ import Svg, { Line, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/journey/ChoiceChips';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -367,9 +367,8 @@ export default function NewJourneyScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <KeyboardAvoidingView
+        <KeyboardSafeView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={0}>
           <View style={[styles.top, { borderBottomColor: theme.hairline }]}>
             <Pressable
@@ -955,7 +954,7 @@ export default function NewJourneyScreen() {
               </View>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardSafeView>
       </SafeAreaView>
     </ThemedView>
   );

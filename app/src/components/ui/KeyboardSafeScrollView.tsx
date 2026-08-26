@@ -13,8 +13,15 @@
  * tool for what this component cannot move: a composer bar pinned below the scroll body (Coach) or
  * a bottom sheet.
  *
- * On Android the window itself resizes (Expo's default `softwareKeyboardLayoutMode: resize`) and the
- * platform brings the focused view into view, so the inset prop is iOS-only by design.
+ * ON ANDROID THIS USED TO BE FREE and is not any more (partner bug, 2026-08-26). The window resized
+ * when the keyboard opened, so the platform brought the focused field up on its own — which is why
+ * the inset prop is iOS-only here. **Edge-to-edge ended that**: from SDK 54 the window draws behind
+ * the system bars and no longer resizes, and the keyboard simply overlays the app.
+ *
+ * For a field INSIDE this scroll view the fallback is still reasonable — Android scrolls a focused
+ * input into view within a scrollable parent. For a composer PINNED BELOW the scroll body it was
+ * not: the coach's input sat under the keyboard and you could not see what you were typing. That is
+ * what {@link ./KeyboardSafeView} now handles, on both platforms, explicitly.
  *
  * `keyboardShouldPersistTaps="handled"` is the other half of the fix: without it the first tap on a
  * button while the keyboard is up only dismisses the keyboard, so "Save" / "Add" / a search result

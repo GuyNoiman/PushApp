@@ -16,10 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachBubble } from '@/components/coach/CoachBubble';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { useDreamCoach } from '@/components/coach/useDreamCoach';
 import { ThemedText } from '@/components/themed-text';
@@ -66,9 +67,8 @@ export default function DreamCoachScreen() {
           <ThemedText type="smallBold">{t('coach.header')}</ThemedText>
         </View>
 
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardSafeView
+          style={styles.flex}>
           <ScrollView
             ref={scrollRef}
             style={styles.flex}
@@ -103,7 +103,7 @@ export default function DreamCoachScreen() {
             onChangeText={setDraft}
             onSend={handleSend}
           />
-        </KeyboardAvoidingView>
+        </KeyboardSafeView>
       </SafeAreaView>
     </ThemedView>
   );

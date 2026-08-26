@@ -10,12 +10,13 @@
  * (Engineering Bible §19).
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { CoachBubble } from '@/components/coach/CoachBubble';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { CoachEditProposalCard } from '@/components/coach/CoachEditProposalCard';
 import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { useJourneyEditCoach } from '@/components/coach/useJourneyEditCoach';
@@ -74,9 +75,8 @@ export function EditCoachScreen() {
           <ThemedText type="smallBold">{t('edit.header')}</ThemedText>
         </View>
 
-        <KeyboardAvoidingView
+        <KeyboardSafeView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}>
           <ScrollView
             ref={scrollRef}
@@ -140,7 +140,7 @@ export function EditCoachScreen() {
               </Pressable>
             </View>
           )}
-        </KeyboardAvoidingView>
+        </KeyboardSafeView>
       </SafeAreaView>
     </ThemedView>
   );

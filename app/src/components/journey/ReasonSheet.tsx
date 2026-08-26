@@ -13,9 +13,10 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { BottomTabInset, FontFamily, Radius, Spacing } from '@/constants/theme';
 import { reasonCaringCopy, reasonLabel, reasonPrompt, REASONS } from '@/core/config/reasons';
 import type { ReasonId } from '@/core/types/domain';
@@ -63,9 +64,8 @@ export function ReasonSheet({
       {/* The sheet sits on the bottom edge, so the keyboard would cover the note field outright —
           lift the whole sheet above it (Device QA A3). There is no scroll body here, so
           KeyboardAvoidingView (not a scroll inset) is the right tool. */}
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardSafeView
+        style={styles.flex}>
         <Pressable
           accessibilityLabel={t('dismiss', { ns: 'common' })}
           style={styles.backdrop}
@@ -165,7 +165,7 @@ export function ReasonSheet({
             </View>
           </Pressable>
         </Pressable>
-      </KeyboardAvoidingView>
+      </KeyboardSafeView>
     </Modal>
   );
 }

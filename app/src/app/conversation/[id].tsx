@@ -18,8 +18,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -29,6 +27,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import {
@@ -157,9 +156,8 @@ export default function ConversationScreen() {
           </Pressable>
         </View>
 
-        <KeyboardAvoidingView
+        <KeyboardSafeView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={8}>
           <ScrollView contentContainerStyle={styles.thread} showsVerticalScrollIndicator={false}>
             <ThemedText type="small" style={[styles.encryption, { color: theme.textMuted }]}>
@@ -230,7 +228,7 @@ export default function ConversationScreen() {
               />
             </Pressable>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardSafeView>
       </SafeAreaView>
     </ThemedView>
   );

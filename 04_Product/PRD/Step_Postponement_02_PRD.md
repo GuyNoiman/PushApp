@@ -628,6 +628,17 @@ not just what was chosen.
    **Terminology note for this whole question:** "the plan" below means *the arrangement of a Journey's
    Steps in time*. It is never a synonym for Journey (`09_Product_Philosophy/Product_Terminology.md`).
 
+   > **SPLIT OUT, 2026-08-25 (founder decision), written 2026-08-27 as task R2.** This question grew
+   > into a mechanism with its own scope, its own events and its own success question, and it governs
+   > BOTH the manual pause/resume (J3) and the inactivity freeze/return (J5) — which share a code path
+   > and had no document between them. The feature now lives in
+   > **`Journey_Resume_Replan_PRD.md`**, and that is the document to build from.
+   >
+   > Everything below stays exactly as it was, because this is where the argument happened: the
+   > founder's own words, the superseded freeze-credit design with the reason it was wrong, and the
+   > consent reconciliation that survived the correction. **Read that PRD to build; read this to
+   > understand why it is shaped the way it is.**
+
    ### Q5.0 — The founder's correction (2026-08-14, fourth pass)
 
    > "I don't see this as compensation. It is simply continuing the plan (the Journey) from the point where

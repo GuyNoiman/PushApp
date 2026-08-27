@@ -40,12 +40,14 @@ import { notificationReadStore } from '@/core/social/notificationReads';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useMirrorInvites } from '@/hooks/useMirrorInvites';
+import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 
 export default function NotificationsScreen() {
   const theme = useTheme();
   const { t } = useTranslation('notify');
   const social = useSocial();
+  const { core } = useApp();
   const mirrorInvites = useMirrorInvites();
 
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
@@ -75,9 +77,11 @@ export default function NotificationsScreen() {
         incomingAllyInvites: social.incomingAllyInvites,
         mirrorInvites,
         journeyStatusEvents: social.journeyStatusEvents,
+        // What the person asked to hear about (Settings › Notifications).
+        prefs: core.getCommunicationPrefs(),
         readIds,
       }),
-    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, social.journeyStatusEvents, readIds],
+    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, social.journeyStatusEvents, core, readIds],
   );
 
   /**

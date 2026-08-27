@@ -3114,10 +3114,23 @@ export class AppCore {
     }
   }
 
-  /** Set a single communication preference and persist. */
+  /** What the user has agreed to hear about (Settings → Notifications). */
+  getCommunicationPrefs(): CommunicationPrefs {
+    return this.state.communicationPrefs;
+  }
+
+  /**
+   * Set a single communication preference and persist.
+   *
+   * Turning REMINDERS off must take effect on the phone immediately, not at the next reconcile that
+   * happens to run — so the scheduler is re-run here, which tears down everything pending and (with
+   * the switch off) schedules nothing. Turning it back on rebuilds the same set. Fire-and-forget:
+   * the preference is already saved, and a scheduling failure must not un-set it.
+   */
   setCommunicationPref<K extends keyof CommunicationPrefs>(key: K, value: CommunicationPrefs[K]): void {
     this.state.communicationPrefs = { ...this.state.communicationPrefs, [key]: value };
     this.onChanged();
+    if (key === 'remindersEnabled') void this.communicationScheduler.reconcile().catch(() => {});
   }
 
   /**

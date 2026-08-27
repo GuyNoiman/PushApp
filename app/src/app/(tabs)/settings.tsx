@@ -25,7 +25,7 @@ import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DeleteAccountSheet } from '@/components/settings/DeleteAccountSheet';
@@ -110,9 +110,14 @@ export default function SettingsScreen() {
 
   // Notifications row (E2): tapping requests permission the first time it's undetermined; once the OS
   // has a decision, it deep-links to the app's OS settings so the user can flip it there.
+  // Notifications row: it opens the app's OWN settings now (2026-08-28), where each kind can be
+  // turned on or off. It used to be a shortcut to the OS permission and nothing else — which meant
+  // there was no way inside the app to say "cheers yes, nudges no". The permission is still asked
+  // the first time, because being sent to a screen of switches while the OS is refusing all of them
+  // helps nobody; the screen itself surfaces a blocked permission when it actually bites.
   const onNotificationsPress = () => {
     if (notifStatus === 'undetermined') void requestNotif();
-    else void Linking.openSettings().catch(() => {});
+    router.push('/settings/notifications' as Href);
   };
 
   // App version for the About row — read from the Expo config (app.json), never hard-coded.

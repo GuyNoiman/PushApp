@@ -261,12 +261,20 @@ export class CommunicationScheduler {
    */
   async reconcile(): Promise<void> {
     const state = this.getState();
-    const planned = this.planSchedule(
-      state.reminderRules,
-      state.journeys,
-      state.schedulingPrefs,
-      this.now(),
-    );
+    // THE MASTER SWITCH (Settings → Notifications, 2026-08-28). Off means an EMPTY plan, whatever
+    // any individual Journey's rule says — and because `apply` tears down before it rebuilds,
+    // turning it off cancels what was already pending rather than merely stopping new ones.
+    //
+    // It is read here rather than inside `planSchedule` on purpose: the planner is a pure function
+    // of the inputs it is handed, and this is a fact about the account rather than about the rules.
+    //
+    // `CommunicationPrefs` has been in the model, persisted and exported since the social pillar
+    // landed, and until today nothing read it — a stored preference that changes nothing is worse
+    // than an absent one, because it looks like a promise.
+    const off = state.communicationPrefs?.remindersEnabled === false;
+    const planned = off
+      ? []
+      : this.planSchedule(state.reminderRules, state.journeys, state.schedulingPrefs, this.now());
     await this.apply(planned);
   }
 

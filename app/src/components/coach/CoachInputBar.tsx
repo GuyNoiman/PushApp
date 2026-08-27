@@ -1,12 +1,22 @@
 /**
- * The persistent bottom input bar for the Coach conversation: a rounded text
- * field, a circular voice button (visual only), and a turquoise send affordance.
- * Shown while the coach is waiting on a free-text reply.
+ * The persistent bottom input bar for the Coach conversation: a rounded text field and a turquoise
+ * send affordance. Shown while the coach is waiting on a free-text reply.
  *
- * Presentational + local draft state. `onSend` fires with the trimmed text (or an
- * empty string when the user sends without typing — the prototype then advances
- * with the next canned turn). The mic is decorative; real speech-to-text is not
- * wired yet.
+ * ── THE MICROPHONE THAT WAS HERE, AND WHY IT IS GONE (device report, 2026-08-27) ───────────────
+ *
+ * There was a mic button beside Send. It had no handler at all — a decorative icon, marked as such
+ * in a comment nobody reading the screen could see. Somebody tapped it and nothing happened, which
+ * is the same defect as a disabled field with no explanation: a control that looks pressable is a
+ * promise.
+ *
+ * It was also a promise we had published the opposite of. The privacy policy went live the day
+ * before saying, in both languages, **"No microphone, camera or photo library."** An app showing a
+ * microphone button contradicts its own policy, whatever the button does.
+ *
+ * Speech-to-text is a real and wanted feature (Engineering Bible E6), and it is not a small one: it
+ * needs a native module, a microphone permission, a new BUILD rather than an over-the-air update,
+ * a line in the privacy policy and an answer on both stores' data forms. It comes back when that is
+ * done, not before.
  */
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,18 +63,6 @@ export function CoachInputBar({
           style={[styles.input, { color: theme.text }]}
         />
       </View>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('speak')}
-        style={({ pressed }) => [
-          styles.round,
-          { backgroundColor: theme.backgroundSelected, borderColor: theme.hairline, borderWidth: 1 },
-          pressed && styles.pressed,
-        ]}>
-        {/* Voice input is visual only for now — no speech-to-text wired yet. */}
-        <Ionicons name="mic-outline" size={19} color={theme.textSecondary} />
-      </Pressable>
 
       <Pressable
         accessibilityRole="button"

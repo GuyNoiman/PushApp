@@ -188,20 +188,15 @@ export default function JourneysScreen() {
                 {t('dreams')}
               </ThemedText>
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('createA11y')}
-              onPress={() => router.push('/journey/new')}
-              style={({ pressed }) => [
-                styles.newButton,
-                { borderColor: theme.hairline, backgroundColor: theme.backgroundElement },
-                pressed && styles.pressed,
-              ]}>
-              <Ionicons name="add" size={18} color={theme.teal} />
-              <ThemedText type="smallBold" style={{ color: theme.teal }}>
-                {t('createJourney')}
-              </ThemedText>
-            </Pressable>
+            {/* THE MANUAL "NEW JOURNEY" BUTTON IS HIDDEN (founder, 2026-08-28).
+                A Journey built by hand skips everything that makes a plan fit a person: the
+                understanding, the diagnosis, the authored library, the variant match, the pace
+                bounded by what they said they have. It also cannot be shared as Companion, because
+                its Step titles are the user's own words. While the coach IS the way in — which is
+                what the onboarding revision just made true — offering a second door that leads to a
+                worse plan is offering people a way to get less.
+                The route, the wizard and every test of it are UNTOUCHED: it is still reachable and
+                still works, and bringing the button back is deleting this comment. */}
             </View>
           </View>
           <ThemedText type="small" themeColor="textSecondary" style={styles.headerSubtitle}>

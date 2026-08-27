@@ -554,9 +554,24 @@ export interface ReminderRule {
  * without an explicit, reviewed opt-in (red-line R2). No PII.
  */
 export interface CommunicationPrefs {
+  /**
+   * The master switch for reminders — the ONLY thing this app can put on a lock screen, because
+   * every reminder is a local notification scheduled on the device and we hold no push token.
+   * Off means the scheduler plans nothing at all, whatever any individual Journey says.
+   */
   remindersEnabled: boolean;
   socialCheerEnabled: boolean;
   socialNudgeEnabled: boolean;
+  /**
+   * Friend requests and Support-Circle invitations in the activity bell. Optional and additive
+   * (backfilled to `true`), like the three below it — a preference nobody has expressed yet is ON,
+   * because that is what the app did before the preference existed.
+   */
+  socialRequestsEnabled?: boolean;
+  /** A Journey you support being paused or resumed (R6). */
+  journeyStatusEnabled?: boolean;
+  /** Mirror invitations — somebody asking what you see in them. */
+  mirrorInvitesEnabled?: boolean;
   /** Opt-in for location-triggered reminders (dormant seam). Default false. */
   locationOptIn: boolean;
   /** Opt-in for calendar-triggered reminders (dormant seam). Default false. */

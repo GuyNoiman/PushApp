@@ -224,6 +224,9 @@ function ThemedChrome() {
         {/* Account-level Active Hours editor — reused by Settings and by the onboarding
             Personal Information page. */}
         <Stack.Screen name="settings/active-hours" />
+        {/* Settings › Notifications — one switch per kind (2026-08-28). A root route like every
+            other Settings sub-screen so it slides over the tabs. */}
+        <Stack.Screen name="settings/notifications" />
         {/* Communication Style (D40) — the view/retake settings page and the six-message
             questionnaire, reachable from Settings and from the onboarding completion seam. */}
         <Stack.Screen name="settings/communication-style" />

@@ -171,5 +171,45 @@
     "sentWithEmail": "We have it, and we will write to you at that address.",
     "sentNoEmail": "We have it. You did not leave an address, so we cannot write back — that is fine, and it still helps.",
     "done": "Done"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "intro": "Choose what we tell you about. Every change is saved immediately.",
+    "kinds": {
+      "reminders": {
+        "label": "Journey reminders",
+        "detail": "The reminder you set for each Journey, and the daily aggregate."
+      },
+      "cheers": {
+        "label": "Cheers",
+        "detail": "When somebody in your circle cheers you on."
+      },
+      "nudges": {
+        "label": "Nudges",
+        "detail": "When somebody sends you a nudge."
+      },
+      "requests": {
+        "label": "Requests and invitations",
+        "detail": "Friend requests and Support Circle invitations."
+      },
+      "journeyStatus": {
+        "label": "Journeys you support",
+        "detail": "When a Journey you support is paused or picked back up."
+      },
+      "mirrorInvites": {
+        "label": "Mirror invitations",
+        "detail": "When somebody asks what you see in them."
+      }
+    },
+    "reach": {
+      "outside": "Also appears outside the app, on your lock screen.",
+      "inApp": "Appears in the in-app bell only."
+    },
+    "osBlocked": {
+      "title": "Notifications are blocked by your system",
+      "body": "Reminders are on here, but the operating system is refusing them. Open Settings to allow them.",
+      "cta": "Open system settings"
+    },
+    "footnote": "Reminders are scheduled on your own device. We have no server that can send you a notification, which is why everything else arrives only when the app is opened."
   }
 }

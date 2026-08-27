@@ -18,10 +18,12 @@ import { notificationReadStore } from '@/core/social/notificationReads';
 import { useFocusRefresh } from '@/hooks/use-focus-refresh';
 import { buildNotifications, unreadNotificationCount } from '@/core/social/notifications';
 import { useMirrorInvites } from '@/hooks/useMirrorInvites';
+import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 
 export function useNotificationActivity(): number {
   const social = useSocial();
+  const { core } = useApp();
   const mirrorInvites = useMirrorInvites();
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
 
@@ -48,9 +50,11 @@ export function useNotificationActivity(): number {
           incomingAllyInvites: social.incomingAllyInvites,
           mirrorInvites,
           journeyStatusEvents: social.journeyStatusEvents,
+          // What the person asked to hear about (Settings › Notifications).
+          prefs: core.getCommunicationPrefs(),
           readIds,
         }),
       ),
-    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, social.journeyStatusEvents, readIds],
+    [social.incomingCheers, social.friends, social.incomingAllyInvites, mirrorInvites, social.journeyStatusEvents, core, readIds],
   );
 }

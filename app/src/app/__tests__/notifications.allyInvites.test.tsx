@@ -26,6 +26,12 @@ jest.mock('expo-router', () => ({
 }));
 const mockSocial: { current: Record<string, unknown> } = { current: {} };
 jest.mock('@/state/SocialProvider', () => ({ useSocial: () => mockSocial.current }));
+// The screen reads the notification preferences (Settings › Notifications, 2026-08-28). Stubbed
+// rather than mounted: pulling the real provider in drags AppCore and expo-notifications behind it,
+// and this file is about the invite rows.
+jest.mock('@/state/AppProvider', () => ({
+  useApp: () => ({ core: { getCommunicationPrefs: () => undefined } }),
+}));
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
 jest.mock('@/hooks/use-theme', () => ({
   useTheme: () => new Proxy({}, { get: () => '#111' }),

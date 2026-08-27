@@ -24,6 +24,8 @@
  * Pure TypeScript — no React, no vendor imports, no storage. The read marks live in
  * `notificationReads.ts`; the gateway supplies the rows.
  */
+import { isKindEnabled } from '../notify/notificationPrefs';
+import type { CommunicationPrefs } from '../types/domain';
 import type { AllyBundle, AllyInvite, Cheer, Friend, JourneyStatusEvent } from './SocialGateway';
 
 /** What kind of thing a person did. */
@@ -89,6 +91,11 @@ export interface NotificationFeedInput {
    * — the row carries nothing else, and the SQL has no column for a reason.
    */
   journeyStatusEvents?: readonly JourneyStatusEvent[];
+  /**
+   * What the person has agreed to hear about (Settings → Notifications, 2026-08-28). Absent means
+   * everything, which is what the bell did before the preference could be expressed.
+   */
+  prefs?: CommunicationPrefs;
   /** Ids already marked read, from `notificationReads`. */
   readIds: ReadonlySet<string>;
 }
@@ -204,8 +211,13 @@ export function buildNotifications(input: NotificationFeedInput): AppNotificatio
     });
   }
 
+  // What the person asked not to hear about is filtered HERE, at the end, rather than at each
+  // source: one rule, applied once, and a new kind cannot quietly escape it by being added to a
+  // loop above that nobody remembered to gate.
+  const wanted = items.filter((item) => isKindEnabled(item.kind, input.prefs));
+
   // Newest first; ties broken by id so the order is deterministic between renders.
-  return items.sort((a, b) => (b.at - a.at) || a.id.localeCompare(b.id));
+  return wanted.sort((a, b) => (b.at - a.at) || a.id.localeCompare(b.id));
 }
 
 /** How many are unread — the number on the bell. Zero hides the badge. */

@@ -23,7 +23,13 @@ import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { countryName } from '@/core/profile/countries';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
-import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } from '@/core/social/username';
+import {
+  canonicalHandle,
+  generateUsername,
+  normalizeUsername,
+  RESERVED_WORDS,
+  usernameError,
+} from '@/core/social/username';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import type { AddressForm } from '@/i18n/addressForm';
@@ -59,9 +65,12 @@ export default function MyProfileScreen() {
   const simUser = getSimulatedUser();
 
   const persistedHandle = social.profile?.handle ?? '';
-  const [generated] = useState(generateUsername);
+  // A SUGGESTION to prefill the field with, never a name the account already has (device bug,
+  // 2026-08-27). See ProfileIdentity for the whole failure: three screens each invented their own.
+  const [suggestion] = useState(generateUsername);
   const [localHandle, setLocalHandle] = useState<string | null>(null);
-  const username = persistedHandle || localHandle || generated;
+  const savedHandle = persistedHandle || localHandle || '';
+  const username = savedHandle || suggestion;
 
   const signInName = simUser.signedIn && simUser.name ? simUser.name : null;
   const shownName = profile.displayName ?? signInName;
@@ -112,6 +121,7 @@ export default function MyProfileScreen() {
             <UsernameField
               label={t('profile.username')}
               username={username}
+              saved={savedHandle.length > 0}
               onSave={(next) => {
                 setLocalHandle(next);
                 void social.setHandle(next);
@@ -187,10 +197,13 @@ function NameField({
 function UsernameField({
   label,
   username,
+  saved,
   onSave,
 }: {
   label: string;
   username: string;
+  /** False while this is only a suggestion — nothing is stored for this account yet. */
+  saved: boolean;
   onSave: (username: string) => void;
 }) {
   const theme = useTheme();
@@ -202,7 +215,12 @@ function UsernameField({
     return set;
   }, []);
   const error = usernameError(draft, taken);
-  const changed = normalizeUsername(draft) !== normalizeUsername(username);
+  // SAVE MUST BE LIVE WHEN NOTHING IS STORED, even if the draft still reads exactly as the field was
+  // prefilled. This is the trap that cost a real person an afternoon: the field showed a name, the
+  // helper said "this is how friends find you", and Save was greyed out because the draft matched
+  // the suggestion — so the one action that would have made the name real was the one action the
+  // screen would not allow.
+  const changed = !saved || normalizeUsername(draft) !== normalizeUsername(username);
   return (
     <View style={styles.field}>
       <ThemedText type="smallBold" themeColor="textSecondary">
@@ -228,7 +246,7 @@ function UsernameField({
           accessibilityRole="button"
           accessibilityLabel={t('save', { ns: 'common' })}
           disabled={!!error || !changed}
-          onPress={() => onSave(draft.trim())}
+          onPress={() => onSave(canonicalHandle(draft))}
           style={({ pressed }) => [
             styles.saveButton,
             { backgroundColor: theme.teal },
@@ -241,7 +259,9 @@ function UsernameField({
         </Pressable>
       </View>
       <ThemedText type="small" themeColor={error ? undefined : 'textSecondary'} style={error ? { color: theme.danger } : undefined}>
-        {error ?? t('profile.usernameHelp')}
+        {/* Only the SAVED name is how friends find you. Saying so over an unsaved suggestion is what
+            made two people search for names that existed nowhere. */}
+        {error ?? (saved ? t('profile.usernameHelp') : t('profile.usernameUnsaved'))}
       </ThemedText>
     </View>
   );

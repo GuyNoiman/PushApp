@@ -27,7 +27,9 @@
     "birthDate": "Birth date",
     "birthDateNotSpecified": "Not specified",
     "addressForm": "How we address you",
-    "openProfile": "Open my profile"
+    "openProfile": "Open my profile",
+    "usernameNotSet": "Choose a username",
+    "usernameUnsaved": "Not saved yet. Save it so friends can find you by this name."
   },
   "account": {
     "apple": "Sign in with Apple",

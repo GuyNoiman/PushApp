@@ -31,6 +31,7 @@ import {
   type Visibility,
 } from './SocialGateway';
 import { computeUnfriendImpact, sharedJourneysFrom, summarizeRelationship } from './friendProfile';
+import { canonicalHandle } from './username';
 import type { StepStatus } from '../status/stepStatus';
 
 type ProfileRow = { id: string; handle: string; buddy_summary: SocialProfile['buddySummary'] };
@@ -82,9 +83,12 @@ export class SupabaseSocialGateway implements SocialGateway {
     const { data: userData } = await this.client().auth.getUser();
     const id = userData.user?.id;
     if (!id) throw new Error('Not signed in.');
+    // Stored in the ONE canonical form (2026-08-27). It used to be stored exactly as typed, so an
+    // `@` somebody typed out of habit became part of their name and a capital letter made them
+    // unfindable — see `canonicalHandle` for why that is one function and not a convention.
     const { data, error } = await this.client()
       .from('profiles')
-      .upsert({ id, handle, buddy_summary: buddySummary })
+      .upsert({ id, handle: canonicalHandle(handle), buddy_summary: buddySummary })
       .select('id, handle, buddy_summary')
       .single();
     if (error) throw error;
@@ -93,7 +97,12 @@ export class SupabaseSocialGateway implements SocialGateway {
 
   // ── Support Circle (friends) ──
   async findByHandle(handle: string): Promise<SocialProfile | null> {
-    const { data } = await this.client().from('profiles').select('id, handle, buddy_summary').eq('handle', handle).maybeSingle();
+    // The SAME canonical form the upsert stores. An exact, case-sensitive match against a
+    // verbatim-stored string is how two people ended up unable to find each other while both
+    // spelling the name correctly.
+    const wanted = canonicalHandle(handle);
+    if (!wanted) return null;
+    const { data } = await this.client().from('profiles').select('id, handle, buddy_summary').eq('handle', wanted).maybeSingle();
     return data ? toProfile(data as ProfileRow) : null;
   }
 

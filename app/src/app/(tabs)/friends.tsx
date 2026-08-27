@@ -124,15 +124,22 @@ export default function FriendsScreen() {
           )}
 
           {/* Add a FRIEND by their username — revealed by the header "Add" button. */}
-          {showAdd && (
-            <AddFriend
-              onAdd={(username) => {
-                social.addFriendByHandle(username);
-                setShowAdd(false);
-              }}
-              disabled={!signedIn}
-            />
-          )}
+          {showAdd &&
+            (signedIn ? (
+              <AddFriend
+                onAdd={(username) => {
+                  social.addFriendByHandle(username);
+                  setShowAdd(false);
+                }}
+              />
+            ) : (
+              // NO DEAD FIELD (device, 2026-08-27). This used to render the input with
+              // `editable={false}`, so on iOS the person tapped it, nothing happened, and there was
+              // nothing on screen saying why. The reason is always the same one — you cannot add a
+              // friend before you have a name they could add you back by — so say that, and offer
+              // the way to fix it instead of a box that ignores them.
+              <NeedsHandleNotice onOpenProfile={() => router.push('/settings/profile' as Href)} />
+            ))}
 
           {/* TWO TABS — friends and Allies (founder, 2026-08-20). The distinction is real and worth
               the tab: a friend is someone you keep; an Ally is someone standing with you on one
@@ -410,7 +417,25 @@ function EmptyState({
   );
 }
 
-function AddFriend({ onAdd, disabled }: { onAdd: (username: string) => void; disabled: boolean }) {
+/**
+ * The "you need a username first" notice that replaces the add-a-friend field when this account has
+ * no handle. It is the answer to a real device report: the field was simply inert.
+ */
+function NeedsHandleNotice({ onOpenProfile }: { onOpenProfile: () => void }) {
+  const theme = useTheme();
+  const { t } = useTranslation('circle');
+  return (
+    <View style={[styles.needsHandle, { borderColor: theme.hairline, backgroundColor: theme.backgroundElement }]}>
+      <ThemedText type="default">{t('needsHandle.title')}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('needsHandle.body')}
+      </ThemedText>
+      <PrimaryButton label={t('needsHandle.cta')} onPress={onOpenProfile} />
+    </View>
+  );
+}
+
+function AddFriend({ onAdd }: { onAdd: (username: string) => void }) {
   const theme = useTheme();
   const { t } = useTranslation('circle');
   const [value, setValue] = useState('');
@@ -428,16 +453,14 @@ function AddFriend({ onAdd, disabled }: { onAdd: (username: string) => void; dis
         placeholderTextColor={theme.textSecondary}
         autoCapitalize="none"
         autoCorrect={false}
-        editable={!disabled}
         autoFocus
         textAlign={START_TEXT_ALIGN}
         style={[
           styles.input,
           { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.hairline },
-          disabled && styles.disabled,
         ]}
       />
-      <PrimaryButton label={t('add')} disabled={disabled || value.trim().length === 0} onPress={submit} />
+      <PrimaryButton label={t('add')} disabled={value.trim().length === 0} onPress={submit} />
     </View>
   );
 }
@@ -537,6 +560,14 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     borderWidth: 1,
     padding: Spacing.three,
+  },
+  needsHandle: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    gap: Spacing.two,
   },
   inputRow: {
     flexDirection: 'row',

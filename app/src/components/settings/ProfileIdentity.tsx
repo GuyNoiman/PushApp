@@ -31,7 +31,13 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
-import { generateUsername, normalizeUsername, RESERVED_WORDS, usernameError } from '@/core/social/username';
+import {
+  canonicalHandle,
+  generateUsername,
+  normalizeUsername,
+  RESERVED_WORDS,
+  usernameError,
+} from '@/core/social/username';
 import { Radius, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
@@ -66,16 +72,24 @@ export function ProfileIdentity() {
   }, []);
 
   const persisted = social.profile?.handle ?? '';
-  // Generated once — the initializer runs on first render only, so it survives
-  // every re-render (stable across re-renders).
-  const [generated] = useState(generateUsername);
+  // A SUGGESTION, not an identity (device bug, 2026-08-27). Generated once for the editor to prefill
+  // — never rendered as though it were the account's name.
+  //
+  // It used to be: `persisted || localSaved || generated`, on THREE screens that each generated
+  // their own. With nothing saved, Settings showed one invented name and My Profile showed a
+  // different one, both under "this is how friends find you" — and neither existed on the server, so
+  // nobody could be found by either. A name the user has not chosen is not their name.
+  const [suggestion] = useState(generateUsername);
   const [localSaved, setLocalSaved] = useState<string | null>(null);
-  const username = persisted || localSaved || generated;
+  const username = persisted || localSaved || '';
+  const hasUsername = username.length > 0;
 
   const [editing, setEditing] = useState(false);
 
   const save = (next: string) => {
-    const clean = next.trim();
+    // Stored in the canonical form, so what is shown here is exactly what a friend has to type.
+    const clean = canonicalHandle(next);
+    if (!clean) return;
     setLocalSaved(clean);
     // Persist through the existing handle-set path when the backend is wired;
     // a harmless no-op in guest/POC mode (SocialProvider returns inert defaults).
@@ -125,9 +139,17 @@ export function ProfileIdentity() {
             <View style={styles.usernameRow}>
               {/* Isolated: the handle is Latin, and inside RTL copy an un-isolated leading
                   "@" drifts to the far side of the name ("sunny-otter-1234@"). */}
-              <ThemedText type="smallBold" numberOfLines={1} style={styles.username}>
-                {isolate(`@${username}`)}
-              </ThemedText>
+              {hasUsername ? (
+                <ThemedText type="smallBold" numberOfLines={1} style={styles.username}>
+                  {isolate(`@${username}`)}
+                </ThemedText>
+              ) : (
+                // No handle yet: say so. Showing an invented one here is what made somebody believe
+                // they were findable when nothing about them existed on the server.
+                <ThemedText type="smallBold" numberOfLines={1} style={[styles.username, { color: theme.tealStrong }]}>
+                  {t('profile.usernameNotSet')}
+                </ThemedText>
+              )}
               {!editing && (
                 <Pressable
                   accessibilityRole="button"
@@ -148,7 +170,9 @@ export function ProfileIdentity() {
           <Ionicons name={chevronName()} size={18} color={theme.textMuted} />
         </Pressable>
 
-        {editing && <UsernameEditor current={username} taken={takenUsernames} onSave={save} />}
+        {/* The editor prefills with the SUGGESTION when nothing is saved — one tap to accept it,
+            and it is only real once Save is pressed. */}
+        {editing && <UsernameEditor current={username || suggestion} taken={takenUsernames} onSave={save} />}
       </View>
     </View>
   );

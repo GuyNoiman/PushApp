@@ -29,7 +29,9 @@
     "birthDate": "תאריך לידה",
     "birthDateNotSpecified": "לא צוין",
     "addressForm": "כיצד לפנות אליך",
-    "openProfile": "פתיחת הפרופיל שלי"
+    "openProfile": "פתיחת הפרופיל שלי",
+    "usernameNotSet": "בחרו שם משתמש",
+    "usernameUnsaved": "עוד לא שמור. שמרו כדי שחברים יוכלו למצוא אתכם בשם הזה."
   },
   "account": {
     "apple": "התחברות עם Apple",

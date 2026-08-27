@@ -31,5 +31,10 @@
       "title": "No Allies yet",
       "body": "An Ally is someone who joined the Support Circle of one of your Journeys. You invite them from the Journey itself."
     }
+  },
+  "needsHandle": {
+    "title": "You need a username first",
+    "body": "To add a friend you need a name they can find you by too. You choose it once, and you can change it anytime.",
+    "cta": "Choose a username"
   }
 }

@@ -88,5 +88,10 @@
       "primary": "Build my Journey",
       "secondary": "Or adjust the pace first"
     }
+  },
+  "technical": {
+    "prefix": "[Technical]",
+    "on": "Technical mode is on. From here every decision the agent and the experts make will be shown here — how the category, the expert, the Journey and the version were chosen. Say \"exit technical mode\" to turn it off.",
+    "off": "Technical mode is off. The conversation carries on as normal."
   }
 }

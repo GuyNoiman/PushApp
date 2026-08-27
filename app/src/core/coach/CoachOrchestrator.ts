@@ -81,6 +81,7 @@ import {
 import { DEFAULT_STYLE_ID, getStyle, type CommunicationStyleId } from './communicationStyles';
 import { horizonQuestion } from './horizonQuestion';
 import { deriveConstraints, journeyShapeFor } from './goalSpecToJourney';
+import { noteOf, type TechnicalNote } from './technicalMode';
 import { variantInterviewQuestions } from './variantQuestions';
 import { journeyDefinitionsFor } from '../learning/library/definitions';
 import { profileSignals } from '../learning/library/matchApproach';
@@ -241,6 +242,14 @@ export interface CoachTurn {
   question?: DomainQuestion;
   /** The active expert, once triage has selected one. */
   activeExpert?: ActiveExpert;
+  /**
+   * Why this turn did what it did, when TECHNICAL MODE is on (see {@link ./technicalMode}). Empty
+   * or absent otherwise.
+   *
+   * DISPLAY-ONLY, and that is load-bearing: these lines are never pushed to {@link history}, so the
+   * model never reads its own commentary back as if the user had said it.
+   */
+  technicalNotes?: TechnicalNote[];
 }
 
 /** A read-only snapshot of the orchestrator's progress. */
@@ -322,6 +331,15 @@ export class CoachOrchestrator {
   private readonly locale?: string;
   /** The onboarding profile, read only to decide which variant questions still need asking. */
   private readonly profile?: CoachOnboardingSummary | null;
+  /**
+   * TECHNICAL MODE (2026-08-27). Off by default. While on, every turn carries the reasoning behind
+   * it — read by the domain expert who authored the trees, who otherwise has no way to see whether
+   * what he designed is what actually ran.
+   */
+  private technicalMode = false;
+  /** Notes gathered during the CURRENT turn; drained by {@link takeNotes} as the turn is returned. */
+  private notes: TechnicalNote[] = [];
+
   /** The steady meta-agent tone, composed onto the coach persona for triage. */
   private readonly styleFragment: string;
 
@@ -392,6 +410,30 @@ export class CoachOrchestrator {
    *   • none usable  → the FALLBACK process-type question.
    * Named `triage` for continuity; it now understands rather than merely classifies.
    */
+  /** Turn the commentary on or off. Changes nothing about what the coach decides — only what it says. */
+  setTechnicalMode(on: boolean): void {
+    this.technicalMode = on;
+    if (!on) this.notes = [];
+  }
+
+  /** Whether the commentary is currently on. */
+  isTechnicalMode(): boolean {
+    return this.technicalMode;
+  }
+
+  /** Record one note, when the mode is on. A no-op otherwise, so callers need no branch. */
+  private note(title: string, fields: Record<string, string | number | undefined | null> = {}): void {
+    if (this.technicalMode) this.notes.push(noteOf(title, fields));
+  }
+
+  /** Hand the turn its notes and clear the buffer, so nothing is ever reported twice. */
+  private takeNotes(): TechnicalNote[] | undefined {
+    if (this.notes.length === 0) return undefined;
+    const taken = this.notes;
+    this.notes = [];
+    return taken;
+  }
+
   async triage(goalText: string): Promise<CoachTurn> {
     if (this.phase !== 'goal') {
       throw new Error('Describe the goal after start(), and triage() only once');
@@ -409,6 +451,11 @@ export class CoachOrchestrator {
       this.history.pop();
       throw e;
     }
+
+    this.note('Understanding the opening message', {
+      'goals detected': goals.length,
+      'each one': goals.map((g) => `${g.title} (${g.domain}, ${g.kind})`).join(' | ') || undefined,
+    });
 
     if (goals.length === 0) {
       // Understanding produced nothing usable — keep the demoted process-type question as a fallback
@@ -561,6 +608,16 @@ export class CoachOrchestrator {
    * goal and for the goal the user picks on the focus turn.
    */
   private activateGoal(goal: UnderstoodGoal, deferred: UnderstoodGoal[]): CoachTurn {
+    const known = Object.entries(goal.signals ?? {})
+      .map(([k, v]) => `${k}=${String(v)}`)
+      .join(', ');
+    this.note('Goal activated', {
+      title: goal.title,
+      domain: goal.domain,
+      'kind (shapes the plan)': goal.kind,
+      'already known from their message': known || 'nothing — everything will be asked',
+      'other goals parked': deferred.length > 0 ? deferred.map((g) => g.title).join(' | ') : undefined,
+    });
     this.spec.title = goal.title;
     this.spec.domain = goal.domain;
     // What their own message already said. Read before anything is asked, which is the point.
@@ -597,8 +654,24 @@ export class CoachOrchestrator {
    * Returns null when there is no diagnosis to run, so the caller falls through unchanged.
    */
   private beginDiagnosis(): CoachTurn | null {
-    if (this.spec.domain !== 'career') return null;
-    if (this.knownSignals.activeJobSearch === 'no') return null;
+    if (this.spec.domain !== 'career') {
+      this.note('Diagnosis skipped', {
+        reason: `no authored diagnosis tree for domain "${this.spec.domain}" — only career has one`,
+        consequence: 'the expert\u2019s own questions run, and the plan is the generic arc',
+      });
+      return null;
+    }
+    if (this.knownSignals.activeJobSearch === 'no') {
+      this.note('Diagnosis skipped', {
+        reason: 'the opening message said the job search is NOT active',
+        why: 'the one authored tree diagnoses a job search; running it here would ask about applications nobody is sending',
+      });
+      return null;
+    }
+    this.note('Diagnosis starting', {
+      tree: 'career — apply, no response',
+      'answers already in hand': Object.entries(this.knownSignals).map(([k, v]) => `${k}=${String(v)}`).join(', ') || 'none',
+    });
 
     this.diagnosisTree = APPLY_NO_RESPONSE;
     this.diagnosisAnswers = {};
@@ -619,6 +692,7 @@ export class CoachOrchestrator {
     return {
       coachMessage,
       state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
       done: false,
       question: cloneQuestion(surfaced),
       activeExpert: this.activeExpert,
@@ -638,8 +712,18 @@ export class CoachOrchestrator {
     const outcome = tree ? outcomeOf(tree, this.diagnosisAnswers, this.knownSignals) : null;
     if (outcome?.kind === 'family') {
       this.spec.diagnosis = { subtype: outcome.subtype, bottleneck: outcome.bottleneck };
+      this.note('Diagnosis settled', {
+        subtype: outcome.subtype,
+        bottleneck: outcome.bottleneck,
+        'answers it rested on': Object.entries(this.diagnosisAnswers).map(([k, v]) => `${k}=${String(v)}`).join(', ') || 'the opening message alone',
+        'what this decides': 'which FAMILY of authored Journeys this person gets',
+      });
     } else if (outcome?.kind === 'unresolved') {
       this.spec.diagnosisUnresolved = outcome.reason;
+      this.note('Diagnosis UNRESOLVED', {
+        reason: outcome.reason,
+        'what happens now': 'no family is forced — the plan must not motivate past this',
+      });
     }
     return this.beginExpertQuestions();
   }
@@ -669,6 +753,22 @@ export class CoachOrchestrator {
       ...this.journeyVariantQuestions(),
     ];
     this.questions = questionsForProcessType(all, this.spec.processType);
+    this.note('Expert selected', {
+      expert: this.activeExpert.displayName,
+      'routed by': `the domain read from the opening message (${this.spec.domain})`,
+    });
+    this.note('Interview assembled', {
+      'expert questions': this.expert.interviewQuestions?.(this.goal).length ?? 0,
+      'plus the horizon question': 'how long they want to give this',
+      'plus Journey variant questions': this.journeyVariantQuestions().length,
+      'dropped as irrelevant to this shape':
+        all.length - this.questions.length > 0 ? all.length - this.questions.length : undefined,
+      'will actually be asked': this.questions.length,
+      note:
+        this.journeyVariantQuestions().length === 0
+          ? 'no variant question needed — the profile already places them, or the versions no longer differ'
+          : undefined,
+    });
     this.questionIndex = 0;
     this.phase = 'questions';
 
@@ -707,6 +807,7 @@ export class CoachOrchestrator {
     return {
       coachMessage,
       state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
       done: false,
       question: cloneQuestion(this.focusQuestion),
     };
@@ -720,6 +821,7 @@ export class CoachOrchestrator {
     return {
       coachMessage,
       state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
       done: false,
       question: cloneQuestion(PROCESS_TYPE_QUESTION),
     };
@@ -835,6 +937,7 @@ export class CoachOrchestrator {
     return {
       coachMessage,
       state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
       done: false,
       question: cloneQuestion(SCHEDULING_QUESTION),
       activeExpert: this.activeExpert,
@@ -854,6 +957,7 @@ export class CoachOrchestrator {
     return {
       coachMessage,
       state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
       done: false,
       question: cloneQuestion(question),
       activeExpert: this.activeExpert,
@@ -895,6 +999,18 @@ export class CoachOrchestrator {
       );
       feasibility = this.expert.assessFeasibility(this.answers, constraints);
       this.spec.feasibility = feasibility;
+      this.note('Constraints the plan is built inside', {
+        'weekly minutes': constraints.weeklyAvailabilityMinutes || '0 (no time signal — one Step per preferred day)',
+        'where that came from':
+          this.spec.timing.sessionMinutes != null && this.spec.timing.sessionsPerWeek != null
+            ? 'this interview, explicitly'
+            : this.profile?.capacity
+              ? `the expert's time question, or failing that onboarding capacity "${this.profile.capacity}"`
+              : "the expert's time question",
+        'preferred days': constraints.preferredDays.length > 0 ? constraints.preferredDays.join(', ') : 'none set',
+        daypart: constraints.daypart,
+        'feasibility verdict': feasibility?.note ? 'the expert had something to say' : 'nothing flagged',
+      });
     }
 
     const lines = [feasibility?.note, this.playbook.supportCircleRecommendation].filter(
@@ -906,6 +1022,7 @@ export class CoachOrchestrator {
     return {
       coachMessage,
       state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
       done: true,
       goalSpec: this.snapshotSpec(),
       activeExpert: this.activeExpert,

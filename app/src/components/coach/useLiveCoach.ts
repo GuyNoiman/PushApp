@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
 import type { CoachOption } from '@/components/coach/coachScript';
+import { technicalModeCommand } from '@/core/coach/technicalMode';
 import {
   CoachOrchestrator,
   CoachUnavailableError,
@@ -64,6 +65,12 @@ export type LiveCoachItem =
   | { kind: 'coach'; text: string; strong?: boolean }
   | { kind: 'user'; text: string }
   | { kind: 'insight'; text: string }
+  /**
+   * TECHNICAL MODE (2026-08-27): why the coach did what it did. Rendered as its own kind of bubble
+   * so it can never be mistaken for something the coach said to the user — and so it is obvious at a
+   * glance which part of the transcript is the product talking about itself.
+   */
+  | { kind: 'technical'; text: string }
   | { kind: 'journey'; eyebrow: string; title: string; description: string; meta: string };
 
 /** The current question awaiting an answer, shaped for {@link CoachOptions}. */
@@ -99,6 +106,8 @@ export interface UseLiveCoach {
   budgetZone: BudgetZone;
   /** Whether a free-text answer may still be offered. False from `narrowing` onward. */
   canAskOpenQuestion: boolean;
+  /** Whether the technical commentary is on (2026-08-27). Toggled by saying so in the conversation. */
+  technicalMode: boolean;
   /** Send the opening free-text — the only LLM call (triage). */
   sendOpening: (text: string) => void;
   /** Pick a single closed option by its id (index). */
@@ -196,6 +205,8 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   const [status, setStatus] = useState<LiveCoachStatus>('idle');
   const [goalSpec, setGoalSpec] = useState<GoalSpec | null>(null);
   const [handoff, setHandoff] = useState(false);
+  /** Whether the commentary is on. Mirrored into state so the screen can show that it is. */
+  const [technicalMode, setTechnicalMode] = useState(false);
   const [awaitingOpening, setAwaitingOpening] = useState(true);
 
   // The raw current question, kept in a ref so handlers always read the latest without re-binding.
@@ -220,9 +231,18 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     setItems([{ kind: 'coach', text: opening.coachMessage }]);
   }, []);
 
+  /** Append the turn's technical commentary, when the mode is on. Display-only; never sent anywhere. */
+  const appendNotes = useCallback((notes: readonly string[] | undefined) => {
+    if (!notes || notes.length === 0) return;
+    setItems((prev) => [...prev, ...notes.map((text): LiveCoachItem => ({ kind: 'technical', text }))]);
+  }, []);
+
   /** Apply an orchestrator turn to the view-model (hand-off / question / done). */
   const applyTurn = useCallback(
     (turn: CoachTurn) => {
+      // BEFORE the branches below, every one of which may return early. The commentary is about the
+      // turn that just happened and must survive a hand-off or a completion.
+      appendNotes(turn.technicalNotes);
       // SENSITIVE-DOMAIN STOP: never interview or build a Journey for a sensitive domain.
       if (turn.activeExpert && SENSITIVE_DOMAINS.has(turn.activeExpert.id)) {
         applyQuestion(null);
@@ -245,7 +265,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       applyQuestion(turn.question ?? null);
       setItems((prev) => [...prev, ...appended]);
     },
-    [applyQuestion, t],
+    [appendNotes, applyQuestion, t],
   );
 
   /**
@@ -280,14 +300,39 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     [applyTurn, applyQuestion, t],
   );
 
+  /**
+   * The technical-mode switch, recognised BEFORE anything is sent.
+   *
+   * It costs no model call and cannot be mistaken for a goal — which is the whole reason it is
+   * matched here rather than inside the orchestrator, whose first job is to understand a sentence.
+   * Returns true when the message was the command and has been handled.
+   */
+  const handleTechnicalCommand = useCallback(
+    (text: string): boolean => {
+      const command = technicalModeCommand(text);
+      if (!command) return false;
+      const on = command === 'on';
+      orchestratorRef.current!.setTechnicalMode(on);
+      setTechnicalMode(on);
+      setItems((prev) => [
+        ...prev,
+        { kind: 'user', text: text.trim() },
+        { kind: 'technical', text: on ? t('technical.on') : t('technical.off') },
+      ]);
+      return true;
+    },
+    [t],
+  );
+
   const sendOpening = useCallback(
     (text: string) => {
       const trimmed = text.trim();
       if (trimmed.length === 0) return;
+      if (handleTechnicalCommand(trimmed)) return;
       lastOpeningRef.current = trimmed;
       void advance(trimmed, () => orchestratorRef.current!.triage(trimmed), true);
     },
-    [advance],
+    [advance, handleTechnicalCommand],
   );
 
   /**
@@ -334,6 +379,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   );
 
   return {
+    technicalMode,
     items,
     question: questionView,
     status,

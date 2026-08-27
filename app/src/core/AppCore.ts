@@ -69,7 +69,19 @@ import { deriveMotivationFacts } from './motivation/facts';
 import { buildMotivationCard, type MotivationCard } from './motivation/motivationCopy';
 import { appendMotivationLog, motivationDayKey, selectMotivation } from './motivation/select';
 import type { MotivationLogEntry } from './motivation/types';
+import { noteOf, type TechnicalNote } from './coach/technicalMode';
 import { buildAggregateCopy } from './notify/aggregateCopy';
+
+/**
+ * How a version was decided, in words a person can read. `default` is deliberately blunt: an
+ * unmatched user must never be told they were matched.
+ */
+const VARIANT_VIA_EXPLANATION: Record<string, string> = {
+  answer: 'an answer this person gave to the Journey\u2019s own question',
+  profile: 'a signal from their onboarding profile',
+  rating: 'how this version has performed for people so far',
+  default: 'nothing was known — the authored default',
+};
 import { buildReminderCopy } from './notify/reminderCopy';
 import { journeysForDream, type NewDreamInput } from './dreams/dreams';
 import { futureCapacity, type FutureCapacity } from './journeys/futureJourneys';
@@ -1363,7 +1375,16 @@ export class AppCore {
     const shape = journeyShapeFor(spec.processType, spec.cadence);
     const diagnosed = this.diagnosedDefinition(spec);
     const definition = diagnosed ?? journeyDefinitionsFor(shape, spec.domain)[0];
-    if (!definition) return spec;
+    if (!definition) {
+      this.buildTrace = [
+        noteOf('No authored Journey matched', {
+          shape,
+          domain: spec.domain,
+          'what happens instead': 'the generic planned arc is built from the interview alone',
+        }),
+      ];
+      return spec;
+    }
 
     const choice = selectVariant(definition, {
       answers: axisAnswersFrom(definition, spec.answers),
@@ -1371,6 +1392,27 @@ export class AppCore {
       ratings: variantScores(rateLibrary(this.state.journeys), definition.id),
     });
     const libraryRef = { definitionId: choice.definitionId, variantId: choice.variantId, version: choice.version };
+
+    // The build trace (technical mode). Computed unconditionally — it is a handful of strings, it
+    // never leaves the device and it is never persisted — so the surface can decide whether to show
+    // it without this layer having to know that the mode exists.
+    this.buildTrace = [
+      noteOf('Journey selected', {
+        'chosen by': diagnosed ? 'the DIAGNOSIS — subtype + bottleneck named this family' : `shape (${shape}) + domain (${spec.domain})`,
+        'diagnosis': spec.diagnosis ? `${spec.diagnosis.subtype} / ${spec.diagnosis.bottleneck}` : undefined,
+        'unresolved': spec.diagnosisUnresolved,
+        'Journey': definition.id,
+      }),
+      noteOf('Version matched to this person', {
+        version: choice.variantId,
+        'decided by': VARIANT_VIA_EXPLANATION[choice.via],
+        'the signal itself': choice.signal,
+        'honest note':
+          choice.via === 'default'
+            ? 'nothing was known that places this person on the axis, so the authored default was used — this is a default, not a match'
+            : undefined,
+      }),
+    ];
 
     // A RECURRING version names an approach the builder reads, and any goal of that shape may have
     // one: the library's recurring Journey is generic by design.
@@ -1397,7 +1439,15 @@ export class AppCore {
   private diagnosedDefinition(spec: GoalSpec): JourneyDefinition | undefined {
     if (!spec.diagnosis) return undefined;
     const family = goalFamilyForDiagnosis(spec.domain, spec.diagnosis.subtype, spec.diagnosis.bottleneck);
-    if (!family) return undefined;
+    if (!family) {
+      this.buildTrace = [
+        noteOf('Diagnosed, but nothing authored for it', {
+          diagnosis: `${spec.diagnosis.subtype} / ${spec.diagnosis.bottleneck}`,
+          'what happens': 'no family is substituted — handing over the nearest one would be treating the wrong thing on purpose',
+        }),
+      ];
+      return undefined;
+    }
     // No answers are passed, and that is not an omission: nothing ASKS a family's axis question yet
     // (the coach's next rung), so the choice is made from what onboarding already knows about this
     // person, and falls back to the family's named default. `via` records which of the two it was.
@@ -2964,6 +3014,18 @@ export class AppCore {
    * Whether the Smart Timing loop may observe or store anything. Single gate, read by every hook
    * below, mirroring how {@link adaptiveEnabled} gates the coach.
    */
+  /**
+   * Why the last Journey build chose what it chose (technical mode, {@link ./coach/technicalMode}).
+   * In memory only: never persisted, never emitted, never sent. Read by the coach screen right after
+   * a build, and overwritten by the next one.
+   */
+  private buildTrace: TechnicalNote[] = [];
+
+  /** The reasoning behind the most recent Journey build. Empty before the first one. */
+  getLastJourneyBuildTrace(): readonly TechnicalNote[] {
+    return this.buildTrace;
+  }
+
   private readonly smartTimingEnabled = featureFlags.smartTiming;
 
   /**

@@ -28,6 +28,7 @@ import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
 import { CoachInputBar } from '@/components/coach/CoachInputBar';
 import { CoachInsight, CoachJourneyCard } from '@/components/coach/CoachJourneyCard';
+import { TechnicalNote } from '@/components/coach/TechnicalNote';
 import { CoachOptions } from '@/components/coach/CoachOptions';
 import { buildCoachScript, type CoachOption } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
@@ -130,6 +131,8 @@ function LiveCoachScreen() {
   const { firstRun: firstRunParam } = useLocalSearchParams<{ firstRun?: string }>();
   const firstRun = firstRunParam === '1';
   const [tail, setTail] = useState<'none' | 'reminders' | 'memory'>('none');
+  /** The build's technical trace, shown after the Journey is created (technical mode only). */
+  const [buildTrace, setBuildTrace] = useState<string[]>([]);
   const scrollRef = useRef<ScrollView>(null);
   const { core, snapshot } = useApp();
   // The onboarding profile goes IN to the interview: a Journey's own variant question (D62) is
@@ -244,6 +247,9 @@ function LiveCoachScreen() {
           : { mode: 'now' };
     const journey = core.createJourneyFromGoalSpec(coach.goalSpec, start);
     if (!journey) return;
+    // The build's own reasoning — which Journey, which version, and on the strength of what. It
+    // happens outside the orchestrator, so it is collected here rather than arriving on a turn.
+    if (coach.technicalMode) setBuildTrace([...core.getLastJourneyBuildTrace()]);
     // FIRST RUN (Onboarding v2 §13/§14): the two questions that were asked before Home — may I
     // remember, and may I remind you — belong HERE, now that there is a Journey to remember and a
     // Step to be reminded about. Everyone else goes straight to Home, exactly as before.
@@ -315,6 +321,8 @@ function LiveCoachScreen() {
                   return <CoachBubble key={i} role="user" text={item.text} />;
                 case 'insight':
                   return <CoachInsight key={i} text={item.text} />;
+                case 'technical':
+                  return <TechnicalNote key={i} text={item.text} />;
                 case 'journey':
                   return (
                     <CoachJourneyCard
@@ -329,6 +337,10 @@ function LiveCoachScreen() {
                   return null;
               }
             })}
+
+            {buildTrace.map((text, i) => (
+              <TechnicalNote key={`build-${i}`} text={text} />
+            ))}
 
             {coach.status === 'thinking' && <CoachBubble role="coach" text={t('thinking')} />}
 

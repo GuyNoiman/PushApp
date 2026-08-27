@@ -22,9 +22,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { displayFont } from '@/constants/displayFont';
@@ -142,7 +143,7 @@ export default function DirectionScreen() {
           </View>
         ) : null}
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {step === 'intro' ? (
             <>
               <Title>{t('direction.intro.lead')}</Title>
@@ -326,7 +327,7 @@ export default function DirectionScreen() {
           <ThemedText type="small" style={[styles.footnote, { color: theme.textMuted }]}>
             {t('direction.notADream')}
           </ThemedText>
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

@@ -21,12 +21,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { InboxEmpty } from '@/components/inbox/InboxEmpty';
 import { InboxRow, type InboxRowData } from '@/components/inbox/InboxRow';
 import { InboxTabs, type InboxTab, type InboxTabKey } from '@/components/inbox/InboxTabs';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { displayFont, displayScale } from '@/constants/displayFont';
@@ -163,7 +164,7 @@ export default function InboxScreen() {
 
         <InboxTabs tabs={tabs} selected={selected} onSelect={onSelectTab} />
 
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+        <KeyboardSafeScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
           {visibleRows.length === 0 ? (
             <InboxEmpty
               emoji={selected === 'requests' ? '📬' : '💬'}
@@ -179,7 +180,7 @@ export default function InboxScreen() {
               />
             ))
           )}
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

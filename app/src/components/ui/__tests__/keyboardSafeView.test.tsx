@@ -46,4 +46,24 @@ describe('keyboard avoidance', () => {
 
     expect(offenders.map((f) => f.replace(SRC, ''))).toEqual([]);
   });
+
+  it('is never simply ABSENT from a scrolling screen that holds a text input', () => {
+    // The 2026-08-26 fix corrected the nine screens with a PINNED composer and stopped there. It
+    // left nine more — the Tools above all, where people type the most — scrolling inside a bare
+    // ScrollView with a TextInput in it and no avoidance of any kind. On Android under edge-to-edge
+    // that is a keyboard sitting on the field, reported from a device on 2026-08-27.
+    //
+    // Checking the source rather than the render, for the same reason as the test above: this
+    // failure arrives by somebody reaching for `ScrollView` out of habit, not by a decision.
+    const offenders = everyTsxFile(SRC).filter((file) => {
+      if (file.includes(join('components', 'ui'))) return false; // the containers themselves
+      const source = readFileSync(file, 'utf8');
+      if (!/<TextInput[\s>]/.test(source)) return false;
+      if (!/<ScrollView[\s>]/.test(source)) return false; // not a scrolling screen
+      // Any of the three safe containers counts; `TabScrollView` wraps KeyboardSafeScrollView.
+      return !/(KeyboardSafeScrollView|KeyboardSafeView|TabScrollView)/.test(source);
+    });
+
+    expect(offenders.map((f) => f.replace(SRC, ''))).toEqual([]);
+  });
 });

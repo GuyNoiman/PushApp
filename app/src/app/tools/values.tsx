@@ -23,10 +23,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SwipeableValueCard } from '@/components/tools/SwipeableValueCard';
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { displayFont, displayScale } from '@/constants/displayFont';
@@ -110,7 +111,7 @@ export default function ValuesScreen() {
           }
         />
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {!store.ready ? null : !state ? (
             <Intro onPick={begin} />
           ) : stage === 'sort' ? (
@@ -126,7 +127,7 @@ export default function ValuesScreen() {
           ) : (
             <Result state={state} label={label} onRestart={store.clear} />
           )}
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

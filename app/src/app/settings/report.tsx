@@ -28,9 +28,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -98,7 +99,7 @@ export default function ReportScreen() {
           <ThemedText type="title">{t('report.title')}</ThemedText>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {phase === 'sent' ? (
             <>
               <ThemedText type="displaySmall">{t('report.sentTitle')}</ThemedText>
@@ -197,7 +198,7 @@ export default function ReportScreen() {
               />
             </>
           )}
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

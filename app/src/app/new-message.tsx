@@ -13,9 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { displayFont, displayScale } from '@/constants/displayFont';
@@ -104,7 +105,7 @@ export default function NewMessageScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+        <KeyboardSafeScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
           {visible.length === 0 ? (
             <ThemedText type="small" style={[styles.empty, { color: theme.textMuted }]}>
               {t('newMessage.empty')}
@@ -133,7 +134,7 @@ export default function NewMessageScreen() {
               </Pressable>
             ))
           )}
-        </ScrollView>
+        </KeyboardSafeScrollView>
       </SafeAreaView>
     </ThemedView>
   );

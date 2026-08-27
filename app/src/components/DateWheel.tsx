@@ -137,21 +137,37 @@ function Column({
   const ref = useRef<ScrollView>(null);
   const index = Math.max(0, rows.findIndex((r) => r.key === selectedKey));
 
+  /** Which row the column came to rest on, reported upward only when it is a different one. */
+  const report = (offsetY: number) => {
+    const i = Math.round(offsetY / ROW);
+    const row = rows[Math.max(0, Math.min(rows.length - 1, i))];
+    if (row && row.key !== selectedKey) onSelect(row.key);
+  };
+
   return (
     <ScrollView
       ref={ref}
       style={{ flex, height: ROW * VISIBLE_ROWS }}
       showsVerticalScrollIndicator={false}
+      // The wheel lives inside a page that also scrolls vertically. Without this the parent takes
+      // the drag on Android and the column barely moves.
+      nestedScrollEnabled
       snapToInterval={ROW}
       decelerationRate="fast"
       // Padding of two rows top and bottom is what lets the FIRST and LAST entries reach the centre.
       contentContainerStyle={{ paddingVertical: ROW * CENTRE_OFFSET }}
       contentOffset={{ x: 0, y: index * ROW }}
-      onMomentumScrollEnd={(e) => {
-        const i = Math.round(e.nativeEvent.contentOffset.y / ROW);
-        const row = rows[Math.max(0, Math.min(rows.length - 1, i))];
-        if (row && row.key !== selectedKey) onSelect(row.key);
-      }}>
+      // BOTH events, and that is the bug this file was reported for (device, 2026-08-27: "I cannot
+      // change my birth date"). `onMomentumScrollEnd` only fires when a flick leaves the list
+      // COASTING. Nudging the wheel one or two rows — which is what changing a birth date actually
+      // is — ends the gesture with no momentum at all, so the column snapped to the new row on
+      // screen and reported nothing: the value silently stayed as it was, and the person watched the
+      // right number sit under the line while the row above kept saying the old one.
+      //
+      // Reporting from the drag as well is safe: `onSelect` is guarded on an actual change, so a
+      // gesture that DOES coast fires once from the drag and then no-ops on the momentum.
+      onScrollEndDrag={(e) => report(e.nativeEvent.contentOffset.y)}
+      onMomentumScrollEnd={(e) => report(e.nativeEvent.contentOffset.y)}>
       {rows.map((r) => {
         const selected = r.key === selectedKey;
         return (

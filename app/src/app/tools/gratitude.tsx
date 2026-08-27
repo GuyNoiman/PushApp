@@ -19,9 +19,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ToolOpening } from '@/components/tools/ToolOpening';
@@ -185,7 +186,7 @@ export default function GratitudeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
           {header(t('gratitude.steps.entries'))}
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <ThemedText
               style={[styles.question, { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(24 * displayScale()) }]}>
               {record.cadence === 'weekly' ? t('gratitude.entries.promptWeekly') : t('gratitude.entries.promptDaily')}
@@ -253,7 +254,7 @@ export default function GratitudeScreen() {
                 </ThemedText>
               ))}
             </View>
-          </ScrollView>
+          </KeyboardSafeScrollView>
 
           <View style={styles.footer}>
             <Pressable
@@ -289,7 +290,7 @@ export default function GratitudeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
           {header(t('gratitude.steps.deepen'), () => setStep('entries'))}
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <ThemedText
               style={[styles.question, { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(24 * displayScale()) }]}>
               {t('gratitude.deepen.prompt')}
@@ -320,7 +321,7 @@ export default function GratitudeScreen() {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </KeyboardSafeScrollView>
 
           <View style={styles.footer}>
             <Pressable
@@ -356,7 +357,7 @@ export default function GratitudeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
           {header(t('gratitude.steps.why'), () => setStep('deepen'))}
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <ThemedText
               style={[styles.question, { color: theme.text, fontFamily: displayFont(), fontSize: Math.round(24 * displayScale()) }]}>
               {t('gratitude.why.prompt')}
@@ -377,7 +378,7 @@ export default function GratitudeScreen() {
                 { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: over ? theme.danger : theme.hairline, textAlign: START_TEXT_ALIGN },
               ]}
             />
-          </ScrollView>
+          </KeyboardSafeScrollView>
           <View style={styles.footer}>
             <Pressable
               accessibilityRole="button"
@@ -404,7 +405,7 @@ export default function GratitudeScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {header(t('gratitude.steps.result'))}
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <KeyboardSafeScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={[styles.crest, { backgroundColor: tint }]}>
             <Ionicons name="sparkles-outline" size={22} color={accent} />
           </View>
@@ -429,7 +430,7 @@ export default function GratitudeScreen() {
                 </View>
               ))
             : null}
-        </ScrollView>
+        </KeyboardSafeScrollView>
 
         <View style={styles.footer}>
           {result && result.status === 'confirmed' ? (

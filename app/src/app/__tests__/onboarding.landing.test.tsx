@@ -1,14 +1,22 @@
 /**
- * Onboarding — where the user LANDS when the flow finishes (Device QA 2026-08-17, B1).
+ * Onboarding — where the user LANDS when the first-run gate closes.
  *
- * On device, finishing onboarding dropped the user straight into the Coach conversation, before they
- * had seen their own app. Founder decision: land on HOME; the Coach stays one tap away on Home's
- * hero card. This pins the destination on BOTH exits of the final reminders pre-prompt — turning
- * reminders on, and declining — because either one finishes onboarding (K1: a permission denial must
- * never block completion).
+ * ── THE FINDING THIS FILE HAS ALWAYS PROTECTED (Device QA 2026-08-17, B1) ──────────────────────
  *
- * `t` is stubbed to echo its key; theme, safe-area and the providers the earlier pages use are
- * stubbed so the last page renders without a provider tree.
+ * Finishing onboarding used to drop the user straight into the Coach conversation, before they had
+ * seen their own app — and behind that conversation Home was EMPTY. The founder's decision was to
+ * land on Home instead.
+ *
+ * ── AND WHAT CHANGED UNDER IT (Onboarding v2, 2026-08-27) ─────────────────────────────────────
+ *
+ * The conversation is now the onboarding rather than something waiting behind it: the welcome screen
+ * says so, and the conversation ends by creating a Journey, so Home has something in it on arrival.
+ * B1's actual objection — a conversation sprung on somebody in front of an empty app — is answered
+ * rather than overruled, and these tests hold the part that still matters: **the person is always
+ * taken somewhere reachable, and "maybe later" is a real answer that invents nothing.**
+ *
+ * `t` is stubbed to echo its key; theme, safe-area and the providers the page uses are stubbed so it
+ * renders without a provider tree.
  */
 import { createElement, type ReactElement } from 'react';
 
@@ -67,10 +75,10 @@ interface TestRendererModule {
 const TestRenderer: TestRendererModule = require('react-test-renderer');
 const { act } = TestRenderer;
 
-/** A core parked on the LAST page of the flow — the reminders pre-prompt. */
+/** A core parked on the welcome — the last page before the conversation. */
 function setApp() {
   const core = {
-    getOnboardingStep: () => 'notifications',
+    getOnboardingStep: () => 'intro',
     getOnboardingAnswers: () => ({ selections: {}, freeText: {}, skipped: [] }),
     saveOnboardingProgress: jest.fn(),
     completeOnboarding: jest.fn(),
@@ -101,28 +109,38 @@ async function tap(r: TestRoot, label: string) {
 
 beforeEach(() => mockReplace.mockClear());
 
-describe('Onboarding — the hand-off at the end of the flow (B1)', () => {
-  it('lands on Home after asking for reminders', async () => {
+describe('Onboarding — the hand-off at the welcome (B1, revised by v2)', () => {
+  it('opens the conversation the welcome just promised', async () => {
     const core = setApp();
     const r = await render();
 
-    await tap(r, 'notifications.primary');
+    await tap(r, 'intro.start');
 
-    expect(core.initReminders).toHaveBeenCalled();
+    // The gate closes FIRST, and that is what makes the coach route reachable at all — until
+    // onboarding is complete, `/coach` sits behind the first-run guard.
     expect(core.completeOnboarding).toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledWith('/');
-    // Never the Coach: the user meets their own app first, and opens the conversation when they choose.
-    expect(mockReplace).not.toHaveBeenCalledWith('/coach');
+    expect(mockReplace).toHaveBeenCalledWith('/coach?firstRun=1');
   });
 
-  it('lands on Home when reminders are declined too — declining never blocks completion', async () => {
+  it('"maybe later" opens the app, and invents nothing', async () => {
     const core = setApp();
     const r = await render();
 
-    await tap(r, 'notifications.secondary');
+    await tap(r, 'intro.later');
 
-    expect(core.initReminders).not.toHaveBeenCalled();
     expect(core.completeOnboarding).toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith('/');
+    // Non-punitive: no answers are fabricated on the way out, and the coach is one tap away on Home.
+    expect(core.completeOnboarding.mock.calls[0][0].skipped ?? []).toEqual([]);
+  });
+
+  it('never leaves somebody nowhere — every exit navigates', async () => {
+    for (const label of ['intro.start', 'intro.later']) {
+      mockReplace.mockClear();
+      setApp();
+      const r = await render();
+      await tap(r, label);
+      expect(mockReplace).toHaveBeenCalledTimes(1);
+    }
   });
 });

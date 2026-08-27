@@ -199,27 +199,63 @@ export const ONBOARDING_QUESTION_IDS: readonly OnboardingQuestionId[] = ONBOARDI
 export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
 
 /**
- * The whole flow in order (PRD §2). `notifications` is the terminal soft pre-prompt AFTER
- * `completion` (K1): "Maybe later" still converges on `completion` before the ask, and the
- * permission request never blocks finishing onboarding.
+ * The FIRST-RUN flow in order (Onboarding v2, 2026-08-27).
+ *
+ * ── WHAT CHANGED, AND WHY IT IS THIS SHORT ─────────────────────────────────────────────────────
+ *
+ * It used to be fifteen pages: language, profile, an intro, nine questions, a completion screen, a
+ * consent page and a permission ask — all of it before the person had seen anything the app does.
+ * The revision's principle is that **onboarding should already feel like the first coaching
+ * session**, so the questionnaire stops being a gate in front of the coach and the coach becomes
+ * the onboarding.
+ *
+ * Three pages remain here, and each earns its place: **language** decides the whole UI, its
+ * direction and the coach's language, so nothing can be rendered before it; **personalInfo** is the
+ * little that is genuinely needed at first run (the rest stays editable in Settings); and the
+ * **welcome** sets the expectation that what follows is a short conversation rather than a form.
+ *
+ * ── WHERE EVERYTHING ELSE WENT ─────────────────────────────────────────────────────────────────
+ *
+ * The nine questions are NOT deleted — the configs, the ids and the screens all stay, they are
+ * still reachable from the Tools tab, and the plan is to ask the few that matter CONTEXTUALLY, when
+ * a chosen Journey actually needs the axis (Phase 2 of the spec). Removing them from this list only
+ * removes them from the fixed first-run sequence.
+ *
+ * The Coach-memory consent and the notification ask moved to AFTER the first Journey exists, which
+ * is the whole point of both: consent to a coach remembering things is easier to mean once somebody
+ * has met it, and a reminder is easier to want once there is something to be reminded about.
  */
-export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
-  'language',
-  'personalInfo',
-  'intro',
-  'q1',
-  'q2',
-  'q3',
-  'q4',
-  'q5',
-  'q6',
-  'q7',
-  'q8',
-  'q9',
+export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = ['language', 'personalInfo', 'intro'];
+
+/**
+ * The steps that are no longer part of the first-run sequence but are still real pages: the nine
+ * questions (reachable from the Tools tab) and the tail that moved after the first Journey.
+ *
+ * This exists for ONE reason, and it is a live one: two people are mid-flow on the shipped build
+ * right now. A device that resumes at `q4` after this update must not be handed a step the order no
+ * longer contains — `nextStep` would return that same step forever and the person would be stuck in
+ * a questionnaire with no way out. {@link resolveResumeStep} is what prevents that.
+ */
+const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
+  'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9',
   'completion',
   'coachMemory',
   'notifications',
 ];
+
+/**
+ * Where a persisted resume point should actually land after the v2 change.
+ *
+ * A step still in the flow resumes exactly where it was. Anything the flow no longer contains
+ * resumes at the **welcome** — the last page before the conversation, which is the honest place to
+ * put somebody who was part-way through a sequence that no longer exists. Their answers are kept
+ * (they are still valid signals; nothing is discarded), they are simply not asked for the rest.
+ */
+export function resolveResumeStep(step: OnboardingStep | undefined): OnboardingStep {
+  if (!step) return ONBOARDING_STEP_ORDER[0];
+  if (ONBOARDING_STEP_ORDER.includes(step)) return step;
+  return RETIRED_FIRST_RUN_STEPS.includes(step) ? 'intro' : ONBOARDING_STEP_ORDER[0];
+}
 
 /** The config for a question id, or undefined for a non-question step. */
 export function questionById(id: string): OnboardingQuestion | undefined {

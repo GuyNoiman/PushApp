@@ -23,6 +23,7 @@ import {
   prevStep,
   questionById,
   questionNumber,
+  resolveResumeStep,
 } from '../questions';
 
 const q = (id: string) => questionById(id)!;
@@ -73,18 +74,34 @@ describe('onboarding config (PRD §6)', () => {
     expect(questionNumber('completion')).toBe(0);
   });
 
-  it('ends with the two asks — coach memory, then notifications (K1 + Coach Context Summaries §4)', () => {
-    // "Maybe later" converges on completion first, then the asks — and the flow still ends at
-    // notifications. The coach-memory consent page was added between them on 2026-08-24: both are
-    // permissions asked in context at the end, and neither blocks finishing onboarding.
-    expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.indexOf('completion') + 1]).toBe('coachMemory');
-    expect(ONBOARDING_STEP_ORDER[ONBOARDING_STEP_ORDER.length - 1]).toBe('notifications');
-    expect(nextStep('completion')).toBe('coachMemory');
-    expect(nextStep('coachMemory')).toBe('notifications');
-    expect(nextStep('notifications')).toBe('notifications'); // terminal (clamped)
-    expect(prevStep('notifications')).toBe('coachMemory');
-    expect(isQuestionStep('coachMemory')).toBe(false);
-    expect(isQuestionStep('notifications')).toBe(false);
+  it('is THREE pages now, and each one earns its place (Onboarding v2, 2026-08-27)', () => {
+    // The fixed nine-question sequence stopped being a gate in front of the coach: the coach IS the
+    // onboarding. Language decides the whole UI and its direction, the profile is the little that is
+    // genuinely needed at first run, and the welcome sets the expectation of a conversation.
+    expect([...ONBOARDING_STEP_ORDER]).toEqual(['language', 'personalInfo', 'intro']);
+    expect(nextStep('intro')).toBe('intro'); // terminal — the hand-off to the coach is the screen's
+    expect(prevStep('intro')).toBe('personalInfo');
+  });
+
+  it('did not DELETE the nine questions — they are still configured and still reachable', () => {
+    // Removing them from the first-run order removes them from the fixed sequence and nothing else.
+    // They stay in the config so the few that matter can be asked contextually, when a chosen Journey
+    // actually needs the axis, and they are still openable from the Tools tab.
+    expect(ONBOARDING_QUESTION_IDS).toHaveLength(9);
+    expect(isQuestionStep('q5')).toBe(true);
+    expect(questionById('q5')).toBeDefined();
+  });
+
+  it('resumes a device that was mid-questionnaire when this update arrived', () => {
+    // Two people are mid-flow on the shipped build. A resume point the order no longer contains
+    // would make `nextStep` return that same step forever — stuck in a questionnaire with no way
+    // out. Everything retired lands on the welcome instead; their answers are kept either way.
+    for (const retired of ['q1', 'q5', 'q9', 'completion', 'coachMemory', 'notifications'] as const) {
+      expect(resolveResumeStep(retired)).toBe('intro');
+    }
+    // A step still in the flow resumes exactly where it was.
+    expect(resolveResumeStep('personalInfo')).toBe('personalInfo');
+    expect(resolveResumeStep(undefined)).toBe('language');
   });
 });
 

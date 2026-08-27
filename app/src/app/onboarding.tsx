@@ -24,28 +24,11 @@ import {
   OnboardingScaffold,
   OnboardingSecondaryButton,
 } from '@/components/onboarding/OnboardingScaffold';
-import { OnboardingQuestionPage } from '@/components/onboarding/OnboardingQuestionPage';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
-import {
-  markSkipped,
-  selectedIds,
-  setFreeText,
-  toggleSelection,
-} from '@/core/onboarding/answers';
-import type { OnboardingAnswers, OnboardingQuestionId, OnboardingStep } from '@/core/onboarding/model';
-import {
-  ONBOARDING_QUESTION_COUNT,
-  ONBOARDING_QUESTION_IDS,
-  isQuestionStep,
-  nextStep,
-  prevStep,
-  questionById,
-  questionNumber,
-  type OnboardingQuestion,
-} from '@/core/onboarding/questions';
+import type { OnboardingAnswers, OnboardingStep } from '@/core/onboarding/model';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import { countryName } from '@/core/profile/countries';
 import { generateUsername } from '@/core/social/username';
@@ -59,7 +42,6 @@ import { useSocial } from '@/state/SocialProvider';
 
 export default function OnboardingScreen() {
   const { core } = useApp();
-  const { t, i18n } = useTranslation('onboarding');
 
   // Seed from the core so an interrupted flow resumes at the same page + language (PRD §8).
   const [step, setStep] = useState<OnboardingStep>(() => core.getOnboardingStep());
@@ -75,62 +57,37 @@ export default function OnboardingScreen() {
     [answers, core],
   );
 
-  // ── Question answer handlers (local; persisted on the next page transition) ──
-  const toggleOption = useCallback((question: OnboardingQuestion, optionId: string) => {
-    setAnswers((a) => {
-      let next = toggleSelection(a, question, optionId);
-      // Deselecting the "Other" option clears its now-hidden free text, so the summary stays honest.
-      const opt = question.options.find((o) => o.id === optionId);
-      if (opt?.isOther && !selectedIds(next, question.id).includes(optionId)) {
-        next = setFreeText(next, question.id, '');
-      }
-      return next;
-    });
-  }, []);
-
-  const changeText = useCallback((id: OnboardingQuestionId, text: string) => {
-    setAnswers((a) => setFreeText(a, id, text));
-  }, []);
-
-  // ── Flow transitions ────────────────────────────────────────────────────────
-  const continueQuestion = useCallback(
-    (question: OnboardingQuestion) => go(nextStep(question.id)),
-    [go],
+  /**
+   * Close the first-run gate and go somewhere reachable.
+   *
+   * ── WHY THE GATE CLOSES *BEFORE* THE CONVERSATION, NOT AFTER IT ──────────────────────────────
+   *
+   * The v2 flow puts the coach inside onboarding, and the coach lives outside the first-run gate —
+   * until onboarding is marked complete, `/coach` is not a reachable route at all. Marking it
+   * complete here is what opens the door. It also means somebody who walks away mid-conversation
+   * lands on a working app rather than being trapped in a flow they did not want, which is the
+   * thing the gate exists to prevent in the first place. `onboardingCompletedAt` records that the
+   * FIRST-RUN GATE is done — not that a person has finished being understood.
+   *
+   * ── AND WHY LANDING ON THE COACH IS NOT A REVERSAL OF THE 2026-08-17 DECISION ────────────────
+   *
+   * That decision ("land on Home, not the Coach") answered a real device finding: the app opened on
+   * a conversation before the user had seen their own app, and behind that conversation Home was
+   * empty. Here the conversation IS the onboarding — it is what the welcome screen just promised —
+   * and it ends by creating a Journey, so Home has something in it when they arrive. The objection
+   * is answered rather than overruled.
+   */
+  const finish = useCallback(
+    ({ toCoach }: { toCoach: boolean }) => {
+      core.completeOnboarding(answers);
+      // Deferred until the gate flips (onboarding done → main stack available), so the route is
+      // reachable rather than being redirected back into the now-removed onboarding group.
+      requestAnimationFrame(() =>
+        router.replace(toCoach ? ('/coach?firstRun=1' as Href) : '/'),
+      );
+    },
+    [answers, core],
   );
-
-  const skipQuestion = useCallback(
-    (question: OnboardingQuestion) =>
-      // Q6's optional free text is a disclosure that must survive a skip of the capacity choice.
-      go(nextStep(question.id), markSkipped(answers, question.id, { keepFreeText: question.freeText === 'optional' })),
-    [answers, go],
-  );
-
-  const skipAll = useCallback(() => {
-    let next = answers;
-    for (const id of ONBOARDING_QUESTION_IDS) next = markSkipped(next, id);
-    go('completion', next);
-  }, [answers, go]);
-
-  const finish = useCallback(() => {
-    core.completeOnboarding(answers);
-    // LAND ON HOME, not the Coach (founder decision, Device QA 2026-08-17 B1). Onboarding used to
-    // hand straight over to the first Coach conversation (PRD §7/§9); on a real device that meant
-    // the app opened on a conversation before the user had seen their own app. Home is the anchor,
-    // and the Coach is one tap away on Home's hero card — the hand-off still happens, the user just
-    // chooses when. Deferred until the gate flips (onboarding done → main stack available), so the
-    // route is reachable rather than being redirected back into the (now-removed) onboarding group.
-    requestAnimationFrame(() => router.replace('/'));
-  }, [answers, core]);
-
-  // K1 — the final soft pre-prompt: ask for notification permission in context, then finish. The
-  // request is best-effort; whatever the user (or OS) decides, completion still proceeds.
-  const enableReminders = useCallback(async () => {
-    try {
-      await core.initReminders();
-    } finally {
-      finish();
-    }
-  }, [core, finish]);
 
   // ── Render the current page ──────────────────────────────────────────────────
   if (step === 'language') {
@@ -144,72 +101,19 @@ export default function OnboardingScreen() {
   }
 
   if (step === 'intro') {
-    return <IntroStep onBack={() => go('personalInfo')} onStart={() => go('q1')} onSkipAll={skipAll} />;
-  }
-
-  if (isQuestionStep(step)) {
-    const question = questionById(step)!;
-    const isText = question.select === 'text';
-    const isSingle = question.select === 'single';
-    const selected = selectedIds(answers, question.id);
-    // Q6's free text is an OPTIONAL add-on (kept separate from the "Other" reveal), so read the same key.
-    const freeText = answers.freeText[question.id] ?? '';
-    // A question is "answered" (Continue enabled) when it has a selection, is a text question with
-    // text, OR carries optional free text (Q6 — so a lone constraint disclosure reaches the Coach).
-    const hasOptionalText = question.freeText === 'optional' && freeText.trim().length > 0;
-    const answered = isText ? freeText.trim().length > 0 : selected.length > 0 || hasOptionalText;
-    const skipLabel = isText ? t('questions.q2.secondary') : t('skip');
-
     return (
-      <OnboardingScaffold
-        onBack={() => go(prevStep(question.id))}
-        progress={{
-          current: questionNumber(step),
-          total: ONBOARDING_QUESTION_COUNT,
-          section: t(`sections.${question.section}`),
-        }}
-        footer={
-          <>
-            <OnboardingPrimaryButton
-              label={t('continue', { ns: 'common' })}
-              disabled={!answered}
-              onPress={() => continueQuestion(question)}
-            />
-            <OnboardingSecondaryButton label={skipLabel} onPress={() => skipQuestion(question)} />
-          </>
-        }>
-        <OnboardingQuestionPage
-          question={question}
-          selected={selected}
-          atLimit={!isSingle && !isText && selected.length >= question.maxSelect}
-          freeText={freeText}
-          onToggle={(optionId) => toggleOption(question, optionId)}
-          onChangeText={(text) => changeText(question.id, text)}
-        />
-      </OnboardingScaffold>
-    );
-  }
-
-  if (step === 'completion') {
-    // Advance to the notifications pre-prompt (persist the resume point) rather than finishing here,
-    // so the gate stays closed and the final step is reachable/resumable after an interruption.
-    const skippedAll = ONBOARDING_QUESTION_IDS.every((id) => answers.skipped.includes(id));
-    return <CompletionStep skippedAll={skippedAll} onStart={() => go('coachMemory')} />;
-  }
-
-  if (step === 'coachMemory') {
-    return (
-      <CoachMemoryStep
-        onAnswer={(granted) => {
-          core.setCoachMemoryConsent(granted ? 'granted' : 'declined', i18n.language);
-          go('notifications');
-        }}
+      <IntroStep
+        onBack={() => go('personalInfo')}
+        onStart={() => finish({ toCoach: true })}
+        onLater={() => finish({ toCoach: false })}
       />
     );
   }
 
-  // notifications — the final soft pre-prompt; both actions finish onboarding and open Home.
-  return <NotificationsStep onTurnOn={enableReminders} onNotNow={finish} />;
+  // The flow is three pages now (Onboarding v2). Anything else a persisted resume point could name
+  // is resolved to the welcome by `resolveResumeStep` before it reaches here, so this is unreachable
+  // in practice — it exists so the component always returns an element rather than trusting that.
+  return <IntroStep onBack={() => go('personalInfo')} onStart={() => finish({ toCoach: true })} onLater={() => finish({ toCoach: false })} />;
 }
 
 // ── Step bodies (presentational; flow-specific, co-located like coach.tsx) ──────
@@ -386,14 +290,22 @@ function PersonalInfoStep({ onBack, onContinue }: { onBack: () => void; onContin
 }
 
 /** §5 — questionnaire intro: Start / Maybe later (Maybe later skips the whole questionnaire). */
+/**
+ * The WELCOME (Onboarding v2 §4 Step B). Its whole job is to set the expectation that what comes
+ * next is a short conversation rather than a form — because what comes next used to be nine
+ * questions and now is the coach.
+ *
+ * "Maybe later" is a real answer and must stay non-punitive: it opens the app, invents no answers,
+ * and leaves the coach exactly one tap away on Home.
+ */
 function IntroStep({
   onBack,
   onStart,
-  onSkipAll,
+  onLater,
 }: {
   onBack: () => void;
   onStart: () => void;
-  onSkipAll: () => void;
+  onLater: () => void;
 }) {
   const { t } = useTranslation('onboarding');
   return (
@@ -402,7 +314,7 @@ function IntroStep({
       footer={
         <>
           <OnboardingPrimaryButton label={t('intro.start')} onPress={onStart} />
-          <OnboardingSecondaryButton label={t('intro.later')} onPress={onSkipAll} />
+          <OnboardingSecondaryButton label={t('intro.later')} onPress={onLater} />
         </>
       }>
       <ThemedText type="title">{t('intro.title')}</ThemedText>
@@ -411,108 +323,6 @@ function IntroStep({
       </ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
         {t('intro.p2')}
-      </ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('intro.p3')}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textMuted">
-        {t('intro.time')}
-      </ThemedText>
-    </OnboardingScaffold>
-  );
-}
-
-/** §7 — completion: ends the questionnaire and (after the reminders pre-prompt) opens Home, with an
- *  optional Communication Style seam.
- *  Communication Style (D40) is offered here as a NON-BLOCKING secondary action — the onboarding shell
- *  owns final placement; it can also be set later in Settings. */
-function CompletionStep({ skippedAll, onStart }: { skippedAll: boolean; onStart: () => void }) {
-  const { t } = useTranslation('onboarding');
-  const { t: tc } = useTranslation('communication');
-  return (
-    <OnboardingScaffold
-      footer={
-        <>
-          <OnboardingPrimaryButton label={t('completion.start')} onPress={onStart} />
-          <OnboardingSecondaryButton
-            label={tc('onboardingEntry.cta')}
-            onPress={() => router.push('/settings/communication-style-quiz' as Href)}
-          />
-        </>
-      }>
-      <ThemedText type="title">
-        {skippedAll ? t('completion.titleSkipped') : t('completion.title')}
-      </ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {skippedAll ? t('completion.bodySkipped') : t('completion.body')}
-      </ThemedText>
-    </OnboardingScaffold>
-  );
-}
-
-/** K1 — final soft pre-prompt: a value-framed reminders ask AFTER completion, right before Home
- *  opens. "Turn on reminders" requests OS permission in context; "Not now" declines. Either action
- *  finishes onboarding — permission denial or declining must NEVER block completion. */
-/**
- * The Coach-memory consent page (Coach_Context_Summaries_PRD §4).
- *
- * ── WHAT MAKES THIS A CONSENT AND NOT A NOTICE ─────────────────────────────────────────────────
- *
- * Both answers are real. "Not now" is a full-size button next to the other one, nothing about the
- * product gets worse if it is chosen, and it is never asked again — the PRD forbids repeated
- * prompting, and a screen that comes back until it hears yes is not asking anything.
- *
- * The bullets say what is kept, what is NOT kept, where it lives, and what happens if they say no.
- * Including the uncomfortable one: today this stays on this phone, so a new phone starts the coach
- * fresh. That is true until the encrypted sync in PRD §9 exists, and a consent screen that glossed
- * over it would be collecting agreement to something else.
- */
-function CoachMemoryStep({ onAnswer }: { onAnswer: (granted: boolean) => void }) {
-  const { t } = useTranslation('onboarding');
-  const points = t('coachMemory.points', { returnObjects: true }) as string[];
-  return (
-    <OnboardingScaffold
-      footer={
-        <>
-          <OnboardingPrimaryButton label={t('coachMemory.primary')} onPress={() => onAnswer(true)} />
-          <OnboardingSecondaryButton label={t('coachMemory.secondary')} onPress={() => onAnswer(false)} />
-        </>
-      }>
-      <ThemedText type="title">{t('coachMemory.title')}</ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('coachMemory.body')}
-      </ThemedText>
-      {points.map((point) => (
-        <ThemedText key={point} type="small" themeColor="textSecondary">
-          {`· ${point}`}
-        </ThemedText>
-      ))}
-    </OnboardingScaffold>
-  );
-}
-
-function NotificationsStep({ onTurnOn, onNotNow }: { onTurnOn: () => void; onNotNow: () => void }) {
-  const { t } = useTranslation('onboarding');
-  // Guard the async permission request from a double-tap; the choice still resolves to finish().
-  const [busy, setBusy] = useState(false);
-  return (
-    <OnboardingScaffold
-      footer={
-        <>
-          <OnboardingPrimaryButton
-            label={t('notifications.primary')}
-            disabled={busy}
-            onPress={() => {
-              setBusy(true);
-              onTurnOn();
-            }}
-          />
-          <OnboardingSecondaryButton label={t('notifications.secondary')} onPress={onNotNow} />
-        </>
-      }>
-      <ThemedText type="title">{t('notifications.title')}</ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('notifications.body')}
       </ThemedText>
     </OnboardingScaffold>
   );

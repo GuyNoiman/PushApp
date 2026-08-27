@@ -24,12 +24,10 @@
     }
   },
   "intro": {
-    "title": "Let's get to know you a little better",
-    "p1": "The next 9 short questions will help us understand what matters to you, what may hold you back, and what kind of approach could suit you.",
-    "p2": "The more accurately you answer, the better we can tailor your guidance and plan to your life.",
-    "p3": "There are no right or wrong answers, and you can skip any question.",
-    "time": "Estimated time: about three minutes.",
-    "start": "Start",
+    "title": "Let's start with what matters to you right now",
+    "p1": "A few minutes of conversation will help us understand what you want to change, and where it makes most sense to begin.",
+    "p2": "You do not need to arrive with answers ready. We will work it out together.",
+    "start": "Let's start",
     "later": "Maybe later"
   },
   "sections": {
@@ -165,9 +163,9 @@
     "start": "Let's get started"
   },
   "notifications": {
-    "title": "One last thing",
-    "body": "Reminders help you show up when it matters, a gentle nudge at the right moment so your progress doesn't slip. The timing is up to you, and you can turn them off anytime in Settings.",
-    "primary": "Turn on reminders",
+    "title": "Want me to help you remember to come back to this?",
+    "body": "One reminder, at a time that suits you, so the first Step does not get lost among everything else. The timing is yours, and you can turn it off anytime in Settings.",
+    "primary": "Yes, remind me",
     "secondary": "Not now"
   },
   "coachMemory": {

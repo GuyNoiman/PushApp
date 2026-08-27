@@ -21,6 +21,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 
+import i18n from '@/i18n';
+
 import { CoachBubble } from '@/components/coach/CoachBubble';
 import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
@@ -29,6 +31,10 @@ import { CoachInsight, CoachJourneyCard } from '@/components/coach/CoachJourneyC
 import { CoachOptions } from '@/components/coach/CoachOptions';
 import { buildCoachScript, type CoachOption } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
+import {
+  CoachMemoryConsentPage,
+  RemindersAskPage,
+} from '@/components/onboarding/FirstRunTail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
@@ -50,7 +56,7 @@ import { useApp } from '@/state/AppProvider';
  * constant, so hooks stay unconditional in each screen.
  */
 export default function CoachScreen() {
-  const { mode } = useLocalSearchParams<{ mode?: string; journeyId?: string }>();
+  const { mode } = useLocalSearchParams<{ mode?: string; journeyId?: string; firstRun?: string }>();
   // Read unconditionally so the hook order never depends on the route.
   const connection = useServerConnection();
   if (mode === 'edit') return <EditCoachScreen />;
@@ -119,6 +125,11 @@ const START_PRESET_KEYS = ['week', 'twoWeeks', 'month'] as const;
 function LiveCoachScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  // FIRST RUN (Onboarding v2): the welcome routes here with `firstRun=1`, and the two questions that
+  // used to sit before Home now follow the Journey this conversation creates.
+  const { firstRun: firstRunParam } = useLocalSearchParams<{ firstRun?: string }>();
+  const firstRun = firstRunParam === '1';
+  const [tail, setTail] = useState<'none' | 'reminders' | 'memory'>('none');
   const scrollRef = useRef<ScrollView>(null);
   const { core, snapshot } = useApp();
   // The onboarding profile goes IN to the interview: a Journey's own variant question (D62) is
@@ -233,10 +244,41 @@ function LiveCoachScreen() {
           : { mode: 'now' };
     const journey = core.createJourneyFromGoalSpec(coach.goalSpec, start);
     if (!journey) return;
-    router.replace('/');
-  }, [coach.goalSpec, core, startMode, startInDays]);
+    // FIRST RUN (Onboarding v2 §13/§14): the two questions that were asked before Home — may I
+    // remember, and may I remind you — belong HERE, now that there is a Journey to remember and a
+    // Step to be reminded about. Everyone else goes straight to Home, exactly as before.
+    if (firstRun) setTail('reminders');
+    else router.replace('/');
+  }, [coach.goalSpec, core, startMode, startInDays, firstRun]);
 
   const headerBorder = useMemo(() => ({ borderBottomColor: theme.hairline }), [theme.hairline]);
+
+  /** Both reminder answers move on; a denied OS permission must never block the app opening. */
+  const answerReminders = useCallback(async (turnOn: boolean) => {
+    if (turnOn) {
+      try {
+        await core.initReminders();
+      } catch {
+        // Best-effort by design: whatever the OS decided, the next page is the next page.
+      }
+    }
+    setTail('memory');
+  }, [core]);
+
+  const answerMemory = useCallback(
+    (granted: boolean) => {
+      core.setCoachMemoryConsent(granted ? 'granted' : 'declined', i18n.language);
+      router.replace('/');
+    },
+    [core],
+  );
+
+  if (tail === 'reminders') {
+    return <RemindersAskPage onTurnOn={() => void answerReminders(true)} onNotNow={() => void answerReminders(false)} />;
+  }
+  if (tail === 'memory') {
+    return <CoachMemoryConsentPage onAnswer={answerMemory} />;
+  }
 
   return (
     <ThemedView style={styles.container}>

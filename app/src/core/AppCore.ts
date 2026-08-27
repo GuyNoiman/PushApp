@@ -157,6 +157,7 @@ import {
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { directDependentsOf } from './status/stepDependencies';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
+import { resolveResumeStep } from './onboarding/questions';
 import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
 import {
   DEFAULT_REMINDER_HOUR,
@@ -3333,7 +3334,10 @@ export class AppCore {
 
   /** The page the flow should resume at (PRD §8), defaulting to the start. */
   getOnboardingStep(): OnboardingStep {
-    return this.state.onboardingStep ?? 'language';
+    // Resolved rather than returned raw (Onboarding v2, 2026-08-27): a device that was part-way
+    // through the old nine-question sequence when this update arrived must not be handed a step the
+    // flow no longer contains, or it would sit there forever. Their answers are kept.
+    return resolveResumeStep(this.state.onboardingStep);
   }
 
   /** The user's on-device onboarding answers (the Coach's opening context), or a fresh empty set. */

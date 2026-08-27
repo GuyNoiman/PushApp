@@ -93,38 +93,53 @@ describe('AppCore onboarding facade (K2)', () => {
     await first.start();
     let answers = emptyOnboardingAnswers();
     answers = toggleSelection(answers, questionById('q1')!, 'calm');
-    first.saveOnboardingProgress('q3', answers);
+    first.saveOnboardingProgress('personalInfo', answers);
 
     const second = new AppCore(store.repo, consumedFlag());
     await second.start();
     expect(second.getSnapshot().onboardingCompleted).toBe(false);
-    expect(second.getOnboardingStep()).toBe('q3');
+    expect(second.getOnboardingStep()).toBe('personalInfo');
     expect(second.getOnboardingAnswers().selections.q1).toEqual(['calm']);
   });
 
-  it('the notifications pre-prompt is reachable/resumable and does NOT complete until finished (K1)', async () => {
+  it('rescues a device stranded mid-questionnaire by the v2 change, keeping its answers', async () => {
+    // Two people were part-way through the nine questions on the shipped build when the flow became
+    // three pages. Handing that device back a step the flow no longer contains would leave it there
+    // forever, because `nextStep` clamps to itself for an unknown step.
     const store = memRepo();
     const first = new AppCore(store.repo, consumedFlag());
     await first.start();
-
-    // Advancing to the terminal notifications step must persist the resume point WITHOUT completing,
-    // so the first-run gate stays closed and the soft pre-prompt remains reachable.
     let answers = emptyOnboardingAnswers();
     answers = toggleSelection(answers, questionById('q3')!, 'notStarted');
-    first.saveOnboardingProgress('notifications', answers);
-    expect(first.getSnapshot().onboardingCompleted).toBe(false);
-    expect(store.saved()?.onboardingStep).toBe('notifications');
+    first.saveOnboardingProgress('q5', answers);
+    expect(store.saved()?.onboardingStep).toBe('q5');
 
-    // A relaunch resumes at the notifications step (an interrupted flow returns to the ask).
     const second = new AppCore(store.repo, consumedFlag());
     await second.start();
+    // Resumed at the welcome — the last page before the conversation.
+    expect(second.getOnboardingStep()).toBe('intro');
     expect(second.getSnapshot().onboardingCompleted).toBe(false);
-    expect(second.getOnboardingStep()).toBe('notifications');
+    // And nothing they told us was thrown away: the answers are still valid signals for the coach.
+    expect(second.getOnboardingAnswers().selections.q3).toEqual(['notStarted']);
+  });
 
-    // Either action on the pre-prompt calls completeOnboarding — which flips the gate for good.
-    second.completeOnboarding(second.getOnboardingAnswers());
-    expect(second.getSnapshot().onboardingCompleted).toBe(true);
-    expect(second.getOnboardingCoachSummary()?.startingPoint).toBe('notStarted');
+  it('the gate closes at the WELCOME now, which is what makes the coach reachable at all', async () => {
+    // Onboarding v2: the conversation is part of onboarding, and the coach lives outside the
+    // first-run gate — until onboarding is marked complete, `/coach` is not a reachable route.
+    // Completing here is what opens that door, and it is also why walking away mid-conversation
+    // lands on a working app rather than trapping somebody in a flow they did not want.
+    const store = memRepo();
+    const core = new AppCore(store.repo, consumedFlag());
+    await core.start();
+
+    let answers = emptyOnboardingAnswers();
+    answers = toggleSelection(answers, questionById('q3')!, 'notStarted');
+    core.saveOnboardingProgress('intro', answers);
+    expect(core.getSnapshot().onboardingCompleted).toBe(false);
+
+    core.completeOnboarding(answers);
+    expect(core.getSnapshot().onboardingCompleted).toBe(true);
+    expect(core.getOnboardingCoachSummary()?.startingPoint).toBe('notStarted');
   });
 
   it('completeOnboarding marks it complete forever and exposes the Coach summary', async () => {

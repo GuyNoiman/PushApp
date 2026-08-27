@@ -186,7 +186,28 @@ function resolveDependencyRef(
   return undefined;
 }
 
-/** Validate one `addSteps` entry: a non-empty title is required; description/cadence are optional. */
+/**
+ * Whether the Journey already has a Step by this name.
+ *
+ * Compared on a squashed form — case folded, punctuation and spaces removed — so "לשתות שייק" and
+ * "לשתות שייק." are the same Step, which is how a person means them.
+ */
+function alreadyHasStep(title: string, context: JourneyEditContext): boolean {
+  const squash = (t: string) => t.trim().toLowerCase().replace(/[\s\p{P}]/gu, '');
+  const wanted = squash(title);
+  if (!wanted) return false;
+  return context.steps.some((s) => !s.dropped && squash(s.title) === wanted);
+}
+
+/**
+ * Validate one `addSteps` entry: a non-empty title is required; description/cadence are optional.
+ *
+ * A Step the Journey ALREADY HAS is refused (device report, 2026-08-27). Somebody with a Journey
+ * called "drink a protein shake" asked for it "every day"; the model read that as ADD A STEP called
+ * "drink a shake" with cadence daily — which parses perfectly, applies cleanly, and is not what was
+ * asked. Duplicating what is already there is never the right answer to a change request, so it is
+ * refused here rather than left to the model to get right every time.
+ */
 function cleanAddStep(value: unknown, context: JourneyEditContext): AddStepEdit | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const rec = value as {
@@ -198,6 +219,7 @@ function cleanAddStep(value: unknown, context: JourneyEditContext): AddStepEdit 
   };
   const title = cleanString(rec.title);
   if (!title) return undefined; // never add a nameless Step
+  if (alreadyHasStep(title, context)) return undefined; // never add one the Journey already has
   const description = cleanString(rec.description);
   // A new Step cannot be validated by validateDependency yet (its id is minted by the engine): keep
   // only a KNOWN predecessor id here and let the engine re-validate + drop it after minting.

@@ -56,6 +56,12 @@ export interface JourneyEditOrchestratorOptions {
    * what it did before this feature and is never wrong, only slower.
    */
   memoryBrief?: string;
+  /**
+   * The user's language, threaded into the understanding call exactly as the create coach threads
+   * it. Without it a Hebrew change request met a prompt written entirely in English, which is half
+   * of why "לשתות שייק מידי יום" came back as a new Step rather than a cadence change.
+   */
+  locale?: string;
 }
 
 export class JourneyEditOrchestrator {
@@ -63,6 +69,7 @@ export class JourneyEditOrchestrator {
   private readonly context: JourneyEditContext;
   private readonly guard?: CoachMessageGuard;
   private readonly memoryBrief: string;
+  private readonly locale?: string;
 
   /** The visible dialogue so far (greeting + change requests) — ON-DEVICE-ONLY context for the model. */
   private readonly history: LlmMessage[] = [];
@@ -72,6 +79,7 @@ export class JourneyEditOrchestrator {
     this.context = options.context;
     this.guard = options.guard;
     this.memoryBrief = options.memoryBrief?.trim() ?? '';
+    this.locale = options.locale;
   }
 
   /** The scoped greeting naming the Journey. No model call. */
@@ -110,7 +118,10 @@ export class JourneyEditOrchestrator {
           : EDIT_SYSTEM_PROMPT,
         json: true,
         temperature: 0,
-        messages: [...this.history, { role: 'user', content: buildEditDirective(this.context, changeText) }],
+        messages: [
+          ...this.history,
+          { role: 'user', content: buildEditDirective(this.context, changeText, this.locale) },
+        ],
       });
       return extractJourneyEdit(result.text, this.context);
     } catch {

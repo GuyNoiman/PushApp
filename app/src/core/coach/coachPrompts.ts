@@ -174,6 +174,20 @@ export const EDIT_SYSTEM_PROMPT = [
   'For "editSteps" and "removeStepIds" you MUST use a Step id from the Journey given to you — never a',
   'title, never an invented id. If the user is vague about which Step, prefer the closest match by',
   'title. If the message asks for nothing that maps to these keys, return {}.',
+  '',
+  // ── HOW OFTEN ─────────────────────────────────────────────────────────────────────────────────
+  // The single most common edit request, and the one that used to go wrong. "Drink a shake every
+  // day", said about a Journey called "drink a protein shake", was read as ADD A STEP called "drink
+  // a shake" with cadence daily — which parses perfectly and is the opposite of what was asked. The
+  // rule has to be stated, because the ambiguity is real and the wrong reading is the fluent one.
+  'HOW OFTEN — read this before choosing a key:',
+  'When the user talks about FREQUENCY ("every day", "twice a week", "daily", "less often", "מידי יום"),',
+  'they are almost always asking to change how often something ALREADY IN the Journey happens. That is',
+  '"rhythm" (the whole Journey) or "editSteps" with a new "cadence" (one Step) — NEVER "addSteps".',
+  'Each Step below is given with its CURRENT cadence, so compare against it: if the thing they named',
+  'is already there under any wording, change its cadence; do not add a second copy of it.',
+  'Use "addSteps" ONLY when the user names an action that is genuinely NOT already in the list.',
+  'If they named the Journey itself rather than one Step, set "rhythm".',
 ].join('\n');
 
 /** Prefix marking the hidden Journey-edit directive turn. */
@@ -185,10 +199,22 @@ export const EDIT_DIRECTIVE_PREFIX = '[edit]';
  * on-device titles/ids — no reason notes, no history. `changeText` is the user's verbatim request.
  */
 export function buildEditDirective(
-  context: { title: string; rhythm: string; durationDays: number; steps: { id: string; title: string }[] },
+  context: {
+    title: string;
+    rhythm: string;
+    durationDays: number;
+    steps: { id: string; title: string; cadence?: string }[];
+  },
   changeText: string,
+  locale?: string,
 ): string {
-  const steps = context.steps.map((s) => `    - id "${s.id}": ${s.title}`).join('\n');
+  // The CADENCE is given per Step, and it is not decoration: without it "make it daily" has nothing
+  // to be a change FROM, and the model reaches for `addSteps` instead — which is exactly what a
+  // device report on 2026-08-27 showed it doing.
+  const steps = context.steps
+    .map((s) => `    - id "${s.id}": ${s.title} (currently: ${s.cadence ?? 'once'})`)
+    .join('\n');
+  const language = buildLocaleDirective(locale);
   return [
     `${EDIT_DIRECTIVE_PREFIX} The user is editing this Journey:`,
     `  title: ${context.title}`,
@@ -199,6 +225,9 @@ export function buildEditDirective(
     '',
     `The user asked: "${changeText}". Return the JSON diff per your instructions, addressing any Step`,
     'by its id above.',
+    // The edit step used to get no language guidance at all, while the create step did — so a Hebrew
+    // request was understood by a prompt written entirely in English.
+    ...(language ? ['', language] : []),
   ].join('\n');
 }
 

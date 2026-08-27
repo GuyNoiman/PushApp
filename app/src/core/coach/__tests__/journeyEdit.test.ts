@@ -72,6 +72,46 @@ describe('extractJourneyEdit', () => {
   });
 });
 
+describe('a change request never becomes a duplicate Step (device, 2026-08-27)', () => {
+  // Somebody with a Journey called "drink a protein shake" asked for it "every day". The model read
+  // that as ADD A STEP called "drink a shake" with cadence daily — which parses perfectly, applies
+  // cleanly, and is not what was asked. They pressed Apply, got a second copy of a Step they already
+  // had, and reported that nothing had happened, because the thing they wanted had not.
+
+  it('refuses a Step the Journey already has', () => {
+    const json = JSON.stringify({ addSteps: [{ title: 'Jog 15 minutes', cadence: 'daily' }] });
+    expect(extractJourneyEdit(json, context()).addSteps).toBeUndefined();
+  });
+
+  it('matches on the words, not the punctuation or the case', () => {
+    for (const title of ['jog 15 minutes', 'Jog 15 minutes.', '  JOG 15 MINUTES  ']) {
+      const json = JSON.stringify({ addSteps: [{ title }] });
+      expect(extractJourneyEdit(json, context()).addSteps).toBeUndefined();
+    }
+  });
+
+  it('still adds something genuinely new', () => {
+    const json = JSON.stringify({ addSteps: [{ title: 'Stretch afterwards' }] });
+    expect(extractJourneyEdit(json, context()).addSteps).toEqual([{ title: 'Stretch afterwards' }]);
+  });
+
+  it('does not count a DROPPED Step as already there — it left scope, so it can come back', () => {
+    const ctx = context();
+    ctx.steps[1].dropped = true;
+    const json = JSON.stringify({ addSteps: [{ title: 'Jog 15 minutes' }] });
+    expect(extractJourneyEdit(json, ctx).addSteps).toHaveLength(1);
+  });
+
+  it('leaves the RIGHT reading of that request untouched', () => {
+    // Changing how often an existing Step happens is what was actually meant, and it must still work.
+    const json = JSON.stringify({ editSteps: [{ stepId: 'step_b', cadence: 'daily' }] });
+    expect(extractJourneyEdit(json, context()).editSteps).toEqual([
+      { stepId: 'step_b', cadence: 'daily' },
+    ]);
+    expect(extractJourneyEdit(JSON.stringify({ rhythm: 'daily' }), context()).rhythm).toBe('daily');
+  });
+});
+
 describe('extractJourneyEdit — dependency authoring (Step Dependencies, Slice 7)', () => {
   it('authors a VALID dependency on an existing Step (predecessor earlier, same Milestone)', () => {
     const json = JSON.stringify({ editSteps: [{ stepId: 'step_b', dependsOnStepId: 'step_a' }] });

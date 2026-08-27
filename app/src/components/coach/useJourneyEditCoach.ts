@@ -86,7 +86,7 @@ function buildContext(journey: Journey): JourneyEditContext {
 export function useJourneyEditCoach(options: UseJourneyEditCoachOptions): UseJourneyEditCoach {
   const { journeyId } = options;
   const { core, snapshot } = useApp();
-  const { t } = useTranslation('coach');
+  const { t, i18n } = useTranslation('coach');
   const router = useRouter();
 
   const journey = snapshot?.journeys.find((j) => j.id === journeyId);
@@ -115,6 +115,9 @@ export function useJourneyEditCoach(options: UseJourneyEditCoachOptions): UseJou
         // What the coach was told about this Journey before, so it does not ask again (Coach Context
         // Summaries). Empty unless the person granted consent AND something was actually kept.
         memoryBrief: renderBrief(core.getCoachContextBrief({ journeyId: journey.id })),
+        // The user's own language, threaded exactly as the create coach threads it — the edit step
+        // used to get none, so a Hebrew request met an English-only prompt.
+        locale: i18n.language,
       });
     orchestratorRef.current.start(); // advances the orchestrator's history; the UI shows a localized line
     setItems([{ kind: 'coach', text: t('edit.greeting', { title: journey.title }) }]);

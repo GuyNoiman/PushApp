@@ -3,7 +3,7 @@
 Status: **Draft for the founder's sign-off.** This is the canonical text; the public page at
 `app/landing/privacy.html` is generated from it and must be kept in step.
 Source of truth for the facts: `04_Product/Privacy_Contract_With_The_User.md`.
-Last updated: **2026-08-27**.
+Last updated: **2026-08-28**.
 
 > ## ⚠ FIVE BLANKS ONLY THE FOUNDER CAN FILL
 >
@@ -138,8 +138,14 @@ This list is part of the policy, not marketing:
   permission and reads no location.
 - **No calendar access.** The same: a seam, nothing behind it.
 - **No contacts.** You find a friend by typing the handle they chose.
-- **No microphone, camera or photo library.**
 - **Nothing is sold, and nothing is shared for anyone else's marketing.**
+
+**The camera, your photos and the microphone are a different case, and this section used to get it
+wrong.** The app can attach a photo or a voice note to something you are writing in a Tool. It asks
+for that permission only at the moment you tap to use it, never at launch; if you say no, the Tool
+works exactly as before without the attachment. **What you attach is a file on your phone and
+nothing else** — it is never uploaded, and there is no code in the app that could upload it. Saving
+a completion card to your photo library happens only when you tap Save.
 
 ## 5. Why we use each thing, and on what basis
 

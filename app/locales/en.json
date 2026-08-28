@@ -1,0 +1,6 @@
+{
+  "NSCameraUsageDescription": "PushApp lets you take a photo for something you are writing. It stays on this phone.",
+  "NSPhotoLibraryUsageDescription": "PushApp lets you attach a photo to something you are writing. It stays on this phone.",
+  "NSPhotoLibraryAddUsageDescription": "PushApp saves your completion card to your photos, only when you tap Save.",
+  "NSMicrophoneUsageDescription": "PushApp records a voice note only when you tap record, and it stays on this phone."
+}

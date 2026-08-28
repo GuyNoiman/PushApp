@@ -25,7 +25,7 @@ import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DeleteAccountSheet } from '@/components/settings/DeleteAccountSheet';
@@ -43,6 +43,12 @@ import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
 import { readRunningBundle, shortUpdateId } from '@/core/util/buildInfo';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
+
+/**
+ * The public privacy policy. One URL, published from `04_Product/Privacy_Policy.md` — the app links
+ * to it rather than carrying its own copy, so there is only ever one text to keep true.
+ */
+const PRIVACY_POLICY_URL = 'https://pushapp-invite.expo.app/privacy.html';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useTheme } from '@/hooks/use-theme';
 import { useServerConnection } from '@/hooks/useServerConnection';
@@ -246,12 +252,26 @@ export default function SettingsScreen() {
                 />
               </>
             ) : (
-              <SettingsRow
-                icon="person-circle-outline"
-                label={t('signIn.title')}
-                detail={t('signIn.rowDetail')}
-                onPress={() => router.push('/sign-in' as Href)}
-              />
+              <>
+                {/* WHAT AN ANONYMOUS ACCOUNT COSTS, said before it costs it (founder, 2026-08-28).
+                    The backup is keyed to the account, and an anonymous account is minted fresh on
+                    every install — so reinstalling, or moving to a new phone, mints a NEW id and the
+                    old backup becomes unreachable. "A lost phone is not a fresh start" is true today
+                    only for somebody who signed in, and until this notice existed nothing said so.
+                    It is a recommendation and never a wall: the app works entirely without it. */}
+                <SettingsRow
+                  icon="alert-circle-outline"
+                  label={t('signIn.atRisk')}
+                  detail={t('signIn.atRiskDetail')}
+                  onPress={() => router.push('/sign-in' as Href)}
+                />
+                <SettingsRow
+                  icon="person-circle-outline"
+                  label={t('signIn.title')}
+                  detail={t('signIn.rowDetail')}
+                  onPress={() => router.push('/sign-in' as Href)}
+                />
+              </>
             )}
             {/* Stated plainly, and stated as OURS: the user did nothing wrong, their Journeys are
                 safe on the device, and the parts that need the server are the parts that are off. */}
@@ -352,6 +372,17 @@ export default function SettingsScreen() {
               detail={t('activeHours.rowDetail')}
               value={activeHoursValue}
               onPress={() => router.push('/settings/active-hours' as Href)}
+            />
+            {/* The privacy policy, reachable from inside the app (founder, 2026-08-28). Both stores
+                require a live URL and a person is entitled to read what is held about them without
+                hunting for a link somebody sent them once. It opens the public page rather than
+                embedding a copy: two texts describing one promise is how the words people agreed to
+                stop matching the words we keep. */}
+            <SettingsRow
+              icon="lock-closed-outline"
+              label={t('app.privacy')}
+              detail={t('app.privacyDetail')}
+              onPress={() => void Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
             />
             <SettingsRow
               icon="information-circle-outline"

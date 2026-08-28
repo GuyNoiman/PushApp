@@ -75,7 +75,9 @@
     "coachMemoryTurnOn": "Turn it on",
     "coachMemoryTurnOff": "Turn it off and delete what was kept",
     "coachMemoryOffNow": "It is off. Nothing is being kept.",
-    "coachMemoryOnNow": "It is on. The coach keeps its reading with your account; your own sentences stay on this phone."
+    "coachMemoryOnNow": "It is on. The coach keeps its reading with your account; your own sentences stay on this phone.",
+    "privacy": "Privacy policy",
+    "privacyDetail": "What we hold, where it lives, and what you can do about it."
   },
   "activeHours": {
     "title": "Active Hours",
@@ -140,7 +142,9 @@
     "signOut": "Sign out",
     "signOutDetail": "Your record stays on this phone.",
     "disconnected": "Not connected to the server",
-    "disconnectedDetail": "Your Journeys are safe on this device. The coach and your Circle will not work until the connection is back."
+    "disconnectedDetail": "Your Journeys are safe on this device. The coach and your Circle will not work until the connection is back.",
+    "atRisk": "Your data lives only on this phone",
+    "atRiskDetail": "Without a linked account, reinstalling or moving to a new phone loses all of it. Signing in with Google or Apple once is enough."
   },
   "report": {
     "title": "Help and feedback",

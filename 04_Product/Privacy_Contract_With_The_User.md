@@ -170,7 +170,15 @@ This list is as important as the others, and belongs in the policy verbatim.
   is deferred.
 - **No calendar access.** Same, a seam only.
 - **No contacts.** Friends are found by a user-typed handle.
-- **No microphone, camera or photo library** on the shipping branch. See §2.
+- ~~**No microphone, camera or photo library.**~~ **CORRECTED 2026-08-28 — this line was WRONG and
+  was copied into the public policy before anyone checked it against the build.** `expo-image-picker`,
+  `expo-audio` and `expo-media-library` are all in the shipping build with permission strings, and
+  `AttachmentStrip` uses them in the My Best Possible Year tool: a photo or a voice note attached to
+  something the person is writing. The permission is asked at the moment of use, never at launch, and
+  the file is a LOCAL uri that nothing uploads (`MediaGateway.Attachment`: "Never a remote URL —
+  nothing here uploads"). The honest statement is not "we do not" but "we do, only when you tap, and
+  it stays here". **The lesson is the one this document exists to prevent: a claim about what the app
+  does must be checked against the app, not against an earlier version of this file.**
 - **Nothing is sold or shared for anyone else's marketing.**
 
 ---

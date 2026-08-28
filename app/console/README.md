@@ -51,21 +51,23 @@ origin):
 npx --yes serve console -l 4321
 ```
 
-## Deploying it
+## Where it is
 
-**Not deployed yet, on purpose.** EAS Hosting's free tier is the intended home —
-the same account that already builds the app and already serves the invitation
-page, so no new account and no new billing relationship. The open question is
-*where*: `eas deploy` publishes one production deployment per project, and the
-invitation page is already using it. Pointing the console at the same one would
-replace the page testers are given.
+**https://pushapp-invite--ops.expo.app** — EAS Hosting's free tier, deployed 2026-08-28.
 
-So this waits on the founder's answer about a subdomain. When it has one, the
-deploy is the same shape as the landing page's:
+It is an **alias** deployment, not the production one. That matters: `eas deploy --prod` publishes
+ONE production deployment per project and the invitation page holds it, so pointing this at
+production would have replaced the page testers are given. An alias sits beside it, on the same free
+tier, and the invitation page is untouched.
+
+Redeploy after a change:
 
 ```bash
-npx eas-cli@latest deploy --prod --export-dir console
+npx eas-cli@latest deploy --non-interactive --export-dir console --alias ops
 ```
+
+The permanent home — a real subdomain rather than `pushapp-invite--ops` — is still an open question,
+and moving it later is one command.
 
 ## What each tab can actually answer today
 

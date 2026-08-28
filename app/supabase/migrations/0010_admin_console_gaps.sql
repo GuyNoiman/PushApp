@@ -1,8 +1,9 @@
 -- ============================================================================
 -- Migration 0010 — what the admin console needs that 0008 did not leave room for
 -- ----------------------------------------------------------------------------
--- NOT YET APPLIED. Idempotent (if-not-exists / policies and constraints dropped
--- first), so it is safe to re-run. The canonical full schema lives in
+-- APPLIED to the live project on 2026-08-28 (`npx supabase db push`, from `app/`).
+-- Idempotent (if-not-exists / policies and constraints dropped first), so it is
+-- safe to re-run. The canonical full schema lives in
 -- app/supabase/schema.sql; this file is the incremental delta.
 --
 -- Stage 3 of `11_Engineering_Bible/Operational_Monitoring_Implementation_Plan.md`

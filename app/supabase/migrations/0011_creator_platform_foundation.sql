@@ -1,7 +1,8 @@
 -- ============================================================================
 -- Migration 0011 — the foundation under the Creator Journey Studio
 -- ----------------------------------------------------------------------------
--- NOT YET APPLIED. Idempotent (if-not-exists / policies dropped first).
+-- APPLIED to the live project on 2026-08-28 (`npx supabase db push`, from `app/`).
+-- Idempotent (if-not-exists / policies dropped first), so it is safe to re-run.
 --
 -- Built to `04_Product/PRD/Future/Creator_Journey_Authoring_Platform_PRD.md`
 -- (Future Vision). That PRD's §20 lists promotion gates this does not meet and

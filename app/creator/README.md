@@ -98,7 +98,19 @@ What is protected is who said it — the reviewer's id is not in the function's
 return type at all, so it cannot be selected, joined, or leaked by a later
 `select *`.
 
-## Running it
+## Where it is
+
+**https://pushapp-invite--studio.expo.app** — EAS Hosting's free tier, deployed 2026-08-28, as an
+**alias** deployment rather than the production one (the invitation page holds production; an alias
+sits beside it and leaves it untouched).
+
+Redeploy after a change:
+
+```bash
+npx eas-cli@latest deploy --non-interactive --export-dir creator --alias studio
+```
+
+## Running it locally
 
 ```bash
 npm run console:config

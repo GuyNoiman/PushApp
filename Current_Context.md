@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-28 (evening)** — start at the **"⛳ START HERE — 2026-08-28 (evening)"** block, which supersedes
+Last updated: **2026-08-28 (night)** — start at the **"⛳ START HERE — 2026-08-28 (night)"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
@@ -36,6 +36,57 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → **the three documents in "START HERE" immediately below** → the
 memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+---
+
+# ⛳ START HERE — 2026-08-28 (night): both builds passed, both migrations applied, both sites live
+
+On `feat/buddy-3d-and-reminders`, committed, **not pushed**. `tsc` clean, **jest 2633 / 250 suites**.
+The blocks below are accurate history of the same day's earlier sessions.
+
+## ▶ THE STATE, plainly
+
+- **Builds: both FINISHED.** iOS `9965027c` (build number 9, runtime `8634cdf5…`), Android
+  `0fbde76b` (runtime `ad3ed4b6…`,
+  [APK](https://expo.dev/artifacts/eas/DbSwh7mo5a1cybqDthDMQ841NXu8ggkKjuBR8AkbddY.apk)).
+- **No over-the-air update is owed.** Nothing under `app/src/` changed after the commit the builds
+  were made from (`94b3c6b`), so the builds already carry every app change. Installing them is the
+  whole job.
+- **Migrations 0010 and 0011: APPLIED** (`npx supabase db push`, 2026-08-28).
+- **Operations console: live** at https://pushapp-invite--ops.expo.app
+- **Journey Studio: live** at https://pushapp-invite--studio.expo.app
+- Both are **alias** deployments, not production: `eas deploy --prod` publishes one production
+  deployment per project and the invitation page holds it. The invitation page is untouched and was
+  re-checked after both deploys.
+- **Google OAuth for the web is already configured** — verified: `/auth/v1/authorize` redirects to
+  Google with a real client id and the correct callback.
+
+## ▶ WHAT IS LEFT, and it is short
+
+1. **Install both builds on both phones.**
+2. **Two rows of SQL**, pasted once in the Supabase SQL editor — one in `admin_members` (console
+   access), one in `creator_members` (studio access). Neither is in a migration on purpose: a file
+   naming who may read production is a permanent claim about a person. The SQL is in the last section
+   of each migration file.
+3. **Add the studio URL to the Supabase redirect allow-list**, or Google sign-in returns to the site
+   root instead of with a session: Authentication → URL Configuration → Redirect URLs.
+
+Everything else that was blocked is unblocked.
+
+## ▶ THE NEXT WORK
+
+1. **Verify Sentry end to end (§11.5)** — now possible: the builds are installed-able. Trigger a
+   handled error and a deliberate fatal one, inspect the actual outbound payload, then add the
+   disclosure line to the privacy policy (§11.1).
+2. **The routine Dream and its short path (D89).** Specified, not started.
+3. **The onboarding conversation's depth** — the largest remaining item from the partner's spec.
+4. **R2's first slice** (Journey resume/re-plan).
+5. **Finish Strength Evidence.**
+6. **The Journey Studio's next piece**, when wanted: the authoring product itself — the structure
+   builder. Largest open design in its PRD; the foundation deliberately did not guess at it.
+
+Still waiting on the founder, unchanged: the legal entity, a support email address, the coach log
+retention period, the permanent subdomain for the two web surfaces, and liam's friend request.
 
 ---
 

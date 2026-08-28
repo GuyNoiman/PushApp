@@ -50,6 +50,31 @@ In `app.json`, under `expo`:
 
 Then build. Nothing else about these files needs to change.
 
+## Why every string is under an `"ios"` key
+
+The first Android build to carry these files **failed**, and iOS's succeeded. Expo's `locales` map is
+not iOS-only: its Android plugin writes the same keys into `res/values-b+en/strings.xml` and
+`res/values-b+he/strings.xml`. Those keys are iOS `Info.plist` names, so nothing in Android's default
+`values/strings.xml` matches them — and Android Lint fails a release build on
+`ExtraTranslation`: *"NSCameraUsageDescription is translated here but not found in default locale"*.
+Eight errors, one per string per language.
+
+The error EAS reported for it was `EAS_BUILD_UNKNOWN_GRADLE_ERROR` with no cause attached, which is
+worth knowing: the reason was 1,900 lines into a brotli-compressed log, and the first guess
+(Sentry's source-map upload, which is what broke the iOS build of the same commit) was wrong.
+
+The locale file format has a per-platform section, so the fix is structural rather than a lint
+suppression:
+
+```jsonc
+{ "ios": { "NSCameraUsageDescription": "…" } }
+```
+
+Keys at the ROOT of the file go to both platforms; keys under `"ios"` go only to iOS. Android now
+gets an empty `<resources/>` for each language, which is correct — an Android permission rationale is
+not an `Info.plist` key, and if Android ever needs its own strings they belong under an `"android"`
+section rather than shared with these.
+
 ## The rule this is here to teach
 
 **Check the runtime fingerprint before and after touching `app.json`.** If it moved, an update is a

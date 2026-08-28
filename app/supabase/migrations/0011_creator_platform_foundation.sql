@@ -74,11 +74,22 @@ create policy "creator_members_own" on public.creator_members for select to auth
   using (user_id = auth.uid());
 
 -- A creator may edit their own published identity, and nothing else about their
--- membership — no self-promotion to a later stage, no un-suspending.
+-- membership.
+--
+-- The policy alone does NOT achieve that, and it is worth being explicit about
+-- why: RLS is row-level. A policy saying "your own row" permits updating every
+-- column of that row, so `stage` and `status` would be self-service — a
+-- suspended creator could un-suspend themselves, which is not a subtle failure.
+-- Column privileges are the mechanism that actually restricts columns, and they
+-- compose with the policy: the row check says WHICH row, the grant says WHICH
+-- columns.
 drop policy if exists "creator_members_own_identity" on public.creator_members;
 create policy "creator_members_own_identity" on public.creator_members for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+revoke update on public.creator_members from authenticated;
+grant update (display_name, credentials) on public.creator_members to authenticated;
 
 /**
  * Is the caller a creator in good standing?
@@ -214,7 +225,20 @@ create table if not exists public.template_enrollments (
   started_at     timestamptz not null default now(),
   last_activity_at timestamptz,
   completed_at   timestamptz,
-  ended_at       timestamptz
+  ended_at       timestamptz,
+
+  -- ONE ROW PER PERSON PER TEMPLATE, and the reason is arithmetic rather than
+  -- tidiness. Without it, "enrolled" (distinct participants) and the breakdown
+  -- (rows by state) count different things, so a person who restarted would
+  -- make 12 completions out of 10 participants — and the first person to notice
+  -- would be a creator who cannot be shown the rows to check.
+  --
+  -- The cost is that per-attempt history is not kept: a restart moves this row
+  -- back to `active`. The restart policy exists on the template, so attempts ARE
+  -- a real thing; how to count them is a decision worth making with real data
+  -- rather than now, and a separate attempts table can be added without moving
+  -- anything that already exists.
+  unique (template_id, participant_id)
 );
 
 create index if not exists template_enrollments_template_idx

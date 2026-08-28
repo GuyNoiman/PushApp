@@ -79,7 +79,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
-    "coach": "tsx src/core/coach/devHarness.ts"
+    "coach": "tsx src/core/coach/devHarness.ts",
+    "console:config": "node scripts/write-console-config.mjs"
   },
   "jest": {
     "preset": "jest-expo",

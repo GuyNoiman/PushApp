@@ -56,6 +56,20 @@
       ],
       "cwd": "app",
       "port": 8083
+    },
+    {
+      "name": "pushapp-console",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "console",
+        "-l",
+        "4321",
+        "--no-clipboard"
+      ],
+      "cwd": "app",
+      "port": 4321
     }
   ]
 }

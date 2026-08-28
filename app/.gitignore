@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# The admin console's generated config (same reason as .env: one source of truth)
+console/config.js

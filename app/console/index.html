@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>PushApp — operations</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <noscript>This console needs JavaScript. It is a set of authenticated queries; there is nothing to render without them.</noscript>
+
+    <header id="chrome" hidden>
+      <div class="brand">
+        <strong>PushApp</strong><span>operations</span>
+      </div>
+      <nav id="tabs" aria-label="Sections"></nav>
+      <div class="who">
+        <span id="who-email"></span>
+        <button id="sign-out" type="button" class="ghost">Sign out</button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section id="signin" class="card centered">
+        <h1>Sign in</h1>
+        <p class="muted">
+          This is an internal operations console. Access is decided by the database, not by this page —
+          signing in with an account that holds no operator role gets you a page that says so.
+        </p>
+        <form id="signin-form">
+          <label>Email<input type="email" name="email" autocomplete="username" required /></label>
+          <label>Password<input type="password" name="password" autocomplete="current-password" required /></label>
+          <button type="submit">Sign in</button>
+        </form>
+        <form id="mfa-form" hidden>
+          <label>Authentication code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required /></label>
+          <button type="submit">Verify</button>
+        </form>
+        <p id="signin-error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section id="view" hidden></section>
+    </main>
+
+    <footer id="foot" hidden>
+      <span id="foot-note"></span>
+    </footer>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

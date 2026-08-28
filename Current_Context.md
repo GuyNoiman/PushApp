@@ -1,9 +1,9 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-27** — start at the **"⛳ START HERE — 2026-08-27"** block, which supersedes
-(but does not replace) every block under it. The two 2026-08-26 blocks below it are accurate history
-of that day's two halves.
+Last updated: **2026-08-28** — start at the **"⛳ START HERE — 2026-08-28"** block, which supersedes
+(but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
+history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
 Prior pointer: **2026-08-24 (late)** — the **"⛳ Previous START HERE — 2026-08-24 (late)"** block
 below, and read its first section before merging anything. The overnight block under it is accurate
@@ -39,7 +39,103 @@ memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
 
 ---
 
-# ⛳ START HERE — 2026-08-27: the queue is empty of things that were mine
+# ⛳ START HERE — 2026-08-28: two builds are in flight, and the work plan is below
+
+On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2573 / 244 suites**.
+Detail: `00_Foundation/CHANGELOG.md` (2026-08-28) and the Decision Log (D86–D90).
+
+## ▶ TASK 0 — CHECK THE TWO BUILDS BEFORE ANYTHING ELSE
+
+Both were queued at the end of the session, carrying the Sentry SDK and the Hebrew localization.
+**Nothing can reach a phone by over-the-air update until they are installed** — the fingerprint moved
+and `tools/publish-ota.mjs` will correctly refuse.
+
+```bash
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest build:list --limit 4
+```
+
+- Android: `3e75e4fe-f0ff-4c61-a4a7-06d8f2cd4799` (preview profile — installable APK)
+- iOS: `3a943433-66ca-4bbd-b88b-f7e06d122ab8` (production profile — TestFlight)
+
+When both are installed on both phones, `node tools/publish-ota.mjs "…"` starts working again. It
+will tell you if they are not.
+
+**Build quota, verified:** the free plan is 15 iOS + 15 Android a month **with no overage charge at
+all**, and 7 builds have run in the last 30 days. There is no payment risk in this or the next
+several.
+
+## ▶ THE ONE THING TO PUBLISH THE MOMENT THE BUILDS LAND
+
+The last over-the-air update reached nobody (see the CHANGELOG). Everything since then is committed
+and unpublished. After the builds are installed, one publish carries all of it.
+
+## ▶ WHAT THIS SESSION BUILT
+
+Username identity fixed end to end · the Circle field explains itself · keyboard avoidance on nine
+more screens, with a guard test that fails on the next one · the birth-date wheel reports a slow drag
+· the coach-edit "make it daily" fix · technical mode in the coach chat · the Notifications settings
+screen with preferences that finally gate something · the privacy policy reachable in Settings · the
+anonymous-account backup warning · the privacy policy corrected on camera/microphone/photos · the
+telemetry contract with its canary suite · Sentry wired with every forbidden default off ·
+`tools/publish-ota.mjs`.
+
+## ▶ WHAT IS SPECIFIED AND NOT BUILT — the next session's real work, in order
+
+1. **Verify Sentry end to end (§11.5).** Once the builds are on the phones: trigger a handled error
+   and a deliberate fatal one, and **inspect the actual outbound payload** — the canary suite proves
+   the contract in unit tests, and §11.5 asks for it against the real SDK on a real device. A release
+   fails if any canary survives. Then add the disclosure line to the privacy policy (§11.1:
+   operational diagnostics are part of the service and are not user-switchable).
+2. **The admin console — stage 3.** A separate responsive web app on EAS Hosting's free tier, not a
+   screen in the app. Tabs 3 (Reports) and 4 (Versions) are fully answerable from migration 0008's
+   data; Tab 1 partially; anything unmeasurable is **gray, not green**. Needs nothing from the
+   founder. Plan: `11_Engineering_Bible/Operational_Monitoring_Implementation_Plan.md` §3.
+3. **The routine Dream and its short path (D89).** Fully specified in the Decision Log, not started.
+   Read D89 first: it carries the design, the "every Journey must end" tension and its proposed
+   resolution, and the one model gap — **"every two weeks" cannot be expressed by `Rhythm` today**.
+4. **The onboarding conversation's depth.** The v2 flow landed; the substance — a focused opening,
+   2–4 adaptive questions, the grounded reflection, the starting-point summary — did not. This is
+   the largest remaining item from the partner's spec.
+5. **R2's first slice** (Journey resume/re-plan), which has a PRD and a six-step build order.
+6. **Finish Strength Evidence.**
+
+## ▶ WAITING ON THE FOUNDER
+
+**Blocks any store submission:**
+- **The legal entity** — which company publishes the app, in which country. Everything hangs on it.
+- **A support email address** a human reads. It goes in the policy and in both stores.
+- **How long the coach's behavioural log is kept.** Recommendation on the table: 90 days.
+
+**Decisions, not blockers:**
+- **Where the two-region block is enforced** (D86) — store availability, sign-up, or both.
+- **Anonymous accounts.** "A lost phone is not a fresh start" is true only for somebody who signed
+  in. The Settings warning now says so; whether sign-in becomes part of the normal path is his.
+- **Renaming the Sentry org/project** from `private-dha` / `react-native` — cosmetic, but the slug
+  is permanent in URLs, so it is cheaper now than later.
+- **PRDs for the four tools** shipping without one (R5) · the seven Weekly Review questions (he will
+  ask the partner) · EU trader status — **moot for now under D86** · a subdomain for the console.
+
+**Waiting on a person, not a decision:**
+- **liam must accept the friend request** (`guyguy → liam`, pending since 27/08 23:40). That is the
+  second real account, and it is what proves R6 and Support Circle authorisation end to end.
+- **The iPad space-bar bug.** Not reproduced yet. When it happens again: which screen, and whether a
+  physical keyboard was attached.
+
+## ▶ AND THE MICROPHONE, BECAUSE IT IS ABOUT TO MATTER
+
+The founder wants a full conversation mode soon. The state today, precisely:
+
+- **Audio recording works** — `expo-audio` is in the build with a permission string, and
+  `AttachmentStrip` records voice notes in the My Best Possible Year tool. Local file, nothing
+  uploads.
+- **The coach composer's microphone was decorative** and has been removed. It had no handler.
+- **What is missing is TRANSCRIPTION, not capture.** Speech-to-text needs a service, which is a cost
+  question and a privacy question — audio of somebody talking about their life is the most sensitive
+  thing this product could send anywhere. It needs its own decision before any of it is built.
+
+---
+
+# ⛳ Previous START HERE — 2026-08-27: the queue emptied, before the device reports arrived
 
 On `feat/buddy-3d-and-reminders`, committed and pushed. `tsc` clean, **jest 2490 / 235 suites**.
 Detail: `00_Foundation/CHANGELOG.md` (2026-08-27) and the Decision Log (D85).

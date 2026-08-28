@@ -324,6 +324,25 @@ MVP-ready sweep)" for the full ▶ NEXT queue.
 | **R5** | **PRDs for the four tools that shipped without an approved one** | ⛔ Founder writing | Life Wheel, Values Clarification, My Best Possible Year and the Passion Map are live under drafts that were never approved. The founder said on 2026-08-25 that he will write them. Nothing blocks on this, but the repo and the product disagree until it is done. |
 
 
+## S. Added 2026-08-28 — the device-report day, and what it left open
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| **S1** | **Identity: one username, and one that exists** | ✅ Built 2026-08-28 | Three screens each generated their own random suggestion and rendered it as the account's handle; Save was disabled because the draft matched the suggestion; and a handle was stored verbatim but looked up case-sensitively. One canonical form (`canonicalHandle`), a suggestion that is only ever a prefill, and a Save that works. |
+| **S2** | **Keyboard avoidance on every screen with a field** | ✅ Built 2026-08-28 | Nine more screens, the Tools above all. The guard test now fails on a scrolling screen that holds a `TextInput` without one of the three safe containers. |
+| **S3** | **The birth-date wheel reports a slow drag** | ✅ Built 2026-08-28 | It listened only to `onMomentumScrollEnd`; nudging one or two rows produces no momentum, so the value silently never changed. |
+| **S4** | **Coach edit: a frequency request is not a new Step** | ✅ Built 2026-08-28 | Cadence in the directive, the rule stated, the locale threaded, and a parser guard that refuses a Step the Journey already has. |
+| **S5** | **Technical mode in the coach chat** | ✅ Built 2026-08-27 | "עבור למצב טכני" shows the whole decision trail. Never enters the model's context, costs no call, changes no decision. |
+| **S6** | **Notification settings, per type** | ✅ Built 2026-08-28 | And the preferences now gate something: `CommunicationPrefs` had been persisted since the social pillar landed with nothing reading it. "Also outside the app" exists only for reminders, because nothing else can reach a lock screen. |
+| **S7** | **The privacy policy corrected and reachable** | ✅ Built 2026-08-28 | It claimed no camera/microphone/photos; the build has all three (D88). Corrected in four places, and linked from Settings. |
+| **S8** | **The OTA publish guard** | ✅ Built 2026-08-28 | `tools/publish-ota.mjs` refuses to publish onto a runtime no installed build matches, and publishes to both channels. It caught its own installation. |
+| **S9** | **Sentry** | 🟡 Wired, unverified | SDK in, every forbidden default off, `beforeSend` rebuilding from the allowlist, canary suite passing. **The §11.5 on-device verification has not run** — it needs the builds queued on 2026-08-28. Then the policy disclosure line. |
+| **S10** | **The admin console (monitoring stage 3)** | ⛔ Not started | A separate web app on EAS Hosting. Needs nothing from the founder. Plan §3. |
+| **S11** | **The routine Dream + quick-add path** | ⛔ **Specified (D89), not started** | Read D89 first — it carries the design, the "every Journey must end" tension and its resolution, and the model gap: **"every two weeks" cannot be expressed by `Rhythm`**. |
+| **S12** | **The manual wizard, kept for content creators** | ✅ Hidden 2026-08-28 (D90) | The in-app button is gone; the route, screens and tests are untouched. Its future is a WEB tool for content creators authoring richer Journeys — **do not delete it**. |
+| **S13** | **Onboarding v2 — the conversation's depth** | ⛔ Not started | The flow landed 2026-08-27; the substance did not. Largest remaining item from the partner's spec: focused opening, 2–4 adaptive questions, the reflection, the starting-point summary. |
+| **S14** | **Full conversation mode (voice)** | ⛔ Needs a decision first | Recording works; TRANSCRIPTION does not exist. Audio of somebody talking about their life is the most sensitive thing this product could send anywhere — it needs its own cost and privacy decision before any of it is built. |
+
 ## How this list is tracked
 
 Mirrored into the harness Task tool for live status during the build; **this doc is the durable

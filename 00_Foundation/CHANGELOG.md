@@ -4,6 +4,80 @@ Status: Living Document
 
 ---
 
+# 2026-08-28 — a day of device reports, one wrong policy line, and a guard that had to be built
+
+`tsc` clean · **jest 2573 / 244 suites**. Decisions: D86–D90. Two builds queued.
+
+## What was reported from real phones, and what each one turned out to be
+
+**One person, two usernames, and a search that found neither.** `generateUsername()` produced a
+random suggestion, three screens each called it independently on mount, and each rendered its own
+result as the account's handle under the words "this is how friends find you". Underneath it, a
+trap: in My Profile the Save button was disabled unless the draft differed from the current value —
+and the current value WAS the suggestion, so the one action that would have made the name real was
+the one action the screen refused. Two adjacent defects would have kept them apart anyway: a handle
+was stored exactly as typed and looked up with an exact, case-sensitive match. There is one
+canonical form now, used on both sides.
+
+**The Circle field could not be tapped on iOS.** It was `editable={false}` whenever the account had
+no handle, with nothing on screen saying so. Replaced by the reason and the way out of it.
+
+**The keyboard covering fields on Android.** The 26 August fix corrected the nine screens with a
+pinned composer and stopped there, leaving nine more — the Tools above all, where people type most.
+The guard test grew the check that would have caught it.
+
+**A birth date that would not change.** The wheel listened only to `onMomentumScrollEnd`, which fires
+when a flick leaves the list coasting. Nudging it one or two rows — which is what changing a birth
+date is — ends with no momentum, so the column snapped to the new row on screen and reported nothing
+upward.
+
+**"Make it daily" became a duplicate Step.** Three causes in the understanding step: the directive
+never told the model a Step's current cadence, nothing said that a frequency request is about
+something already in the Journey, and the edit step got no language guidance while the create step
+did. Under all three, a guard the model cannot get wrong: a Step the Journey already has is refused.
+
+**The microphone in the coach composer did nothing.** It had no handler at all — and it contradicted
+a privacy policy published two days earlier. Removed.
+
+**iOS dictation transcribed English in a Hebrew app.** The app declared no native localization, so
+iOS considered it English-only whatever the JavaScript did — which also made every system permission
+prompt English.
+
+## The policy said we use no camera, microphone or photos. We do.
+
+Found while chasing the dictation bug, and the most serious thing in the day. The claim came from a
+stale line in the privacy contract and was copied into a public legal document without being checked
+against the build. Corrected in all four places and stated accurately rather than removed. The
+contract now carries the lesson in place of the line.
+
+## An update that reached nobody, and the guard that now prevents it
+
+Adding three lines to `app.json` moved the runtime fingerprint, and the update published on top of
+them went to a runtime version neither phone was on. It reached nobody, silently — a publish onto an
+empty runtime prints exactly the same success as one that works.
+
+`tools/publish-ota.mjs` is the only way to publish now: it compares the project's fingerprint against
+the newest finished build's, refuses when they differ, and publishes to both channels. It caught its
+own installation — `packageJson:scripts` is itself a fingerprint source — which is why it is a file
+called directly rather than an npm script.
+
+## Notification settings, and preferences that finally do something
+
+`CommunicationPrefs` had been persisted, migrated and exported since the social pillar landed, and
+nothing read it and no screen wrote it. There is a screen now, and the switches are real: reminders
+off means the scheduler plans nothing, and the six bell kinds are filtered in one place. The "also
+outside the app" control the founder asked for exists only for reminders, because nothing else can
+reach a lock screen — each row says which it is instead of drawing a dead switch.
+
+## Sentry, with every default it ships with turned off
+
+The DSN arrived. The interesting part is what is not enabled: Sentry's own quickstart is a list of
+things §11.4 forbids by name. All off, in a value a test reads. `beforeSend` rebuilds each event from
+an allowlist rather than editing what the SDK produced, and the exception MESSAGE is never read at
+all — because `throw new Error(\`Could not plan "${title}"\`)` is an ordinary thing to write.
+
+---
+
 # 2026-08-27 — the rest of the queue: capacity, a pause an Ally can see, the policy, and the replan spec
 
 `tsc` clean · **jest 2490 / 235 suites**. Migration 0009 applied to the live project.

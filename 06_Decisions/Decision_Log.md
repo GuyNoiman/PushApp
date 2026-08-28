@@ -49,6 +49,78 @@ one natural sentence) is still open: the tree asks one at a time.
 (the signal block), `core/learning/experts/careerDiagnosis` (`CAREER_SIGNAL_HINTS`), `core/AppCore`
 (`diagnosedDefinition` + `matchVariant`), `core/coach/goalSpecToJourney` (`authoredArcFor`).
 
+## 2026-08-28 — where we operate, what the app may reach, and how a routine fits
+
+### D86 — Two regions only: Israel and the United States
+**Decision (founder, 2026-08-28).** Every region a product serves has to be governed separately —
+its own transfer basis, its own retention answers, its own store obligations. So the product launches
+in **Israel and the US only, and use from other regions is blocked** until a region is deliberately
+added.
+
+**What it simplifies immediately:** no EU users means no EEA transfer clause to justify, which was
+the open question behind the Mirror provider's region. Our Supabase project is in `ap-northeast-2`
+(Seoul) and the Sentry project is EU-hosted (Germany); neither has to be moved for launch.
+
+**What it obliges:** the block has to be real, not a sentence in a policy — deciding WHERE it is
+enforced (store availability, sign-up, or both) is the open half of this decision.
+
+### D87 — The minimum age is the stores' own
+**Decision (founder, 2026-08-28):** 13, or higher where the country's age of digital consent is
+higher — 14, 15 or 16 in parts of the EU. The same rule the app stores enforce, the same rule
+Instagram states. **Published**; one of the five policy blanks closed.
+
+### D88 — The app DOES use the camera, the photo library and the microphone
+**Decision (founder, 2026-08-28), correcting a documentation error, not a product one.** The
+privacy policy published on 2026-08-26 said "No microphone, camera or photo library." The shipping
+build declares all three — `expo-image-picker`, `expo-audio` and `expo-media-library` — and
+`AttachmentStrip` uses them in the My Best Possible Year tool.
+
+The claim was copied from `Privacy_Contract_With_The_User.md` §Group E, which said it "on the
+shipping branch" and had gone stale, into a public legal document without being checked against the
+build. The founder's answer when it was raised: *"יש מצלמה ויש מיקרופון - תעדכן את המסמכים."*
+
+**Now stated accurately in all four places** (contract, canonical policy, both live language
+versions): the app can attach a photo or a voice note to something the person is writing, it asks at
+the moment of use and never at launch, the Tool works without it if declined, and the attachment is
+a local file that nothing uploads.
+
+**The rule that came out of it, and it belongs to every future claim:** a statement about what the
+app does must be checked against the app, not against an earlier version of the document making it.
+
+### D89 — A Dream for routine, and a short path into it
+**Decision (founder, 2026-08-28). SPECIFIED, NOT BUILT.**
+
+A Dream called something like *ניהול שגרת יום* / "keeping my daily routine", holding the simple
+Journeys that never needed an expert and often have none: a protein shake once a day, bedsheets every
+two weeks, watering the plants weekly. The founder's own framing: *"לא בהכרח חלק מחלום של התפתחות
+אישית והם נופלים יותר באזור של אפליקציה המסייעת בהרגלים."*
+
+**Two constraints he set:** it must fit the existing data model without breaking it, and adding one
+must be *very* simple — no interview, no diagnosis, no coach analysis.
+
+**The design proposed and not yet approved:**
+- **No new object.** A Dream with an optional `kind: 'routine'` (additive), and ordinary `recurring`
+  Journeys beneath it. Nothing about the hierarchy changes.
+- **The tension, named:** *"every Journey must end"* is a standing principle and "water the plants
+  weekly" is open-ended by nature. Proposed resolution: a routine Journey gets a length like any
+  other (60 days by default) and is **celebrated and renewed** at the end rather than running
+  forever. A habit that has held for two months deserves a moment of recognition and a fresh
+  commitment, which is closer to the philosophy than an endless chore list.
+- **A quick-add path** that skips the coach entirely: a name, how often, done. Two questions.
+- **One model gap:** `Rhythm` knows daily / few-times-week / weekly. **"Every two weeks" cannot be
+  expressed** and will need either a new rhythm value or date-driven Steps.
+
+### D90 — The manual Journey wizard is hidden in the app and kept for content creators
+**Decision (founder, 2026-08-28).** The "New Journey" button is hidden from the Journeys tab: while
+the coach is the way in, a second door leading to a plan built without understanding, diagnosis,
+library or variant match is a way for somebody to get less. A hand-built Journey also can never be
+shared as Companion, because its Step titles are the user's own words.
+
+**But the wizard itself is deliberately kept and must not be deleted.** Its intended future is a
+**web tool for content creators** who will author richer Journeys than the in-app flow ever offered.
+The route, the screens and every test of it are untouched; bringing the in-app button back is
+deleting one comment.
+
 ## 2026-08-26 (later) — the first thing the app says that is not a reminder
 
 ### D85 — Motivation ships as a SLICE, and the slice says only what the app already counted

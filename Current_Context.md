@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-28** — start at the **"⛳ START HERE — 2026-08-28"** block, which supersedes
+Last updated: **2026-08-28 (later)** — start at the **"⛳ START HERE — 2026-08-28 (later)"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
@@ -36,6 +36,72 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → **the three documents in "START HERE" immediately below** → the
 memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+---
+
+# ⛳ START HERE — 2026-08-28 (later): the builds failed and were fixed, the console is built
+
+On `feat/buddy-3d-and-reminders`, committed, **not pushed**. `tsc` clean, **jest 2619 / 249 suites**.
+Detail: `00_Foundation/CHANGELOG.md` (2026-08-28, later). The block below this one is accurate
+history of the same day's first half and is superseded only as the starting point.
+
+## ▶ WHAT HAPPENED TO THE TWO BUILDS
+
+Both errored. Same cause on both platforms: `@sentry/react-native` adds a source-map upload step that
+needs an auth token nobody minted. iOS said so plainly; Android reported an unattributed Gradle
+failure. `SENTRY_DISABLE_AUTO_UPLOAD=true` in every `eas.json` build profile fixes both.
+
+Rebuilt. **iOS finished** (`dc41f7b9-9672-40b5-8e45-f80f5c9f8787`). **Android was still building**
+(`cfb298a5-2d73-4257-a9ed-c67b1f9b7607`) — check it first:
+
+```bash
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest build:list --limit 2
+```
+
+Nothing reaches a phone over the air until both are installed on both phones; `tools/publish-ota.mjs`
+will correctly refuse and say so. **When they are installed, one publish carries everything since the
+last one.**
+
+## ▶ WHAT THIS SESSION BUILT
+
+The **operations console** (stage 3) in `app/console/` — four tabs, no framework, no build step, no
+dependency, deployed nowhere yet. Read `app/console/README.md` before touching it; it names three
+decisions that are easy to undo by accident. Plus **migration 0010**, which fixes an audit policy
+that stopped every non-owner operator from logging an attachment open — and therefore from opening
+one at all.
+
+## ▶ WHAT NEEDS THE FOUNDER, in the order it unblocks things
+
+1. **The first operator row.** `admin_members` is empty and no migration fills it, on purpose. The
+   console signs in and correctly says the account holds no role until this exists. The SQL is in the
+   last section of `app/supabase/migrations/0010_admin_console_gaps.sql`.
+2. **Apply migration 0010** (`npx supabase db push` from `app/`). Additive and idempotent. Operator
+   notes, severity and the fixed audit policy all wait on it.
+3. **Where the console is deployed.** `eas deploy` publishes one production deployment per project
+   and the invitation page already holds it — pointing the console at the same one would replace the
+   page testers are given. This is the "subdomain for the console" question, and it is now blocking
+   something real.
+4. **A Sentry org auth token**, if source maps are wanted. One minute in Sentry's settings, then it
+   becomes an EAS environment variable and the flag in `eas.json` comes back out. Without it, stack
+   traces name minified frames.
+
+## ▶ THE NEXT WORK, unchanged in order except that #2 is done
+
+1. **Verify Sentry end to end (§11.5)** — needs the builds on the phones. Trigger a handled error and
+   a deliberate fatal one, inspect the actual outbound payload, then add the disclosure line to the
+   privacy policy (§11.1).
+2. ~~The admin console — stage 3.~~ **Built.** What remains of it is deployment and the first
+   operator row, both above.
+3. **The routine Dream and its short path (D89).** Specified, not started. Read D89 first: it carries
+   the "every Journey must end" tension and the one model gap — "every two weeks" cannot be expressed
+   by `Rhythm` today.
+4. **The onboarding conversation's depth.** The v2 flow landed; the substance did not. Largest
+   remaining item from the partner's spec.
+5. **R2's first slice** (Journey resume/re-plan) — PRD and a six-step build order exist.
+6. **Finish Strength Evidence.**
+
+Everything under "WAITING ON THE FOUNDER" in the block below still stands, including the legal
+entity, the support email address, the coach log retention period, and liam's pending friend request.
 
 ---
 

@@ -76,7 +76,7 @@ and an explicit confirmation that this exact image is what will be sent.
 Deliberately deferred, as the PRD allows: reporting another user from their profile (§8.1) waits for
 blocking to exist, and encrypted-message evidence (§8.5) waits for its own design.
 
-## 3. Stage 3 — the console (a separate web app, free hosting)
+## 3. Stage 3 — the console (a separate web app, free hosting) — **BUILT 2026-08-28, not deployed**
 
 A responsive internal website, not a screen in the app (§5). It is deployed to **EAS Hosting's free
 tier**, the same place the invite page lives — no new account, no new billing relationship.
@@ -85,6 +85,23 @@ It authenticates with Supabase Auth against `admin_members`, and every authorisa
 server-side (§10): the browser is never trusted with a role. MFA before production access is a
 Supabase Auth capability to verify at implementation; if it is not available on the free tier, that
 is a gate to raise rather than a rule to quietly drop.
+
+**What was built** lives in `app/console/` and documents itself in `app/console/README.md`. It
+turned out to need no backend of its own: RLS plus `has_admin_role()` already satisfies §10's
+"server-side authorization on every query", so the console is a static page making authenticated
+`fetch` calls and holding no authority of its own.
+
+Three things this stage learned that the plan above did not anticipate:
+
+- **MFA is available and is not enforced.** The sign-in flow answers a TOTP challenge when a factor
+  is enrolled, and Settings shows the unenrolled case in red. That is the gate raised rather than
+  quietly dropped, as this section asked — but it is raised, not closed.
+- **Deployment is blocked by a question, not by work.** `eas deploy` publishes one production
+  deployment per project, and the invitation page already holds it. The console needs its own
+  subdomain or its own project; the command itself is one line.
+- **Building it found a bug in stage 1.** 0008's audit-append policy checked for the role NAMED
+  `readonly` rather than for membership, which removed the audited-attachment-open capability from
+  every non-owner operator. Migration 0010 fixes it and adds the three columns §8.6 needs.
 
 Tabs 3 (Reports) and 4 (Versions) are fully answerable from stage 1's data. Tab 1 (System Health) is
 partially answerable — Supabase reachability, update adoption from EAS, KPI freshness — and every

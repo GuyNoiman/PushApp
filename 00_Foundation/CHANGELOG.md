@@ -4,6 +4,83 @@ Status: Living Document
 
 ---
 
+# 2026-08-28 (later) — the two builds failed, and the console got built while they ran
+
+`tsc` clean · **jest 2619 / 249 suites**. The earlier 2026-08-28 entry below is accurate history of
+the same day's first half; nothing in it is replaced.
+
+## Both builds errored, for the same reason, and it was not obvious on Android
+
+The two builds queued at the end of the previous session came back errored. iOS said it plainly —
+*"Auth token is required for this request"* from `sentry-cli` — and Android reported only
+`EAS_BUILD_UNKNOWN_GRADLE_ERROR`, which is the same invocation from `sentry.gradle` failing without
+a name attached to it.
+
+Adding `@sentry/react-native` also adds a build step that uploads source maps to Sentry, and that
+step needs an org auth token nobody had minted. `SENTRY_DISABLE_AUTO_UPLOAD=true` is read by both
+integrations, so one flag per build profile in `eas.json` covers iOS and Android alike. It is set
+inline rather than as a hosted EAS variable so that it is visible in review, and so that turning
+source maps back ON is a one-line diff with a reason attached.
+
+What it costs: a JavaScript stack trace in Sentry will name minified frames rather than functions.
+It does not weaken the §11.5 contract — the canary suite tests WHICH fields leave the device, not
+how readable they are — but it does leave step 4 of the Sentry Setup Guide unfinished. Finishing it
+needs a token only the founder can mint.
+
+Rebuilt: iOS finished, Android was still building at the end of the session. Quota checked before
+launching either — 6 iOS and 3 Android in the last 30 days against 15 of each, and the free plan has
+no overage charge.
+
+## The admin console — stage 3, built
+
+A responsive internal website in `app/console/`: one HTML file, one stylesheet, a handful of ES
+modules the browser loads directly. No framework, no build step, no CDN, no dependency. Four tabs —
+System health, KPIs, User reports, Versions — plus Settings, with sign-in, roles, an audit log and
+retention.
+
+**It needed no backend of its own, and that is the interesting part.** Every table has RLS on and
+access is decided by `has_admin_role()` inside Postgres, which reads `admin_members` and takes the
+caller from `auth.uid()`. A browser holding the anon key and no session reads nothing. §10's
+"server-side authorization on every query" is already satisfied when the server is the database.
+
+**Most of the work went into what the page refuses to claim.** §6.2's headline percentage shows no
+number at all, because nothing counts installations and nothing turns "an error happened" into "this
+installation was blocked" — and §6.2 requires the numerator and denominator beside the percentage,
+which is the requirement that makes inventing one impossible. Nine of thirteen service cards are
+gray, each with a written reason instead of a blank. The banner reads *"Healthy where measured · 4 of
+13 checked · 9 unknown"*. §3.4 says unknown is not healthy; `status.js` encodes it by ranking gray
+above green, and the load-bearing tests assert that a never-run check and a failed check come out
+different colours.
+
+Tab 2 is deliberately empty and says why: its data needs a separate product-analytics consent nobody
+has been asked for. Tab 4 labels no row with one of §9.2's ten statuses, because nothing records
+them — but it does compute the one thing it can, an update published against a runtime no build
+shares. That reached nobody, it has happened here once, and it now has a red card of its own.
+
+Three decisions written into the README because they are easy to undo by accident: no search over
+report descriptions (every filter is a column comparison); the audit write happens BEFORE the
+sensitive action and its failure stops the action; and `src/dom.js` offers no way to inject markup,
+verified in the browser with a planted `<img onerror>` that rendered as characters.
+
+## One bug in migration 0008, found by building against it
+
+The audit-append policy required `has_admin_role('readonly')` — the role NAMED `readonly`, not "any
+role at all". An operator whose roles are `{support}` fails it; an owner passes only because `owner`
+is universal, which is how it survived review.
+
+It is not a lost log line. The console writes the audit entry before opening an attachment and
+refuses the open if the write fails, so for every non-owner operator the bug removed the capability
+rather than the record. Migration 0010 adds `is_admin_member()` and fixes the policy, and carries
+three more things §8.6 asks a report list to show that no table had: `severity` (nullable, because
+"not triaged" is a real state), the two missing terminal statuses `duplicate` and `cannot_reproduce`
+— taught to the retention sweep in the same file — and `report_notes` as a TABLE rather than a
+column, because RLS is row-level and an internal note on `app_reports` would be readable by the
+person it is written about.
+
+**Migration 0010 is not applied yet.**
+
+---
+
 # 2026-08-28 — a day of device reports, one wrong policy line, and a guard that had to be built
 
 `tsc` clean · **jest 2573 / 244 suites**. Decisions: D86–D90. Two builds queued.

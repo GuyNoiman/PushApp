@@ -110,6 +110,17 @@ Redeploy after a change:
 npx eas-cli@latest deploy --non-interactive --export-dir creator --alias studio
 ```
 
+**A redeploy does not always move the alias.** The first deploy assigns it; a
+later one can create a new deployment and leave the alias pointing at the old
+one — which looks exactly like a caching problem and is not. Confirm by fetching
+the alias, and if it is stale, move it explicitly:
+
+```bash
+npx eas-cli@latest deploy:alias --non-interactive --alias studio --id <deployment-id>
+```
+
+The id is the subdomain in the `Deployment URL` the deploy printed.
+
 ## Running it locally
 
 ```bash

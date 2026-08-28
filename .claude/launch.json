@@ -70,6 +70,20 @@
       ],
       "cwd": "app",
       "port": 4321
+    },
+    {
+      "name": "pushapp-creator-studio",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "creator",
+        "-l",
+        "4322",
+        "--no-clipboard"
+      ],
+      "cwd": "app",
+      "port": 4322
     }
   ]
 }

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>PushApp — Journey Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <noscript>The studio needs JavaScript. It is a set of authenticated queries; there is nothing to render without them.</noscript>
+
+    <header id="chrome" hidden>
+      <div class="brand"><strong>PushApp</strong><span>Journey Studio</span></div>
+      <div class="who"><span id="who"></span><button id="sign-out" type="button" class="ghost">Sign out</button></div>
+    </header>
+
+    <main>
+      <section id="signin" class="card centered">
+        <h1>Journey Studio</h1>
+        <p>
+          Where a coach, teacher or facilitator turns what they know into a Journey somebody can actually
+          keep going with — between sessions, not only during them.
+        </p>
+        <button id="google" type="button" class="provider">Continue with Google</button>
+        <p class="muted small">
+          The same account you use in the PushApp app. Authoring for the community is a separate
+          permission, so signing in is not the same as being admitted.
+        </p>
+        <p id="signin-error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section id="view" hidden></section>
+    </main>
+  </body>
+</html>

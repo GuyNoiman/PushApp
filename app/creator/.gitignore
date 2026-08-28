@@ -1,0 +1,3 @@
+# Generated from the app's .env by scripts/write-console-config.mjs. Never committed:
+# one source of truth for which Supabase project is live, the same rule as .env.
+config.js

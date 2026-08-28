@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-28 (later)** — start at the **"⛳ START HERE — 2026-08-28 (later)"** block, which supersedes
+Last updated: **2026-08-28 (evening)** — start at the **"⛳ START HERE — 2026-08-28 (evening)"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
@@ -36,6 +36,77 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 ## How to resume
 Read `AI_Start_Here.md` → this file → **the three documents in "START HERE" immediately below** → the
 memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+---
+
+# ⛳ START HERE — 2026-08-28 (evening): Android's real cause, and the Journey Studio foundation
+
+On `feat/buddy-3d-and-reminders`, committed, **not pushed**. `tsc` clean, **jest 2633 / 250 suites**.
+Detail: `00_Foundation/CHANGELOG.md` (2026-08-28 evening) and the Decision Log (D91, D92). The blocks
+below are accurate history of the same day's earlier halves.
+
+## ▶ TASK 0 — THE BUILDS, AGAIN
+
+The Sentry fix was right for iOS and wrong for Android. Android's real cause was Android Lint failing
+on the iOS permission strings that `expo.locales` writes into `res/values-b+<lang>/strings.xml`; the
+locale files now nest everything under an `"ios"` key. Both were rebuilt from `94b3c6b`:
+
+- **iOS `9965027c-cc54-4d70-9d18-9e173249668c` — finished.**
+- **Android `0fbde76b-3b16-4c9f-923a-8a3587b8c812` — was still queued.** Check it first:
+
+```bash
+cd /Users/guynoiman/Documents/PushApp/app && npx eas-cli@latest build:list --limit 2
+```
+
+If it failed again, get the real log rather than trusting the CLI's summary — it says
+`EAS_BUILD_UNKNOWN_GRADLE_ERROR` for everything:
+
+```bash
+npx eas-cli@latest build:view <id> --json | python3 -c "import sys,json;print(json.load(sys.stdin)['logFiles'][0])"
+```
+then `curl` it (the body is **brotli**, so decompress with `node -e "…zlib.brotliDecompressSync…"`).
+
+**Do not touch `package.json` scripts, the root `.gitignore`, `eas.json`, `app.json` or `assets/`
+while a build is in flight.** All are runtime-fingerprint sources; the earlier `console:config`
+script addition is what forced iOS to be rebuilt after it had already succeeded.
+
+## ▶ WHAT THIS SESSION BUILT
+
+**The operations console** (stage 3) — `app/console/`, four tabs, deployed nowhere.
+**The Journey Studio foundation** — `app/creator/`, sign-in, the creator permission check, the
+creator's profile page and per-Journey analytics. Read `app/creator/README.md` first.
+**Migrations 0010 and 0011**, neither applied.
+
+## ▶ WHAT NEEDS THE FOUNDER, in the order it unblocks things
+
+1. **Apply migrations 0010 and 0011** (`npx supabase db push` from `app/`). Both additive and
+   idempotent.
+2. **Two rows, by hand, in the SQL editor.** Neither is in a migration on purpose — a file naming who
+   may read production, or who may publish, is a permanent claim about a person. The SQL is in the
+   last section of each migration: `admin_members` for the console, `creator_members` for the studio.
+3. **Supabase redirect allow-list.** Authentication → URL Configuration must include the studio's
+   URL, or Google returns an error instead of a session. Locally that is `http://localhost:4322`.
+4. **Where the two web surfaces are deployed.** `eas deploy` publishes one production deployment per
+   project and the invitation page already holds it. This is the "subdomain" question, and it now
+   blocks two things rather than one.
+5. **A Sentry org auth token**, if source maps are wanted — otherwise stack traces name minified
+   frames.
+
+## ▶ THE NEXT WORK
+
+1. **Verify Sentry end to end (§11.5)** — needs the builds on the phones.
+2. ~~The admin console — stage 3.~~ Built; deployment and the first operator row remain.
+3. **The routine Dream and its short path (D89).** Specified, not started.
+4. **The onboarding conversation's depth** — the largest remaining item from the partner's spec.
+5. **R2's first slice** (Journey resume/re-plan).
+6. **Finish Strength Evidence.**
+
+The Journey Studio's next piece, when it is wanted, is the authoring product itself — the structure
+builder. It is the largest open design in its PRD, and the foundation was deliberately built without
+guessing at it (see that PRD's new §0).
+
+Everything under "WAITING ON THE FOUNDER" further below still stands: the legal entity, the support
+email address, the coach log retention period, and liam's pending friend request.
 
 ---
 

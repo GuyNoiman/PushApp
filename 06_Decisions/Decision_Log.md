@@ -10,6 +10,65 @@ Each entry records the decision, its framing, and where it is reflected in the r
 
 ---
 
+### D91 — What a Creator may learn about the people on their Journey
+**Decision (2026-08-28, taken while building the Journey Studio foundation; the Creator PRD is
+Future Vision and this narrows one of its open areas rather than opening a new one):** a Creator sees
+counts and reviews. They never see who the participants are, an individual's progress, private
+Dreams, the reason a Step was missed, coach conversations, free-text answers or photos from Steps, or
+Ally activity.
+
+**Enforced by the schema, not by the page.** `template_enrollments` — the table that knows which
+person is on which Journey Template — has no select policy for a creator at all. Not a masked view,
+not a column grant. The numbers come from SECURITY DEFINER functions that return counts, the same
+shape `kpi_events` uses for KPIs. A table a creator cannot select cannot quietly become a participant
+list two features from now, and that is the property worth having rather than a rule somebody
+remembers.
+
+**Suppression, and the part that is a judgement call.** The PRD requires minimum cohort thresholds.
+Applied literally to everything, a creator with three participants sees nothing — which is not what
+the requirement protects against. A TOTAL identifies nobody. A BREAKDOWN can: "1 enrolled, 1
+completed" is a fact about a person. So the enrolment total is always shown, every breakdown appears
+at **five** participants, and the page says how many more are needed rather than "insufficient data",
+because a creator with three should know they need two more. Five is the constant, named once, in one
+SQL function.
+
+**Reviews are not an exception.** The PRD forbids free-text ANSWERS, photos, reports and coach
+context — things a person wrote for themselves or for the coach. A review is written knowingly, to be
+read by the creator. That is the whole difference. What is protected is who wrote it: the reviewer's
+id is not in the reading function's return type at all, so it cannot be selected, joined, or leaked
+by a later `select *`.
+
+**Open, and deliberately not decided here:** whether a creator may ever respond to a review; whether
+a cohort or assigned-client model changes any of this (an assigned client already knows their coach
+sees them, which is a different consent); and everything the PRD's §10 lists about rich Step inputs,
+none of which exist yet.
+
+**Reflected in:** `app/supabase/migrations/0011_creator_platform_foundation.sql`,
+`app/creator/README.md`, and the studio page itself — the list of what is never shown is rendered to
+the creator, because an absence is easy to erode and a written line has to be argued with.
+
+---
+
+### D92 — Creator access is a granted role today, and a subscription later, through one check
+**Decision (2026-08-28):** authoring for the community is gated by a row in `creator_members`, not by
+a subscription tier — and `is_creator()` is the single place that decides, so the eventual creator
+subscription is ORed in there and nowhere else.
+
+**Why not the entitlement that already exists.** `entitlements` is real, service-role-written, and
+would be the obvious home. It is not the check today because the Creator PRD §13.1 is explicit that
+an open creator platform must not be the first release: internal team, then invited professionals,
+then a reviewed catalogue. "Who was invited" is a different fact from "who is paying", and collapsing
+them now would make the first release self-serve by accident.
+
+**What this costs and buys:** one hand-written SQL insert per early creator, and a seam that means
+adding the subscription later touches one function instead of every policy. The `stage` column
+records WHICH release stage admitted somebody, which is what a controlled rollout needs to know.
+
+**Reflected in:** `app/supabase/migrations/0011_creator_platform_foundation.sql` §1,
+`app/creator/README.md`.
+
+---
+
 ### E9 — The diagnosis is wired, and twenty-seven authored Journeys became reachable
 **Decision (engineering, inside the partner's approved v1.2 contract, 2026-08-24):** a career
 conversation now runs the partner's DIAGNOSIS before the expert's own questions, and the family it

@@ -4,6 +4,79 @@ Status: Living Document
 
 ---
 
+# 2026-08-28 (evening) — the Android failure was not what it looked like, and the Journey Studio got its foundation
+
+`tsc` clean · **jest 2633 / 250 suites**. Decisions: D91, D92. The two 2026-08-28 entries below are
+accurate history of the same day's earlier halves; nothing in them is replaced.
+
+## The Android build failed twice, and the second time for the reason nobody had looked at
+
+The first diagnosis — Sentry's source-map upload needing an auth token — was correct for iOS and
+wrong for Android. Android came back with the same unattributed
+`EAS_BUILD_UNKNOWN_GRADLE_ERROR` after the fix, and the real cause was 1,900 lines into a
+brotli-compressed log the CLI does not surface:
+
+> `values-b+he/strings.xml:2: Error: "NSCameraUsageDescription" is translated here but not found in
+> default locale [ExtraTranslation]`
+
+Eight of them. **`expo.locales` is not iOS-only.** Its Android plugin writes the same keys into
+`res/values-b+<lang>/strings.xml`, and those keys are iOS `Info.plist` names — so Android has a
+translation of a string that does not exist in its default locale, and Lint fails the release build.
+iOS built fine from the same commit, which is exactly what made the first, sufficient-looking
+explanation stick.
+
+The locale file format already has a per-platform section, so the fix is structural rather than a
+lint suppression: everything moves under an `"ios"` key. Verified locally with `expo prebuild
+--platform android` — the two generated files are now `<resources/>` — and with the resolver itself.
+
+**The lesson worth keeping is about the diagnosis, not the strings.** One explanation covered one
+platform's failure and was assumed to cover the other's. It is written into `locales/README.md`
+where the next person meets it.
+
+**A second thing learned the expensive way:** `packageJson:scripts` is a runtime-fingerprint source.
+Adding the `console:config` npm script earlier in the day moved the hash away from the iOS build that
+had just succeeded — so both platforms had to run again, not only the broken one. The root
+`.gitignore` is a fingerprint source too, which is why the studio's ignore rule lives in a nested
+`creator/.gitignore` instead; verified by computing the hash either side of adding it.
+
+## The Journey Studio — the foundation, not the product
+
+Requested by the founder: a website with the app's sign-in, a permission check, a creator's own page
+listing the Journeys they built **for the community**, and per-Journey analytics. Built as
+`app/creator/` and migration 0011, in the same shape as the operations console — one HTML file, ES
+modules, no framework and no build step.
+
+**Signing in needed a translation, not a copy.** The app exchanges a native Apple or Google identity
+token through Supabase; a browser cannot do that exchange. The web equivalent is Supabase's
+`/auth/v1/authorize` redirect — same provider, same project, therefore the same account and user id.
+A creator signs in with the identity they already use in the app. Apple is absent rather than broken:
+it needs a Services ID and its own return URL on the web.
+
+**The decision the whole design follows from** is the PRD's own: aggregate completion analytics must
+not become surveillance. So the table that knows which person is on which Journey Template has **no
+select policy for a creator at all** — not a masked view, not a column grant. The numbers come from
+functions that return counts. The list of what a creator will never see is rendered on the page
+itself, because an absence is easy to erode and a written line has to be argued with.
+
+**Where suppression belongs took a judgement call** (D91). Minimum cohort thresholds applied to
+everything would show a creator with three participants nothing at all — but a total identifies
+nobody, while "1 enrolled, 1 completed" is a fact about a person. So the total is always shown, the
+breakdown appears at five, and the page says how many more are needed rather than "insufficient
+data".
+
+**Creator access is a granted row, not a subscription tier** (D92), because §13.1 says an open
+creator platform must not be the first release. `is_creator()` is the seam: when the creator
+subscription exists it is ORed in there and nowhere else.
+
+Terminology held exactly — **Journey Template** for the reusable definition, **Journey Instance** for
+the participant's copy, no Course or Program or Module object anywhere. The PRD stays Future Vision
+and gained a §0 saying precisely which of its gates the foundation did NOT pre-empt: no authoring, no
+structure column even as an empty one, no commerce, and nothing that enrols anybody.
+
+**Migration 0011 is not applied yet, and there is no creator row.**
+
+---
+
 # 2026-08-28 (later) — the two builds failed, and the console got built while they ran
 
 `tsc` clean · **jest 2619 / 249 suites**. The earlier 2026-08-28 entry below is accurate history of

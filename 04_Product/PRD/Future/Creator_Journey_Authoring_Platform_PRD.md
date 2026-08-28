@@ -10,6 +10,32 @@ Milestones, Journey Success Policy, creator/professional tier, Community Insight
 
 ---
 
+## 0. Foundation status (added 2026-08-28, does not change this PRD's stage)
+
+A **foundation** was built at the founder's request: authentication, the creator permission check,
+the creator's own page listing the Journey Templates they authored for the community, and
+per-Journey analytics. It is `app/creator/` and
+`app/supabase/migrations/0011_creator_platform_foundation.sql`.
+
+This PRD stays **Future Vision**. Nothing in §20's promotion gates has been met, and the foundation
+was deliberately built so that none of them is pre-empted:
+
+- **No authoring.** No structure builder, no Milestones, no Steps, no rich Step types, no
+  dependencies, no release rules, no versions, no publishing action. §6 and §8 remain entirely open.
+- **No structure column, not even an empty one.** `journey_templates` holds §5.1 and the
+  field-shaped subset of §5.2 and stops. An empty `jsonb` "for later" would be a guess later code
+  builds on.
+- **No commerce, no marketplace, no review workflow.** The lifecycle column accepts all eight of
+  §13's states; only reading them exists.
+- **Nothing enrols anybody.** Adopting a creator Journey is not a feature yet, so every number the
+  studio shows is honestly zero.
+
+What the foundation DID settle, because building it forced the question, is logged as **D91** (what a
+creator may learn about participants, and where suppression belongs) and **D92** (a granted role
+today, a subscription later, through one check). Both narrow §10 and §14 rather than reopening them.
+
+---
+
 ## 1. Purpose
 
 Provide a professional web-based authoring environment where coaches, teachers, facilitators, and other

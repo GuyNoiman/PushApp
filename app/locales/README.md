@@ -1,4 +1,9 @@
-# `locales/` — the Hebrew system strings, waiting for a build
+# `locales/` — the Hebrew system strings
+
+> **WIRED BACK IN on 2026-08-28**, riding the same build as the Sentry SDK. The three lines below are
+> in `app.json` again. Everything under this line is the history of why they were ever taken out, and
+> the rule that came from it — both worth keeping, because the next native change will face the same
+> choice.
 
 These two files are **not wired into `app.json` right now, on purpose.**
 

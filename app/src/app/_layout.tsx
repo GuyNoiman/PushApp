@@ -14,6 +14,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { resolveMediaGateway } from '@/core/media/ExpoMediaGateway';
 import { setMediaGateway } from '@/core/media/MediaGateway';
+import { setCrashGateway } from '@/core/monitoring/CrashGateway';
+import { resolveCrashGateway } from '@/core/monitoring/SentryCrashGateway';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, FontAssets } from '@/constants/theme';
@@ -84,6 +86,17 @@ const NavThemes: Record<'light' | 'dark', Theme> = {
  * every jest run all keep working — they simply do not offer a camera.
  */
 setMediaGateway(resolveMediaGateway());
+
+/**
+ * Install the crash gateway once, at module load — before any screen renders, so a failure during
+ * the first render is still reported. With no DSN it resolves to the inert Null gateway and nothing
+ * is initialised at all, which is what the web preview and every test get.
+ *
+ * Operational diagnostics are part of the base service and are not user-switchable (Operational
+ * Monitoring PRD §11.1) — which is exactly why what they may contain is an allowlist enforced in
+ * `core/monitoring/telemetryContract.ts` rather than a promise in a document.
+ */
+setCrashGateway(resolveCrashGateway());
 
 export default function RootLayout() {
   // Load the brand fonts (Baloo 2 headings + Inter body, Design System §3) before

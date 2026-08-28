@@ -11,7 +11,12 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.guynoiman.pushapp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": [
+          "en",
+          "he"
+        ],
+        "CFBundleDevelopmentRegion": "en"
       },
       "usesAppleSignIn": true,
       "supportsTablet": true
@@ -88,6 +93,14 @@
           "photosPermission": "PushApp lets you attach a photo to something you are writing. It stays on this phone.",
           "cameraPermission": "PushApp lets you take a photo for something you are writing. It stays on this phone."
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "private-dha",
+          "project": "react-native",
+          "url": "https://sentry.io/"
+        }
       ]
     ],
     "experiments": {
@@ -107,6 +120,10 @@
     "updates": {
       "url": "https://u.expo.dev/4505f207-aaec-48fc-95f7-039d72c1ec29",
       "fallbackToCacheTimeout": 0
+    },
+    "locales": {
+      "en": "./locales/en.json",
+      "he": "./locales/he.json"
     }
   }
 }

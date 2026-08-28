@@ -14,8 +14,10 @@ Last updated: **2026-08-28**.
 >    Everything hangs on this.
 > 2. **`[[CONTACT_EMAIL]]`** — a support address a human actually reads. It goes in the policy AND in
 >    both stores.
-> 3. **`[[MIN_AGE]]`** — the minimum age. Related: whether to keep asking for a full birth date at
->    all, or only a year (§1 of the contract flags it as the most identifying field we hold).
+> 3. ~~**`[[MIN_AGE]]`**~~ **ANSWERED (founder, 2026-08-28): 13, or higher where the country's age of
+>    digital consent is higher — the same rule the stores enforce.** What is still open beside it:
+>    whether to keep asking for a full birth date at all, or only a year (§1 of the contract flags it
+>    as the most identifying field we hold).
 > 4. **`[[BEHAVIOUR_LOG_WINDOW]]`** — how long the coach may remember a life minute by minute. A
 >    product decision, not an engineering one.
 > 5. **`[[MIRROR_REGION]]`** — the region the Mirror synthesis provider runs in.
@@ -196,7 +198,7 @@ exception above.
 
 ## 8. Children
 
-PushApp is not for children. You must be at least `[[MIN_AGE]]` to use it. We do not knowingly
+PushApp is not for children. You must be **13 or older**, or older where your country sets a higher age of digital consent — in parts of the EU that is 14, 15 or 16. This matches the minimum the app stores themselves enforce. We do not knowingly
 collect data from anyone younger; if we learn that we have, we delete the account. If you believe a
 child is using PushApp, write to `[[CONTACT_EMAIL]]`.
 

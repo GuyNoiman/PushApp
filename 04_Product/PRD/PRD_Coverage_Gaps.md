@@ -78,6 +78,40 @@ and the non-finite model needs a founder decision before engineering.
 
 ---
 
+## Re-audit against the code — 2026-08-29
+
+The table in §2 was produced on 2026-08-14. Two weeks of building have moved several of its rows, and
+a code-truth pass found gaps it did not contain. **The table below is not edited** — §2 stays as the
+accurate record of what was true on 14 August. This section is the delta.
+
+### Rows that have since closed
+
+| ID | Then | Now |
+|---|---|---|
+| PC-15 | Authentication & account model — a dev stand-in, "coming soon" in Settings | **Closed.** Real Apple and Google sign-in through Supabase; anonymous bootstrap; account deletion; a backup warning for anonymous accounts |
+| PC-03 | The Circle tab's `Invite` button was a live dead button | **Closed.** Invitation acquisition shipped with a landing page |
+| PC-11 | Onboarding shell rules unspecified | **Partly closed.** The v2 shell shipped. The CONVERSATION's substance did not — see the new row N-04 |
+
+### Gaps the 14 August pass did not contain
+
+| ID | Area | Code truth, verified 2026-08-29 | Why it matters |
+|---|---|---|---|
+| **N-01** | **Journey types** | `Rhythm` is `daily` / `few-times-week` / `weekly` and that is the whole model. The MVP definition names five types — frequency · completion · avoidance · critical-compliance · hybrid — and **none of them exists** | This is a named MVP deliverable (`POC_and_MVP_Scope.md` §2.1), not a nice-to-have. An avoidance Journey ("not to smoke") cannot be expressed at all, which rules out entire domains |
+| **N-02** | **Journey adoption** | There is no adoption path anywhere. `adoptJourney` / `adoptTemplate` do not exist in `app/src`. Explore renders `sampleContent.ts` behind `SHOW_MARKETPLACE = false` | **Deferred, not a gap: Explore is out of the first version (founder, 2026-08-29).** Recorded here so that the absence is a decision on the record rather than an oversight. It returns with the creator platform |
+| **N-03** | **Rhythm cannot express "every two weeks"** | `Rhythm` has three values and no interval form | Blocks D89's routine Dream, which is specified and unstarted |
+| **N-04** | **The onboarding conversation's depth** | The v2 flow shipped; the substance — a focused opening, 2–4 adaptive questions, a grounded reflection, a starting-point summary — did not | The largest remaining item from the partner's spec, and the first thing every new account meets |
+| **N-05** | **Nothing writes to `app_versions`** | Migration 0008 created the release registry; the publish tooling does not write to it, so the console's Versions tab is honest and empty | An update that reached nobody has already happened once here. The registry is what makes it visible |
+| **N-06** | **KPI events are accepted and never sent** | `kpi_events` exists with a write-only policy; nothing in the app emits one | Founder 2026-08-29: start with the provisional version-0 KPI set. Now in progress |
+| **N-07** | **No Journey outcome or feedback event** | A Journey ends and nothing records WHAT KIND of ending it was, or asks | Founder 2026-08-29: begin collecting the data the future matching engine will need, without building the engine. Data of this kind cannot be backfilled |
+
+### Rows worth re-reading before acting on them
+
+PC-08 (friendship exit — remove / block / report) is unchanged and is **store-blocking**. PC-10
+(notification delivery) is unchanged: nine Support-Circle content types are built and nothing routes
+them. PC-17 (dead messaging UI) is unchanged and still ships controls for deferred features.
+
+---
+
 ## 1. ALREADY COVERED — do not re-spec these with Codex
 
 Read the named PRD before touching any of these. Several carry *deferred* sections; a deferral is not a

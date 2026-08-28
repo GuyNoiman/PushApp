@@ -26,6 +26,8 @@
  */
 
 const SESSION_KEY = 'pushapp.studio.session';
+/** Set when a sign-in leaves this page, cleared when one comes back with a session. */
+const ATTEMPT_KEY = 'pushapp.studio.signin-attempt';
 
 export class ApiError extends Error {
   constructor(message, status, body) {
@@ -56,15 +58,54 @@ export class Api {
   }
 
   /**
-   * Send the browser to the provider. `redirect_to` must be listed in the
-   * Supabase project's redirect allow-list, or the provider returns here with an
-   * error instead of a session — which is a configuration step, not a code one.
+   * Send the browser to the provider.
+   *
+   * `redirect_to` must be in the Supabase project's redirect allow-list.
+   * Supabase does not check it at this step — it checks at the CALLBACK, after
+   * the person has already chosen their Google account, and a value that is not
+   * allowed is silently replaced by the project's Site URL. When that Site URL
+   * is the default `http://localhost:3000`, the visible result is a browser
+   * error page with no explanation anywhere near the cause.
+   *
+   * Hence the trailing slash, which is not a detail: `location.pathname` is `/`
+   * at the site root, so the obvious `origin + pathname` sends
+   * `https://…app/` while the allow-list almost always contains
+   * `https://…app`. Those do not match. The path is only appended when there
+   * actually is one.
    */
   signInWith(provider) {
-    const redirect = `${window.location.origin}${window.location.pathname}`;
+    const path = window.location.pathname === '/' ? '' : window.location.pathname;
+    const redirect = `${window.location.origin}${path}`;
+    try {
+      // Breadcrumb for the round trip: if we come back with neither a session
+      // nor an error, the page can say WHY instead of looking broken.
+      sessionStorage.setItem(ATTEMPT_KEY, redirect);
+    } catch {
+      // A browser refusing storage loses the diagnosis, not the sign-in.
+    }
     window.location.assign(
       `${this.url}/auth/v1/authorize?provider=${encodeURIComponent(provider)}&redirect_to=${encodeURIComponent(redirect)}`,
     );
+  }
+
+  /**
+   * Did a sign-in attempt come back with nothing? Called after
+   * {@link consumeRedirect}, which clears the breadcrumb on success.
+   */
+  strandedAttempt() {
+    try {
+      return sessionStorage.getItem(ATTEMPT_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  clearAttempt() {
+    try {
+      sessionStorage.removeItem(ATTEMPT_KEY);
+    } catch {
+      // Nothing to clear if storage is unavailable.
+    }
   }
 
   /**
@@ -81,6 +122,7 @@ export class Api {
     const accessToken = params.get('access_token');
     if (!error && !accessToken) return null;
     history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    this.clearAttempt();
     if (error) return { error };
     this.setSession({
       access_token: accessToken,

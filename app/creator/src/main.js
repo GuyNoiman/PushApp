@@ -30,6 +30,7 @@ try {
 if (api) {
   const redirect = api.consumeRedirect();
   if (redirect?.error) showError(redirect.error);
+  else if (!api.signedIn) strandedNotice();
 
   document.getElementById('google').addEventListener('click', () => api.signInWith('google'));
   document.getElementById('sign-out').addEventListener('click', async () => {
@@ -100,4 +101,32 @@ function route() {
 function showError(message) {
   signinError.hidden = false;
   signinError.textContent = message;
+}
+
+/**
+ * The sign-in left this page and came back with no session and no error.
+ *
+ * There is exactly one likely cause and it is worth naming rather than
+ * shrugging at: Supabase checks `redirect_to` against the project's allow-list
+ * at the CALLBACK, and silently substitutes the Site URL when it does not
+ * match. So the person is bounced somewhere else entirely — usually
+ * `http://localhost:3000`, which is a browser error page — or lands back here
+ * with an empty fragment. Neither says what to fix, so this does.
+ */
+function strandedNotice() {
+  const attempted = api.strandedAttempt();
+  if (!attempted) return;
+  api.clearAttempt();
+  signinError.hidden = false;
+  signinError.replaceChildren(
+    el('b', { text: 'The sign-in came back without a session.' }),
+    el('p', {
+      text:
+        'Supabase only checks the return address after the Google account is chosen, and replaces ' +
+        'one it does not recognise with the project’s Site URL — which is why this can end on an ' +
+        'unreachable page instead of an error.',
+    }),
+    el('p', { text: 'Add this exact value under Authentication → URL Configuration → Redirect URLs:' }),
+    el('code', { text: attempted }),
+  );
 }

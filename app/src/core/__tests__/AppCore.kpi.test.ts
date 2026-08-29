@@ -90,3 +90,42 @@ describe('the KPI subscription', () => {
     expect(sent.filter((e) => e.name === 'onboarding_completed')).toHaveLength(1);
   });
 });
+
+describe('outcome evidence', () => {
+  it('records an ending even though nobody is ever asked a question about it', async () => {
+    const c = await core();
+    const written: unknown[] = [];
+    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; } });
+
+    c.bus.emit({
+      type: 'JourneyCompleted',
+      journey: { ...(journeyStub('j1') as object), completedAt: Date.now() } as never,
+      firstCompletion: true,
+    });
+    await Promise.resolve();
+    expect(written).toHaveLength(1);
+    expect(written[0]).toMatchObject({ ending: 'completed', satisfaction: null });
+  });
+
+  it('records one row for a Journey that completes twice after a reversal', async () => {
+    const c = await core();
+    const written: unknown[] = [];
+    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; } });
+
+    const journey = journeyStub('j1');
+    c.bus.emit({ type: 'JourneyCompleted', journey, firstCompletion: true });
+    c.bus.emit({ type: 'JourneyCompleted', journey, firstCompletion: false });
+    await Promise.resolve();
+    expect(written).toHaveLength(1);
+  });
+
+  it('records an abandonment as its own outcome, not as an absence', async () => {
+    const c = await core();
+    const written: { ending?: string }[] = [];
+    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; } });
+
+    c.bus.emit({ type: 'JourneyAbandoned', journey: journeyStub('j1') });
+    await Promise.resolve();
+    expect(written[0]?.ending).toBe('abandoned');
+  });
+});

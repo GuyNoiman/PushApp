@@ -29,6 +29,12 @@ import {
   NullKpiGateway,
   type KpiGateway,
 } from './kpi';
+import {
+  automaticOutcomeFrom,
+  buildOutcome,
+  getOutcomeGateway,
+  type OutcomeGateway,
+} from './outcomes';
 import { FutureJourneyEngine } from './engines/FutureJourneyEngine';
 import {
   ReminderEngine,
@@ -533,6 +539,13 @@ export class AppCore {
   private readonly kpiMemory = createJourneyMemory();
 
   /**
+   * Journey outcome evidence — the data the future matching engine will learn
+   * from (Matching Engine PRD §3A.6). Resolved lazily so a build with no backend
+   * gets the inert gateway and no call site branches on it.
+   */
+  private outcomes: OutcomeGateway = getOutcomeGateway();
+
+  /**
    * Turn the KPI stream on. The app root supplies it because the two things it
    * needs — the installation id (device storage) and the running build's version
    * and channel — are known there and nowhere in here.
@@ -548,6 +561,21 @@ export class AppCore {
   /** Record the first launch of this installation. Once per install, guarded by the gateway. */
   noteFirstOpen(): void {
     this.kpi.record({ name: 'app_first_open' });
+  }
+
+  /** Test seam, and the same shape as {@link setKpiGateway}. */
+  setOutcomeGateway(gateway: OutcomeGateway): void {
+    this.outcomes = gateway;
+  }
+
+  /**
+   * The automatic half of an ending's evidence. The felt half is a separate,
+   * skippable ask that updates this row later; it is not a condition of writing
+   * one.
+   */
+  private async recordOutcome(journey: Journey, ending: 'completed' | 'abandoned'): Promise<void> {
+    const evidence = buildOutcome(automaticOutcomeFrom(journey, ending));
+    if (evidence) await this.outcomes.record(evidence);
   }
 
   private state: AppState = emptyState();
@@ -777,6 +805,27 @@ export class AppCore {
         for (const input of kpiEventsFor(event, this.kpiMemory)) this.kpi.record(input);
       });
     }
+
+    /**
+     * OUTCOME EVIDENCE (Matching Engine PRD §3A.6) — every ending leaves a row,
+     * even when nobody is ever asked a question about it.
+     *
+     * The engine is deliberately not built: it needs data that does not exist.
+     * This is that data, and it is collected now because it cannot be filled in
+     * backwards — a Journey that ended in June is a fact nobody can recover in
+     * December. The felt half stays null until somebody answers, and null means
+     * "not asked", never zero.
+     *
+     * A failure to record is swallowed by the gateway on purpose: a Journey
+     * ending must never fail because its evidence could not be written.
+     */
+    this.bus.on('JourneyCompleted', ({ journey, firstCompletion }) => {
+      // Only the FIRST completion. A re-completion after a reversal is the same
+      // Journey finishing once, and two rows would be two data points about one
+      // thing that happened.
+      if (firstCompletion) void this.recordOutcome(journey, 'completed');
+    });
+    this.bus.on('JourneyAbandoned', ({ journey }) => void this.recordOutcome(journey, 'abandoned'));
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
     // Daily Step Reporting reversal (D36): persist the cleared report; a reopened Journey also

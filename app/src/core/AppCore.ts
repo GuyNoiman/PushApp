@@ -22,6 +22,13 @@ import {
 import { EntitlementEngine } from './engines/EntitlementEngine';
 import { InactivityEngine } from './engines/InactivityEngine';
 import { getInactivityGateway } from './inactivity';
+import {
+  createJourneyMemory,
+  kpiEventsFor,
+  KPI_SOURCE_EVENTS,
+  NullKpiGateway,
+  type KpiGateway,
+} from './kpi';
 import { FutureJourneyEngine } from './engines/FutureJourneyEngine';
 import {
   ReminderEngine,
@@ -517,6 +524,32 @@ export class AppCore {
   /** Exposed so the UI can react to one-off moments (e.g. a Buddy celebration). */
   readonly bus = new EventBus();
 
+  /**
+   * The KPI stream. Inert until a backend exists, and inert forever on a build
+   * with no Supabase env — `NullKpiGateway` accepts everything and sends nothing,
+   * so no call site has to branch on whether measurement is configured.
+   */
+  private kpi: KpiGateway = NullKpiGateway;
+  private readonly kpiMemory = createJourneyMemory();
+
+  /**
+   * Turn the KPI stream on. The app root supplies it because the two things it
+   * needs — the installation id (device storage) and the running build's version
+   * and channel — are known there and nowhere in here.
+   *
+   * Left unset, every KPI call is a no-op. That is the state under jest, on web,
+   * and on any build with no Supabase env, and it means no test has to know this
+   * subsystem exists.
+   */
+  setKpiGateway(gateway: KpiGateway): void {
+    this.kpi = gateway;
+  }
+
+  /** Record the first launch of this installation. Once per install, guarded by the gateway. */
+  noteFirstOpen(): void {
+    this.kpi.record({ name: 'app_first_open' });
+  }
+
   private state: AppState = emptyState();
   private readonly repo: Repository;
   /**
@@ -726,6 +759,24 @@ export class AppCore {
     // come into existence — the coach, a parked goal, manual creation, a Future Journey activating —
     // is remembered the same way. Nothing is written unless consent is active.
     this.bus.on('JourneyCreated', ({ journey }) => this.rememberApprovedJourney(journey));
+
+    /**
+     * PRODUCT KPIs (§7) — one subscriber, not a call beside every emit.
+     *
+     * The engines already say what happened, in a typed vocabulary, on this bus.
+     * Adding `kpi.record(...)` next to each `bus.emit(...)` would be a second
+     * place to forget and would put a measurement concern inside business logic
+     * (Engineering Bible §3). Mapping in one place also means the taxonomy can
+     * change without an engine changing at all.
+     *
+     * `kpiEventsFor` is pure and refuses anything not in the closed taxonomy, so
+     * a domain event with no KPI meaning produces nothing and costs nothing.
+     */
+    for (const type of KPI_SOURCE_EVENTS) {
+      this.bus.on(type, (event) => {
+        for (const input of kpiEventsFor(event, this.kpiMemory)) this.kpi.record(input);
+      });
+    }
     this.bus.on('StepCheckedIn', this.onChanged);
     this.bus.on('JourneyCompleted', this.onChanged);
     // Daily Step Reporting reversal (D36): persist the cleared report; a reopened Journey also
@@ -1304,6 +1355,19 @@ export class AppCore {
   createJourneyFromGoalSpec(spec: GoalSpec): Journey;
   createJourneyFromGoalSpec(spec: GoalSpec, start: JourneyStart): Journey | null;
   createJourneyFromGoalSpec(spec: GoalSpec, start: JourneyStart = { mode: 'now' }): Journey | null {
+    // A diagnosed goal must never fall back to a shape/domain default. If the library changed while
+    // the conversation was open and the selected Journey is no longer valid for this family,
+    // creation stops instead of building and crediting an unrelated Journey.
+    if (spec.diagnosis && !this.diagnosedDefinition(spec)) {
+      this.buildTrace = [
+        noteOf('Diagnosed Journey selection is no longer valid', {
+          diagnosis: `${spec.diagnosis.subtype} / ${spec.diagnosis.bottleneck}`,
+          selected: spec.selectedJourneyDefinitionId,
+          'what happens': 'creation stops; the old default matcher is not consulted',
+        }),
+      ];
+      return null;
+    }
     // Parked/deferred goals (L1): the coach may have detected OTHER goals in the opening the user did
     // NOT choose to build now. Capture them BEFORE delegating, so they persist in the SAME
     // JourneyCreated save. Sensitive-domain goals are filtered out at capture and never parked.
@@ -1374,7 +1438,9 @@ export class AppCore {
   private matchVariant(spec: GoalSpec): GoalSpec {
     const shape = journeyShapeFor(spec.processType, spec.cadence);
     const diagnosed = this.diagnosedDefinition(spec);
-    const definition = diagnosed ?? journeyDefinitionsFor(shape, spec.domain)[0];
+    const definition = spec.diagnosis
+      ? diagnosed
+      : journeyDefinitionsFor(shape, spec.domain)[0];
     if (!definition) {
       this.buildTrace = [
         noteOf('No authored Journey matched', {
@@ -1447,6 +1513,12 @@ export class AppCore {
         }),
       ];
       return undefined;
+    }
+    // The Coach's consultation has already asked the family-level fit question (or presented the
+    // candidate menu). Honour that explicit selection; never re-run a weaker default matcher here.
+    if (spec.selectedJourneyDefinitionId) {
+      const isMember = family.members.some((member) => member.id === spec.selectedJourneyDefinitionId);
+      return isMember ? journeyDefinition(spec.selectedJourneyDefinitionId) : undefined;
     }
     // No answers are passed, and that is not an omission: nothing ASKS a family's axis question yet
     // (the coach's next rung), so the choice is made from what onboarding already knows about this
@@ -3448,7 +3520,12 @@ export class AppCore {
   completeOnboarding(answers: OnboardingAnswers): void {
     this.state.onboardingAnswers = answers;
     this.state.onboardingStep = 'completion';
+    const first = this.state.onboardingCompletedAt == null;
     this.state.onboardingCompletedAt ??= Date.now();
+    // Not on the bus, because finishing onboarding is not a domain event any
+    // engine reacts to — it is a fact about this installation. The once-per-
+    // install guard makes a re-call harmless either way.
+    if (first) this.kpi.record({ name: 'onboarding_completed' });
     this.onChanged();
   }
 

@@ -22,7 +22,7 @@
  *
  * Pure TypeScript — no React, no vendor imports.
  */
-import type { DomainEvent } from '../events/events';
+import type { DomainEvent, DomainEventType } from '../events/events';
 import type { KpiInput } from './KpiGateway';
 
 /**
@@ -40,6 +40,27 @@ export interface KpiJourneyMemory {
   hasAnyJourney(): boolean;
   markJourneyCreated(): void;
 }
+
+/**
+ * The domain events that can produce a KPI event. Exported so the subscriber
+ * registers exactly these and nothing else — a list beats `bus.on` for every
+ * type in the union, which would run this mapping on every reward, buddy
+ * reaction and mission tick for nothing.
+ *
+ * Adding a name here without adding a case below is harmless (the mapping
+ * returns nothing); adding a case without adding the name here is the mistake
+ * this constant makes visible, because the case would simply never run.
+ */
+export const KPI_SOURCE_EVENTS = [
+  'JourneyCreated',
+  'JourneyCompleted',
+  'JourneyAbandoned',
+  'StepCheckedIn',
+  'StepPartial',
+  'StepCancelled',
+  'StepPostponed',
+  'StepMissed',
+] as const satisfies readonly DomainEventType[];
 
 /** A postponement answers a day honestly, but it is not the Journey starting. */
 const GENUINE_START_KINDS = new Set(['done', 'partial']);

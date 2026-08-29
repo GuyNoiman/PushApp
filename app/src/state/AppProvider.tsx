@@ -8,6 +8,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { AppCore, type Snapshot } from '@/core/AppCore';
+import { wireKpiGateway } from '@/core/kpi/wireKpi';
 
 interface AppContextValue {
   core: AppCore;
@@ -46,6 +47,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setReady(true);
       refresh();
+
+      // PRODUCT KPIs (§7). Wired AFTER start() resolves, so the first-open event
+      // is recorded against loaded state rather than against a core that has not
+      // read its own storage yet. A failure disables measurement and nothing
+      // else — there is no state where the app works worse because a metric
+      // could not be configured.
+      void wireKpiGateway().then((gateway) => {
+        if (!mounted || !gateway) return;
+        core.setKpiGateway(gateway);
+        core.noteFirstOpen();
+      });
 
       // Run the authoritative day/week rollover whenever the app returns to the
       // foreground (outside render), so Missions/Login reconcile with the clock.

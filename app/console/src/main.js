@@ -14,12 +14,14 @@ import { renderKpis } from './views/kpis.js';
 import { renderReports } from './views/reports.js';
 import { renderVersions } from './views/versions.js';
 import { renderSettings } from './views/settings.js';
+import { renderUsers } from './views/users.js';
 
 const TABS = [
   { id: 'health', label: 'System health', render: renderHealth },
   { id: 'kpis', label: 'KPIs', render: renderKpis },
   { id: 'reports', label: 'User reports', render: renderReports },
   { id: 'versions', label: 'Versions', render: renderVersions },
+  { id: 'users', label: 'Users', render: renderUsers },
   { id: 'settings', label: 'Settings', render: renderSettings },
 ];
 

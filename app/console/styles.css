@@ -130,3 +130,12 @@ footer#foot { padding: 1rem; text-align: center; color: var(--muted); font-size:
   .detail-grid { grid-template-columns: 1fr; }
   .detail-grid dt { margin-top: 0.4rem; }
 }
+
+/* ── Users: the permission rows ──────────────────────────────────────────── */
+.role-list { display: grid; gap: 0.35rem; margin: 0.4rem 0 0.8rem; }
+.role-row {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.5rem;
+  align-items: start; margin: 0; font-size: 0.9rem; color: var(--ink);
+}
+.role-row input { width: auto; margin: 0.2rem 0 0; }
+.role-row b { font-weight: 600; }

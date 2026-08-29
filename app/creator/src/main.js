@@ -11,15 +11,37 @@ import { Api } from './api.js';
 import { el, clear } from './dom.js';
 import { renderProfile } from './views/profile.js';
 import { renderTemplate } from './views/template.js';
+import { renderCreate } from './views/create.js';
 
 const config = window.PUSHAPP_STUDIO ?? {};
 const signin = document.getElementById('signin');
 const signinError = document.getElementById('signin-error');
 const chrome = document.getElementById('chrome');
+const studioNav = document.getElementById('studio-nav');
 const view = document.getElementById('view');
+const themeButton = document.getElementById('theme');
+
+const themes = ['system', 'light', 'dark'];
+let theme = localStorage.getItem('pushapp-studio-theme');
+if (!themes.includes(theme)) theme = 'system';
+applyTheme();
+themeButton.addEventListener('click', () => {
+  theme = themes[(themes.indexOf(theme) + 1) % themes.length];
+  if (theme === 'system') localStorage.removeItem('pushapp-studio-theme');
+  else localStorage.setItem('pushapp-studio-theme', theme);
+  applyTheme();
+});
 
 let api;
 let ctx;
+let routeGeneration = 0;
+
+function applyTheme() {
+  if (theme === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+  themeButton.textContent = `Theme: ${theme}`;
+  themeButton.setAttribute('aria-label', `Theme: ${theme}. Activate to change.`);
+}
 
 try {
   api = new Api({ url: config.supabaseUrl, anonKey: config.supabaseAnonKey });
@@ -78,23 +100,45 @@ async function start() {
     return;
   }
 
+  studioNav.hidden = false;
   window.addEventListener('hashchange', route);
   route();
 }
 
 function route() {
+  const generation = ++routeGeneration;
   const hash = (window.location.hash || '').slice(1);
   const [section, id] = hash.split('/');
+  const active = section === 'new' ? 'new' : 'journeys';
+  for (const link of studioNav.querySelectorAll('[data-route]')) {
+    const isActive = link.dataset.route === active;
+    link.classList.toggle('active', isActive);
+    if (isActive) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
   clear(view);
+  // Each route renders into its own root. If an older async request resolves
+  // after navigation, it can update only its now-detached root—not the screen.
+  const routeRoot = el('div', { class: 'route-view' });
+  view.append(routeRoot);
   const done = (p) =>
     Promise.resolve(p).catch((e) => {
-      clear(view);
-      view.append(el('section', { class: 'card' }, [el('p', { class: 'error', text: e.message })]));
+      if (generation !== routeGeneration) return;
+      clear(routeRoot);
+      routeRoot.append(el('section', { class: 'card' }, [el('p', { class: 'error', text: e.message })]));
     });
   if (section === 'journey' && id) {
-    done(renderTemplate(view, ctx, id, () => { window.location.hash = ''; }));
+    done(renderTemplate(routeRoot, ctx, id, () => { window.location.hash = 'journeys'; }));
+  } else if (section === 'new') {
+    done(renderCreate(routeRoot, ctx, {
+      onCancel: () => { window.location.hash = 'journeys'; },
+      onCreated: (templateId) => { window.location.hash = `journey/${templateId}`; },
+    }));
   } else {
-    done(renderProfile(view, ctx, (templateId) => { window.location.hash = `journey/${templateId}`; }));
+    done(renderProfile(routeRoot, ctx, {
+      onOpen: (templateId) => { window.location.hash = `journey/${templateId}`; },
+      onCreate: () => { window.location.hash = 'new'; },
+    }));
   }
 }
 

@@ -10,6 +10,8 @@ import {
   STATUSES, statusLabel, isAdoptable,
   FIELD_GROUPS, fieldValue, missingBeforePublish,
   withStats, normaliseStats, suppressionNote, MIN_COHORT, NEVER_SHOWN,
+  createDraftPayload, draftRpcArgs, validateDraft,
+  workspaceOverview, filterTemplates, draftReadiness, relativeTime, languageLabel,
 } from '../src/model.js';
 
 // The model is plain JS and its exports are frozen literals, so TypeScript
@@ -29,6 +31,38 @@ describe('lifecycle', () => {
 
   it('shows an unknown status rather than hiding it behind a label', () => {
     expect(statusLabel('something_new')).toBe('something_new');
+  });
+});
+
+describe('creator draft', () => {
+  it('creates metadata-only draft payload with stable defaults', () => {
+    expect(createDraftPayload({ name: '  Return to running  ', tags: ' Running, restart, running ' }, 'u1')).toMatchObject({
+      creator_id: 'u1', status: 'draft', name: 'Return to running', language: 'he',
+      tags: ['running', 'restart'], start_mode: 'flexible', edit_policy: 'editable', restart_policy: 'allowed',
+    });
+  });
+
+  it('does not turn empty or invalid numeric fields into zero', () => {
+    const payload = createDraftPayload({ name: 'A', estimated_days: '', weekly_minutes: '-2' }, 'u1');
+    expect(payload.estimated_days).toBeNull();
+    expect(payload.weekly_minutes).toBeNull();
+  });
+
+  it('requires only identity and a name to save a private draft', () => {
+    expect(validateDraft(createDraftPayload({ name: '' }, 'u1'))).toContain('Give this Journey a working name before saving.');
+    expect(validateDraft(createDraftPayload({ name: 'A Journey' }, 'u1'))).toEqual([]);
+  });
+
+  it('rejects a non-HTTPS cover before the request reaches the server', () => {
+    const draft = createDraftPayload({ name: 'A Journey', cover_url: 'http://example.com/cover.jpg' }, 'creator-1');
+    expect(validateDraft(draft)).toContain('Use an HTTPS address for the cover image.');
+  });
+
+  it('never lets the browser choose the creator or lifecycle through the write RPC', () => {
+    const args = draftRpcArgs(createDraftPayload({ name: 'A Journey' }, 'u1'));
+    expect(args).not.toHaveProperty('p_creator_id');
+    expect(args).not.toHaveProperty('p_status');
+    expect(args).toMatchObject({ p_name: 'A Journey', p_language: 'he' });
   });
 });
 
@@ -114,5 +148,136 @@ describe('the boundary', () => {
     expect(NEVER_SHOWN).toContain('who the participants are');
     expect(NEVER_SHOWN).toContain('coach conversations');
     expect(NEVER_SHOWN).toContain('free-text answers and photos from Steps');
+  });
+});
+
+describe('the workspace overview', () => {
+  const row = (status: string, stats: unknown) => ({ status, stats }) as never;
+
+  it('counts only what it can measure into the completion rate', () => {
+    // The suppressed template contributes its enrolment total — a total identifies
+    // nobody — but NOT a zero to the completion rate. Counting it as zero
+    // completions would punish a Journey for being new, and "not enough
+    // participants to say" is the whole reason the breakdown is withheld.
+    const out = workspaceOverview([
+      row('published', { enrolled: 100, suppressed: false, completed: 60 }),
+      row('draft', { enrolled: 3, suppressed: true, completed: null }),
+    ]);
+    expect(out).toEqual({ templates: 2, published: 1, started: 103, completionRate: 60 });
+  });
+
+  it('says nothing rather than 0% when no template is measurable yet', () => {
+    const out = workspaceOverview([row('draft', { enrolled: 2, suppressed: true, completed: null })]);
+    expect(out.completionRate).toBeNull();
+    expect(out.started).toBe(2);
+  });
+
+  it('counts only adoptable statuses as published', () => {
+    const out = workspaceOverview([row('published', null), row('paused', null), row('draft', null)]);
+    expect(out.published).toBe(1);
+    expect(out.templates).toBe(3);
+  });
+
+  it('survives a template with no stats row at all', () => {
+    expect(workspaceOverview([row('draft', null)])).toEqual({
+      templates: 1, published: 0, started: 0, completionRate: null,
+    });
+  });
+});
+
+describe('filtering the library', () => {
+  const rows = [
+    { name: 'Return to running', short_description: 'Back to a habit', status: 'published', updated_at: '2026-08-01', created_at: '2026-07-01', stats: { enrolled: 10 } },
+    { name: 'Sleeping earlier', short_description: 'Wind down', status: 'draft', updated_at: '2026-08-05', created_at: '2026-07-20', stats: { enrolled: 40 } },
+    { name: 'Hard conversations', short_description: 'Rehearse the running order', status: 'draft', updated_at: '2026-07-30', created_at: '2026-07-25', stats: null },
+  ] as never[];
+
+  it('searches the name and the short description, and nothing else', () => {
+    expect(filterTemplates(rows, { query: 'running' }).map((r) => r.name))
+      .toEqual(['Return to running', 'Hard conversations']);
+  });
+
+  it('is case-insensitive and ignores surrounding space', () => {
+    expect(filterTemplates(rows, { query: '  SLEEPING ' })).toHaveLength(1);
+  });
+
+  it('filters by status', () => {
+    expect(filterTemplates(rows, { status: 'draft' })).toHaveLength(2);
+  });
+
+  it('defaults to most recently updated', () => {
+    expect(filterTemplates(rows).map((r) => r.name))
+      .toEqual(['Sleeping earlier', 'Return to running', 'Hard conversations']);
+  });
+
+  it('sorts by reach, treating an unmeasurable template as zero rather than dropping it', () => {
+    expect(filterTemplates(rows, { sort: 'reach' }).map((r) => r.name))
+      .toEqual(['Sleeping earlier', 'Return to running', 'Hard conversations']);
+  });
+
+  it('returns everything when nothing is asked for', () => {
+    expect(filterTemplates(rows, {})).toHaveLength(3);
+  });
+});
+
+describe('draft readiness', () => {
+  const full = {
+    name: 'Coming back to running',
+    short_description: 'Eight weeks back.',
+    long_description: 'For somebody who stopped.',
+    audience: 'Adults returning',
+    outcome: 'Run 30 minutes',
+    success_policy: 'Finish the mandatory Steps.',
+  };
+
+  it('is complete when every required field is filled', () => {
+    const out = draftReadiness(full);
+    expect(out.ratio).toBe(1);
+    expect(out.missing).toEqual([]);
+    expect(out.title).toBe('Ready to review');
+  });
+
+  it('counts only the required fields, so optional ones cannot pad the bar', () => {
+    const out = draftReadiness({ ...full, prerequisites: '', dream_fit: '' });
+    expect(out.done).toBe(out.total);
+  });
+
+  it('names the stage from how much is done', () => {
+    expect(draftReadiness({}).title).toBe('Just started');
+    expect(draftReadiness({ name: 'x', short_description: 'y', long_description: 'z' }).title).toBe('Good beginning');
+  });
+
+  it('lists what is missing rather than only counting it', () => {
+    expect(draftReadiness({ name: 'x' }).missing).toContain('What counts as completing it');
+  });
+});
+
+describe('relative time', () => {
+  const now = Date.UTC(2026, 7, 29, 12, 0, 0);
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+
+  it('reads the way somebody would say it out loud', () => {
+    expect(relativeTime(ago(30 * 1000), now)).toBe('just now');
+    expect(relativeTime(ago(5 * 60 * 1000), now)).toBe('5 minutes ago');
+    expect(relativeTime(ago(3 * 3600 * 1000), now)).toBe('3 hours ago');
+    expect(relativeTime(ago(24 * 3600 * 1000), now)).toBe('yesterday');
+    expect(relativeTime(ago(3 * 24 * 3600 * 1000), now)).toBe('3 days ago');
+    expect(relativeTime(ago(60 * 24 * 3600 * 1000), now)).toBe('2 months ago');
+  });
+
+  it('does not guess at a missing or unreadable date', () => {
+    expect(relativeTime(null, now)).toBe('—');
+    expect(relativeTime('not a date', now)).toBe('—');
+  });
+});
+
+describe('language', () => {
+  it('shows the name a Creator would use, not the stored code', () => {
+    expect(languageLabel('he')).toBe('Hebrew');
+    expect(languageLabel('en')).toBe('English');
+  });
+
+  it('shows an unknown code rather than hiding it', () => {
+    expect(languageLabel('ar')).toBe('ar');
   });
 });

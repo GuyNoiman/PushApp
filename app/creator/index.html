@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https:; img-src 'self' https: data:; object-src 'none'; base-uri 'none'; form-action 'self'" />
     <title>PushApp — Journey Studio</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="config.js"></script>
@@ -13,7 +15,15 @@
 
     <header id="chrome" hidden>
       <div class="brand"><strong>PushApp</strong><span>Journey Studio</span></div>
-      <div class="who"><span id="who"></span><button id="sign-out" type="button" class="ghost">Sign out</button></div>
+      <nav id="studio-nav" aria-label="Journey Studio" hidden>
+        <a href="#journeys" data-route="journeys">My Journeys</a>
+        <a href="#new" data-route="new">Create Journey</a>
+      </nav>
+      <div class="who">
+        <span id="who"></span>
+        <button id="theme" type="button" class="ghost" aria-label="Theme: system">Theme: system</button>
+        <button id="sign-out" type="button" class="ghost">Sign out</button>
+      </div>
     </header>
 
     <main>

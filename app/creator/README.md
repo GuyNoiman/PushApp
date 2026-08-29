@@ -9,8 +9,11 @@ Built to `04_Product/PRD/Future/Creator_Journey_Authoring_Platform_PRD.md`
 (**Future Vision** — strategic direction approved, many product, business and
 compliance questions open). That PRD's §20 lists promotion gates this does not
 meet and does not claim to. This is the foundation, requested on 2026-08-28:
-authentication, the permission check, the creator's own page, and per-Journey
-analytics. **Authoring is not here.**
+authentication, the permission check, the creator's own page, per-Journey
+analytics, and the first metadata-only Journey Template draft flow.
+
+The approved responsive Light/Dark design references are stored under
+`04_Product/PRD/Assets/Creator_Journey_Studio/` and embedded in that PRD.
 
 ## Terminology, because it is easy to lose
 
@@ -134,6 +137,20 @@ deferred: `packageJson:scripts` is a runtime-fingerprint source, so renaming the
 script would cut every installed build off from over-the-air updates. It is
 worth doing at the next native build and not worth a build of its own.
 
+## Creating the first draft
+
+An active Creator can now open **Create Journey** and save a private metadata
+draft. The first slice captures identity and fit, expected effort, and safe
+Journey-level rules. It intentionally does **not** invent a structure format:
+Milestones, Steps, dependencies, rich media, completion thresholds and Coach
+guidance still belong to the future structure builder.
+
+Draft creation goes through `creator_create_template_draft()`, introduced by
+`app/supabase/migrations/0012_creator_draft_write_boundary.sql`. The function
+derives the owner from the signed-in account and always creates a `draft`; the
+browser cannot choose an owner or publish itself. Migration 0012 must be applied
+before this version of the site is deployed.
+
 ## Known, and deliberate
 
 - **The ignore rule lives in `creator/.gitignore`, not the root one.** The root
@@ -147,9 +164,9 @@ worth doing at the next native build and not worth a build of its own.
   sign-in into `sessionStorage` under an eight-hour cap versus an OAuth redirect
   and a normal product session. A third site is the moment to extract the
   plumbing and accept a copy step or a bundler with it.
-- **No authoring.** No structure builder, no Milestones, no Steps, no versions,
-  no publishing action. The lifecycle column accepts all eight of §13's states;
-  only reading them is built.
+- **Metadata draft authoring only.** No structure builder, no Milestones, no
+  Steps, no versions, and no publishing action. The lifecycle column accepts all
+  eight of §13's states, but the browser can create only a private draft.
 - **`journey_templates` has no structure column.** Not even an empty `jsonb`
   "for later" — that would be a guess that later code builds on. §6's structure
   builder is the largest open design in the PRD.

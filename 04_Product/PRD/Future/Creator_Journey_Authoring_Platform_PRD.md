@@ -13,15 +13,18 @@ Milestones, Journey Success Policy, creator/professional tier, Community Insight
 ## 0. Foundation status (added 2026-08-28, does not change this PRD's stage)
 
 A **foundation** was built at the founder's request: authentication, the creator permission check,
-the creator's own page listing the Journey Templates they authored for the community, and
-per-Journey analytics. It is `app/creator/` and
-`app/supabase/migrations/0011_creator_platform_foundation.sql`.
+the creator's own page listing the Journey Templates they authored for the community, per-Journey
+analytics, and a metadata-only private-draft form. It is `app/creator/` and migrations
+`app/supabase/migrations/0011_creator_platform_foundation.sql` and
+`app/supabase/migrations/0012_creator_draft_write_boundary.sql`.
 
 This PRD stays **Future Vision**. Nothing in §20's promotion gates has been met, and the foundation
 was deliberately built so that none of them is pre-empted:
 
-- **No authoring.** No structure builder, no Milestones, no Steps, no rich Step types, no
-  dependencies, no release rules, no versions, no publishing action. §6 and §8 remain entirely open.
+- **Metadata authoring only.** A Creator may save the identity, fit, effort, and Journey-level rules
+  in §5 as a private draft. There is still no structure builder, no Milestones, no Steps, no rich
+  Step types, no dependencies, no release rules, no versions, and no publishing action. §6 and §8
+  remain entirely open.
 - **No structure column, not even an empty one.** `journey_templates` holds §5.1 and the
   field-shaped subset of §5.2 and stops. An empty `jsonb` "for later" would be a guess later code
   builds on.
@@ -30,9 +33,65 @@ was deliberately built so that none of them is pre-empted:
 - **Nothing enrols anybody.** Adopting a creator Journey is not a feature yet, so every number the
   studio shows is honestly zero.
 
+The draft boundary is server-owned: the browser cannot supply `creator_id`, choose lifecycle state,
+or publish. The server derives ownership from the authenticated account, verifies active Creator
+access, validates bounded metadata, and pins the new template to `draft`. Direct table mutation is
+revoked from authenticated clients so that future lifecycle states cannot accidentally become a
+self-service publishing API.
+
 What the foundation DID settle, because building it forced the question, is logged as **D91** (what a
 creator may learn about participants, and where suppression belongs) and **D92** (a granted role
 today, a subscription later, through one check). Both narrow §10 and §14 rather than reopening them.
+
+### 0.1 Foundation scope implemented
+
+The current infrastructure includes:
+
+- the same Supabase account identity used by the participant app, with Google web sign-in today;
+- a server-side active-Creator capability check, designed to absorb a future Creator subscription;
+- separate **My Journeys** and **Create Journey** destinations;
+- a Creator dashboard listing community-authored Journey Templates rather than the Creator's own
+  personal Journey Instances;
+- per-template aggregate adoption, progress, completion, departure, rating, review, and authored-field
+  views, subject to the privacy boundaries in §14;
+- metadata-only private draft creation for identity, fit, effort, and Journey-level rules;
+- responsive desktop/mobile presentation and explicit System, Light, and Dark themes;
+- a server-owned draft write boundary: owner and lifecycle cannot be supplied by the browser;
+- navigation-race protection, keyboard-accessible Journey actions, bounded input, and HTTPS-only
+  cover-image addresses.
+
+Before deploying this version, migration 0012 must be applied and one authenticated draft-save smoke
+test must pass with an active Creator account. This is a release gate, not an open product decision.
+
+### 0.2 Approved visual foundation
+
+These images are the approved starting direction, not a final claim about the future structure
+builder. Example Creator names and analytics are illustrative only.
+
+**Desktop dashboard — Light**
+
+![Journey Studio desktop dashboard, light](../Assets/Creator_Journey_Studio/creator-dashboard-light.png)
+
+**Desktop Create Journey — Light**
+
+![Journey Studio Create Journey, desktop light](../Assets/Creator_Journey_Studio/creator-create-light.png)
+
+**Mobile dashboard — Dark**
+
+![Journey Studio mobile dashboard, dark](../Assets/Creator_Journey_Studio/creator-dashboard-dark-mobile.png)
+
+**Mobile Create Journey — Dark**
+
+![Journey Studio Create Journey, mobile dark](../Assets/Creator_Journey_Studio/creator-create-dark-mobile.png)
+
+Visual rules established by this foundation:
+
+- coral is the primary-action colour; teal identifies navigation, status, and guidance;
+- each Journey Template is an independent work card rather than a nested row inside one large card;
+- display headings feel warm and editorial while controls and supporting copy remain utilitarian;
+- analytics are prominent but do not dominate the Creator's primary job of authoring useful Journeys;
+- Light and Dark modes use semantic colour tokens rather than inversion;
+- the narrow layout preserves the same information hierarchy instead of shrinking the desktop page.
 
 ---
 

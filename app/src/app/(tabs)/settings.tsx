@@ -40,7 +40,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
-import { readRunningBundle, shortUpdateId } from '@/core/util/buildInfo';
+import { readRunningBundle, shortRuntime, shortUpdateId } from '@/core/util/buildInfo';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 
@@ -140,18 +140,27 @@ export default function SettingsScreen() {
   const bundle = useMemo(() => readRunningBundle(), []);
   const aboutDetail = useMemo(() => {
     if (bundle.kind === 'development') return undefined;
-    if (bundle.kind === 'embedded') return t('app.aboutEmbedded');
-    return t('app.aboutUpdated', {
-      date: bundle.createdAt
-        ? bundle.createdAt.toLocaleString(language, {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '—',
-      id: shortUpdateId(bundle.id),
-    });
+    // WHICH BUILD, always — the app version cannot answer it. `1.0.0` was two different Android
+    // builds a week apart and Android's own version code did not move between them either, so a
+    // tester asked "am I on the newest one?" and nothing on the device could say. The runtime
+    // version is a fingerprint of the native side: it changes exactly when the thing that has to be
+    // REINSTALLED changes, which is the question being asked.
+    const build = bundle.runtime ? t('app.aboutBuild', { id: shortRuntime(bundle.runtime) }) : null;
+    const running =
+      bundle.kind === 'embedded'
+        ? t('app.aboutEmbedded')
+        : t('app.aboutUpdated', {
+            date: bundle.createdAt
+              ? bundle.createdAt.toLocaleString(language, {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '—',
+            id: shortUpdateId(bundle.id),
+          });
+    return build ? `${running} · ${build}` : running;
   }, [bundle, language, t]);
 
   // Local JSON export via the OS share sheet; a failure surfaces a calm alert

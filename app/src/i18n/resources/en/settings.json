@@ -78,7 +78,8 @@
     "coachMemoryOffNow": "It is off. Nothing is being kept.",
     "coachMemoryOnNow": "It is on. The coach keeps its reading with your account; your own sentences stay on this phone.",
     "privacy": "Privacy policy",
-    "privacyDetail": "What we hold, where it lives, and what you can do about it."
+    "privacyDetail": "What we hold, where it lives, and what you can do about it.",
+    "aboutBuild": "build {{id}}"
   },
   "activeHours": {
     "title": "Active Hours",

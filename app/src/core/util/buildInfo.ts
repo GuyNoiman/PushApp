@@ -38,8 +38,8 @@ export type UpdatesLike = {
  */
 export type RunningBundle =
   | { kind: 'development' }
-  | { kind: 'embedded'; channel: string | null }
-  | { kind: 'update'; id: string; createdAt: Date | null; channel: string | null };
+  | { kind: 'embedded'; channel: string | null; runtime: string | null }
+  | { kind: 'update'; id: string; createdAt: Date | null; channel: string | null; runtime: string | null };
 
 /** Empty string, `null` and `undefined` all mean "not set" — collapse them to one. */
 function orNull(value: string | null | undefined): string | null {
@@ -56,10 +56,11 @@ export function describeBundle(updates: UpdatesLike | null): RunningBundle {
   if (!updates || updates.isEnabled !== true) return { kind: 'development' };
   const channel = orNull(updates.channel);
   const id = orNull(updates.updateId);
+  const runtime = orNull(updates.runtimeVersion);
   // An embedded launch has an updateId too (the id of the bundle baked into the build), so the
   // flag decides — not the presence of an id.
-  if (updates.isEmbeddedLaunch === true || !id) return { kind: 'embedded', channel };
-  return { kind: 'update', id, createdAt: updates.createdAt ?? null, channel };
+  if (updates.isEmbeddedLaunch === true || !id) return { kind: 'embedded', channel, runtime };
+  return { kind: 'update', id, createdAt: updates.createdAt ?? null, channel, runtime };
 }
 
 /**
@@ -69,6 +70,19 @@ export function describeBundle(updates: UpdatesLike | null): RunningBundle {
  */
 export function shortUpdateId(id: string): string {
   return id.replace(/-/g, '').slice(0, 8);
+}
+
+/**
+ * The first characters of the runtime version — WHICH BUILD this is.
+ *
+ * The app version does not answer that question: `1.0.0` was two different Android builds a week
+ * apart, and Android's own version code did not move between them either. The runtime version is
+ * a fingerprint of the native side, so it changes exactly when the thing that has to be reinstalled
+ * changes — which makes it the one value a tester can read out and have compared against the build
+ * that was published for them.
+ */
+export function shortRuntime(runtime: string): string {
+  return runtime.replace(/-/g, '').slice(0, 8);
 }
 
 /** The `expo-updates` module, or null wherever it does not exist (web, Expo Go, jest). */

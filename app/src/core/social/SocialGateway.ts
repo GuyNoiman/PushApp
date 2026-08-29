@@ -238,6 +238,26 @@ export class NotFriendsError extends Error {
 }
 
 /**
+ * Thrown when a chosen username already belongs to somebody else.
+ *
+ * A distinct type because it is the ONE failure of `upsertProfile` the person
+ * can act on, and because the alternative is what shipped: a Postgres unique-
+ * violation string reaching a user, or — as it actually happened — reaching
+ * nobody at all while the screen showed the new name as though it had been
+ * saved. A name that only looks saved is worse than a refusal.
+ */
+export class HandleTakenError extends Error {
+  constructor(
+    readonly handle: string,
+    message = 'That username is already taken.',
+  ) {
+    super(message);
+    this.name = 'HandleTakenError';
+    Object.setPrototypeOf(this, HandleTakenError.prototype);
+  }
+}
+
+/**
  * The social surface the POC needs. Kept intentionally thin (proposal §2):
  * identity, Support Circle, per-Journey Allies, published summaries, cheers.
  * Auth is ANONYMOUS (no email, no SMTP, no cost): the user gets an account on

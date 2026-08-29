@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
 import type { CoachOption } from '@/components/coach/coachScript';
-import { technicalModeCommand } from '@/core/coach/technicalMode';
+import { extractTechnicalMode } from '@/core/coach/technicalMode';
 import {
   CoachOrchestrator,
   CoachUnavailableError,
@@ -308,9 +308,9 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
    * Returns true when the message was the command and has been handled.
    */
   const handleTechnicalCommand = useCallback(
-    (text: string): boolean => {
-      const command = technicalModeCommand(text);
-      if (!command) return false;
+    (text: string): { handled: boolean; rest: string } => {
+      const { command, rest } = extractTechnicalMode(text);
+      if (!command) return { handled: false, rest: text };
       const on = command === 'on';
       orchestratorRef.current!.setTechnicalMode(on);
       setTechnicalMode(on);
@@ -319,7 +319,11 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         { kind: 'user', text: text.trim() },
         { kind: 'technical', text: on ? t('technical.on') : t('technical.off') },
       ]);
-      return true;
+      // The switch is not an answer. When the message carried one as well, the
+      // rest of it is still a thing somebody said and still gets replied to —
+      // the first version dropped it silently, which is how a tester ended up
+      // seeing no change AND no answer.
+      return { handled: true, rest };
     },
     [t],
   );
@@ -328,9 +332,12 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     (text: string) => {
       const trimmed = text.trim();
       if (trimmed.length === 0) return;
-      if (handleTechnicalCommand(trimmed)) return;
-      lastOpeningRef.current = trimmed;
-      void advance(trimmed, () => orchestratorRef.current!.triage(trimmed), true);
+      const { handled, rest } = handleTechnicalCommand(trimmed);
+      // Handled AND nothing else said: the switch was the whole message.
+      if (handled && !rest) return;
+      const message = handled ? rest : trimmed;
+      lastOpeningRef.current = message;
+      void advance(message, () => orchestratorRef.current!.triage(message), true);
     },
     [advance, handleTechnicalCommand],
   );

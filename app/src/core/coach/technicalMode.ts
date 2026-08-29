@@ -76,12 +76,11 @@ function normalize(raw: string): string {
 }
 
 /**
- * Whether this message is the technical-mode command, and which way.
+ * Whether the WHOLE message is the technical-mode command, and which way.
  *
- * Deliberately an EXACT match on the whole message rather than a search inside it. Somebody
- * describing a goal — "I want to move into a more technical mode of working" — must not have their
- * opening silently swallowed by a debug switch, and that sentence is exactly the kind of thing this
- * product's users type.
+ * An exact match. Kept as its own function because "the entire message was the
+ * switch" is a different question from "the switch appears in the message", and
+ * only the first one means there is nothing else to answer.
  */
 export function technicalModeCommand(raw: string): TechnicalModeCommand | null {
   const text = normalize(raw);
@@ -89,6 +88,69 @@ export function technicalModeCommand(raw: string): TechnicalModeCommand | null {
   if (OFF_PHRASES.some((p) => normalize(p) === text)) return 'off';
   if (ON_PHRASES.some((p) => normalize(p) === text)) return 'on';
   return null;
+}
+
+/**
+ * The command as part of a longer message, plus whatever else was said.
+ *
+ * ── WHY THIS EXISTS, AND WHY IT IS NOT A SUBSTRING SEARCH ────────────────
+ *
+ * The first version matched only a whole message, on the reasoning that
+ * somebody writing "I want to move into a more technical mode of working" must
+ * not have their opening swallowed by a debug switch. That reasoning is right
+ * and the rule that came from it was too strict: a tester wrote the command
+ * with a sentence after it and nothing happened at all — no switch, and no hint
+ * that the words had been read as an ordinary message.
+ *
+ * So the phrase is recognised only as a STANDALONE CLAUSE: it must start at the
+ * beginning of the message or just after a sentence break, and end at a
+ * sentence break or at the end of the message. "…a more technical mode of
+ * working" still does not match, because the phrase there is followed by more
+ * words rather than by a break — which is exactly the distinction the original
+ * comment was reaching for.
+ *
+ * What remains after removing the clause is returned, so a message that both
+ * flips the switch and says something is answered rather than eaten.
+ */
+export interface TechnicalModeMatch {
+  command: TechnicalModeCommand | null;
+  /** The message with the command clause removed, trimmed. Empty when it was the whole message. */
+  rest: string;
+}
+
+/** A sentence break: punctuation or a newline, with any spacing around it. */
+const BREAK = '[.!?,:;\n\r]';
+
+function clausePattern(phrase: string): RegExp {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  // Start of string or just after a break · the phrase · a break or end of string.
+  return new RegExp(`(^|${BREAK}\\s*)(${escaped})\\s*(?=${BREAK}|$)`, 'iu');
+}
+
+export function extractTechnicalMode(raw: string): TechnicalModeMatch {
+  const text = raw.trim();
+  if (!text) return { command: null, rest: '' };
+
+  // OFF first: every off phrase contains an on phrase.
+  for (const [command, phrases] of [
+    ['off', OFF_PHRASES],
+    ['on', ON_PHRASES],
+  ] as const) {
+    // Longest phrase first, so "technical mode on" is not matched as "technical mode".
+    for (const phrase of [...phrases].sort((a, b) => b.length - a.length)) {
+      const match = clausePattern(phrase).exec(text);
+      if (!match) continue;
+      const rest = (text.slice(0, match.index) + ' ' + text.slice(match.index + match[0].length))
+        // The break that ENDED the clause is left behind; it belongs to the clause.
+        .replace(new RegExp(`^\\s*${BREAK}\\s*`, 'u'), ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(new RegExp(`^${BREAK}\\s*`, 'u'), '')
+        .trim();
+      return { command, rest };
+    }
+  }
+  return { command: null, rest: text };
 }
 
 // ── The notes themselves ────────────────────────────────────────────────────────────────────────

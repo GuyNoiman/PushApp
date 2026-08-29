@@ -1,6 +1,17 @@
 /**
- * Onboarding — the first-run flow (K2, Onboarding_Questionnaire_PRD). ONE route that walks the user
- * through: language → Personal Information → questionnaire intro → the six questions → completion.
+ * Onboarding — the first-run flow (K2, Onboarding_Questionnaire_PRD). ONE route, and since v2 phase 1
+ * (2026-08-27) it is THREE steps: language → Personal Information → welcome. Then the conversation,
+ * because the conversation IS the onboarding.
+ *
+ * The nine questions are RETIRED from the first run — see `ONBOARDING_STEP_ORDER` and
+ * `RETIRED_FIRST_RUN_STEPS` in `core/onboarding/questions.ts`, which is the authority. They still
+ * exist as pages, reachable from the Tools tab, and are meant to be asked contextually when a chosen
+ * Journey needs the axis.
+ *
+ * (This paragraph described the retired flow for two days after it was retired, and cost a wrong
+ * answer to a question about why a tester saw the old version. The step order is one exported
+ * constant; read it rather than this comment if they ever disagree again.)
+ *
  * The root layout's first-run gate ({@link '@/app/_layout'}) routes here until onboarding is complete,
  * then never again; completion lands the user on HOME (founder decision, Device QA 2026-08-17 B1),
  * with the first Coach conversation one tap away on Home's hero card.

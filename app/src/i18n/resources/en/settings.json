@@ -29,7 +29,8 @@
     "addressForm": "How we address you",
     "openProfile": "Open my profile",
     "usernameNotSet": "Choose a username",
-    "usernameUnsaved": "Not saved yet. Save it so friends can find you by this name."
+    "usernameUnsaved": "Not saved yet. Save it so friends can find you by this name.",
+    "usernameRefused": "The name was not saved. It may already be taken, or the connection failed — try another name."
   },
   "account": {
     "apple": "Sign in with Apple",

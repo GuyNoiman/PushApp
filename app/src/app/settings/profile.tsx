@@ -122,9 +122,17 @@ export default function MyProfileScreen() {
               label={t('profile.username')}
               username={username}
               saved={savedHandle.length > 0}
-              onSave={(next) => {
+              onSave={async (next) => {
+                // The local handle is set only AFTER the server accepts it. It
+                // used to be set first, with the promise voided — so a refused
+                // name (taken, offline, RLS) showed on screen as though it had
+                // been saved and quietly reverted on the next launch. That is
+                // the report "I still cannot change my username": it looked like
+                // it worked every time.
+                await social.setHandle(next);
+                if (social.error) return false;
                 setLocalHandle(next);
-                void social.setHandle(next);
+                return true;
               }}
             />
           </View>
@@ -204,7 +212,8 @@ function UsernameField({
   username: string;
   /** False while this is only a suggestion — nothing is stored for this account yet. */
   saved: boolean;
-  onSave: (username: string) => void;
+  /** Resolves true when the name was actually stored; false when the server refused it. */
+  onSave: (username: string) => Promise<boolean>;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('settings');
@@ -215,6 +224,11 @@ function UsernameField({
     return set;
   }, []);
   const error = usernameError(draft, taken);
+  // Two different failures, deliberately kept apart: `error` is the format rule
+  // this device can check on its own, and `rejected` is the server's answer,
+  // which only exists after asking.
+  const [rejected, setRejected] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   // SAVE MUST BE LIVE WHEN NOTHING IS STORED, even if the draft still reads exactly as the field was
   // prefilled. This is the trap that cost a real person an afternoon: the field showed a name, the
   // helper said "this is how friends find you", and Save was greyed out because the draft matched
@@ -245,12 +259,18 @@ function UsernameField({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('save', { ns: 'common' })}
-          disabled={!!error || !changed}
-          onPress={() => onSave(canonicalHandle(draft))}
+          disabled={!!error || !changed || saving}
+          onPress={async () => {
+            setRejected(null);
+            setSaving(true);
+            const ok = await onSave(canonicalHandle(draft));
+            setSaving(false);
+            if (!ok) setRejected(t('profile.usernameRefused'));
+          }}
           style={({ pressed }) => [
             styles.saveButton,
             { backgroundColor: theme.teal },
-            (!!error || !changed) && styles.disabled,
+            (!!error || !changed || saving) && styles.disabled,
             pressed && styles.pressed,
           ]}>
           <ThemedText type="smallBold" style={{ color: theme.background }}>
@@ -258,10 +278,14 @@ function UsernameField({
           </ThemedText>
         </Pressable>
       </View>
-      <ThemedText type="small" themeColor={error ? undefined : 'textSecondary'} style={error ? { color: theme.danger } : undefined}>
+      <ThemedText
+        type="small"
+        themeColor={error || rejected ? undefined : 'textSecondary'}
+        style={error || rejected ? { color: theme.danger } : undefined}>
         {/* Only the SAVED name is how friends find you. Saying so over an unsaved suggestion is what
-            made two people search for names that existed nowhere. */}
-        {error ?? (saved ? t('profile.usernameHelp') : t('profile.usernameUnsaved'))}
+            made two people search for names that existed nowhere. A refusal from the server outranks
+            both, because it is the only one that means the name on screen is not the name stored. */}
+        {rejected ?? error ?? (saved ? t('profile.usernameHelp') : t('profile.usernameUnsaved'))}
       </ThemedText>
     </View>
   );

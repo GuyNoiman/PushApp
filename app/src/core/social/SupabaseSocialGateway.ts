@@ -11,6 +11,7 @@ import { supabase } from './supabaseClient';
 import {
   bundleFromVisibility,
   bundleToVisibility,
+  HandleTakenError,
   NotFriendsError,
   type AllyBundle,
   type AllyInvite,
@@ -91,7 +92,15 @@ export class SupabaseSocialGateway implements SocialGateway {
       .upsert({ id, handle: canonicalHandle(handle), buddy_summary: buddySummary })
       .select('id, handle, buddy_summary')
       .single();
-    if (error) throw error;
+    // `profiles.handle` is UNIQUE, so the one failure a person can do something
+    // about arrives as Postgres 23505. Translated here rather than in the screen,
+    // because the screen should not have to know a Postgres error code — and
+    // because the raw message ("duplicate key value violates unique constraint
+    // profiles_handle_key") is not something to show a person.
+    if (error) {
+      if ((error as { code?: string }).code === '23505') throw new HandleTakenError(canonicalHandle(handle));
+      throw error;
+    }
     return toProfile(data as ProfileRow);
   }
 

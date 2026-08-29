@@ -1,6 +1,28 @@
 # CHANGELOG
 
-Status: Living Document
+Status: Living Document — the history. **What is LEFT lives in `04_Product/Backlog.md`** (single
+list, from 2026-08-29).
+
+---
+
+# 2026-08-29 — Journey Studio gained safe metadata-draft creation
+
+The existing Creator Journey Studio foundation now has two clear work areas: **My Journeys** and
+**Create Journey**. An active Creator can save a private metadata-only Journey Template draft,
+return to the dashboard, and inspect the same aggregate analytics and fields already supported by
+the foundation. The responsive interface now has explicit light and dark themes, clearer dashboard
+hierarchy, and a desktop-first authoring form that still works on a narrow screen.
+
+The implementation deliberately stops before Journey structure. It does not guess at a JSON shape
+for Milestones, Steps, dependencies, media or Coach guidance. Those remain the next product layer.
+
+Migration 0012 closes the important security boundary exposed by adding writes: draft ownership is
+derived from the authenticated account, lifecycle is pinned to `draft`, direct authenticated table
+mutation is revoked, fields are bounded on the server, and suspended Creators cannot call private
+analytics functions. The migration is created but has not been applied, and the updated site has not
+been deployed.
+
+Creator model tests: **19 / 19 passing**.
 
 ---
 
@@ -2733,3 +2755,19 @@ Updated the repository after Founder Interview #1 and subsequent product positio
 - Whether Competition belongs in early product.
 - How to measure intervention effectiveness.
 - How to clearly outperform existing workflows like Calendar + WhatsApp + Notes.
+## 2026-08-29 — Career Expert consultation boundary and end-to-end reference vertical
+
+- Added a deterministic, privacy-minimal Career consultation contract over the existing diagnosis
+  and Journey Library.
+- Added explicit results for missing information, evidence-backed recommendations, single-option
+  selection, and temporary no-match.
+- Corrected the Domain Expert authoring architecture: the Coach alone speaks; Experts recommend
+  existing Journeys; a separate future Journey Creator Expert owns no-match authoring.
+- Connected the consultation to the Coach and AppCore: family-fit questions, single/multiple choice,
+  explicit selection provenance, localized explanation, and a no-match state that cannot build a
+  generic unrelated Journey.
+- Added focused integration coverage; full regression passes 255 suites / 2,706 tests and TypeScript
+  is clean.
+- Closed Claude's review findings: fail-closed catalog drift, recoverable no-match UX, a closed
+  profile-signal allowlist, stable-id family answers, deterministic recommendation order,
+  non-throwing stale selection handling, and explicit coverage for zero/one/three Journey outcomes.

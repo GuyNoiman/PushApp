@@ -5,6 +5,10 @@ Owner: product-manager. Purpose: **one walkable list of every part of the shippe
 behind it**, so the founder can work down it with a parallel AI (Codex) writing drafts.
 Stage of the audit itself: MVP hygiene — it specs nothing, it only says what is unspecced.
 
+> **Superseded as the list, 2026-08-29.** `04_Product/Backlog.md` is now the single place
+> that answers "what is left". This file keeps its own job — the PRD-coverage analysis of
+> 14 August and its 29 August re-audit — and both stay as accurate history. Do not track work here.
+
 ## What this document is (and is not)
 
 This answers exactly one question: **which parts of PushApp ship user-visible behaviour with no PRD?**

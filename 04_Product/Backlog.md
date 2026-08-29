@@ -1,0 +1,133 @@
+# Backlog — the one list
+
+Status: **The single source for what is done and what is not.** Approved 2026-08-29.
+Last updated: **2026-08-30**.
+
+## Why this file exists, and what it replaces
+
+Until now the answer to "what is left" was spread across four documents, none of
+which claimed to be the list: `PRD/PRD_Coverage_Gaps.md` (PRD gaps only, and
+written on 14 August), `Current_Context.md` (a handoff, not a tracker),
+`00_Foundation/CHANGELOG.md` (history) and `01_Vision/Open_Questions.md`
+(questions, not work). Four partial lists is the same as none.
+
+**None of them is deleted.** Each keeps its own job and gains a line pointing
+here. What moves is the claim to be the list.
+
+## The rule that makes this list different
+
+**Every row carries code truth.** Not "done" — *what exists in the code*, with
+the file or the reason it cannot be checked. Four partial lists happened because
+"done" was recorded without saying done-as-in-what, and the same item was open in
+one document and closed in another for three weeks.
+
+A row leaves this list only when its code truth says it works. A row whose truth
+is "specified" is not started, however finished the specification is.
+
+## Status vocabulary
+
+| Status | Means |
+|---|---|
+| **Shipped** | In the code, tested, and reachable by a person on a phone |
+| **Built** | In the code and tested; not yet reachable, or not yet deployed |
+| **Half** | Part of it is real; the row says which part |
+| **Specified** | A decision or PRD exists and no code does |
+| **Open** | Not decided |
+| **Blocked** | Waiting on a person or an external thing; the row says which |
+
+---
+
+## 1. Blocking a store submission
+
+| ID | Item | Status | Code truth | Blocked on |
+|---|---|---|---|---|
+| S-01 | The legal entity — which company publishes, in which country | Blocked | — | The founder. Everything in the store listing hangs on it |
+| S-02 | A support email address a human reads | Blocked | — | The founder. Goes in the policy and both stores |
+| S-03 | Coach behavioural-log retention period | Blocked | The log exists on-device (`BehaviorModelEngine`); no retention rule is written | The founder. 90 days is on the table |
+| S-04 | Friendship exit — remove, block, report a user | Specified | Nothing. `SocialGateway` has no `removeFriend`, `blockUser` or `report*` | — |
+| S-05 | Sentry §11.5 verification on a real device | Blocked | SDK wired, canary suite green in unit tests; the on-device payload has never been inspected | Both builds are installed now — this is doable |
+| S-06 | Privacy-policy line for operational diagnostics and KPIs | Specified | Policy is live and does not mention either | S-05 lands first |
+
+## 2. The MVP delta (`POC_and_MVP_Scope.md` §2.1)
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| M-01 | Explore + an adoptable starter library | **Deferred** (founder, 2026-08-29) | Tab renders `sampleContent.ts` behind `SHOW_MARKETPLACE = false`; no adoption path exists anywhere. Returns with the creator platform |
+| M-02 | Proper onboarding, egg→hatch | Half | v2 phase 1 shipped 2026-08-27: first run is three steps and then the conversation. The conversation's DEPTH — a focused opening, 2–4 adaptive questions, the grounded reflection, the starting-point summary — is phase 2 and unbuilt |
+| M-03 | The five Journey types (frequency · completion · avoidance · critical-compliance · hybrid) | **Not started** | `Rhythm` is `daily` / `few-times-week` / `weekly` and that is the whole model. An avoidance Journey ("not to smoke") cannot be expressed at all |
+| M-04 | Light AI: personalised encouragement + smarter reminders | Half | `CommunicationScheduler` exists; encouragement from the "why" answers is partial |
+
+## 3. Specified and not built
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| B-01 | The routine Dream and its short path (D89) | Specified | Nothing. D89 carries the design and one model gap: "every two weeks" cannot be expressed by `Rhythm` |
+| B-02 | Journey resume / re-plan (R2, PC-26) | Specified | PRD and a six-step build order exist; a paused Journey still resumes onto its old dates |
+| B-03 | Strength Evidence | Half | Started, not finished |
+| B-04 | Notification delivery for Support Circle | Specified | Nine content types are built; nothing routes them anywhere |
+| B-05 | Weekly Review contribution contract (PC-27) | Specified | Experts have no typed way to contribute a per-Journey block |
+| B-06 | Parked goals: label, cap, activation semantics (D44) | Open | State persists and the tab works; the three rules are undecided |
+
+## 4. Operations and platform
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| O-01 | Operations console | Shipped | `app/console/`, live at `pushapp-invite--ops.expo.app`. Reports and Versions complete; health 4 of 13 services measured, the rest gray with written reasons |
+| O-02 | Users / permissions administration | Shipped | Migration 0014 + console Users tab. super_admin and admin enforced in SQL |
+| O-03 | Product KPIs, version 0 | Shipped | Closed taxonomy, bus subscriber, console tab with definitions. Four of §7.3's eight are listed as not computable, each with what blocks it |
+| O-04 | Journey outcome evidence | Built | Migration 0015 + `core/outcomes`. Every ending records automatically; **nothing asks the felt half yet** — that survey is the next piece |
+| O-05 | `app_versions` registry is never written | **Gap** | Migration 0008 created it; the publish tooling does not write to it, so the console's Versions tab is honest and empty |
+| O-06 | MFA is answered but not enforced | Gap | The studio completes a TOTP challenge when a factor exists; nothing requires one. §10 asks for MFA before production access |
+| O-07 | A permanent subdomain for the two web surfaces | Open | Both live on `pushapp-invite--<alias>` aliases. Moving either is one command |
+| O-08 | Sentry source maps | Blocked | `SENTRY_DISABLE_AUTO_UPLOAD=true` in every build profile; stack traces name minified frames | 
+
+## 5. Creator platform
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| C-01 | Studio foundation: sign-in, permission check, dashboard, analytics | Shipped | `app/creator/`, live at `pushapp-invite--studio.expo.app` |
+| C-02 | Metadata draft authoring | Built | Migration 0012's server-owned write boundary + the create form. **The §0.1 release gate — one authenticated draft-save smoke test — has not been run** |
+| C-03 | The structure builder: Milestones, Steps, dependencies, release rules | Open | Nothing, deliberately. The largest open design in the PRD; `journey_templates` has no structure column, not even an empty one |
+| C-04 | Publishing, review workflow, versions | Open | The lifecycle column accepts all eight of §13's states; only reading them exists |
+| C-05 | Nothing enrols anybody | Open | `template_enrollments` is written by adopting a creator Journey, which is not a feature yet. Every number the studio shows is honestly zero |
+
+## 6. Domain experts
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| E-01 | Career expert, wired end to end | Shipped | Diagnosis → family → journey fit → selection. 477-line diagnosis + ~2,900-line authored library |
+| E-02 | Body Image · Relationships · Addiction | Half | A ~220-line expert each with generic arcs, no diagnosis, no authored library. A spec with a domain's name on a generic arc |
+| E-03 | The authoring guide for a new domain | Shipped | `04_Product/Domain_Expert_Authoring_Guide.md` — four files per domain, including the value-id appendix that the Career drift proved was needed |
+| E-04 | The consultation seam is a domain string comparison | Gap | `this.spec.domain === 'career'` in `CoachOrchestrator`. Worth making a registry capability while there is one implementation to migrate |
+
+## 7. Matching engine
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| X-01 | Outcome evidence collection | Built | See O-04 |
+| X-02 | The feedback ask at an ending | **Next** | The taxonomy and the row exist; no screen asks. Until it does, every row's felt half is null |
+| X-03 | `intended_depth` at Journey start | **Next** | The column exists and nothing writes it, so adherence is uncomputable by design rather than by accident |
+| X-04 | Aggregate read functions | Open | Deliberate: nothing should read this until there is something to read |
+| X-05 | The engine itself | Open | Future/Commercial. Do not build before X-02 and X-03 have produced data |
+
+## 8. Known small defects
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| D-01 | `createJourneyFromGoalSpec(spec)` one-arg overload promises non-null | Gap | The Career guard can return null on that path. Only tests use the one-arg form, so no production crash |
+| D-02 | "Build my Journey" can do nothing visibly | Gap | `coach.tsx` has `if (!journey) return;` — no journey, no message, no navigation |
+| D-03 | Dead UI for deferred features | Gap | Inbox's compose control is a plain `View`; the Groups tab is permanently empty |
+| D-04 | `PRD_Coverage_Gaps.md` is superseded by this file | — | Its 14 August table stays as accurate history; its re-audit section is folded in above |
+
+---
+
+## How to use this
+
+Add a row when work is identified, with its code truth from the code rather than
+from a document. Move a row's status when the code truth changes, not when the
+work feels done. Delete a row only when it ships and the truth column says what
+shipped.
+
+`Current_Context.md` stays the handoff — where to start today. The CHANGELOG
+stays the history — what happened and why. The Decision Log stays the record of
+decisions. This is the only one that answers "what is left".

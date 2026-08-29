@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-28 (night)** — start at the **"⛳ START HERE — 2026-08-28 (night)"** block, which supersedes
+Last updated: **2026-08-29** — start at the **"⛳ START HERE — 2026-08-29"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
@@ -33,9 +33,74 @@ competitive research v2 — merged to `main`; PLUS an in-progress strategy conve
 added to capture the AI-adaptive-coach repositioning (Decision Log D23) — no code changed,
 engineering snapshots below (2026-07-20 and earlier) are untouched.
 
+> **What is left lives in `04_Product/Backlog.md`**, the single list, from 2026-08-29. This file
+> stays the handoff: where to start today, and what happened last session.
+
 ## How to resume
 Read `AI_Start_Here.md` → this file → **the three documents in "START HERE" immediately below** → the
 memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+---
+
+# ⛳ START HERE — 2026-08-29: Journey Studio metadata-draft infrastructure
+
+## Career Expert consultation contract (same day, complete reference vertical)
+
+The first deterministic consultation boundary now exists at
+`app/src/core/learning/experts/CareerConsultation.ts`. It accepts closed Career signals only and
+returns one of: missing information, Journey recommendations, or a truthful no-match. It implements
+the founder's selection rules: recommend only on meaningful evidence; one valid Journey removes the
+menu but does not silently start it; no match remains explicit until the separate Journey Creator
+Expert exists.
+
+The consultation is now connected end to end for the authored Career diagnosis vertical. The Coach
+surfaces the family-level fit question, skips a second menu when one Journey remains, presents a
+choice when several remain, and explains a meaningful recommendation without forcing it. The
+selected definition is carried into AppCore and built from its authored arc. A no-match produces no
+GoalSpec, so the UI cannot offer the Build Journey action or fall through to a generic Career arc;
+instead it reopens the Coach composer so the user can clarify the goal and try again.
+
+Claude's follow-up review found two blockers and six smaller weaknesses. They are closed: catalog
+drift now fails closed, no-match is recoverable, matching accepts only allowlisted closed profile
+ids, family answers remain stable ids, auto-selection is consumed, recommendation order is stable,
+stale choices do not throw, Coach history is written once, and no-match reasons no longer masquerade
+as unresolved diagnosis state.
+
+Full regression: **all 255 suites / 2,706 tests pass**; TypeScript is clean. Existing React test
+warnings about asynchronous icon updates remain unchanged and did not fail the suite.
+
+Decision D93 and `04_Product/PRD/Future/Journey_Creator_Expert_PRD.md` record the architecture and
+the mandatory removal task for the temporary no-match branch.
+
+The existing Journey Studio foundation in `app/creator/` was extended locally with:
+
+- explicit **My Journeys** and **Create Journey** navigation;
+- a clearer Creator dashboard using the existing privacy-safe aggregate analytics;
+- responsive metadata-only Journey Template draft creation;
+- light/dark semantic styling and accessible form controls;
+- migration `0012_creator_draft_write_boundary.sql`, which prevents the browser from choosing an
+  owner or lifecycle state and closes private reads when Creator access is suspended.
+
+The boundary is intentional: this slice captures identity, fit, effort and Journey-level rules. It
+does **not** invent the future structure format for Milestones, Steps, dependencies, media or Coach
+guidance.
+
+Focused Creator model tests pass **19 / 19**. The signed-out surface was visually checked locally in
+the browser with no console warnings or errors. Authenticated screens still require an active
+Creator account for end-to-end visual verification.
+
+## ▶ REQUIRED BEFORE THIS VERSION GOES LIVE
+
+1. Review and apply migration 0012.
+2. Verify draft creation with an active Creator account.
+3. Deploy `app/creator/` and move the existing `studio` alias to that deployment.
+
+Neither the migration nor the deployment has been performed in this session.
+
+## ▶ NEXT PRODUCT LAYER
+
+Define the Journey structure-builder contract before adding Milestones, Steps, repetition,
+dependencies, rich media, required Steps, completion thresholds or per-Step Coach guidance.
 
 ---
 

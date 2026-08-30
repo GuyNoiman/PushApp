@@ -49,6 +49,7 @@ import { useServerConnection } from '@/hooks/useServerConnection';
 import { isRTL } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
 import { useApp } from '@/state/AppProvider';
+import { useProfile } from '@/state/ProfileProvider';
 
 /**
  * Route the Coach surface: `mode=edit` opens the coach-led Journey EDIT flow ({@link EditCoachScreen},
@@ -137,7 +138,11 @@ function LiveCoachScreen() {
   const { core, snapshot } = useApp();
   // The onboarding profile goes IN to the interview: a Journey's own variant question (D62) is
   // skipped when the user already answered it in onboarding.
-  const coach = useLiveCoach({ profile: core.getOnboardingCoachSummary() });
+  // The name is read here rather than inside the hook: the core is framework-free and the profile
+  // is React state the screen already holds.
+  const { profile: ownProfile } = useProfile();
+  const displayName = ownProfile.displayName ?? null;
+  const coach = useLiveCoach({ profile: core.getOnboardingCoachSummary(), firstName: displayName });
   const { t } = useAddressedTranslation('coach');
   const { t: tCommon } = useTranslation('common');
 

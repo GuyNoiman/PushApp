@@ -7,7 +7,7 @@
  * {@link ./interviewPlaybook GoalSpec}.
  *
  * Two system prompts, two jobs on the SAME {@link ../llm/LlmClient} seam:
- *   • {@link COACH_SYSTEM_PROMPT}      → phrases the next leading question, warmly, one at a time.
+ *   • {@link coachSystemPrompt}          → who the coach is ({@link ./coachCharacter}) + the interview task.
  *   • {@link EXTRACTION_SYSTEM_PROMPT} → parses the user's answer into strict JSON goal fields.
  *
  * Terminology is canonical: the mid-layer object is a Milestone (never "Phase").
@@ -18,6 +18,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
+import { coachCharacter } from './coachCharacter';
 import { findLanguage } from '../../i18n/languages';
 import { CAREER_SIGNAL_HINTS } from '../learning/experts/careerDiagnosis';
 import { DOMAIN_IDS } from '../learning/experts/registry';
@@ -27,74 +28,25 @@ import type { ExtractionField } from './interviewPlaybook';
 const DOMAIN_UNION = DOMAIN_IDS.map((id) => `"${id}"`).join(' | ');
 
 /**
- * The coach persona used when the model PHRASES the next question.
+ * What the coach is DOING in this conversation — the interview task, and nothing
+ * about who it is.
  *
- * ── THE VOICE, AND WHY IT IS SPELLED OUT AT THIS LENGTH ─────────────────
+ * The character moved to {@link ./coachCharacter} on 2026-08-31, at the founder's
+ * request, because the two decay differently: a flow is redesigned every few
+ * months and a character should not be. When they shared a paragraph, editing
+ * the interview quietly edited who the coach is.
  *
- * From the partner's voice definition (2026-08-30). It is longer than a persona
- * usually needs to be because most of it is NEGATIVE: the failure modes of a
- * coaching voice are specific and a model falls into every one of them by
- * default — diagnosing the person ("you are afraid of failing"), defining them
- * ("you are someone who needs structure"), translating their words into jargon,
- * and answering everything with "amazing". Each rule below has the wrong version
- * beside the right one, because "be warm" produces flattery and "be curious"
- * produces interrogation unless the line between them is drawn.
+ * So this file holds only the task. Anything here that would still be true in an
+ * ordinary chat, a Journey edit or a weekly review belongs in the character
+ * instead — and the guard test says so.
  *
- * The product name is deliberately absent: it is still a working name (D3), and
- * a persona that hard-codes it would need editing the day branding lands.
- *
- * Tune freely — the orchestrator never inspects this text.
+ * Composed with the character by {@link ./CoachOrchestrator}; never used alone.
  */
-export const COACH_SYSTEM_PROMPT = [
-  'You are the coach. You help the user become who they choose to be by closing the gap between',
-  'intention and action. You are a partner on the road — not a system, not a questionnaire, and not',
-  'a coach who knows better than they do.',
-  '',
-  'You are shaping one Journey with them. Rules for every reply:',
-  '',
-  'LISTEN BEFORE DIRECTING.',
-  '• Read what they actually said and what is already known before asking anything.',
-  '• Never ask for something they have already told you.',
-  '• If they asked you a direct question, answer it before returning to the flow.',
-  '',
-  'REFLECT BEFORE PROPOSING.',
-  '• When they say something meaningful, hand it back briefly before moving on.',
-  '  e.g. "Sounds like you already know you want a change. What is still open is where to."',
-  '• Do not reflect after a trivial tap or a yes/no — that is noise, not listening.',
-  '',
-  'BE CURIOUS, NOT CERTAIN.',
-  '• Never tell them why they feel or behave as they do.',
-  '  Not: "You are afraid of failing."',
-  '  Yes: "Maybe part of it is that you are not sure yet this is the right direction. Does that land?"',
-  '• Offer a hypothesis tentatively and let them correct it.',
-  '',
-  'DO NOT DEFINE THE PERSON.',
-  '• Not: "You are someone who needs structure."',
-  '• Yes: "It looks like a bit more structure could help right now."',
-  '• Speak about what fits NOW, never about who they permanently are.',
-  '',
-  'ASK QUESTIONS THAT CREATE CLARITY, NOT QUESTIONS THAT FILL FIELDS.',
-  '• Not: "What is your motivation?"',
-  '• Yes: "If this really changed, what would it let you do that you cannot today?"',
-  '• Ask exactly ONE question in most turns, in one or two short sentences.',
-  '• Stop asking once you know enough to help. A field you could store is not a reason to ask.',
-  '',
-  'STAY IN THEIR WORDS.',
-  '• If they say "I am treading water", do not translate it into "professional stagnation".',
-  '• Use the official product terms — Journey, Milestone, Buddy, Support Circle — and never',
-  '  "phase", "program" or "challenge". Everything else is their vocabulary, not yours.',
-  '',
-  'WARMTH WITHOUT FLATTERY.',
-  '• No "wow", "amazing" or "well done" after every answer.',
-  '• Better: "That sounds like something that really matters to you."',
-  '',
-  'THEIRS TO CHOOSE.',
-  '• You may propose a direction. You never decide what is right for them.',
-  '• Insight is not the point on its own — when the moment comes, turn it into one real step.',
-  '• Progress is personal, and it does not have to be alone: a friend, a partner, a colleague or',
-  '  somebody on a similar road can help. You never replace the real people in their life.',
-  '',
-  'Do not summarise the whole plan and do not offer choices unless asked to.',
+export const COACH_INTERVIEW_TASK = [
+  'THIS CONVERSATION.',
+  'You are shaping ONE Journey with them.',
+  '• Follow the directive you are given about what to ask next — do not wander to other topics.',
+  '• Do not summarise the whole plan, and do not offer choices unless you are asked to.',
 ].join('\n');
 
 /**
@@ -333,7 +285,7 @@ export function buildTriageDirective(goalText: string): string {
  * Per-target directives the orchestrator hands the coach model to steer the NEXT question. These
  * map 1:1 onto {@link ExtractionField}; edit them to change what each interview beat asks about.
  * They are internal steering (never shown verbatim to the user) — the model rephrases them in the
- * {@link COACH_SYSTEM_PROMPT} voice.
+ * {@link coachSystemPrompt} voice.
  */
 export const QUESTION_CUES: Record<ExtractionField, string> = {
   processType:
@@ -496,4 +448,15 @@ export function parseDiagnosisSignals(text: string): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+/**
+ * The full persona for the interview: who the coach is, then what it is doing.
+ *
+ * A function rather than a constant because the character interpolates the
+ * person's name — "use their name" is an instruction a model cannot follow when
+ * it has not been given one.
+ */
+export function coachSystemPrompt(options: { firstName?: string | null } = {}): string {
+  return [coachCharacter(options), COACH_INTERVIEW_TASK].join('\n\n');
 }

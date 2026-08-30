@@ -10,7 +10,7 @@
  * a valid style. {@link getStyle} treats a contentless stub as "not yet usable" and falls back to
  * {@link DEFAULT_STYLE_ID steady}, so a caller always gets a usable voice.
  *
- * The populated `steady` voice aligns with {@link ./coachPrompts COACH_SYSTEM_PROMPT}: its
+ * The populated `steady` voice aligns with {@link ./coachPrompts coachSystemPrompt}: its
  * `systemPromptFragment` is meant to compose alongside that persona, not replace it.
  *
  * SECURITY-PRIVACY G1: nothing here holds user data — only static tone copy.
@@ -35,14 +35,14 @@ export interface CommunicationStyle {
   displayName: string;
   /** Short human-readable summary of the tone. Omitted on unwritten stubs. */
   description?: string;
-  /** Tone instructions composed alongside COACH_SYSTEM_PROMPT. Omitted on unwritten stubs. */
+  /** Tone instructions composed alongside the coach character. Omitted on unwritten stubs. */
   systemPromptFragment?: string;
 }
 
 /**
  * The one POPULATED voice: the founder's meta-agent tone. Professional and accepting, non-
  * judgmental, pleasant but to-the-point, and always oriented to BUILDING A WORK PLAN — explicitly
- * NOT a psychologist or therapist. Aligns with {@link ./coachPrompts COACH_SYSTEM_PROMPT}.
+ * NOT a psychologist or therapist. Aligns with {@link ./coachPrompts coachSystemPrompt}.
  */
 const STEADY: CommunicationStyle = {
   id: 'steady',

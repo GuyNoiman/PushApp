@@ -7,6 +7,7 @@
  */
 import { profileToCoachStyle } from '../../communication/communicationProfile';
 import { CoachOrchestrator } from '../CoachOrchestrator';
+import { coachSystemPrompt } from '../coachPrompts';
 import { DEFAULT_STYLE_ID, getStyle, STYLE_IDS } from '../communicationStyles';
 import type { LlmClient } from '../../llm/LlmClient';
 
@@ -17,6 +18,22 @@ const fragmentOf = (orchestrator: CoachOrchestrator) =>
   (orchestrator as unknown as { styleFragment: string }).styleFragment;
 
 describe('the coach voice', () => {
+  it('keeps the founder-approved conversational behavior in the main coach prompt', () => {
+    // The permanent character moved to `coachCharacter.ts` (founder, 2026-08-31) so that editing a
+    // FLOW cannot quietly edit who the coach is. The composed prompt is what the model sees, so it
+    // is what this asserts — the split is an implementation detail, the behaviour is not.
+    const COACH_SYSTEM_PROMPT = coachSystemPrompt({ firstName: 'Yoav' });
+    expect(COACH_SYSTEM_PROMPT).toContain('PERSONAL, NOT OVER-FAMILIAR');
+    expect(COACH_SYSTEM_PROMPT).toContain('preferred first name');
+    expect(COACH_SYSTEM_PROMPT).toContain('LISTEN BEFORE DIRECTING');
+    expect(COACH_SYSTEM_PROMPT).toContain('REFLECT BEFORE PROPOSING');
+    expect(COACH_SYSTEM_PROMPT).toContain('STAY IN THEIR WORDS');
+    expect(COACH_SYSTEM_PROMPT).toContain('EMPATHY THROUGH ACCURACY');
+    expect(COACH_SYSTEM_PROMPT).toContain('ONE question');
+    expect(COACH_SYSTEM_PROMPT).toContain('ONE USEFUL LAYER DEEPER');
+    expect(COACH_SYSTEM_PROMPT).toContain('Deepening is not interrogation');
+  });
+
   it('uses the style it was given', () => {
     for (const id of STYLE_IDS) {
       const orchestrator = new CoachOrchestrator({ llm, styleId: id });

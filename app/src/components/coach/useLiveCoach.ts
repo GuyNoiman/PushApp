@@ -138,6 +138,8 @@ export interface UseLiveCoachOptions {
    * is how every test drives it.
    */
   profile?: CoachOnboardingSummary | null;
+  /** The user's preferred first name, when the profile has one. Absent is normal. */
+  firstName?: string | null;
 }
 
 /** Map an expert {@link DomainQuestion} onto the option-card view (index → id). */
@@ -192,6 +194,12 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         // has answered (D62). Read once, at construction: an interview is one conversation, and a
         // profile edited mid-interview must not change the questions under the user.
         profile: options?.profile,
+        // THE NAME THEY ARE CALLED. "Use their name" is an instruction a model
+        // cannot follow when it has not been given one — it invents one, or
+        // writes a placeholder. Read once at construction, like the profile and
+        // the voice: a name that changed mid-conversation would read as somebody
+        // else answering.
+        firstName: options?.firstName ?? null,
         // THE USER'S OWN VOICE (Communication_Style_Profile_PRD §9, AC#4). Until this line the
         // coach spoke `steady` to everybody, which made the whole style questionnaire change
         // nothing anyone could hear. Read once at construction for the same reason as the profile:
@@ -253,6 +261,13 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       }
 
       const appended: LiveCoachItem[] = [{ kind: 'coach', text: turn.coachMessage }];
+      if (turn.awaitingGoalText) {
+        applyQuestion(null);
+        setGoalSpec(null);
+        setAwaitingOpening(true);
+        setItems((prev) => [...prev, ...appended]);
+        return;
+      }
       if (turn.done) {
         const spec = turn.goalSpec ?? null;
         if (spec) appended.push(journeyCardItem(spec, t));

@@ -86,14 +86,26 @@ export function ProfileIdentity() {
 
   const [editing, setEditing] = useState(false);
 
-  const save = (next: string) => {
-    // Stored in the canonical form, so what is shown here is exactly what a friend has to type.
+  const [refused, setRefused] = useState<string | null>(null);
+
+  /**
+   * The local name is set only AFTER the server accepts it.
+   *
+   * It used to be set first, with the promise voided — so a refused save showed
+   * on screen as though it had worked and reverted on the next launch. The same
+   * bug lived in `settings/profile.tsx`, was fixed there, and survived here,
+   * which is exactly why it was reported three times.
+   */
+  const save = async (next: string) => {
     const clean = canonicalHandle(next);
     if (!clean) return;
-    setLocalSaved(clean);
-    // Persist through the existing handle-set path when the backend is wired;
-    // a harmless no-op in guest/POC mode (SocialProvider returns inert defaults).
-    void social.setHandle(clean);
+    setRefused(null);
+    const result = await social.setHandle(clean);
+    if (!result.ok) {
+      setRefused(t(result.reason === 'taken' ? 'profile.usernameTaken' : 'profile.usernameRefused'));
+      return;
+    }
+    setLocalSaved(result.handle);
     setEditing(false);
   };
 

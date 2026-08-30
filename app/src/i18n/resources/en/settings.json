@@ -30,7 +30,8 @@
     "openProfile": "Open my profile",
     "usernameNotSet": "Choose a username",
     "usernameUnsaved": "Not saved yet. Save it so friends can find you by this name.",
-    "usernameRefused": "The name was not saved. It may already be taken, or the connection failed — try another name."
+    "usernameRefused": "The name was not saved. It may already be taken, or the connection failed — try another name.",
+    "usernameTaken": "That username is already taken. Try another one."
   },
   "account": {
     "apple": "Sign in with Apple",

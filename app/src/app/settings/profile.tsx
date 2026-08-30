@@ -123,16 +123,14 @@ export default function MyProfileScreen() {
               username={username}
               saved={savedHandle.length > 0}
               onSave={async (next) => {
-                // The local handle is set only AFTER the server accepts it. It
-                // used to be set first, with the promise voided — so a refused
-                // name (taken, offline, RLS) showed on screen as though it had
-                // been saved and quietly reverted on the next launch. That is
-                // the report "I still cannot change my username": it looked like
-                // it worked every time.
-                await social.setHandle(next);
-                if (social.error) return false;
-                setLocalHandle(next);
-                return true;
+                // The local handle is set only AFTER the server accepts it, and
+                // the answer comes from the SAVE rather than from provider error
+                // state — reading `social.error` meant a stale error from an
+                // unrelated call could fail a save that worked.
+                const result = await social.setHandle(next);
+                if (!result.ok) return result.reason;
+                setLocalHandle(result.handle);
+                return null;
               }}
             />
           </View>
@@ -212,8 +210,8 @@ function UsernameField({
   username: string;
   /** False while this is only a suggestion — nothing is stored for this account yet. */
   saved: boolean;
-  /** Resolves true when the name was actually stored; false when the server refused it. */
-  onSave: (username: string) => Promise<boolean>;
+  /** Resolves null when the name was stored, or the refusal reason when it was not. */
+  onSave: (username: string) => Promise<'taken' | 'invalid' | 'failed' | null>;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('settings');
@@ -263,9 +261,9 @@ function UsernameField({
           onPress={async () => {
             setRejected(null);
             setSaving(true);
-            const ok = await onSave(canonicalHandle(draft));
+            const reason = await onSave(canonicalHandle(draft));
             setSaving(false);
-            if (!ok) setRejected(t('profile.usernameRefused'));
+            if (reason) setRejected(t(reason === 'taken' ? 'profile.usernameTaken' : 'profile.usernameRefused'));
           }}
           style={({ pressed }) => [
             styles.saveButton,

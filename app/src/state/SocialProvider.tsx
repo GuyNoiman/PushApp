@@ -19,7 +19,8 @@ import { assertCompanionAllowed, getSocialGateway } from '@/core/social';
 import { globalAllies } from '@/core/social/circleRows';
 // Imported from the module itself, not the barrel: this is a runtime VALUE (an `instanceof`
 // check), and the barrel pulls the Supabase-backed gateway in with it.
-import { NotFriendsError } from '@/core/social/SocialGateway';
+import {
+  HandleTakenError, NotFriendsError } from '@/core/social/SocialGateway';
 import type {
   AllyBundle,
   AllyInvite,
@@ -44,6 +45,15 @@ const JOURNEY_STATUS_EVENT_DAYS = 30;
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
 
+/**
+ * What happened to a username save. `taken` is the only failure a person can act
+ * on; the rest are the same to them and different to us, which is why the reason
+ * is a closed set rather than a message.
+ */
+export type HandleSaveResult =
+  | { ok: true; handle: string }
+  | { ok: false; reason: 'taken' | 'invalid' | 'failed' };
+
 export interface SocialContextValue {
   enabled: boolean;
   profile: SocialProfile | null;
@@ -66,7 +76,8 @@ export interface SocialContextValue {
   needsHandle: boolean;
   /** Last gateway error, for the UI to surface. Null when healthy. */
   error: string | null;
-  setHandle: (handle: string) => Promise<void>;
+  /** Saves the username and says whether it stuck. Never `void` — see the implementation. */
+  setHandle: (handle: string) => Promise<HandleSaveResult>;
   addFriendByHandle: (handle: string) => Promise<void>;
   respondToFriend: (requesterId: string, accept: boolean) => Promise<void>;
   sendCheer: (toId: string, journeyId: string, kind?: CheerKind) => Promise<void>;
@@ -111,7 +122,7 @@ const EMPTY: SocialContextValue = {
   journeyStatusEvents: [],
   needsHandle: false,
   error: null,
-  setHandle: async () => {},
+  setHandle: async () => ({ ok: false, reason: 'failed' }),
   addFriendByHandle: async () => {},
   respondToFriend: async () => {},
   sendCheer: async () => {},
@@ -149,7 +160,7 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   const { core } = useApp();
   // Auth owns the session now (P2). The social pillar reacts to the uid instead
   // of minting its own anonymous account. A non-empty uid means a session exists.
-  const { user } = useAuth();
+  const { user, ensureSession } = useAuth();
   const uid = user?.id ?? null;
 
   const [profile, setProfile] = useState<SocialProfile | null>(null);
@@ -350,14 +361,48 @@ function ActiveSocialProvider({ children }: { children: ReactNode }) {
   }, [core, publishAll]);
 
   // ── Actions ──
+  /**
+   * Save the username, and SAY whether it was saved.
+   *
+   * ── WHY THIS RETURNS A RESULT AND NOT VOID ──────────────────────────────
+   *
+   * It used to be `Promise<void>`, with the failure swallowed into `error`, and
+   * every caller wrote `void social.setHandle(next)` and then rendered the new
+   * name. So a refused save — taken, offline, or no session yet — showed on
+   * screen as though it had worked and reverted on the next launch. That bug was
+   * reported three times and fixed twice, on two different screens, because
+   * there were three of them and each fix reached one.
+   *
+   * A signature that cannot be ignored quietly is the actual fix. The guard test
+   * in `src/state/__tests__/handleEditors.test.ts` fails if a caller stops
+   * awaiting it, or if a fourth editor appears.
+   *
+   * ── AND WHY IT WAITS FOR A SESSION ─────────────────────────────────────
+   *
+   * `AuthProvider` bootstraps the anonymous session asynchronously, after a
+   * backend health probe. Somebody editing their username on the first-run
+   * personal-information step can genuinely get there before it resolves, and
+   * `upsertProfile` throws "Not signed in." Telling them the name is taken —
+   * or telling them anything at all — would be wrong for a condition that fixes
+   * itself in a second, so this waits for the session instead of failing on it.
+   */
   const setHandle = useCallback(
-    async (handle: string) => {
-      await guard(async () => {
-        const p = await gateway.upsertProfile(handle.trim(), profileRef.current?.buddySummary ?? {});
+    async (handle: string): Promise<HandleSaveResult> => {
+      const clean = handle.trim();
+      if (!clean) return { ok: false, reason: 'invalid' };
+      try {
+        if (!uid) await ensureSession();
+        const p = await gateway.upsertProfile(clean, profileRef.current?.buddySummary ?? {});
         setProfile(p);
-      });
+        setError(null);
+        return { ok: true, handle: p.handle };
+      } catch (e) {
+        const reason = e instanceof HandleTakenError ? 'taken' : 'failed';
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+        return { ok: false, reason } as const;
+      }
     },
-    [gateway, guard],
+    [ensureSession, gateway, uid],
   );
 
   const addFriendByHandle = useCallback(

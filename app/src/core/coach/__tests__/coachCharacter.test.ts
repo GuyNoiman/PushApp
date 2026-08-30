@@ -34,6 +34,29 @@ describe('the permanent character', () => {
     expect(character).not.toMatch(/PushApp|MeMore/i);
   });
 
+  it('states the loop as a sequence, not as scattered advice', () => {
+    // The Meta Coach spec (partner, v0.8) names it explicitly, and an ordered
+    // loop is a different instruction from the same rules listed separately:
+    // it says what comes BEFORE asking, which is the whole correction.
+    expect(character).toContain('listen → acknowledge → reflect → deepen only if needed');
+    expect(character).toContain('hidden questionnaire');
+  });
+
+  it('bounds how deep it may go', () => {
+    // Depth without a limit becomes therapy, and this is not one.
+    expect(character).toContain('not repeated "why"');
+    expect(character).toContain('pressure to disclose');
+  });
+
+  it('will not let a handle stand in for a name', () => {
+    // We have handles. "Hi guyguy" is the exact failure the spec names.
+    expect(character).toContain('never use a username or handle as');
+  });
+
+  it('forbids performed empathy as well as flattery', () => {
+    expect(character).toContain('Never claim to know exactly how they feel');
+  });
+
   it('protects the terminology it is allowed to fix', () => {
     expect(character).toContain('Journey, Milestone, Buddy, Support Circle');
     expect(character).toContain('Never "phase", "program" or "challenge"');

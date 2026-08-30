@@ -53,9 +53,29 @@ is "specified" is not started, however finished the specification is.
 | ID | Item | Status | Code truth |
 |---|---|---|---|
 | M-01 | Explore + an adoptable starter library | **Deferred** (founder, 2026-08-29) | Tab renders `sampleContent.ts` behind `SHOW_MARKETPLACE = false`; no adoption path exists anywhere. Returns with the creator platform |
-| M-02 | Proper onboarding, egg→hatch | Half | v2 phase 1 shipped 2026-08-27: first run is three steps and then the conversation. The conversation's DEPTH — a focused opening, 2–4 adaptive questions, the grounded reflection, the starting-point summary — is phase 2 and unbuilt |
+| M-02 | Proper onboarding, egg→hatch | Half | v2 phase 1 shipped 2026-08-27: first run is three steps and then the conversation. **The partner's v3 spec (2026-08-30) supersedes v2** — see O-09 to O-14 |
 | M-03 | The five Journey types (frequency · completion · avoidance · critical-compliance · hybrid) | **Not started** | `Rhythm` is `daily` / `few-times-week` / `weekly` and that is the whole model. An avoidance Journey ("not to smoke") cannot be expressed at all |
 | M-04 | Light AI: personalised encouragement + smarter reminders | Half | `CommunicationScheduler` exists; encouragement from the "why" answers is partial |
+
+## 2a. Onboarding v3 (partner spec, 2026-08-30)
+
+`04_Product/Partner_Onboarding_Spec_v3_2026-08-30.md`. Broken out because "onboarding v3" as one row
+is unactionable and would sit at Half forever. Ordered by what unblocks what.
+
+| ID | Item | Status | Code truth |
+|---|---|---|---|
+| O-09 | The coach's voice | **Shipped** | `COACH_SYSTEM_PROMPT` carries the partner's voice rules with the wrong version beside each right one |
+| O-10 | Purpose + calm-setting guidance before the conversation | **Shipped** | On the intro screen, both languages (founder's addition, 2026-08-30) |
+| O-11 | Brand introduction — three screens | Specified | Nothing. Copy is written in the spec §4 |
+| O-12 | A distinct onboarding coach SESSION | Specified | The coach opens as an ordinary conversation with `?firstRun=1`. There is no separate state, no header, and nothing downstream knows this is first-run |
+| O-13 | Meaningful reflection + user correction before the plan | **Specified, and the heart of it** | Nothing reflects. §8.2 requires a summary the user can confirm or correct, and a correction must rebuild the Journey |
+| O-14 | Starting-point summary screen | Specified | Nothing. §12's three blocks and the "something here does not feel right" return path |
+| O-15 | A concrete first action before onboarding completes | Specified | Onboarding completes when the flow ends, not when a step exists |
+| O-16 | Populated first Home | Half | Home renders whatever exists; nothing guarantees a Journey and a next step are there |
+| O-17 | Contextual profile signals instead of a block | Half | The nine questions are retired from first-run and reachable from Tools; nothing asks them contextually |
+| O-18 | Resume mid-conversation | **Gap** | §21 requires the coach session, messages and resolved signals to survive a restart. The orchestrator lives in a React ref and has no rehydration path — a restart loses the conversation |
+| O-19 | Memory + reminder + sharing asked after value | Half | The tail moved after the first Journey (v2 phase 1). Sharing is not offered at all |
+| O-20 | The v3 analytics events | Specified | §27 lists 20 events; the KPI taxonomy has none of them |
 
 ## 3. Specified and not built
 

@@ -332,6 +332,19 @@ function IntroStep({
       <ThemedText type="default" themeColor="textSecondary">
         {t('intro.p1')}
       </ThemedText>
+      {/*
+        Founder, 2026-08-30: say what the next part is FOR before it starts, and
+        suggest the conditions it goes well in. Somebody who wanders into this
+        between two other things gives short answers, and short answers produce a
+        starting point that fits nobody — the cost of a distracted first
+        conversation is paid by the plan built from it, not by the conversation.
+      */}
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('intro.purpose')}
+      </ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('intro.setting')}
+      </ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
         {t('intro.p2')}
       </ThemedText>

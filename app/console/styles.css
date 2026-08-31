@@ -139,3 +139,17 @@ footer#foot { padding: 1rem; text-align: center; color: var(--muted); font-size:
 }
 .role-row input { width: auto; margin: 0.2rem 0 0; }
 .role-row b { font-weight: 600; }
+
+/* Sign-in: the provider button leads, the password form is the fallback. */
+button.provider { width: 100%; margin: 1rem 0 0.5rem; }
+.password-fallback { margin-top: 1.25rem; }
+.password-fallback summary {
+  cursor: pointer; color: var(--muted); font-size: 0.85rem; list-style: revert;
+}
+.password-fallback summary:hover { color: var(--ink); }
+#signin-error code {
+  display: block; margin-top: 0.4rem; padding: 0.4rem 0.55rem;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  font: 0.85rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink); overflow-wrap: anywhere;
+}

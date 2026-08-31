@@ -29,11 +29,17 @@
           This is an internal operations console. Access is decided by the database, not by this page —
           signing in with an account that holds no operator role gets you a page that says so.
         </p>
-        <form id="signin-form">
-          <label>Email<input type="email" name="email" autocomplete="username" required /></label>
-          <label>Password<input type="password" name="password" autocomplete="current-password" required /></label>
-          <button type="submit">Sign in</button>
-        </form>
+        <button id="google" type="button" class="provider">Continue with Google</button>
+        <p class="muted small">The same account you use in the app. This is how everybody signs in — no operations account has a password.</p>
+
+        <details class="password-fallback">
+          <summary>Sign in with a password instead</summary>
+          <form id="signin-form">
+            <label>Email<input type="email" name="email" autocomplete="username" /></label>
+            <label>Password<input type="password" name="password" autocomplete="current-password" /></label>
+            <button type="submit">Sign in</button>
+          </form>
+        </details>
         <form id="mfa-form" hidden>
           <label>Authentication code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required /></label>
           <button type="submit">Verify</button>

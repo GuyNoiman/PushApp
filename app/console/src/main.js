@@ -46,6 +46,12 @@ try {
 }
 
 if (api) {
+  const redirect = api.consumeRedirect();
+  if (redirect?.error) showSigninError(new Error(redirect.error));
+  else if (!api.signedIn) strandedNotice();
+
+  document.getElementById('google').addEventListener('click', () => api.signInWith('google'));
+
   if (api.signedIn) start().catch(showSigninError);
   signinForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -160,4 +166,22 @@ function route() {
 function showSigninError(err) {
   signinError.hidden = false;
   signinError.textContent = err?.message ?? String(err);
+}
+
+/**
+ * A sign-in that left this page and came back with neither a session nor an
+ * error. There is one likely cause and it is worth naming: Supabase checks the
+ * return address at the CALLBACK and silently substitutes the project's Site URL
+ * when it does not match, so the person lands somewhere else entirely.
+ */
+function strandedNotice() {
+  const attempted = api.strandedAttempt();
+  if (!attempted) return;
+  api.clearAttempt();
+  signinError.hidden = false;
+  signinError.replaceChildren(
+    el('b', { text: 'The sign-in came back without a session.' }),
+    el('p', { text: 'Add this exact value under Authentication → URL Configuration → Redirect URLs:' }),
+    el('code', { text: attempted }),
+  );
 }

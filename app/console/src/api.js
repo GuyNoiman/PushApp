@@ -21,6 +21,8 @@
  */
 
 const SESSION_KEY = 'pushapp.console.session';
+/** Set when a sign-in leaves this page, cleared when one returns with a session. */
+const ATTEMPT_KEY = 'pushapp.console.signin-attempt';
 /** After this long, sign in again — no matter how busy the tab has been. */
 const ABSOLUTE_SESSION_MS = 8 * 60 * 60 * 1000;
 
@@ -59,6 +61,76 @@ export class Api {
   }
 
   // ── auth ────────────────────────────────────────────────────────────────
+
+  /**
+   * Sign in with the same identity the app uses.
+   *
+   * This console shipped with a password field and nothing else, which was wrong
+   * for the only accounts that exist: everybody signs into the app with Apple or
+   * Google, so nobody HAS a password, and the first operator to open this was
+   * asked for one that could not exist. The password path is kept — a dedicated
+   * operations account with a real password is a reasonable thing to want — but
+   * it is no longer the only door.
+   *
+   * `redirect_to` must be in the project's redirect allow-list. Supabase checks
+   * it at the CALLBACK, not here, and silently substitutes the Site URL when it
+   * does not match; see the studio's client for the whole trap.
+   */
+  signInWith(provider) {
+    const path = window.location.pathname === '/' ? '' : window.location.pathname;
+    const redirect = `${window.location.origin}${path}`;
+    try {
+      sessionStorage.setItem(ATTEMPT_KEY, redirect);
+    } catch {
+      // Losing the breadcrumb loses the diagnosis, not the sign-in.
+    }
+    window.location.assign(
+      `${this.url}/auth/v1/authorize?provider=${encodeURIComponent(provider)}&redirect_to=${encodeURIComponent(redirect)}`,
+    );
+  }
+
+  /** Tokens come back in the URL fragment — the one part a browser never sends to a server. */
+  consumeRedirect() {
+    const hash = window.location.hash?.startsWith('#') ? window.location.hash.slice(1) : '';
+    if (!hash) return null;
+    const params = new URLSearchParams(hash);
+    const error = params.get('error_description') || params.get('error');
+    const accessToken = params.get('access_token');
+    if (!error && !accessToken) return null;
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    try {
+      sessionStorage.removeItem(ATTEMPT_KEY);
+    } catch {
+      // Nothing to clear.
+    }
+    if (error) return { error };
+    const claims = decodeClaims(accessToken);
+    this.setSession({
+      access_token: accessToken,
+      refresh_token: params.get('refresh_token'),
+      started_at: Date.now(),
+      user: { id: claims?.sub ?? null, email: claims?.email ?? null },
+    });
+    return { ok: true };
+  }
+
+  /** A sign-in that left and came back with nothing — see the studio's notice for why this exists. */
+  strandedAttempt() {
+    try {
+      return sessionStorage.getItem(ATTEMPT_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  clearAttempt() {
+    try {
+      sessionStorage.removeItem(ATTEMPT_KEY);
+    } catch {
+      // Nothing to clear.
+    }
+  }
+
   async signIn(email, password) {
     const res = await this.raw(`/auth/v1/token?grant_type=password`, {
       method: 'POST',
@@ -214,14 +286,18 @@ function readSession() {
   }
 }
 
-/** The assurance level is a claim inside the access token; reading it is not trusting it. */
-export function decodeAal(accessToken) {
+/** Claims inside the access token. Reading one is not trusting it — every query is checked by RLS. */
+export function decodeClaims(accessToken) {
   if (!accessToken) return null;
   try {
     const payload = accessToken.split('.')[1];
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(json).aal ?? null;
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
   } catch {
     return null;
   }
+}
+
+/** The assurance level is a claim inside the access token; reading it is not trusting it. */
+export function decodeAal(accessToken) {
+  return decodeClaims(accessToken)?.aal ?? null;
 }

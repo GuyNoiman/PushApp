@@ -5,6 +5,7 @@ import { SupabaseKpiGateway } from './SupabaseKpiGateway';
 export * from './KpiGateway';
 export * from './installId';
 export * from './kpiFromEvents';
+export * from './reportRuntime';
 export * from './taxonomy';
 
 let gateway: KpiGateway | null = null;

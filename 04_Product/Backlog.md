@@ -96,7 +96,9 @@ is unactionable and would sit at Half forever. Ordered by what unblocks what.
 | O-02 | Users / permissions administration | Shipped | Migration 0014 + console Users tab. super_admin and admin enforced in SQL |
 | O-03 | Product KPIs, version 0 | Shipped | Closed taxonomy, bus subscriber, console tab with definitions. Four of §7.3's eight are listed as not computable, each with what blocks it |
 | O-04 | Journey outcome evidence | Built | Migration 0015 + `core/outcomes`. Every ending records automatically; **nothing asks the felt half yet** — that survey is the next piece |
-| O-05 | `app_versions` registry is never written | **Gap** | Migration 0008 created it; the publish tooling does not write to it, so the console's Versions tab is honest and empty |
+| O-05 | `app_versions` registry is never written | **Closed differently** | Superseded by `runtime_installs` (0016): the app reports what is INSTALLED, which answers the question the registry was wanted for. The release registry stays empty and unused |
+| O-21 | A build that cannot receive updates says so | **Shipped** | `current-build.json` on the public install site + a Home banner. Protects from the next install onward; it cannot reach a phone that predates it |
+| O-22 | **Play Console internal testing** | **Next, high** | Testers install a raw APK today, which means Android's unknown-source warning AND Play Protect — whose prominent button cancels. It stopped the partner cold on 2026-08-31. Internal testing removes both, is free, and Play Console is needed for the store regardless |
 | O-06 | MFA is answered but not enforced | Gap | The studio completes a TOTP challenge when a factor exists; nothing requires one. §10 asks for MFA before production access |
 | O-07 | A permanent subdomain for the two web surfaces | Open | Both live on `pushapp-invite--<alias>` aliases. Moving either is one command |
 | O-08 | Sentry source maps | Blocked | `SENTRY_DISABLE_AUTO_UPLOAD=true` in every build profile; stack traces name minified frames | 

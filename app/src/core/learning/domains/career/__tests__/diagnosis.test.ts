@@ -20,8 +20,8 @@ import {
   remainingQuestionCount,
   routesToFamily,
   type CareerDiagnosisAnswers,
-} from '../careerDiagnosis';
-import { goalFamilyForDiagnosis } from '../../library/definitions';
+} from '../diagnosis';
+import { goalFamilyForDiagnosis } from '../../../library/definitions';
 
 const Q = APPLY_NO_RESPONSE.questions;
 const [TARGET, PROOF, ACCESS, PROCESS] = Q;

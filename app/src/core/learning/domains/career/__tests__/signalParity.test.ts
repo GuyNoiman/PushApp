@@ -14,16 +14,16 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { CAREER_SIGNALS, CAREER_SIGNAL_HINTS } from '../careerDiagnosis';
+import { CAREER_SIGNALS, CAREER_SIGNAL_HINTS } from '../diagnosis';
 
 const CARD_COPY = join(
   __dirname,
-  '../../../../../../07_Assets/Partner_Packages/Career_v1.3_2026-08-25/03_Career_Diagnosis_Card_Copy_v1.0.json',
+  '../../../../../../../07_Assets/Partner_Packages/Career_v1.3_2026-08-25/03_Career_Diagnosis_Card_Copy_v1.0.json',
 );
 
 const MAPPING = join(
   __dirname,
-  '../../../../../../07_Assets/Partner_Packages/Career_v1.3_2026-08-25/02_Career_Interview_Diagnosis_Mapping_v1.3.json',
+  '../../../../../../../07_Assets/Partner_Packages/Career_v1.3_2026-08-25/02_Career_Interview_Diagnosis_Mapping_v1.3.json',
 );
 
 interface CardCopy {
@@ -70,7 +70,7 @@ describe('career signal parity with the partner package', () => {
     // If a tree ever asks about a signal the classifier cannot read, the "listen first" rule quietly
     // stops applying to that question and the person is asked something they already answered.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { APPLY_NO_RESPONSE } = require('../careerDiagnosis');
+    const { APPLY_NO_RESPONSE } = require('../diagnosis');
     const classified = new Set(CAREER_SIGNAL_HINTS.map((h) => h.signal));
     for (const question of APPLY_NO_RESPONSE.questions) {
       expect(classified.has(question.signal)).toBe(true);
@@ -101,7 +101,7 @@ describe('the words on the cards are HIS', () => {
     // which is a content decision and therefore his. We asked him to write these; this is what stops
     // us drifting away from what he wrote.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { APPLY_NO_RESPONSE } = require('../careerDiagnosis');
+    const { APPLY_NO_RESPONSE } = require('../diagnosis');
     for (const question of APPLY_NO_RESPONSE.questions) {
       for (const option of question.options) {
         const card = CARD_FOR[option.value];

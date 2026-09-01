@@ -11,11 +11,11 @@
  * is not shipped: the wiring gap is asserted here so it stays visible until it is closed.
  */
 import i18n from '../../../../../i18n';
-import { validateAuthoredArc, type AuthoredArc } from '../../authoredArc';
-import { GOAL_FAMILIES, JOURNEY_DEFINITIONS, goalFamiliesFor, goalFamily, journeyDefinition, journeyDefinitionsFor } from '../../definitions';
-import { journeyQuestionsFor, selectJourney, validateGoalFamily } from '../../goalFamily';
-import { validateJourneyDefinition } from '../../journeyDefinition';
-import { CAREER_FAMILIES, CAREER_JOURNEYS } from '../index';
+import { validateAuthoredArc, type AuthoredArc } from '../../../library/authoredArc';
+import { GOAL_FAMILIES, JOURNEY_DEFINITIONS, goalFamiliesFor, goalFamily, journeyDefinition, journeyDefinitionsFor } from '../../../library/definitions';
+import { journeyQuestionsFor, selectJourney, validateGoalFamily } from '../../../library/goalFamily';
+import { validateJourneyDefinition } from '../../../library/journeyDefinition';
+import { CAREER_FAMILIES, CAREER_JOURNEYS } from '../journeys';
 
 const arcOf = (definitionId: string): AuthoredArc => {
   const build = journeyDefinition(definitionId)!.variants[0].build;

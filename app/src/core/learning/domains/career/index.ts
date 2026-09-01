@@ -16,8 +16,8 @@ import type {
   ProposedMilestone,
   RiskSignal,
   StepTemplate,
-} from '../DomainExpert';
-import type { GoalInput, PlanConstraints } from '../types';
+} from '../../DomainExpert';
+import type { GoalInput, PlanConstraints } from '../../types';
 import {
   answerFor,
   assessFrom,
@@ -28,7 +28,7 @@ import {
   minutesFor,
   stepsFrom,
   usesMilestonesFrom,
-} from './expertKit';
+} from '../../expertKit';
 
 /** Progress arc: know where you're headed → build skills → reach out → keep momentum. */
 const MILESTONES: readonly ProposedMilestone[] = [

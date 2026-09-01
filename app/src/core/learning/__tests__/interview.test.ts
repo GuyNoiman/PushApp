@@ -11,8 +11,8 @@ import {
   type DomainQuestion,
   type InterviewAnswers,
   type QuestionIntent,
-} from '../../DomainExpert';
-import type { GoalInput, PlanConstraints } from '../../types';
+} from '../DomainExpert';
+import type { GoalInput, PlanConstraints } from '../types';
 import {
   AddictionExpert,
   BodyImageExpert,

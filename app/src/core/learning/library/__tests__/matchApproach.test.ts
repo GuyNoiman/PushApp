@@ -7,7 +7,7 @@
  * nothing. These tests pin that the answers now reach the plan, that the user's own choice always
  * outranks the match, and that a profile we know nothing from says so instead of pretending.
  */
-import { chooseRecurringApproach } from '../matchApproach';
+import { chooseRecurringApproach, profileSignals } from '../matchApproach';
 import type { CoachOnboardingSummary } from '../../../onboarding/model';
 
 function profile(over: Partial<CoachOnboardingSummary> = {}): CoachOnboardingSummary {
@@ -85,5 +85,14 @@ describe('choosing an approach from what the user told us about themselves', () 
     });
 
     expect(chooseRecurringApproach(freeTextOnly).signal).toBe('default');
+  });
+
+  it('drops unknown ids at the matching boundary instead of trusting string arrays', () => {
+    const futureOrCorrupt = profile({
+      friction: ['tooMuchAtOnce', 'raw words accidentally placed here'],
+      help: ['clearPlan', 'another unapproved value'],
+    });
+
+    expect(profileSignals(futureOrCorrupt)).toEqual(['tooMuchAtOnce', 'clearPlan']);
   });
 });

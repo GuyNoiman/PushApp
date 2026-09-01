@@ -5,9 +5,9 @@
  * checks each expert plans end-to-end through the domain-ignorant Planner. Fully deterministic
  * — no OS, no async, no randomness, no network.
  */
-import { GeneralExpert, type DomainExpert } from '../../DomainExpert';
-import { planJourney } from '../../Planner';
-import type { GoalInput, PlanConstraints } from '../../types';
+import { GeneralExpert, type DomainExpert } from '../DomainExpert';
+import { planJourney } from '../Planner';
+import type { GoalInput, PlanConstraints } from '../types';
 import {
   AddictionExpert,
   BodyImageExpert,

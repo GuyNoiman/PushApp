@@ -31,7 +31,7 @@
  *
  * Pure TypeScript — no React, no i18n at module level, no clock reads.
  */
-import { CAREER_FAMILIES, CAREER_JOURNEYS } from './career';
+import { CAREER_FAMILIES, CAREER_JOURNEYS } from '../domains/career/journeys';
 import type { GoalFamily } from './goalFamily';
 import type { JourneyDefinition } from './journeyDefinition';
 import type { JourneyShape } from '../types';

@@ -32,9 +32,19 @@
  */
 import type { CoachOnboardingSummary } from '../../onboarding/model';
 import { RECURRING_GENERIC } from './definitions';
-import type { ProfileSignalId } from './journeyDefinition';
 import { selectVariant, type VariantChoice, type VariantContext } from './selectVariant';
 import { DEFAULT_RECURRING_APPROACH, type RecurringApproachId } from './recurringApproaches';
+
+/** Closed ids permitted to cross from onboarding into matching. Free text can never pass this set. */
+export const MATCHING_PROFILE_SIGNAL_IDS = [
+  'lifeBusy', 'excitementFades', 'noClearPlan', 'tooMuchAtOnce', 'hardToSeeProgress',
+  'hardToRestart', 'lackSupport', 'dontKnow', 'clearPlan', 'smallSteps', 'flexibility',
+  'seeProgress', 'remindersEncouragement', 'supportClose', 'clarityFirst', 'actionFirst',
+  'dependsGoal', 'detailedStructure', 'lightStructure', 'firmThenLoose', 'gentleNow',
+  'meaningfulPush', 'hardPush',
+] as const;
+export type MatchingProfileSignalId = (typeof MATCHING_PROFILE_SIGNAL_IDS)[number];
+const MATCHING_PROFILE_SIGNAL_SET = new Set<string>(MATCHING_PROFILE_SIGNAL_IDS);
 
 /** The chosen approach, and the onboarding answer that chose it. */
 export interface ApproachMatch {
@@ -62,7 +72,7 @@ export interface ApproachMatch {
  */
 export function profileSignals(
   profile: CoachOnboardingSummary | null | undefined,
-): ProfileSignalId[] {
+): MatchingProfileSignalId[] {
   if (!profile) return [];
   return [
     ...(profile.friction ?? []),
@@ -70,7 +80,7 @@ export function profileSignals(
     ...(profile.startingMode ? [profile.startingMode] : []),
     ...(profile.structure ? [profile.structure] : []),
     ...(profile.challenge ? [profile.challenge] : []),
-  ];
+  ].filter((id): id is MatchingProfileSignalId => MATCHING_PROFILE_SIGNAL_SET.has(id));
 }
 
 /**

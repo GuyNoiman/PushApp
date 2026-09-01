@@ -14,8 +14,8 @@ import type {
   PlanStructure,
   ProposedMilestone,
   StepTemplate,
-} from '../DomainExpert';
-import type { GoalInput, PlanConstraints } from '../types';
+} from './DomainExpert';
+import type { GoalInput, PlanConstraints } from './types';
 
 /** Clamp a Milestone weight to a Step difficulty (1..5), same rule as {@link GeneralExpert}. */
 export function difficultyFor(weight?: number): number {

@@ -9,15 +9,15 @@
  */
 import i18n from '../../../../../i18n';
 import { setAddressForm } from '../../../../../i18n/addressForm';
-import { buildProcessStructure, validateAuthoredArc } from '../../authoredArc';
-import { journeyQuestionsFor, selectJourney, validateGoalFamily } from '../../goalFamily';
+import { buildProcessStructure, validateAuthoredArc } from '../../../library/authoredArc';
+import { journeyQuestionsFor, selectJourney, validateGoalFamily } from '../../../library/goalFamily';
 import {
   CAREER_NEXT_STEP,
   CAREER_NEXT_STEP_JOURNEYS,
   NEXT_STEP_ACTION_FIRST,
   NEXT_STEP_CLARITY_FIRST,
   NEXT_STEP_HYBRID,
-} from '../nextStep';
+} from '../journeys/nextStep';
 
 const known = (id: string) => CAREER_NEXT_STEP_JOURNEYS.find((j) => j.id === id);
 const arcOf = (definitionId: string) => {

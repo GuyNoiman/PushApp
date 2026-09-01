@@ -9,11 +9,11 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import { GeneralExpert, type DomainExpert } from '../DomainExpert';
-import { AddictionExpert } from './AddictionExpert';
-import { BodyImageExpert } from './BodyImageExpert';
-import { CareerExpert } from './CareerExpert';
-import { RelationshipsExpert } from './RelationshipsExpert';
+import { GeneralExpert, type DomainExpert } from './DomainExpert';
+import { AddictionExpert } from './domains/addiction';
+import { BodyImageExpert } from './domains/bodyImage';
+import { CareerExpert } from './domains/career';
+import { RelationshipsExpert } from './domains/relationships';
 
 /** The stable id of every domain PushApp has an expert for. Reused by SX.2's GoalSpec. */
 export type DomainId = 'addiction' | 'relationships' | 'body_image' | 'career' | 'general';

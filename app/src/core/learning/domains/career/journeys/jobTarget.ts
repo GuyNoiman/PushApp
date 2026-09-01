@@ -21,10 +21,10 @@
  *
  * Pure TypeScript — no React, no i18n at module level, no clock reads.
  */
-import type { AuthoredArc } from '../authoredArc';
-import type { GoalFamily } from '../goalFamily';
-import type { JourneyDefinition } from '../journeyDefinition';
-import { processJourney } from '../processJourney';
+import type { AuthoredArc } from '../../../library/authoredArc';
+import type { GoalFamily } from '../../../library/goalFamily';
+import type { JourneyDefinition } from '../../../library/journeyDefinition';
+import { processJourney } from '../../../library/processJourney';
 
 const K = 'career.jobTarget';
 

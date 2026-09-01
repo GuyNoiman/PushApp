@@ -5,7 +5,7 @@
  */
 export * from './types';
 export * from './DomainExpert';
-export * from './experts';
+export * from './domains';
 export * from './Planner';
 export * from './AdaptivePlanner';
 export * from './applyReplan';

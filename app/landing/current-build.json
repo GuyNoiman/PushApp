@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-09-01T13:27:16.765Z",
+  "platforms": {
+    "android": {
+      "runtimeVersion": "ad3ed4b68b3b71b492aa50a3ea8c1b3fbec69aa0",
+      "appVersion": "1.0.0",
+      "buildNumber": "2",
+      "builtAt": "2026-08-28T17:29:35.078Z",
+      "installUrl": "https://expo.dev/artifacts/eas/DbSwh7mo5a1cybqDthDMQ841NXu8ggkKjuBR8AkbddY.apk",
+      "installPage": "https://pushapp-invite.expo.app"
+    },
+    "ios": {
+      "runtimeVersion": "8634cdf5f948ae44696ecdf113b66f587d06022b",
+      "appVersion": "1.0.0",
+      "buildNumber": "9",
+      "builtAt": "2026-08-28T17:03:54.574Z",
+      "installUrl": "https://testflight.apple.com",
+      "installPage": "https://pushapp-invite.expo.app"
+    }
+  }
+}

@@ -43,5 +43,11 @@
     "inbox": "Inbox",
     "settings": "Settings",
     "tools": "Tools"
+  },
+  "updateAvailable": {
+    "title": "A newer version is available",
+    "body": "The version installed here no longer receives updates. It has to be installed again to see what has changed.",
+    "cta": "How to install",
+    "dismiss": "Not now"
   }
 }

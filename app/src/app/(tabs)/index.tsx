@@ -50,6 +50,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { TabScrollView } from '@/components/ui/TabScrollView';
+import { UpdateAvailableBanner } from '@/components/home/UpdateAvailableBanner';
 import { displayFont, displayScale } from '@/constants/displayFont';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { TodayStep } from '@/core/engines/JourneyEngine';
@@ -600,6 +601,12 @@ export default function HomeScreen() {
         {/* Tapping the Home tab while already on Home returns this (the app's longest) scroll to
             the top — the standard iOS gesture, owned by TabScrollView so it cannot be half-wired. */}
         <TabScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* ── A build that can no longer receive updates ──
+              Above everything, because from the device being cut off looks exactly like being up to
+              date, and a tester spent three days on the wrong side of that. It renders nothing
+              unless the answer is definite, and it can be dismissed. */}
+          <UpdateAvailableBanner />
+
           {/* ── Greeting ── */}
           <View style={styles.header}>
             {/* A monogram, not a photo: profile photos are Phase 2 (ProfileProvider), and a grey

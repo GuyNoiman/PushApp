@@ -1,7 +1,7 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-08-29** — start at the **"⛳ START HERE — 2026-08-29"** block, which supersedes
+Last updated: **2026-09-01** — start at the **"⛳ START HERE — 2026-09-01"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
@@ -37,8 +37,108 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 > stays the handoff: where to start today, and what happened last session.
 
 ## How to resume
-Read `AI_Start_Here.md` → this file → **the three documents in "START HERE" immediately below** → the
+Read `AI_Start_Here.md` → this file → **the documents in "START HERE" immediately below** → the
 memory index. Then pick up at "▶ NEXT". Do NOT re-read the whole repo.
+
+---
+
+# ⛳ START HERE — 2026-09-01: read the Backlog, not this, for what is left
+
+On `feat/buddy-3d-and-reminders`, committed, **not pushed**. `tsc` clean, **jest 2816 / 263 suites**.
+Detail: `00_Foundation/CHANGELOG.md` (2026-08-29 → 09-01). Blocks below are accurate history.
+
+## ▶ FIRST: WHAT IS LEFT LIVES IN `04_Product/Backlog.md`
+
+Single list since 2026-08-29, every row carrying code truth rather than a status word. This file is
+the handoff — where to start today — and no longer tries to be the list.
+
+## ▶ TWO SESSIONS ARE WORKING THIS REPO
+
+Codex is building onboarding v3 (`04_Product/Partner_Onboarding_Spec_v3_2026-08-30.md`). As of
+2026-09-01 it has ~570 uncommitted lines across 22 files, including `core/onboarding/*`,
+`coach/interviewPlaybook.ts`, `coach/sensitiveDomains.ts` and the onboarding i18n.
+
+**Check `git status` before touching anything in `src/app/`, `src/core/coach/` or
+`src/core/onboarding/`.** Two collisions happened on 2026-08-31 — both recoverable, both avoidable.
+Safe territory while that is in flight: `console/`, `creator/`, `supabase/migrations/`, `tools/`,
+`core/kpi`, `core/outcomes`, `core/update`, and the docs.
+
+## ▶ WAITING ON THE FOUNDER
+
+1. **Install the new Android build on the partner's phone.** The APK is linked in the Backlog and in
+   `landing/INSTALL_NOTE.md`. The step that stops people is Play Protect: its big button CANCELS;
+   the way through is "install anyway" behind "More details". Everything published since 28 August
+   evening is on a runtime his current build cannot reach.
+2. **Redirect URLs in Supabase** — Authentication → URL Configuration → Redirect URLs:
+   `https://pushapp-invite--ops.expo.app`, `https://pushapp-invite--studio.expo.app`, and both with
+   `/**`. Without them, Google sign-in returns without a session on both web surfaces.
+3. **One SQL line to become super admin** — the console shows roles under Settings; if `super_admin`
+   is missing, the statement is in `0014_user_administration.sql`'s last section.
+4. **The relationships expert is BLOCKED on a safety decision.** `relationships` is in
+   `SENSITIVE_DOMAINS`, so the coach refuses to interview or plan for it. The partner's new spec
+   builds the gate (`relationships.scope`, `professional_referral`, `safety_override`, routing rule
+   7). Removing the domain from that set is a founder decision and has not been made.
+
+## ▶ THE NEXT WORK, in order
+
+1. **`O-22` Play Console internal testing** — approved, unstarted, and it removes the distribution
+   problem that has cost the most time this week.
+2. **`X-02` the feedback ask at a Journey ending** — the outcome spine records every ending; nothing
+   asks the felt half, so every row is half empty until this exists.
+3. **`X-03` intended depth at Journey start** — one question, and it is what makes adherence
+   computable at all.
+4. **`M-03` the five Journey types** — `Rhythm` has three values and the MVP names five. An
+   avoidance Journey cannot be expressed today.
+5. **`B-01` the routine Dream (D89)** — blocked on the same model gap: "every two weeks" is not
+   expressible.
+6. **`D-01`/`D-02`** — two small defects the Career fix introduced; both in files Codex is editing.
+
+## ▶ WHAT IS LIVE
+
+| | |
+|---|---|
+| Operations console | https://pushapp-invite--ops.expo.app |
+| Journey Studio | https://pushapp-invite--studio.expo.app |
+| Invitation + installer + build manifest | https://pushapp-invite.expo.app |
+| Builds | iOS `9965027c` (TestFlight, build 9) · Android `0fbde76b` (APK) |
+| Migrations applied | through 0016 |
+
+---
+
+# ⛳ START HERE — 2026-08-31: Coach-led onboarding UX and permanent meta-agent behavior
+
+Founder-approved conversational behavior is now recorded in all three required layers:
+
+1. the permanent content source at
+   `10_Partner_Coaching_Content/Master_Specs_Original/15_Meta_Coach_Master_Spec.md`;
+2. the active runtime prompt at `app/src/core/coach/coachPrompts.ts`, protected by a focused test;
+3. the product/UX contracts at `04_Product/Partner_Onboarding_Spec_v3_2026-08-30.md` and
+   `04_Product/PRD/Onboarding_Coach_Led_UX_PRD.md`.
+
+The UX PRD is screen-exact: post-auth language, full Personal Information review, three required
+brand screens, quiet-time preparation, dedicated resumable Coach session, correctable reflection,
+starting-point summary, explicit Journey and first Step approval, conditional Support Circle and
+reminder offers, populated Home, and post-value memory consent. Light/dark, RTL/LTR, accessibility,
+offline, retry, safety and idempotent resume are all specified. The old implemented questionnaire
+PRD in `PRD/Done` was not changed.
+
+**Implementation started:** the persisted first-run route now contains language, Personal
+Information, the three required brand screens and the conversation-preparation screen in Hebrew and
+English. It no longer marks onboarding complete before the Coach opens; completion now happens only
+after the first real Journey is created. Closing mid-conversation
+therefore returns to a safe preparation point instead of opening an empty Home.
+
+**What remains:** the Coach session itself still needs persisted turn checkpoints, explicit
+reflection/correction, a typed starting-point summary, idempotent first-Journey activation and the
+conditional Support Circle screen. The current Journey proposal/build surface covers the basic
+recommendation and approval path, but it is not the complete dynamic conversation contract.
+
+Focused Coach voice tests: **4 / 4 passing**.
+
+## ▶ NEXT
+
+Render and approve the implemented introduction screens, then implement persisted Coach checkpoints,
+reflection/correction and atomic first-Journey activation.
 
 ---
 

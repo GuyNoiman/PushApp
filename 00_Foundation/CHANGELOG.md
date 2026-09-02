@@ -5,6 +5,32 @@ list, from 2026-08-29).
 
 ---
 
+# 2026-08-31 — Coach-led onboarding received a complete UX and voice contract
+
+The permanent meta-agent specification and active Coach prompt now require personal but sparse name
+use, the user's own vocabulary, accurate empathy, meaningful reflection, one useful layer of depth,
+one question at a time and conversation-led rather than field-led progression. A focused regression
+test protects those prompt commitments.
+
+`04_Product/PRD/Onboarding_Coach_Led_UX_PRD.md` now defines the complete first-run experience from
+post-auth language selection through profile review, three brand screens, preparation, the dedicated
+Coach conversation, correctable reflection, starting-point summary, first Step approval, optional
+support/reminders, populated Home and post-value memory consent. It includes idempotent resume,
+offline/error/safety/no-match behavior, privacy, accessibility, light/dark and RTL/LTR requirements.
+The immutable completed questionnaire PRD was not edited.
+
+Coach voice test: **4 / 4 passing**.
+
+The first implementation slice is also live in the app: the pre-conversation route now includes all
+three product-introduction screens with temporary icon artwork and localized copy. Progress persists
+between screens. The previous early-completion shortcut was removed, so opening the first Coach
+conversation no longer unlocks an empty Home; completion is recorded only after a real Journey was
+created. The optional reminder follows without gating Home, while the memory offer is deliberately
+deferred to the later post-value phase. Focused onboarding tests: **36 / 36 passing**; TypeScript and
+whitespace checks are clean.
+
+---
+
 # 2026-08-29 — Journey Studio gained safe metadata-draft creation
 
 The existing Creator Journey Studio foundation now has two clear work areas: **My Journeys** and
@@ -23,6 +49,84 @@ analytics functions. The migration is created but has not been applied, and the 
 been deployed.
 
 Creator model tests: **19 / 19 passing**.
+
+---
+
+# 2026-08-29 → 09-01 — two people looking at different builds, and the machinery to stop it
+
+`tsc` clean · **jest 2816 / 263 suites**. Decisions: D91, D92. Migrations 0014–0016 applied.
+The 2026-08-28 entries below are accurate history of that day.
+
+## The thread running through three days
+
+Almost every problem in this stretch was one problem wearing different clothes: **the founder and
+the partner were looking at different copies of the app and did not know it.**
+
+It produced bug reports about things fixed twice. It produced a username bug reported three times.
+It produced three days of a tester on a build from a week earlier. Each was investigated as its own
+defect, and each turned out to be a symptom.
+
+## The username bug came back because there were three of it
+
+Reported three times, fixed twice, and both fixes were correct. The same logic lived in three
+screens — `settings/profile.tsx`, `ProfileIdentity.tsx`, `onboarding.tsx` — and each fix reached one
+of them. Every copy had the same shape: `void social.setHandle(next)` beside an optimistic local
+write, so a refused save rendered as a saved one and reverted on the next launch.
+
+`setHandle` now returns a result that cannot be ignored by accident, and waits for the anonymous
+session rather than failing on it — which is the half specific to onboarding, where somebody can
+genuinely arrive before the session resolves. The guard test reads the source of every screen that
+calls it and fails on a fourth editor, on a voided result, or on a local write placed before the
+save. **That guard is the actual fix**; the other two were the actual bug fixed in one place.
+
+## A build that can no longer receive updates now says so
+
+An over-the-air update reaches only installations built for its runtime. A phone whose runtime has
+moved on is cut off permanently, and from the device that is indistinguishable from being up to
+date — both are "no update available". `publish-ota.mjs` protected us from publishing into a void;
+nothing protected the person holding the phone.
+
+An update cannot tell them. A network request can. `current-build.json` sits on the public site that
+already hosts the installer, the app compares its own runtime, and a banner on Home says so. Every
+failure — no network, bad manifest, unknown platform — resolves to silence, because a notice like
+this only has to be wrong once before nobody believes it again.
+
+The console gained the other half: `runtime_installs` reports what is actually installed, grouped by
+runtime, so an operator can see a stranded group instead of finding it in a screenshot.
+
+## And the distribution path itself is the root cause
+
+The partner filmed his install attempt. The download worked. **Google Play Protect** stopped him —
+its prominent full-width button CANCELS, and the way through is an unstyled line of text behind
+"More details". The install note covered Android's unknown-source warning and said nothing about the
+screen that actually ends the attempt. Both language versions now walk it.
+
+The real fix is Play Console internal testing (`O-22`), which removes both dialogs entirely.
+
+## What else shipped
+
+**The operations console** gained a Users tab and working KPIs. `super_admin` could not simply be
+added as a role — `has_admin_role` answers true for every role when the caller holds `owner`, so a
+new role would have silently promoted every existing admin. `is_super_admin()` has no such shortcut.
+The console also **asked for a password nobody has**: every account signs in with Apple or Google.
+It now leads with Google, like the studio.
+
+**Journey outcome evidence** (0015) records every ending, so the future matching engine has
+something to learn from. Three separate outcomes, never one blended score — a Journey somebody loved
+and abandoned and one they finished and got nothing from must stay tellable apart.
+
+**The coach's character became its own file.** What the coach permanently IS now lives apart from
+what any flow asks it to DO, because the two decay at different rates and sharing a paragraph means
+editing the onboarding quietly edits the coach.
+
+**One folder per domain.** `domains/career/`, `domains/relationships/`, and so on, each with the
+same shape, so "what do we have for X" is one place rather than two.
+
+## The other lesson, said plainly
+
+Two sessions worked the same files on the same day, twice. Nothing was lost — both times the other
+session's work was better in some respect and was kept — but it cost review time that a five-minute
+handover would not have. Territory is worth agreeing before the work, not after.
 
 ---
 

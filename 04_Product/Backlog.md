@@ -1,7 +1,7 @@
 # Backlog — the one list
 
 Status: **The single source for what is done and what is not.** Approved 2026-08-29.
-Last updated: **2026-08-30**.
+Last updated: **2026-09-02**.
 
 ## Why this file exists, and what it replaces
 
@@ -98,6 +98,7 @@ is unactionable and would sit at Half forever. Ordered by what unblocks what.
 | O-04 | Journey outcome evidence | Built | Migration 0015 + `core/outcomes`. Every ending records automatically; **nothing asks the felt half yet** — that survey is the next piece |
 | O-05 | `app_versions` registry is never written | **Closed differently** | Superseded by `runtime_installs` (0016): the app reports what is INSTALLED, which answers the question the registry was wanted for. The release registry stays empty and unused |
 | O-21 | A build that cannot receive updates says so | **Shipped** | `current-build.json` on the public install site + a Home banner. Protects from the next install onward; it cannot reach a phone that predates it |
+| O-23 | Health tab headline | **Half, honestly** | The denominator exists now (installations report themselves); the numerator needs a blocking-failure stream that nothing produces |
 | O-22 | **Play Console internal testing** | **Next, high** | Testers install a raw APK today, which means Android's unknown-source warning AND Play Protect — whose prominent button cancels. It stopped the partner cold on 2026-08-31. Internal testing removes both, is free, and Play Console is needed for the store regardless |
 | O-06 | MFA is answered but not enforced | Gap | The studio completes a TOTP challenge when a factor exists; nothing requires one. §10 asks for MFA before production access |
 | O-07 | A permanent subdomain for the two web surfaces | Open | Both live on `pushapp-invite--<alias>` aliases. Moving either is one command |
@@ -127,10 +128,31 @@ is unactionable and would sit at Half forever. Ordered by what unblocks what.
 | ID | Item | Status | Code truth |
 |---|---|---|---|
 | X-01 | Outcome evidence collection | Built | See O-04 |
-| X-02 | The feedback ask at an ending | **Next** | The taxonomy and the row exist; no screen asks. Until it does, every row's felt half is null |
+| X-02 | The feedback ask at an ending | **Half** | Model, storage, latch and tests shipped 2026-09-02 (`core/outcomes/askModel.ts`, `AppCore.getPendingOutcomeAsk`). **The sheet that renders it is not built** — until it is, nothing asks |
 | X-03 | `intended_depth` at Journey start | **Next** | The column exists and nothing writes it, so adherence is uncomputable by design rather than by accident |
 | X-04 | Aggregate read functions | Open | Deliberate: nothing should read this until there is something to read |
 | X-05 | The engine itself | Open | Future/Commercial. Do not build before X-02 and X-03 have produced data |
+
+## 7a. Needs specification before it can be built
+
+The founder asked (2026-09-02) for everything still open that requires a spec rather than a
+decision. These are the items where "start building" is not yet a sensible instruction — each says
+what specifically is undecided, so the gap is answerable rather than vague.
+
+| ID | Item | What is undecided |
+|---|---|---|
+| **S-10** | **The five Journey types** (`M-03`) | `Rhythm` has three values; the MVP names five. Nobody has defined what an AVOIDANCE Journey is as an object: what a Step is when success means *not* doing something, what "done" means on a day nothing happened, whether a lapse is a miss or a report, and how completion is judged. Same question for critical-compliance and hybrid. This is a product model decision, not a schema one, and it blocks a whole class of domains |
+| **S-11** | **Interval rhythms** (`N-03`, blocks `B-01`) | "Every two weeks" is not expressible. Deciding it means deciding whether `Rhythm` becomes an interval type, what that does to existing Journeys, and what the coach asks to establish it |
+| **S-12** | **The routine Dream and its short path** (D89) | Decided in principle and carries its own open tension, written in D89: every Journey must end, and a routine by definition does not. That contradiction has no resolution yet |
+| **S-13** | **Creator: the structure builder** (`C-03`) | The largest open design in the Creator PRD. Milestones, Steps, dependencies, release rules, rich Step types. `journey_templates` deliberately has no structure column so nothing is guessed at |
+| **S-14** | **Creator: publishing and review** (`C-04`) | Who reviews a Journey before it reaches anybody, against what, and what happens to participants when a published Journey is edited or withdrawn |
+| **S-15** | **Adoption: what happens when somebody takes a creator's Journey** (`C-05`) | Nothing enrols anybody today. Needs: what is copied vs referenced, what the participant may change, what the creator sees, and what happens when the template moves on |
+| **S-16** | **The matching engine's v1 scoring** (`X-05`) | Its own PRD says it is not implementation-ready. The next analysis is named in that document's §19; nothing should be built before X-02's sheet has produced data |
+| **S-17** | **KPI: "Journeys moving forward"** | Needs a periodic snapshot of which Journeys were ELIGIBLE in a period — an event shape nobody has designed. Three more §7.3 KPIs are blocked behind similar gaps |
+| **S-18** | **Parked goals: label, cap, activation** (`B-06`) | D44 lists the three open questions verbatim and none is answered |
+| **S-19** | **Weekly Review contributions** (`B-05`) | The trust boundary, priority and conflict rules for an expert contributing a per-Journey block |
+| **S-20** | **Relationships: the safety gate** | Not a spec gap — a DECISION gap. `relationships` sits in `SENSITIVE_DOMAINS`, so the coach refuses to plan for it. The partner's spec builds the gate; removing the domain from that set is the founder's call and has not been made. **This is the single thing blocking a finished expert from shipping** |
+| **S-21** | **Onboarding v3 P0 defects** | Specified in detail (`Partner_Onboarding_Corrections_2026-09-02.md` §22). Not a spec gap; listed here so it is not lost. Codex is mid-build |
 
 ## 8. Known small defects
 

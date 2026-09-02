@@ -12,9 +12,8 @@ export const SERVICES = Object.freeze([
   {
     id: 'app',
     name: 'Mobile application',
-    signal: null,
-    metric: 'Installations without a blocking failure (24h)',
-    blockedBy: 'Needs crash data. Sentry is wired; §6.2 also needs an install count, which nothing reports yet.',
+    signal: 'installs',
+    metric: 'Installations reporting in, and which build they are on',
   },
   {
     id: 'db',

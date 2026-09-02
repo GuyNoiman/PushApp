@@ -7,6 +7,7 @@
  * So the headline says that, in those words, instead of showing 100%.
  */
 import { el, clear, dl, when, bytes } from '../dom.js';
+import { readInstalls } from '../installs-model.js';
 import { SERVICES } from '../registry.js';
 import { evaluateAll } from '../health.js';
 import { STATE } from '../status.js';
@@ -19,7 +20,7 @@ export async function renderHealth(root, ctx) {
 
   clear(root);
   root.append(banner(overall));
-  root.append(headline());
+  root.append(headline(probes.installs?.total ?? null));
   root.append(el('h2', { text: 'Services' }));
   root.append(el('div', { class: 'grid' }, cards.map(serviceCard)));
   root.append(await issues(ctx));
@@ -40,17 +41,28 @@ function banner(overall) {
  * that requirement to prevent — so the card carries the requirement and what it
  * is waiting for, and no number at all.
  */
-function headline() {
+function headline(installs) {
+  // §6.2 asks for a percentage with its numerator and denominator beside it.
+  // The DENOMINATOR now exists — installations report themselves — and the
+  // numerator does not, because nothing turns "an error happened" into "this
+  // installation was blocked". Showing the half we have, and naming the half we
+  // do not, is more useful than a gray card that says nothing: it tells whoever
+  // reads it exactly which piece to go and build.
   return el('section', { class: 'card' }, [
     el('h3', { text: 'Installations without a blocking failure (24h)' }),
-    el('p', { class: 'verdict' }, [el('span', { class: 'dot gray' }), 'Not measurable yet']),
+    el('p', { class: 'verdict' }, [
+      el('span', { class: `dot ${installs === null ? 'gray' : 'yellow'}` }),
+      installs === null ? 'Not measurable yet' : 'Half measurable',
+    ]),
     el('p', {
       class: 'muted',
       text:
-        'Needs two things that do not exist yet: a count of active installations, and a blocking-failure ' +
-        'stream. Sentry now reports errors, but nothing yet turns "an error happened" into "this ' +
-        'installation was blocked", and §6.2 requires the numerator and denominator to be shown beside ' +
-        'the percentage — which is why there is no percentage here.',
+        installs === null
+          ? 'Needs a count of active installations and a blocking-failure stream. Neither reports yet.'
+          : `${installs} installation${installs === 1 ? '' : 's'} are reporting in — that is the ` +
+            'denominator. There is still no numerator: Sentry reports errors, and nothing yet turns ' +
+            '"an error happened" into "this installation was blocked". §6.2 requires both beside the ' +
+            'percentage, which is why there is no percentage here.',
     }),
   ]);
 }
@@ -133,6 +145,28 @@ async function runProbes(ctx) {
       : undefined;
   } catch {
     probes.updates = undefined;
+  }
+
+  try {
+    const rows = await ctx.api.rpc('installed_runtimes');
+    const groups = readInstalls(rows);
+    const total = groups.reduce((sum, g) => sum + g.installs, 0);
+    const stranded = groups.reduce((sum, g) => sum + g.strandedInstalls, 0);
+    probes.installs = groups.length
+      ? {
+          ok: true,
+          at: new Date().toISOString(),
+          total,
+          // A stranded installation is a real, actionable problem rather than a
+          // quiet one: it cannot receive anything we publish.
+          issues: stranded ? [{ severity: 'high' }] : [],
+          detail: stranded
+            ? `${total} reporting · ${stranded} cannot receive updates — see Versions`
+            : `${total} reporting, all on a current runtime`,
+        }
+      : undefined;
+  } catch {
+    probes.installs = undefined;
   }
 
   try {

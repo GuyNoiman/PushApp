@@ -109,38 +109,24 @@ async function tap(r: TestRoot, label: string) {
 
 beforeEach(() => mockReplace.mockClear());
 
-describe('Onboarding — the hand-off at the welcome (B1, revised by v2)', () => {
-  it('opens the conversation the welcome just promised', async () => {
+describe('Onboarding — the hand-off at the conversation preparation', () => {
+  it('opens the conversation without completing onboarding early', async () => {
     const core = setApp();
     const r = await render();
 
     await tap(r, 'intro.start');
 
-    // The gate closes FIRST, and that is what makes the coach route reachable at all — until
-    // onboarding is complete, `/coach` sits behind the first-run guard.
-    expect(core.completeOnboarding).toHaveBeenCalled();
+    expect(core.saveOnboardingProgress).toHaveBeenCalledWith(
+      'intro',
+      expect.objectContaining({ selections: {}, freeText: {}, skipped: [] }),
+    );
+    expect(core.completeOnboarding).not.toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith('/coach?firstRun=1');
   });
 
-  it('"maybe later" opens the app, and invents nothing', async () => {
-    const core = setApp();
+  it('the primary action always has a reachable destination', async () => {
     const r = await render();
-
-    await tap(r, 'intro.later');
-
-    expect(core.completeOnboarding).toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledWith('/');
-    // Non-punitive: no answers are fabricated on the way out, and the coach is one tap away on Home.
-    expect(core.completeOnboarding.mock.calls[0][0].skipped ?? []).toEqual([]);
-  });
-
-  it('never leaves somebody nowhere — every exit navigates', async () => {
-    for (const label of ['intro.start', 'intro.later']) {
-      mockReplace.mockClear();
-      setApp();
-      const r = await render();
-      await tap(r, label);
-      expect(mockReplace).toHaveBeenCalledTimes(1);
-    }
+    await tap(r, 'intro.start');
+    expect(mockReplace).toHaveBeenCalledTimes(1);
   });
 });

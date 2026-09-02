@@ -74,13 +74,20 @@ describe('onboarding config (PRD §6)', () => {
     expect(questionNumber('completion')).toBe(0);
   });
 
-  it('is THREE pages now, and each one earns its place (Onboarding v2, 2026-08-27)', () => {
+  it('includes the complete pre-conversation introduction (Onboarding v3, 2026-08-31)', () => {
     // The fixed nine-question sequence stopped being a gate in front of the coach: the coach IS the
     // onboarding. Language decides the whole UI and its direction, the profile is the little that is
     // genuinely needed at first run, and the welcome sets the expectation of a conversation.
-    expect([...ONBOARDING_STEP_ORDER]).toEqual(['language', 'personalInfo', 'intro']);
+    expect([...ONBOARDING_STEP_ORDER]).toEqual([
+      'language',
+      'personalInfo',
+      'promise',
+      'personalization',
+      'supportIntro',
+      'intro',
+    ]);
     expect(nextStep('intro')).toBe('intro'); // terminal — the hand-off to the coach is the screen's
-    expect(prevStep('intro')).toBe('personalInfo');
+    expect(prevStep('intro')).toBe('supportIntro');
   });
 
   it('did not DELETE the nine questions — they are still configured and still reachable', () => {

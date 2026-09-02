@@ -209,10 +209,10 @@ export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
  * session**, so the questionnaire stops being a gate in front of the coach and the coach becomes
  * the onboarding.
  *
- * Three pages remain here, and each earns its place: **language** decides the whole UI, its
- * direction and the coach's language, so nothing can be rendered before it; **personalInfo** is the
- * little that is genuinely needed at first run (the rest stays editable in Settings); and the
- * **welcome** sets the expectation that what follows is a short conversation rather than a form.
+ * The fixed introduction remains short: **language** decides the whole UI and direction;
+ * **personalInfo** is the little genuinely needed at first run; three lightweight product screens
+ * establish the promise, adaptation model and sharing control; and **intro** prepares the person
+ * for a short conversation rather than a form.
  *
  * ── WHERE EVERYTHING ELSE WENT ─────────────────────────────────────────────────────────────────
  *
@@ -225,7 +225,14 @@ export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
  * is the whole point of both: consent to a coach remembering things is easier to mean once somebody
  * has met it, and a reminder is easier to want once there is something to be reminded about.
  */
-export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = ['language', 'personalInfo', 'intro'];
+export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
+  'language',
+  'personalInfo',
+  'promise',
+  'personalization',
+  'supportIntro',
+  'intro',
+];
 
 /**
  * The steps that are no longer part of the first-run sequence but are still real pages: the nine

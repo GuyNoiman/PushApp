@@ -1,6 +1,7 @@
 /**
  * Onboarding — the first-run flow (K2, Onboarding_Questionnaire_PRD). ONE route, and since v2 phase 1
- * (2026-08-27) it is THREE steps: language → Personal Information → welcome. Then the conversation,
+ * (2026-08-31) it is a short introduction: language → Personal Information → three product
+ * principles → conversation preparation. Then the conversation,
  * because the conversation IS the onboarding.
  *
  * The nine questions are RETIRED from the first run — see `ONBOARDING_STEP_ORDER` and
@@ -88,17 +89,14 @@ export default function OnboardingScreen() {
    * and it ends by creating a Journey, so Home has something in it when they arrive. The objection
    * is answered rather than overruled.
    */
-  const finish = useCallback(
-    ({ toCoach }: { toCoach: boolean }) => {
-      core.completeOnboarding(answers);
-      // Deferred until the gate flips (onboarding done → main stack available), so the route is
-      // reachable rather than being redirected back into the now-removed onboarding group.
-      requestAnimationFrame(() =>
-        router.replace(toCoach ? ('/coach?firstRun=1' as Href) : '/'),
-      );
-    },
-    [answers, core],
-  );
+  const startConversation = useCallback(() => {
+    // Do NOT complete onboarding here. The root Coach route is deliberately reachable while the
+    // first-run gate is still closed; completion happens only after a real Journey was created.
+    // If the app closes during the conversation, the persisted preparation page is a safe resume
+    // point and the person can start the conversation again rather than landing on an empty Home.
+    core.saveOnboardingProgress('intro', answers);
+    requestAnimationFrame(() => router.replace('/coach?firstRun=1' as Href));
+  }, [answers, core]);
 
   // ── Render the current page ──────────────────────────────────────────────────
   if (step === 'language') {
@@ -107,24 +105,59 @@ export default function OnboardingScreen() {
 
   if (step === 'personalInfo') {
     return (
-      <PersonalInfoStep onBack={() => go('language')} onContinue={() => go('intro')} />
+      <PersonalInfoStep onBack={() => go('language')} onContinue={() => go('promise')} />
+    );
+  }
+
+  if (step === 'promise') {
+    return (
+      <ProductIntroStep
+        page="promise"
+        icon="trail-sign-outline"
+        progress={1}
+        onBack={() => go('personalInfo')}
+        onContinue={() => go('personalization')}
+      />
+    );
+  }
+
+  if (step === 'personalization') {
+    return (
+      <ProductIntroStep
+        page="personalization"
+        icon="sparkles-outline"
+        progress={2}
+        onBack={() => go('promise')}
+        onContinue={() => go('supportIntro')}
+      />
+    );
+  }
+
+  if (step === 'supportIntro') {
+    return (
+      <ProductIntroStep
+        page="support"
+        icon="people-outline"
+        progress={3}
+        onBack={() => go('personalization')}
+        onContinue={() => go('intro')}
+      />
     );
   }
 
   if (step === 'intro') {
     return (
       <IntroStep
-        onBack={() => go('personalInfo')}
-        onStart={() => finish({ toCoach: true })}
-        onLater={() => finish({ toCoach: false })}
+        onBack={() => go('supportIntro')}
+        onStart={startConversation}
       />
     );
   }
 
-  // The flow is three pages now (Onboarding v2). Anything else a persisted resume point could name
-  // is resolved to the welcome by `resolveResumeStep` before it reaches here, so this is unreachable
-  // in practice — it exists so the component always returns an element rather than trusting that.
-  return <IntroStep onBack={() => go('personalInfo')} onStart={() => finish({ toCoach: true })} onLater={() => finish({ toCoach: false })} />;
+  // Anything else a persisted resume point could name is resolved to the preparation screen by
+  // `resolveResumeStep` before it reaches here, so this is unreachable in practice — it exists so
+  // the component always returns an element rather than trusting that.
+  return <IntroStep onBack={() => go('supportIntro')} onStart={startConversation} />;
 }
 
 // ── Step bodies (presentational; flow-specific, co-located like coach.tsx) ──────
@@ -300,33 +333,66 @@ function PersonalInfoStep({ onBack, onContinue }: { onBack: () => void; onContin
   );
 }
 
-/** §5 — questionnaire intro: Start / Maybe later (Maybe later skips the whole questionnaire). */
 /**
  * The WELCOME (Onboarding v2 §4 Step B). Its whole job is to set the expectation that what comes
  * next is a short conversation rather than a form — because what comes next used to be nine
  * questions and now is the coach.
- *
- * "Maybe later" is a real answer and must stay non-punitive: it opens the app, invents no answers,
- * and leaves the coach exactly one tap away on Home.
  */
+function ProductIntroStep({
+  page,
+  icon,
+  progress,
+  onBack,
+  onContinue,
+}: {
+  page: 'promise' | 'personalization' | 'support';
+  icon: keyof typeof Ionicons.glyphMap;
+  progress: 1 | 2 | 3;
+  onBack: () => void;
+  onContinue: () => void;
+}) {
+  const { t } = useTranslation('onboarding');
+  const theme = useTheme();
+  return (
+    <OnboardingScaffold
+      onBack={onBack}
+      footer={<OnboardingPrimaryButton label={t('brand.continue')} onPress={onContinue} />}>
+      <View style={styles.progressDots} accessibilityLabel={t('brand.progress', { current: progress, total: 3 })}>
+        {[1, 2, 3].map((dot) => (
+          <View
+            key={dot}
+            style={[
+              styles.progressDot,
+              { backgroundColor: dot <= progress ? theme.teal : theme.hairline },
+              dot === progress && styles.progressDotCurrent,
+            ]}
+          />
+        ))}
+      </View>
+      <View style={[styles.introArt, { backgroundColor: theme.backgroundElement }]}>
+        <Ionicons name={icon} size={58} color={theme.teal} />
+      </View>
+      <ThemedText type="title">{t(`brand.${page}.title`)}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t(`brand.${page}.body`)}
+      </ThemedText>
+    </OnboardingScaffold>
+  );
+}
+
 function IntroStep({
   onBack,
   onStart,
-  onLater,
 }: {
   onBack: () => void;
   onStart: () => void;
-  onLater: () => void;
 }) {
   const { t } = useTranslation('onboarding');
   return (
     <OnboardingScaffold
       onBack={onBack}
       footer={
-        <>
-          <OnboardingPrimaryButton label={t('intro.start')} onPress={onStart} />
-          <OnboardingSecondaryButton label={t('intro.later')} onPress={onLater} />
-        </>
+        <OnboardingPrimaryButton label={t('intro.start')} onPress={onStart} />
       }>
       <ThemedText type="title">{t('intro.title')}</ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
@@ -367,4 +433,14 @@ const styles = StyleSheet.create({
   langDivider: { position: 'absolute', start: Spacing.three, end: 0, bottom: 0, height: 1 },
   section: { borderRadius: Radius.card, overflow: 'hidden', gap: 0 },
   pressed: { opacity: 0.6 },
+  progressDots: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
+  progressDot: { width: 8, height: 8, borderRadius: 4 },
+  progressDotCurrent: { width: 22 },
+  introArt: {
+    minHeight: 150,
+    borderRadius: Radius.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.two,
+  },
 });

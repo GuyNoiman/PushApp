@@ -23,6 +23,22 @@
       "weekStart": "Week starts on"
     }
   },
+  "brand": {
+    "continue": "Continue",
+    "progress": "Introduction {{current}} of {{total}}",
+    "promise": {
+      "title": "More of what matters to you. More of you.",
+      "body": "Change is easier when the next move is clear. We help turn what matters to you into Steps you can actually move with."
+    },
+    "personalization": {
+      "title": "You do not need to know the whole way yet.",
+      "body": "We begin with what is happening now, learn together, and adapt the way forward—with your approval—to fit real life."
+    },
+    "support": {
+      "title": "You do not have to do it alone.",
+      "body": "When it helps, you can invite someone you trust to support a Journey. You always choose who joins and what they can see."
+    }
+  },
   "intro": {
     "title": "Let's start with what matters to you right now",
     "p1": "A few minutes of conversation will help us understand what you want to change, and where it makes most sense to begin.",
@@ -31,6 +47,11 @@
     "later": "Maybe later",
     "purpose": "The point of what comes next is to get to know you a little better, so we can help in a way that actually fits you.",
     "setting": "It is worth giving it a few minutes somewhere calm, without interruptions. The conversation goes better, and so does what we build from it."
+  },
+  "coachPending": {
+    "title": "Your first conversation is not available in this build yet",
+    "body": "Your progress is saved. This development build does not have the live Coach connected, so it will not pretend to personalize a Journey.",
+    "back": "Back to preparation"
   },
   "sections": {
     "help": "How can we help you?",

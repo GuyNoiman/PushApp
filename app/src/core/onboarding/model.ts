@@ -20,6 +20,9 @@
 export type OnboardingStep =
   | 'language'
   | 'personalInfo'
+  | 'promise'
+  | 'personalization'
+  | 'supportIntro'
   | 'intro'
   | 'q1'
   | 'q2'

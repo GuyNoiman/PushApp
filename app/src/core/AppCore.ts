@@ -32,7 +32,9 @@ import {
 import {
   automaticOutcomeFrom,
   buildOutcome,
+  feltFrom,
   getOutcomeGateway,
+  type JourneyEnding,
   type OutcomeGateway,
 } from './outcomes';
 import { FutureJourneyEngine } from './engines/FutureJourneyEngine';
@@ -545,6 +547,9 @@ export class AppCore {
    */
   private outcomes: OutcomeGateway = getOutcomeGateway();
 
+  /** The ending whose question has not been asked or dismissed yet. In memory only. */
+  private pendingOutcomeAsk: { id: string; ending: JourneyEnding; journeyTitle?: string } | null = null;
+
   /**
    * Turn the KPI stream on. The app root supplies it because the two things it
    * needs — the installation id (device storage) and the running build's version
@@ -575,7 +580,40 @@ export class AppCore {
    */
   private async recordOutcome(journey: Journey, ending: 'completed' | 'abandoned'): Promise<void> {
     const evidence = buildOutcome(automaticOutcomeFrom(journey, ending));
-    if (evidence) await this.outcomes.record(evidence);
+    if (!evidence) return;
+    const id = await this.outcomes.record(evidence);
+    // Remember that this ending has a question outstanding. The ask is short and
+    // skippable (§3A.7), so it must survive the app closing — somebody who left
+    // mid-celebration is not somebody who declined.
+    if (id) {
+      this.pendingOutcomeAsk = { id, ending, journeyTitle: journey.title };
+      this.onChanged();
+    }
+  }
+
+  /**
+   * The ending that still owes a question, or null.
+   *
+   * One at a time by design: two Journeys ending in the same session is real,
+   * and stacking two surveys on somebody is how both get dismissed.
+   */
+  getPendingOutcomeAsk(): { id: string; ending: JourneyEnding; journeyTitle?: string } | null {
+    return this.pendingOutcomeAsk;
+  }
+
+  /**
+   * Record what they said, or that they said nothing.
+   *
+   * Skipping clears the latch WITHOUT writing: a skipped survey leaves the felt
+   * half null, and null means "not asked". Writing zeros would turn a decision
+   * not to answer into a bad review.
+   */
+  async answerOutcomeAsk(answers: Parameters<typeof feltFrom>[0] | null): Promise<void> {
+    const pending = this.pendingOutcomeAsk;
+    this.pendingOutcomeAsk = null;
+    this.onChanged();
+    if (!pending || !answers) return;
+    await this.outcomes.answer(pending.id, feltFrom(answers));
   }
 
   private state: AppState = emptyState();

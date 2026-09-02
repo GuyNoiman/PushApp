@@ -95,7 +95,7 @@ describe('outcome evidence', () => {
   it('records an ending even though nobody is ever asked a question about it', async () => {
     const c = await core();
     const written: unknown[] = [];
-    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; } });
+    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; }, answer: async () => true });
 
     c.bus.emit({
       type: 'JourneyCompleted',
@@ -110,7 +110,7 @@ describe('outcome evidence', () => {
   it('records one row for a Journey that completes twice after a reversal', async () => {
     const c = await core();
     const written: unknown[] = [];
-    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; } });
+    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; }, answer: async () => true });
 
     const journey = journeyStub('j1');
     c.bus.emit({ type: 'JourneyCompleted', journey, firstCompletion: true });
@@ -122,10 +122,60 @@ describe('outcome evidence', () => {
   it('records an abandonment as its own outcome, not as an absence', async () => {
     const c = await core();
     const written: { ending?: string }[] = [];
-    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; } });
+    c.setOutcomeGateway({ enabled: true, record: async (e) => { written.push(e); return 'row-1'; }, answer: async () => true });
 
     c.bus.emit({ type: 'JourneyAbandoned', journey: journeyStub('j1') });
     await Promise.resolve();
     expect(written[0]?.ending).toBe('abandoned');
+  });
+});
+
+describe('the question an ending leaves behind', () => {
+  const gateway = (written: unknown[], answered: unknown[]) => ({
+    enabled: true,
+    record: async (e: unknown) => { written.push(e); return 'row-1'; },
+    answer: async (id: string, felt: unknown) => { answered.push({ id, felt }); return true; },
+  });
+
+  it('latches a pending ask after an ending, and clears it when answered', async () => {
+    const c = await core();
+    const written: unknown[] = []; const answered: { id: string; felt: unknown }[] = [];
+    c.setOutcomeGateway(gateway(written, answered) as never);
+
+    c.bus.emit({ type: 'JourneyAbandoned', journey: journeyStub('j1') });
+    await Promise.resolve(); await Promise.resolve();
+    expect(c.getPendingOutcomeAsk()).toMatchObject({ id: 'row-1', ending: 'abandoned' });
+
+    await c.answerOutcomeAsk({ mismatch: ['c_time_fit'] });
+    expect(c.getPendingOutcomeAsk()).toBeNull();
+    expect(answered[0].felt).toMatchObject({ mismatch: ['c_time_fit'] });
+  });
+
+  it('writes NOTHING when the question is skipped', async () => {
+    // A skipped survey leaves the felt half null, and null means "not asked".
+    // Writing zeros would turn a decision not to answer into a bad review.
+    const c = await core();
+    const written: unknown[] = []; const answered: unknown[] = [];
+    c.setOutcomeGateway(gateway(written, answered) as never);
+
+    c.bus.emit({ type: 'JourneyAbandoned', journey: journeyStub('j1') });
+    await Promise.resolve(); await Promise.resolve();
+    await c.answerOutcomeAsk(null);
+
+    expect(answered).toEqual([]);
+    expect(c.getPendingOutcomeAsk()).toBeNull();
+  });
+
+  it('holds one question at a time, so two endings do not stack two surveys', async () => {
+    const c = await core();
+    const written: unknown[] = []; const answered: unknown[] = [];
+    c.setOutcomeGateway(gateway(written, answered) as never);
+
+    c.bus.emit({ type: 'JourneyAbandoned', journey: journeyStub('j1') });
+    c.bus.emit({ type: 'JourneyAbandoned', journey: journeyStub('j2') });
+    await Promise.resolve(); await Promise.resolve();
+    expect(c.getPendingOutcomeAsk()).not.toBeNull();
+    await c.answerOutcomeAsk(null);
+    expect(c.getPendingOutcomeAsk()).toBeNull();
   });
 });

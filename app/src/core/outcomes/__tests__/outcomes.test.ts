@@ -10,6 +10,7 @@
  */
 import { adherence, buildOutcome, hasFelt, type AutomaticOutcome } from '../model';
 import { automaticOutcomeFrom } from '../fromJourney';
+import { feltFrom, isEmptyAnswer, questionsFor } from '../askModel';
 import { HELPED_FACTORS, MISMATCH_DIMENSIONS, OUTCOME_SCHEMA_VERSION } from '../taxonomy';
 
 const ended: AutomaticOutcome = { ending: 'completed', stepsTotal: 12, stepsDone: 12 };
@@ -143,5 +144,60 @@ describe('the taxonomies', () => {
     // A taxonomy that only records complaints learns how to avoid harm and never
     // what to do more of.
     expect(HELPED_FACTORS.length).toBeGreaterThan(4);
+  });
+});
+
+describe('the ask at an ending', () => {
+  it('is at most three questions, and different for a completion and an abandonment', () => {
+    // Asking "what helped?" of somebody who abandoned is tone-deaf; asking "what
+    // did not fit?" of somebody who loved it wastes the one question they answer.
+    const done = questionsFor('completed').map((q) => q.id);
+    const left = questionsFor('abandoned').map((q) => q.id);
+    expect(done.length).toBeLessThanOrEqual(3);
+    expect(left.length).toBeLessThanOrEqual(3);
+    expect(done).toContain('helped');
+    expect(left).toContain('mismatch');
+    expect(left).not.toContain('helped');
+  });
+
+  it('does not put satisfaction first on a completion', () => {
+    // It is the outcome most vulnerable to novelty and relief, and asking it
+    // first anchors everything after it.
+    expect(questionsFor('completed')[0].id).toBe('real_world_change');
+  });
+
+  it('asks whether anything actually changed even of somebody who left', () => {
+    // §5.3's primary outcome. A Journey somebody abandoned can still have
+    // changed something, and non-completion is not failure.
+    expect(questionsFor('abandoned').map((q) => q.id)).toContain('real_world_change');
+  });
+
+  it('offers only closed options, from the taxonomy', () => {
+    for (const ending of ['completed', 'abandoned'] as const) {
+      for (const q of questionsFor(ending)) {
+        if (q.kind !== 'multi') continue;
+        expect(q.options!.length).toBeGreaterThan(1);
+        for (const o of q.options!) expect(typeof o.value).toBe('string');
+      }
+    }
+  });
+
+  it('recognises an answer that answered nothing', () => {
+    expect(isEmptyAnswer({})).toBe(true);
+    expect(isEmptyAnswer({ helped: [], satisfaction: null })).toBe(true);
+    expect(isEmptyAnswer({ satisfaction: 3 })).toBe(false);
+    expect(isEmptyAnswer({ mismatch: ['a_goal_fit'] })).toBe(false);
+  });
+
+  it('shapes answers into the felt half without inventing any of it', () => {
+    const felt = feltFrom({ real_world_change: 4, helped: ['coach'] });
+    expect(felt).toEqual({
+      satisfaction: null,
+      realWorldChange: 4,
+      effortAccuracy: null,
+      helped: ['coach'],
+      mismatch: [],
+      comment: null,
+    });
   });
 });

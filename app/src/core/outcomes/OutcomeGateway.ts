@@ -13,18 +13,29 @@
  * leave the matching evidence without enough to hold on to.
  */
 import { supabase } from '../social/supabaseClient';
-import type { OutcomeEvidence } from './model';
+import { buildOutcome, type FeltOutcome, type OutcomeEvidence } from './model';
 
 export interface OutcomeGateway {
   readonly enabled: boolean;
   /** Returns the new row's id, or null when nothing was written. Never throws. */
   record(evidence: OutcomeEvidence): Promise<string | null>;
+  /**
+   * Fill in the felt half of a row somebody answered about, later.
+   *
+   * A separate call rather than a field on `record` because the two happen at
+   * different moments and either can be the only one: an ending always writes
+   * evidence, and an answer may never come.
+   */
+  answer(id: string, felt: FeltOutcome): Promise<boolean>;
 }
 
 export const NullOutcomeGateway: OutcomeGateway = {
   enabled: false,
   async record() {
     return null;
+  },
+  async answer() {
+    return false;
   },
 };
 
@@ -54,6 +65,34 @@ export class SupabaseOutcomeGateway implements OutcomeGateway {
       // A Journey ending must never fail because its evidence could not be
       // written. The row is lost; the person's Journey is not.
       return null;
+    }
+  }
+
+  async answer(id: string, felt: FeltOutcome): Promise<boolean> {
+    const client = supabase;
+    if (!client || !id) return false;
+    try {
+      // Rebuilt through the same allowlist the row was written with, so an
+      // answer cannot smuggle in a field the ending could not.
+      const shaped = buildOutcome({ ending: 'completed' }, felt);
+      if (!shaped) return false;
+      const { error } = await client
+        .from('journey_outcomes')
+        .update({
+          satisfaction: shaped.satisfaction,
+          real_world_change: shaped.real_world_change,
+          effort_accuracy: shaped.effort_accuracy,
+          mismatch: shaped.mismatch,
+          helped: shaped.helped,
+          comment: shaped.comment,
+          answered_at: new Date().toISOString(),
+        })
+        // RLS already restricts this to the participant's own rows; the id is
+        // the only thing that needs naming.
+        .eq('id', id);
+      return !error;
+    } catch {
+      return false;
     }
   }
 }

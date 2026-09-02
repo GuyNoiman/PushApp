@@ -2,4 +2,5 @@
 export * from './model';
 export * from './OutcomeGateway';
 export * from './taxonomy';
+export * from './askModel';
 export * from './fromJourney';

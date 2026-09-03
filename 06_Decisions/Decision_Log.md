@@ -2576,6 +2576,22 @@ stays; the profile collection does not.
 
 **Stage:** MVP.
 
+**Continuation approved 2026-09-03 — the introductory Journey's complete shape:** the working title
+is **"Getting to know the app"**, and it contains four Steps: complete the profile and preferences;
+complete one beginner-appropriate Tool; explore ordinary friendship by inviting a real friend,
+trying a clearly-labelled Demo Guide, or continuing alone; and build the first personal Journey with
+the Coach. Active Hours are part of the profile Step, not a separate Step. The friendship Step is not
+a Support Circle invitation and has no Journey-sharing consequence.
+
+The Demo Guide is local and isolated, never a real social account. It is always labelled as a demo,
+does not enter search, metrics, XP, Achievements, friend/Ally/Support Circle counts or external push,
+and never receives private data. Its purpose is only to let an empty social surface demonstrate the
+same UI components safely. All three friendship-Step choices count as completion; the product never
+forces a person to invite somebody.
+
+**Still under visual review:** whether all four Steps run in a focused pre-Home shell or the Journey
+is revealed before Home and continued from the normal Home/Journeys surfaces.
+
 ### D96 — One onboarding specification, and it is generated from the code
 
 **Decision (2026-09-03):** `04_Product/Onboarding_And_Coach_Spec.md` is the single specification for

@@ -70,12 +70,21 @@ address, language, active hours, week start. Every field was pre-filled and the 
 confirmable in one tap, and it was **still a form standing between somebody and the reason they
 opened the app**. Nothing on it has to be answered before the conversation.
 
-**It has been removed from the first run entirely.** In its place, the moment the first Journey is
-built, the app creates a second Journey called **"Getting to know PushApp"** whose Steps are:
+**It has been removed from the first run entirely.** In its place, the app creates an introductory
+Journey whose working title is **"Getting to know the app"**. This is the first Journey the person
+encounters; the Journey built with the Coach is their first **personal transformation Journey**.
 
-1. **Fill in your profile** → opens My Profile
-2. **Choose the hours we may reach you** → opens Active Hours
-3. **Open Tools and try one** → opens the Tools tab
+Its approved Step sequence is:
+
+1. **Complete your profile** → opens My Profile. Active Hours, week start and the other personal
+   preferences belong to this Step; there is no separate scheduling Step.
+2. **Get to know yourself a little better** → shows only beginner-appropriate Tools and is completed
+   by finishing any one of them. The set may be filtered by the user's current Level when Levels ship.
+3. **See how friends work** → introduces ordinary app friendship, not a Journey Support Circle. The
+   person may invite a real friend, try the clearly-labelled local Demo Guide, or continue alone;
+   every choice completes the Step.
+4. **Build your first personal Journey** → opens the Coach and completes when the person approves and
+   creates a real personal Journey.
 
 It is an **ordinary Journey**, not a tutorial overlay or a checklist widget: it appears on Home and
 in the Journeys tab, its Steps are self-reported like any others, it can be paused, and somebody who
@@ -84,8 +93,16 @@ does not want it can abandon it. Learning the app in the shape of the app is the
 > **This overrides "Stage A: Language and essential profile"** in the 2026-08-30 spec. Language
 > stays; the profile collection does not.
 
-**Note for whoever edits this:** the third Step is a proposal, not a decision. If there is a better
-third thing for somebody's first day, say so — it is one line of copy.
+The Demo Guide is not a real account. It is a local, isolated demonstration state, always labelled
+**Demo account**. It may demonstrate a profile, a friendship request, a Cheer and a short scripted
+conversation. It is not searchable; receives no private Journey data; sends no external push; never
+counts as a friend, Ally or Support Circle member; and cannot affect XP, Achievements, support score,
+analytics or any social metric. It can be removed at any time and may disappear after the first real
+friendship is established.
+
+**UX placement still under visual review:** whether the focused introductory Journey is completed
+before the first Home appearance, or is revealed before Home and then continued from Home. The
+approved content and rules above do not depend on that placement decision.
 
 ---
 
@@ -644,33 +661,35 @@ than editing the past into agreement.
 - The three brand-introduction screens are required once for a new user because they establish the
   product promise, personalization model and sharing control. They have no Skip action; Save and exit
   remains available, and the total sequence is designed to take well under one minute.
-- Personal information remains one compact review screen using the approved Own Profile fields. It is
-  not split into a name-only screen and several later profile questions.
+- Personal information is not collected in onboarding. It is completed later through Step 1 of the
+  introductory Journey, inside the permanent profile surface.
 
 ### 4. Complete screen map
 
 ```text
 Authentication success
   → A1 Language
-  → A2 Personal information review
   → B1 Why MeMore
   → B2 How it works
   → B3 Progress with people
-  → C1 Prepare for the first conversation
+  → C0 Introductory Journey reveal
+       → J1 Complete profile
+       → J2 Complete one beginner Tool
+       → J3 Explore friends: invite / Demo Guide / continue alone
+  → C1 Prepare for the first Coach conversation
   → D1 Onboarding Coach conversation
        ↔ D2 Correction / clarification within the same conversation
        → D3 Reflection confirmation within the conversation
   → E1 Starting point summary
        ↔ D2 when the summary is corrected
   → F1 First Step acceptance
-  → G1 Optional Support Circle invitation
   → G2 Optional reminder setup
   → Home populated
   → H1 Memory continuity offer after first value
 ```
 
-`G1` appears only when the selected Journey can truthfully support the current social flow. `G2`
-appears only after an actual Step with a meaningful reminder target exists. Neither blocks completion.
+The friendship Step is not a Support Circle invitation and shares no Journey. `G2` appears only after
+an actual Step with a meaningful reminder target exists and never blocks completion.
 
 ### 5. Shared shell
 

@@ -1,5 +1,11 @@
 # Domain Expert Authoring Guide — the brief for Codex
 
+> **Every Step you author today is an ACTION Step** — a title, a description and a cadence,
+> describing something the person does in the world. There is no way yet to author a questionnaire,
+> a video, an audio piece or an image sequence as a Step. That is being designed (`PRD/Step_Types_PRD.md`,
+> Backlog S-22); until it lands, write your Steps as actions rather than as instructions to consume
+> something we cannot yet deliver. When it lands, this guide gains the way to declare a type.
+
 Status: **Approved working method (2026-08-29).** Written after wiring the Career Expert end to end
 and finding out, the expensive way, which parts of a content spec survive contact with code.
 Owner: founder + AI product team.

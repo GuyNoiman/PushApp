@@ -57,21 +57,29 @@ is "specified" is not started, however finished the specification is.
 | M-03 | The five Journey types (frequency · completion · avoidance · critical-compliance · hybrid) | **Not started** | `Rhythm` is `daily` / `few-times-week` / `weekly` and that is the whole model. An avoidance Journey ("not to smoke") cannot be expressed at all |
 | M-04 | Light AI: personalised encouragement + smarter reminders | Half | `CommunicationScheduler` exists; encouragement from the "why" answers is partial |
 
-## 2a. Onboarding v3 (partner spec, 2026-08-30)
+## 2a. Onboarding v3
 
-`04_Product/Partner_Onboarding_Spec_v3_2026-08-30.md`. Broken out because "onboarding v3" as one row
-is unactionable and would sit at Half forever. Ordered by what unblocks what.
+**The spec is now [`Onboarding_And_Coach_Spec.md`](./Onboarding_And_Coach_Spec.md) and nothing else.**
+The three dated versions and the separate corrections file are marked superseded in place
+(2026-09-03): four documents describing four different products is what had the founder and the
+partner reading different specs, and it is over. Its §3 is GENERATED from
+`app/src/core/coach/coachCharacter.ts` with a test that fails when the two drift, so the half of the
+spec that quotes the code cannot go stale quietly.
+
+Broken out below because "onboarding v3" as one row is unactionable and would sit at Half forever.
+Ordered by what unblocks what.
 
 | ID | Item | Status | Code truth |
 |---|---|---|---|
 | O-09 | The coach's voice | **Shipped** | `COACH_SYSTEM_PROMPT` carries the partner's voice rules with the wrong version beside each right one |
 | O-10 | Purpose + calm-setting guidance before the conversation | **Shipped** | On the intro screen, both languages (founder's addition, 2026-08-30) |
-| O-11 | Brand introduction — three screens | Specified | Nothing. Copy is written in the spec §4 |
+| O-11 | Brand introduction — three screens | **Shipped** | The three promise screens run in the first flow, both languages |
+| O-21 | The profile page leaves the first run | **Shipped 2026-09-03** | Founder's decision. `personalInfo` is retired from `ONBOARDING_STEP_ORDER`; its fields are the Steps of the "Getting to know PushApp" Journey created at completion (`core/onboarding/introJourney.ts`). `Step.appLink` lets a Step open a screen. **Supersedes the 2026-08-30 spec's "Stage A: essential profile"** |
 | O-12 | A distinct onboarding coach SESSION | Specified | The coach opens as an ordinary conversation with `?firstRun=1`. There is no separate state, no header, and nothing downstream knows this is first-run |
 | O-13 | Meaningful reflection + user correction before the plan | **Specified, and the heart of it** | Nothing reflects. §8.2 requires a summary the user can confirm or correct, and a correction must rebuild the Journey |
 | O-14 | Starting-point summary screen | Specified | Nothing. §12's three blocks and the "something here does not feel right" return path |
 | O-15 | A concrete first action before onboarding completes | Specified | Onboarding completes when the flow ends, not when a step exists |
-| O-16 | Populated first Home | Half | Home renders whatever exists; nothing guarantees a Journey and a next step are there |
+| O-16 | Populated first Home | **Shipped** | Onboarding completes only when the coach builds a Journey, and the intro Journey (O-21) lands beside it — so a first Home now has at least two Journeys and a Starter Step |
 | O-17 | Contextual profile signals instead of a block | Half | The nine questions are retired from first-run and reachable from Tools; nothing asks them contextually |
 | O-18 | Resume mid-conversation | **Gap** | §21 requires the coach session, messages and resolved signals to survive a restart. The orchestrator lives in a React ref and has no rehydration path — a restart loses the conversation |
 | O-19 | Memory + reminder + sharing asked after value | Half | The tail moved after the first Journey (v2 phase 1). Sharing is not offered at all |
@@ -152,7 +160,7 @@ what specifically is undecided, so the gap is answerable rather than vague.
 | **S-18** | **Parked goals: label, cap, activation** (`B-06`) | D44 lists the three open questions verbatim and none is answered |
 | **S-19** | **Weekly Review contributions** (`B-05`) | The trust boundary, priority and conflict rules for an expert contributing a per-Journey block |
 | **S-20** | **Relationships: the safety gate** | Not a spec gap — a DECISION gap. `relationships` sits in `SENSITIVE_DOMAINS`, so the coach refuses to plan for it. The partner's spec builds the gate; removing the domain from that set is the founder's call and has not been made. **This is the single thing blocking a finished expert from shipping** |
-| **S-21** | **Onboarding v3 P0 defects** | Specified in detail (`Partner_Onboarding_Corrections_2026-09-02.md` §22). Not a spec gap; listed here so it is not lost. Codex is mid-build |
+| **S-21** | **Onboarding v3 P0 defects** | Specified in detail; the corrections file is superseded and its items now live in `Onboarding_And_Coach_Spec.md` §4.1. Not a spec gap; listed here so it is not lost. Codex is mid-build |
 
 ## 8. Known small defects
 

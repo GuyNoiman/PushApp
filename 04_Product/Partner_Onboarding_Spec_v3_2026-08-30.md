@@ -1,10 +1,21 @@
 # MeMore MVP Onboarding v3
+
+> **SUPERSEDED, 2026-09-03.** The current specification is
+> [`04_Product/Onboarding_And_Coach_Spec.md`](./Onboarding_And_Coach_Spec.md), which is the ONE file
+> to edit. This one is kept for its reasoning and its history; where the two disagree, the other one
+> wins. Do not write corrections against this file.
+
 ## Implementation Handoff for App Development
 
 **Status:** Proposed MVP replacement for current first-run onboarding  
 **Date:** 2026-08-30  
 **Audience:** Product / Engineering / Design  
 **Goal:** Replace the current nine-question first-run questionnaire with a branded, coach-led onboarding flow while preserving downstream compatibility where useful.
+
+**UX companion:** `PRD/Onboarding_Coach_Led_UX_PRD.md` defines the exact screens, layout hierarchy,
+interactions, navigation, light/dark, RTL/LTR, accessibility, error states and first populated Home.
+This file remains authoritative for product logic and compatibility; the companion is authoritative
+for the visible experience.
 
 ---
 
@@ -724,18 +735,25 @@ If the correction changes goal/diagnosis/Journey:
 
 The onboarding Coach prompt/instructions should explicitly include:
 
-1. Listen before directing.
-2. Reflect before proposing.
-3. Do not repeat already-known questions.
-4. Prefer the user's own language.
-5. Do not define the user's personality or identity.
-6. Present hypotheses tentatively.
-7. Ask one question at a time in most turns.
-8. Answer direct questions before returning to the flow.
-9. Keep responses concise.
-10. Stop gathering data once there is enough information to help.
-11. Convert insight to an actionable next step.
-12. Preserve user agency.
+1. Use the user's preferred first name sparingly, only when it makes the exchange feel naturally
+   personal; never guess a name or repeat it mechanically.
+2. Listen before directing.
+3. Reflect before proposing.
+4. Show empathy by accurately acknowledging the weight, effort or tension the user described — not
+   by claiming to know exactly how they feel, flattering them, or performing warmth.
+5. Do not repeat already-known questions.
+6. Prefer the user's own language and preserve their meaningful words rather than translating them
+   into professional or system terminology.
+7. Do not define the user's personality or identity.
+8. Present hypotheses tentatively.
+9. Ask one question at a time in most turns.
+10. When an answer is broad, help the user go one useful layer deeper by asking about a concrete
+    moment, consequence, tension or desired change — without pressuring intimate disclosure.
+11. Answer direct questions before returning to the flow.
+12. Keep responses concise.
+13. Stop gathering data once there is enough information to help.
+14. Convert insight to an actionable next step.
+15. Preserve user agency.
 
 ---
 

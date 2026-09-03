@@ -6,6 +6,13 @@ Owner: founder + AI product team.
 Reference implementation: `10_Partner_Coaching_Content/Master_Specs_Original/20_Career_Expert_Master_Spec.md`
 and everything under `app/src/core/learning/`.
 
+> **Architecture correction — approved 2026-08-29:** the Coach is the only actor that speaks with
+> the user. A Domain Expert is an internal consultation tool: it diagnoses, identifies information
+> still missing, and recommends existing Journeys with structured reasons. It receives only the
+> minimum closed signals required for that consultation — never the conversation transcript or a
+> full user profile. Authoring a new Journey when the library has no fit belongs to a separate
+> **Journey Creator Expert**, not to every Domain Expert.
+
 ---
 
 ## 0. Read this paragraph before anything else
@@ -27,14 +34,23 @@ A **domain** is an area of life a person may want to change: career, body image,
 loneliness, addiction. It is served by a **Domain Expert** — a professional judgement layer that the
 **meta-agent (the coach)** consults. The Expert never speaks to the user directly; the coach does.
 
-The Expert's job is to answer four questions about one person, right now:
+The Expert's job is to answer five questions about one person, right now:
 
 1. **What kind of problem is this?** (the subtype)
 2. **What is actually in the way?** (the bottleneck)
-3. **What is the next move?** (one move, not a lecture)
-4. **What would be a mistake here?** (the domain's traps)
+3. **What relevant information is still missing?** (and only what can change the result)
+4. **Which existing Journeys fit, and why?** (up to three; one is marked recommended only when the
+   evidence makes it meaningfully more relevant)
+5. **What would be a mistake here?** (the domain's traps)
 
-That is all. It does not motivate, does not write copy, and does not decide what the app shows.
+That is all. It does not motivate, does not write copy, does not speak to the user, and does not
+silently start a Journey. If exactly one valid Journey remains, the system may select it without a
+choice menu, but the Coach must still explain the selection before the normal user-approval boundary.
+
+If the current library has no sufficiently relevant Journey, the Expert returns a structured
+`no_match` result. Until the Journey Creator Expert is connected, the Coach says this calmly and
+offers to refine the goal or continue the conversation. This temporary branch must be removed — and
+a regression test must prove its removal — when the Journey Creator Expert ships.
 
 ### The objects you may use
 

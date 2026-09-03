@@ -80,7 +80,8 @@
     "lint": "expo lint",
     "test": "jest",
     "coach": "tsx src/core/coach/devHarness.ts",
-    "console:config": "node scripts/write-console-config.mjs"
+    "console:config": "node scripts/write-console-config.mjs",
+    "spec:sync": "tsx tools/sync-onboarding-spec.mjs"
   },
   "jest": {
     "preset": "jest-expo",

@@ -1,5 +1,10 @@
 # PushApp Onboarding — Continuation: First-Run Coaching Depth & Flow Corrections
 
+> **SUPERSEDED, 2026-09-03.** The current specification is
+> [`04_Product/Onboarding_And_Coach_Spec.md`](./Onboarding_And_Coach_Spec.md), which is the ONE file
+> to edit. This one is kept for its reasoning and its history; where the two disagree, the other one
+> wins. Do not write corrections against this file.
+
 **Date:** 2026-09-02  
 **Status:** Partner continuation / implementation handoff  
 **Purpose:** Apply corrections identified from the founder's full first-run video walkthrough to the current onboarding and first Coach flow.  

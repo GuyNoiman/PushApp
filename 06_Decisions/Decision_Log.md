@@ -2501,3 +2501,93 @@ All respect **D2** (no core flow depends on AI).
 ### Also reflected (previously-confirmed decisions the review flagged)
 - **Home screen is action-based** (not Journey-based) — `Product_Bible.md` §11.2.
 - **Maximum Journey duration** defaults to **~2 months, configurable** — `Product_Bible.md` §3.3.
+### D93 — The Coach speaks; Domain Experts diagnose and recommend existing Journeys
+
+**Decision (2026-08-29):** The Coach is the only user-facing conversational actor. A Domain Expert
+is an internal, deterministic consultation tool. It receives a minimum allowlist of closed signals,
+identifies missing information, and returns up to three relevant existing Journeys with structured
+reasons. It never receives the full transcript or profile, writes user-facing copy, or starts a
+Journey.
+
+When one Journey is meaningfully more relevant, it is marked recommended. When the evidence does
+not separate the valid options, none is given an artificial recommendation. When exactly one valid
+Journey remains, it is selected without a menu, but the Coach must still explain it before the normal
+user-approval boundary.
+
+If no suitable Journey exists, the current temporary behavior is a calm, non-diagnostic no-match
+message. A separate Journey Creator Expert will replace that branch. Its arrival must include an
+explicit cleanup task and regression test; no consultation is handed to it automatically and raw
+conversation data is never forwarded.
+
+**Why:** This preserves one coherent relationship with the Coach, separates conversation skill from
+domain judgement, avoids poor forced matches, and lets each Expert share one testable contract.
+
+**Stage:** Career reference vertical — **MVP**. Journey Creator Expert — **Future Vision; exact
+release stage remains open**.
+
+### D94 — Coach-led onboarding and permanent conversational behavior
+
+**Decision (2026-08-31):** The first-run experience is a branded introduction followed by one
+dedicated, resumable Coach conversation—not a questionnaire rendered as chat. The Coach listens to
+the whole answer, answers direct questions, acknowledges and reflects meaningful content, preserves
+the user's language, deepens by one useful layer only when needed, and asks one decision-relevant
+question at a time. It uses a known preferred first name sparingly and never guesses one.
+
+Before Journey activation the user confirms or corrects a meaningful reflection, then reviews a
+non-chat starting-point summary and explicitly approves the Journey and first Step. Sharing and
+reminders appear only after relevant value exists; memory consent follows the first value moment;
+the first Home is populated. The complete visible flow, including error/resume states, light/dark and
+RTL/LTR, is defined in `04_Product/PRD/Onboarding_Coach_Led_UX_PRD.md`.
+
+**Why:** A fixed intake optimizes for completed fields rather than understanding. The product should
+learn while helping, make its interpretation correctable, and reach real action without making the
+user feel analysed or processed.
+
+**Stage:** MVP.
+
+### D95 — The profile page leaves the first run and becomes a Journey
+
+**Decision (2026-09-03):** Onboarding no longer collects profile fields. The page that asked for
+name, username, birth date, country, form of address, active hours and week start is removed from
+the first-run sequence entirely. In its place, the moment the coach builds the person's first
+Journey, the app creates a second Journey called **"Getting to know PushApp"** whose Steps take the
+person to the screens that hold those fields — the profile, active hours, and the Tools tab.
+
+It is an ordinary Journey. It appears on Home and in the Journeys tab, its Steps are self-reported
+like every other Step, it can be paused, and somebody who does not want it can abandon it. It is
+deliberately not a tutorial overlay, a checklist widget or a badge.
+
+To make it work, a Step may now name an in-app destination (`Step.appLink`): a plain tap opens that
+screen instead of the report sheet. Reporting is unchanged — the same swipe and the same menu.
+
+The page itself is **not deleted**. `personalInfo` moves to the retired-steps list, so a device
+paused on it mid-flow resumes on the welcome rather than a page the sequence can no longer leave.
+
+**Why:** every field on that page was pre-filled and confirmable in one tap, and it was still a form
+standing between somebody and the reason they opened the app. Nothing on it has to be answered
+before the conversation, and every field has a permanent screen of its own. Replacing it with a
+Journey also means the first thing a new person meets is the product demonstrating itself: learning
+the app in the shape the app actually uses.
+
+**Supersedes:** "Stage A: Language and essential profile" in the 2026-08-30 partner spec. Language
+stays; the profile collection does not.
+
+**Stage:** MVP.
+
+### D96 — One onboarding specification, and it is generated from the code
+
+**Decision (2026-09-03):** `04_Product/Onboarding_And_Coach_Spec.md` is the single specification for
+onboarding and the coach. The three dated partner specs and the separate corrections file are marked
+superseded in place and kept for their reasoning; where any of them disagrees with the single file,
+the single file wins. Changes are made by editing it, never by starting a new version or writing a
+corrections document against it.
+
+Its coach-character section is **generated** from `app/src/core/coach/coachCharacter.ts` by
+`npm run spec:sync`, and a test fails when the document drifts from the code.
+
+**Why:** four documents describing four different versions of onboarding is what had the founder and
+the partner working from different specs for a week. Marking the old ones superseded stops new work
+landing on them; generating the half that quotes the code stops the new one going stale the way they
+did.
+
+**Stage:** Process decision — in force now.

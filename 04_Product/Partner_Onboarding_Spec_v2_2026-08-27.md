@@ -1,5 +1,10 @@
 # MeMore / PushApp Onboarding v2 — MVP Implementation Handoff
 
+> **SUPERSEDED, 2026-09-03.** The current specification is
+> [`04_Product/Onboarding_And_Coach_Spec.md`](./Onboarding_And_Coach_Spec.md), which is the ONE file
+> to edit. This one is kept for its reasoning and its history; where the two disagree, the other one
+> wins. Do not write corrections against this file.
+
 Status: **Proposed MVP revision for implementation**
 
 Date: **2026-08-27**

@@ -21,8 +21,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 
-import i18n from '@/i18n';
-
 import { CoachBubble } from '@/components/coach/CoachBubble';
 import { KeyboardSafeView } from '@/components/ui/KeyboardSafeView';
 import { EditCoachScreen } from '@/components/coach/EditCoachScreen';
@@ -32,10 +30,11 @@ import { TechnicalNote } from '@/components/coach/TechnicalNote';
 import { CoachOptions } from '@/components/coach/CoachOptions';
 import { buildCoachScript, type CoachOption } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
+import { RemindersAskPage } from '@/components/onboarding/FirstRunTail';
 import {
-  CoachMemoryConsentPage,
-  RemindersAskPage,
-} from '@/components/onboarding/FirstRunTail';
+  OnboardingPrimaryButton,
+  OnboardingScaffold,
+} from '@/components/onboarding/OnboardingScaffold';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
@@ -58,10 +57,13 @@ import { useProfile } from '@/state/ProfileProvider';
  * constant, so hooks stay unconditional in each screen.
  */
 export default function CoachScreen() {
-  const { mode } = useLocalSearchParams<{ mode?: string; journeyId?: string; firstRun?: string }>();
+  const { mode, firstRun } = useLocalSearchParams<{ mode?: string; journeyId?: string; firstRun?: string }>();
   // Read unconditionally so the hook order never depends on the route.
   const connection = useServerConnection();
   if (mode === 'edit') return <EditCoachScreen />;
+  // The scripted conversation is a development-only visual prototype. It must never impersonate
+  // the personalized first-run Coach or leave a new account behind an unfinishable gate.
+  if (firstRun === '1' && !featureFlags.liveCoach) return <OnboardingCoachPendingScreen />;
   /**
    * NO SESSION, NO INTERVIEW (2026-08-20). The live coach understands the opening through our proxy,
    * which authenticates with the device's own session. With no session it cannot understand anything
@@ -70,9 +72,56 @@ export default function CoachScreen() {
    * coach. The SCRIPTED prototype needs no session, so it is deliberately not gated.
    */
   if (featureFlags.liveCoach && connection.disconnected) {
-    return <CoachOfflineScreen onRetry={() => void connection.retry()} retrying={connection.retrying} />;
+    return (
+      <CoachOfflineScreen
+        firstRun={firstRun === '1'}
+        onRetry={() => void connection.retry()}
+        retrying={connection.retrying}
+      />
+    );
   }
   return featureFlags.liveCoach ? <LiveCoachScreen /> : <ScriptedCoachScreen />;
+}
+
+/**
+ * Leaving the conversation.
+ *
+ * EVERYWHERE ELSE there is a Home to land on. During the FIRST RUN there is not: `(tabs)` sits behind
+ * the onboarding gate in `_layout`, so `replace('/')` named a route the router refuses — and the first
+ * run is also the one case where the coach REPLACED the screen behind it (`onboarding.tsx` uses
+ * `router.replace('/coach?firstRun=1')`), so `canGoBack()` is false and there was no back stack to
+ * fall back on either. Both arms of the old expression were dead at once and the X did nothing at all
+ * (partner, 2026-09-03). Onboarding is where that person came from and the only place they can be.
+ */
+export function leaveCoach(firstRun: boolean): void {
+  if (firstRun) {
+    router.replace('/onboarding');
+    return;
+  }
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+  router.replace('/');
+}
+
+function OnboardingCoachPendingScreen() {
+  const { t } = useTranslation('onboarding');
+  return (
+    <OnboardingScaffold
+      onBack={() => router.replace('/onboarding')}
+      footer={
+        <OnboardingPrimaryButton
+          label={t('coachPending.back')}
+          onPress={() => router.replace('/onboarding')}
+        />
+      }>
+      <ThemedText type="title">{t('coachPending.title')}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('coachPending.body')}
+      </ThemedText>
+    </OnboardingScaffold>
+  );
 }
 
 /**
@@ -80,7 +129,15 @@ export default function CoachScreen() {
  * place of a conversation. The retry re-runs `ensureSession`, so someone who was simply offline at
  * first launch gets their coach back without reinstalling.
  */
-function CoachOfflineScreen({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
+function CoachOfflineScreen({
+  firstRun,
+  onRetry,
+  retrying,
+}: {
+  firstRun: boolean;
+  onRetry: () => void;
+  retrying: boolean;
+}) {
   const theme = useTheme();
   const { t } = useAddressedTranslation('coach');
   const { t: tCommon } = useTranslation('common');
@@ -92,7 +149,7 @@ function CoachOfflineScreen({ onRetry, retrying }: { onRetry: () => void; retryi
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('closeConversation')}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            onPress={() => leaveCoach(firstRun)}
             hitSlop={8}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
@@ -131,7 +188,7 @@ function LiveCoachScreen() {
   // used to sit before Home now follow the Journey this conversation creates.
   const { firstRun: firstRunParam } = useLocalSearchParams<{ firstRun?: string }>();
   const firstRun = firstRunParam === '1';
-  const [tail, setTail] = useState<'none' | 'reminders' | 'memory'>('none');
+  const [tail, setTail] = useState<'none' | 'reminders'>('none');
   /** The build's technical trace, shown after the Journey is created (technical mode only). */
   const [buildTrace, setBuildTrace] = useState<string[]>([]);
   const scrollRef = useRef<ScrollView>(null);
@@ -252,6 +309,9 @@ function LiveCoachScreen() {
           : { mode: 'now' };
     const journey = core.createJourneyFromGoalSpec(coach.goalSpec, start);
     if (!journey) return;
+    // A real Journey is the durable completion boundary. The reminder that follows is optional;
+    // closing there must open a populated Home rather than restart and risk a duplicate Journey.
+    if (firstRun) core.completeOnboarding(core.getOnboardingAnswers());
     // The build's own reasoning — which Journey, which version, and on the strength of what. It
     // happens outside the orchestrator, so it is collected here rather than arriving on a turn.
     if (coach.technicalMode) setBuildTrace([...core.getLastJourneyBuildTrace()]);
@@ -264,7 +324,7 @@ function LiveCoachScreen() {
 
   const headerBorder = useMemo(() => ({ borderBottomColor: theme.hairline }), [theme.hairline]);
 
-  /** Both reminder answers move on; a denied OS permission must never block the app opening. */
+  /** Both reminder answers go Home; a denied OS permission must never block the app opening. */
   const answerReminders = useCallback(async (turnOn: boolean) => {
     if (turnOn) {
       try {
@@ -273,22 +333,11 @@ function LiveCoachScreen() {
         // Best-effort by design: whatever the OS decided, the next page is the next page.
       }
     }
-    setTail('memory');
+    router.replace('/');
   }, [core]);
-
-  const answerMemory = useCallback(
-    (granted: boolean) => {
-      core.setCoachMemoryConsent(granted ? 'granted' : 'declined', i18n.language);
-      router.replace('/');
-    },
-    [core],
-  );
 
   if (tail === 'reminders') {
     return <RemindersAskPage onTurnOn={() => void answerReminders(true)} onNotNow={() => void answerReminders(false)} />;
-  }
-  if (tail === 'memory') {
-    return <CoachMemoryConsentPage onAnswer={answerMemory} />;
   }
 
   return (
@@ -298,7 +347,7 @@ function LiveCoachScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('closeConversation')}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            onPress={() => leaveCoach(firstRun)}
             hitSlop={8}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
@@ -557,7 +606,7 @@ function ScriptedCoachScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('closeConversation')}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            onPress={() => leaveCoach(false)}
             hitSlop={8}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
@@ -667,7 +716,7 @@ function ScriptedCoachScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={current.reply.secondaryLabel}
-                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+                onPress={() => leaveCoach(false)}
                 style={({ pressed }) => [styles.ctaSecondary, pressed && styles.pressed]}>
                 <ThemedText type="small" themeColor="textSecondary">
                   {current.reply.secondaryLabel}

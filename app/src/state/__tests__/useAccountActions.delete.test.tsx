@@ -18,6 +18,7 @@ const mockMultiRemove = jest.fn(async () => {});
 const mockResetToFirstRun = jest.fn(async () => {});
 const mockDeleteRemote = jest.fn(async () => {});
 const mockSignOut = jest.fn(async () => {});
+const mockEnsureSession = jest.fn(async () => {});
 type Health = 'reachable' | 'unreachable' | 'unconfigured';
 const mockCheckBackendHealth = jest.fn<Promise<Health>, []>(async () => 'reachable');
 
@@ -26,12 +27,14 @@ interface FakeAuth {
   user: { id: string; isAnonymous: boolean } | null;
   deleteAccount: typeof mockDeleteRemote;
   signOut: typeof mockSignOut;
+  ensureSession: typeof mockEnsureSession;
 }
 let mockAuth: FakeAuth = {
   enabled: true,
   user: { id: 'u1', isAnonymous: true },
   deleteAccount: mockDeleteRemote,
   signOut: mockSignOut,
+  ensureSession: mockEnsureSession,
 };
 
 jest.mock('@/global.css', () => ({}));
@@ -75,7 +78,7 @@ function grabActions(): { deleteAccount: () => Promise<void> } {
 beforeEach(() => {
   jest.clearAllMocks();
   mockCheckBackendHealth.mockResolvedValue('reachable');
-  mockAuth = { enabled: true, user: { id: 'u1', isAnonymous: true }, deleteAccount: mockDeleteRemote, signOut: mockSignOut };
+  mockAuth = { enabled: true, user: { id: 'u1', isAnonymous: true }, deleteAccount: mockDeleteRemote, signOut: mockSignOut, ensureSession: mockEnsureSession };
 });
 
 const run = async () => {
@@ -130,6 +133,32 @@ describe('when there is no backend at all', () => {
     mockAuth = { ...mockAuth, enabled: false };
     await run();
     expect(mockDeleteRemote).not.toHaveBeenCalled();
+    expect(mockResetToFirstRun).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the device the deletion leaves behind', () => {
+  /**
+   * The partner deleted his account to look at the new first run, and the first run opened on
+   * "we cannot reach the server" — which his own Try again then fixed (2026-09-03). Nothing was
+   * broken; the device had simply been signed out and nobody had minted the anonymous session a
+   * genuine fresh install gets at launch.
+   */
+  it('holds a session again, so the first run does not open on an error', async () => {
+    await run();
+    expect(mockEnsureSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('mints it only after the wipe, so the new session is not caught by it', async () => {
+    await run();
+    expect(mockEnsureSession.mock.invocationCallOrder[0]).toBeGreaterThan(
+      mockMultiRemove.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('still counts the deletion as done when the network is not there for the new session', async () => {
+    mockEnsureSession.mockRejectedValueOnce(new Error('offline'));
+    await expect(run()).resolves.toBeUndefined();
     expect(mockResetToFirstRun).toHaveBeenCalledTimes(1);
   });
 });

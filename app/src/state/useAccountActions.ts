@@ -46,7 +46,7 @@ export class BackendUnreachableError extends Error {
 
 export function useAccountActions() {
   const { core } = useApp();
-  const { enabled, user, deleteAccount: deleteRemote, signOut } = useAuth();
+  const { enabled, user, deleteAccount: deleteRemote, signOut, ensureSession } = useAuth();
   const { profile } = useSocial();
 
   /**
@@ -129,7 +129,23 @@ export function useAccountActions() {
     }
     await core.resetToFirstRun();
     await AsyncStorage.multiRemove([...ACCOUNT_STORAGE_KEYS]);
-  }, [enabled, user, deleteRemote, signOut, core]);
+
+    // 3) THIS DEVICE IS NOW A FRESH INSTALL, so give it what a fresh install gets: an anonymous
+    // session. `signOut` above left `status === 'signedOut'`, and nothing re-minted one until the
+    // next cold start — so the very next screen the person met was the coach's "we cannot reach the
+    // server" card, which their own "Try again" then fixed. They were deleting their account
+    // precisely IN ORDER to see the first run, and the first thing the first run showed them was an
+    // error that was not true (partner, 2026-09-03).
+    //
+    // Best-effort on purpose, and LAST on purpose: the deletion has already succeeded and is not
+    // undone by a network that is down. Someone genuinely offline still lands on the honest offline
+    // card with a retry that works — which is the case that card was written for.
+    try {
+      await ensureSession();
+    } catch {
+      // ensureSession surfaces failure as `error` rather than throwing; this is belt and braces.
+    }
+  }, [enabled, user, deleteRemote, signOut, ensureSession, core]);
 
   return { exportData, deleteAccount };
 }

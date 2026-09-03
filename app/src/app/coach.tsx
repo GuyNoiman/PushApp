@@ -35,6 +35,7 @@ import { RemindersAskPage } from '@/components/onboarding/FirstRunTail';
 import {
   OnboardingPrimaryButton,
   OnboardingScaffold,
+  OnboardingSecondaryButton,
 } from '@/components/onboarding/OnboardingScaffold';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -110,6 +111,37 @@ function introJourneyContent(t: TFunction): IntroJourneyContent {
   };
 }
 
+/**
+ * Finish the first run WITHOUT a coach conversation.
+ *
+ * ── WHY THIS IS ALLOWED NOW (founder, 2026-09-03) ────────────────────────────
+ *
+ * Until today onboarding could not complete until the coach had built a Journey, and that rule was
+ * right for the reason behind it: nobody should reach Home empty. It also made an unreachable model
+ * a dead end — the person could not get into the app at all, on a path they had no way to fix.
+ *
+ * The founder replaced the GUARANTEE rather than the promise. Every user now gets the "Getting to
+ * know PushApp" Journey (§2.1 of the spec), so Home is never empty of Journeys whatever happened in
+ * the conversation, and the condition that produced the dead end can go.
+ *
+ * ── THIS IS THE FAILURE PATH, NOT A SKIP BUTTON ──────────────────────────────
+ *
+ * It is offered only where the conversation genuinely cannot happen: no session, or a build with no
+ * live coach. The conversation is still the onboarding, and somebody who simply does not feel like
+ * talking is not shown a way past it. Home's coach card is the way back, and it is the first thing
+ * on the screen they land on.
+ */
+function useFinishFirstRunWithoutCoach(): () => void {
+  const { core } = useApp();
+  const { t } = useTranslation('onboarding');
+  return useCallback(() => {
+    // The same completion the coach path calls, with the same intro Journey. One seam, so a person
+    // who arrives here is not a second kind of user with a different Home.
+    core.completeOnboarding(core.getOnboardingAnswers(), introJourneyContent(t));
+    router.replace('/');
+  }, [core, t]);
+}
+
 export function leaveCoach(firstRun: boolean): void {
   if (firstRun) {
     router.replace('/onboarding');
@@ -124,14 +156,20 @@ export function leaveCoach(firstRun: boolean): void {
 
 function OnboardingCoachPendingScreen() {
   const { t } = useTranslation('onboarding');
+  const finishWithoutCoach = useFinishFirstRunWithoutCoach();
   return (
     <OnboardingScaffold
       onBack={() => router.replace('/onboarding')}
       footer={
-        <OnboardingPrimaryButton
-          label={t('coachPending.back')}
-          onPress={() => router.replace('/onboarding')}
-        />
+        <>
+          {/* Into the app is now the PRIMARY action. A build with no live coach cannot hold somebody
+              in a preparation loop for a conversation it will never open. */}
+          <OnboardingPrimaryButton label={t('firstRun.continueWithout')} onPress={finishWithoutCoach} />
+          <OnboardingSecondaryButton
+            label={t('coachPending.back')}
+            onPress={() => router.replace('/onboarding')}
+          />
+        </>
       }>
       <ThemedText type="title">{t('coachPending.title')}</ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
@@ -158,6 +196,7 @@ function CoachOfflineScreen({
   const theme = useTheme();
   const { t } = useAddressedTranslation('coach');
   const { t: tCommon } = useTranslation('common');
+  const finishWithoutCoach = useFinishFirstRunWithoutCoach();
 
   return (
     <ThemedView style={styles.container}>
@@ -181,6 +220,16 @@ function CoachOfflineScreen({
             onRetry={onRetry}
             retrying={retrying}
           />
+          {/* FIRST RUN ONLY. Retry is the right first offer and stays first; but somebody whose
+              connection is not coming back in the next minute must not be locked out of an app that
+              works offline. They land on a Home with the intro Journey on it and the coach one tap
+              away. */}
+          {firstRun ? (
+            <OnboardingSecondaryButton
+              label={t('firstRunContinue')}
+              onPress={finishWithoutCoach}
+            />
+          ) : null}
         </View>
       </SafeAreaView>
     </ThemedView>

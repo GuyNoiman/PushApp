@@ -2593,3 +2593,29 @@ landing on them; generating the half that quotes the code stops the new one goin
 did.
 
 **Stage:** Process decision — in force now.
+
+### D97 — The default Journey replaces the condition that onboarding must produce one
+
+**Decision (2026-09-03):** every user is given the default "Getting to know PushApp" Journey (D95),
+so Home is never empty of Journeys. The rule that **onboarding does not complete until a Journey
+exists** is therefore removed.
+
+The promise it protected is unchanged and now better protected: **a person must never reach Home
+empty.** What changed is what guarantees it. It used to be a condition on the conversation, which
+made an unreachable model a dead end — somebody whose session or network was down could not get into
+an app that otherwise works entirely offline, on a path they had no way to fix. It is now a Journey
+that exists regardless.
+
+In the first run, when the coach cannot be reached: retry is offered first and stays first; beneath
+it is a way into the app that completes onboarding through the same seam the coach path uses, with
+the same intro Journey. Nothing is fabricated — no Journey is invented from unprocessed free text
+and no conversation is claimed to have happened. Home's coach card is the way back.
+
+**It is not a skip.** The escape appears only where the conversation genuinely cannot happen (no
+session, or a build with no live coach). The conversation is still the onboarding, and somebody who
+simply does not feel like talking is not offered a way around it.
+
+**Resolves:** the open question in the onboarding spec §4.14, which the partner correctly refused to
+answer on his own because both halves of the contradiction were founder decisions.
+
+**Stage:** MVP.

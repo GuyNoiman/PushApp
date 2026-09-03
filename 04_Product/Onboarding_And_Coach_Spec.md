@@ -553,21 +553,30 @@ This is the founder's Career/no-direction test and should be kept as a regressio
   in the domain rather than forcing certainty. If no honest route exists, state that the direction
   is still unresolved and ask one discriminating question later when there is more context.
 
-### 4.14 Model/network unavailable — **OPEN**
+### 4.14 Model or network unavailable — **DECIDED 2026-09-03, BUILT**
 
-This remains open because §6 currently says onboarding does not complete until a Journey exists and
-a person must never reach Home empty. That conflicts with an earlier proposal to let the person enter
-Home during an outage.
+This was open because two rules contradicted each other: onboarding could not complete until a
+Journey existed, and the outage plan wanted to let the person into Home. The founder resolved it by
+removing the reason for the first rule rather than choosing between them.
 
-Until the founder decides otherwise, implementation must at minimum:
+**Every user gets the default "Getting to know PushApp" Journey**, so Home is never empty of
+Journeys whatever happened in the conversation. Onboarding therefore no longer waits for the coach
+to build one, and an unreachable model stops being a dead end.
 
-- preserve the person's first-run progress;
-- never fabricate a Journey from unprocessed free text;
-- provide a clear retry/resume path;
-- not silently mark onboarding complete.
+What the first run does when the coach cannot be reached:
 
-The open decision is whether there is a deterministic fallback Journey-building flow or whether the
-person remains in a resumable onboarding state until the model is available.
+- **Retry is offered first**, and stays first. Getting the conversation is what the person actually
+  wants, and a session that was simply late usually comes back.
+- **Underneath it, a way into the app.** It completes onboarding through the SAME seam the coach path
+  uses, with the same intro Journey — so somebody who arrives this way is not a second kind of user
+  with a different Home.
+- Nothing is fabricated. No Journey is invented from unprocessed free text, and no conversation is
+  claimed to have happened.
+- Home's coach card is the way back, and it is the first thing on the screen they land on.
+
+**It is not a skip button.** It appears only where the conversation genuinely cannot happen — no
+session, or a build with no live coach. Somebody who simply does not feel like talking is not shown
+a way past the conversation, because the conversation is still the onboarding.
 
 ### 4.15 Username and public profile — **BUILT (moved), OPEN (errors)**
 
@@ -1183,7 +1192,10 @@ These are decided. If you want to change one, that is a conversation with the fo
   and are meant to be asked contextually, when a chosen Journey actually needs the axis.
 - **The product terms are fixed:** Dream · Journey · Milestone · Step · Buddy · Ally · Support
   Circle. Never "phase", "program" or "challenge", in any language.
-- **Onboarding does not complete until a Journey exists.** A person must never reach Home empty.
+- **A person must never reach Home empty**, and as of 2026-09-03 that is guaranteed by the default
+  Journey rather than by a condition on the conversation. Every user gets "Getting to know
+  PushApp" (§2.1), so Home always has a Journey and a Step on it. Onboarding no longer waits for
+  the coach to build one. *(Superseded: "onboarding does not complete until a Journey exists".)*
 - **No product name in the coach's character.** The name is not settled, and a half-renamed persona
   is worse than an unnamed one.
 

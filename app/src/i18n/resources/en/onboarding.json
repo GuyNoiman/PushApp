@@ -224,5 +224,8 @@
         "description": "Fourteen short exercises you do on your own. Pick whichever one looks interesting."
       }
     ]
+  },
+  "firstRun": {
+    "continueWithout": "Continue to the app"
   }
 }

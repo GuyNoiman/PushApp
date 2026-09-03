@@ -110,8 +110,8 @@ Ordered by what unblocks what.
 | O-12 | A distinct onboarding coach SESSION | Specified | The coach opens as an ordinary conversation with `?firstRun=1`. There is no separate state, no header, and nothing downstream knows this is first-run |
 | O-13 | Meaningful reflection + user correction before the plan | **Specified, and the heart of it** | Nothing reflects. §8.2 requires a summary the user can confirm or correct, and a correction must rebuild the Journey |
 | O-14 | Starting-point summary screen | Specified | Nothing. §12's three blocks and the "something here does not feel right" return path |
-| O-15 | A concrete first action before onboarding completes | Specified | Onboarding completes when the flow ends, not when a step exists |
-| O-16 | Populated first Home | **Shipped** | Onboarding completes only when the coach builds a Journey, and the intro Journey (O-21) lands beside it — so a first Home now has at least two Journeys and a Starter Step |
+| O-15 | A concrete first action before onboarding completes | **Shipped** | The intro Journey's Starter Step is on Home whatever happened in the conversation (D95, D97), so the first run always ends on a named next action |
+| O-16 | Populated first Home | **Shipped** | Guaranteed by the default Journey rather than by a condition on the conversation (D97). A first Home always carries at least the intro Journey and its Starter Step, including when the coach could not be reached |
 | O-17 | Contextual profile signals instead of a block | Half | The nine questions are retired from first-run and reachable from Tools; nothing asks them contextually |
 | O-18 | Resume mid-conversation | **Gap** | The coach session, messages and resolved signals must survive a restart. The orchestrator lives in a React ref and has no rehydration path — a restart loses the conversation. Spec §4.16 |
 | O-19 | Memory + reminder + sharing asked after value | Half | The tail moved after the first Journey (v2 phase 1). Sharing is not offered at all |

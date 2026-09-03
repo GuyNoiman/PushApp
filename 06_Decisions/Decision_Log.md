@@ -2538,6 +2538,8 @@ non-chat starting-point summary and explicitly approves the Journey and first St
 reminders appear only after relevant value exists; memory consent follows the first value moment;
 the first Home is populated. The complete visible flow, including error/resume states, light/dark and
 RTL/LTR, is defined in `04_Product/PRD/Onboarding_Coach_Led_UX_PRD.md`.
+*(2026-09-03: that PRD was folded into `04_Product/Onboarding_And_Coach_Spec.md` §5 — D96. The
+decision above is unchanged; only where to read it moved.)*
 
 **Why:** A fixed intake optimizes for completed fields rather than understanding. The product should
 learn while helping, make its interpretation correctable, and reach real action without making the

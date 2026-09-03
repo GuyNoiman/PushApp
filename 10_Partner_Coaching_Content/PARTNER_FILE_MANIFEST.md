@@ -172,6 +172,15 @@ audit above and have since been resolved by the founder (Decision Log **D47**):
 
 ## Derived work
 
-Nothing from this package has been copied into PushApp's own documents or code yet.
-Record any such use here, with the source file and the destination, so a future deletion knows
-what it would leave behind.
+Founder-approved derived work, 2026-08-31:
+
+- Source: `Master_Specs_Original/15_Meta_Coach_Master_Spec.md` and the partner's 2026-08-30 voice
+  guidance. Destinations: `app/src/core/coach/coachPrompts.ts`,
+  `04_Product/Onboarding_And_Coach_Spec.md`, and
+  `04_Product/Onboarding_And_Coach_Spec.md` §5. The derived behavior covers listening before
+  directing, meaningful reflection, user-language preservation, tentative hypotheses, sparse use of
+  a preferred first name, empathy without flattery, one useful layer of depth, one question at a
+  time, user correction and user-owned action.
+
+If the external partner package is ever removed, these founder-approved product rules remain part of
+PushApp unless the founder explicitly reverses them.

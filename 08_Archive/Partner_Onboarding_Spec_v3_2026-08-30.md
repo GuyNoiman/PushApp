@@ -1,9 +1,9 @@
 # MeMore MVP Onboarding v3
 
 > **SUPERSEDED, 2026-09-03.** The current specification is
-> [`04_Product/Onboarding_And_Coach_Spec.md`](./Onboarding_And_Coach_Spec.md), which is the ONE file
-> to edit. This one is kept for its reasoning and its history; where the two disagree, the other one
-> wins. Do not write corrections against this file.
+> [`04_Product/Onboarding_And_Coach_Spec.md`](../04_Product/Onboarding_And_Coach_Spec.md), which is the ONE file
+> to edit. Everything still true here was folded into that file on 2026-09-03; this copy is kept for
+> its reasoning and for the record. Do not write corrections against it.
 
 ## Implementation Handoff for App Development
 

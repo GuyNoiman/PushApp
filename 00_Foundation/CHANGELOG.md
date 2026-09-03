@@ -12,7 +12,7 @@ use, the user's own vocabulary, accurate empathy, meaningful reflection, one use
 one question at a time and conversation-led rather than field-led progression. A focused regression
 test protects those prompt commitments.
 
-`04_Product/PRD/Onboarding_Coach_Led_UX_PRD.md` now defines the complete first-run experience from
+`04_Product/Onboarding_And_Coach_Spec.md` §5 (folded in there 2026-09-03) defines the complete first-run experience from
 post-auth language selection through profile review, three brand screens, preparation, the dedicated
 Coach conversation, correctable reflection, starting-point summary, first Step approval, optional
 support/reminders, populated Home and post-value memory consent. It includes idempotent resume,

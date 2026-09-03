@@ -68,3 +68,28 @@ During Phase 2 (Repository Cleanup), four Product Bible variants existed at once
 complete), and `Product_Bible_updated.md`. The newest and most complete version
 was promoted to the canonical `04_Product/Product_Bible.md`; the two older
 full-Bible versions were moved here.
+
+### Partner_Onboarding_Spec_and_Flow_2026-08-26.md · Partner_Onboarding_Spec_v2_2026-08-27.md · Partner_Onboarding_Spec_v3_2026-08-30.md · Partner_Onboarding_Corrections_2026-09-02.md
+Four successive descriptions of first-run onboarding and the coach's behaviour, written between
+26 August and 2 September 2026. They are archived together because the problem they caused was
+collective: with four of them live, the founder and the partner were working from different ones,
+and a correction arrived for behaviour that had already changed.
+
+Everything still true in them was folded into `04_Product/Onboarding_And_Coach_Spec.md` on
+2026-09-03 (D96) — the flow, the phases and their budgets, the invisible-routing rule, the capacity
+precedence, the localisation audit, the starting-point summary, the failure cases and the reference
+transcript. The five character precisions from the corrections file live in
+`app/src/core/coach/coachCharacter.ts`, which that spec generates its §3 from.
+
+Kept for their reasoning and for the record of how the design arrived. Nothing in them needs reading
+in order to work from the current spec.
+
+### Onboarding_Coach_Led_UX_PRD_2026-08-31.md
+The screen-level UX specification for coach-led onboarding: the shell, each screen's job and copy,
+the conversation states, light/dark, RTL, accessibility, edge cases and acceptance criteria. Folded
+into `04_Product/Onboarding_And_Coach_Spec.md` §5 on 2026-09-03 (D96), unchanged except that its
+"Screen A2 — Personal information review" was dropped (that page left the first run the same day)
+and its opening two sections were dropped as duplicates of the spec's own.
+
+Kept because it is the record of the design at the moment it was approved. The live version is §5 of
+the spec.

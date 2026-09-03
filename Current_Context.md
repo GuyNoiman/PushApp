@@ -54,7 +54,7 @@ the handoff — where to start today — and no longer tries to be the list.
 
 ## ▶ TWO SESSIONS ARE WORKING THIS REPO
 
-Codex is building onboarding v3 (`04_Product/Partner_Onboarding_Spec_v3_2026-08-30.md`). As of
+Codex is building onboarding v3 (`04_Product/Onboarding_And_Coach_Spec.md`, the one spec — D96). As of
 2026-09-01 it has ~570 uncommitted lines across 22 files, including `core/onboarding/*`,
 `coach/interviewPlaybook.ts`, `coach/sensitiveDomains.ts` and the onboarding i18n.
 
@@ -112,8 +112,8 @@ Founder-approved conversational behavior is now recorded in all three required l
 1. the permanent content source at
    `10_Partner_Coaching_Content/Master_Specs_Original/15_Meta_Coach_Master_Spec.md`;
 2. the active runtime prompt at `app/src/core/coach/coachPrompts.ts`, protected by a focused test;
-3. the product/UX contracts at `04_Product/Partner_Onboarding_Spec_v3_2026-08-30.md` and
-   `04_Product/PRD/Onboarding_Coach_Led_UX_PRD.md`.
+3. the product/UX contracts at `04_Product/Onboarding_And_Coach_Spec.md` and
+   `04_Product/Onboarding_And_Coach_Spec.md` §5.
 
 The UX PRD is screen-exact: post-auth language, full Personal Information review, three required
 brand screens, quiet-time preparation, dedicated resumable Coach session, correctable reflection,

@@ -1,10 +1,15 @@
 # PRD — Coach-Led Onboarding UX
 
+> **ARCHIVED, 2026-09-03.** Folded into
+> [`04_Product/Onboarding_And_Coach_Spec.md`](../04_Product/Onboarding_And_Coach_Spec.md) §5, which
+> is the single specification for onboarding and the coach (D96). Kept for the record of the design
+> as approved; edit the spec, not this.
+
 **Status:** Approved direction; implementation-ready UX specification pending rendered visual review.  
 **Stage:** MVP.  
 **Owner:** founder + AI product team.  
 **Date:** 2026-08-31.  
-**Related:** `Partner_Onboarding_Spec_v3_2026-08-30.md`,
+**Related:** `Onboarding_And_Coach_Spec.md` (the single spec — D96),
 `10_Partner_Coaching_Content/Master_Specs_Original/15_Meta_Coach_Master_Spec.md`,
 `PRD/Done/Onboarding_Questionnaire_PRD.md` (historical implemented flow; immutable),
 `PRD/Done/Own_Profile_PRD.md`, `PRD/Coach_Context_Summaries_PRD.md`.

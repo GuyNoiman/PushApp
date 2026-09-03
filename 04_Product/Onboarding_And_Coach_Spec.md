@@ -5,6 +5,7 @@
 > four different products, and it is the problem this file exists to end.
 >
 > Owner: the founder. Last built from the code on **2026-09-03**.
+> Founder decisions in §4 last updated on **2026-09-03** and are **not built until the acceptance tests in §9 pass**.
 
 ---
 
@@ -40,6 +41,12 @@ Two consequences that everything else follows from:
    asked inside the conversation is asked there, not on a form before it.
 2. **Nothing is collected before the conversation that the conversation does not need.** A field
    the product would like to have is not a reason to stop somebody on their way in.
+
+A third consequence is now explicit:
+
+3. **The diagnostic machinery is invisible.** Signals, routing, Journey families, variant selection
+   and planning may remain structured and deterministic underneath. The person should experience
+   listening, reflection and a useful next move — not classification.
 
 ---
 
@@ -205,172 +212,392 @@ the generated block — it will be overwritten.
 
 ---
 
-## 4. The conversation — the design in full
+## 4. The onboarding conversation — **DECIDED, NOT BUILT**
 
-The character in §3 governs how the coach *sounds* in every conversation. This section is what the
-FIRST conversation does: its shape, its budget, and where it ends. It is the live part of this
-document, and everything in it came out of watching real first runs.
+The character above governs how the coach *sounds*. This section governs how the first conversation
+*executes*. A prompt rule is not enough: the orchestrator must enforce the flow below, otherwise the
+model can sound better while the app still behaves like the same questionnaire.
 
-### 4.1 The opening — **BUILT**
+### 4.1 The target experience — **DECIDED, NOT BUILT**
 
-One open question about the person's life, not about the product, and not a menu.
+> **The onboarding should already feel like the first coaching session — not like a questionnaire rendered inside a chat UI.**
 
-> מה היית רוצה שיהיה קצת אחרת בחיים שלך עכשיו?
-> *(What would you like to be a little different in your life right now?)*
+The person should feel, very early, that the coach listened, understood what they said, and is asking
+only what is still needed.
 
-The exact wording lives in the locale files, which are the source of truth for copy. What is fixed
-here is the shape: **an open question, in their language, that a person could answer at a dinner
-table.**
+The first conversation has three phases:
 
-### 4.2 Three phases, and a budget — **DECIDED, NOT BUILT**
+```text
+A. UNDERSTAND
+   opening → use what is already known → ask only unresolved high-value questions
+   → 2–3 grounded reflections across the conversation
 
-The failure this fixes: a conversation that looks conversational and behaves like a form, because
-it keeps asking until the model is satisfied. Each phase has a ceiling.
+B. REFLECT THE STARTING POINT
+   synthesize goal + current reality + main uncertainty/bottleneck + immediate direction
+   → person can confirm or correct
 
-| Phase | What it is for | Budget |
-|---|---|---|
-| **A — Understand** | The active goal, the starting point, and enough not to build the wrong Journey. Nothing else. | **2–4 adaptive questions** after the opening. A target, not a quota: if the first answer already carries the signals, ask fewer. |
-| **B — Reflect the starting point** | Say what the coach currently understands, and let them correct it, BEFORE any scheduling question. | One turn. |
-| **C — Fit it to real life** | Only now: capacity, structure, pace, challenge, scheduling — the questions that materially change the plan. | As few as the plan needs. |
+C. FIT THE JOURNEY TO REAL LIFE
+   ask only plan-changing questions still missing
+   → capacity / structure / pace / horizon / scheduling as needed
+   → create Journey internally
+   → show the first Step clearly
+```
 
-**Diagnosis and scheduling never mix into one long uninterrupted run of questions.** Phase B exists
-to break them apart, and it is the moment the person finds out they were being listened to.
+These are phases of reasoning, not screens. **Do not display "Phase A", "diagnosis", "routing",
+"family", "variant", "matching" or any other internal machinery to the person.**
 
-### 4.3 Reflection
+### 4.2 Opening — **DECIDED, NOT BUILT**
 
-The rules are in §3 and are not repeated here — including what does **not** count as a reflection,
-the four moments to reflect at, and the budget of two or three across a first conversation. If you
-want to change reflection behaviour, that is a change to the character, not to this section.
+Do not open onboarding with a customer-support line such as:
 
-### 4.4 Routing is invisible — **DECIDED, NOT BUILT**
+> "How can I help you today?"
 
-Observed failure: the coach said *"I found one Journey that fits what you told me"* and then showed
-a list of Journey families to pick from — *Find a new direction · Land a new role · Grow where I am ·
-Build a specific skill*. That contradicts the sentence it just said, and it exposes internal
-taxonomy.
+Use a change-oriented coaching opening. Hebrew default:
 
-**Routing is engine behaviour, not user-facing content. The person should feel understood, not
-classified.** When the engine has enough evidence to select a family, it selects it, and confirms
-the MEANING in ordinary language:
+> **מה היית רוצה שיהיה קצת אחרת בחיים שלך עכשיו?**
 
-> ממה שסיפרת, נראה שהשלב הראשון שלך הוא לא למצוא את התפקיד הבא — אלא להבין מה הכיוון הנכון עבורך.
-> זה נשמע מדויק? · **כן** / **לא בדיוק**
+Acceptable alternative if product copy requires it:
 
-"Not exactly" earns **one** discriminating follow-up. The internal taxonomy is shown only when the
-engine is genuinely unresolved and the options really are the most natural way to resolve it.
+> **מה הדבר שהכי היית רוצה להתקדם בו עכשיו?**
 
-### 4.5 Never re-ask what is already known — **DECIDED, NOT BUILT**
+The first question should invite the person to name the change that matters now. It must not ask
+for a category, a Journey family or a product feature.
 
-The rule exists in the character; what is missing is its consistent application across the seams:
-opening goal, diagnosis, Journey-specific questions, onboarding profile signals, and capacity. If
-somebody has said they do not know their direction, they must not be asked a few turns later to
-choose between career families as though the sentence never happened.
+### 4.3 Question budget — **DECIDED, NOT BUILT**
 
-### 4.6 Capacity: one authoritative value — **DECIDED, NOT BUILT**
+The first conversation is intentionally bounded.
 
-There must be **one capacity value for the current Journey-building session**, in this precedence:
+#### Phase A — understand
 
-1. an explicit answer given in THIS conversation;
-2. an existing onboarding capacity signal;
-3. ask, only if neither is enough.
+- **Normally 2–4 adaptive questions after the person's opening answer.**
+- **Hard ceiling: 4 understanding/diagnosis questions** unless the person corrects a wrong
+  interpretation and one replacement question is required to recover from that error.
+- Ask fewer than 4 when the opening message or prior answer already resolves what is needed.
+- A closed field that is technically empty is **not** permission to ask a question the person has
+  already answered in ordinary language.
+- At the ceiling, do not continue interviewing because more data would be nice to have. Move to the
+  starting-point reflection with the uncertainty stated honestly.
 
-If the Journey-specific scheduling interview stays authoritative, prior capacity must **prefill or
-skip**, never produce the same question twice.
+#### Phase B — reflect
 
-> **P0 defect, observed:** the question "how much time can you realistically dedicate each week?"
-> was rendered with options *about one month · about two months · no fixed end*. Those are Journey
-> **horizon** answers on a **capacity** question. The fix is the mapping plus a parity test: capacity
-> ids may only render capacity labels, horizon ids may only render horizon labels, and Hebrew and
-> English must use the same semantic mapping.
+- One grounded starting-point summary.
+- It appears **as a Coach message inside the conversation, not as a separate questionnaire screen**.
+- The person must be able to correct it. Preferred actions: **"מדויק" / "לא בדיוק"**, with free text
+  available for correction.
+- A correction replaces the invalid interpretation and may trigger **one** discriminating question
+  if required before routing. Do not restart the interview.
 
-### 4.7 Language: no leakage — **DECIDED, NOT BUILT**
+#### Phase C — fit to real life
 
-When the app language is Hebrew, the entire first run and Journey-building path is Hebrew, except
-protected product names. English strings observed leaking through: *"Find a new direction" · "More
-than 5 hours" · "Not knowing where to start" · "Build up in clear stages" · "Career" ·* the username
-availability error.
+- **Maximum 3 questions**, and only if they materially change the plan.
+- Typical axes: weekly capacity, preferred structure/pace, Journey horizon or scheduling.
+- Do not ask a Phase C question whose answer is already sufficiently known.
+- Do not mix these questions back into diagnosis; the person should feel that the coach first
+  understood *what* they need, and only then fitted it to *how their life actually works*.
 
-Every string on these paths gets audited: first run · coach answer cards · diagnosis · family
-confirmation · variant questions · capacity · horizon and scheduling · the creation summary · the
-first Journey card · username and profile errors. Then a **Hebrew smoke test that walks the whole
-first-run path and fails when an English string is rendered.**
+### 4.4 The next-question contract — **DECIDED, NOT BUILT**
 
-### 4.8 The starting-point summary — **DECIDED, NOT BUILT**
+Before the orchestrator renders or asks the next question, it must assemble the current known state
+from all permitted sources:
 
-Before a Journey is created, the person reads what the coach understood, **in their own words**, and
-can correct it. It replaces the generic reassurance that used to sit there ("this is a realistic
-plan for where you are and the time you have"), which is a sentence about nobody.
+1. the person's latest message;
+2. earlier turns in this same onboarding conversation;
+3. structured answers already captured during this conversation;
+4. relevant existing profile/onboarding signals where the current privacy contract permits them;
+5. diagnosis signals already resolved from those answers.
 
-Grounded elements only: the change they want · where they are now · the main uncertainty · the
-direction that follows. Ending on the offer, not on a claim:
+Then it must choose **only the highest-value unresolved question**.
 
-> אז הנה נקודת ההתחלה שלך: אתה רוצה שינוי בקריירה, אבל עדיין לא רוצה לקפוץ לתפקיד הבא לפני שתבין
-> מה באמת מתאים לך. יש לך זמן להשקיע בזה, ומה שהכי יעזור לך הוא דרך ברורה, בנויה בשלבים.
-> **מכאן הייתי מתחיל.**
+This is an orchestration rule, not just a character instruction.
 
-A correction here **rebuilds the Journey**. It is not acknowledged and then ignored.
+Required behavior:
 
-### 4.9 The handoff to Home — **DECIDED, NOT BUILT**
+- If a supported signal is already resolved, skip the corresponding authored question.
+- If the person's natural-language answer resolves an authored closed question, store/map the
+  supported signal and skip the authored wording.
+- If the person corrects the Coach, replace the old conversational hypothesis immediately.
+- Never ask the same semantic question twice because two subsystems use different IDs.
+- Do not render an answer-card question automatically just because it is next in a static list.
 
-The moment itself is strong and stays. One correction: **the first Step must be immediately
-legible.** Do not truncate its title if it can be avoided, put "what do I do now?" above secondary
-metadata, and if something must truncate, make the card openable without ambiguity. Nobody should
-finish onboarding knowing only that a plan exists.
+### 4.5 Grounded reflection — **BUILT IN CHARACTER; FLOW SUPPORT NOT BUILT**
 
-### 4.10 Username and public profile — **BUILT (moved), OPEN (errors)**
+The character already requires 2–3 grounded reflections. The first-run flow must now make room for
+them instead of forcing every model turn directly into the next structured question.
 
-Public-profile completion is out of the first run — as of 2026-09-03 the whole profile page is
-(§2.1). When a username is taken: keep the message in the chosen locale, preserve what was typed,
-offer a couple of available alternatives if identity can do it cheaply, and **never block private
-Journey functionality on an unresolved public username.** If a backend invariant genuinely requires
-it, that constraint gets written down as an implementation note rather than treated as a coaching
-requirement.
+A reflection must add compression or connection based on evidence, for example:
 
-### 4.11 When it fails — **OPEN**
+> **אז כרגע לא צריך להתחיל מלחפש עבודה. קודם כדאי להבין איזה כיוון באמת מתאים לך.**
 
-The first run leans harder on the coach than anything else in the product, so it must never dead-end.
+or:
 
-- **Model or network unavailable:** keep the first-run progress locally, say briefly that the
-  conversation cannot continue now, let the person into the app without losing anything, and give an
-  obvious way to resume later. **Never fabricate a Journey out of unprocessed free text.** An offline
-  structured fallback may be kept, but must never be presented as the same coaching experience.
-- **"I don't know":** valid information. It is never converted into a default belief about the
-  person. If routing cannot resolve, it stays unresolved and the smallest useful question comes later.
-- **The coach got it wrong:** acknowledge through a reflection, **discard** the invalid assumption
-  (§3 — a correction replaces it), recompute the next unresolved signal, and do not continue down the
-  old route.
-- **Username unavailable:** belongs to identity setup and must never look like onboarding failing.
+> **אני שומע שאתה רוצה שינוי, אבל לא רוצה לקפוץ לתפקיד הבא רק כדי לצאת מהנוכחי. חשוב לך קודם להבין מה באמת מתאים לך, ובמקביל אתה רוצה דרך מספיק ברורה כדי לא להישאר רק במחשבות.**
 
-### 4.12 A reference transcript
+These do not count as reflections:
 
-Behaviour, not fixed copy. It is here because it shows the pattern in less space than a description:
+- "זה נשמע חשוב"
+- "תודה ששיתפת"
+- "אני מבין"
+- "מעולה"
 
-> **Coach** · מה היית רוצה שיהיה קצת אחרת בחיים שלך עכשיו?
-> **User** · אני רוצה לעשות שינוי בקריירה שלי.
-> **Coach** · נשמע שאתה יודע שאתה רוצה שינוי — השאלה היא אם כבר יש לך כיוון. יש משהו שמושך אותך, או
-> שאתה עדיין מנסה להבין לאן?
+The orchestration must permit a response that **reflects and asks the next unresolved question in the
+same turn**. Do not require a separate acknowledgement bubble followed by a separate question.
 
-The second turn does two jobs at once: it hands back what was understood, and asks the next
-unresolved question. Note what it does **not** do — it does not ask which roles are being applied
-for, because nobody said anything about applying (§3).
+### 4.6 No unsupported assumptions — **BUILT IN CHARACTER; MUST PASS FLOW TEST**
 
-### 4.13 Still genuinely open — **OPEN**
+The specific failure seen in founder testing must not recur.
 
-- The exact ceiling per phase, and what the coach does on the last question of a phase.
-- What happens when somebody answers "I don't know" three times in a row.
-- Whether the starting-point summary is a screen or a message inside the conversation.
-- **Resume:** the orchestrator lives in a React ref with no rehydration path, so closing the app
-  mid-conversation loses it. The conversation, its messages and its resolved signals must survive a
-  restart.
-- The analytics events for this flow. Twenty are drafted; none exists in the KPI taxonomy yet
-  (Backlog O-20), and they belong in `app/src/core/kpi/taxonomy.ts` rather than in prose here.
+Person:
+> אני רוצה לעשות שינוי בקריירה שלי
 
-### 4.14 What this work is NOT allowed to become
+Wrong next question:
+> לאילו סוגי תפקידים את/ה מגיש/ה מועמדות כרגע?
 
-From the corrections, and worth keeping: no new native permission, no new analytics SDK, no
-server-side profile/learning pipeline, no change to the privacy rule for raw free text, and no change
-to who owns Journey and Planner decisions. If building any of the above turns out to require one of
-these, **stop and say so** rather than expanding quietly.
+That question invents an active job search.
+
+Required shape:
+
+Coach:
+> **נשמע שאתה יודע שאתה רוצה שינוי — השאלה היא אם כבר יש לך כיוון. יש משהו שמושך אותך, או שאתה עדיין מנסה להבין לאן?**
+
+Person:
+> אני לא כל כך יודע לאיזה כיוון ללכת.
+
+Coach:
+> **אז כרגע לא צריך להתחיל מלחפש עבודה. קודם כדאי להבין איזה כיוון באמת מתאים לך. מה הכי חשוב לך שיהיה בתפקיד הבא?**
+
+This example is not fixed copy. The **logic** is fixed: do not infer application/job-search status
+from "I want a career change".
+
+### 4.7 Journey routing is invisible — **DECIDED, NOT BUILT**
+
+The person never performs the system's routing job when the system already has enough evidence to do
+it.
+
+The observed failure was:
+
+1. the app says it found **one** Journey that fits;
+2. then it displays multiple internal Journey-family choices such as "Find a new direction",
+   "Land a new role or job", "Grow where I am", "Build a specific skill".
+
+This must be removed.
+
+Required behavior:
+
+- If routing is resolved, choose the Journey family internally.
+- Do not show domain/family/variant taxonomy merely to confirm the engine's own decision.
+- If human confirmation is useful, confirm the **meaning**, not the taxonomy. Example:
+
+  > **ממה שסיפרת, נראה שהשלב הראשון שלך הוא לא למצוא את התפקיד הבא — אלא להבין מה הכיוון הנכון עבורך. זה נשמע מדויק?**
+
+- If the person says "לא בדיוק", ask one discriminating follow-up and recompute.
+- Show multiple choices only when the engine is genuinely unresolved **and** those choices are the
+  most natural user-facing way to express the actual alternatives. Never label them as routing or
+  Journey families.
+- The UI must never say "one Journey found" and then present multiple unrelated families.
+
+> **Routing is engine behavior, not user-facing product content.**
+
+### 4.8 Starting-point summary — **DECIDED, NOT BUILT**
+
+Before the Journey is created, the Coach sends one grounded summary that answers:
+
+- what the person wants;
+- where they are now;
+- what is currently uncertain or blocking movement;
+- what the Coach therefore thinks the first useful direction is.
+
+Use the person's own language wherever possible. Do not add personality labels or invented motives.
+
+For the founder's Career test, the desired shape is:
+
+> **אז הנה נקודת ההתחלה שלך: אתה רוצה שינוי בקריירה, אבל עדיין לא רוצה לקפוץ לתפקיד הבא לפני שתבין מה באמת מתאים לך. יש לך זמן להשקיע בזה, ומה שהכי יעזור לך הוא דרך ברורה, בנויה בשלבים. מכאן הייתי מתחיל.**
+
+Then, after confirmation/correction:
+
+> **מצאנו את נקודת ההתחלה. בוא נבנה את הדרך.**
+
+Do not use a generic summary such as:
+
+> "This is a realistic plan for where you are and the time you have."
+
+The summary is evidence that the system listened. It must contain only things actually established.
+
+### 4.9 Capacity, horizon and scheduling — **DECIDED, NOT BUILT**
+
+There must be one authoritative weekly-capacity value for the current Journey-building session.
+
+Precedence:
+
+1. a current explicit answer in this onboarding/Journey conversation;
+2. a relevant existing capacity signal if it is still valid and sufficiently precise;
+3. ask the capacity question if neither exists.
+
+Do not ask capacity twice because onboarding and Journey scheduling each have their own question.
+
+#### P0 mapping defect observed in founder test
+
+A question equivalent to:
+
+> "How much time can you realistically dedicate each week?"
+
+was rendered with answers equivalent to:
+
+- about one month;
+- about two months;
+- no fixed end.
+
+Those are Journey-duration/horizon answers, not weekly-capacity answers.
+
+Required fix:
+
+- capacity question IDs can render only capacity answer IDs/labels;
+- horizon/duration question IDs can render only horizon/duration answer IDs/labels;
+- the same semantic mapping must hold in Hebrew and English;
+- add a deterministic test that fails if a question is paired with answer options from another axis.
+
+Capacity must reach the Planner. It is not enough to collect it conversationally and then build the
+same schedule regardless.
+
+### 4.10 Language integrity — **DECIDED, NOT BUILT**
+
+A Hebrew first conversation is Hebrew **everywhere** except protected product/brand terms that are
+intentionally untranslated.
+
+The founder test exposed English leakage in:
+
+- Journey-family answer cards;
+- progress/state answer cards;
+- capacity answers;
+- bottleneck answers;
+- desired-future answers;
+- structure/pace answers;
+- the pre-Journey summary;
+- "Career";
+- username/profile errors in the older profile flow.
+
+Required implementation:
+
+- no user-facing onboarding/Coach/Journey-building string is hard-coded in English;
+- all authored answer cards use locale resources;
+- model-composed turns are explicitly constrained to the selected conversation language;
+- Hebrew locale keeps RTL throughout the entire path;
+- add one automated Hebrew smoke path through Career onboarding that fails on known English fallback
+  keys/strings.
+
+### 4.11 Journey creation and Home handoff — **DECIDED, NOT BUILT**
+
+The moment a Journey is created is already a strong part of the experience. Preserve it, but make
+one thing unambiguous:
+
+> **The person must finish onboarding knowing what to do next.**
+
+Requirements:
+
+- the first concrete Step is immediately visible and legible;
+- prioritize the first Step over secondary metadata on the first Journey/Home card;
+- avoid truncating the Step title where possible;
+- if layout constraints require truncation, the primary action must still communicate the next move
+  without needing the person to infer it from the Journey title;
+- onboarding should not end with only "a plan exists". It should end with "this is my next action".
+
+### 4.12 Reference transcript — **DECIDED BEHAVIOR, NOT FIXED COPY**
+
+This is the founder's Career/no-direction test and should be kept as a regression fixture.
+
+**Coach**  
+מה היית רוצה שיהיה קצת אחרת בחיים שלך עכשיו?
+
+**Person**  
+אני רוצה לעשות שינוי בקריירה שלי.
+
+**Coach**  
+נשמע שאתה יודע שאתה רוצה שינוי — השאלה היא אם כבר יש לך כיוון. יש משהו שמושך אותך, או שאתה עדיין מנסה להבין לאן?
+
+**Person**  
+אני לא כל כך יודע לאיזה כיוון ללכת.
+
+**Coach**  
+אז כרגע לא צריך להתחיל מלחפש עבודה. קודם כדאי להבין איזה כיוון באמת מתאים לך. מה הכי חשוב לך שיהיה בתפקיד הבא?
+
+**Person**  
+אני רוצה להרגיש עניין, ושיהיה לי יותר חופש.
+
+**Coach**  
+יש פה שני דברים שכבר די ברורים: אתה לא מחפש רק "עבודה אחרת", אלא משהו שירגיש יותר מעניין וייתן לך יותר חופש. לפני שנבנה דרך, אני רוצה להבין עוד דבר אחד — מה בדרך כלל עוצר אותך כשאתה מנסה לעשות שינוי כזה?
+
+**Person**  
+אני לא יודע מאיפה להתחיל.
+
+**Coach**  
+זה עוזר. אז נקודת ההתחלה היא לא קורות חיים ולא הגשת מועמדויות — היא לצמצם את האפשרויות לכיוונים שמתאימים למה שחשוב לך, ואז לבדוק אותם במציאות.
+
+**[Ask only remaining Phase C questions that materially change the plan.]**
+
+**Coach**  
+אז הנה מה שאני מבין: אתה רוצה שינוי בקריירה, עדיין אין כיוון אחד ברור, חשובים לך עניין וחופש, והחסם המרכזי כרגע הוא שאין לך דרך מסודרת להתחיל לבדוק אפשרויות. מכאן הייתי מתחיל. זה נשמע מדויק?
+
+**[Engine selects the appropriate Career Journey internally. Do not show the taxonomy.]**
+
+**Coach**  
+מצאנו את נקודת ההתחלה. בוא נבנה את הדרך.
+
+### 4.13 "I don't know" — **DECIDED, NOT BUILT**
+
+"I don't know" is valid information, not a failed answer.
+
+- Never convert it into a default yes/no or a nearest category.
+- Do not ask the same question again in different words.
+- One useful layer deeper is allowed if it can genuinely help the person answer from experience.
+- If the person still does not know, preserve the uncertainty and move on.
+- If routing depends on that unresolved axis, use the smallest honest exploratory direction available
+  in the domain rather than forcing certainty. If no honest route exists, state that the direction
+  is still unresolved and ask one discriminating question later when there is more context.
+
+### 4.14 Model/network unavailable — **OPEN**
+
+This remains open because §6 currently says onboarding does not complete until a Journey exists and
+a person must never reach Home empty. That conflicts with an earlier proposal to let the person enter
+Home during an outage.
+
+Until the founder decides otherwise, implementation must at minimum:
+
+- preserve the person's first-run progress;
+- never fabricate a Journey from unprocessed free text;
+- provide a clear retry/resume path;
+- not silently mark onboarding complete.
+
+The open decision is whether there is a deterministic fallback Journey-building flow or whether the
+person remains in a resumable onboarding state until the model is available.
+
+### 4.15 Username and public profile — **BUILT (moved), OPEN (errors)**
+
+Public-profile completion left the first run when the whole profile page did (§2.1). What is still
+unresolved is the failure path: when a username is taken, keep the message in the chosen locale,
+preserve what was typed, offer a couple of available alternatives if identity can do it cheaply, and
+**never block private Journey functionality on an unresolved public username.** If a backend
+invariant genuinely requires it, that constraint gets written down as an implementation note rather
+than treated as a coaching requirement.
+
+### 4.16 Resume — **OPEN, and a real gap**
+
+The orchestrator lives in a React ref and has no rehydration path, so closing the app mid-conversation
+loses it. The conversation, its messages and its resolved signals must survive a restart. This is
+listed here rather than in §11 because it is not a defect in the flow — it is a capability the flow
+assumes and the code does not have.
+
+### 4.17 What this work is NOT allowed to become
+
+Carried from the 2026-09-02 corrections and worth keeping in front of whoever builds §11: no new
+native permission, no new analytics SDK, no server-side profile or learning pipeline, no change to
+the privacy rule for raw free text, and no change to who owns Journey and Planner decisions.
+
+If building any of the above turns out to require one of these, **stop and say so** rather than
+expanding quietly.
+
+The onboarding analytics events belong in `app/src/core/kpi/taxonomy.ts`, not in prose here. Twenty
+are drafted and none exists yet (Backlog O-20).
+
+---
 
 ## 5. The screens, in detail — **BUILT unless noted**
 
@@ -945,6 +1172,8 @@ answers or profile fields in analytics or crash breadcrumbs.
 
 ---
 
+---
+
 ## 6. What is settled and should not be reopened
 
 These are decided. If you want to change one, that is a conversation with the founder, not an edit.
@@ -962,18 +1191,19 @@ These are decided. If you want to change one, that is a conversation with the fo
 
 ## 7. What this file replaces
 
-Four documents used to describe this, and the founder and the partner were reading different ones.
-Everything of theirs that is still true is **in this file** — the flow, the character, the phases,
-the routing rule, the capacity precedence, the localisation audit, the summary, the failure cases and
-the transcript. They have been moved to `08_Archive/` with their reasoning intact, because nothing is
-deleted here; but nothing in them needs reading to work from this file.
+Five documents, all archived in `08_Archive/` with their reasoning intact. Nothing has been deleted;
+what they lost is the claim to be current. Where any of them disagrees with this file, **this file
+wins**, and nothing in them needs reading in order to work from it.
 
-| Archived file | What it was |
+| File | What it was |
 |---|---|
 | `Partner_Onboarding_Spec_and_Flow_2026-08-26.md` | The first flow spec. |
 | `Partner_Onboarding_Spec_v2_2026-08-27.md` | Its second version. |
-| `Partner_Onboarding_Spec_v3_2026-08-30.md` | Its third. Its brand-screen copy is now in the locale files, which are the source of truth for copy; its "Stage A: essential profile" is superseded by §2.1. |
-| `Partner_Onboarding_Corrections_2026-09-02.md` | Corrections written against v3. Its five character precisions are in the code and therefore in §3; everything else is in §4. |
+| `Partner_Onboarding_Spec_v3_2026-08-30.md` | Its third. Its "Stage A: essential profile" is superseded by §2.1 above. |
+| `Partner_Onboarding_Corrections_2026-09-02.md` | Corrections written against v3. The five character precisions from it are **in the code**, and therefore in §3 above. The flow items are now fully specified in §4 of this file. |
+| `Onboarding_Coach_Led_UX_PRD_2026-08-31.md` | The screen-level UX specification. Folded into §5 unchanged, minus its Screen A2 (the profile page, retired 2026-09-03) and its opening two sections, which duplicated §1 and §2. |
+
+---
 
 ## 8. How to tell which build you are looking at
 
@@ -986,3 +1216,183 @@ different builds without knowing it. Two things now prevent it:
   the build rather than misleading somebody quietly.
 
 Run `npm run spec:sync` inside `app/` after changing the coach's character.
+
+---
+
+## 9. Founder acceptance tests — **DECIDED, NOT BUILT**
+
+A change to §4 is not considered implemented because the prompt or spec was updated. It is
+implemented only when the running build passes these behaviors.
+
+### 9.1 Conversation
+
+- [ ] The first Coach question is change-oriented, not "How can I help you today?"
+- [ ] "I want a career change" does **not** cause an assumption that the person is already applying
+      for jobs.
+- [ ] The Coach asks only unresolved high-value questions.
+- [ ] Phase A normally uses 2–4 questions and never continues as an open-ended interview.
+- [ ] At least one grounded reflection appears by the time two meaningful signals are known.
+- [ ] The first conversation contains 2–3 grounded reflections where evidence supports them.
+- [ ] A correction from the person replaces the prior assumption in the very next reasoning step.
+- [ ] The starting-point summary appears before Journey creation and can be corrected.
+
+### 9.2 Routing
+
+- [ ] Internal domain/family/variant taxonomy is not exposed when routing is resolved.
+- [ ] The app never says it found one Journey and then presents multiple unrelated Journey families.
+- [ ] A signal resolved from natural language is not asked again as an authored card.
+- [ ] A signal resolved by one subsystem is not re-asked because another subsystem uses a different ID.
+
+### 9.3 Capacity and scheduling
+
+- [ ] Weekly-capacity questions render only weekly-capacity answers.
+- [ ] Journey-horizon questions render only Journey-horizon answers.
+- [ ] A sufficient capacity answer is not asked twice.
+- [ ] The chosen capacity changes or constrains the generated plan as intended by the Planner.
+
+### 9.4 Localization
+
+- [ ] A complete Hebrew Career first-run contains no accidental English strings.
+- [ ] Answer cards, errors, summaries and Journey-building content are localized.
+- [ ] RTL remains correct from Language through first Journey creation.
+
+### 9.5 Handoff
+
+- [ ] The first concrete Step is readable immediately after Journey creation.
+- [ ] A new tester can answer both questions without reopening the conversation:
+      1. "What did the app understand about me?"
+      2. "What am I supposed to do next?"
+- [ ] With normal connectivity, first coaching value arrives before any public-profile/username
+      requirement.
+
+---
+
+## 10. Required regression scenarios — **DECIDED, NOT BUILT**
+
+### T1 — Career change, no direction
+
+Opening:
+> אני רוצה לעשות שינוי בקריירה שלי
+
+Pass if:
+- no active-job-search assumption;
+- the next question distinguishes "has a direction" from "still exploring";
+- uncertainty is reflected;
+- routing can resolve toward direction-finding without showing taxonomy;
+- a starting-point summary appears before Journey creation.
+
+### T2 — Active job search explicitly stated
+
+Opening:
+> אני שולח קורות חיים כבר חודש ולא חוזרים אליי
+
+Pass if:
+- the system does not ask whether the person is applying;
+- known signals are skipped;
+- diagnosis starts at the next unresolved point.
+
+### T3 — User corrects the Coach
+
+Person:
+> לא, זה לא העניין.
+
+Pass if:
+- the next Coach turn reflects the correction;
+- the invalid assumption is discarded;
+- the old route is not kept alive in parallel.
+
+### T4 — Multiple goals
+
+Opening:
+> אני רוצה להחליף עבודה וגם לחזור להתאמן
+
+Pass if:
+- both are acknowledged;
+- the Coach asks which one to work on first;
+- it does not attempt to build two Journeys in the same onboarding conversation unless that is an
+  explicit later product decision.
+
+### T5 — Hebrew end-to-end
+
+Run the full Career onboarding path in Hebrew.
+
+Pass if:
+- no accidental English strings;
+- no English fallback answer cards;
+- RTL remains correct;
+- the summary and first Step are Hebrew.
+
+### T6 — Capacity versus horizon
+
+Pass if:
+- weekly-capacity questions show weekly-capacity answers only;
+- Journey-horizon questions show horizon answers only;
+- the deterministic pairing test passes in both Hebrew and English.
+
+### T7 — Already-known capacity
+
+Give a sufficiently precise capacity answer once.
+
+Pass if:
+- capacity is not asked again later in Journey fitting;
+- the Planner receives the same authoritative capacity value.
+
+### T8 — Visible routing regression
+
+Use a conversation that clearly resolves to one Career Journey family.
+
+Pass if:
+- no four-family chooser appears;
+- no copy says "one Journey found" before a multi-family chooser;
+- if confirmation is used, it confirms the human meaning in natural language.
+
+---
+
+## 11. Implementation order — **DECIDED, NOT BUILT**
+
+### P0 — behavior/defect fixes
+
+1. Enforce next-question skip logic across natural-language and structured signals.
+2. Remove unsupported job-search assumptions from Career onboarding flow.
+3. Remove the contradictory/visible Journey-family chooser when routing is resolved.
+4. Fix capacity/horizon question-option mapping.
+5. Remove Hebrew/English leakage across the entire first-run path.
+6. Make the starting-point summary execute before Journey creation.
+
+### P1 — coaching depth
+
+1. Replace the generic opening.
+2. Allow reflection + next question in the same Coach turn.
+3. Enforce the Phase A question budget.
+4. Add the correctable starting-point confirmation.
+5. Separate understanding/diagnosis from reality-fit questions.
+
+### P2 — plan/handoff quality
+
+1. Make capacity authoritative and pass it through to the Planner.
+2. Make the first Step unambiguous on Journey/Home handoff.
+3. Resolve the model-unavailable decision in §4.14.
+
+When implementation is reported complete, the report must distinguish:
+
+```text
+Implemented in code
+- ...
+
+Prompt/spec only
+- ...
+
+Tests added and passing
+- ...
+
+Still open
+- ...
+
+Founder should retest
+- T1
+- T5
+- T6
+- T8
+```
+
+**Do not mark §4 BUILT until the relevant §9 acceptance tests pass in the running build.**

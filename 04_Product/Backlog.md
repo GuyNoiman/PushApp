@@ -113,9 +113,10 @@ Ordered by what unblocks what.
 | O-15 | A concrete first action before onboarding completes | Specified | Onboarding completes when the flow ends, not when a step exists |
 | O-16 | Populated first Home | **Shipped** | Onboarding completes only when the coach builds a Journey, and the intro Journey (O-21) lands beside it — so a first Home now has at least two Journeys and a Starter Step |
 | O-17 | Contextual profile signals instead of a block | Half | The nine questions are retired from first-run and reachable from Tools; nothing asks them contextually |
-| O-18 | Resume mid-conversation | **Gap** | §21 requires the coach session, messages and resolved signals to survive a restart. The orchestrator lives in a React ref and has no rehydration path — a restart loses the conversation |
+| O-18 | Resume mid-conversation | **Gap** | The coach session, messages and resolved signals must survive a restart. The orchestrator lives in a React ref and has no rehydration path — a restart loses the conversation. Spec §4.16 |
 | O-19 | Memory + reminder + sharing asked after value | Half | The tail moved after the first Journey (v2 phase 1). Sharing is not offered at all |
 | O-20 | The v3 analytics events | Specified | §27 lists 20 events; the KPI taxonomy has none of them |
+| O-23 | **The §11 implementation order** | Specified, in detail | The partner's 2026-09-03 pass turned §4 into an executable contract: a hard Phase-A ceiling of 4 questions, a next-question contract the ORCHESTRATOR enforces (not the prompt), the capacity/horizon pairing test, the Hebrew smoke path, and §9's acceptance checklist plus §10's eight regression scenarios T1–T8. Nothing of it is built. **§4 may not be marked BUILT until the §9 tests pass in a running build** |
 
 ## 3. Specified and not built
 

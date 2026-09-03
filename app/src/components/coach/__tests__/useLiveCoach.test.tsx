@@ -44,6 +44,19 @@ function singleGoalMock(domain: string, title = 'run a 5k'): MockLlmClient {
   );
 }
 
+function unresolvedCareerMock(): MockLlmClient {
+  return new MockLlmClient((req) =>
+    req.json
+      ? JSON.stringify({
+          goals: [{
+            title: 'find a job', kind: 'process', domain: 'career',
+            careerSignals: { targetClarity: 'clear' },
+          }],
+        })
+      : 'UNUSED',
+  );
+}
+
 /** Render the hook and expose its latest return value (Probe renders nothing). */
 function renderLiveCoach(orchestrator: CoachOrchestrator): {
   result: { current: UseLiveCoach };
@@ -123,6 +136,20 @@ describe('useLiveCoach', () => {
     // The last coach line is the calm hand-off, not an expert question.
     const lastCoach = [...result.current.items].reverse().find((i) => i.kind === 'coach');
     expect(lastCoach?.kind === 'coach' && lastCoach.text).toMatch(/deserves a person/i);
+    unmount();
+  });
+
+  it('reopens free-text conversation after a Career no-match and shows no Build card', async () => {
+    const orchestrator = new CoachOrchestrator({ llm: unresolvedCareerMock() });
+    const { result, unmount } = renderLiveCoach(orchestrator);
+
+    await act(async () => result.current.sendOpening('I apply but get no replies'));
+    await act(async () => result.current.selectSingle('0'));
+
+    expect(result.current.awaitingOpening).toBe(true);
+    expect(result.current.goalSpec).toBeNull();
+    expect(result.current.question).toBeNull();
+    expect(result.current.items.some((item) => item.kind === 'journey')).toBe(false);
     unmount();
   });
 

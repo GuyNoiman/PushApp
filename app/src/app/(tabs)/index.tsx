@@ -151,6 +151,26 @@ export default function HomeScreen() {
   const { confirmVisible, requestDone, confirm, cancel } = useFinalStepConfirm(core);
   // The Step whose ⋯ report sheet is open, or null when closed.
   const [reportStep, setReportStep] = useState<TodayStep | null>(null);
+  /**
+   * Tapping a Step. Almost every Step in PushApp happens outside the app, so a tap asks how it went,
+   * which is right and stays the default. A Step that NAMES a screen ({@link Step.appLink}, which
+   * arrived with the "Getting to know PushApp" Journey) opens that screen instead: being asked "did
+   * you do it?" by the thing that has not taken you there yet is a question nobody can answer.
+   *
+   * Reporting is untouched. Swipe, Done, Postpone and Let go all still work on these Steps exactly
+   * as they do on every other one.
+   */
+  const openStep = useCallback(
+    (item: TodayStep) => {
+      const link = item.step.appLink;
+      if (link !== undefined) {
+        router.push(link as Href);
+        return;
+      }
+      setReportStep(item);
+    },
+    [router],
+  );
   // The last adaptive week-review that CHANGED the plan, shown as the calm "I adjusted your
   // week" card until dismissed. Null when nothing changed (or the adaptive loop is off).
   const [weekOutcome, setWeekOutcome] = useState<WeekReviewOutcome | null>(null);
@@ -743,7 +763,7 @@ export default function HomeScreen() {
                 // another day it would be saying something untrue about that day.
                 streakRole={day.isToday ? core.streakRole(item.journeyId) : undefined}
                 locked={isInClosedWeek(item.step.plannedFor)}
-                onPress={() => setReportStep(item)}
+                onPress={() => openStep(item)}
                 onDone={() => reportDone(item)}
                 onPostpone={() => reportPostpone(item)}
                 onLetGo={() => reportLetGo(item)}
@@ -772,7 +792,7 @@ export default function HomeScreen() {
                     }
                     pullForward
                     status={item.status}
-                    onPress={() => setReportStep(item)}
+                    onPress={() => openStep(item)}
                     onDone={() => reportDone(item)}
                     onPostpone={() => reportPostpone(item)}
                     onLetGo={() => reportLetGo(item)}

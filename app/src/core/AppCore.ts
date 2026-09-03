@@ -184,6 +184,7 @@ import {
 import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { directDependentsOf } from './status/stepDependencies';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
+import { introJourneyInput, type IntroJourneyContent } from './onboarding/introJourney';
 import { resolveResumeStep } from './onboarding/questions';
 import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
 import {
@@ -3603,8 +3604,15 @@ export class AppCore {
    * shows the flow again, and stores the final answers as the Coach's opening context. Idempotent —
    * a re-call keeps the original completion timestamp. The caller then opens the first Coach
    * conversation.
+   *
+   * `intro` is the already-translated "Getting to know PushApp" Journey (founder, 2026-09-03), which
+   * takes the place of the profile page the first run used to stop on. It is created HERE, in the
+   * once-per-install branch, for two reasons: this is the only moment that is guaranteed to happen
+   * exactly once, and it is AFTER the coach has built the person's own first Journey — so the
+   * Journey they came for is the one that greets them, with this one underneath it. Omitting `intro`
+   * simply creates nothing, which keeps every existing caller and test unchanged.
    */
-  completeOnboarding(answers: OnboardingAnswers): void {
+  completeOnboarding(answers: OnboardingAnswers, intro?: IntroJourneyContent): void {
     this.state.onboardingAnswers = answers;
     this.state.onboardingStep = 'completion';
     const first = this.state.onboardingCompletedAt == null;
@@ -3612,7 +3620,10 @@ export class AppCore {
     // Not on the bus, because finishing onboarding is not a domain event any
     // engine reacts to — it is a fact about this installation. The once-per-
     // install guard makes a re-call harmless either way.
-    if (first) this.kpi.record({ name: 'onboarding_completed' });
+    if (first) {
+      this.kpi.record({ name: 'onboarding_completed' });
+      if (intro) this.journeyEngine.createJourney(introJourneyInput(intro));
+    }
     this.onChanged();
   }
 

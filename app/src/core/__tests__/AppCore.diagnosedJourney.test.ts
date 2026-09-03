@@ -23,7 +23,7 @@ jest.mock('expo-notifications', () => ({
 
 import { AppCore } from '../AppCore';
 import type { GoalSpec } from '../coach/interviewPlaybook';
-import { CAREER_JOURNEYS } from '../learning/library/career';
+import { CAREER_JOURNEYS } from '../learning/domains/career/journeys';
 import type { AppState } from '../types/domain';
 import type { Repository } from '../persistence/Repository';
 import type { FirstRunFlag } from '../persistence/firstRunFlag';
@@ -90,6 +90,32 @@ describe('a diagnosed career goal', () => {
     expect(journey!.steps.length).toBeGreaterThan(0);
   });
 
+  it('honours the Journey selected by the Coach consultation', async () => {
+    const c = await core();
+
+    const journey = c.createJourneyFromGoalSpec(
+      spec({
+        diagnosis: { subtype: 'LAND_ROLE', bottleneck: 'DIRECTION_GAP' },
+        selectedJourneyDefinitionId: 'career.jobTarget.postingsFirst',
+      }),
+    );
+
+    expect(journey?.libraryRef?.definitionId).toBe('career.jobTarget.postingsFirst');
+  });
+
+  it('refuses a stale selected Journey instead of falling back to the old matcher', async () => {
+    const c = await core();
+
+    const journey = c.createJourneyFromGoalSpec(
+      spec({
+        diagnosis: { subtype: 'LAND_ROLE', bottleneck: 'DIRECTION_GAP' },
+        selectedJourneyDefinitionId: 'career.proof.inventoryFirst',
+      }),
+    );
+
+    expect(journey).toBeNull();
+  });
+
   it('gives the generic arc to a career goal that was NOT diagnosed', async () => {
     const c = await core();
 
@@ -100,7 +126,7 @@ describe('a diagnosed career goal', () => {
     expect(journey!.libraryRef).toBeUndefined();
   });
 
-  it('gives the generic arc when the diagnosis names a family nobody has authored', async () => {
+  it('refuses creation when the diagnosis names a family nobody has authored', async () => {
     const c = await core();
 
     const journey = c.createJourneyFromGoalSpec(
@@ -108,8 +134,7 @@ describe('a diagnosed career goal', () => {
     );
 
     // Refusing to substitute the nearest family is the point: treating the wrong bottleneck on
-    // purpose is worse than the generic plan.
-    expect(journey).not.toBeNull();
-    expect(journey!.libraryRef).toBeUndefined();
+    // purpose is worse than not creating a Journey.
+    expect(journey).toBeNull();
   });
 });

@@ -76,16 +76,25 @@ describe('onboarding config (PRD §6)', () => {
 
   it('includes the complete pre-conversation introduction (Onboarding v3, 2026-08-31)', () => {
     // The fixed nine-question sequence stopped being a gate in front of the coach: the coach IS the
-    // onboarding. Language decides the whole UI and its direction, the profile is the little that is
-    // genuinely needed at first run, and the welcome sets the expectation of a conversation.
+    // onboarding. Language decides the whole UI and its direction, and the welcome sets the
+    // expectation of a conversation.
+    //
+    // The PROFILE PAGE left this list on 2026-09-03 (founder). It was already the gentlest possible
+    // form — everything pre-filled, one button to confirm — and it was still a form standing between
+    // somebody and the reason they opened the app, asking for nothing the conversation needs. Its
+    // fields are now Steps of the "Getting to know PushApp" Journey, on Home, where they can be done
+    // in any order or ignored.
     expect([...ONBOARDING_STEP_ORDER]).toEqual([
       'language',
-      'personalInfo',
       'promise',
       'personalization',
       'supportIntro',
       'intro',
     ]);
+    expect(ONBOARDING_STEP_ORDER).not.toContain('personalInfo');
+    // Nothing in the sequence walks into it any more, from either direction.
+    expect(nextStep('language')).toBe('promise');
+    expect(prevStep('promise')).toBe('language');
     expect(nextStep('intro')).toBe('intro'); // terminal — the hand-off to the coach is the screen's
     expect(prevStep('intro')).toBe('supportIntro');
   });
@@ -106,8 +115,9 @@ describe('onboarding config (PRD §6)', () => {
     for (const retired of ['q1', 'q5', 'q9', 'completion', 'coachMemory', 'notifications'] as const) {
       expect(resolveResumeStep(retired)).toBe('intro');
     }
-    // A step still in the flow resumes exactly where it was.
-    expect(resolveResumeStep('personalInfo')).toBe('personalInfo');
+    // The profile page is retired too, and for the same reason: somebody paused on it yesterday and
+    // must not open the app tomorrow to a page the sequence can no longer leave.
+    expect(resolveResumeStep('personalInfo')).toBe('intro');
     expect(resolveResumeStep(undefined)).toBe('language');
   });
 });

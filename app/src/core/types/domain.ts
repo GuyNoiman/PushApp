@@ -16,7 +16,7 @@ import type { OnboardingAnswers, OnboardingStep } from '../onboarding/model';
 import type { ReplanAdjustment, StepAdjustment } from '../learning/types';
 // Type-only cross-import (erased at runtime — no cycle): the classified goal domain, so a parked
 // goal can be routed back to the right expert on activation. Same source the coach's DeferredGoal uses.
-import type { DomainId } from '../learning/experts/registry';
+import type { DomainId } from '../learning/registry';
 // Type-only cross-import (erased at runtime — no cycle): which authored Journey + version built a
 // plan (D62). Authored ids only — the definitions live under core/learning/library.
 import type { LibraryRef } from '../learning/library/journeyDefinition';
@@ -86,6 +86,23 @@ export interface Step {
   dependsOnStepId?: string;
   /** Relative difficulty 1..5 the Planner/DomainExpert assigned. Optional metadata. */
   difficulty?: number;
+  /**
+   * An IN-APP destination this Step is asking the person to go to (e.g. `/settings/profile`).
+   *
+   * Almost every Step in PushApp happens in the world outside the app, and tapping it opens the
+   * report sheet, which is right. A handful do not: the "Getting to know PushApp" Journey that
+   * replaced the profile page in onboarding (founder, 2026-09-03) asks somebody to go and fill in
+   * their profile, and a Step that names a screen should open that screen rather than immediately
+   * ask whether it is done.
+   *
+   * Reporting is UNCHANGED — these Steps are self-reported like every other one, through the same
+   * swipe and the same menu. This only decides what a plain tap does.
+   *
+   * An INTERNAL expo-router path and nothing else: never an external URL, never a deep link from
+   * outside. ON-DEVICE only, never emitted or synced, and covered by export/deletion with the rest
+   * of the Step.
+   */
+  appLink?: string;
   /**
    * True once the adaptive coach shed this Step from scope to hold a deadline
    * (AdaptivePlanner load-shed, applied via JourneyEngine.dropStep). A dropped Step is

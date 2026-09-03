@@ -227,7 +227,6 @@ export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
  */
 export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'language',
-  'personalInfo',
   'promise',
   'personalization',
   'supportIntro',
@@ -248,6 +247,13 @@ const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
   'completion',
   'coachMemory',
   'notifications',
+  // The profile page (founder, 2026-09-03). Everything on it was already pre-filled and confirmable
+  // in one tap, and it was still a form standing between somebody and the reason they opened the
+  // app — none of which has to be answered before the conversation. Its contents are now the Steps
+  // of the "Getting to know PushApp" Journey (core/onboarding/introJourney), so the same fields are
+  // asked for on Home, in the shape the product actually uses, by a Journey that can be ignored.
+  // The PAGE still exists and is unchanged; it is simply no longer part of the first run.
+  'personalInfo',
 ];
 
 /**

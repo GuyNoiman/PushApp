@@ -59,7 +59,7 @@ import { replan } from '../learning/AdaptivePlanner';
 import { applyReplan } from '../learning/applyReplan';
 import { BehaviorModelEngine } from '../learning/BehaviorModelEngine';
 import { DeterministicNarrator } from '../learning/CoachNarrator';
-import { getExpert } from '../learning/experts/registry';
+import { getExpert } from '../learning/registry';
 import { MockReminderEngine } from '../learning/sim/MockReminderEngine';
 import type { PlanConstraints } from '../learning/types';
 import { GeminiClient } from '../llm/GeminiClient';

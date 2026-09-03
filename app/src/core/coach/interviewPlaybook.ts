@@ -25,7 +25,7 @@
 import i18n from '../../i18n';
 import { addressContext } from '../../i18n/addressForm';
 import type { FeasibilityAssessment, InterviewAnswers } from '../learning/DomainExpert';
-import type { DomainId } from '../learning/experts/registry';
+import type { DomainId } from '../learning/registry';
 import type { RecurringApproachId } from '../learning/library/recurringApproaches';
 import type { LibraryRef } from '../learning/library/journeyDefinition';
 import type { Cadence, DayPart } from '../types/domain';
@@ -281,7 +281,7 @@ export interface GoalSpec {
   title: string;
   /**
    * The classified goal domain (SX.2) — routes {@link ../coach/goalSpecToJourney} to the matching
-   * {@link ../learning/experts/registry DomainExpert}, so the SAME engine builds domain-appropriate
+   * {@link ../learning/registry DomainExpert}, so the SAME engine builds domain-appropriate
    * Milestones. The coach's extraction fills this; it defaults to `'general'` and any unrecognized
    * value falls back to `'general'` (never crashes, never invents a bad domain). Not PII — a coarse
    * category label, so it is safe to keep alongside the scheduling scalars.
@@ -327,7 +327,7 @@ export interface GoalSpec {
   libraryRef?: LibraryRef;
   /**
    * WHAT THE EXPERT DIAGNOSED — the rung between a real conversation and the authored library
-   * (`../learning/experts/careerDiagnosis`).
+   * (`../learning/domains/career/diagnosis`).
    *
    * A `subtype` + `bottleneck` pair names exactly one {@link ../learning/library/goalFamily.GoalFamily},
    * and the matcher chooses inside that family instead of taking the first Journey of the right
@@ -341,6 +341,8 @@ export interface GoalSpec {
    * built after one is a plan that should say so. A closed enum value, never free text.
    */
   diagnosisUnresolved?: string;
+  /** The Career consultation's chosen existing Journey. Selection is not activation. */
+  selectedJourneyDefinitionId?: string;
   /** Whether the user accepted the closing Support-Circle recommendation. */
   wantsSupportCircle?: boolean;
 

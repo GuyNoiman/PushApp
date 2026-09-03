@@ -100,9 +100,13 @@ export default function OnboardingScreen() {
 
   // ── Render the current page ──────────────────────────────────────────────────
   if (step === 'language') {
-    return <LanguageStep onContinue={() => go('personalInfo')} />;
+    return <LanguageStep onContinue={() => go('promise')} />;
   }
 
+  // `personalInfo` LEFT the first run on 2026-09-03 (founder): the page below is intact and still
+  // rendered for anyone whose device resumes on it mid-flow, but nothing in the sequence walks into
+  // it any more. Its fields are now the Steps of the "Getting to know PushApp" Journey, which is
+  // created the moment the first Journey is built (core/onboarding/introJourney).
   if (step === 'personalInfo') {
     return (
       <PersonalInfoStep onBack={() => go('language')} onContinue={() => go('promise')} />
@@ -115,7 +119,7 @@ export default function OnboardingScreen() {
         page="promise"
         icon="trail-sign-outline"
         progress={1}
-        onBack={() => go('personalInfo')}
+        onBack={() => go('language')}
         onContinue={() => go('personalization')}
       />
     );

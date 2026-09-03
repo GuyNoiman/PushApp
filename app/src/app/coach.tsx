@@ -16,6 +16,7 @@
  */
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,7 @@ import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { featureFlags } from '@/core/config/featureFlags';
 import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
+import type { IntroJourneyContent } from '@/core/onboarding/introJourney';
 import type { JourneyStart } from '@/core/types/domain';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -93,6 +95,21 @@ export default function CoachScreen() {
  * fall back on either. Both arms of the old expression were dead at once and the X did nothing at all
  * (partner, 2026-09-03). Onboarding is where that person came from and the only place they can be.
  */
+/**
+ * The "Getting to know PushApp" Journey's strings, pulled out of the `onboarding` namespace.
+ *
+ * Kept as a function rather than inlined because the Steps are an ARRAY in the locale files and
+ * i18next returns arrays only when asked to (`returnObjects`), which is easy to get wrong once and
+ * then never notice — a missing array here would create a Journey with no Steps at all.
+ */
+function introJourneyContent(t: TFunction): IntroJourneyContent {
+  return {
+    title: t('introJourney.title'),
+    why: t('introJourney.why', { returnObjects: true }) as string[],
+    steps: t('introJourney.steps', { returnObjects: true }) as { title: string; description: string }[],
+  };
+}
+
 export function leaveCoach(firstRun: boolean): void {
   if (firstRun) {
     router.replace('/onboarding');
@@ -188,6 +205,8 @@ function LiveCoachScreen() {
   // used to sit before Home now follow the Journey this conversation creates.
   const { firstRun: firstRunParam } = useLocalSearchParams<{ firstRun?: string }>();
   const firstRun = firstRunParam === '1';
+  // The intro Journey's own copy. Read unconditionally so the hook order never depends on the route.
+  const { t: tOnboarding } = useTranslation('onboarding');
   const [tail, setTail] = useState<'none' | 'reminders'>('none');
   /** The build's technical trace, shown after the Journey is created (technical mode only). */
   const [buildTrace, setBuildTrace] = useState<string[]>([]);
@@ -311,7 +330,11 @@ function LiveCoachScreen() {
     if (!journey) return;
     // A real Journey is the durable completion boundary. The reminder that follows is optional;
     // closing there must open a populated Home rather than restart and risk a duplicate Journey.
-    if (firstRun) core.completeOnboarding(core.getOnboardingAnswers());
+    // The intro Journey rides along with completion (founder, 2026-09-03) — it replaced the profile
+    // page the first run used to stop on, so the fields that page asked for are Steps on Home now.
+    // Second in the list, deliberately: the Journey the person came here for is created first and is
+    // the one that greets them.
+    if (firstRun) core.completeOnboarding(core.getOnboardingAnswers(), introJourneyContent(tOnboarding));
     // The build's own reasoning — which Journey, which version, and on the strength of what. It
     // happens outside the orchestrator, so it is collected here rather than arriving on a turn.
     if (coach.technicalMode) setBuildTrace([...core.getLastJourneyBuildTrace()]);
@@ -320,7 +343,7 @@ function LiveCoachScreen() {
     // Step to be reminded about. Everyone else goes straight to Home, exactly as before.
     if (firstRun) setTail('reminders');
     else router.replace('/');
-  }, [coach.goalSpec, core, startMode, startInDays, firstRun]);
+  }, [coach.goalSpec, core, startMode, startInDays, firstRun, tOnboarding]);
 
   const headerBorder = useMemo(() => ({ borderBottomColor: theme.hairline }), [theme.hairline]);
 

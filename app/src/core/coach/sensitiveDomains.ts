@@ -8,7 +8,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import type { DomainId } from '../learning/experts/registry';
+import type { DomainId } from '../learning/registry';
 
 /** The domains the coach hands off rather than plans for. */
 export const SENSITIVE_DOMAINS = new Set<DomainId>(['addiction', 'relationships']);

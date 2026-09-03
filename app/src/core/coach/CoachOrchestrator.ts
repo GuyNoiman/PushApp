@@ -64,16 +64,20 @@ import {
   type CareerDiagnosisQuestion,
   type CareerDiagnosisTree,
   type CareerKnownSignals,
-} from '../learning/experts/careerDiagnosis';
+} from '../learning/domains/career/diagnosis';
+import {
+  consultCareer,
+  type CareerNoMatchReason,
+} from '../learning/domains/career/consultation';
 import { arcCopy } from '../learning/library/authoredArc';
-import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/experts/registry';
+import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/registry';
 import type { GoalInput } from '../learning/types';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
 import {
   DIAGNOSIS_SIGNAL_SYSTEM_PROMPT,
   buildDiagnosisDirective,
   parseDiagnosisSignals,
-  COACH_SYSTEM_PROMPT,
+  coachSystemPrompt,
   TRIAGE_SYSTEM_PROMPT,
   buildLocaleDirective,
   buildTriageDirective,
@@ -83,7 +87,12 @@ import { horizonQuestion } from './horizonQuestion';
 import { deriveConstraints, journeyShapeFor } from './goalSpecToJourney';
 import { noteOf, type TechnicalNote } from './technicalMode';
 import { variantInterviewQuestions } from './variantQuestions';
-import { journeyDefinitionsFor } from '../learning/library/definitions';
+import { familyInterviewQuestions } from './familyQuestions';
+import {
+  goalFamily,
+  journeyDefinition,
+  journeyDefinitionsFor,
+} from '../learning/library/definitions';
 import { profileSignals } from '../learning/library/matchApproach';
 import type { CoachOnboardingSummary } from '../onboarding/model';
 import {
@@ -213,6 +222,8 @@ export type CoachPhase =
   | 'processType'
   /** The expert's DIAGNOSIS — which family of Journeys this goal actually belongs to. */
   | 'diagnosis'
+  | 'journeyFit'
+  | 'journeyChoice'
   | 'questions'
   | 'scheduling'
   | 'done';
@@ -242,6 +253,8 @@ export interface CoachTurn {
   question?: DomainQuestion;
   /** The active expert, once triage has selected one. */
   activeExpert?: ActiveExpert;
+  /** The Coach is asking for a newly phrased goal; the UI should reopen its free-text composer. */
+  awaitingGoalText?: boolean;
   /**
    * Why this turn did what it did, when TECHNICAL MODE is on (see {@link ./technicalMode}). Empty
    * or absent otherwise.
@@ -284,6 +297,14 @@ export type CoachMessageGuard = (text: string) => string;
 
 /** Construction options — inject the LlmClient (tests use MockLlmClient); everything else defaults. */
 export interface CoachOrchestratorOptions {
+  /**
+   * The name they are called, when it is known. Threaded in rather than read
+   * here because the core is framework-free and the name lives in the profile
+   * the screen already holds. Absent is normal — the character reads correctly
+   * without it and never invents one.
+   */
+  firstName?: string | null;
+
   /** The completion seam. Required. Used ONLY for triage classification (and optional "Other" parse). */
   llm: LlmClient;
   /** The editable interview script; defaults to {@link INTERVIEW_PLAYBOOK} (opening + closing copy). */
@@ -331,6 +352,7 @@ export class CoachOrchestrator {
   private readonly locale?: string;
   /** The onboarding profile, read only to decide which variant questions still need asking. */
   private readonly profile?: CoachOnboardingSummary | null;
+  private readonly firstName: string | null;
   /**
    * TECHNICAL MODE (2026-08-27). Off by default. While on, every turn carries the reasoning behind
    * it — read by the domain expert who authored the trees, who otherwise has no way to see whether
@@ -357,6 +379,12 @@ export class CoachOrchestrator {
   private diagnosisAnswers: CareerDiagnosisAnswers = {};
   /** What the opening message already established, so those questions are never asked. */
   private knownSignals: CareerKnownSignals = {};
+  private journeyFitQuestion?: DomainQuestion;
+  private journeyFitAxisId?: string;
+  private journeyFitValueIds: string[] = [];
+  private familyAnswers: Record<string, string> = {};
+  private journeyChoiceQuestion?: DomainQuestion;
+  private journeyChoiceDefinitionIds: string[] = [];
   private questions: DomainQuestion[] = [];
   private questionIndex = 0;
   private readonly answers: InterviewAnswers = {};
@@ -384,6 +412,7 @@ export class CoachOrchestrator {
     this.guard = options.guard;
     this.locale = options.locale;
     this.profile = options.profile;
+    this.firstName = options.firstName ?? null;
     this.styleFragment = getStyle(options.styleId ?? DEFAULT_STYLE_ID).systemPromptFragment ?? '';
   }
 
@@ -582,7 +611,7 @@ export class CoachOrchestrator {
   private async understand(goalText: string): Promise<UnderstoodGoal[]> {
     const system = [
       this.styleFragment,
-      COACH_SYSTEM_PROMPT,
+      coachSystemPrompt({ firstName: this.firstName }),
       TRIAGE_SYSTEM_PROMPT,
       buildLocaleDirective(this.locale),
     ]
@@ -725,7 +754,135 @@ export class CoachOrchestrator {
         'what happens now': 'no family is forced — the plan must not motivate past this',
       });
     }
-    return this.beginExpertQuestions();
+    return this.spec.domain === 'career'
+      ? this.continueCareerConsultation()
+      : this.beginExpertQuestions();
+  }
+
+  /** Ask only what can change the Career match, then select or offer the eligible Journeys. */
+  private continueCareerConsultation(): CoachTurn {
+    const result = consultCareer({
+      schemaVersion: 1,
+      knownSignals: this.knownSignals,
+      diagnosisAnswers: this.diagnosisAnswers,
+      familyAnswers: this.familyAnswers,
+      profileSignals: profileSignals(this.profile),
+    });
+
+    if (result.kind === 'no_match') return this.offerJourneyRefinement(result.reason);
+    if (result.kind === 'needs_information') {
+      if (result.request.kind === 'diagnosis') {
+        this.phase = 'diagnosis';
+        return this.askDiagnosisQuestion(result.request.question);
+      }
+      const family = goalFamily(result.request.familyId);
+      if (!family) return this.offerJourneyRefinement('missing_authored_family');
+      this.journeyFitAxisId = result.request.question.axisId;
+      this.journeyFitValueIds = result.request.question.values.map((value) => value.id);
+      this.journeyFitQuestion = familyInterviewQuestions(family, {
+        answers: this.familyAnswers,
+        signals: profileSignals(this.profile),
+      })[0];
+      if (!this.journeyFitQuestion) return this.offerJourneyRefinement('missing_journey_content');
+      this.phase = 'journeyFit';
+      const coachMessage = this.applyGuard(this.journeyFitQuestion.prompt);
+      this.history.push({ role: 'model', content: coachMessage });
+      return {
+        coachMessage,
+        state: this.snapshot(),
+        technicalNotes: this.takeNotes(),
+        done: false,
+        question: cloneQuestion(this.journeyFitQuestion),
+        activeExpert: this.activeExpert,
+      };
+    }
+
+    if (result.items.length === 1) {
+      const selected = result.autoSelectedDefinitionId;
+      if (!selected) return this.offerJourneyRefinement('missing_journey_content');
+      this.spec.selectedJourneyDefinitionId = selected;
+      return this.beginExpertQuestions(cc('journeyMatching.singleMatch'));
+    }
+
+    const recommended = result.items.find(
+      (item) => item.definitionId === result.recommendedDefinitionId,
+    );
+    const orderedItems = recommended
+      ? [recommended, ...result.items.filter((item) => item !== recommended)]
+      : result.items;
+    this.journeyChoiceDefinitionIds = orderedItems.map((item) => item.definitionId);
+    this.journeyChoiceQuestion = {
+      id: 'career.journeyChoice',
+      intent: 'variant',
+      prompt: cc(
+        result.recommendedDefinitionId
+          ? 'journeyMatching.multipleRecommended'
+          : 'journeyMatching.multipleMatch',
+      ),
+      options: this.journeyChoiceDefinitionIds.map((id) => {
+        const definition = journeyDefinition(id);
+        const key = definition?.variants[0]?.essenceKey;
+        const label = key ? i18n.t(key, { ns: 'library', context: addressContext() }) : id;
+        return id === result.recommendedDefinitionId
+          ? `${label} ${cc('journeyMatching.recommendedSuffix')}`
+          : label;
+      }),
+      allowOther: false,
+    };
+    this.phase = 'journeyChoice';
+    const coachMessage = this.applyGuard(this.journeyChoiceQuestion.prompt);
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      question: cloneQuestion(this.journeyChoiceQuestion),
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /** Keep the Coach open for a better description; no GoalSpec means no unrelated Build action. */
+  private offerJourneyRefinement(reason: CareerNoMatchReason): CoachTurn {
+    this.note('No matching Journey', { reason, next: 'ask the user to refine the goal' });
+    this.resetActiveGoal();
+    this.phase = 'goal';
+    const coachMessage = this.applyGuard(cc('journeyMatching.noMatch'));
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      awaitingGoalText: true,
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /** Clear only the active goal's routing state; the visible conversation history remains. */
+  private resetActiveGoal(): void {
+    this.expert = undefined;
+    this.activeExpert = undefined;
+    this.goal = undefined;
+    this.diagnosisTree = undefined;
+    this.diagnosisAnswers = {};
+    this.knownSignals = {};
+    this.familyAnswers = {};
+    this.journeyFitQuestion = undefined;
+    this.journeyFitAxisId = undefined;
+    this.journeyFitValueIds = [];
+    this.journeyChoiceQuestion = undefined;
+    this.journeyChoiceDefinitionIds = [];
+    this.questions = [];
+    this.questionIndex = 0;
+    for (const key of Object.keys(this.answers)) delete this.answers[key];
+    this.spec.title = '';
+    this.spec.domain = 'general';
+    this.spec.processType = 'unknown';
+    this.spec.isHabit = false;
+    delete this.spec.diagnosis;
+    delete this.spec.diagnosisUnresolved;
+    delete this.spec.selectedJourneyDefinitionId;
   }
 
   /**
@@ -733,7 +890,7 @@ export class CoachOrchestrator {
    * recurring habit skips the staging/milestones questions), and surface the first — or the closing
    * scheduling question when the expert asks nothing.
    */
-  private beginExpertQuestions(): CoachTurn {
+  private beginExpertQuestions(prefix?: string): CoachTurn {
     this.expert = getExpert(this.spec.domain);
     this.activeExpert = {
       id: this.spec.domain,
@@ -772,7 +929,9 @@ export class CoachOrchestrator {
     this.questionIndex = 0;
     this.phase = 'questions';
 
-    return this.questions.length > 0 ? this.askCurrentQuestion() : this.askSchedulingQuestion();
+    return this.questions.length > 0
+      ? this.askCurrentQuestion(prefix)
+      : this.askSchedulingQuestion(prefix);
   }
 
   /**
@@ -789,7 +948,8 @@ export class CoachOrchestrator {
    */
   private journeyVariantQuestions(): DomainQuestion[] {
     const shape = journeyShapeFor(this.spec.processType, this.spec.cadence);
-    const definition = journeyDefinitionsFor(shape, this.spec.domain)[0];
+    const definition = journeyDefinition(this.spec.selectedJourneyDefinitionId)
+      ?? journeyDefinitionsFor(shape, this.spec.domain)[0];
     if (!definition) return [];
     return variantInterviewQuestions(definition, { signals: profileSignals(this.profile) });
   }
@@ -847,6 +1007,10 @@ export class CoachOrchestrator {
           : null;
         return question ? diagnosisQuestionAsDomainQuestion(question) : undefined;
       }
+      case 'journeyFit':
+        return this.journeyFitQuestion;
+      case 'journeyChoice':
+        return this.journeyChoiceQuestion;
       case 'questions':
         return this.questions[this.questionIndex];
       case 'scheduling':
@@ -873,6 +1037,25 @@ export class CoachOrchestrator {
         return this.beginExpertQuestions();
       case 'diagnosis':
         return this.recordDiagnosisAnswer(question, answer);
+      case 'journeyFit':
+        {
+          const value = Array.isArray(answer) ? answer[0] : answer;
+          const index = question.options.indexOf(value);
+          const axisValue = this.journeyFitValueIds[index];
+          if (!this.journeyFitAxisId || !axisValue) {
+            return this.offerJourneyRefinement('missing_journey_content');
+          }
+          this.familyAnswers[this.journeyFitAxisId] = axisValue;
+        }
+        return this.continueCareerConsultation();
+      case 'journeyChoice': {
+        const value = Array.isArray(answer) ? answer[0] : answer;
+        const index = this.journeyChoiceQuestion?.options.indexOf(value) ?? -1;
+        const chosen = this.journeyChoiceDefinitionIds[index];
+        if (!chosen) return this.askJourneyChoiceAgain();
+        this.spec.selectedJourneyDefinitionId = chosen;
+        return this.beginExpertQuestions();
+      }
       case 'questions':
         this.answers[question.id] = answer;
         this.questionIndex++;
@@ -887,6 +1070,21 @@ export class CoachOrchestrator {
       default:
         throw new Error('There is no question to answer right now');
     }
+  }
+
+  private askJourneyChoiceAgain(): CoachTurn {
+    const question = this.journeyChoiceQuestion;
+    if (!question) return this.offerJourneyRefinement('missing_journey_content');
+    const coachMessage = this.applyGuard(cc('journeyMatching.selectionUnavailable'));
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      question: cloneQuestion(question),
+      activeExpert: this.activeExpert,
+    };
   }
 
   /**
@@ -930,9 +1128,10 @@ export class CoachOrchestrator {
   }
 
   /** Surface the closing scheduling-preference meta question after the expert's questions. */
-  private askSchedulingQuestion(): CoachTurn {
+  private askSchedulingQuestion(prefix?: string): CoachTurn {
     this.phase = 'scheduling';
-    const coachMessage = this.applyGuard(SCHEDULING_QUESTION.prompt);
+    const body = SCHEDULING_QUESTION.prompt;
+    const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${body}` : body);
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -950,9 +1149,9 @@ export class CoachOrchestrator {
    * speaks to the user directly. The meta-agent authors the words the user reads, in the user's
    * language and its own voice, via {@link metaVoiced}. No LLM phrasing (deterministic templates).
    */
-  private askCurrentQuestion(): CoachTurn {
+  private askCurrentQuestion(prefix?: string): CoachTurn {
     const question = this.metaVoiced(this.questions[this.questionIndex]);
-    const coachMessage = this.applyGuard(question.prompt);
+    const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${question.prompt}` : question.prompt);
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,

@@ -8,7 +8,7 @@ import { horizonQuestion, HORIZON_QUESTION_ID } from '../horizonQuestion';
 import { EventBus } from '../../events/EventBus';
 import { JourneyEngine } from '../../engines/JourneyEngine';
 import { GeneralExpert } from '../../learning/DomainExpert';
-import { BodyImageExpert } from '../../learning/experts/BodyImageExpert';
+import { BodyImageExpert } from '../../learning/domains/bodyImage';
 import type { AppState, ParkedGoal } from '../../types/domain';
 import type { GoalSpec } from '../interviewPlaybook';
 import {

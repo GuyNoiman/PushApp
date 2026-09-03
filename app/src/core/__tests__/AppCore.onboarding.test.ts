@@ -93,12 +93,15 @@ describe('AppCore onboarding facade (K2)', () => {
     await first.start();
     let answers = emptyOnboardingAnswers();
     answers = toggleSelection(answers, questionById('q1')!, 'calm');
-    first.saveOnboardingProgress('personalInfo', answers);
+    // A step still IN the flow. `personalInfo` used to stand here and was retired on 2026-09-03;
+    // where a retired step resumes is covered in core/onboarding (resolveResumeStep), and what this
+    // test is about is that a live one comes back exactly where it was left.
+    first.saveOnboardingProgress('personalization', answers);
 
     const second = new AppCore(store.repo, consumedFlag());
     await second.start();
     expect(second.getSnapshot().onboardingCompleted).toBe(false);
-    expect(second.getOnboardingStep()).toBe('personalInfo');
+    expect(second.getOnboardingStep()).toBe('personalization');
     expect(second.getOnboardingAnswers().selections.q1).toEqual(['calm']);
   });
 
@@ -205,5 +208,60 @@ describe('AppCore onboarding facade (K2)', () => {
     await second.start();
     expect(second.getSnapshot().onboardingCompleted).toBe(false);
     expect(second.getOnboardingStep()).toBe('language');
+  });
+});
+
+describe('the Journey the first run leaves behind (founder, 2026-09-03)', () => {
+  /**
+   * The profile page left the first run and its fields became a Journey instead. That only works if
+   * the Journey is actually there when the person arrives at Home, exactly once, and never on a
+   * device that has already been through this.
+   */
+  const intro = {
+    title: 'Getting to know PushApp',
+    why: ['Set up my way'],
+    steps: [
+      { title: 'Fill in your profile', description: 'Name, username, country.' },
+      { title: 'Choose the hours', description: 'When a reminder may arrive.' },
+      { title: 'Open Tools', description: 'Try one.' },
+    ],
+  };
+
+  it('is created when onboarding completes, pointing at the screen it asks for', async () => {
+    const { repo, saved } = memRepo();
+    const core = new AppCore(repo, consumedFlag());
+    await core.start();
+
+    core.completeOnboarding(emptyOnboardingAnswers(), intro);
+
+    const created = (saved()?.journeys ?? []).find((j) => j.title === 'Getting to know PushApp');
+    expect(created).toBeDefined();
+    expect(created!.steps.map((s) => s.appLink)).toEqual([
+      '/settings/profile',
+      '/settings/active-hours',
+      '/tools',
+    ]);
+  });
+
+  it('is created ONCE, however many times completion is re-called', async () => {
+    const { repo, saved } = memRepo();
+    const core = new AppCore(repo, consumedFlag());
+    await core.start();
+
+    core.completeOnboarding(emptyOnboardingAnswers(), intro);
+    core.completeOnboarding(emptyOnboardingAnswers(), intro);
+
+    const matches = (saved()?.journeys ?? []).filter((j) => j.title === 'Getting to know PushApp');
+    expect(matches).toHaveLength(1);
+  });
+
+  it('is not created at all when the caller does not ask for one', async () => {
+    // Every existing caller and test passes answers alone, and must keep behaving exactly as before.
+    const { repo, saved } = memRepo();
+    const core = new AppCore(repo, consumedFlag());
+    await core.start();
+
+    core.completeOnboarding(emptyOnboardingAnswers());
+    expect(saved()?.journeys ?? []).toHaveLength(0);
   });
 });

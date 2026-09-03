@@ -20,8 +20,8 @@
  */
 import { coachCharacter } from './coachCharacter';
 import { findLanguage } from '../../i18n/languages';
-import { CAREER_SIGNAL_HINTS } from '../learning/experts/careerDiagnosis';
-import { DOMAIN_IDS } from '../learning/experts/registry';
+import { CAREER_SIGNAL_HINTS } from '../learning/domains/career/diagnosis';
+import { DOMAIN_IDS } from '../learning/registry';
 import type { ExtractionField } from './interviewPlaybook';
 
 /** The domain ids the extractor may classify a goal into, as a JSON-union string for the prompt. */
@@ -93,7 +93,7 @@ export const EXTRACTION_SYSTEM_PROMPT = [
  * and break it into a structured list of goals, classifying EACH by domain and by KIND (a simple
  * `recurring` habit vs a staged `process`). The orchestrator uses that understanding to focus the
  * user on one goal first (deferring the rest) and to route the chosen goal to the matching
- * {@link ../learning/experts/registry DomainExpert} with the right question flow. Deliberately
+ * {@link ../learning/registry DomainExpert} with the right question flow. Deliberately
  * NON-conversational — it must NOT coach, ask, or chat; it only labels.
  *
  * The orchestrator composes this with the STEADY {@link ./communicationStyles} voice so the

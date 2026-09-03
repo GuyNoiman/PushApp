@@ -61,6 +61,22 @@ describe('the diagnosis runs first', () => {
     // And the conversation moved ON — the diagnosis is over, not repeated.
     expect(next.question?.id).not.toBe(first.question?.id);
     expect(next.state.phase).not.toBe('diagnosis');
+    expect(next.state.phase).toBe('journeyFit');
+    expect(next.question?.id).toContain('library.family.career.jobTarget.targetNarrowing');
+  });
+
+  it('uses the family-fit answer to select one authored Journey without a second menu', async () => {
+    const orchestrator = new CoachOrchestrator({ llm: careerMock() });
+    orchestrator.start();
+    await orchestrator.triage('I apply and nobody answers');
+    await orchestrator.selectOption(0);
+
+    const turn = await orchestrator.selectOption(1);
+
+    expect(turn.state.phase).toBe('questions');
+    expect(turn.state.spec.selectedJourneyDefinitionId).toBe('career.jobTarget.postingsFirst');
+    expect(turn.coachMessage).toContain('I found one Journey');
+    expect(turn.question?.id).not.toBe('career.journeyChoice');
   });
 
   it('never asks what the opening message already said', async () => {
@@ -97,7 +113,43 @@ describe('the diagnosis runs first', () => {
     const turn = await orchestrator.selectOption(0);
 
     expect(turn.state.spec.diagnosis).toBeUndefined();
-    expect(turn.state.spec.diagnosisUnresolved).toBe('capabilityGap');
+    // The reason is consultation state, not persisted as a diagnosis field after refinement opens.
+    expect(turn.state.spec.diagnosisUnresolved).toBeUndefined();
+    expect(turn.done).toBe(false);
+    expect(turn.goalSpec).toBeUndefined();
+    expect(turn.coachMessage).toContain('I don’t have a Journey');
+    expect(turn.awaitingGoalText).toBe(true);
+    expect(turn.state.phase).toBe('goal');
+  });
+
+  it('lets the user refine a no-match goal in the same conversation', async () => {
+    const orchestrator = new CoachOrchestrator({
+      llm: new MockLlmClient((req) => {
+        const last = req.messages[req.messages.length - 1]?.content ?? '';
+        if (last.includes('second attempt')) {
+          return JSON.stringify({
+            goals: [{
+              title: 'find a focused role', kind: 'process', domain: 'career',
+              careerSignals: { targetClarity: 'broad' },
+            }],
+          });
+        }
+        return JSON.stringify({
+          goals: [{
+            title: 'find a job', kind: 'process', domain: 'career',
+            careerSignals: { targetClarity: 'clear' },
+          }],
+        });
+      }),
+    });
+    orchestrator.start();
+    await orchestrator.triage('first attempt');
+    const noMatch = await orchestrator.selectOption(0);
+    expect(noMatch.awaitingGoalText).toBe(true);
+
+    const retried = await orchestrator.triage('second attempt');
+    expect(retried.state.phase).toBe('journeyFit');
+    expect(retried.question?.id).toContain('career.jobTarget');
   });
 
   it('leaves every other domain exactly as it was', async () => {

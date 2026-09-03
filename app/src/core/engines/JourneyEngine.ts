@@ -77,6 +77,8 @@ export interface NewStepInput {
   milestoneId?: string;
   /** Optional relative difficulty 1..5 (adaptive coach, S1). */
   difficulty?: number;
+  /** Optional in-app destination this Step points at ({@link Step.appLink}). */
+  appLink?: string;
   /**
    * POSITIONAL dependency for {@link createJourney} (Step Dependencies, linear): an index into the
    * SAME `input.steps[]`, which MUST be `< own index` (a Step may only depend on an earlier one).
@@ -256,6 +258,7 @@ export class JourneyEngine {
       ...(s.plannedFor !== undefined ? { plannedFor: s.plannedFor } : {}),
       ...(s.milestoneId !== undefined ? { milestoneId: s.milestoneId } : {}),
       ...(s.difficulty !== undefined ? { difficulty: s.difficulty } : {}),
+      ...(s.appLink !== undefined ? { appLink: s.appLink } : {}),
       ...(s.dependsOnStepId !== undefined ? { dependsOnStepId: s.dependsOnStepId } : {}),
     };
   }

@@ -14,6 +14,14 @@
   },
   "exampleMessageTemplate": "If it’s easier, tell me everything at once — for example: “I want to {goal}. It matters to me because {motivation}. I can give it about {sessionMinutes} minutes, {timesPerWeek} times a week, usually in the {daypart}. What usually trips me up is {failureRisk}.”",
   "supportCircleRecommendation": "One last thing — people who invite a Buddy or a small Support Circle stick with it far more. Want me to suggest who could back you on this?",
+  "journeyMatching": {
+    "noMatch": "I don’t have a Journey in the library that fits this well enough yet, and I’d rather be honest than give you the wrong one. Tell me what you would like to change or clarify, and I’ll try again with you.",
+    "singleMatch": "I found one Journey that fits what you told me. I’ll use it as the basis for the plan, and you’ll still review the full Journey before anything starts.",
+    "multipleMatch": "I found a few Journeys that could fit. One is not clearly better for you yet, so choose the approach that feels most useful.",
+    "multipleRecommended": "I found a few Journeys that could fit. Based on what you told me, the first is the strongest match, but the choice is yours.",
+    "recommendedSuffix": "— Recommended",
+    "selectionUnavailable": "That option changed while we were talking. Nothing was selected. Please choose from the updated list."
+  },
   "processType": {
     "prompt": "What would you like to work on?",
     "options": [

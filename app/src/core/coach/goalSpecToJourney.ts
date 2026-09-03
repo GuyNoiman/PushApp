@@ -26,7 +26,7 @@ import type { Cadence, Journey, JourneyStart, ParkedGoal } from '../types/domain
 import { isValidDreamTitle, type NewDreamInput } from '../dreams/dreams';
 import { answerText, type DomainExpert, type InterviewAnswers } from '../learning/DomainExpert';
 import { weeklyMinutesForCapacity } from '../onboarding/capacity';
-import { getExpert } from '../learning/experts/registry';
+import { getExpert } from '../learning/registry';
 import {
   planJourney,
   planJourneyFromStructure,

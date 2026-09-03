@@ -16,7 +16,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import { isDomainId, type DomainId } from '../learning/experts/registry';
+import { isDomainId, type DomainId } from '../learning/registry';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
 import type { DayPart } from '../types/domain';
 import { EXTRACTION_SYSTEM_PROMPT, buildExtractDirective } from './coachPrompts';

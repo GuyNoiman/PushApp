@@ -1,7 +1,7 @@
 # Backlog — the one list
 
 Status: **The single source for what is done and what is not.** Approved 2026-08-29.
-Last updated: **2026-09-02**.
+Last updated: **2026-09-03**.
 
 ## Why this file exists, and what it replaces
 
@@ -13,6 +13,13 @@ written on 14 August), `Current_Context.md` (a handoff, not a tracker),
 
 **None of them is deleted.** Each keeps its own job and gains a line pointing
 here. What moves is the claim to be the list.
+
+**Two more joined them on 2026-09-03** (founder: one file, not several that
+overlap): `04_Product/Open_Work_2026-08-21.md`, the last link in the Open_Work
+chain, and `04_Product/Open_Questions_For_Founder.md`. Their still-open items are
+§1a and the sections below; their standing instructions about how to work with
+the founder moved into `CLAUDE.md` §0, which is where a rule that governs every
+session belongs. Both keep their text and gain a banner.
 
 ## The rule that makes this list different
 
@@ -47,6 +54,31 @@ is "specified" is not started, however finished the specification is.
 | S-04 | Friendship exit — remove, block, report a user | Specified | Nothing. `SocialGateway` has no `removeFriend`, `blockUser` or `report*` | — |
 | S-05 | Sentry §11.5 verification on a real device | Blocked | SDK wired, canary suite green in unit tests; the on-device payload has never been inspected | Both builds are installed now — this is doable |
 | S-06 | Privacy-policy line for operational diagnostics and KPIs | Specified | Policy is live and does not mention either | S-05 lands first |
+
+## 1a. Waiting on a founder decision
+
+Walked in from `Open_Questions_For_Founder.md` on 2026-09-03, when that file was superseded by this
+one. Only what was still genuinely open after its own 2026-08-25 re-audit is here; everything it
+listed that has since shipped, or been decided, is not repeated.
+
+A row leaves this table when the decision is made and lands in `06_Decisions/Decision_Log.md`.
+
+| ID | The decision | Why it is his | Recommendation on the table |
+|---|---|---|---|
+| F-01 | **Remove `relationships` from `SENSITIVE_DOMAINS`** | The coach refuses to plan for it, so a finished expert cannot ship. The gate is built; whether the domain sits behind it is a judgement about people, not code | Also tracked as S-20 — the single thing blocking a finished expert |
+| F-02 | **The wizard offers 90 days; the guidance says up to two months** | One of the two has to move. `journey/new.tsx` has `DURATION_VALUES = [30, 60, 90]` | Align the wizard, or restate the guidance as "about two to three months" |
+| F-03 | **What the app SAYS when a Journey is extended** | Extension is explicit and always respected (decided). Open: whether the app also shows the original date. It must never become a warning, a nag, or a count | Show both dates always; one neutral original-plan line only on a repeat extension. Showing nothing is defensible |
+| F-04 | **`deferDependents` moves a dependent Step by a week with no warning** | The one remaining path that moves somebody's plan without asking. The freeze decision makes this sharper, not softer | Needs an answer before the explicit-consent rule can be called complete |
+| F-05 | **Does a postponement that extends the Journey also re-date the postponed Step?** | Unspecified today; postponing moves the occurrence and its reminder | No — keep extension and Step move as separate effects (matches D37 §4) |
+| F-06 | **Ally status visibility when a Journey is paused** | He asked for it; what leaves the device is a strict four-field whitelist with no status field, so even a minimal tag widens what a paused person reveals | Needs a security-privacy pass before it is a yes |
+| F-07 | **Should real-world supporters be modelled at all?** | A person supported by somebody who will never install the app is the common case, and the object model has no room for them | Open |
+| F-08 | **Smart Notification Timing — the aggregate** | The learning loop shipped (D74); nothing bundles several Journeys into one notification | Open |
+| F-09 | **Ratify D76 — coach memory is on-device only** | Decided in his absence on 2026-08-24. The alternative would have quietly downgraded a promise the PRD makes explicitly | Ratify or overturn |
+| F-10 | **Weekly Review contributions — seven questions** | 4.1 decides whether the partner's content is expressible at all; the rest follow from it | Also tracked as S-19 |
+| F-11 | **Encryption: keep the device key migratable?** | Locking it to one device is stronger and guarantees total data loss on every phone upgrade until a recovery path exists | Leave it migratable for MVP |
+| F-12 | **Encryption: should server-assisted recovery ever exist?** | It would mean the server can decrypt | No — keep the strong promise |
+| F-13 | **Quarantine recovery** | Unreadable data is preserved and explained, but nothing can read it back, so "start fresh" is the only exit and it destroys the copy | Needs a tool, or an accepted limitation written down |
+| F-14 | **Google Play developer account — $25 one-time** | Cannot be created without him: identity verification and a payment method. Blocks internal testing and the store | Register at `play.google.com/console`; also tracked as O-22 |
 
 ## 2. The MVP delta (`POC_and_MVP_Scope.md` §2.1)
 

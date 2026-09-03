@@ -1,5 +1,10 @@
 # Open Questions — founder decisions pending
 
+> **SUPERSEDED, 2026-09-03.** Every question here that was still open after its own 2026-08-25
+> re-audit is now a row in `04_Product/Backlog.md` §1a, "Waiting on a founder decision", which is
+> where pending decisions are tracked. This file is kept for its reasoning and for the record of what
+> was considered and answered. Do not add new questions here.
+
 Status: **Living list.** Compiled 2026-08-14 from every PRD, decision and code audit produced in the
 2026-08-13/14 sessions. Each item names where it came from and what it blocks, so it can be answered
 out of order.

@@ -958,7 +958,8 @@ tool answer survived a deletion. Fixed, generated from the tool list, and named 
 # ⛳ Previous START HERE — 2026-08-21: six tools, a token budget, and one ordering decision
 
 Everything committed and **pushed**, on TWO branches. `tsc` clean, **jest 2014 / 190 suites**.
-**The open list is now `04_Product/Open_Work_2026-08-21.md` — read it after this block.**
+**The open list is now `04_Product/Backlog.md` — read it after this block.** *(2026-09-03: it
+superseded `Open_Work_2026-08-21.md`, which was true when this line was written.)*
 Full detail: `00_Foundation/CHANGELOG.md`, the 2026-08-21 entry.
 
 ## ▶ DECIDE THIS BEFORE MERGING ANYTHING
@@ -1465,7 +1466,8 @@ compare, and without comparison there is no learning); and a matching layer that
 which Journey suits whom. Stages 0–2 need no backend, no privacy policy and no consent.
 Companion research: `05_Research/User_Matching_Parameters_Research_2026-08-17.md`.
 
-**3. `04_Product/Open_Questions_For_Founder.md` — every pending founder decision, in one place.**
+**3. `04_Product/Backlog.md` §1a — every pending founder decision, in one place.** *(2026-09-03:
+walked in from `Open_Questions_For_Founder.md`, which held them when this line was written.)*
 Ordered so the ones that actually block code sit at the top.
 
 ### The single most important fact to carry into the next session

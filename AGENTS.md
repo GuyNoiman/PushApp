@@ -7,7 +7,22 @@ This file is auto-loaded into every session and every sub-agent. It is the share
 > intention and action. It is *not* a habit tracker, task manager, or productivity app.
 > Optimize for real-life transformation, never for time-in-app.
 
+
+> **`CLAUDE.md` and `AGENTS.md` are the same document.** Claude Code reads one, Codex reads the
+> other, and they differ only in the title line and the agents directory. **Edit both in the same
+> commit** — a rule that lands in one and not the other is a rule half the team does not have.
+
 ---
+
+## 0. Working with the founder
+
+Two standing instructions, moved here on 2026-09-03 from `04_Product/Open_Work_2026-08-21.md` §3.7
+because a rule that governs every session cannot live in a dated handoff nobody opens any more.
+
+1. **Ask complete questions.** Never use a term without defining it in the same message. A question
+   he has to decode before he can answer it is a question that costs him twice.
+2. **He wants to see, not read.** Render the options; do not describe them. For anything with a
+   visual answer, show it.
 
 ## 1. How to start any session (repo-first, token-efficient)
 

@@ -1,104 +1,84 @@
-# PushApp Knowledge Repository
+# PushApp
 
-Welcome to the official knowledge repository of PushApp.
+> PushApp helps people **become who they choose to be** — closing the gap between intention and
+> action. It is not a habit tracker, a task manager or a productivity app.
 
-This repository is the single source of truth for everything related to PushApp — including the company's vision, product, strategy, research, principles, and major decisions.
-
-Its purpose is not only to document what we build, but also to preserve **why** we build it.
-
-As the company evolves, this repository should evolve with it.
+This repository is the source of truth for the product: the vision, the decisions, the
+specifications, and the app itself. Not only what we build, but **why**.
 
 ---
 
-## Core Principle
+## Start here
 
-> **If it isn't documented here, it isn't part of PushApp.**
+**→ [`AI_Start_Here.md`](./AI_Start_Here.md)** — the reading order and the source-of-truth priority.
+Then [`Current_Context.md`](./Current_Context.md), which says where things stand today.
 
-Every validated decision, product definition, strategic direction, research insight, or design principle must eventually be reflected in this repository.
+That is the whole answer for a person or an AI joining the project. Everything below is the map.
 
-The goal is not to document every conversation.
-
-The goal is to preserve the knowledge required to understand, build, evaluate, and evolve PushApp.
-
----
-
-## Repository Goal
-
-If a new AI assistant, investor, product manager, designer, or developer receives only these files, they should understand PushApp well enough to:
-
-- Explain the product.
-- Continue designing it.
-- Answer investor questions.
-- Help developers implement it.
-- Understand which ideas are approved and which are still under discussion.
-
-No critical product knowledge should exist only inside chat history.
+*(Until 2026-09-03 this file carried its own, different reading order, which had drifted out of
+agreement with the constitution. There is now one of them.)*
 
 ---
 
-## Knowledge Philosophy
+## The three files that govern the work
 
-This repository is designed to be **AI-first**.
-
-Its structure should make it easy for both humans and AI assistants to understand the project, reason about it, and contribute to it.
-
-Whenever possible:
-
-- Prefer improving existing knowledge over creating unnecessary new documents.
-- Keep documents self-contained.
-- Avoid duplicated information inside a single document.
-- Allow intentional overlap across documents when each document serves a different audience or perspective.
-- Write for long-term clarity rather than short-term convenience.
-
-If future AI tools work better with a different structure, the repository should evolve accordingly.
+| File | What it is |
+|---|---|
+| [`CLAUDE.md`](./CLAUDE.md) / [`AGENTS.md`](./AGENTS.md) | The working constitution — the rules every session obeys. The same document twice: Claude Code reads one, Codex the other. Edit both together. |
+| [`Repository_Workflow.md`](./Repository_Workflow.md) | Context and token discipline — how to work without re-reading the repo. |
+| [`Repository_Guidelines.md`](./Repository_Guidelines.md) | Documentation conventions — how to write and organise what is here. |
 
 ---
 
-## Reading Order
+## The four files you will actually open most days
 
-For anyone joining the project for the first time, read the documents in the following order:
-
-1. `01_Vision/Vision.md`
-2. `00_Foundation/Core_Beliefs.md`
-3. `02_Product_Principles/Product_Principles.md`
-4. `04_Product/Product_Bible.md`
-5. `03_Pitch/Pitch_Deck.md`
-6. `05_Research/Research_Foundation.md`
-7. `00_Foundation/Open_Questions.md`
-
-This order explains not only **what** PushApp is, but **why** it exists, **how** it should evolve, and **what still needs validation**.
+| File | Answers |
+|---|---|
+| [`Current_Context.md`](./Current_Context.md) | Where are we, right now? |
+| [`04_Product/Backlog.md`](./04_Product/Backlog.md) | What is left? Including §1a, every decision waiting on the founder. |
+| [`06_Decisions/Decision_Log.md`](./06_Decisions/Decision_Log.md) | What was decided, and why? |
+| [`00_Foundation/CHANGELOG.md`](./00_Foundation/CHANGELOG.md) | What happened? |
 
 ---
 
-## Repository Structure
+## The map
 
 ```text
-00_Foundation/
-01_Vision/
-02_Product_Principles/
-03_Pitch/
-04_Product/
-05_Research/
-06_Decisions/
-07_Assets/
-08_Archive/
+00_Foundation/            Terminology, IA, CHANGELOG, conventions
+01_Vision/                The long-range picture
+02_Product_Principles/    Product principles
+03_Pitch/                 Investor and external material
+04_Product/               PRDs, UX specs, scope, roadmap, the Backlog
+05_Research/              Behavioural and market research
+06_Decisions/             The Decision Log
+07_Assets/                Brand and visual assets
+08_Archive/               Superseded documents, kept for their reasoning. Nothing here is current
+09_Product_Philosophy/    Philosophy, AI product principles, terminology
+10_Partner_Coaching_Content/  Externally authored coaching content + its manifest
+11_Engineering_Bible/     Architecture decisions and engineering rules
+12_Future_Assets/         Built but archived screens and assets
+app/                      The Expo/React Native application
 ```
 
-Each section has a unique purpose and should contain only the information that belongs there.
+---
+
+## How we keep it usable
+
+- **One subject, one file.** When two documents describe the same thing, they get merged and the
+  older one goes to `08_Archive/` with a note saying what it contributed. Two files describing one
+  subject means somebody is reading the wrong one.
+- **Nothing is deleted.** Superseded documents keep their text and their reasoning; what they lose
+  is the claim to be current.
+- **Improve the existing document** rather than adding another. A new file needs a reason a section
+  could not do.
+- **Intentional overlap is allowed** only when each document serves a genuinely different reader —
+  and each one says so at the top.
+- **If it is not written here, it is not part of PushApp.** Conversations are temporary.
 
 ---
 
-## Working Principles
+## The app
 
-- The repository is the official source of truth.
-- Every approved decision should be documented.
-- Existing documents should be continuously improved rather than endlessly expanded.
-- Discussions are temporary.
-- Knowledge is permanent.
-- Important ideas may first live in draft documents before being promoted into official documents.
-
----
-
-## Long-Term Goal
-
-The long-term goal is to make this repository comprehensive enough that a new team member — or an AI assistant — can understand PushApp without relying on historical conversations.
+Everything under `app/` is an Expo (React Native) + TypeScript application with an engine-based
+architecture: pure-TypeScript engines over an event bus, configuration before code, offline-first.
+The rationale is in [`11_Engineering_Bible/Engineering_Decisions.md`](./11_Engineering_Bible/Engineering_Decisions.md) §E1.

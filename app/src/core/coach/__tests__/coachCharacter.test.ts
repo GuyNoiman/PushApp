@@ -57,6 +57,33 @@ describe('the permanent character', () => {
     expect(character).toContain('Never claim to know exactly how they feel');
   });
 
+  it('says what does NOT count as a reflection', () => {
+    // The partner's corrections spec, 2026-09-02: the UI already looks
+    // conversational and behaves like a form, because filler is being mistaken
+    // for listening. Naming the filler is the only way to rule it out.
+    for (const filler of ['that sounds important', 'thanks for sharing', 'I understand', 'great']) {
+      expect(character).toContain(filler);
+    }
+    expect(character).toContain('never count as having reflected');
+  });
+
+  it('names WHEN to reflect rather than leaving it to taste', () => {
+    expect(character).toContain('they correct an assumption you made');
+    expect(character).toContain('two answers combine into a pattern');
+    expect(character).toContain('Two or three across a first conversation');
+  });
+
+  it('forbids inventing the person’s situation, which is not the same as diagnosing them', () => {
+    // The observed failure: "I want to change career" answered with "which roles
+    // are you applying for?" — a fact they never gave.
+    expect(character).toContain('NEVER ASSUME A FACT THEY DID NOT GIVE YOU');
+    expect(character).toContain('they never said they were applying');
+  });
+
+  it('makes a correction replace the assumption rather than sit beside it', () => {
+    expect(character).toContain('the correction REPLACES your assumption');
+  });
+
   it('protects the terminology it is allowed to fix', () => {
     expect(character).toContain('Journey, Milestone, Buddy, Support Circle');
     expect(character).toContain('Never "phase", "program" or "challenge"');

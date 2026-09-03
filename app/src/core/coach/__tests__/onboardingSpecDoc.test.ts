@@ -8,7 +8,8 @@
  *
  * So the coach's permanent character is COPIED into `04_Product/Onboarding_And_Coach_Spec.md` by
  * `tools/sync-onboarding-spec.mjs`, and this test fails the moment the two drift. The fix when it
- * fails is one command: `npm run spec:sync`.
+ * fails is one command: `npx tsx tools/sync-onboarding-spec.mjs` (deliberately not an npm script —
+ * see that file's header for what adding one did to the runtime fingerprint).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

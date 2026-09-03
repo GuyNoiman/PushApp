@@ -1227,7 +1227,12 @@ different builds without knowing it. Two things now prevent it:
 - **In this file:** §3 is generated from the code and tested against it, so a stale document fails
   the build rather than misleading somebody quietly.
 
-Run `npm run spec:sync` inside `app/` after changing the coach's character.
+Run `npx tsx tools/sync-onboarding-spec.mjs` inside `app/` after changing the coach's character.
+
+*(It is deliberately NOT an npm script. `packageJson:scripts` is an Expo fingerprint source, so
+adding one changes the runtime version and silently cuts every installed build off from OTA
+updates. That is exactly what happened when this was first added, on 2026-09-03, and it was caught
+only because `publish-ota.mjs` refuses to publish to a runtime no device is running.)*
 
 ---
 

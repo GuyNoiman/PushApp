@@ -2585,7 +2585,10 @@ the single file wins. Changes are made by editing it, never by starting a new ve
 corrections document against it.
 
 Its coach-character section is **generated** from `app/src/core/coach/coachCharacter.ts` by
-`npm run spec:sync`, and a test fails when the document drifts from the code.
+`npx tsx app/tools/sync-onboarding-spec.mjs`, and a test fails when the document drifts from the
+code. *(2026-09-03: it was briefly an npm script. `packageJson:scripts` is an Expo fingerprint
+source, so that alone cut every installed build off from OTA updates; the alias was removed the same
+hour.)*
 
 **Why:** four documents describing four different versions of onboarding is what had the founder and
 the partner working from different specs for a week. Marking the old ones superseded stops new work

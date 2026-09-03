@@ -6,7 +6,13 @@
  * describes something the code already holds VERBATIM — the coach's permanent character — should
  * not be retyped by anybody. It is copied, and a test fails when the copy goes stale.
  *
- *   node tools/sync-onboarding-spec.mjs     (or: npm run spec:sync)
+ *   npx tsx tools/sync-onboarding-spec.mjs
+ *
+ * NOT an npm script, and that is not an oversight. `packageJson:scripts` is an Expo fingerprint
+ * source: adding one changes the runtime version, and every already-installed build is silently cut
+ * off from OTA updates until somebody makes a new native build. It was added as `spec:sync` on
+ * 2026-09-03 and removed the same hour, caught only because `publish-ota.mjs` refuses to publish to
+ * a runtime version no device is running.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

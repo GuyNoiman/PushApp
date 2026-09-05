@@ -26,6 +26,12 @@
   "brand": {
     "continue": "Continue",
     "progress": "Introduction {{current}} of {{total}}",
+    "acknowledge": {
+      "title": "The problem was never that you did not care enough.",
+      "body": "Most people already know what they want to change. What gets in the way is an ordinary week: work, other people, tiredness, and a reason that is genuinely good every single time.",
+      "close": "A promise a person makes to themselves is the only one nobody else is waiting on. That gap is what this app is for.",
+      "continue": "That sounds about right"
+    },
     "promise": {
       "title": "More of what matters to you. More of you.",
       "body": "Change is easier when the next move is clear. We help turn what matters to you into Steps you can actually move with."

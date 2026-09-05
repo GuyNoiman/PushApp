@@ -100,7 +100,11 @@ export default function OnboardingScreen() {
 
   // ── Render the current page ──────────────────────────────────────────────────
   if (step === 'language') {
-    return <LanguageStep onContinue={() => go('promise')} />;
+    return <LanguageStep onContinue={() => go('acknowledge')} />;
+  }
+
+  if (step === 'acknowledge') {
+    return <AcknowledgeStep onBack={() => go('language')} onContinue={() => go('promise')} />;
   }
 
   // `personalInfo` LEFT the first run on 2026-09-03 (founder): the page below is intact and still
@@ -119,7 +123,7 @@ export default function OnboardingScreen() {
         page="promise"
         icon="trail-sign-outline"
         progress={1}
-        onBack={() => go('language')}
+        onBack={() => go('acknowledge')}
         onContinue={() => go('personalization')}
       />
     );
@@ -342,6 +346,40 @@ function PersonalInfoStep({ onBack, onContinue }: { onBack: () => void; onContin
  * next is a short conversation rather than a form — because what comes next used to be nine
  * questions and now is the coach.
  */
+/**
+ * The screen that names the difficulty before anything is promised (D98).
+ *
+ * ── WHY IT IS FIRST, AND WHY IT LOOKS DIFFERENT ────────────────────────────────────────────────
+ *
+ * Somebody installing this has almost certainly failed at something like it before. Three screens
+ * of what we believe, arriving before anything acknowledges that, is a pitch to a person who is
+ * still braced — and it bounces off. So this comes first, it asks for nothing, and it blames
+ * nobody: the reasons people stop are usually real, which is exactly why they win.
+ *
+ * It deliberately does NOT wear the three-promise chrome — no progress dots, no icon plate. Those
+ * mark the introduction, and this is not part of it. Making it look like a fourth promise would
+ * turn recognition back into selling, which is the one thing it exists to avoid.
+ *
+ * The button is the person agreeing with a description of themselves rather than accepting a step,
+ * which is why it is not "Continue".
+ */
+function AcknowledgeStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
+  const { t } = useTranslation('onboarding');
+  return (
+    <OnboardingScaffold
+      onBack={onBack}
+      footer={<OnboardingPrimaryButton label={t('brand.acknowledge.continue')} onPress={onContinue} />}>
+      <ThemedText type="title">{t('brand.acknowledge.title')}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('brand.acknowledge.body')}
+      </ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('brand.acknowledge.close')}
+      </ThemedText>
+    </OnboardingScaffold>
+  );
+}
+
 function ProductIntroStep({
   page,
   icon,

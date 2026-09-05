@@ -227,6 +227,10 @@ export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
  */
 export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'language',
+  // BEFORE the three promises, on purpose (D98): a person who has just installed this has failed at
+  // something like it before, and being sold to before being recognised is what makes the selling
+  // bounce off. It is the only screen in the flow that asks for nothing.
+  'acknowledge',
   'promise',
   'personalization',
   'supportIntro',

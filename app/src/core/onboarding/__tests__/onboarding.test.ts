@@ -86,6 +86,7 @@ describe('onboarding config (PRD §6)', () => {
     // in any order or ignored.
     expect([...ONBOARDING_STEP_ORDER]).toEqual([
       'language',
+      'acknowledge',
       'promise',
       'personalization',
       'supportIntro',
@@ -93,12 +94,25 @@ describe('onboarding config (PRD §6)', () => {
     ]);
     expect(ONBOARDING_STEP_ORDER).not.toContain('personalInfo');
     // Nothing in the sequence walks into it any more, from either direction.
-    expect(nextStep('language')).toBe('promise');
-    expect(prevStep('promise')).toBe('language');
+    expect(nextStep('language')).toBe('acknowledge');
+    expect(prevStep('promise')).toBe('acknowledge');
     expect(nextStep('intro')).toBe('intro'); // terminal — the hand-off to the coach is the screen's
     expect(prevStep('intro')).toBe('supportIntro');
   });
 
+
+  it('names the difficulty before it promises anything (D98)', () => {
+    // Somebody installing this has failed at something like it before. Three screens of what we
+    // believe, arriving before anything acknowledges that, is a pitch to a person who is still
+    // braced. The order is the whole point of the screen, so it is pinned here rather than left to
+    // whoever next edits the list.
+    const order = [...ONBOARDING_STEP_ORDER];
+    const ack = order.indexOf('acknowledge');
+    expect(ack).toBeGreaterThan(-1);
+    for (const promise of ['promise', 'personalization', 'supportIntro'] as const) {
+      expect(ack).toBeLessThan(order.indexOf(promise));
+    }
+  });
   it('did not DELETE the nine questions — they are still configured and still reachable', () => {
     // Removing them from the first-run order removes them from the fixed sequence and nothing else.
     // They stay in the config so the few that matter can be asked contextually, when a chosen Journey

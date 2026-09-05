@@ -2638,3 +2638,30 @@ simply does not feel like talking is not offered a way around it.
 answer on his own because both halves of the contradiction were founder decisions.
 
 **Stage:** MVP.
+
+### D98 — Name the difficulty before promising anything
+
+**Decision (2026-09-06):** the first run acknowledges what makes change hard **before** it says
+anything about what PushApp believes. A new screen sits between the language choice and the three
+introduction screens, and it asks for nothing.
+
+It deliberately does not wear the introduction's chrome — no progress dots, no icon plate — because
+those mark the three promises and this is not a fourth one. Making it look like one would turn
+recognition back into selling, which is the thing it exists to avoid. Its button is the person
+agreeing with a description of themselves ("That sounds about right"), not accepting a step.
+
+**Why:** somebody installing this has almost certainly failed at something like it before. Three
+screens of what we believe, arriving before anything acknowledges that, is a pitch to a person who is
+still braced, and it bounces off. The reasons people stop are usually real, which is exactly why they
+win over a promise nobody else heard.
+
+**Where it came from:** the founder's conclusion from the XOLTAR/Wish analysis (2026-09-05), first of
+three: an opening that acknowledges the difficulty before it sells a solution; an explicit reflection
+the user confirms before any recommendation; and turning the Journey-building time into proof the
+coach listened. This decision covers the first. The second and third are the starting-point summary
+(spec §4.8) and Backlog O-24, both in the onboarding-conversation build.
+
+**Not copied.** Wish's version lists real abandoned intentions struck through with their excuses. Ours
+says the same thing in its own words and does not reproduce theirs.
+
+**Stage:** MVP.

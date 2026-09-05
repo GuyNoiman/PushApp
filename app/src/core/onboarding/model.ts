@@ -19,6 +19,9 @@
  */
 export type OnboardingStep =
   | 'language'
+  // The screen that names the difficulty BEFORE any of the three promises (D98). It is not a
+  // fourth promise and is deliberately not styled as one.
+  | 'acknowledge'
   | 'personalInfo'
   | 'promise'
   | 'personalization'

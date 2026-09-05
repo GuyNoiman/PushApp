@@ -1,7 +1,7 @@
 # XOLTAR / Wish — Competitive Analysis
 
-Status: **Living competitor research — first demo and public-source pass complete; update with each future demo**  
-Date: **2026-08-28**  
+Status: **Living competitor research — second observation pass added 2026-09-05 (§1B); update with each future demo**  
+Date: **2026-08-28**, second pass **2026-09-05**  
 Scope: XOLTAR company, the founder-provided three-minute Wish demo, and the strategic threat to PushApp.  
 Evidence labels: **Observed in demo · Publicly verified · Company claim · Inference · Unknown**
 
@@ -100,6 +100,148 @@ not a chatbot.
 
 The recording does not show the resulting plan, the post-call Home experience, reminder behavior, daily
 execution, recovery after a miss, memory accuracy, or long-term product loop. Those remain unknown.
+
+## 1B. Second observation pass — the ten-minute recording (2026-09-05)
+
+A second recording, same build (`v0.4.0`), roughly **ten minutes** and covering the whole flow end to end:
+the pre-headline screen, the questionnaire, both maps, sign-in, consent, the waiting room, **eight minutes of
+the actual call**, and — for the first time — **what happens after the call ends**, which §1.6 correctly listed
+as unknown.
+
+Nothing below contradicts the first pass. It adds what the three-minute recording did not reach, and it
+records the exact copy, because the copy is most of what is good here.
+
+### 1B.1 The screen before the promise, which is the best thing in the flow
+
+The very first screen is not the positioning line. It is this:
+
+> **It was never the wanting.**
+> Changes people meant to make — and the perfectly good reason each one didn't happen.
+
+Then a list animates in, each intention struck through, each with its excuse underneath in italic:
+
+> ~~leave the job that's eating me~~ — *not with the mortgage*
+> ~~get my money in order~~ — *I'll look when there's more of it*
+> ~~be there for my kids, properly~~ — *someone has to earn it*
+> ~~write the book I keep describing~~ — *when things calm down*
+
+And then the turn:
+
+> **Every one of those reasons is fair.**
+> That's exactly the problem. A fair reason beats a promise you made to yourself, every single time — because
+> nobody else was in the room when you made it.
+
+CTA: **Meet your companion →**
+
+**Why it works, mechanically.** It states the user's problem in the user's own excuses before it says one word
+about itself; every line is a real sentence somebody has said. It refuses to blame — "every one of those
+reasons is fair" is the opposite of what a productivity app says. And the last clause does the entire selling
+job in fourteen words: *nobody else was in the room when you made it.* The product is the person who is now in
+the room. That is the pitch, and it is never stated as a feature.
+
+This is the single strongest piece of writing in the flow and it is the part most worth learning from.
+
+### 1B.2 The questionnaire, exactly
+
+Framing screen: *"Nice to meet you. **First, the honest part.** No right answers. No score you can fail. Just
+six quick reads on you, today. Go with your gut — first instinct is usually the true one."* CTA: **I'm in**.
+
+Six statements, one per screen, under the eyebrow `HOW TRUE IS THIS?`, with a `n/6` progress bar:
+
+1. I feel alive and full of energy.
+2. When I start something, I follow it all the way through.
+3. When things get loud, I stay level.
+4. I bounce back quickly after a hard week.
+5. I've got people I can really lean on.
+6. I'm pulled forward by goals that genuinely matter to me.
+
+**The scale has no numbers.** Five circles of increasing size, labelled only at the ends and the middle:
+`Not me · Sometimes · Very me`. Nothing to compute, nothing to score yourself against.
+
+The three forward-looking questions use different selection modes on purpose, which is worth noting:
+
+| Eyebrow | Question | Mode |
+|---|---|---|
+| `NOW THE FUN PART` | Picture six months from now. What would you feel first? *Pick the one you want most.* | single |
+| `WHERE TO` | When you're at your best, what do people feel from you? *Choose up to two.* | up to two, Continue disabled until chosen |
+| `WHERE TO` | How far do you want to take this? *There's no wrong answer.* | single, each option with a sub-line |
+
+The last one's options are the ambition ladder, and the sub-lines do the work: *A steadier version of me ·
+small, real shifts* / *A noticeably different me · people will feel the change* / *A whole new chapter · go all
+in*.
+
+### 1B.3 The two maps
+
+`YOUR MAP · TODAY` → **This is you, right now.** A six-axis radar: Drive · Focus · Calm · Resilience ·
+Connection · Vitality. Under it, one interpreted sentence, not a score:
+
+> You're even across the board. The gap here isn't a weak spot, it's the ceiling.
+
+CTA: **But here's the thing →** — a link, not a label, and it earns the next screen.
+
+`YOUR MAP · 6 MONTHS IN` → **And this is where you're headed.** The same radar with the desired shape
+overlaid, legend *You, now* / *Where you could be*. CTA: **I want that →**.
+
+### 1B.4 The waiting room, and its cost
+
+After consent the user meets the companion by name and face — **Nova**, a photograph in a ring — with *"Design
+your personal journey with Nova"*, **Start the call**, and *"Takes about 5 minutes"*.
+
+Then a staged checklist that reveals line by line: *Preparing your session · Scheduling the call (finding a
+time for you…) · Loading session details (almost there…) · Waiting for your partner (they'll be with you
+shortly…) · Ready to join.*
+
+It is beautifully made and it is **theatre**. Nothing is being scheduled and no partner is arriving. §6 already
+says not to copy this; the second recording only makes the judgement firmer, because the illusion is
+sustained for nearly twenty seconds before a call that then starts instantly.
+
+### 1B.5 What happens after the call — the finding this pass exists for
+
+The call runs about eight minutes with a photoreal avatar and three controls (mic, end, camera). Nothing else
+is on screen: no transcript, no notes, no summary panel.
+
+When it ends, the plan is not ready — and **the wait is the best-designed moment in the product.** A hexagon
+of nodes fills in progressively, and the copy rotates through grounded reflections written from what was
+actually said:
+
+> **We're shaping something that fits you — hang tight.**
+
+> **I'm getting to know you, Tal — a busy student and dog parent juggling work, studies, and fitness goals.
+> Your goal is to move from 2 workouts per week up to 3–4, and I'm here to help you make that happen.**
+
+> **I see your challenge clearly: evenings are completely packed with lectures, homework, dog care, and
+> cooking, leaving zero space for exercise at the end of the day. We're going to find creative solutions
+> together.**
+
+And the button label changes with each one, in a second, wryer voice:
+
+> *I can't tell you when it's ready — turn on notifications*
+> *Still forming — I'll tell you the moment it's ready*
+> *No need to wait here — I'll come get you*
+
+**Three things are happening at once**, and this is the part to steal:
+
+1. **The loading screen is the proof of listening.** Dead time is spent showing exactly which facts were
+   heard — the dog, the lectures, two workouts going to three or four. Nothing generic, nothing flattering.
+2. **The reflection escalates.** First a generic reassurance, then the person's situation, then the
+   *obstacle* — which is the hardest thing to say back and the most convincing.
+3. **The button is a character.** It is written by somebody who knows that "please wait" is a bad sentence,
+   and it turns the wait into permission to leave. The third label — *I'll come get you* — is the entire
+   retention mechanism disguised as good manners.
+
+The recording ends here, so the plan itself, Home, reminders, execution, a missed day and long-term memory
+are **still unknown**. Every unknown in §5 that concerns the daily loop stands.
+
+### 1B.6 The visual system, briefly
+
+One accent (magenta `#E0218A`-ish) on a deep violet vertical gradient, dark throughout. No icons anywhere in
+the onboarding — small uppercase letter-spaced eyebrows do all the labelling. One question per screen, large
+type, enormous vertical breathing room, and a single full-width pill button at the bottom. Progress is a thin
+hairline bar, not dots. Every CTA is a sentence in the user's voice — *I'm in · I want that · That's right ·
+But here's the thing* — never a verb-object label like "Continue" except where the screen genuinely has
+nothing to say.
+
+That last one is the cheapest thing on this list to adopt and probably the highest-yield.
 
 ## 2. Product strategy embedded in the demo
 
@@ -246,6 +388,17 @@ lose focus on the transformation architecture that XOLTAR has not shown.
    preserving autonomy, curiosity, and no-shame language.
 6. **Measure action, not session length.** The relevant result is whether a realistic Step is accepted and
    later completed, not whether the user watched an avatar for 14 minutes.
+
+7. **Write the CTA in the user's voice, not the product's.** *I'm in · I want that · But here's the thing*
+   costs nothing, and it is the difference between a form and a conversation.
+8. **Name the excuse before naming the product** (§1B.1). Our own first screen currently opens with what we
+   believe; theirs opens with the sentence the user has already said to themselves. Ours is not wrong, but it
+   is a claim where theirs is recognition.
+9. **Spend the waiting time proving you listened** (§1B.5). We have exactly this moment — the pause while a
+   Journey is built — and today it is a spinner. It should be the person's own words and their real obstacle,
+   escalating, with a button that gives them permission to leave.
+10. **A scale with no numbers.** Five sizes and three words beat a 1–5 rating for anything self-descriptive:
+    nothing to compute and nothing to fail.
 
 ### Do not copy
 

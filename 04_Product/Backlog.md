@@ -116,6 +116,8 @@ Ordered by what unblocks what.
 | O-18 | Resume mid-conversation | **Gap** | The coach session, messages and resolved signals must survive a restart. The orchestrator lives in a React ref and has no rehydration path — a restart loses the conversation. Spec §4.16 |
 | O-19 | Memory + reminder + sharing asked after value | Half | The tail moved after the first Journey (v2 phase 1). Sharing is not offered at all |
 | O-20 | The v3 analytics events | Specified | §27 lists 20 events; the KPI taxonomy has none of them |
+| O-24 | **The wait after the coach builds a Journey is a spinner** | Gap | Xoltar spends the same wait proving it listened: the person's own facts, then their real OBSTACLE, escalating, with a button that gives permission to leave (`05_Research/Xoltar_Wish_Competitive_Analysis_2026-08-28.md` §1B.5). We already have the moment and the understanding; we show a spinner |
+| O-25 | **CTAs are written in the product's voice** | Gap | Continue · Next · Save. Theirs are the user's own words — I'm in · I want that · That's right · But here's the thing. Cheapest change on the list, and it is the difference between a form and a conversation (§1B.6) |
 | O-23 | **The §11 implementation order** | Specified, in detail | The partner's 2026-09-03 pass turned §4 into an executable contract: a hard Phase-A ceiling of 4 questions, a next-question contract the ORCHESTRATOR enforces (not the prompt), the capacity/horizon pairing test, the Hebrew smoke path, and §9's acceptance checklist plus §10's eight regression scenarios T1–T8. Nothing of it is built. **§4 may not be marked BUILT until the §9 tests pass in a running build** |
 
 ## 3. Specified and not built

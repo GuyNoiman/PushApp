@@ -86,7 +86,7 @@ A row leaves this table when the decision is made and lands in `06_Decisions/Dec
 |---|---|---|---|
 | M-01 | Explore + an adoptable starter library | **Deferred** (founder, 2026-08-29) | Tab renders `sampleContent.ts` behind `SHOW_MARKETPLACE = false`; no adoption path exists anywhere. Returns with the creator platform |
 | M-02 | Proper onboarding, egg→hatch | Half | v2 phase 1 shipped 2026-08-27: first run is three steps and then the conversation. **The partner's v3 spec (2026-08-30) supersedes v2** — see O-09 to O-14 |
-| M-03 | The five Journey types (frequency · completion · avoidance · critical-compliance · hybrid) | **Not started** | `Rhythm` is `daily` / `few-times-week` / `weekly` and that is the whole model. An avoidance Journey ("not to smoke") cannot be expressed at all |
+| M-03 | Journey types — **avoidance deferred out of the MVP** (founder, 2026-09-06, D99). Remaining for MVP: frequency · completion · critical-compliance · hybrid | **Not started, still blocked** | `Rhythm` is `daily` / `few-times-week` / `weekly` and that is the whole model. Phases exist already, under the name Milestones (the Planner creates them). **Deferring avoidance alone does not unblock this row:** critical-compliance and hybrid carry the identical undefined question — see S-10 |
 | M-04 | Light AI: personalised encouragement + smarter reminders | Half | `CommunicationScheduler` exists; encouragement from the "why" answers is partial |
 
 ## 2a. Onboarding v3
@@ -184,7 +184,7 @@ what specifically is undecided, so the gap is answerable rather than vague.
 
 | ID | Item | What is undecided |
 |---|---|---|
-| **S-10** | **The five Journey types** (`M-03`) | `Rhythm` has three values; the MVP names five. Nobody has defined what an AVOIDANCE Journey is as an object: what a Step is when success means *not* doing something, what "done" means on a day nothing happened, whether a lapse is a miss or a report, and how completion is judged. Same question for critical-compliance and hybrid. This is a product model decision, not a schema one, and it blocks a whole class of domains |
+| **S-10** | **Journey types** (`M-03`) | **Avoidance is deferred out of the MVP** (founder, 2026-09-06, D99), so the hardest of the three is off the critical path — a Journey where success means *not* doing something needs its own definition of a Step, of "done" on a day nothing happened, of whether a lapse is a miss or a report, and of completion. **What remains open for the MVP is the same question about critical-compliance and hybrid**, which nobody has answered either. Until they are answered, or deferred with avoidance, `M-03` stays blocked. A product-model decision, not a schema one |
 | **S-11** | **Interval rhythms** (`N-03`, blocks `B-01`) | "Every two weeks" is not expressible. Deciding it means deciding whether `Rhythm` becomes an interval type, what that does to existing Journeys, and what the coach asks to establish it |
 | **S-12** | **The routine Dream and its short path** (D89) | Decided in principle and carries its own open tension, written in D89: every Journey must end, and a routine by definition does not. That contradiction has no resolution yet |
 | **S-13** | **Creator: the structure builder** (`C-03`) | The largest open design in the Creator PRD. Milestones, Steps, dependencies, release rules. `journey_templates` deliberately has no structure column so nothing is guessed at. **Its Step-types half is S-22 and they are one design** — the Studio cannot offer a type the app cannot render |

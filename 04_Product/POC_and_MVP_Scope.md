@@ -89,6 +89,21 @@ core flow depends on it** — AI only enhances.
 - **Light AI (enhancement only):** **personalized encouragement** generated from the user's
   **"why"** answers, plus **smarter-timed reminders**. Everything still works if AI is down.
 
+### 2.1a Amendments to the locked list
+
+The bullets above are the list as locked on 2026-07-08 and are left exactly as written. Two of them
+have since been changed by the founder, and those changes are recorded here rather than by editing
+the original — the point of a locked list is that you can still see what it said.
+
+| Date | Change | Where it is tracked |
+|---|---|---|
+| **2026-08-29** | **Explore and the starter Journey library are DEFERRED out of the MVP.** They return with the creator platform. The decision was made on the 29th and was never written into this document until now, which meant §2.1 and the Backlog disagreed about the MVP for a week. | Backlog `M-01` |
+| **2026-09-06** | **AVOIDANCE Journeys are DEFERRED out of the MVP** (D99). "Journey Phases + the full Journey types" therefore reads *frequency · completion · critical-compliance · hybrid* for the MVP. Phases exist already, under the name Milestones. | Backlog `M-03`, `S-10` |
+
+> **Still open after the 2026-09-06 amendment:** critical-compliance and hybrid have exactly the same
+> gap avoidance had — nobody has defined what a Step, a "done" and a completion are for either of
+> them. Deferring avoidance alone does not unblock `M-03`. See Backlog `S-10`.
+
 ## 2.2 Explicitly deferred to Commercial (chosen 2026-07-08)
 
 - **Adaptive Intervention Engine** (even the light multi-signal version) — MVP keeps

@@ -2665,3 +2665,52 @@ coach listened. This decision covers the first. The second and third are the sta
 says the same thing in its own words and does not reproduce theirs.
 
 **Stage:** MVP.
+
+### D99 — Ask what should change before choosing how to build the Journey
+
+**Decision (2026-09-06):** a Journey-creation conversation starts with a personal, open invitation
+to name what the person wants to work on. The Coach reflects its understanding and gives the person
+a real chance to correct it before offering two routes: **Help me find the way** or **I already have
+a direction**.
+
+The first route lets the Coach and its domain experts ask only the questions that can change the
+match, then recommend one Journey or a small, explained set. The second replaces the feel of the
+manual wizard with a natural construction conversation for a plan the person already has in mind.
+Neither choice traps the person: the Coach may move between discovery and construction while
+preserving everything already learned.
+
+**Why:** asking for a plan too early favors people who already know the available methods; forcing
+diagnosis on everybody wastes the time of people who already know what they want. Starting with the
+person's own words and routing only after a confirmed reflection preserves both autonomy and useful
+professional guidance.
+
+**Model boundary:** `creation_mode` describes how the person asked to be helped. It is separate from
+`intended_depth`, which describes the scale of change they meant to pursue and remains a separate
+matching/outcome decision.
+
+**Stage:** MVP.
+
+### D99 — Avoidance Journeys are deferred out of the MVP
+
+**Decision (2026-09-06):** an **avoidance** Journey — one where success means *not* doing something,
+"not to smoke" being the canonical case — is **out of the MVP**. It returns in a later version.
+
+**Why it was the one to drop.** Of the five Journey types the MVP named, avoidance is the only one
+that breaks the object model rather than extending it. Every other Journey is a set of Steps a person
+does; an avoidance Journey has no Step to do. Nobody had defined what a Step is when the goal is
+absence, what "done" means on a day nothing happened, whether a lapse is a miss or a report, or how
+completion is judged. That is a product invention, not a schema change, and it was the last untouched
+MVP pillar's hardest third.
+
+**What this does NOT do, and it matters.** `M-03` is not unblocked by this. **Critical-compliance and
+hybrid carry the identical undefined question** and neither has been answered. The MVP's Journey-types
+pillar stays blocked until they are answered, or deferred alongside avoidance. Recorded here so the
+next person reading "avoidance deferred" does not conclude the pillar is clear.
+
+Frequency and completion, the other two, are effectively what the product already does: `Rhythm` is
+the frequency model and a Journey completes when its Steps are reported.
+
+**Where it is written:** `POC_and_MVP_Scope.md` §2.1a (the locked list is amended beside itself, not
+edited), `Version_Roadmap.md`, and Backlog `M-03` / `S-10`.
+
+**Stage:** the MVP loses it; it returns Commercial or later, stage to be set when it is specified.

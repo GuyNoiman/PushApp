@@ -73,6 +73,19 @@ The initial purpose enum is extensible and contains:
 
 The user wants to express a Dream, aspiration, goal, or change and receive a Journey proposal.
 
+The Coach does not begin with a category or a configuration form. It opens with a personal,
+change-oriented free-text question, reflects its understanding for confirmation or correction, and
+then offers two plain-language creation routes:
+
+- **Help me find the way:** identify what is still missing, consult the relevant expert, and offer
+  one best fit or a small set of meaningfully different authored Journeys with fit reasons.
+- **I already have a direction:** help the user translate an existing idea into a coherent Journey
+  through conversation rather than sending them through the manual wizard.
+
+The routes may change during the same rolling conversation without losing context or repeating
+questions. They are stored as creation mode and are not a proxy for the intended depth of the
+Journey.
+
 Potential sources:
 
 - Home Coach entry;
@@ -445,4 +458,3 @@ Security/privacy and store-compliance review are mandatory before production.
 - voice/video conversation and transcript attachments;
 - model training on private conversations;
 - permanent manual Journey creation after the Coach meets its approved capability threshold.
-

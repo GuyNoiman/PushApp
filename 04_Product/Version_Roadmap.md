@@ -31,7 +31,9 @@ Goal: POC made adoptable and lightly personalized; stands alone without AI (D2).
 
 - **Explore + a starter Journey library** — browse & **adopt** existing Journeys (fixes cold-start)
 - **Proper onboarding** — real first-run incl. **egg → hatch**
-- **Journey Phases + full Journey types** (frequency · completion · avoidance · critical-compliance · hybrid)
+- **Journey Phases + full Journey types** (frequency · completion · ~~avoidance~~ · critical-compliance · hybrid)
+  — *avoidance deferred out of the MVP by the founder on 2026-09-06 (D99); it returns in a later version.
+  Phases already exist, under the name Milestones.*
 - **Light AI (enhancement only):** personalized **encouragement** from the "why" + **smarter-timed reminders**
 - Polish: **Journey-completion celebrations**, empty/return-to-life states, quick check-in variants
 - **Grace Tokens (minimal)** — earned grace to skip/postpone a Step without breaking the Journey, with a brief reason capture (directly reduces the miss→quit churn). See Bible §36.

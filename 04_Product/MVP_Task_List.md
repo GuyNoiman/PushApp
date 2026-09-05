@@ -1,5 +1,12 @@
 # MVP_Task_List.md — The Initial-Version Build Checklist
 
+> **SUPERSEDED AS THE LIST, 2026-09-06.** `04_Product/Backlog.md` is the single source for what is
+> done and what is not; it took that role on 2026-08-29 and this file has not been updated since the
+> 28th. Kept as the record of the post-pivot build and for the per-task detail behind rows the
+> Backlog states in one line. Do not add new tasks here.
+>
+> Its note below — that `POC_and_MVP_Scope.md` is superseded for positioning — still stands. What
+> changed is only which document is the live task list.
 Status: **Living task list** — the single granular checklist for the **initial version (MVP)** of the
 post-pivot AI-adaptive-coach app. Created **2026-08-08** jointly with the founder, on branch
 `feat/buddy-3d-and-reminders`.

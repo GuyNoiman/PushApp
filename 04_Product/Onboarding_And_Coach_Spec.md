@@ -282,6 +282,31 @@ for a category, a Journey family or a product feature.
 
 ### 4.3 Question budget — **DECIDED, NOT BUILT**
 
+### 4.2.1 Journey-creation mode — **DECIDED, NOT BUILT**
+
+The person's first choice is not a Journey-depth selector. The Coach first invites a free answer,
+reflects what it understood in the person's own language, and asks the person to confirm or correct
+that reflection. Only then, when the conversation is moving toward creating a Journey, it asks how
+the person wants to proceed:
+
+- **Help me find the way** — the Coach asks only the discriminating questions it still needs,
+  consults the relevant domain expert, and presents the best-fitting authored Journey or a small set
+  of meaningfully different fits, with a reason for each.
+- **I already have a direction** — the person describes the approach they want. The Coach turns it
+  into a sound Journey structure through natural conversation: Steps, cadence, order, Milestones,
+  schedule and reminders as relevant. This is the conversational successor to the manual wizard,
+  not the same form restyled as chat.
+
+These are permeable routes, not commitments. If the person's direction is not yet concrete enough,
+the Coach may offer to help find an approach. If a person in the discovery route already knows the
+approach they want, the Coach moves into guided construction without restarting the conversation.
+The Coach explains the transition and never makes the person repeat information.
+
+Persist the route as a closed `creation_mode` value for orchestration and later evaluation. It must
+remain separate from `intended_depth`: creation mode records **how help was requested**; intended
+depth records **how substantial a change the person meant to pursue**. The latter is resolved
+separately and must not be inferred merely from choosing one of these two routes.
+
 The first conversation is intentionally bounded.
 
 #### Phase A — understand

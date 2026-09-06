@@ -28,14 +28,21 @@ import {
 } from '../CoachOrchestrator';
 import { SafetyLayer } from '../SafetyLayer';
 
-/** A mock understanding response carrying a SINGLE goal of the given domain + kind. */
+/**
+ * A mock understanding response carrying a SINGLE goal of the given domain + kind.
+ *
+ * The non-JSON branch returns EMPTY on purpose. Since 2026-09-06 every turn is composed by the model
+ * ({@link ../composeTurn}), and an empty completion is that module's documented "use the canned line"
+ * outcome — so these tests keep asserting what the ENGINE decided rather than what a model wrote,
+ * which is what they are for. The composition itself is tested in `composeTurn.test.ts`.
+ */
 function singleGoalMock(
   domain: string,
   kind: 'recurring' | 'process' = 'process',
   title = 'get fit',
 ): MockLlmClient {
   return new MockLlmClient((req) =>
-    req.json ? JSON.stringify({ goals: [{ title, kind, domain }] }) : 'UNUSED',
+    req.json ? JSON.stringify({ goals: [{ title, kind, domain }] }) : '',
   );
 }
 
@@ -43,7 +50,7 @@ function singleGoalMock(
 function multiGoalMock(
   goals: Array<{ title: string; kind: string; domain: string }>,
 ): MockLlmClient {
-  return new MockLlmClient((req) => (req.json ? JSON.stringify({ goals }) : 'UNUSED'));
+  return new MockLlmClient((req) => (req.json ? JSON.stringify({ goals }) : ''));
 }
 
 /**
@@ -89,7 +96,9 @@ describe('CoachOrchestrator — start / understanding', () => {
 
     // Nameless on purpose (2026-08-20): the opening used to greet the founder by name, which is
     // what every user then saw. A real name reaches the screen from the user's own profile.
-    expect(opening.coachMessage).toBe('Hi, how can I help you today?');
+    expect(opening.coachMessage).toBe(
+      'What would you like to be a little different in your life right now?',
+    );
     expect(opening.state.phase).toBe('goal');
     // The legacy A/B/C choices are still exposed for back-compat, but ignored by the flow.
     expect(opening.choices.map((c) => c.id)).toEqual(['A', 'B', 'C']);
@@ -131,18 +140,24 @@ describe('CoachOrchestrator — single goal', () => {
     expect(turn.state.spec.deferredGoals).toBeUndefined();
   });
 
-  it('understands exactly once — the understanding call is the only LLM call', async () => {
+  it('understands exactly once — every other call is voice, never a second interpretation', async () => {
+    // The contract CHANGED on 2026-09-06 and this test is the record of how. It used to say the
+    // understanding call was the only call at all. Now each turn is also composed, so what must
+    // still hold is the part that was actually load-bearing: the goal is INTERPRETED once, and
+    // nothing after it asks a model what anything means. A closed pick is still recorded on-device.
     const llm = singleGoalMock('career', 'process');
     const orchestrator = new CoachOrchestrator({ llm });
     orchestrator.start();
 
     await orchestrator.triage('I want a promotion');
-    expect(llm.calls).toHaveLength(1);
+    const interpreting = () => llm.calls.filter((c) => c.json === true);
+    expect(interpreting()).toHaveLength(1);
 
     await orchestrator.selectOption(0);
     await orchestrator.selectOption(1);
-    // Closed picks need no interpretation — still just the one understanding call.
-    expect(llm.calls).toHaveLength(1);
+    // Still one interpretation. The extra calls are prose and carry no decision.
+    expect(interpreting()).toHaveLength(1);
+    expect(llm.calls.length).toBeGreaterThan(1);
   });
 
   it('degrades an unknown / hallucinated domain to the general expert', async () => {
@@ -203,8 +218,8 @@ describe('CoachOrchestrator — multi-goal focus', () => {
     expect(afterPick.state.phase).toBe('questions');
     expect(afterPick.activeExpert?.displayName).toBe('Body Image');
     expect(afterPick.question?.id).toBe('body_image.foundation');
-    // Still only the one understanding call — the focus pick made none.
-    expect(llm.calls).toHaveLength(1);
+    // Still only the one INTERPRETATION — the focus pick asked a model to decide nothing.
+    expect(llm.calls.filter((c) => c.json === true)).toHaveLength(1);
   });
 
   it('picking the recurring goal defers the process one and uses the lighter flow', async () => {
@@ -328,7 +343,8 @@ describe('CoachOrchestrator — expert interview', () => {
     const recorded = next.state.spec.answers?.['body_image.foundation'];
     expect(Array.isArray(recorded)).toBe(true);
     expect(recorded).toEqual([first.question!.options[0], first.question!.options[2]]);
-    expect(llm.calls).toHaveLength(1); // no LLM for a closed pick
+    // No INTERPRETATION for a closed pick: the value is recorded on-device exactly as tapped.
+    expect(llm.calls.filter((c) => c.json === true)).toHaveLength(1);
   });
 
   it('records a single-select question as a string VALUE', async () => {
@@ -355,7 +371,8 @@ describe('CoachOrchestrator — expert interview', () => {
 
     const next = await orchestrator.answerOther('a very personal reason of my own');
 
-    expect(llm.calls).toHaveLength(1); // "Other" is stored raw — no required LLM call
+    // "Other" is stored raw — no interpretation call is required to record it.
+    expect(llm.calls.filter((c) => c.json === true)).toHaveLength(1);
     expect(next.state.spec.answers?.[first.question!.id]).toBe('a very personal reason of my own');
   });
 
@@ -415,7 +432,9 @@ describe('CoachOrchestrator — safety guard', () => {
 
     const opening = orchestrator.start();
 
-    expect(opening.coachMessage).toBe('HI, HOW CAN I HELP YOU TODAY?');
+    expect(opening.coachMessage).toBe(
+      'WHAT WOULD YOU LIKE TO BE A LITTLE DIFFERENT IN YOUR LIFE RIGHT NOW?',
+    );
   });
 
   it('drives the whole flow cleanly with the SafetyLayer guard installed', async () => {

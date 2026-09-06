@@ -36,7 +36,7 @@ describe('JourneyEditOrchestrator', () => {
 
   it('propose() makes exactly ONE understanding call and returns the validated edit + summary', async () => {
     const llm = new MockLlmClient((req) =>
-      req.json ? JSON.stringify({ title: 'Run 10km', removeStepIds: ['step_b'] }) : 'UNUSED',
+      req.json ? JSON.stringify({ title: 'Run 10km', removeStepIds: ['step_b'] }) : '',
     );
     const orchestrator = new JourneyEditOrchestrator({ context: context(), llm });
     orchestrator.start();

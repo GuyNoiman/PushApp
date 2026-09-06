@@ -32,7 +32,7 @@ function careerMock(signals?: Record<string, string>): MockLlmClient {
             },
           ],
         })
-      : 'UNUSED',
+      : '',
   );
 }
 
@@ -157,7 +157,7 @@ describe('the diagnosis runs first', () => {
       llm: new MockLlmClient((req) =>
         req.json
           ? JSON.stringify({ goals: [{ title: 'run more', kind: 'recurring', domain: 'body_image' }] })
-          : 'UNUSED',
+          : '',
       ),
     });
     orchestrator.start();

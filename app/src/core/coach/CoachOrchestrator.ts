@@ -73,6 +73,7 @@ import { arcCopy } from '../learning/library/authoredArc';
 import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/registry';
 import type { GoalInput } from '../learning/types';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
+import { composeCoachTurn, looksLikeReflection, type KnownFact } from './composeTurn';
 import {
   DIAGNOSIS_SIGNAL_SYSTEM_PROMPT,
   buildDiagnosisDirective,
@@ -388,6 +389,8 @@ export class CoachOrchestrator {
   private questions: DomainQuestion[] = [];
   private questionIndex = 0;
   private readonly answers: InterviewAnswers = {};
+  /** How many turns have handed something back, so the character's budget can be respected. */
+  private reflections = 0;
 
   /** The goals understanding detected, in order — held while the user makes a focus pick. */
   private understoodGoals: UnderstoodGoal[] = [];
@@ -491,17 +494,17 @@ export class CoachOrchestrator {
       // so the user can still tell us the shape, and route to the general expert.
       this.spec.title = text;
       this.spec.domain = 'general';
-      return this.askProcessTypeFallback();
+      return this.voiced(this.askProcessTypeFallback());
     }
 
     if (goals.length > 1) {
       // Several distinct goals — focus the user on ONE first before interviewing.
       this.understoodGoals = goals;
-      return this.askFocusChoice(goals);
+      return this.voiced(this.askFocusChoice(goals));
     }
 
     // A single goal — no need to focus; activate it and start its expert's questions.
-    return this.activateGoal(goals[0], []);
+    return this.voiced(this.activateGoal(goals[0], []));
   }
 
   /**
@@ -533,7 +536,7 @@ export class CoachOrchestrator {
     const values = optionIndices.map((i) => question.options[i]);
     // Single-answer questions collapse to the first value; multi-select keeps every chosen value.
     const answer: string | string[] = question.multiSelect ? values : values[0];
-    return this.record(question, answer);
+    return this.voiced(this.record(question, answer));
   }
 
   /**
@@ -549,8 +552,8 @@ export class CoachOrchestrator {
     // ONE CALL PER MESSAGE (founder, 2026-08-21). During the diagnosis a sentence usually answers more
     // than the question in front of it, so it is read for EVERY signal it supports and the tree skips
     // all of them at once. Everywhere else a free-text answer is stored verbatim, exactly as before.
-    if (this.phase === 'diagnosis') return this.readSpokenDiagnosisAnswer(question, answer);
-    return this.record(question, answer);
+    if (this.phase === 'diagnosis') return this.voiced(await this.readSpokenDiagnosisAnswer(question, answer));
+    return this.voiced(this.record(question, answer));
   }
 
   /**
@@ -1232,6 +1235,71 @@ export class CoachOrchestrator {
    * Run an outbound coach line through the optional safety guard. Identity when no guard is
    * configured; a guard that returns empty is ignored so the coach never surfaces a blank turn.
    */
+  /**
+   * SAY the turn instead of selecting it.
+   *
+   * The turn arrives from the deterministic builders with `coachMessage` set to a catalogue string
+   * and `question` set to what the engine decided to ask. This replaces the words — and only the
+   * words — with a composed turn that can hand back what was understood before it asks. What is
+   * asked, whether the interview is over, and everything that reaches the Planner are untouched.
+   *
+   * THE HISTORY IS CORRECTED TOO, and that is not a detail: the builder already pushed the canned
+   * line, and leaving it there would let the model read back a sentence it never said and reflect on
+   * words the person never saw.
+   *
+   * A failure returns the turn exactly as it arrived (see {@link composeCoachTurn}), so the offline
+   * path is unchanged.
+   */
+  private async voiced(turn: CoachTurn): Promise<CoachTurn> {
+    const original = turn.coachMessage;
+    if (original.trim().length === 0) return turn;
+
+    const composed = this.applyGuard(
+      await composeCoachTurn(this.llm, {
+        firstName: this.firstName,
+        goal: this.goal?.title ?? this.spec.title ?? null,
+        known: this.knownSoFar(),
+        prompt: original,
+        closing: turn.done,
+        reflectionsSoFar: this.reflections,
+        locale: this.locale ?? 'en',
+      }),
+    );
+    if (composed === original) return turn;
+
+    if (looksLikeReflection(composed, original)) this.reflections += 1;
+    // Replace what the builder pushed rather than appending beside it.
+    const last = this.history[this.history.length - 1];
+    if (last?.role === 'model' && last.content === original) {
+      this.history[this.history.length - 1] = { role: 'model', content: composed };
+    } else {
+      this.history.push({ role: 'model', content: composed });
+    }
+    this.note('Turn composed', { reflections: this.reflections });
+    return { ...turn, coachMessage: composed };
+  }
+
+  /**
+   * What the person has already told us, in the words it was asked and answered in. This is the
+   * whole defence against asking twice: a composer that can see the answer cannot ask for it again,
+   * and the instruction above it says so explicitly.
+   */
+  private knownSoFar(): KnownFact[] {
+    const asked = new Map<string, string>();
+    for (const q of this.questions) asked.set(q.id, q.prompt);
+    if (this.journeyChoiceQuestion) asked.set(this.journeyChoiceQuestion.id, this.journeyChoiceQuestion.prompt);
+    if (this.focusQuestion) asked.set(this.focusQuestion.id, this.focusQuestion.prompt);
+
+    const facts: KnownFact[] = [];
+    for (const [id, answer] of Object.entries(this.answers)) {
+      if (answer === undefined) continue;
+      const text = Array.isArray(answer) ? answer.join(', ') : String(answer);
+      if (text.trim().length === 0) continue;
+      facts.push({ asked: asked.get(id) ?? id, answered: text });
+    }
+    return facts;
+  }
+
   private applyGuard(text: string): string {
     if (!this.guard) return text;
     const safe = this.guard(text);

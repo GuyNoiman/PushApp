@@ -13,7 +13,11 @@ const BRANCH_IDS: InterviewBranchId[] = ['A', 'B', 'C'];
 
 describe('INTERVIEW_PLAYBOOK', () => {
   it('opens with the coach greeting', () => {
-    expect(INTERVIEW_PLAYBOOK.opening).toBe('Hi, how can I help you today?');
+    // The opening is the first thing anybody reads, and "how can I help you today" is a service
+    // desk rather than a coach (spec §4.2). It asks about their life, not about our product.
+    expect(INTERVIEW_PLAYBOOK.opening).toBe(
+      'What would you like to be a little different in your life right now?',
+    );
   });
 
   it('offers exactly the three closed choices A, B, C', () => {

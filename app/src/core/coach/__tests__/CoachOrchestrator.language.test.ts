@@ -25,7 +25,7 @@ jest.mock('expo-localization', () => ({
 /** A mock understanding response carrying a SINGLE goal verbatim (title stays in the user's language). */
 function singleGoalMock(title: string, kind: 'recurring' | 'process', domain: string): MockLlmClient {
   return new MockLlmClient((req) =>
-    req.json ? JSON.stringify({ goals: [{ title, kind, domain }] }) : 'UNUSED',
+    req.json ? JSON.stringify({ goals: [{ title, kind, domain }] }) : '',
   );
 }
 
@@ -60,8 +60,14 @@ describe('CoachOrchestrator — Hebrew understanding', () => {
 
     await orchestrator.triage('אני רוצה להתאמן לריצת 5 קילומטר');
 
-    expect(llm.calls).toHaveLength(1);
-    expect(llm.calls[0].system).toContain('Hebrew');
+    const interpreting = llm.calls.filter((c) => c.json === true);
+    expect(interpreting).toHaveLength(1);
+    expect(interpreting[0].system).toContain('Hebrew');
+    // The composed turn is told the language too, or a Hebrew conversation comes back in English —
+    // which is exactly what the partner reported (spec §4.10).
+    const prose = llm.calls.filter((c) => c.json !== true);
+    expect(prose.length).toBeGreaterThan(0);
+    expect(prose[0].system).toContain('he');
   });
 
   it('keeps the goal title in the user\'s language while the domain/kind enums stay English', async () => {

@@ -10,7 +10,7 @@ import { MockLlmClient } from '../../llm/LlmClient';
 import { CoachOrchestrator } from '../CoachOrchestrator';
 
 const goalMock = (domain: string, kind: 'recurring' | 'process' = 'process', title = 'find a new job') =>
-  new MockLlmClient((req) => (req.json ? JSON.stringify({ goals: [{ title, kind, domain }] }) : 'UNUSED'));
+  new MockLlmClient((req) => (req.json ? JSON.stringify({ goals: [{ title, kind, domain }] }) : ''));
 
 /** Every note produced across a whole interview. */
 async function notesFor(domain: string, technical: boolean) {

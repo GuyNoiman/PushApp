@@ -4,7 +4,7 @@
 > document, or a copy with a date in the name — that is what produced four documents describing
 > four different products, and it is the problem this file exists to end.
 >
-> Owner: the founder. Last built from the code on **2026-09-03**.
+> Owner: the founder. Last built from the code on **2026-09-06**.
 > Founder decisions in §4 last updated on **2026-09-03** and are **not built until the acceptance tests in §9 pass**.
 
 ---
@@ -52,16 +52,42 @@ A third consequence is now explicit:
 
 ## 2. The first run, screen by screen — **BUILT**
 
-This is the sequence as it runs today, in order. Five screens, then the conversation.
+This is the sequence as it runs today, in order. Six screens, then the conversation.
 
 | # | Screen | What it does |
 |---|---|---|
 | 1 | **Language** | The language for the whole app, including the coach. Changeable later in Settings. It is first because it decides text direction, and RTL cannot be applied halfway through a flow. |
-| 2 | **More of what matters to you** | The first of three one-line promises: we turn what matters to you into Steps you can move with. |
-| 3 | **You do not need to know the whole way yet** | We begin with what is happening now and adapt, with your approval, to fit real life. |
-| 4 | **You do not have to do it alone** | You may invite someone you trust to support a Journey. You always choose who joins and what they see. |
-| 5 | **Before the conversation** | Says what the next few minutes are for, and asks for a calm place without interruptions. |
+| 2 | **The difficulty, named** | *Added 2026-09-06 (D98).* "The problem was never that you did not care enough." It asks for nothing, and it blames nobody: what gets in the way is an ordinary week and a reason that is genuinely good every time. See §2.2. |
+| 3 | **More of what matters to you** | The first of three one-line promises: we turn what matters to you into Steps you can move with. |
+| 4 | **You do not need to know the whole way yet** | We begin with what is happening now and adapt, with your approval, to fit real life. |
+| 5 | **You do not have to do it alone** | You may invite someone you trust to support a Journey. You always choose who joins and what they see. |
+| 6 | **Before the conversation** | Says what the next few minutes are for, and asks for a calm place without interruptions. |
 | → | **The conversation** | The coach. Onboarding completes when it builds the person's first Journey, and not before. |
+
+### 2.2 The difficulty is named before anything is promised — **BUILT, 2026-09-06**
+
+Screen 2, and it did not exist when this document was last written. **The build was changed and this
+section was not, which the partner caught on 2026-09-06** — exactly the drift this file exists to
+prevent, on the one document that claims to be the only one.
+
+> **The problem was never that you did not care enough.**
+> Most people already know what they want to change. What gets in the way is an ordinary week: work,
+> other people, tiredness, and a reason that is genuinely good every single time.
+>
+> A promise a person makes to themselves is the only one nobody else is waiting on. That gap is what
+> this app is for.
+
+Button: **That sounds about right** — the person agreeing with a description of themselves, not
+accepting a step.
+
+**It deliberately does not wear the introduction's chrome.** No progress dots, no icon plate. Those
+mark the three promises, and this is not a fourth one; dressed as one, recognition turns back into
+selling, which is the single thing it exists to avoid.
+
+**Why it is first:** somebody installing this has almost certainly failed at something like it
+before. Three screens of what we believe, arriving before anything acknowledges that, is a pitch to a
+person who is still braced. A test pins the ORDER rather than the copy, because being before all
+three promises is the whole point and is one line for the next person to undo by accident.
 
 ### 2.1 The profile page is gone — **BUILT, 2026-09-03**
 

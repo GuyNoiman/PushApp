@@ -30,4 +30,4 @@
  */
 
 /** Incremented by `tools/publish-ota.mjs` on every publish. Not for hand-editing. */
-export const OTA_VERSION = 1;
+export const OTA_VERSION = 2;

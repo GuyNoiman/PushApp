@@ -2714,3 +2714,51 @@ the frequency model and a Journey completes when its Steps are reported.
 edited), `Version_Roadmap.md`, and Backlog `M-03` / `S-10`.
 
 **Stage:** the MVP loses it; it returns Commercial or later, stage to be set when it is specified.
+
+### D100 — How anybody can tell which version they are running
+
+**Decision (2026-09-07):** three mechanisms, answering three different questions, and none of them
+overlaps. Together they close the failure that has cost this project more than a week: two people
+testing a version that was not the one published, reporting things that had been fixed days earlier.
+
+| Question | Mechanism |
+|---|---|
+| Which update am I running? | `OTA_VERSION`, incremented by `tools/publish-ota.mjs` on every publish, announced once on Home the first time a new update runs, and always readable in Settings › About. |
+| Can this build receive updates at all? | `UpdateAvailableBanner` + `landing/current-build.json` (O-21). |
+| How do I get the update without a force-quit? | `useReadyUpdate` reloads when an update is pending and the app returns to the foreground. |
+
+**The version number does NOT live in `app.json`,** and this is the part most likely to be undone by
+somebody being helpful. `expo.version` belongs to the native build, and this project runs
+`runtimeVersion: {policy: "fingerprint"}` — the Expo config is part of that fingerprint. Measured,
+not assumed: `1.0.0` → `1.0.1` moved the iOS fingerprint from `8634cdf5…` to `37cd640b…`, which
+would leave every installed phone matching no runtime and unable to receive another update until a
+new binary was installed. **Never bump `expo.version` to mark an over-the-air update.**
+
+Application source under `src/` is not a fingerprint input — it cannot be, or no over-the-air update
+could ever match the build it was made for. That is why the number can live there and move freely.
+
+**The root cause of the invisible updates** was `updates.fallbackToCacheTimeout: 0`. It is the right
+setting for launch speed, and its consequence was never priced: the app launches from the bundle it
+has and fetches the new one in the background, so what it downloaded does not run until the next
+cold start — and backgrounding and returning is not one. Stated plainly, the old behaviour was: open
+the app and you are testing the previous version, every time. The setting stays; `useReadyUpdate` is
+what makes it survivable.
+
+**Verified on both platforms** by the founder on 2026-09-07.
+
+**Stage:** in force now.
+
+### D101 — The coach answers in the language the person wrote in
+
+**Decision (2026-09-07):** the app's language decides the interface. It does not decide what somebody
+types, and it must not decide what the coach answers in. The conversation's language is read from
+the person's opening free-text message and kept for the rest of that conversation.
+
+**Kept, not re-read per message,** on purpose: an English word inside a Hebrew sentence — a brand, a
+job title, a tool — is ordinary, and swinging the conversation on it would be worse than being wrong
+consistently.
+
+**Why:** the founder wrote to the coach in Hebrew inside an English install and was answered in
+English, with his question ignored. That is the app talking past the person in front of it.
+
+**Stage:** MVP.

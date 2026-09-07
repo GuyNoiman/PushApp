@@ -392,6 +392,18 @@ export class CoachOrchestrator {
   private readonly answers: InterviewAnswers = {};
   /** How many turns have handed something back, so the character's budget can be respected. */
   private reflections = 0;
+  /**
+   * The language the PERSON is writing in, decided once from their opening message.
+   *
+   * The app's language decides the interface; it does not decide what somebody types. The founder
+   * wrote to the coach in Hebrew inside an English install on 2026-09-07 and was answered in
+   * English, which is the app talking past the person in front of it.
+   *
+   * DECIDED ONCE AND KEPT, deliberately. Reading it per message would swing the conversation on a
+   * single English word inside a Hebrew sentence — a brand name, a job title — which is worse than
+   * being wrong consistently.
+   */
+  private conversationLocale?: string;
 
   /** The goals understanding detected, in order — held while the user makes a focus pick. */
   private understoodGoals: UnderstoodGoal[] = [];
@@ -472,6 +484,8 @@ export class CoachOrchestrator {
       throw new Error('Describe the goal after start(), and triage() only once');
     }
     const text = goalText.trim();
+    // Their first words in their own language, before anything is interpreted.
+    this.conversationLocale = writtenLocale(text);
     this.history.push({ role: 'user', content: text });
 
     let goals: UnderstoodGoal[];
@@ -1264,7 +1278,7 @@ export class CoachOrchestrator {
         prompt: original,
         closing: turn.done,
         reflectionsSoFar: this.reflections,
-        locale: this.locale ?? 'en',
+        locale: this.conversationLocale ?? this.locale ?? 'en',
       }),
     );
     if (composed === original) return turn;
@@ -1424,6 +1438,23 @@ const META_VOICE_KEYS: Partial<Record<QuestionIntent, string>> = {
   milestones: 'interview.milestones',
   horizon: 'interview.horizon.prompt',
 };
+
+/**
+ * Which language somebody is writing in, from what they wrote.
+ *
+ * Script detection rather than language detection, and only for the scripts this product actually
+ * ships. It answers the one question that matters — *is this person writing Hebrew?* — without a
+ * dependency, a model call, or a confident guess about a language we do not speak. Anything it
+ * cannot place returns undefined, and the caller falls back to the app's own language, which is
+ * exactly what happened before this existed.
+ */
+export function writtenLocale(text: string): string | undefined {
+  // The Hebrew block. A single Hebrew letter is enough: nobody types one by accident, while an
+  // English word inside a Hebrew sentence is ordinary.
+  if (/[\u0590-\u05FF]/.test(text)) return 'he';
+  if (/[A-Za-z]/.test(text)) return 'en';
+  return undefined;
+}
 
 function questionsForProcessType(
   questions: DomainQuestion[],

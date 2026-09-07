@@ -306,8 +306,6 @@ Acceptable alternative if product copy requires it:
 The first question should invite the person to name the change that matters now. It must not ask
 for a category, a Journey family or a product feature.
 
-### 4.3 Question budget — **DECIDED, NOT BUILT**
-
 ### 4.2.1 Journey-creation mode — **DECIDED, NOT BUILT**
 
 The person's first choice is not a Journey-depth selector. The Coach first invites a free answer,
@@ -333,18 +331,59 @@ remain separate from `intended_depth`: creation mode records **how help was requ
 depth records **how substantial a change the person meant to pursue**. The latter is resolved
 separately and must not be inferred merely from choosing one of these two routes.
 
-The first conversation is intentionally bounded.
+### 4.3 Question budget — **DECIDED 2026-09-08 (founder), NOT BUILT**
 
-#### Phase A — understand
+> **This section was rewritten by the founder's decision on 2026-09-08 and replaces a hard ceiling of
+> four.** What it said before is kept at the end of this section, because the reasoning behind it was
+> sound and the change is a change, not a correction.
 
-- **Normally 2–4 adaptive questions after the person's opening answer.**
-- **Hard ceiling: 4 understanding/diagnosis questions** unless the person corrects a wrong
-  interpretation and one replacement question is required to recover from that error.
-- Ask fewer than 4 when the opening message or prior answer already resolves what is needed.
-- A closed field that is technically empty is **not** permission to ask a question the person has
-  already answered in ordinary language.
-- At the ceiling, do not continue interviewing because more data would be nice to have. Move to the
-  starting-point reflection with the uncertainty stated honestly.
+**There is no fixed number of questions.** Ten is acceptable. The measure is not how many were asked
+but whether each one had to be:
+
+> **The goal is to understand the person's real target, what is actually stopping them, and which
+> plan would genuinely help.** — founder, 2026-09-08
+
+Three rules, and they do all the work:
+
+1. **Never ask what is already known.** Not from a closed field, and not from something they said in
+   ordinary language a moment ago. A field the product has not stored is not permission to ask again.
+2. **Never ask what does not change the plan.** If the answer would not move a Step, a cadence, a
+   Milestone or the shape of the Journey, it is curiosity, and curiosity is what makes a form.
+3. **Never stop while something is missing that a Journey cannot be built without.** This is the half
+   the previous version got backwards: the failure in the founder's 2026-09-07 recording was not too
+   many questions, it was a Journey built without ever asking what he wanted to achieve.
+
+#### How precise each answer has to be — **founder, 2026-09-08**
+
+The required confidence is a property of the QUESTION, not one setting for the whole interview.
+
+| | Questions | Required |
+|---|---|---|
+| **Exact** | weekly time · frequency · horizon | These feed the Planner's arithmetic. A near-enough guess here changes the plan itself, so nothing is inferred: it is asked, or it is confirmed. |
+| **Approximate is fine** | motivation · what gets in the way · what matters | These feed the conversation and the wording, not the calculation. Understood from free text at eighty per cent is better than asking again. |
+
+#### The cost budget is per CONVERSATION, not per question
+
+There is a budget for the whole conversation. **When it is crossed, the coach moves to closed
+questions** — the answer cards it already has — which costs no model call, rather than shortening the
+understanding. Cutting the number of questions to save money and cutting it to keep the conversation
+short are two different things, and only the second is a product decision.
+
+<details>
+<summary>What this section said before 2026-09-08</summary>
+
+> **Phase A — understand.** Normally 2–4 adaptive questions after the person's opening answer.
+> **Hard ceiling: 4 understanding/diagnosis questions** unless the person corrects a wrong
+> interpretation and one replacement question is required to recover from that error. At the ceiling,
+> do not continue interviewing because more data would be nice to have; move to the starting-point
+> reflection with the uncertainty stated honestly.
+>
+> **Phase C.** Maximum 3 questions, and only if they materially change the plan.
+
+It was written against a real failure — an interview that ran on collecting whatever could be
+collected. The founder's change keeps that objection and removes the instrument: relevance, not a
+count.
+</details>
 
 #### Phase B — reflect
 
@@ -357,11 +396,9 @@ The first conversation is intentionally bounded.
 
 #### Phase C — fit to real life
 
-- **Maximum 3 questions**, and only if they materially change the plan.
-- Typical axes: weekly capacity, preferred structure/pace, Journey horizon or scheduling.
-- Do not ask a Phase C question whose answer is already sufficiently known.
-- Do not mix these questions back into diagnosis; the person should feel that the coach first
-  understood *what* they need, and only then fitted it to *how their life actually works*.
+- Ask only what materially changes the plan, and only what is not already known.
+- Do not mix these back into diagnosis: the person should feel that the coach first understood
+  *what* they need, and only then fitted it to *how their life actually works*.
 
 ### 4.4 The next-question contract — **DECIDED, NOT BUILT**
 

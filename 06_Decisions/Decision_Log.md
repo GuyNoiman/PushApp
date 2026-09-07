@@ -2762,3 +2762,35 @@ consistently.
 English, with his question ignored. That is the app talking past the person in front of it.
 
 **Stage:** MVP.
+
+### D102 — No question ceiling. Relevance is the budget
+
+**Decision (2026-09-08):** the first conversation has **no fixed number of questions**. Ten is
+acceptable. In the founder's words: *the goal is to understand the person's real target, what is
+actually stopping them, and which plan would genuinely help.*
+
+**This replaces** the hard ceiling of four understanding questions (and maximum three fit questions)
+in the partner's 2026-08-30 spec, which is kept in §4.3 under a fold rather than deleted — the
+objection behind it was sound, and only the instrument was wrong.
+
+Three rules carry it instead:
+
+1. Never ask what is already known — including something said in ordinary language a moment ago. A
+   field the product has not stored is not permission to ask again.
+2. Never ask what does not change the plan. If the answer moves no Step, cadence, Milestone or
+   shape, it is curiosity, and curiosity is what makes a form.
+3. **Never stop while something is missing that a Journey cannot be built without.** This is the half
+   the ceiling had backwards: the failure in the 2026-09-07 recording was not too many questions, it
+   was a Journey built without ever asking what he wanted to achieve.
+
+**How precise each answer must be is a property of the question, not one setting for the interview.**
+Weekly time, frequency and horizon feed the Planner's arithmetic and must be exact — a near-enough
+guess there changes the plan itself. Motivation, obstacles and what matters feed the conversation and
+the wording; understood from free text at eighty per cent, they beat asking again.
+
+**The cost budget is per conversation, not per question.** When it is crossed the coach moves to
+closed questions, which cost no model call — rather than shortening the understanding. Cutting
+questions to save money and cutting them to keep the conversation short are different things, and
+only the second is a product decision.
+
+**Stage:** MVP.

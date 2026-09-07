@@ -54,6 +54,7 @@ import type {
   DomainQuestion,
   FeasibilityAssessment,
   InterviewAnswers,
+  QuestionIntent,
 } from '../learning/DomainExpert';
 import {
   APPLY_NO_RESPONSE,
@@ -172,7 +173,7 @@ export const PROCESS_TYPE_QUESTION: DomainQuestion = {
  */
 export const SCHEDULING_QUESTION: DomainQuestion = {
   id: SCHEDULING_QUESTION_ID,
-  intent: 'time',
+  intent: 'scheduling',
   get prompt() {
     return cc('scheduling.prompt');
   },
@@ -1175,7 +1176,8 @@ export class CoachOrchestrator {
    * prompt only if a template is somehow missing (defensive — every {@link QuestionIntent} has one).
    */
   private metaVoiced(question: DomainQuestion): DomainQuestion {
-    const key = `interview.${question.intent}`;
+    const key = META_VOICE_KEYS[question.intent];
+    if (!key) return question;
     const voiced = cc(key);
     return voiced && voiced !== key ? { ...question, prompt: voiced } : question;
   }
@@ -1402,6 +1404,27 @@ function cloneQuestion(question: DomainQuestion): DomainQuestion {
  * type keeps the full staged interview. Pure — the input array is returned unchanged for non-recurring
  * goals.
  */
+/**
+ * Which copy key voices each axis. A MAP rather than `interview.${intent}` (which is what this was
+ * until 2026-09-07) because that template silently paired a question with another axis's words the
+ * moment two questions shared an intent — and two did. The horizon question was `time`, so it was
+ * asked as "how much time can you realistically give this each week?" and answered with "about two
+ * months", and the same prompt appeared twice in one interview. Both were the partner's findings 10
+ * and 11, and both were this one line.
+ *
+ * An intent with no entry is NOT voiced: the question keeps the words its author gave it, which is
+ * the safe direction to fail in.
+ */
+const META_VOICE_KEYS: Partial<Record<QuestionIntent, string>> = {
+  foundation: 'interview.foundation',
+  baseline: 'interview.baseline',
+  time: 'interview.time',
+  obstacles: 'interview.obstacles',
+  motivation: 'interview.motivation',
+  milestones: 'interview.milestones',
+  horizon: 'interview.horizon.prompt',
+};
+
 function questionsForProcessType(
   questions: DomainQuestion[],
   processType: ProcessType,

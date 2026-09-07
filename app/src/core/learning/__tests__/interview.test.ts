@@ -36,6 +36,11 @@ const INTENT_RANK: Record<QuestionIntent, number> = {
   obstacles: 3,
   motivation: 4,
   milestones: 5,
+  // Both of these sit after the expert's own questions: how LONG the Journey runs and WHEN in the
+  // week it happens are facts about the person's calendar, not about the domain. They were both
+  // called `time` until 2026-09-07, which is how one came to be asked in the other's words.
+  horizon: 6,
+  scheduling: 7,
   // A Journey's own variant question is asked AFTER every expert question (D62), so it ranks last.
   // No expert owns one: it belongs to the Journey, not to the domain.
   variant: 6,

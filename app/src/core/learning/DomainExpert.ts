@@ -106,7 +106,14 @@ export interface RiskSignal {
 export type QuestionIntent =
   | 'foundation' // why this matters / what it means to you
   | 'baseline' // the zero-state — where you are right now
-  | 'time' // how much time you can allocate
+  | 'time' // how much time you can allocate PER WEEK
+  // How long the whole Journey should run. A DIFFERENT axis from `time`, and it used to share it —
+  // which is exactly how "how much time each week?" came to be answered with "about two months"
+  // (partner finding 11, reproduced 2026-09-07). Same overload made the same prompt appear twice
+  // (finding 10).
+  | 'horizon'
+  // Which days or times of day suit them. Also not `time`.
+  | 'scheduling'
   | 'obstacles' // what has gotten in the way before
   | 'motivation' // what keeps you going when it is hard
   | 'milestones' // whether to break the goal into intermediate Milestones

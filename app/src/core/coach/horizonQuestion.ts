@@ -45,7 +45,7 @@ export const HORIZON_DAYS: readonly (number | undefined)[] = [30, MAX_JOURNEY_DA
 export function horizonQuestion(): DomainQuestion {
   return {
     id: HORIZON_QUESTION_ID,
-    intent: 'time',
+    intent: 'horizon',
     prompt: i18n.t('interview.horizon.prompt', { ns: 'coachContent', context: addressContext() }),
     options: [
       ...(i18n.t('interview.horizon.options', {

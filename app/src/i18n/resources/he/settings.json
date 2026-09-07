@@ -56,7 +56,7 @@
     "appearance": "מראה",
     "appearanceDetail": "ערכת נושא",
     "about": "אודות",
-    "aboutUpdated": "עודכן {{date}} · {{id}}",
+    "aboutUpdated": "עדכון {{n}} · {{date}} · {{id}}",
     "aboutEmbedded": "הגרסה שהגיעה עם ההתקנה",
     "language": "שפה",
     "addressForm": "כיצד לפנות אליך",
@@ -82,7 +82,10 @@
     "coachMemoryOnNow": "פועל. המאמן שומר את הקריאה שלו עם החשבון; המשפטים שלך נשארים בטלפון הזה.",
     "privacy": "מדיניות פרטיות",
     "privacyDetail": "מה אנחנו מחזיקים, איפה זה נמצא, ומה אפשר לעשות עם זה.",
-    "aboutBuild": "בנייה {{id}}"
+    "aboutBuild": "בנייה {{id}}",
+    "updateApplied": "אתם על עדכון {{n}}",
+    "updatePublished": "פורסם {{date}}",
+    "updateDismiss": "סגירה"
   },
   "activeHours": {
     "title": "שעות פעילות",

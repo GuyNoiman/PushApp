@@ -40,6 +40,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
+import { OTA_VERSION } from '@/core/update/otaVersion';
 import { readRunningBundle, shortRuntime, shortUpdateId } from '@/core/util/buildInfo';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
@@ -150,6 +151,9 @@ export default function SettingsScreen() {
       bundle.kind === 'embedded'
         ? t('app.aboutEmbedded')
         : t('app.aboutUpdated', {
+            // The human-sized number, so "are you on 17 or 19?" is answerable out loud. The id below
+            // stays because it is the unarguable one.
+            n: OTA_VERSION,
             date: bundle.createdAt
               ? bundle.createdAt.toLocaleString(language, {
                   day: 'numeric',

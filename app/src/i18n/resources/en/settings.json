@@ -54,7 +54,7 @@
     "appearance": "Appearance",
     "appearanceDetail": "Theme",
     "about": "About",
-    "aboutUpdated": "Updated {{date}} · {{id}}",
+    "aboutUpdated": "Update {{n}} · {{date}} · {{id}}",
     "aboutEmbedded": "The version this build was installed with",
     "language": "Language",
     "addressForm": "How we address you",
@@ -80,7 +80,10 @@
     "coachMemoryOnNow": "It is on. The coach keeps its reading with your account; your own sentences stay on this phone.",
     "privacy": "Privacy policy",
     "privacyDetail": "What we hold, where it lives, and what you can do about it.",
-    "aboutBuild": "build {{id}}"
+    "aboutBuild": "build {{id}}",
+    "updateApplied": "You are on update {{n}}",
+    "updatePublished": "Published {{date}}",
+    "updateDismiss": "Dismiss"
   },
   "activeHours": {
     "title": "Active Hours",

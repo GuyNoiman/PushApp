@@ -50,6 +50,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { TabScrollView } from '@/components/ui/TabScrollView';
+import { UpdateAppliedNotice } from '@/components/home/UpdateAppliedNotice';
 import { UpdateAvailableBanner } from '@/components/home/UpdateAvailableBanner';
 import { displayFont, displayScale } from '@/constants/displayFont';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -625,6 +626,9 @@ export default function HomeScreen() {
               Above everything, because from the device being cut off looks exactly like being up to
               date, and a tester spent three days on the wrong side of that. It renders nothing
               unless the answer is definite, and it can be dismissed. */}
+          {/* Which update is running, said once on the first screen. The banner below is the
+              opposite case: a build that can no longer receive one at all. */}
+          <UpdateAppliedNotice />
           <UpdateAvailableBanner />
 
           {/* ── Greeting ── */}

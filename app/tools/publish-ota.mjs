@@ -40,6 +40,7 @@
  * best evidence it works — and the reason this is a file you call directly.
  */
 import { execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const PLATFORMS = ['ios', 'android'];
 const CHANNELS = ['production', 'preview'];
@@ -122,10 +123,33 @@ if (blocked && !force) {
 
 if (blocked) console.log('--force given: publishing onto a runtime no installed build matches.\n');
 
+/**
+ * Bump the human-sized update number BEFORE publishing, so the bundle that goes out carries it.
+ *
+ * It lives in `src/`, which is not a fingerprint input — that is the whole reason it can move at all
+ * (see the file's own header for what happens when you try to move `expo.version` instead).
+ */
+const otaVersionFile = new URL('../src/core/update/otaVersion.ts', import.meta.url);
+const otaSource = readFileSync(otaVersionFile, 'utf8');
+const current = Number(/export const OTA_VERSION = (\d+);/.exec(otaSource)?.[1]);
+if (!Number.isFinite(current)) {
+  console.error('Could not read OTA_VERSION — refusing to publish an unnumbered update.');
+  process.exit(1);
+}
+const next = current + 1;
+writeFileSync(
+  otaVersionFile,
+  otaSource.replace(`export const OTA_VERSION = ${current};`, `export const OTA_VERSION = ${next};`),
+);
+console.log(`Update ${next} (was ${current}).\n`);
+
 for (const channel of CHANNELS) {
   console.log(`Publishing to ${channel}…`);
   run('npx', ['eas-cli@latest', 'update', '--branch', channel, '--message', message, '--non-interactive']);
   console.log(`  done: ${channel}`);
 }
 
-console.log('\nPublished to both channels. Opening the app is all either phone has to do.');
+console.log(
+  `\nPublished update ${next} to both channels. Leaving the app and coming back is all either` +
+    ' phone has to do; Settings › About names the update it is running.',
+);

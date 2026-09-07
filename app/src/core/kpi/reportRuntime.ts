@@ -28,6 +28,7 @@
  */
 import { supabase } from '../social/supabaseClient';
 import type { KpiContext } from './KpiGateway';
+import { OTA_VERSION } from '../update/otaVersion';
 import { readRunningBundle } from '../util/buildInfo';
 
 export interface RuntimeReporter {
@@ -54,6 +55,9 @@ export const supabaseRuntimeReporter: RuntimeReporter = {
         p_channel: context.channel ?? null,
         p_update_id: bundle.kind === 'update' ? bundle.id : null,
         p_update_at: bundle.kind === 'update' ? (bundle.createdAt?.toISOString() ?? null) : null,
+        // The number a person can say out loud (D100). The update id above is the unarguable
+        // identity; this is the one the console can put in a column and two people can compare.
+        p_ota_version: OTA_VERSION,
       })
       .then(
         () => undefined,

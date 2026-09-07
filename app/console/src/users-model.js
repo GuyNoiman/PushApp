@@ -92,3 +92,12 @@ export function describeAccount(row) {
 /** The shortest query the server will answer, repeated here only to explain it. */
 export const MIN_QUERY = 2;
 export const tooShort = (q) => (q ?? '').trim().length < MIN_QUERY;
+
+/**
+ * How many accounts one page of the listing asks for.
+ *
+ * Fifty rather than everything: the database clamps at a hundred whatever is asked, and a page that
+ * cannot be driven into returning the whole table is the protection that survived turning the search
+ * into a directory (migration 0017).
+ */
+export const PAGE = 50;

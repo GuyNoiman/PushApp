@@ -1,13 +1,21 @@
 /**
  * Settings → Users — the one place account types are changed.
  *
- * ── IT IS A SEARCH, NOT A DIRECTORY ──────────────────────────────────────
+ * ── IT LISTS, AND IT SEARCHES ────────────────────────────────────────────
  *
- * The console was built without a user listing on purpose. Managing account
- * types needs a way to find a person, and that is a smaller thing than a list of
- * everyone: `admin_search_users` refuses a query shorter than two characters,
- * caps at 25, and writes an audit row for every call. Nothing here can
- * enumerate the user base, and every look is on the record.
+ * The console shipped without a listing on purpose: managing account types needs
+ * a way to FIND a person, which is a smaller thing than a list of everybody.
+ * That was right for a console nobody had signed into. It stopped being the
+ * whole picture the moment there was an operator who has to answer "how many
+ * people are on this?" and "did anybody sign up today?" — questions a search
+ * cannot answer at all, because you have to already know a name to ask one
+ * (founder, 2026-09-08).
+ *
+ * So the page opens on the newest accounts, and typing narrows to a search. Both
+ * are admin-only, both are capped, and BOTH ARE AUDITED — one row per page and
+ * one per search. The point of the audit was never that looking is rare; it is
+ * that looking is on the record, and a listing is more worth recording than a
+ * search rather than less.
  *
  * ── THE SCREEN DOES NOT DECIDE ANYTHING ─────────────────────────────────
  *
@@ -19,7 +27,7 @@
 import { el, clear, when } from '../dom.js';
 import {
   STAFF_ROLES, CREATOR_STAGES, TIERS,
-  capabilitiesFor, refusalReason, toggleRole, describeAccount, tooShort, MIN_QUERY,
+  capabilitiesFor, refusalReason, toggleRole, describeAccount, tooShort, PAGE,
 } from '../users-model.js';
 
 export async function renderUsers(root, ctx) {
@@ -32,9 +40,8 @@ export async function renderUsers(root, ctx) {
   const search = async (query) => {
     clear(results);
     if (tooShort(query)) {
-      status.className = 'muted';
-      status.textContent = `Type at least ${MIN_QUERY} characters. This is a search rather than a list of everybody, and every search is written to the audit log.`;
-      return;
+      // Fewer than two characters is not a search; show the list instead of an instruction.
+      return list();
     }
     status.textContent = 'Searching…';
     try {
@@ -52,12 +59,41 @@ export async function renderUsers(root, ctx) {
     }
   };
 
+  /** The newest accounts, which is what the page shows before anybody types. */
+  const list = async () => {
+    clear(results);
+    status.className = 'muted';
+    status.textContent = 'Loading…';
+    try {
+      const [rows, total] = await Promise.all([
+        ctx.api.rpc('admin_list_users', { p_limit: PAGE }),
+        ctx.api.rpc('admin_count_users'),
+      ]);
+      const count = typeof total === 'number' ? total : null;
+      if (!rows?.length) {
+        status.textContent = 'No accounts yet.';
+        return;
+      }
+      status.textContent =
+        count != null && count > rows.length
+          ? `Newest ${rows.length} of ${count} accounts. Search to find a specific one.`
+          : `${rows.length} account${rows.length === 1 ? '' : 's'}.`;
+      for (const row of rows) results.append(accountCard(row, viewerRoles, ctx, refresh, ''));
+    } catch (e) {
+      status.className = 'error';
+      status.textContent = e.message;
+    }
+  };
+
+  /** Whatever the page is currently showing — a search if one is typed, else the list. */
+  const refresh = async (query) => (tooShort(query) ? list() : search(query));
+
   const input = el('input', {
     type: 'search',
     placeholder: 'Handle or email address',
     oninput: (e) => {
       clearTimeout(input._t);
-      input._t = setTimeout(() => search(e.target.value), 250);
+      input._t = setTimeout(() => refresh(e.target.value), 250);
     },
   });
 
@@ -71,12 +107,13 @@ export async function renderUsers(root, ctx) {
           'They are shown together and changed separately.',
       }),
       el('label', { text: 'Find an account' }, [input]),
+      el('p', { class: 'muted small', text: 'Every search and every page of this list is written to the audit log.' }),
       status,
     ]),
     results,
   );
 
-  await search('');
+  await list();
 }
 
 function accountCard(row, viewerRoles, ctx, research, query) {

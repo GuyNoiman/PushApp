@@ -115,3 +115,43 @@ describe('shortRuntime', () => {
     expect(shortRuntime(null)).toBe('—');
   });
 });
+
+describe('the update number, which is the one thing a person can say out loud', () => {
+  it('carries the range each runtime is running', () => {
+    // A RANGE rather than one value: two phones on the same build sitting on different updates is
+    // exactly the situation this tab exists to surface, and it is invisible in a single number.
+    const [group] = readInstalls([
+      {
+        platform: 'ios',
+        runtime_version: 'abc123',
+        installs: 2,
+        app_versions: ['1.0.0'],
+        channels: ['production'],
+        newest_update_at: '2026-09-08T10:00:00Z',
+        oldest_update_at: '2026-09-07T10:00:00Z',
+        newest_ota_version: 5,
+        oldest_ota_version: 3,
+        last_seen: '2026-09-08T10:05:00Z',
+      },
+    ]);
+    expect(group.runtimes[0].newestOta).toBe(5);
+    expect(group.runtimes[0].oldestOta).toBe(3);
+  });
+
+  it('reports nothing rather than zero for an installation that predates the numbering', () => {
+    // Null is a fact — "an older build" — and zero would read as a real update number.
+    const [group] = readInstalls([
+      {
+        platform: 'android',
+        runtime_version: 'def456',
+        installs: 1,
+        app_versions: [],
+        channels: [],
+        newest_update_at: null,
+        oldest_update_at: null,
+        last_seen: '2026-09-08T10:05:00Z',
+      },
+    ]);
+    expect(group.runtimes[0].newestOta).toBeNull();
+  });
+});

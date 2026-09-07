@@ -10,6 +10,19 @@ import { el, clear, dl, when } from '../dom.js';
 import { readInstalls, shortRuntime, strandedNote } from '../installs-model.js';
 import { identity, kindLabel, platformLabel, byRuntime, unreachableUpdates } from '../versions-model.js';
 
+/**
+ * How to name the update running on a group of installations.
+ *
+ * One number when they agree, a range when they do not — and the range is the point: two phones on
+ * the same build sitting on different updates is the exact situation this tab exists to surface, and
+ * it is invisible in a single value.
+ */
+function updateLabel(runtime) {
+  const { newestOta, oldestOta } = runtime;
+  if (newestOta == null) return 'update not reported';
+  return newestOta === oldestOta ? `update ${newestOta}` : `updates ${oldestOta}–${newestOta}`;
+}
+
 export async function renderVersions(root, ctx) {
   clear(root);
   root.append(el('section', { class: 'card' }, [el('h1', { text: 'Versions' }), el('p', { class: 'muted', text: 'Loading…' })]));
@@ -133,6 +146,10 @@ async function installedSection(ctx) {
             el('b', { text: `runtime ${shortRuntime(runtime.runtime)}` }),
             ' · ',
             `${runtime.installs} install${runtime.installs === 1 ? '' : 's'}`,
+            // The number a person can say out loud, ahead of the identifiers that never move
+            // between over-the-air updates. Its absence is a fact too: an installation that has
+            // not reported one predates the numbering.
+            ` · ${updateLabel(runtime)}`,
             runtime.appVersions.length ? ` · ${runtime.appVersions.join(', ')}` : '',
             runtime.channels.length ? ` · ${runtime.channels.join(', ')}` : '',
           ]),

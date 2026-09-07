@@ -41,6 +41,10 @@ export function readInstalls(rows, { strandedAfterHours = STRANDED_AFTER_HOURS }
       channels: row.channels ?? [],
       newestUpdateAt: row.newest_update_at ?? null,
       oldestUpdateAt: row.oldest_update_at ?? null,
+      // The update NUMBER (D100). A range rather than one value: two phones on the same build can
+      // sit on different updates, and that gap is exactly the thing worth seeing.
+      newestOta: row.newest_ota_version ?? null,
+      oldestOta: row.oldest_ota_version ?? null,
       lastSeen: row.last_seen ?? null,
     });
   }

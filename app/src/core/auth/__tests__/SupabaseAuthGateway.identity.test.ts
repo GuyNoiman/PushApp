@@ -63,7 +63,7 @@ beforeEach(() => {
 
 describe('SupabaseAuthGateway — Apple sign-in', () => {
   it('exchanges the Apple identity token and returns the real (non-anonymous) user', async () => {
-    mockApple.mockResolvedValue('apple-id-token');
+    mockApple.mockResolvedValue({ token: 'apple-id-token', nonce: 'raw-nonce' });
     auth.signInWithIdToken.mockResolvedValue({ data: { user: supabaseUser('apple') }, error: null });
 
     const user = await new SupabaseAuthGateway().signInWithApple();
@@ -71,6 +71,9 @@ describe('SupabaseAuthGateway — Apple sign-in', () => {
     expect(auth.signInWithIdToken).toHaveBeenCalledWith({
       provider: 'apple',
       token: 'apple-id-token',
+      // The RAW nonce goes to Supabase while Apple got its hash. Passing neither is what produced
+      // "Passed nonce and nonce in id_token should either both exist or not" (founder, 2026-09-07).
+      nonce: 'raw-nonce',
     });
     expect(user.id).toBe('uid-real-1');
     expect(user.isAnonymous).toBe(false);
@@ -79,14 +82,16 @@ describe('SupabaseAuthGateway — Apple sign-in', () => {
 
   it('propagates a Supabase error instead of resolving half-signed-in', async () => {
     const err = new Error('token rejected');
-    mockApple.mockResolvedValue('apple-id-token');
+    mockApple.mockResolvedValue({ token: 'apple-id-token', nonce: 'raw-nonce' });
     auth.signInWithIdToken.mockResolvedValue({ data: { user: null }, error: err });
 
-    await expect(new SupabaseAuthGateway().signInWithApple()).rejects.toBe(err);
+    // The provider is named, because one error line sits under two buttons and "which one failed"
+    // was the first question the last screenshot could not answer.
+    await expect(new SupabaseAuthGateway().signInWithApple()).rejects.toThrow('apple: token rejected');
   });
 
   it('throws when the exchange succeeds but returns no user', async () => {
-    mockApple.mockResolvedValue('apple-id-token');
+    mockApple.mockResolvedValue({ token: 'apple-id-token', nonce: 'raw-nonce' });
     auth.signInWithIdToken.mockResolvedValue({ data: { user: null }, error: null });
 
     await expect(new SupabaseAuthGateway().signInWithApple()).rejects.toBeInstanceOf(
@@ -105,7 +110,7 @@ describe('SupabaseAuthGateway — Apple sign-in', () => {
 
 describe('SupabaseAuthGateway — Google sign-in', () => {
   it('exchanges the Google identity token under the `google` provider', async () => {
-    mockGoogle.mockResolvedValue('google-id-token');
+    mockGoogle.mockResolvedValue({ token: 'google-id-token' });
     auth.signInWithIdToken.mockResolvedValue({ data: { user: supabaseUser('google') }, error: null });
 
     const user = await new SupabaseAuthGateway().signInWithGoogle();
@@ -119,7 +124,7 @@ describe('SupabaseAuthGateway — Google sign-in', () => {
   });
 
   it('never falls back to the Apple token source', async () => {
-    mockGoogle.mockResolvedValue('google-id-token');
+    mockGoogle.mockResolvedValue({ token: 'google-id-token' });
     auth.signInWithIdToken.mockResolvedValue({ data: { user: supabaseUser('google') }, error: null });
 
     await new SupabaseAuthGateway().signInWithGoogle();

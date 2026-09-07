@@ -23,7 +23,7 @@ import {
   type AuthUser,
 } from './AuthGateway';
 import { toAuthUser } from './authUser';
-import { appleIdentityToken, googleIdentityToken } from './nativeIdentity';
+import { appleIdentityToken, googleIdentityToken, type IdentityToken } from './nativeIdentity';
 import { getSingleUserConfig, type SingleUserConfig } from './singleUser';
 
 export class SupabaseAuthGateway implements AuthGateway {
@@ -172,9 +172,21 @@ export class SupabaseAuthGateway implements AuthGateway {
    * against the provider, so a forged one cannot mint a session; nothing about the person is read
    * off it here (red-line R1 — no PII in PushApp's own tables).
    */
-  private async exchangeIdToken(provider: 'apple' | 'google', token: string): Promise<AuthUser> {
-    const { data, error } = await this.client().auth.signInWithIdToken({ provider, token });
-    if (error) throw error;
+  private async exchangeIdToken(
+    provider: 'apple' | 'google',
+    identity: IdentityToken,
+  ): Promise<AuthUser> {
+    const { data, error } = await this.client().auth.signInWithIdToken({
+      provider,
+      token: identity.token,
+      // Present only when the provider was given the matching hash. Supabase refuses a token whose
+      // nonce claim has no partner here, and equally refuses a nonce with no claim to match — so
+      // this field is passed exactly when the provider path produced one.
+      ...(identity.nonce ? { nonce: identity.nonce } : {}),
+    });
+    // Name the provider: the screen shows one error line under two buttons, and "which one failed"
+    // was the first question the last report could not answer.
+    if (error) throw new Error(`${provider}: ${error.message}`);
     const user = toAuthUser(data.user);
     if (!user) throw new AuthNotAvailableError(`${provider} sign-in returned no user.`);
     return user;

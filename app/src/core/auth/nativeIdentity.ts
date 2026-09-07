@@ -21,6 +21,7 @@
 import type * as AppleAuthenticationModule from 'expo-apple-authentication';
 import type { GoogleSignin as GoogleSigninType } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
+import * as Crypto from 'expo-crypto';
 
 import { AuthNotAvailableError } from './AuthGateway';
 
@@ -73,6 +74,33 @@ export async function isAppleSignInAvailable(): Promise<boolean> {
   }
 }
 
+/** An identity token and, when the provider was given one, the raw nonce that proves it is ours. */
+export interface IdentityToken {
+  token: string;
+  /** The RAW nonce. Supabase hashes it itself and compares against the token's claim. */
+  nonce?: string;
+}
+
+/**
+ * A fresh nonce, and its SHA-256, for one sign-in attempt.
+ *
+ * ── WHY THIS EXISTS (founder, 2026-09-07) ──────────────────────────────────────────────────────
+ *
+ * Signing in failed with *"Passed nonce and nonce in id_token should either both exist or not."*
+ * That is Supabase saying the token it was handed carries a nonce claim while the call that handed
+ * it over passed none — a mismatch it refuses on purpose, because a token you cannot tie to a
+ * request you made is a token somebody else could have replayed.
+ *
+ * The documented pattern is the one implemented here: give the PROVIDER the hash, give SUPABASE the
+ * original. Neither side ever sees both, and only the app that generated it can produce the pair.
+ */
+async function freshNonce(): Promise<{ raw: string; hashed: string }> {
+  const bytes = Crypto.getRandomBytes(32);
+  const raw = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const hashed = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, raw);
+  return { raw, hashed };
+}
+
 /**
  * Run the Apple sheet and return the signed identity token for Supabase to verify.
  *
@@ -80,7 +108,7 @@ export async function isAppleSignInAvailable(): Promise<boolean> {
  * {@link AuthNotAvailableError} when this build cannot do it at all — two different things, and the
  * UI must not show an error for the first.
  */
-export async function appleIdentityToken(): Promise<string> {
+export async function appleIdentityToken(): Promise<IdentityToken> {
   const Apple = loadModule<typeof AppleAuthenticationModule>(
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     () => require('expo-apple-authentication'),
@@ -88,9 +116,13 @@ export async function appleIdentityToken(): Promise<string> {
   if (!Apple || !(await isAppleSignInAvailable())) {
     throw new AuthNotAvailableError('Apple sign-in is not available in this build.');
   }
+  const nonce = await freshNonce();
   let credential: AppleAuthenticationModule.AppleAuthenticationCredential;
   try {
     credential = await Apple.signInAsync({
+      // Apple receives the HASH and stamps it into the token it signs; Supabase receives the raw
+      // value below and checks the two agree. Passing neither is what produced the mismatch.
+      nonce: nonce.hashed,
       // Requested so Apple shows the person what is being shared. We ask and then deliberately do
       // NOT read the name/email off the credential — see the privacy note at the top of this file.
       requestedScopes: [
@@ -105,7 +137,7 @@ export async function appleIdentityToken(): Promise<string> {
   if (!credential.identityToken) {
     throw new AuthNotAvailableError('Apple returned no identity token.');
   }
-  return credential.identityToken;
+  return { token: credential.identityToken, nonce: nonce.raw };
 }
 
 /** Whether this build can offer Google sign-in: the native module is present AND a client id is set. */
@@ -121,7 +153,7 @@ export function isGoogleSignInAvailable(): boolean {
  * Run Google's native sheet and return the signed identity token for Supabase to verify. Same two
  * failure shapes as {@link appleIdentityToken}: a cancel is not an error, a missing module is.
  */
-export async function googleIdentityToken(): Promise<string> {
+export async function googleIdentityToken(): Promise<IdentityToken> {
   const ids = googleClientIds();
   const mod = loadModule<{ GoogleSignin: typeof GoogleSigninType; statusCodes: Record<string, string> }>(
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -148,7 +180,9 @@ export async function googleIdentityToken(): Promise<string> {
     if (result.type === 'cancelled') throw new SignInCancelledError();
     const token = result.data?.idToken;
     if (!token) throw new AuthNotAvailableError('Google returned no identity token.');
-    return token;
+    // No nonce: this library does not offer one, so the token Google signs carries no nonce claim
+    // and Supabase must be given none either. Both absent is a valid pair; one of each is not.
+    return { token };
   } catch (e) {
     if (e instanceof SignInCancelledError) throw e;
     // Older versions signal a cancel through a status code instead of the result shape.

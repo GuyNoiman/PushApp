@@ -47,6 +47,17 @@ describe('what the composer is told', () => {
     expect(asked).toContain('Never ask any of this again');
   });
 
+  it('answers a direct question before it asks its own', async () => {
+    // The founder asked the coach, in Hebrew, whether it could speak Hebrew. It ignored him and
+    // continued its protocol (2026-09-07). A person who asks a question and gets a question back has
+    // been handled, not talked to — and the composer's own "ask the ONE question below" instruction
+    // was actively fighting the character's answer-first rule.
+    const { llm, calls } = llmThat(() => 'ok');
+    await composeCoachTurn(llm, base);
+    expect(calls[0].system).toContain('ANSWER IT FIRST');
+    expect(calls[0].system).toContain('This outranks everything below');
+  });
+
   it('carries the character, which is where every rule about how to speak already lives', async () => {
     const { llm, calls } = llmThat(() => 'ok');
     await composeCoachTurn(llm, base);

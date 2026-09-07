@@ -5,6 +5,7 @@ import {
   type Theme,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import { useReadyUpdate } from '@/core/update/useReadyUpdate';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -99,6 +100,11 @@ setMediaGateway(resolveMediaGateway());
 setCrashGateway(resolveCrashGateway());
 
 export default function RootLayout() {
+  // An update the phone already downloaded is applied when the app next comes to the foreground,
+  // rather than waiting for a cold start nobody knows to perform. See the hook's header for why
+  // this is the fix for "I am not seeing the latest version".
+  useReadyUpdate();
+
   // Load the brand fonts (Baloo 2 headings + Inter body, Design System §3) before
   // revealing the app so headings never flash in a fallback face. The splash is
   // held (preventAutoHideAsync above) until they resolve — errors don't wedge the

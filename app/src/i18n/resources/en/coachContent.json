@@ -109,5 +109,67 @@
     "reasonable": "This looks like a realistic fit for where you are and the time you have.",
     "ambitious": "This is a real stretch — doable, but it will ask for steady effort.",
     "tooAmbitious": "This is a big reach from your starting point; a gentler first target may serve you better."
+  },
+  "career": {
+    "foundation": {
+      "prompt": "What are you hoping to change in your career?",
+      "options": [
+        "Find a new direction",
+        "Land a new role or job",
+        "Grow where I am",
+        "Build a specific skill"
+      ]
+    },
+    "baseline": {
+      "prompt": "Where are you with it right now?",
+      "options": [
+        "Just starting to figure it out",
+        "I have a direction but little momentum",
+        "I'm actively progressing and want to push further"
+      ]
+    },
+    "time": {
+      "prompt": "How much time can you give to this each week?",
+      "options": [
+        "Under 1 hour",
+        "1–3 hours",
+        "3–5 hours",
+        "More than 5 hours"
+      ]
+    },
+    "obstacles": {
+      "prompt": "What usually gets in the way?",
+      "options": [
+        "Not knowing where to start",
+        "Procrastination or overwhelm",
+        "Fear of putting myself out there",
+        "No time outside work"
+      ]
+    },
+    "motivation": {
+      "prompt": "What will keep you going?",
+      "options": [
+        "A clearer future I want",
+        "More income or security",
+        "Doing work that means something",
+        "Proving to myself I can"
+      ]
+    },
+    "milestones": {
+      "prompt": "How would you like to approach it?",
+      "options": [
+        "Build up in clear stages",
+        "Keep it simple — one steady step at a time"
+      ]
+    },
+    "feasibility": {
+      "reasonable": "This is a realistic plan for where you are and the time you have.",
+      "ambitious": "This is a real stretch — steady, focused steps each week will get you there.",
+      "tooAmbitious": "This is a big reach from your starting point; a nearer first target builds momentum faster."
+    },
+    "defaultTitles": [
+      "Take one small step toward your career goal today",
+      "Reflect on what progress would look like for you"
+    ]
   }
 }

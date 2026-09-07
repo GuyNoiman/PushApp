@@ -92,6 +92,11 @@ function composerTask(input: ComposeTurnInput): string {
           'said, it does not appear. End on where you would start, not on a promise.',
         ].join('\n')
       : [
+          'IF THEIR LAST MESSAGE ASKED YOU SOMETHING, ANSWER IT FIRST, in a sentence or two, before',
+          'anything else. A person who asks a question and gets a question back has been handled, not',
+          'talked to. Answer it plainly and truthfully — including when the answer is that you do not',
+          'know or cannot do it — and only then continue. This outranks everything below.',
+          '',
           'Ask the ONE question given below. Ask it in your own words, so it follows from what they',
           'just said instead of arriving beside it. Do not ask anything else.',
           '',

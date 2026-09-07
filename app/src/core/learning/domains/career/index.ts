@@ -18,6 +18,15 @@ import type {
   StepTemplate,
 } from '../../DomainExpert';
 import type { GoalInput, PlanConstraints } from '../../types';
+import i18n from '../../../../i18n';
+import { addressContext } from '../../../../i18n/addressForm';
+
+/** Resolve `coachContent` copy in the active language + form of address. */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+/** The same for an OPTIONS array, as a fresh (mutation-safe) copy. */
+const ccOptions = (key: string): string[] => [
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true, context: addressContext() }) as unknown as string[]),
+];
 import {
   answerFor,
   assessFrom,
@@ -61,94 +70,85 @@ const STEP_TITLES: Record<string, readonly string[]> = {
   ],
 };
 
-const DEFAULT_TITLES: readonly string[] = [
-  'Take one small step toward your career goal today',
-  'Reflect on what progress would look like for you',
-];
+const defaultTitles = (): string[] => ccOptions('career.defaultTitles');
 
 /**
  * The career interview — practical, non-directive, general → specific. EDITABLE config.
  * `baseline` options are ORDERED (just starting to figure it out → actively progressing);
  * `milestones` option [1] is the "one steady step at a time" (no-stages) choice.
  */
+/**
+ * The career interview — practical, non-directive, general → specific.
+ *
+ * EVERY STRING IS A LOOKUP, NOT A LITERAL (2026-09-07). These prompts and options used to be
+ * hard-coded English in this file, which is why a Hebrew first run answered a Hebrew question with
+ * English cards: the founder saw "Find a new direction" and "Not knowing where to start" in the
+ * middle of his own language. The prompts were already localised, because the meta-agent voices
+ * those from `interview.*` — the OPTIONS were the leak, and they come from here.
+ *
+ * `get` rather than a computed constant: the copy is read when the question is ASKED, so a person
+ * who changes language mid-interview sees the rest of it in the new one.
+ *
+ * `baseline` options stay ORDERED (just figuring it out → actively progressing) and `milestones`
+ * option [1] is still the "one steady step at a time" choice; the ordering carries meaning that
+ * `keepSimple()` and the feasibility read below both depend on.
+ */
 const QUESTIONS: readonly DomainQuestion[] = [
   {
     id: 'career.foundation',
     intent: 'foundation',
-    prompt: 'What are you hoping to change in your career?',
-    options: [
-      'Find a new direction',
-      'Land a new role or job',
-      'Grow where I am',
-      'Build a specific skill',
-    ],
+    get prompt() { return cc('career.foundation.prompt'); },
+    get options() { return ccOptions('career.foundation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'career.baseline',
     intent: 'baseline',
-    prompt: 'Where are you with it right now?',
-    options: [
-      'Just starting to figure it out',
-      'I have a direction but little momentum',
-      "I'm actively progressing and want to push further",
-    ],
+    get prompt() { return cc('career.baseline.prompt'); },
+    get options() { return ccOptions('career.baseline.options'); },
     allowOther: true,
   },
   {
     id: 'career.time',
     intent: 'time',
-    prompt: 'How much time can you give to this each week?',
-    options: ['Under 1 hour', '1–3 hours', '3–5 hours', 'More than 5 hours'],
+    get prompt() { return cc('career.time.prompt'); },
+    get options() { return ccOptions('career.time.options'); },
     allowOther: true,
   },
   {
     id: 'career.obstacles',
     intent: 'obstacles',
-    prompt: 'What usually gets in the way?',
-    options: [
-      'Not knowing where to start',
-      'Procrastination or overwhelm',
-      'Fear of putting myself out there',
-      'No time outside work',
-    ],
+    get prompt() { return cc('career.obstacles.prompt'); },
+    get options() { return ccOptions('career.obstacles.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'career.motivation',
     intent: 'motivation',
-    prompt: 'What will keep you going?',
-    options: [
-      'A clearer future I want',
-      'More income or security',
-      'Doing work that means something',
-      'Proving to myself I can',
-    ],
+    get prompt() { return cc('career.motivation.prompt'); },
+    get options() { return ccOptions('career.motivation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'career.milestones',
     intent: 'milestones',
-    prompt: 'How would you like to approach it?',
-    options: ['Build up in clear stages', 'Keep it simple — one steady step at a time'],
+    get prompt() { return cc('career.milestones.prompt'); },
+    get options() { return ccOptions('career.milestones.options'); },
     allowOther: true,
   },
 ] as const;
 
 const BASELINE_ID = 'career.baseline';
 const MILESTONES_ID = 'career.milestones';
-const KEEP_SIMPLE = QUESTIONS[5].options[1];
+/** The "one steady step at a time" choice, read live so it matches whatever language asked. */
+const keepSimple = (): string => ccOptions('career.milestones.options')[1];
 /** Career progress needs meaningful focused blocks — a fuller weekly threshold is "enough". */
 const COMFORTABLE_MINUTES = 90;
 
-const FEASIBILITY_NOTES: Record<FeasibilityVerdict, string> = {
-  reasonable: 'This is a realistic plan for where you are and the time you have.',
-  ambitious: 'This is a real stretch — steady, focused steps each week will get you there.',
-  tooAmbitious: 'This is a big reach from your starting point; a nearer first target builds momentum faster.',
-};
+const feasibilityNote = (verdict: FeasibilityVerdict): string => cc(`career.feasibility.${verdict}`);
 
 export const CareerExpert: DomainExpert = {
   displayName: 'Career',
@@ -158,7 +158,7 @@ export const CareerExpert: DomainExpert = {
   },
 
   stepTemplatesFor(milestone: ProposedMilestone, goal: GoalInput): StepTemplate[] {
-    const titles = STEP_TITLES[milestone.title] ?? DEFAULT_TITLES;
+    const titles = STEP_TITLES[milestone.title] ?? defaultTitles();
     const minutes = minutesFor(goal.cadence, goal.isHabit, 15, 30);
     return stepsFrom(titles, minutes, difficultyFor(milestone.weight));
   },
@@ -190,11 +190,17 @@ export const CareerExpert: DomainExpert = {
 
   assessFeasibility(answers, constraints) {
     const level = levelFromOrderedOptions(answerFor(answers, BASELINE_ID), QUESTIONS[1].options);
-    return assessFrom(level, constraints, COMFORTABLE_MINUTES, FEASIBILITY_NOTES);
+    // Built when the verdict is READ, so the note is in the language the person is being spoken to
+    // in rather than whatever was loaded when this module first evaluated.
+    return assessFrom(level, constraints, COMFORTABLE_MINUTES, {
+      reasonable: feasibilityNote('reasonable'),
+      ambitious: feasibilityNote('ambitious'),
+      tooAmbitious: feasibilityNote('tooAmbitious'),
+    });
   },
 
   usesMilestones(answers) {
-    return usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE);
+    return usesMilestonesFrom(answers, MILESTONES_ID, keepSimple());
   },
 
   buildStructure(goal, answers) {
@@ -203,12 +209,12 @@ export const CareerExpert: DomainExpert = {
       answers,
       milestones: MILESTONES,
       stepTitles: STEP_TITLES,
-      defaultTitles: DEFAULT_TITLES,
+      defaultTitles: defaultTitles(),
       baselineId: BASELINE_ID,
       baselineOptions: QUESTIONS[1].options,
       dailyMinutes: 15,
       weeklyMinutes: 30,
-      staged: usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE),
+      staged: usesMilestonesFrom(answers, MILESTONES_ID, keepSimple()),
     });
   },
 };

@@ -5,8 +5,9 @@
  * guard, and turns the orchestrator's turns into a flat, render-ready view-model the screen maps 1:1
  * onto the existing presentational coach components (bubbles, option cards, insight / Journey card).
  *
- * Only the opening free-text triage makes an LLM call (→ a `thinking` status); every closed pick /
- * "Other" answer is recorded on-device with no model call. All orchestrator calls are wrapped so a
+ * Every turn now makes a model call: the goal is INTERPRETED once (triage), and each turn after
+ * that is WRITTEN by the model (`composeTurn`). So every advance shows `thinking` — a tap that waits
+ * on a model and shows nothing is the bug the partner reported on 2026-09-14. All orchestrator calls are wrapped so a
  * transport failure surfaces a calm retry line and NEVER crashes the screen.
  *
  * SENSITIVE-DOMAIN STOP (safety): if the coach routes the goal to the `addiction` or `relationships`
@@ -284,15 +285,26 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   );
 
   /**
-   * Echo the user's answer, advance the orchestrator, and apply the returned turn. `thinking` flags
-   * the one LLM call (triage). Any throw surfaces a calm retry line — the screen never crashes.
+   * Echo the user's answer, advance the orchestrator, and apply the returned turn. Any throw
+   * surfaces a calm retry line — the screen never crashes.
+   *
+   * ── EVERY ADVANCE THINKS NOW (partner QA, 2026-09-14) ────────────────────────────────────────
+   *
+   * This used to take a `thinking` flag, true only for the triage call, because everything else was
+   * recorded on-device and returned instantly. `composeTurn` ended that on 2026-09-06: the coach now
+   * WRITES each turn, so a tap that used to be instant waits on a model like any other.
+   *
+   * The flag stayed false on those paths, so the person tapped a card and watched nothing happen for
+   * a second or more — which is exactly the "the thinking indicator does not always appear" the
+   * partner reported, and it is a regression my own change caused. There is no longer such a thing
+   * as an advance that does not think.
    */
   const advance = useCallback(
-    async (userEcho: string | null, call: () => Promise<CoachTurn>, thinking: boolean) => {
+    async (userEcho: string | null, call: () => Promise<CoachTurn>) => {
       setAwaitingOpening(false);
       applyQuestion(null); // hide the options while we advance
       if (userEcho) setItems((prev) => [...prev, { kind: 'user', text: userEcho }]);
-      if (thinking) setStatus('thinking');
+      setStatus('thinking');
       try {
         const turn = await call();
         setStatus('idle');
@@ -309,7 +321,10 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         // Anything else is a softer hiccup: the surface stays alive and the person can say it again.
         setStatus('error');
         setItems((prev) => [...prev, { kind: 'coach', text: t('retry') }]);
-        if (thinking) setAwaitingOpening(true);
+        // Reopen the composer only when the failure left NO question on the table — otherwise the
+        // person is looking at a question they can still answer, and an opening bar beside it
+        // invites them to start over instead of retrying.
+        if (!rawQuestionRef.current) setAwaitingOpening(true);
       }
     },
     [applyTurn, applyQuestion, t],
@@ -352,7 +367,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       if (handled && !rest) return;
       const message = handled ? rest : trimmed;
       lastOpeningRef.current = message;
-      void advance(message, () => orchestratorRef.current!.triage(message), true);
+      void advance(message, () => orchestratorRef.current!.triage(message));
     },
     [advance, handleTechnicalCommand],
   );
@@ -365,7 +380,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   const retryOpening = useCallback(() => {
     const text = lastOpeningRef.current;
     if (!text) return;
-    void advance(null, () => orchestratorRef.current!.triage(text), true);
+    void advance(null, () => orchestratorRef.current!.triage(text));
   }, [advance]);
 
   const selectSingle = useCallback(
@@ -374,7 +389,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       if (!question) return;
       const index = Number(id);
       if (!Number.isInteger(index) || index < 0 || index >= question.options.length) return;
-      void advance(question.options[index], () => orchestratorRef.current!.selectOption(index), false);
+      void advance(question.options[index], () => orchestratorRef.current!.selectOption(index));
     },
     [advance],
   );
@@ -386,7 +401,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       const indices = ids.map(Number);
       if (!indices.every((i) => Number.isInteger(i) && i >= 0 && i < question.options.length)) return;
       const echo = indices.map((i) => question.options[i]).join(' · ');
-      void advance(echo, () => orchestratorRef.current!.selectOptions(indices), false);
+      void advance(echo, () => orchestratorRef.current!.selectOptions(indices));
     },
     [advance],
   );
@@ -395,7 +410,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     (text: string) => {
       const trimmed = text.trim();
       if (trimmed.length === 0 || !rawQuestionRef.current) return;
-      void advance(trimmed, () => orchestratorRef.current!.answerOther(trimmed), false);
+      void advance(trimmed, () => orchestratorRef.current!.answerOther(trimmed));
     },
     [advance],
   );

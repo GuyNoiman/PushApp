@@ -5,6 +5,48 @@ list, from 2026-08-29).
 
 ---
 
+# 2026-09-14 — The coach stopped reciting, and the app can finally say which version it is
+
+**The conversation.** Every word the coach spoke was a catalogue string and the next question was
+the next element of an array. Both model calls were extractors that produce no prose, so the
+character we had spent days writing was attached to a JSON classifier and printed nowhere. Two
+modules changed that: `composeTurn` has the coach WRITE each turn from the character plus what is
+known, and `readConversation` reads the whole transcript against the whole set of outstanding
+questions after every message and strikes off what was answered, asked or not. `questionIndex` is
+gone. The engine still decides what must be known and when the interview ends; the model's reading
+is validated against what the engine handed it, and any failure falls back to the behaviour that
+shipped before.
+
+Also in the conversation: the opening stopped being "Hi, how can I help you today?"; the coach
+answers in the language the person wrote in; a question can no longer be asked in another question's
+words (the horizon question carried `intent: 'time'`, so "how much time each week?" was answered with
+"about two months", and the same sentence appeared twice); the career expert's prompts and options
+are locale lookups rather than hard-coded English; a direct question is answered before the coach
+asks its own; and the conversation is open by default, narrowing to closed cards only once the
+budget is crossed — it had been exactly backwards.
+
+**Knowing which version you are running**, which had cost more than a week of two people testing
+different builds. `expo.version` cannot mark an over-the-air update: changing it moves the runtime
+fingerprint and orphans every installed phone, measured rather than assumed. So the number lives in
+`src/`, `publish-ota.mjs` increments it on every publish, Home announces it once when a new update
+first runs, and the console's Versions tab shows the range each runtime is on. `useReadyUpdate`
+applies a downloaded update when the app returns to the foreground, because
+`fallbackToCacheTimeout: 0` meant it otherwise waited for a cold start nobody knew to perform.
+
+**The operations console.** The Users page lists as well as searches — a search cannot answer "how
+many people are on this?" because you have to know a name to ask one. Admin-only, capped,
+keyset-paginated and audited per page. Sign-in with Apple sends the nonce it had always been missing.
+Migrations 0017 and 0018 applied; the console redeployed, which is a separate deployment and had been
+silently stale.
+
+**Decisions:** D99 (avoidance Journeys leave the MVP), D100 (how versions are told apart), D101
+(the coach's language follows the person), D102 (no question ceiling; precision belongs to the
+question), D103 (there is no list — a slate with no order).
+
+jest 2898 / 272 suites.
+
+---
+
 # 2026-08-31 — Coach-led onboarding received a complete UX and voice contract
 
 The permanent meta-agent specification and active Coach prompt now require personal but sparse name

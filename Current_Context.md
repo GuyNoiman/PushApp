@@ -1,7 +1,8 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-09-01** — start at the **"⛳ START HERE — 2026-09-01"** block, which supersedes
+Last updated: **2026-09-14** — start at the **"⛳ START HERE — 2026-09-14"** block below.
+Prior pointer: **2026-09-01** — the **"⛳ START HERE — 2026-09-01"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
 Prior pointer: **2026-08-24 (continued)** — the block below it, kept as accurate history.
@@ -35,6 +36,103 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 
 > **What is left lives in `04_Product/Backlog.md`**, the single list, from 2026-08-29. This file
 > stays the handoff: where to start today, and what happened last session.
+
+# ⛳ START HERE — 2026-09-14 (coach behaviour, update visibility, console)
+
+Everything below is **committed and pushed** on `feat/buddy-3d-and-reminders`, working tree clean,
+**jest 2898 / 272 suites, tsc clean**. Published as **over-the-air update 7**. Migrations **0017 and
+0018 are applied** to the project (18 of 18, nothing pending). The console is **redeployed** to
+`pushapp-invite--ops.expo.app`.
+
+## The one thing to understand before touching the coach
+
+The partner ran QA on the first conversation and sent fifteen findings. Ten of them were **one fact
+seen from ten angles**, and it is worth knowing before reading any of the code:
+
+> Every word the coach spoke used to be a string chosen from a catalogue (`coachMessage =
+> question.prompt`), and the next question was the next element of an array (`questionIndex++`).
+> Both model calls were extractors — `json: true, temperature: 0` — and one of them says in its own
+> prompt "do not coach, do not reply, do not ask anything". **Neither produced a sentence anybody
+> read**, and the coach's carefully written CHARACTER was attached only to the triage classifier,
+> whose output is a JSON object of goals. It was never printed anywhere, which is why every edit to
+> it changed nothing the partner could see.
+
+Two modules undid that, and they are the centre of the current design:
+
+- **`app/src/core/coach/composeTurn.ts`** — the coach WRITES each turn from the character plus what
+  is already known, instead of selecting it. Any failure returns the canned string, so the offline
+  path is unchanged.
+- **`app/src/core/coach/readConversation.ts`** — after every message the WHOLE transcript is read
+  against the WHOLE set of outstanding questions, and whatever was answered is struck off, asked or
+  not. `questionIndex` is gone.
+
+The engine still decides **what** must be known and **when** the interview is over. Only the voice
+and the striking-off moved to the model, and everything the model returns is validated against what
+the engine handed it.
+
+## What the founder decided this session (all in the Decision Log)
+
+- **D99** — avoidance Journeys are out of the MVP. *Critical-compliance and hybrid carry the
+  identical undefined question and are NOT decided; the types pillar is still blocked.*
+- **D100** — how anybody tells which version they are running. **Never bump `expo.version` to mark an
+  over-the-air update** — measured: 1.0.0 → 1.0.1 moves the iOS fingerprint from `8634cdf5…` to
+  `37cd640b…` and orphans every installed phone.
+- **D101** — the coach answers in the language the person wrote in, decided once from the opening
+  message and kept.
+- **D102** — no question ceiling. Relevance is the budget, and required precision belongs to the
+  QUESTION: weekly time / horizon / scheduling must be exact; motivation / obstacles may be read
+  from ordinary language.
+- **D103** — **there is no list.** The engine holds a SET with no order; the next turn is chosen by
+  what would land best now. Four questions of room to wander off-slate. Crossing the budget switches
+  to a cheaper MODEL and closed questions rather than shortening the understanding.
+
+## What is still missing, in the founder's own framing (he asked for it without section numbers)
+
+1. ~~The coach asks things you already told it~~ — **done in update 7.**
+2. **The coach asks you to pick from our internal list of Journey "families"**, after saying it
+   found one. The matcher already returns a recommendation; it should select silently and confirm
+   the meaning in a sentence. `journeyChoiceQuestion` in `CoachOrchestrator.ts`.
+3. **There is no moment where it says what it understood before building.** The closing turn is
+   composed from what was said, but it happens at the END. It has to move before the plan is built
+   and gain "accurate / not quite", and a correction must REBUILD rather than be acknowledged.
+4. **Cost per conversation is not measured.** `gemini-proxy` counts bytes and requests, cumulative
+   per user, for life. Needed: read the token counts the model already returns and we ignore, a
+   conversation id to group by, a price table per model, and an average-cost card in the console.
+   **Measured server-side, never in the app** — a client that reports its own cost can report zero.
+5. **There is no registration step in the first run.** Sign-in exists (Apple + Google) but sits in
+   Settings and is optional by design. The founder has decided it goes in; **where it sits in the
+   flow is still open** — before the conversation, after the Journey is built (my recommendation,
+   and what the Xoltar analysis singles out as something they do well), or mandatory with no
+   anonymous path. He is sending designs for the screen.
+
+## What the founder is doing next
+
+Many QA rounds on the conversation, **after the design change lands**. He is sending the new
+onboarding + registration designs. `04_Product/UX/Turquoise_Path_Visual_System.md` already defines
+`/sign-in`: wordmark, one promise, provider buttons, quiet legal copy, **no card wrapping the
+screen**. His designs outrank it if they disagree.
+
+## Traps this session fell into — do not repeat them
+
+- **Adding an npm script changed the runtime fingerprint** and would have cut both phones off from
+  every update. `packageJson:scripts` is a fingerprint source. The spec-sync tool is deliberately
+  NOT an npm script.
+- **`fallbackToCacheTimeout: 0`** means an update downloads in the background and runs on the next
+  COLD start — backgrounding and returning is not one. `useReadyUpdate` now reloads on foreground,
+  which is why "we keep shipping and nobody sees it" happened for a week.
+- **The console is a separate deployment.** Changing `app/console/**` does nothing until
+  `npx eas-cli@latest deploy --non-interactive --export-dir console --alias ops`.
+- **`create or replace` cannot change a function's return type**, and with a different argument list
+  it makes an overload rather than replacing. 0018 drops first for both reasons.
+- **`profiles.handle` is NOT NULL and the table exists in no migration** — it was made by hand in
+  the dashboard. Creating a profile row by hand needs a handle.
+
+## Open questions waiting on the founder
+
+- Where the registration step sits in the first run (above).
+- Critical-compliance and hybrid Journey types: define, or defer alongside avoidance. Deferring both
+  closes the last untouched MVP pillar today, on frequency and completion, which already work.
+- Whether to build the cost measurement before or after the two remaining conversation gaps.
 
 ## How to resume
 Read `AI_Start_Here.md` → this file → **the documents in "START HERE" immediately below** → the

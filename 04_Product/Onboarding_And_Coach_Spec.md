@@ -400,6 +400,54 @@ count.
 - Do not mix these back into diagnosis: the person should feel that the coach first understood
   *what* they need, and only then fitted it to *how their life actually works*.
 
+### 4.3a There is no list — **DECIDED 2026-09-14 (founder), NOT BUILT**
+
+> **This supersedes the phase model above, and it supersedes my own reading of it.** §4.1 describes
+> three phases; §4.3 used to describe a ceiling. Both are lists, one shorter than the other. The
+> founder's framing removes the list entirely:
+
+> **There is no "next in the list" and no order to the list. There is an open conversation in which
+> we learn the person in front of us and gather what we need, in whatever order feels most natural
+> in the conversation and richest for choosing the right plan.** — founder, 2026-09-14
+
+#### What replaces the list: a SLATE
+
+The engine holds a **set** of facts it needs before a plan can be chosen and built — not a sequence.
+Nothing in the set has a position. After every message the whole set is re-read against everything
+said so far, and a fact that has been answered is struck off whether or not it was ever asked.
+
+The next turn is chosen from what remains by ONE question: *which of these, asked now, would feel
+most natural in this conversation and most improve the plan?* Not *which is next*.
+
+This is why "17 years as a restaurant owner and I want to change career" has to strike off the
+starting point, the domain and a good deal of the background in one line. Under a list, it answered
+one question. Under a slate, it answers several and the conversation moves on.
+
+#### Four questions of room to wander
+
+The person is allowed to take the conversation somewhere the slate does not care about, and the
+coach follows them there — **up to four questions** — before it steers back. A coach that redirects
+every sentence to its own agenda is a form with better manners.
+
+#### The budget changes the MODEL, not the understanding
+
+There is one budget for the whole conversation. Crossing it does not shorten the understanding and
+does not end the conversation. It switches to a **cheaper model** and to **closed questions**, both
+of which cost less, and carries on. Nobody is told they ran out of anything.
+
+Until the budget is crossed, the conversation is open: the person types, and the answer cards are
+not shown at all (§4.3).
+
+#### What this means for the three phases in §4.1
+
+They stop being stages the conversation walks through and become a description of what the coach is
+*doing* at a given moment: understanding, handing back, fitting. A turn may do two of them at once,
+and the founder's own instruction for reflection — that it is part of an answer rather than a
+ceremony — is the same point.
+
+The one ORDER that survives is not a phase order: **the starting-point summary happens before a
+Journey is built** (§4.8), because a summary after the fact is a receipt.
+
 ### 4.4 The next-question contract — **DECIDED, NOT BUILT**
 
 Before the orchestrator renders or asks the next question, it must assemble the current known state

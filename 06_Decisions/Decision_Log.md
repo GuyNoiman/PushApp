@@ -2794,3 +2794,35 @@ questions to save money and cutting them to keep the conversation short are diff
 only the second is a product decision.
 
 **Stage:** MVP.
+
+### D103 — There is no list of questions. There is a slate, and a conversation
+
+**Decision (2026-09-14):** the first conversation is not a sequence of questions and has no order.
+In the founder's words:
+
+> There is no "next in the list" and no order to the list. There is an open conversation in which we
+> learn the person in front of us and gather what we need, in whatever order feels most natural in
+> the conversation and richest for choosing the right plan.
+
+**What the engine holds is a SET, not a sequence.** Nothing in it has a position. After every
+message the whole set is re-read against everything said so far, and a fact that has been answered is
+struck off whether or not it was ever asked. The next turn is chosen from what remains by one
+question — *which of these, asked now, would feel most natural and most improve the plan?* — never by
+*which is next*.
+
+**Four questions of room to wander.** The person may take the conversation somewhere the slate does
+not care about and the coach follows, up to four questions, before steering back. A coach that
+redirects every sentence to its own agenda is a form with better manners.
+
+**The budget changes the model, not the understanding.** One budget for the whole conversation.
+Crossing it switches to a cheaper model and to closed questions — both cheaper — and the conversation
+carries on. It never shortens what is understood, and nobody is told they ran out of anything.
+
+**This supersedes** the three-phase model (spec §4.1) and the question ceiling (D102) as *structures*.
+Both were lists, one shorter than the other. What survives from D102 is its content: never ask what
+is known, never ask what does not change the plan, and required precision belongs to the question.
+What survives from the phases is a description of what the coach is doing at a moment, not stages it
+walks through. The one order that remains is that the starting-point summary comes before a Journey
+is built, because a summary after the fact is a receipt.
+
+**Stage:** MVP.

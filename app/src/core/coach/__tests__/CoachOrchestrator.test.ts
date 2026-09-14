@@ -150,7 +150,11 @@ describe('CoachOrchestrator — single goal', () => {
     orchestrator.start();
 
     await orchestrator.triage('I want a promotion');
-    const interpreting = () => llm.calls.filter((c) => c.json === true);
+    // "Interpreting" means deciding what the person WANTS. The reading step added on 2026-09-14 is
+    // also JSON, but it decides nothing: everything it returns is checked against the questions the
+    // engine handed it, so it is filtered out by its own system prompt.
+    const interpreting = () =>
+      llm.calls.filter((c) => c.json === true && !String(c.system).includes('reading step'));
     expect(interpreting()).toHaveLength(1);
 
     await orchestrator.selectOption(0);
@@ -218,8 +222,11 @@ describe('CoachOrchestrator — multi-goal focus', () => {
     expect(afterPick.state.phase).toBe('questions');
     expect(afterPick.activeExpert?.displayName).toBe('Body Image');
     expect(afterPick.question?.id).toBe('body_image.foundation');
-    // Still only the one INTERPRETATION — the focus pick asked a model to decide nothing.
-    expect(llm.calls.filter((c) => c.json === true)).toHaveLength(1);
+    // Still only the one INTERPRETATION — the focus pick asked a model to decide nothing. The
+    // reading call that follows it decides nothing either; the engine validates everything it says.
+    expect(
+      llm.calls.filter((c) => c.json === true && !String(c.system).includes('reading step')),
+    ).toHaveLength(1);
   });
 
   it('picking the recurring goal defers the process one and uses the lighter flow', async () => {
@@ -344,7 +351,9 @@ describe('CoachOrchestrator — expert interview', () => {
     expect(Array.isArray(recorded)).toBe(true);
     expect(recorded).toEqual([first.question!.options[0], first.question!.options[2]]);
     // No INTERPRETATION for a closed pick: the value is recorded on-device exactly as tapped.
-    expect(llm.calls.filter((c) => c.json === true)).toHaveLength(1);
+    expect(
+      llm.calls.filter((c) => c.json === true && !String(c.system).includes('reading step')),
+    ).toHaveLength(1);
   });
 
   it('records a single-select question as a string VALUE', async () => {
@@ -372,7 +381,9 @@ describe('CoachOrchestrator — expert interview', () => {
     const next = await orchestrator.answerOther('a very personal reason of my own');
 
     // "Other" is stored raw — no interpretation call is required to record it.
-    expect(llm.calls.filter((c) => c.json === true)).toHaveLength(1);
+    expect(
+      llm.calls.filter((c) => c.json === true && !String(c.system).includes('reading step')),
+    ).toHaveLength(1);
     expect(next.state.spec.answers?.[first.question!.id]).toBe('a very personal reason of my own');
   });
 

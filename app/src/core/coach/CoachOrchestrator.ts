@@ -75,6 +75,7 @@ import { DOMAIN_IDS, getExpert, isDomainId, type DomainId } from '../learning/re
 import type { GoalInput } from '../learning/types';
 import type { LlmClient, LlmMessage } from '../llm/LlmClient';
 import { composeCoachTurn, looksLikeReflection, type KnownFact } from './composeTurn';
+import { readConversation } from './readConversation';
 import {
   DIAGNOSIS_SIGNAL_SYSTEM_PROMPT,
   buildDiagnosisDirective,
@@ -388,7 +389,8 @@ export class CoachOrchestrator {
   private journeyChoiceQuestion?: DomainQuestion;
   private journeyChoiceDefinitionIds: string[] = [];
   private questions: DomainQuestion[] = [];
-  private questionIndex = 0;
+  /** The question currently on the table. There is no index: the slate is a set (D103). */
+  private pending?: DomainQuestion;
   private readonly answers: InterviewAnswers = {};
   /** How many turns have handed something back, so the character's budget can be respected. */
   private reflections = 0;
@@ -551,7 +553,7 @@ export class CoachOrchestrator {
     const values = optionIndices.map((i) => question.options[i]);
     // Single-answer questions collapse to the first value; multi-select keeps every chosen value.
     const answer: string | string[] = question.multiSelect ? values : values[0];
-    return this.voiced(this.record(question, answer));
+    return this.voiced(await this.reread(this.record(question, answer)));
   }
 
   /**
@@ -568,7 +570,7 @@ export class CoachOrchestrator {
     // than the question in front of it, so it is read for EVERY signal it supports and the tree skips
     // all of them at once. Everywhere else a free-text answer is stored verbatim, exactly as before.
     if (this.phase === 'diagnosis') return this.voiced(await this.readSpokenDiagnosisAnswer(question, answer));
-    return this.voiced(this.record(question, answer));
+    return this.voiced(await this.reread(this.record(question, answer)));
   }
 
   /**
@@ -892,7 +894,7 @@ export class CoachOrchestrator {
     this.journeyChoiceQuestion = undefined;
     this.journeyChoiceDefinitionIds = [];
     this.questions = [];
-    this.questionIndex = 0;
+    this.pending = undefined;
     for (const key of Object.keys(this.answers)) delete this.answers[key];
     this.spec.title = '';
     this.spec.domain = 'general';
@@ -944,11 +946,11 @@ export class CoachOrchestrator {
           ? 'no variant question needed — the profile already places them, or the versions no longer differ'
           : undefined,
     });
-    this.questionIndex = 0;
+    this.pending = undefined;
     this.phase = 'questions';
 
     return this.questions.length > 0
-      ? this.askCurrentQuestion(prefix)
+      ? this.askNextOutstanding(prefix)
       : this.askSchedulingQuestion(prefix);
   }
 
@@ -1030,7 +1032,7 @@ export class CoachOrchestrator {
       case 'journeyChoice':
         return this.journeyChoiceQuestion;
       case 'questions':
-        return this.questions[this.questionIndex];
+        return this.pending;
       case 'scheduling':
         return SCHEDULING_QUESTION;
       default:
@@ -1075,11 +1077,10 @@ export class CoachOrchestrator {
         return this.beginExpertQuestions();
       }
       case 'questions':
+        // Recorded here; WHAT TO ASK NEXT is decided by `advanceQuestions`, after the conversation
+        // has been read. The pointer that used to live on this line is gone (D103).
         this.answers[question.id] = answer;
-        this.questionIndex++;
-        return this.questionIndex < this.questions.length
-          ? this.askCurrentQuestion()
-          : this.askSchedulingQuestion();
+        return this.askNextOutstanding();
       case 'scheduling': {
         const preference = schedulingPreferenceFromAnswer(answer);
         if (preference) this.spec.schedulingPreference = preference;
@@ -1167,8 +1168,88 @@ export class CoachOrchestrator {
    * speaks to the user directly. The meta-agent authors the words the user reads, in the user's
    * language and its own voice, via {@link metaVoiced}. No LLM phrasing (deterministic templates).
    */
-  private askCurrentQuestion(prefix?: string): CoachTurn {
-    const question = this.metaVoiced(this.questions[this.questionIndex]);
+  /**
+   * THE SLATE — every authored question this interview still needs an answer to.
+   *
+   * A SET with no positions, which is the whole change (D103). `questionIndex` is gone: a question
+   * leaves this list by being ANSWERED, whether it was ever asked or not, and the next turn is
+   * chosen from what is left rather than from where a pointer happened to be.
+   */
+  private outstanding(): DomainQuestion[] {
+    return this.questions.filter((q) => this.answers[q.id] === undefined);
+  }
+
+  /**
+   * The conversation so far, as the reader sees it — "who said what", oldest first.
+   *
+   * The whole transcript rather than the last message, deliberately: a fact mentioned six turns ago
+   * is still a fact, and being unable to see it is exactly what the pointer could not do.
+   */
+  private transcript(): string {
+    return this.history
+      .map((m) => `${m.role === 'user' ? 'PERSON' : 'COACH'}: ${m.content}`)
+      .join('\n');
+  }
+
+  /**
+   * Ask whatever is still outstanding, or move on when nothing is.
+   *
+   * `outstanding()[0]` is the authored order as a TIEBREAK, not a sequence: the expert's opinion
+   * about which gap matters most is a better default than whichever happens to be first in memory.
+   * {@link reread} overrides it whenever the conversation suggests a better next.
+   */
+  private askNextOutstanding(prefix?: string): CoachTurn {
+    const left = this.outstanding();
+    if (left.length === 0) return this.askSchedulingQuestion(prefix);
+    this.pending = left[0];
+    return this.askQuestion(this.pending, prefix);
+  }
+
+  /**
+   * Read the whole conversation against everything still outstanding, strike off whatever it has
+   * already answered, and re-choose what to ask — all AFTER the turn has been built.
+   *
+   * It runs here, at the async boundary, rather than inside `record`: the builders below are
+   * synchronous and every one of them would have had to change, which is a wide refactor to buy the
+   * same behaviour. This is the one seam where a model call already belongs.
+   *
+   * A reading that strikes nothing off and suggests nothing leaves the turn exactly as it arrived.
+   */
+  private async reread(turn: CoachTurn): Promise<CoachTurn> {
+    if (this.phase !== 'questions') return turn;
+    const before = this.outstanding();
+    if (before.length === 0) return turn;
+
+    const reading = await readConversation(this.llm, this.transcript(), before);
+    const struck = Object.entries(reading.resolved);
+    for (const [id, value] of struck) this.answers[id] = value;
+    if (struck.length > 0) {
+      this.note('Answered without being asked', {
+        questions: struck.map(([id]) => id).join(', '),
+        'read from': 'everything said so far, not only the last message',
+      });
+    }
+
+    const left = this.outstanding();
+    // Nothing left to ask: the reading finished the interview on its own, which is the best possible
+    // outcome and the one a pointer could never produce.
+    if (left.length === 0) {
+      this.history.pop(); // the question we were about to ask is not being asked
+      return this.askSchedulingQuestion();
+    }
+
+    const chosen = left.find((q) => q.id === reading.nextId) ?? left[0];
+    if (this.pending && chosen.id === this.pending.id) return turn;
+
+    // A different question is now the right one. Take the old one back out of the history so the
+    // coach is never recorded as having asked something the person did not see.
+    this.history.pop();
+    this.pending = chosen;
+    return this.askQuestion(chosen);
+  }
+
+  private askQuestion(raw: DomainQuestion, prefix?: string): CoachTurn {
+    const question = this.metaVoiced(raw);
     const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${question.prompt}` : question.prompt);
     this.history.push({ role: 'model', content: coachMessage });
     return {
@@ -1325,7 +1406,7 @@ export class CoachOrchestrator {
   /** The question ids still to come after the current one (legacy dev-harness display). */
   private remainingQuestionIds(): string[] {
     if (this.phase !== 'questions') return [];
-    return this.questions.slice(this.questionIndex + 1).map((q) => q.id);
+    return this.outstanding().map((q) => q.id);
   }
 
   /** A defensive read-only snapshot of the current state. */
@@ -1336,7 +1417,9 @@ export class CoachOrchestrator {
       spec: this.snapshotSpec(),
       activeExpert: this.activeExpert ? { ...this.activeExpert } : undefined,
       question: question ? cloneQuestion(question) : undefined,
-      questionIndex: this.questionIndex,
+      // How many of the slate are answered. Kept on the snapshot under its old name because the
+      // dev harness reads it; it is a COUNT now, never a position.
+      questionIndex: this.questions.filter((q) => this.answers[q.id] !== undefined).length,
       totalQuestions: this.questions.length,
       pendingTarget: question?.id,
       remainingTargets: this.remainingQuestionIds(),

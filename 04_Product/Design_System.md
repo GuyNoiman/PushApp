@@ -2,6 +2,11 @@
 
 Status: Draft · Phase 5 · 2026-07-06 · **§0 added 2026-08-19 (the redesign in progress) — read it first**
 
+> **2026-09-14 implementation pointer:** the founder-approved turquoise-led visual direction,
+> connected-path background, exact Light/Dark targets and route-by-route migration contract now live
+> in `UX/Turquoise_Path_Visual_System.md`. That document supersedes visual styling guidance here
+> where the two disagree. Product behavior and the reasoning retained below remain in force.
+
 > Direction: **A (playful game-world) primary, B (calm wellness) secondary** — *"a cozy,
 > encouraging world that stays clean and calm."* Concrete tokens (exact hex, fonts) are
 > drafts to be finalized. Grounds on `Product_Philosophy.md` and `AI_Product_Principles.md`.

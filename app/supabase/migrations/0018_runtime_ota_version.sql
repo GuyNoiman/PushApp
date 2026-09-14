@@ -24,6 +24,11 @@ alter table public.runtime_installs
 comment on column public.runtime_installs.ota_version is
   'The app''s own update number (core/update/otaVersion.ts), incremented on every publish. Null on installations that predate it.';
 
+-- The 8-argument version from 0016 is DROPPED rather than left beside this one. `create or replace`
+-- with a different argument list makes an OVERLOAD, and two functions of the same name that differ
+-- only by a trailing default is exactly the ambiguity a caller stumbles into at runtime.
+drop function if exists public.note_installed_runtime(uuid, text, text, text, text, text, text, timestamptz);
+
 create or replace function public.note_installed_runtime(
   p_install_id uuid,
   p_platform text,
@@ -72,6 +77,11 @@ end;
 $$;
 
 grant execute on function public.note_installed_runtime(uuid, text, text, text, text, text, text, timestamptz, int) to authenticated;
+
+-- DROPPED FIRST, because the return table changes. Postgres refuses `create or replace` on a
+-- function whose return type moves at all, and a migration that fails halfway is worse than one
+-- that says what it is doing.
+drop function if exists public.installed_runtimes();
 
 -- The grouped read gains the range of update numbers running on each runtime.
 -- A RANGE rather than one value on purpose: two phones on the same build can sit

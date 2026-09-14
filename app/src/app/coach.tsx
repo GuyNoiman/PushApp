@@ -293,7 +293,10 @@ function LiveCoachScreen() {
     const typed = draft.trim();
     if (typed.length === 0) return;
     setDraft('');
-    coach.sendOpening(typed);
+    // The same bar carries the opening and every later answer given in the person's own words.
+    // Which one this is depends only on whether a question is already on the table.
+    if (coach.question) coach.answerOther(typed);
+    else coach.sendOpening(typed);
     scrollToEnd();
   }, [draft, coach, scrollToEnd]);
 
@@ -318,6 +321,29 @@ function LiveCoachScreen() {
     setSelectedIds([]);
     scrollToEnd();
   }, [coach, selectedIds, scrollToEnd]);
+
+  /**
+   * ARE THE ANSWER CARDS SHOWN FOR THE CURRENT QUESTION?
+   *
+   * ── THE DECISION THIS IMPLEMENTS (founder, 2026-09-08 · D102) ───────────────────────────────
+   *
+   * The conversation is open by default and only NARROWS to closed choices once the conversation's
+   * cost budget is crossed. The build had that exactly backwards: cards were shown for every
+   * question and the budget withdrew the free-text escape — so the further a person got, the more
+   * it behaved like the form it is supposed to replace, which is what the partner's QA found.
+   *
+   * Two cases keep their cards whatever the budget says, and neither is a question:
+   *   · `allowOther: false` — which goal to build first, which Journey, which variant. These are
+   *     PICKS from a real, closed set, and free text cannot answer them.
+   *   · past the `open` zone — free text costs a model call, cards cost nothing, and the honest
+   *     move at the ceiling is a cheaper conversation rather than a shorter one.
+   */
+  const offerCards = Boolean(
+    coach.question && (!coach.question.allowOther || !coach.canAskOpenQuestion),
+  );
+
+  /** A pending question the person is meant to answer in their own words. */
+  const awaitingFreeText = Boolean(coach.question) && !offerCards;
 
   const handleSubmitOther = useCallback(
     (text: string) => {
@@ -481,7 +507,7 @@ function LiveCoachScreen() {
               />
             )}
 
-            {coach.question && (
+            {coach.question && offerCards && (
               <CoachOptions
                 prompt={coach.question.label}
                 options={coach.question.options}
@@ -533,7 +559,7 @@ function LiveCoachScreen() {
           </ScrollView>
 
           {/* Bottom region: the opening free-text bar, the Build CTA, or the sensitive-domain hand-off. */}
-          {coach.awaitingOpening && (
+          {(coach.awaitingOpening || awaitingFreeText) && (
             <CoachInputBar
               value={draft}
               placeholder={t('inputPlaceholder')}

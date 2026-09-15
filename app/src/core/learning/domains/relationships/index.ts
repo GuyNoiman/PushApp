@@ -20,6 +20,15 @@ import type {
   StepTemplate,
 } from '../../DomainExpert';
 import type { GoalInput, PlanConstraints } from '../../types';
+import i18n from '../../../../i18n';
+import { addressContext } from '../../../../i18n/addressForm';
+
+/** Resolve `coachContent` copy in the active language + form of address. */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+/** The same for an OPTIONS array, as a fresh (mutation-safe) copy. */
+const ccOptions = (key: string): string[] => [
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true, context: addressContext() }) as unknown as string[]),
+];
 import {
   answerFor,
   assessFrom,
@@ -63,94 +72,80 @@ const STEP_TITLES: Record<string, readonly string[]> = {
   ],
 };
 
-const DEFAULT_TITLES: readonly string[] = [
-  'Take one small step toward connection today',
-  'Reflect on a relationship that matters to you',
-];
+const defaultTitles = (): string[] => ccOptions('relationships.defaultTitles');
 
 /**
- * The relationships interview — gentle, non-clinical, general → specific. EDITABLE config.
- * `baseline` options are ORDERED (quite isolated → solid circle wanting depth); `milestones`
- * option [1] is the "one small reach-out at a time" (no-stages) choice.
+ * The relationships interview — gentle, non-clinical, general → specific.
+ *
+ * EVERY STRING IS A LOOKUP, NOT A LITERAL (2026-09-15), the same as {@link CareerExpert}: a Hebrew
+ * conversation used to reach a Hebrew question and then English answer cards, because the prompts
+ * are voiced by the meta-agent from `interview.*` while the OPTIONS come from here. Being asked
+ * about loneliness and handed cards in a foreign language is its own small rejection.
+ *
+ * `get` rather than a computed constant: the copy is read when the question is ASKED, so a person
+ * who changes language mid-interview sees the rest of it in the new one.
+ *
+ * `baseline` options stay ORDERED (quite isolated → solid circle wanting depth) and `milestones`
+ * option [1] is still the "one small reach-out at a time" choice; that ordering carries meaning
+ * that `keepSimple()` and the feasibility read below both depend on.
  */
 const QUESTIONS: readonly DomainQuestion[] = [
   {
     id: 'relationships.foundation',
     intent: 'foundation',
-    prompt: 'What matters most to you here?',
-    options: [
-      'Feeling less alone',
-      'Finding a partner',
-      'Deepening the relationships I have',
-      'Building new friendships',
-    ],
+    get prompt() { return cc('relationships.foundation.prompt'); },
+    get options() { return ccOptions('relationships.foundation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'relationships.baseline',
     intent: 'baseline',
-    prompt: 'How connected do you feel right now?',
-    options: [
-      'I feel quite isolated right now',
-      'I have some connections but want more',
-      'I have a solid circle and want to deepen it',
-    ],
+    get prompt() { return cc('relationships.baseline.prompt'); },
+    get options() { return ccOptions('relationships.baseline.options'); },
     allowOther: true,
   },
   {
     id: 'relationships.time',
     intent: 'time',
-    prompt: 'How much time can you give to nurturing connection each week?',
-    options: ['A few minutes a day', 'About 1–2 hours', '3–5 hours', 'More than 5 hours'],
+    get prompt() { return cc('relationships.time.prompt'); },
+    get options() { return ccOptions('relationships.time.options'); },
     allowOther: true,
   },
   {
     id: 'relationships.obstacles',
     intent: 'obstacles',
-    prompt: 'What gets in the way of connecting?',
-    options: [
-      'Fear of rejection',
-      'Not knowing where to meet people',
-      'Feeling too busy or tired',
-      'A habit of withdrawing',
-    ],
+    get prompt() { return cc('relationships.obstacles.prompt'); },
+    get options() { return ccOptions('relationships.obstacles.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'relationships.motivation',
     intent: 'motivation',
-    prompt: 'What keeps you reaching out?',
-    options: [
-      'Wanting to feel understood',
-      'How good real connection feels',
-      'Not wanting to stay isolated',
-      'Someone specific I care about',
-    ],
+    get prompt() { return cc('relationships.motivation.prompt'); },
+    get options() { return ccOptions('relationships.motivation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'relationships.milestones',
     intent: 'milestones',
-    prompt: 'How would you like to approach it?',
-    options: ['Build up in clear stages', 'Keep it simple — one small reach-out at a time'],
+    get prompt() { return cc('relationships.milestones.prompt'); },
+    get options() { return ccOptions('relationships.milestones.options'); },
     allowOther: true,
   },
 ] as const;
 
 const BASELINE_ID = 'relationships.baseline';
 const MILESTONES_ID = 'relationships.milestones';
-const KEEP_SIMPLE = QUESTIONS[5].options[1];
+/** The "one small reach-out at a time" choice, read live so it matches whatever language asked. */
+const keepSimple = (): string => ccOptions('relationships.milestones.options')[1];
 /** Connection is built in small, frequent reach-outs — a modest weekly threshold is "enough". */
 const COMFORTABLE_MINUTES = 60;
 
-const FEASIBILITY_NOTES: Record<FeasibilityVerdict, string> = {
-  reasonable: 'This is a realistic reach — small, regular reach-outs build real connection over time.',
-  ambitious: 'This is a genuine stretch — start with one small, low-pressure reach-out and let it grow.',
-  tooAmbitious: 'This is a big leap at once — a gentler first step gives you a win to build on.',
-};
+const feasibilityNote = (verdict: FeasibilityVerdict): string =>
+  cc(`relationships.feasibility.${verdict}`);
 
 export const RelationshipsExpert: DomainExpert = {
   displayName: 'Relationships & Loneliness',
@@ -160,7 +155,7 @@ export const RelationshipsExpert: DomainExpert = {
   },
 
   stepTemplatesFor(milestone: ProposedMilestone, goal: GoalInput): StepTemplate[] {
-    const titles = STEP_TITLES[milestone.title] ?? DEFAULT_TITLES;
+    const titles = STEP_TITLES[milestone.title] ?? defaultTitles();
     const minutes = minutesFor(goal.cadence, goal.isHabit, 10, 20);
     return stepsFrom(titles, minutes, difficultyFor(milestone.weight));
   },
@@ -192,11 +187,17 @@ export const RelationshipsExpert: DomainExpert = {
 
   assessFeasibility(answers, constraints) {
     const level = levelFromOrderedOptions(answerFor(answers, BASELINE_ID), QUESTIONS[1].options);
-    return assessFrom(level, constraints, COMFORTABLE_MINUTES, FEASIBILITY_NOTES);
+    // Built when the verdict is READ, so the note is in the language the person is being spoken to
+    // in rather than whatever was loaded when this module first evaluated.
+    return assessFrom(level, constraints, COMFORTABLE_MINUTES, {
+      reasonable: feasibilityNote('reasonable'),
+      ambitious: feasibilityNote('ambitious'),
+      tooAmbitious: feasibilityNote('tooAmbitious'),
+    });
   },
 
   usesMilestones(answers) {
-    return usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE);
+    return usesMilestonesFrom(answers, MILESTONES_ID, keepSimple());
   },
 
   buildStructure(goal, answers) {
@@ -205,12 +206,12 @@ export const RelationshipsExpert: DomainExpert = {
       answers,
       milestones: MILESTONES,
       stepTitles: STEP_TITLES,
-      defaultTitles: DEFAULT_TITLES,
+      defaultTitles: defaultTitles(),
       baselineId: BASELINE_ID,
       baselineOptions: QUESTIONS[1].options,
       dailyMinutes: 10,
       weeklyMinutes: 20,
-      staged: usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE),
+      staged: usesMilestonesFrom(answers, MILESTONES_ID, keepSimple()),
     });
   },
 };

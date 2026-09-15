@@ -21,6 +21,15 @@ import type {
   StepTemplate,
 } from '../../DomainExpert';
 import type { GoalInput, PlanConstraints } from '../../types';
+import i18n from '../../../../i18n';
+import { addressContext } from '../../../../i18n/addressForm';
+
+/** Resolve `coachContent` copy in the active language + form of address. */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+/** The same for an OPTIONS array, as a fresh (mutation-safe) copy. */
+const ccOptions = (key: string): string[] => [
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true, context: addressContext() }) as unknown as string[]),
+];
 import {
   answerFor,
   assessFrom,
@@ -64,96 +73,80 @@ const STEP_TITLES: Record<string, readonly string[]> = {
   ],
 };
 
-const DEFAULT_TITLES: readonly string[] = [
-  'Make one small, kind choice for your body today',
-  'Reflect on how you feel in your body today',
-];
+const defaultTitles = (): string[] => ccOptions('bodyImage.defaultTitles');
 
 /**
  * The body-image interview — general-wellness, non-prescriptive, general → specific. Modelled on
  * the founder's flow (do you do this today · why it matters · what you want · what YOU would count
- * as success). EDITABLE config, with NO calorie/macro/rep targets. `baseline` options are ORDERED
- * (inactive & on-the-go → active & balanced); `milestones` option [1] is the "one habit at a
- * time" (no-stages) choice.
+ * as success). NO calorie/macro/rep targets.
+ *
+ * EVERY STRING IS A LOOKUP, NOT A LITERAL (2026-09-15), the same as {@link CareerExpert}: a Hebrew
+ * conversation used to reach a Hebrew question and then English answer cards, because the prompts
+ * are voiced by the meta-agent from `interview.*` while the OPTIONS come from here.
+ *
+ * `get` rather than a computed constant: the copy is read when the question is ASKED, so a person
+ * who changes language mid-interview sees the rest of it in the new one.
+ *
+ * `baseline` options stay ORDERED (inactive & on-the-go → active & balanced) and `milestones`
+ * option [1] is still the "one habit at a time" choice; that ordering carries meaning that
+ * `keepSimple()` and the feasibility read below both depend on.
  */
 const QUESTIONS: readonly DomainQuestion[] = [
   {
     id: 'body_image.foundation',
     intent: 'foundation',
-    prompt: 'Why does this matter to you right now?',
-    options: [
-      'More energy and health',
-      'Feeling better in my body',
-      'Building strength or fitness',
-      'A steadier relationship with food',
-    ],
+    get prompt() { return cc('bodyImage.foundation.prompt'); },
+    get options() { return ccOptions('bodyImage.foundation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'body_image.baseline',
     intent: 'baseline',
-    prompt: 'How active and balanced are things right now?',
-    options: [
-      'Mostly inactive, eating on the go',
-      'Some movement and balance, but not consistent',
-      'Fairly active and balanced already',
-    ],
+    get prompt() { return cc('bodyImage.baseline.prompt'); },
+    get options() { return ccOptions('bodyImage.baseline.options'); },
     allowOther: true,
   },
   {
     id: 'body_image.time',
     intent: 'time',
-    prompt: 'How much time can you give to this each week?',
-    options: ['Under 1 hour', '1–3 hours', '3–5 hours', 'More than 5 hours'],
+    get prompt() { return cc('bodyImage.time.prompt'); },
+    get options() { return ccOptions('bodyImage.time.options'); },
     allowOther: true,
   },
   {
     id: 'body_image.obstacles',
     intent: 'obstacles',
-    prompt: 'What usually throws this off?',
-    options: [
-      'No time or too busy',
-      'Low energy or motivation',
-      'Stress or emotional eating',
-      'All-or-nothing thinking',
-    ],
+    get prompt() { return cc('bodyImage.obstacles.prompt'); },
+    get options() { return ccOptions('bodyImage.obstacles.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'body_image.motivation',
     intent: 'motivation',
-    prompt: 'What would you count as success?',
-    options: [
-      'Feeling stronger and more energetic',
-      'Feeling at home in my body',
-      'Keeping the habit going',
-      'Enjoying movement and food again',
-    ],
+    get prompt() { return cc('bodyImage.motivation.prompt'); },
+    get options() { return ccOptions('bodyImage.motivation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'body_image.milestones',
     intent: 'milestones',
-    prompt: 'How would you like to approach it?',
-    options: ['Build up in clear stages', 'Keep it simple — one habit at a time'],
+    get prompt() { return cc('bodyImage.milestones.prompt'); },
+    get options() { return ccOptions('bodyImage.milestones.options'); },
     allowOther: true,
   },
 ] as const;
 
 const BASELINE_ID = 'body_image.baseline';
 const MILESTONES_ID = 'body_image.milestones';
-const KEEP_SIMPLE = QUESTIONS[5].options[1];
+/** The "one habit at a time" choice, read live so it matches whatever language asked. */
+const keepSimple = (): string => ccOptions('bodyImage.milestones.options')[1];
 /** Movement + eating together need a fuller weekly block than the gentler domains. */
 const COMFORTABLE_MINUTES = 120;
 
-const FEASIBILITY_NOTES: Record<FeasibilityVerdict, string> = {
-  reasonable: 'This is a realistic fit — small, repeatable habits will carry it.',
-  ambitious: 'This is a real stretch — build one habit at a time so it sticks rather than snaps back.',
-  tooAmbitious: 'This is a lot to change at once; a smaller first habit is far likelier to last.',
-};
+const feasibilityNote = (verdict: FeasibilityVerdict): string => cc(`bodyImage.feasibility.${verdict}`);
 
 export const BodyImageExpert: DomainExpert = {
   displayName: 'Body Image',
@@ -163,7 +156,7 @@ export const BodyImageExpert: DomainExpert = {
   },
 
   stepTemplatesFor(milestone: ProposedMilestone, goal: GoalInput): StepTemplate[] {
-    const titles = STEP_TITLES[milestone.title] ?? DEFAULT_TITLES;
+    const titles = STEP_TITLES[milestone.title] ?? defaultTitles();
     const minutes = minutesFor(goal.cadence, goal.isHabit, 15, 30);
     return stepsFrom(titles, minutes, difficultyFor(milestone.weight));
   },
@@ -199,11 +192,17 @@ export const BodyImageExpert: DomainExpert = {
 
   assessFeasibility(answers, constraints) {
     const level = levelFromOrderedOptions(answerFor(answers, BASELINE_ID), QUESTIONS[1].options);
-    return assessFrom(level, constraints, COMFORTABLE_MINUTES, FEASIBILITY_NOTES);
+    // Built when the verdict is READ, so the note is in the language the person is being spoken to
+    // in rather than whatever was loaded when this module first evaluated.
+    return assessFrom(level, constraints, COMFORTABLE_MINUTES, {
+      reasonable: feasibilityNote('reasonable'),
+      ambitious: feasibilityNote('ambitious'),
+      tooAmbitious: feasibilityNote('tooAmbitious'),
+    });
   },
 
   usesMilestones(answers) {
-    return usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE);
+    return usesMilestonesFrom(answers, MILESTONES_ID, keepSimple());
   },
 
   buildStructure(goal, answers) {
@@ -212,12 +211,12 @@ export const BodyImageExpert: DomainExpert = {
       answers,
       milestones: MILESTONES,
       stepTitles: STEP_TITLES,
-      defaultTitles: DEFAULT_TITLES,
+      defaultTitles: defaultTitles(),
       baselineId: BASELINE_ID,
       baselineOptions: QUESTIONS[1].options,
       dailyMinutes: 15,
       weeklyMinutes: 30,
-      staged: usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE),
+      staged: usesMilestonesFrom(answers, MILESTONES_ID, keepSimple()),
     });
   },
 };

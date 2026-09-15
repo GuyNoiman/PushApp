@@ -20,6 +20,15 @@ import type {
   StepTemplate,
 } from '../../DomainExpert';
 import type { GoalInput, PlanConstraints } from '../../types';
+import i18n from '../../../../i18n';
+import { addressContext } from '../../../../i18n/addressForm';
+
+/** Resolve `coachContent` copy in the active language + form of address. */
+const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+/** The same for an OPTIONS array, as a fresh (mutation-safe) copy. */
+const ccOptions = (key: string): string[] => [
+  ...(i18n.t(key, { ns: 'coachContent', returnObjects: true, context: addressContext() }) as unknown as string[]),
+];
 import {
   answerFor,
   assessFrom,
@@ -70,90 +79,79 @@ const STEP_TITLES: Record<string, readonly string[]> = {
   ],
 };
 
-const DEFAULT_TITLES: readonly string[] = [
-  'Take one small step toward staying free today',
-  'Reflect on what is helping most right now',
-];
+const defaultTitles = (): string[] => ccOptions('addiction.defaultTitles');
 
 /**
- * The addiction interview — supportive, non-clinical, general → specific. EDITABLE config.
- * `baseline` options are ORDERED (deep in it now → protecting a long stretch); `milestones`
- * option [1] is the "one day at a time" (no-stages) choice.
+ * The addiction interview — supportive, non-clinical, general → specific.
+ *
+ * EVERY STRING IS A LOOKUP, NOT A LITERAL (2026-09-15), the same as {@link CareerExpert}: a Hebrew
+ * conversation used to reach a Hebrew question and then English answer cards, because the prompts
+ * are voiced by the meta-agent from `interview.*` while the OPTIONS come from here. In a domain
+ * this tender, being answered in the wrong language is not a cosmetic bug.
+ *
+ * `get` rather than a computed constant: the copy is read when the question is ASKED, so a person
+ * who changes language mid-interview sees the rest of it in the new one.
+ *
+ * `baseline` options stay ORDERED (deep in it now → protecting a long stretch) and `milestones`
+ * option [1] is still the "one day at a time" choice; that ordering carries meaning that
+ * `keepSimple()` and the feasibility read below both depend on.
  */
 const QUESTIONS: readonly DomainQuestion[] = [
   {
     id: 'addiction.foundation',
     intent: 'foundation',
-    prompt: "What's driving you to change this now?",
-    options: [
-      'My health',
-      'My relationships',
-      'My work or finances',
-      'I want to feel in control again',
-    ],
+    get prompt() { return cc('addiction.foundation.prompt'); },
+    get options() { return ccOptions('addiction.foundation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'addiction.baseline',
     intent: 'baseline',
-    prompt: 'Where are you with it right now?',
-    options: [
-      "I'm deep in the pattern right now",
-      "I've had some short breaks from it",
-      "I've been free for a while and want to protect it",
-    ],
+    get prompt() { return cc('addiction.baseline.prompt'); },
+    get options() { return ccOptions('addiction.baseline.options'); },
     allowOther: true,
   },
   {
     id: 'addiction.time',
     intent: 'time',
-    prompt: 'How much time can you give to support routines each week?',
-    options: ['A few minutes a day', 'About 1–2 hours', '3–5 hours', 'As much as it takes'],
+    get prompt() { return cc('addiction.time.prompt'); },
+    get options() { return ccOptions('addiction.time.options'); },
     allowOther: true,
   },
   {
     id: 'addiction.obstacles',
     intent: 'obstacles',
-    prompt: 'When is the urge hardest to resist?',
-    options: ['Evenings or at night', 'Around certain people', 'When stressed or upset', "When I'm bored or alone"],
+    get prompt() { return cc('addiction.obstacles.prompt'); },
+    get options() { return ccOptions('addiction.obstacles.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'addiction.motivation',
     intent: 'motivation',
-    prompt: 'What helps you most on a hard day?',
-    options: [
-      'Reaching out to someone',
-      'A distraction or activity',
-      'Remembering my reasons',
-      'Tracking my streak',
-    ],
+    get prompt() { return cc('addiction.motivation.prompt'); },
+    get options() { return ccOptions('addiction.motivation.options'); },
     allowOther: true,
     multiSelect: true,
   },
   {
     id: 'addiction.milestones',
     intent: 'milestones',
-    prompt: 'How would you like to structure this?',
-    options: ['Take it in clear stages', 'Keep it simple — one day at a time'],
+    get prompt() { return cc('addiction.milestones.prompt'); },
+    get options() { return ccOptions('addiction.milestones.options'); },
     allowOther: true,
   },
 ] as const;
 
 const BASELINE_ID = 'addiction.baseline';
 const MILESTONES_ID = 'addiction.milestones';
-const KEEP_SIMPLE = QUESTIONS[5].options[1];
+/** The "one day at a time" choice, read live so it matches whatever language asked. */
+const keepSimple = (): string => ccOptions('addiction.milestones.options')[1];
 /** This domain leans on small support routines — a modest weekly threshold is "enough". */
 const COMFORTABLE_MINUTES = 60;
 
-const FEASIBILITY_NOTES: Record<FeasibilityVerdict, string> = {
-  reasonable: 'This is a realistic footing — small, steady support routines can hold this.',
-  ambitious: 'This is a real challenge, and worth it — lean on your support and go one step at a time.',
-  tooAmbitious:
-    'This is a lot to carry — please consider reaching out for extra support alongside these steps.',
-};
+const feasibilityNote = (verdict: FeasibilityVerdict): string => cc(`addiction.feasibility.${verdict}`);
 
 export const AddictionExpert: DomainExpert = {
   displayName: 'Addiction',
@@ -163,7 +161,7 @@ export const AddictionExpert: DomainExpert = {
   },
 
   stepTemplatesFor(milestone: ProposedMilestone, goal: GoalInput): StepTemplate[] {
-    const titles = STEP_TITLES[milestone.title] ?? DEFAULT_TITLES;
+    const titles = STEP_TITLES[milestone.title] ?? defaultTitles();
     const minutes = minutesFor(goal.cadence, goal.isHabit, 10, 20);
     return stepsFrom(titles, minutes, difficultyFor(milestone.weight));
   },
@@ -195,11 +193,17 @@ export const AddictionExpert: DomainExpert = {
 
   assessFeasibility(answers, constraints) {
     const level = levelFromOrderedOptions(answerFor(answers, BASELINE_ID), QUESTIONS[1].options);
-    return assessFrom(level, constraints, COMFORTABLE_MINUTES, FEASIBILITY_NOTES);
+    // Built when the verdict is READ, so the note is in the language the person is being spoken to
+    // in rather than whatever was loaded when this module first evaluated.
+    return assessFrom(level, constraints, COMFORTABLE_MINUTES, {
+      reasonable: feasibilityNote('reasonable'),
+      ambitious: feasibilityNote('ambitious'),
+      tooAmbitious: feasibilityNote('tooAmbitious'),
+    });
   },
 
   usesMilestones(answers) {
-    return usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE);
+    return usesMilestonesFrom(answers, MILESTONES_ID, keepSimple());
   },
 
   buildStructure(goal, answers) {
@@ -208,12 +212,12 @@ export const AddictionExpert: DomainExpert = {
       answers,
       milestones: MILESTONES,
       stepTitles: STEP_TITLES,
-      defaultTitles: DEFAULT_TITLES,
+      defaultTitles: defaultTitles(),
       baselineId: BASELINE_ID,
       baselineOptions: QUESTIONS[1].options,
       dailyMinutes: 10,
       weeklyMinutes: 20,
-      staged: usesMilestonesFrom(answers, MILESTONES_ID, KEEP_SIMPLE),
+      staged: usesMilestonesFrom(answers, MILESTONES_ID, keepSimple()),
     });
   },
 };

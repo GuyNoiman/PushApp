@@ -233,3 +233,52 @@ describe('signals read from the opening message', () => {
     expect(turn.question?.id).toContain('target');
   });
 });
+
+/**
+ * WE DO NOT HAND THE PERSON OUR FILING SYSTEM (founder, 2026-09-14).
+ *
+ *   > The coach asks you to pick from our internal list of Journey "families", after saying it
+ *   > found one. The matcher already returns a recommendation; it should select silently and
+ *   > confirm the meaning in a sentence.
+ *
+ * The matcher only returns a recommendation when the choice came from something the person said or
+ * from their profile — so a menu afterwards asks them to re-decide, in our vocabulary, what they
+ * have already told us in theirs. The real disagreement has a place: the full Journey is reviewed
+ * and approved before anything starts.
+ *
+ * Today the authored content narrows to one candidate before this code is reached, so the branch is
+ * covered rather than reproduced — which is the point of covering it now. The moment a family ships
+ * a second eligible Journey, the menu would come back.
+ */
+describe('a recommended Journey is chosen, not offered', () => {
+  it('names the Journey it chose instead of asking which one', async () => {
+    const orchestrator = new CoachOrchestrator({ llm: careerMock() });
+    orchestrator.start();
+    await orchestrator.triage('I apply and nobody answers');
+    await orchestrator.selectOption(0);
+
+    const turn = await orchestrator.selectOption(1);
+
+    expect(turn.question?.id).not.toBe('career.journeyChoice');
+    expect(turn.state.spec.selectedJourneyDefinitionId).toBeTruthy();
+  });
+
+  it('never offers a menu whose options are Journey essences while one is recommended', async () => {
+    // Every first/second-answer combination the authored Career content allows.
+    for (const first of [0, 1]) {
+      for (const second of [0, 1, 2]) {
+        const orchestrator = new CoachOrchestrator({ llm: careerMock() });
+        orchestrator.start();
+        await orchestrator.triage('I apply and nobody answers');
+        let turn;
+        try {
+          await orchestrator.selectOption(first);
+          turn = await orchestrator.selectOption(second);
+        } catch {
+          continue; // that combination is not offered; nothing to assert
+        }
+        expect(turn.question?.id).not.toBe('career.journeyChoice');
+      }
+    }
+  });
+});

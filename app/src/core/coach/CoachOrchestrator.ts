@@ -28,6 +28,16 @@
  *      the user's raw free text. Re-voicing is deterministic (a template lookup, no LLM), so LLM
  *      usage stays minimal — the model still runs only for the one understanding call.
  *
+ * ── AND THE OTHER CONVERSATION, WHICH USES NONE OF THAT (D105, 2026-09-15) ────────────────────
+ *
+ * `mode: 'introduction'` is the FIRST RUN, and it is not a lighter version of the two layers above.
+ * It meets the person: it learns their name, then runs from the {@link ./portrait Portrait} —
+ * what we understand about them, with a confidence and a source on every field — asking whichever
+ * gap in that picture is worth the most and stopping when the picture is good enough (spec §22)
+ * rather than when a list is empty. It selects NO expert, runs NO diagnosis, reads NO library and
+ * builds NOTHING. Everything below this line about experts, matching and the GoalSpec belongs to
+ * `planning`, which is byte-identical to what it has always been.
+ *
  * After the questions the expert's {@link DomainExpert.assessFeasibility} produces an honest
  * reality-check note, and the closing recommends a Support Circle. The completed {@link GoalSpec}
  * carries `title`, `domain`, `activeExpertDisplayName`, `answers`, `feasibility` and the scheduling
@@ -77,9 +87,29 @@ import type { LlmClient, LlmMessage } from '../llm/LlmClient';
 import { composeCoachTurn, looksLikeReflection, type KnownFact } from './composeTurn';
 import { readConversation } from './readConversation';
 import {
+  QUIET_TURNS_TO_STOP,
+  clonePortrait,
+  emptyPortrait,
+  nextGap,
+  outstandingGaps,
+  mergePortrait,
+  portraitFacts,
+  readPortrait,
+  readyToFinish,
+  type Portrait,
+  type PortraitFieldId,
+  type PortraitGap,
+} from './portrait';
+import {
   DIAGNOSIS_SIGNAL_SYSTEM_PROMPT,
+  FOCUS_SYSTEM_PROMPT,
+  NAME_SYSTEM_PROMPT,
   buildDiagnosisDirective,
+  buildFocusDirective,
+  buildNameDirective,
   parseDiagnosisSignals,
+  parseFocusChoice,
+  parsePersonalName,
   coachSystemPrompt,
   TRIAGE_SYSTEM_PROMPT,
   buildLocaleDirective,
@@ -130,6 +160,9 @@ export * from './disclosureParser';
  * key is the fallback — D31).
  */
 const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+/** {@link cc} for the few strings that name something back to the user (a Journey, a goal). */
+const ccWith = (key: string, vars: Record<string, string>): string =>
+  i18n.t(key, { ns: 'coachContent', context: addressContext(), ...vars });
 /**
  * Resolve a `coachContent` OPTIONS array in the active language, as a FRESH copy so callers can't
  * mutate the shared resource. The rendered option list AND the constant an answer is matched against
@@ -139,6 +172,16 @@ const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: a
 const ccOptions = (key: string): string[] => [
   ...(i18n.t(key, { ns: 'coachContent', returnObjects: true }) as unknown as string[]),
 ];
+
+/**
+ * The human name of a Journey — its authored essence, in the user's language — falling back to the
+ * definition id only when the library has no essence for it, which would be a content bug and is
+ * better shown than silently blank.
+ */
+const journeyEssenceLabel = (definitionId: string): string => {
+  const key = journeyDefinition(definitionId)?.variants[0]?.essenceKey;
+  return key ? i18n.t(key, { ns: 'library', context: addressContext() }) : definitionId;
+};
 
 /** The stable id of the fallback process-type meta question. */
 export const PROCESS_TYPE_QUESTION_ID = 'meta.processType';
@@ -185,6 +228,80 @@ export const SCHEDULING_QUESTION: DomainQuestion = {
   multiSelect: false,
 };
 
+/** The stable id of the understanding check — the last thing asked before anything is built. */
+export const CONFIRM_QUESTION_ID = 'meta.confirm';
+
+/**
+ * THE UNDERSTANDING CHECK (founder, 2026-09-14).
+ *
+ * The coach used to say what it had understood on the turn AFTER the interview ended — composed
+ * from the whole conversation, well written, and worth nothing, because by then the plan was
+ * already being built from it. A person who read it and thought "that is not what I meant" had
+ * nowhere to put that.
+ *
+ * So it moved. This question carries the same reflection to the one moment where it can still
+ * change the outcome, and adds the only thing that makes a reflection a CHECK: an answer that says
+ * no. `allowOther` is true so the correction can be written straight into the same turn instead of
+ * costing a round trip.
+ *
+ * `intent: 'variant'` because a synthetic meta question needs an intent that no `interview.*`
+ * template voices over — this prompt is the composed understanding, and being replaced by a
+ * catalogue string is precisely the failure this whole change exists to end.
+ */
+export const CONFIRM_QUESTION: DomainQuestion = {
+  id: CONFIRM_QUESTION_ID,
+  intent: 'variant',
+  get prompt() {
+    return cc('understandingCheck.prompt');
+  },
+  get options() {
+    return ccOptions('understandingCheck.options');
+  },
+  allowOther: true,
+  multiSelect: false,
+};
+
+/**
+ * ONE QUESTION BUILT FROM ONE GAP IN THE PORTRAIT (the introduction, 2026-09-15).
+ *
+ * Free text and nothing else: the Portrait is built by TALKING, which is the whole reason the first
+ * run's personal-details screen was replaced by a conversation. A set of cards here would be the
+ * form again, with the coach reading it aloud.
+ *
+ * The authored prompt is the OFFLINE FALLBACK. On the ordinary path {@link CoachOrchestrator.voiced}
+ * rewrites it so it follows from what the person just said; with no model reachable, this sentence
+ * is still a real question and the conversation still works.
+ *
+ * `intent: 'variant'` for the same reason {@link CONFIRM_QUESTION} uses it — it is the one intent no
+ * `interview.*` template voices over, and being replaced by a catalogue string from the planner's
+ * slate is exactly what must not happen to these.
+ */
+function portraitGapQuestion(gap: PortraitGap): DomainQuestion {
+  return {
+    id: `portrait.${gap.field}`,
+    intent: 'variant',
+    prompt: cc(`portrait.${gap.field}.prompt`),
+    options: [],
+    allowOther: true,
+    multiSelect: false,
+  };
+}
+
+/**
+ * What is asked after "Not quite." — free text only, because a correction that has to be chosen
+ * from options we wrote is the same failure as the reflection it is correcting.
+ */
+export const CORRECTION_QUESTION: DomainQuestion = {
+  id: 'meta.correction',
+  intent: 'variant',
+  get prompt() {
+    return cc('understandingCheck.askCorrection');
+  },
+  options: [],
+  allowOther: true,
+  multiSelect: false,
+};
+
 // ── Public turn / state shapes ──────────────────────────────────────────────────
 
 /**
@@ -220,6 +337,12 @@ export interface ActiveExpert {
  */
 export type CoachPhase =
   | 'opening'
+  /**
+   * THE NAME (introduction only). The first thing the first conversation learns, because the screen
+   * that used to ask for it left the flow and nothing replaced it. There is no question object here
+   * — the composer is simply open, exactly as it is for the opening.
+   */
+  | 'name'
   | 'goal'
   | 'focus'
   | 'processType'
@@ -228,7 +351,22 @@ export type CoachPhase =
   | 'journeyFit'
   | 'journeyChoice'
   | 'questions'
+  /**
+   * THE INTRODUCTION'S OWN PHASE (2026-09-15). Not `questions`: there is no slate and no pointer
+   * here, only a {@link ./portrait Portrait} with holes in it. What is asked next is whichever hole
+   * is worth the most, re-derived after every message, and the conversation ends when the picture is
+   * good enough rather than when a list is empty.
+   */
+  | 'portrait'
   | 'scheduling'
+  /**
+   * THE UNDERSTANDING CHECK — the coach says what it understood and asks whether that is right,
+   * BEFORE the plan is built (founder, 2026-09-14). "Not quite" does not acknowledge a correction;
+   * it re-reads the whole conversation and rebuilds what is known from it.
+   */
+  | 'confirm'
+  /** Awaiting the free-text correction that follows a "not quite". */
+  | 'correcting'
   | 'done';
 
 /** What {@link CoachOrchestrator.start} returns: the opening greeting that asks for the goal. */
@@ -258,6 +396,25 @@ export interface CoachTurn {
   activeExpert?: ActiveExpert;
   /** The Coach is asking for a newly phrased goal; the UI should reopen its free-text composer. */
   awaitingGoalText?: boolean;
+  /**
+   * THE NAME the person just gave, on the one turn that learns it (introduction mode).
+   *
+   * Surfaced rather than written: the core is framework-free and the name belongs in the profile,
+   * which is React state the screen owns. Absent whenever nothing was understood — which is a normal
+   * outcome and never an error, and the screens that greet by name already carry a second, complete
+   * sentence for it.
+   */
+  personalName?: string;
+  /**
+   * THE PORTRAIT (דיוקן) as it stands after this turn, in `introduction` mode.
+   *
+   * Surfaced rather than written, exactly like {@link personalName}: the core is framework-free and
+   * this belongs in `AppState`, which the screen owns the door to. Absent in `planning` mode and on
+   * any turn that did not read the conversation.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. Never logged, never sent, never copied into an event.
+   */
+  portrait?: Portrait;
   /**
    * Why this turn did what it did, when TECHNICAL MODE is on (see {@link ./technicalMode}). Empty
    * or absent otherwise.
@@ -298,8 +455,34 @@ export interface OrchestratorState {
  */
 export type CoachMessageGuard = (text: string) => string;
 
+/**
+ * WHICH CONVERSATION THIS IS (D105).
+ *
+ * `planning` is the Coach tab and everything this file did before the mode existed: understand the
+ * goal, diagnose, match a Journey, ask what the Planner needs, build a {@link GoalSpec}.
+ *
+ * `introduction` is the FIRST RUN, and the decision it implements is that the first conversation
+ * chooses and builds NOTHING — it meets the person. That is not a lighter version of planning. The
+ * first run inherited the planner's slate, and three of that slate's questions (`time`, `horizon`,
+ * `scheduling`) are the D102 EXACT intents {@link ./readConversation} deliberately refuses to strike
+ * off from ordinary language — so they were exactly the ones that survived to the end of every
+ * conversation. The last third of the first run was "how many minutes a week / how long / which
+ * days", which is the questionnaire the founder felt on 2026-09-15.
+ *
+ * Dropping those questions is only half of it. The mode must ALSO build nothing: a planner that
+ * loses its time and horizon answers but still builds silently falls back to an eight-week default
+ * with no capacity, which is the precise failure {@link ./horizonQuestion} was written to end.
+ */
+export type CoachMode = 'introduction' | 'planning';
+
 /** Construction options — inject the LlmClient (tests use MockLlmClient); everything else defaults. */
 export interface CoachOrchestratorOptions {
+  /**
+   * Which conversation this is — see {@link CoachMode}. Defaults to `planning`, so every caller that
+   * existed before the mode did behaves exactly as it did.
+   */
+  mode?: CoachMode;
+
   /**
    * The name they are called, when it is known. Threaded in rather than read
    * here because the core is framework-free and the name lives in the profile
@@ -348,6 +531,8 @@ export interface CoachOrchestratorOptions {
  * The legacy {@link chooseBranch} / {@link respond} pair is kept for the not-yet-rewritten harness.
  */
 export class CoachOrchestrator {
+  /** Which conversation this is (D105). Decided at construction and never changes. */
+  private readonly mode: CoachMode;
   private readonly llm: LlmClient;
   private readonly playbook: InterviewPlaybook;
   private readonly guard?: CoachMessageGuard;
@@ -355,7 +540,12 @@ export class CoachOrchestrator {
   private readonly locale?: string;
   /** The onboarding profile, read only to decide which variant questions still need asking. */
   private readonly profile?: CoachOnboardingSummary | null;
-  private readonly firstName: string | null;
+  /**
+   * The name they are called. NOT readonly since 2026-09-15: in `introduction` mode the first thing
+   * the conversation does is ask, and a name learned on turn one has to reach the composer that
+   * writes turn two. Every other path still sets it once, at construction.
+   */
+  private firstName: string | null;
   /**
    * TECHNICAL MODE (2026-08-27). Off by default. While on, every turn carries the reasoning behind
    * it — read by the domain expert who authored the trees, who otherwise has no way to see whether
@@ -370,6 +560,13 @@ export class CoachOrchestrator {
 
   private readonly history: LlmMessage[] = [];
   private phase: CoachPhase = 'opening';
+  /** True once the understanding check has been asked — so the landing turn does not reflect twice. */
+  private understandingChecked = false;
+  /**
+   * The interview's answers, set aside while a correction is being rebuilt from. Present ONLY during
+   * a rebuild, and the signal {@link reread} uses to tell one from an ordinary turn.
+   */
+  private answersBeforeRebuild?: Record<string, string | string[]>;
 
   private expert?: DomainExpert;
   private activeExpert?: ActiveExpert;
@@ -391,6 +588,28 @@ export class CoachOrchestrator {
   private questions: DomainQuestion[] = [];
   /** The question currently on the table. There is no index: the slate is a set (D103). */
   private pending?: DomainQuestion;
+
+  // ── The Portrait (introduction only) ─────────────────────────────────────────
+  /**
+   * WHAT WE UNDERSTAND ABOUT THE PERSON so far (דיוקן). Empty in `planning` mode, forever: the
+   * Coach tab is building a plan for somebody we have already met.
+   */
+  private portrait: Portrait = emptyPortrait();
+  /** The gap the question on the table was built from, so a re-read knows what is being asked. */
+  private pendingGap?: PortraitFieldId;
+  /** The question on the table in `portrait` phase. */
+  private portraitQuestion?: DomainQuestion;
+  /**
+   * How many consecutive turns have added nothing at medium confidence or better. Two is where the
+   * introduction stops, because a third question to somebody who is not telling us anything is an
+   * interrogation rather than a conversation (see {@link ./portrait/gaps readyToFinish}).
+   */
+  private quietPortraitTurns = 0;
+  /**
+   * The Portrait set aside while a correction is being rebuilt from — the exact counterpart of
+   * {@link answersBeforeRebuild}, and it comes back untouched when the re-read cannot run.
+   */
+  private portraitBeforeRebuild?: Portrait;
   private readonly answers: InterviewAnswers = {};
   /** How many turns have handed something back, so the character's budget can be respected. */
   private reflections = 0;
@@ -425,6 +644,7 @@ export class CoachOrchestrator {
   };
 
   constructor(options: CoachOrchestratorOptions) {
+    this.mode = options.mode ?? 'planning';
     this.llm = options.llm;
     this.playbook = options.playbook ?? INTERVIEW_PLAYBOOK;
     this.guard = options.guard;
@@ -439,8 +659,12 @@ export class CoachOrchestrator {
     if (this.phase !== 'opening') {
       throw new Error('CoachOrchestrator.start() was already called');
     }
-    this.phase = 'goal';
-    const coachMessage = this.applyGuard(this.playbook.opening);
+    // THE INTRODUCTION OPENS BY ASKING WHAT TO CALL THEM (spec §6). Deterministic copy, no model
+    // call — this is the app's first sentence and it must be there with the screen.
+    this.phase = this.mode === 'introduction' ? 'name' : 'goal';
+    const coachMessage = this.applyGuard(
+      this.mode === 'introduction' ? cc('introduction.namePrompt') : this.playbook.opening,
+    );
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -468,6 +692,15 @@ export class CoachOrchestrator {
     return this.technicalMode;
   }
 
+  /**
+   * Whether this is the INTRODUCTION (D105) — read by the surface, which behaves differently when a
+   * conversation ends with nothing to build. Asked of the orchestrator rather than passed beside it,
+   * so the screen and the engine can never disagree about which conversation this is.
+   */
+  isIntroduction(): boolean {
+    return this.mode === 'introduction';
+  }
+
   /** Record one note, when the mode is on. A no-op otherwise, so callers need no branch. */
   private note(title: string, fields: Record<string, string | number | undefined | null> = {}): void {
     if (this.technicalMode) this.notes.push(noteOf(title, fields));
@@ -482,6 +715,9 @@ export class CoachOrchestrator {
   }
 
   async triage(goalText: string): Promise<CoachTurn> {
+    // The introduction's first message is not a goal — it is a name. Same entry point, because the
+    // surface has one composer and one send, and which message this is belongs to the engine.
+    if (this.phase === 'name') return this.voiced(await this.readPersonalName(goalText.trim()));
     if (this.phase !== 'goal') {
       throw new Error('Describe the goal after start(), and triage() only once');
     }
@@ -521,7 +757,12 @@ export class CoachOrchestrator {
     }
 
     // A single goal — no need to focus; activate it and start its expert's questions.
-    return this.voiced(this.activateGoal(goals[0], []));
+    //
+    // THE INTRODUCTION READS THE OPENING BEFORE IT ASKS ANYTHING. Somebody who writes "I have been
+    // in marketing eight years, I am burned out and I have no idea what else" has just filled half
+    // the Portrait, and asking them where they are starting from would be the questionnaire again.
+    // `reread` is the same async seam the interview already uses after every message.
+    return this.voiced(await this.rereadIntroduction(this.activateGoal(goals[0], [])));
   }
 
   /**
@@ -570,6 +811,9 @@ export class CoachOrchestrator {
     // than the question in front of it, so it is read for EVERY signal it supports and the tree skips
     // all of them at once. Everywhere else a free-text answer is stored verbatim, exactly as before.
     if (this.phase === 'diagnosis') return this.voiced(await this.readSpokenDiagnosisAnswer(question, answer));
+    // The focus pick is a choice between goals they named themselves, so a sentence has to be placed
+    // back onto one of them before it means anything.
+    if (this.phase === 'focus') return this.voiced(await this.readSpokenFocusPick(answer));
     return this.voiced(await this.reread(this.record(question, answer)));
   }
 
@@ -609,6 +853,122 @@ export class CoachOrchestrator {
     if (!tree) return this.settleDiagnosis();
     const next = nextDiagnosisQuestion(tree, this.diagnosisAnswers, this.knownSignals);
     return next ? this.askDiagnosisQuestion(next) : this.settleDiagnosis();
+  }
+
+  /**
+   * Read a TYPED answer to the focus pick: which of their own goals did they just choose?
+   *
+   * Modelled on {@link readSpokenDiagnosisAnswer} deliberately, including the part that matters
+   * most: the model returns a POSITION, the engine checks it against the goals it actually offered
+   * ({@link parseFocusChoice}), and a reading it cannot place changes NOTHING — the same question
+   * stands, with its cards still there. Choosing wrongly here would build one goal and park the one
+   * they came for, which is a silent failure they would have no way to see.
+   */
+  private async readSpokenFocusPick(answer: string): Promise<CoachTurn> {
+    const options = this.focusQuestion?.options ?? [];
+    this.history.push({ role: 'user', content: answer });
+    let index: number | null = null;
+    try {
+      const result = await this.llm.complete({
+        system: FOCUS_SYSTEM_PROMPT,
+        json: true,
+        temperature: 0,
+        messages: [{ role: 'user', content: buildFocusDirective(options, answer) }],
+      });
+      index = parseFocusChoice(result.text, options.length);
+    } catch {
+      // No session, no network, a provider error. Nothing was understood, and nothing is chosen.
+      index = null;
+    }
+
+    if (index === null) {
+      this.note('The focus answer could not be placed', {
+        'what happens now': 'the same question stands, with the goals still on offer',
+        why: 'choosing for them would build one goal and park the one they came for',
+      });
+      const coachMessage = this.applyGuard(this.playbook.focus.intro);
+      this.history.push({ role: 'model', content: coachMessage });
+      return {
+        coachMessage,
+        state: this.snapshot(),
+        technicalNotes: this.takeNotes(),
+        done: false,
+        question: cloneQuestion(this.focusQuestion ?? buildFocusQuestion(this.understoodGoals, this.playbook.focus)),
+      };
+    }
+
+    this.note('Focus chosen in their own words', {
+      chose: options[index],
+      'read from': 'what they typed, mapped back onto the goals we offered',
+    });
+    const chosen = this.understoodGoals[index];
+    const deferred = this.understoodGoals.filter((_, i) => i !== index);
+    return this.rereadIntroduction(this.activateGoal(chosen, deferred));
+  }
+
+  /**
+   * The introduction's async seam: read the conversation into the Portrait before the turn is said.
+   * A no-op in `planning` mode, which is what keeps that path byte-identical.
+   */
+  private async rereadIntroduction(turn: CoachTurn): Promise<CoachTurn> {
+    return this.mode === 'introduction' ? this.readPortraitTurn(turn) : turn;
+  }
+
+  /**
+   * READ THE NAME, then open the conversation properly (introduction mode).
+   *
+   * One call, one job, and it may only report a name the person actually typed — {@link
+   * parsePersonalName} checks it against their own message before it is kept. A call that fails
+   * changes nothing except that there is no name: the offline fallback below reads a one-word
+   * answer literally, which is not a guess (it is what they wrote), and anything else simply moves
+   * on without one.
+   *
+   * IT NEVER RE-ASKS. A conversation that keeps asking for a name until it understands one is a
+   * worse door than a coach that gets on with it, and with the model down it would never stop.
+   */
+  private async readPersonalName(said: string): Promise<CoachTurn> {
+    this.history.push({ role: 'user', content: said });
+    let name: string | null = null;
+    try {
+      const result = await this.llm.complete({
+        system: NAME_SYSTEM_PROMPT,
+        json: true,
+        temperature: 0,
+        messages: [{ role: 'user', content: buildNameDirective(said) }],
+      });
+      name = parsePersonalName(result.text, said);
+    } catch {
+      // No session, no network, a provider error. Nothing was understood, and nothing is invented.
+      name = null;
+    }
+    name = name ?? literalName(said);
+    if (name) {
+      // The composer writes every turn from here on and is told who it is talking to. A name learned
+      // on turn one that never reached it would be a name nobody ever hears.
+      this.firstName = name;
+      this.note('Name understood', { name, 'where it goes': 'the profile, through the screen' });
+    } else {
+      this.note('No name understood', {
+        'what happens now': 'the conversation continues without one, and nothing is invented',
+      });
+    }
+
+    this.phase = 'goal';
+    // Their first words, in their own language, before anything is interpreted.
+    this.conversationLocale = writtenLocale(said);
+    const coachMessage = this.applyGuard(
+      name ? ccWith('introduction.openingNamed', { name }) : cc('introduction.opening'),
+    );
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      // The composer reopens: what follows is the broad opening, answered in their own words.
+      awaitingGoalText: true,
+      ...(name ? { personalName: name } : {}),
+    };
   }
 
   // ── internals ──────────────────────────────────────────────────────────────
@@ -678,6 +1038,29 @@ export class CoachOrchestrator {
         (g): DeferredGoal => ({ title: g.title, processType: g.kind, domain: g.domain }),
       );
     }
+    // ── THE INTRODUCTION LEARNS THE PERSON, NOT THE CATALOGUE ────────────────────────────────
+    //
+    // The founder's words on 2026-09-15: the introduction gets to know the user INDEPENDENTLY of
+    // which Journeys exist in the app. Three phases below this line exist only to choose from that
+    // catalogue — the career DIAGNOSIS picks a family, `journeyFit` asks an axis inside one, and
+    // `journeyChoice` offers the eligible entries. All three are matching, and matching is the
+    // SECOND conversation (D105).
+    //
+    // It also has to be true for somebody whose goal has no authored Journey at all: three of our
+    // four domains have almost none, and an introduction that felt different depending on what
+    // happens to be in the library is the opposite of getting to know somebody. So the introduction
+    // takes NO library lookup, NO consultation and NO diagnosis.
+    //
+    // ── AND NO DOMAIN EXPERT EITHER (founder, 2026-09-15) ────────────────────────────────────────
+    //
+    //   > מומחה התחום רלוונטי רק לשלב בניית המסעות — לא לשלב שיחת ההיכרות ולא לאונבורדינג.
+    //
+    // This corrects what shipped a day earlier, which took the introduction's four questions from
+    // `expert.interviewQuestions()`. Those questions are a plan's questions — the same four every
+    // expert asks before building one — and they are a dependency on which experts exist. The
+    // introduction now asks what a PORTRAIT is missing instead, which depends on nothing but the
+    // person in front of it.
+    if (this.mode === 'introduction') return this.beginPortrait();
     return this.beginDiagnosis() ?? this.beginExpertQuestions();
   }
 
@@ -703,6 +1086,17 @@ export class CoachOrchestrator {
    * Returns null when there is no diagnosis to run, so the caller falls through unchanged.
    */
   private beginDiagnosis(): CoachTurn | null {
+    // A SECOND BELT. {@link activateGoal} already goes straight to the questions in `introduction`
+    // mode, so nothing reaches here today — but the diagnosis is the entrance to every matching
+    // phase (`journeyFit` and `journeyChoice` are only reachable through it), and a future caller
+    // that wires a new path into it must not quietly let the introduction start matching again.
+    if (this.mode === 'introduction') {
+      this.note('Diagnosis skipped', {
+        reason: 'this is the INTRODUCTION — it chooses no Journey (D105)',
+        'what happens instead': 'the coach gets to know them; matching is a later conversation',
+      });
+      return null;
+    }
     if (this.spec.domain !== 'career') {
       this.note('Diagnosis skipped', {
         reason: `no authored diagnosis tree for domain "${this.spec.domain}" — only career has one`,
@@ -824,29 +1218,36 @@ export class CoachOrchestrator {
       return this.beginExpertQuestions(cc('journeyMatching.singleMatch'));
     }
 
+    // When the matcher has a recommendation, TAKE IT. Handing the user our own taxonomy of Journey
+    // families and asking them to pick — right after saying we found the fit — moves our internal
+    // filing onto a person who has no way to tell the options apart. The coach chooses, and says in
+    // one sentence what it chose and what that means; the full Journey is still reviewed and
+    // approved before anything starts, which is where a real disagreement belongs.
     const recommended = result.items.find(
       (item) => item.definitionId === result.recommendedDefinitionId,
     );
-    const orderedItems = recommended
-      ? [recommended, ...result.items.filter((item) => item !== recommended)]
-      : result.items;
-    this.journeyChoiceDefinitionIds = orderedItems.map((item) => item.definitionId);
+    if (recommended) {
+      this.spec.selectedJourneyDefinitionId = recommended.definitionId;
+      this.note('Journey selected', {
+        journey: recommended.definitionId,
+        'chosen from': `${result.items.length} eligible Journeys`,
+        why: 'the matcher recommended it — the user is told which, not asked to pick',
+      });
+      return this.beginExpertQuestions(
+        ccWith('journeyMatching.recommendedSelected', {
+          journey: journeyEssenceLabel(recommended.definitionId),
+        }),
+      );
+    }
+
+    // No recommendation: the eligible Journeys are genuinely equivalent on what we know, so the
+    // choice is a real one and belongs to the user.
+    this.journeyChoiceDefinitionIds = result.items.map((item) => item.definitionId);
     this.journeyChoiceQuestion = {
       id: 'career.journeyChoice',
       intent: 'variant',
-      prompt: cc(
-        result.recommendedDefinitionId
-          ? 'journeyMatching.multipleRecommended'
-          : 'journeyMatching.multipleMatch',
-      ),
-      options: this.journeyChoiceDefinitionIds.map((id) => {
-        const definition = journeyDefinition(id);
-        const key = definition?.variants[0]?.essenceKey;
-        const label = key ? i18n.t(key, { ns: 'library', context: addressContext() }) : id;
-        return id === result.recommendedDefinitionId
-          ? `${label} ${cc('journeyMatching.recommendedSuffix')}`
-          : label;
-      }),
+      prompt: cc('journeyMatching.multipleMatch'),
+      options: this.journeyChoiceDefinitionIds.map(journeyEssenceLabel),
       allowOther: false,
     };
     this.phase = 'journeyChoice';
@@ -893,8 +1294,12 @@ export class CoachOrchestrator {
     this.journeyFitValueIds = [];
     this.journeyChoiceQuestion = undefined;
     this.journeyChoiceDefinitionIds = [];
+    this.understandingChecked = false;
+    this.answersBeforeRebuild = undefined;
     this.questions = [];
     this.pending = undefined;
+    this.pendingGap = undefined;
+    this.portraitQuestion = undefined;
     for (const key of Object.keys(this.answers)) delete this.answers[key];
     this.spec.title = '';
     this.spec.domain = 'general';
@@ -905,12 +1310,159 @@ export class CoachOrchestrator {
     delete this.spec.selectedJourneyDefinitionId;
   }
 
+  // ── THE INTRODUCTION RUNS FROM THE PORTRAIT ────────────────────────────────────────────────
+  //
+  // Everything below replaces a list of questions with a picture that has holes in it. What is asked
+  // next is the most valuable hole; the conversation ends when the picture is good enough (spec
+  // §22), or when two turns in a row have added nothing to it.
+  //
+  // Nothing here reads the budget, and that is deliberate (D103): running low changes HOW the coach
+  // asks, never how much it needs to understand.
+
+  /** Open the Portrait conversation: no expert, no slate, no catalogue. */
+  private beginPortrait(prefix?: string): CoachTurn {
+    this.phase = 'portrait';
+    // The Portrait is NOT cleared here. This is reachable a second time (the belt in
+    // {@link beginExpertQuestions}), and forgetting everything somebody has already told us because
+    // the conversation took another door would be a worse bug than the one that belt guards.
+    // A rebuild clears it deliberately, in {@link rebuildFromCorrection}.
+    //
+    // THE SAFETY STOP STILL HAS TO FIRE. The surface reads `activeExpert.id` to decide whether this
+    // is a domain we hand off rather than coach ({@link ./sensitiveDomains}), and a first run that
+    // quietly lost that stop would be the worst possible regression to make silently. The id is the
+    // TRIAGE classification, which this conversation already has — no expert is loaded and nothing
+    // an expert authored is read.
+    this.activeExpert = { id: this.spec.domain, displayName: this.spec.domain };
+    this.note('The introduction begins from the Portrait', {
+      'what drives it': 'what we still do not understand about the person, best-first',
+      'what does not': 'a domain expert, the Journey library, or a list of questions',
+    });
+    return this.askNextGap(prefix);
+  }
+
+  /**
+   * Ask the most valuable thing we still do not understand — or move to the check when there is
+   * nothing left worth asking.
+   *
+   * `preferred` is the reader's suggestion; {@link ./portrait/gaps nextGap} honours it only when it
+   * is genuinely one of the askable gaps, so the engine keeps the veto.
+   */
+  private askNextGap(prefix?: string, preferred?: PortraitFieldId): CoachTurn {
+    const gap = nextGap(this.portrait, preferred);
+    if (!gap) return this.askUnderstandingCheck(prefix);
+    this.pendingGap = gap.field;
+    this.portraitQuestion = portraitGapQuestion(gap);
+    this.note('Opening the most valuable gap', {
+      gap: gap.field,
+      'worth asking': gap.weight,
+      'held at': gap.held,
+      'chosen by': preferred === gap.field ? 'the reader, and the engine agreed' : 'the authored weight',
+      'never asked': 'support need, readiness, previous attempts, constraints — listened for only',
+    });
+    const question = this.portraitQuestion;
+    const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${question.prompt}` : question.prompt);
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      question: cloneQuestion(question),
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /**
+   * Read the whole conversation into the Portrait, then decide what this turn actually is.
+   *
+   * The counterpart of {@link reread}, and the same three properties: it runs AFTER the turn has
+   * been built, it can only replace the question that was about to be asked, and a reading that
+   * produced nothing leaves the turn exactly as it arrived. Failure is silence, so the offline path
+   * is the authored question and nothing else.
+   */
+  private async readPortraitTurn(turn: CoachTurn): Promise<CoachTurn> {
+    if (this.phase !== 'portrait') return turn;
+    const outstanding = outstandingGaps(this.portrait);
+    const rebuilding = this.portraitBeforeRebuild !== undefined;
+
+    const reading =
+      outstanding.length > 0
+        ? await readPortrait(this.llm, this.transcript(), outstanding)
+        : { updates: [] };
+
+    // A REBUILD re-reads a transcript that already contains everything the person has said, so a
+    // reading that finds nothing did not run — {@link ./portrait/readPortrait} is silent on failure
+    // by design. Put the Portrait back and return to the check rather than starting the
+    // conversation over on somebody who has already had it.
+    if (rebuilding && reading.updates.length === 0 && this.portraitBeforeRebuild) {
+      this.portrait = this.portraitBeforeRebuild;
+      this.portraitBeforeRebuild = undefined;
+      this.note('The rebuild could not read the conversation', {
+        'what was done': 'the Portrait we had was put back',
+        'what happens now': 'the check is asked again, with the correction now part of the transcript',
+      });
+      if (turn.question) this.history.pop();
+      return this.askUnderstandingCheck();
+    }
+    this.portraitBeforeRebuild = undefined;
+
+    const merged = mergePortrait(this.portrait, reading.updates, Date.now());
+    this.portrait = merged.portrait;
+    // THE QUIET-TURN CLAUSE. A turn that taught us nothing we can hold counts; two in a row end the
+    // conversation. Anything that landed at medium or better resets it.
+    this.quietPortraitTurns = merged.landed.length > 0 ? 0 : this.quietPortraitTurns + 1;
+    if (merged.landed.length > 0) {
+      this.note('Understood without asking', {
+        fields: merged.landed.join(', '),
+        'read from': 'everything said so far, not only the last message',
+      });
+    } else {
+      this.note('That turn added nothing we can hold', {
+        'quiet turns in a row': this.quietPortraitTurns,
+        'what happens at the limit': `at ${QUIET_TURNS_TO_STOP} the conversation stops — another question would be an interrogation`,
+      });
+    }
+
+    if (readyToFinish(this.portrait, this.quietPortraitTurns)) {
+      this.note('The introduction has heard enough', {
+        why:
+          this.quietPortraitTurns >= QUIET_TURNS_TO_STOP
+            ? `${this.quietPortraitTurns} turns in a row added nothing`
+            : 'the picture meets the minimum understanding (spec §22)',
+        'what it never read': 'the budget — that changes how we ask, never how much we understand',
+      });
+      if (turn.question) this.history.pop(); // the question we were about to ask is not being asked
+      return this.askUnderstandingCheck();
+    }
+
+    const gap = nextGap(this.portrait, reading.nextGap);
+    if (gap && this.pendingGap === gap.field && turn.question) return turn;
+    if (turn.question) this.history.pop();
+    return this.askNextGap(undefined, reading.nextGap);
+  }
+
+  /** The Portrait as it stands. A defensive copy — nothing outside may edit what we understood. */
+  getPortrait(): Portrait {
+    return clonePortrait(this.portrait);
+  }
+
   /**
    * Select the expert for the active goal's domain, load its questions SHAPED BY the goal's type (a
    * recurring habit skips the staging/milestones questions), and surface the first — or the closing
    * scheduling question when the expert asks nothing.
    */
   private beginExpertQuestions(prefix?: string): CoachTurn {
+    // A SECOND BELT, exactly like the one in {@link beginDiagnosis}. The introduction must not
+    // consult a DomainExpert at all (founder, 2026-09-15), and this method is where an expert is
+    // loaded. Nothing routes here in `introduction` today; a future path that does would silently
+    // put the planner's four questions back into the first run.
+    if (this.mode === 'introduction') {
+      this.note('Expert questions skipped', {
+        reason: 'this is the INTRODUCTION — the domain expert belongs to Journey building only',
+        'what happens instead': 'the conversation continues from the Portrait',
+      });
+      return this.beginPortrait(prefix);
+    }
     this.expert = getExpert(this.spec.domain);
     this.activeExpert = {
       id: this.spec.domain,
@@ -951,7 +1503,7 @@ export class CoachOrchestrator {
 
     return this.questions.length > 0
       ? this.askNextOutstanding(prefix)
-      : this.askSchedulingQuestion(prefix);
+      : this.afterQuestions(prefix);
   }
 
   /**
@@ -1033,8 +1585,14 @@ export class CoachOrchestrator {
         return this.journeyChoiceQuestion;
       case 'questions':
         return this.pending;
+      case 'portrait':
+        return this.portraitQuestion;
       case 'scheduling':
         return SCHEDULING_QUESTION;
+      case 'confirm':
+        return CONFIRM_QUESTION;
+      case 'correcting':
+        return CORRECTION_QUESTION;
       default:
         return undefined;
     }
@@ -1081,10 +1639,34 @@ export class CoachOrchestrator {
         // has been read. The pointer that used to live on this line is gone (D103).
         this.answers[question.id] = answer;
         return this.askNextOutstanding();
+      case 'portrait':
+        // NOTHING IS RECORDED HERE, and that is the difference between this and the slate above.
+        // What they said is already in the history, and what it MEANS is decided by reading the
+        // whole conversation against the Portrait ({@link readPortraitTurn}) — never by filing an
+        // answer under the question that happened to be on the table. The turn built here is the
+        // provisional one that reading may replace, and the one that stands if it cannot run.
+        return this.askNextGap();
       case 'scheduling': {
         const preference = schedulingPreferenceFromAnswer(answer);
         if (preference) this.spec.schedulingPreference = preference;
-        return this.finish();
+        // NOT `finish()` any more. Nothing is built until the person has seen what we understood
+        // and said it is right (founder, 2026-09-14).
+        return this.askUnderstandingCheck();
+      }
+      case 'confirm': {
+        const value = Array.isArray(answer) ? answer[0] : answer;
+        const [yes, no] = CONFIRM_QUESTION.options;
+        if (value === yes) return this.finish();
+        // "Not quite." on its own says there is something wrong but not what; ask. Anything else is
+        // the correction itself, typed straight into this turn, and does not cost a round trip.
+        if (value === no || value.trim().length === 0) return this.askForCorrection();
+        this.history.pop(); // rebuildFromCorrection pushes it; don't record the same line twice
+        return this.rebuildFromCorrection(value);
+      }
+      case 'correcting': {
+        const value = Array.isArray(answer) ? answer[0] : answer;
+        this.history.pop();
+        return this.rebuildFromCorrection(value);
       }
       default:
         throw new Error('There is no question to answer right now');
@@ -1146,6 +1728,16 @@ export class CoachOrchestrator {
     return this.activateGoal(chosen, deferred);
   }
 
+  /**
+   * What follows the last question. Planning asks when the Steps should go; the introduction has
+   * nothing to schedule, so it goes straight to the check and says what it understood.
+   */
+  private afterQuestions(prefix?: string): CoachTurn {
+    return this.mode === 'introduction'
+      ? this.askUnderstandingCheck(prefix)
+      : this.askSchedulingQuestion(prefix);
+  }
+
   /** Surface the closing scheduling-preference meta question after the expert's questions. */
   private askSchedulingQuestion(prefix?: string): CoachTurn {
     this.phase = 'scheduling';
@@ -1200,7 +1792,7 @@ export class CoachOrchestrator {
    */
   private askNextOutstanding(prefix?: string): CoachTurn {
     const left = this.outstanding();
-    if (left.length === 0) return this.askSchedulingQuestion(prefix);
+    if (left.length === 0) return this.afterQuestions(prefix);
     this.pending = left[0];
     return this.askQuestion(this.pending, prefix);
   }
@@ -1216,11 +1808,31 @@ export class CoachOrchestrator {
    * A reading that strikes nothing off and suggests nothing leaves the turn exactly as it arrived.
    */
   private async reread(turn: CoachTurn): Promise<CoachTurn> {
+    // The introduction has no slate to re-read; it has a Portrait, and its own reader.
+    if (this.phase === 'portrait') return this.readPortraitTurn(turn);
     if (this.phase !== 'questions') return turn;
     const before = this.outstanding();
     if (before.length === 0) return turn;
 
+    const rebuilding = this.answersBeforeRebuild !== undefined;
     const reading = await readConversation(this.llm, this.transcript(), before);
+
+    // A REBUILD reads the whole slate against a transcript that already contains every answer, so a
+    // reading that strikes nothing off did not run — {@link readConversation} is silent on failure
+    // by design and returns exactly this. Put the answers back and go straight to the check rather
+    // than marching the person through an interview they have already done.
+    if (rebuilding && Object.keys(reading.resolved).length === 0 && this.answersBeforeRebuild) {
+      Object.assign(this.answers, this.answersBeforeRebuild);
+      this.answersBeforeRebuild = undefined;
+      this.note('The rebuild could not read the conversation', {
+        'what was done': 'the previous answers were put back',
+        'what happens now': 'the check is asked again, with the correction now part of the transcript',
+      });
+      this.history.pop(); // the question that is no longer being asked
+      return this.askUnderstandingCheck();
+    }
+    this.answersBeforeRebuild = undefined;
+
     const struck = Object.entries(reading.resolved);
     for (const [id, value] of struck) this.answers[id] = value;
     if (struck.length > 0) {
@@ -1235,7 +1847,9 @@ export class CoachOrchestrator {
     // outcome and the one a pointer could never produce.
     if (left.length === 0) {
       this.history.pop(); // the question we were about to ask is not being asked
-      return this.askSchedulingQuestion();
+      // After a rebuild the scheduling answer is still on the spec and asking for it again would be
+      // the coach forgetting; go back to the check, which is what the correction was aimed at.
+      return rebuilding ? this.askUnderstandingCheck() : this.afterQuestions();
     }
 
     const chosen = left.find((q) => q.id === reading.nextId) ?? left[0];
@@ -1278,11 +1892,152 @@ export class CoachOrchestrator {
   }
 
   /**
+   * Say what was understood, and ask whether it is right — before anything is built.
+   *
+   * The prompt below is the FALLBACK. On the ordinary path {@link voiced} replaces it with the
+   * composed reflection (`understanding: true`), which is the whole point: the words are written
+   * from this conversation. Offline, the canned sentence still asks the question, so the check
+   * exists on every path rather than only when a model answers.
+   */
+  private askUnderstandingCheck(prefix?: string): CoachTurn {
+    this.phase = 'confirm';
+    this.understandingChecked = true;
+    const body = CONFIRM_QUESTION.prompt;
+    const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${body}` : body);
+    this.history.push({ role: 'model', content: coachMessage });
+    this.note('Understanding check', {
+      'what happens next': 'nothing is built until they say the picture is right',
+      'if they say no': 'the whole conversation is read again and what is known is rebuilt',
+    });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      question: cloneQuestion(CONFIRM_QUESTION),
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /**
+   * They said the picture is wrong. Ask what is wrong — and say what will happen to the answer,
+   * because "I'll take it from the top" is a promise this code actually keeps.
+   */
+  private askForCorrection(): CoachTurn {
+    this.phase = 'correcting';
+    const coachMessage = this.applyGuard(CORRECTION_QUESTION.prompt);
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      question: cloneQuestion(CORRECTION_QUESTION),
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /**
+   * REBUILD, rather than acknowledge.
+   *
+   * A correction that is merely thanked for leaves the wrong answer sitting in `answers`, and the
+   * plan is built from `answers`. So everything the interview recorded is dropped and the whole
+   * slate is read again against the whole transcript — which now ends with the correction. Whatever
+   * the person still means is struck off exactly as it was the first time; whatever the correction
+   * changed comes back either with its new value or as an open question. The correction is a fact in
+   * the conversation, not a note appended to a conclusion.
+   *
+   * This is the same {@link reread} machinery the interview already runs after every message. It
+   * gets no special case, and that is deliberate: a second, parallel path for corrections is how the
+   * two drift apart.
+   */
+  private rebuildFromCorrection(correction: string): CoachTurn {
+    this.history.push({ role: 'user', content: correction });
+    if (this.mode === 'introduction') return this.rebuildPortraitFromCorrection();
+    // Kept, not discarded: if the reading cannot run (no network, a provider error) these come back
+    // untouched, because re-asking somebody every question they already answered is a worse failure
+    // than carrying one stale answer to a check they can fail again.
+    this.answersBeforeRebuild = { ...this.answers };
+    for (const key of Object.keys(this.answers)) delete this.answers[key];
+    this.spec.answers = {};
+    delete this.spec.feasibility;
+    this.pending = undefined;
+    this.phase = 'questions';
+    this.note('Rebuilding from a correction', {
+      'answers set aside': Object.keys(this.answersBeforeRebuild).length,
+      'read again from': 'the whole conversation, which now ends with what they just corrected',
+      why: 'a correction acknowledged is a plan still built on the wrong answer',
+    });
+    // `reread`, at the async boundary, does the reading. This returns the turn it works from.
+    return this.askNextOutstanding(cc('understandingCheck.rebuilt'));
+  }
+
+  /**
+   * THE SAME REBUILD, FOR THE PORTRAIT.
+   *
+   * "I want to clarify" must mean the same thing in both conversations: everything we thought we
+   * understood is dropped and the whole transcript — which now ends with the correction — is read
+   * again. That is only safe because the Portrait was never the source of truth; it is a reading,
+   * and a reading can be redone. A correction merely appended to it would leave the wrong belief in
+   * place underneath the right sentence.
+   *
+   * The quiet-turn count resets with it. The person has just told us something; starting the new
+   * reading two turns from the end would stop the conversation before it could use what they said.
+   */
+  private rebuildPortraitFromCorrection(): CoachTurn {
+    // Kept rather than discarded, exactly as the interview's answers are: if the re-read cannot run
+    // (no network, a provider error), the picture we had comes back and the person is asked to
+    // confirm it again — which is a better failure than meeting them from scratch.
+    this.portraitBeforeRebuild = clonePortrait(this.portrait);
+    this.portrait = emptyPortrait();
+    this.quietPortraitTurns = 0;
+    this.pendingGap = undefined;
+    this.portraitQuestion = undefined;
+    this.phase = 'portrait';
+    this.note('Rebuilding the Portrait from a correction', {
+      'what was set aside': Object.keys(this.portraitBeforeRebuild).length + ' fields',
+      'read again from': 'the whole conversation, which now ends with what they just corrected',
+      why: 'a correction acknowledged is a picture still built on what they told us was wrong',
+    });
+    // `readPortraitTurn`, at the async boundary, does the reading. This is the turn it works from.
+    return this.askNextGap(cc('understandingCheck.rebuilt'));
+  }
+
+  /**
+   * THE INTRODUCTION LANDS, AND BUILDS NOTHING (D105).
+   *
+   * No feasibility — that is an assessment of a plan against a week, and there is no plan and no
+   * week. No {@link GoalSpec} either, and that is the load-bearing line rather than a tidiness one:
+   * this conversation deliberately never asked for weekly time, a horizon or preferred days, so a
+   * spec handed on from here would be built against the Planner's silent eight-week default with no
+   * capacity — the exact failure {@link ./horizonQuestion} exists to end.
+   *
+   * What the person gets instead is the first run's own tail: the intro Journey, the reminder ask,
+   * and the handoff. Matching a real Journey is the SECOND conversation.
+   */
+  private landIntroduction(): CoachTurn {
+    this.note('The introduction is over', {
+      'what was built': 'nothing — this conversation chooses no Journey (D105)',
+      'what happens next': 'the first run continues with the intro Journey and its tail',
+    });
+    const coachMessage = this.applyGuard(cc('introduction.closing'));
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: true,
+      activeExpert: this.activeExpert,
+    };
+  }
+
+  /**
    * Close the interview: record the answers, run the expert's honest feasibility check, and surface
    * its note followed by the Support-Circle recommendation. Produces the completed {@link GoalSpec}.
    */
   private finish(): CoachTurn {
     this.phase = 'done';
+    if (this.mode === 'introduction') return this.landIntroduction();
     this.spec.answers = { ...this.answers };
 
     let feasibility: FeasibilityAssessment | undefined;
@@ -1348,8 +2103,13 @@ export class CoachOrchestrator {
    * path is unchanged.
    */
   private async voiced(turn: CoachTurn): Promise<CoachTurn> {
-    const original = turn.coachMessage;
-    if (original.trim().length === 0) return turn;
+    // WHAT THE FIRST RUN ACTUALLY PRODUCES rides out with every turn of it. Not a Journey — a
+    // Portrait, which the screen writes to AppState. Attached HERE, at the one seam every turn
+    // passes through, rather than at each builder: a builder that forgot would hand the screen a
+    // picture one turn out of date, and nothing would fail.
+    const said = this.mode === 'introduction' ? this.withPortrait(turn) : turn;
+    const original = said.coachMessage;
+    if (original.trim().length === 0) return said;
 
     const composed = this.applyGuard(
       await composeCoachTurn(this.llm, {
@@ -1357,12 +2117,22 @@ export class CoachOrchestrator {
         goal: this.goal?.title ?? this.spec.title ?? null,
         known: this.knownSoFar(),
         prompt: original,
-        closing: turn.done,
+        // Three different turns, three different jobs. The reflection that used to arrive with the
+        // finished plan now arrives at the CHECK, where it can still change it; the turn after a
+        // confirmed check only lands. `closing` survives for the paths that reach the end without a
+        // check at all, so nothing silently loses its voice.
+        closing: turn.done && !this.understandingChecked,
+        understanding: this.phase === 'confirm',
+        landing: turn.done && this.understandingChecked,
+        // There is no plan on the other side of an introduction, and the landing instruction says
+        // there is. One sentence, and it would be the coach promising something that is not
+        // happening — which is the whole reason this mode exists.
+        introduction: this.mode === 'introduction',
         reflectionsSoFar: this.reflections,
         locale: this.conversationLocale ?? this.locale ?? 'en',
       }),
     );
-    if (composed === original) return turn;
+    if (composed === original) return said;
 
     if (looksLikeReflection(composed, original)) this.reflections += 1;
     // Replace what the builder pushed rather than appending beside it.
@@ -1373,7 +2143,12 @@ export class CoachOrchestrator {
       this.history.push({ role: 'model', content: composed });
     }
     this.note('Turn composed', { reflections: this.reflections });
-    return { ...turn, coachMessage: composed };
+    return { ...said, coachMessage: composed };
+  }
+
+  /** The turn, carrying the Portrait as it stands. A copy, so the screen holds no live reference. */
+  private withPortrait(turn: CoachTurn): CoachTurn {
+    return { ...turn, portrait: clonePortrait(this.portrait) };
   }
 
   /**
@@ -1382,6 +2157,14 @@ export class CoachOrchestrator {
    * and the instruction above it says so explicitly.
    */
   private knownSoFar(): KnownFact[] {
+    // THE INTRODUCTION KNOWS THE PERSON, NOT A SET OF ANSWERS.
+    //
+    // This is what makes the understanding check a real check: what the composer says back is
+    // composed from the Portrait, so it IS what the engine believes. A mis-extraction becomes a
+    // sentence the person can recognise as wrong and correct, instead of a belief that silently
+    // shapes everything after it. It also stops the coach asking for something it already
+    // understood, which is the same guarantee the slate version gives.
+    if (this.mode === 'introduction') return portraitFacts(this.portrait);
     const asked = new Map<string, string>();
     for (const q of this.questions) asked.set(q.id, q.prompt);
     if (this.journeyChoiceQuestion) asked.set(this.journeyChoiceQuestion.id, this.journeyChoiceQuestion.prompt);
@@ -1523,6 +2306,20 @@ const META_VOICE_KEYS: Partial<Record<QuestionIntent, string>> = {
 };
 
 /**
+ * The offline reading of "what should I call you": their answer, when it IS a name and nothing else.
+ *
+ * Not a guess — it is literally what they typed, unchanged. It exists so the name still lands when
+ * the model is unreachable, which is the ordinary offline invariant applied to the one thing the
+ * introduction has to learn. One word, letters only, short: "Guy" or "גיא" qualifies, "I'd rather
+ * not say" does not, and anything it cannot place returns nothing.
+ */
+function literalName(said: string): string | null {
+  const text = said.trim();
+  if (text.length === 0 || text.length > 24) return null;
+  return /^[\p{L}][\p{L}'\u2019-]*$/u.test(text) ? text : null;
+}
+
+/**
  * Which language somebody is writing in, from what they wrote.
  *
  * Script detection rather than language detection, and only for the scripts this product actually
@@ -1550,9 +2347,15 @@ function questionsForProcessType(
 
 /**
  * Build the synthetic multi-goal FOCUS question: one closed option per detected goal, each labelled
- * with its KIND in plain language (e.g. "Pushups 100→500/week — a step-by-step plan …"). Closed (no
- * "Other") so the user simply picks which goal to build first. The orchestrator maps the chosen value
- * back to its goal index.
+ * with its KIND in plain language (e.g. "Pushups 100→500/week — a step-by-step plan …").
+ *
+ * ── IT IS OPEN NOW (founder, 2026-09-15) ───────────────────────────────────────────────────────
+ *
+ * It used to be `allowOther: false`, which made it the most jarring card in the flow: somebody had
+ * just written two goals in their own words and was handed a numbered menu, on the second turn. The
+ * goals are still the only real answers — so the cards stay, the composer stays open beside them,
+ * and a typed sentence is read back onto one of these exact options by
+ * {@link CoachOrchestrator.readSpokenFocusPick}. An answer that cannot be placed changes nothing.
  */
 function buildFocusQuestion(goals: UnderstoodGoal[], copy: FocusCopy): DomainQuestion {
   return {
@@ -1560,7 +2363,7 @@ function buildFocusQuestion(goals: UnderstoodGoal[], copy: FocusCopy): DomainQue
     intent: 'foundation',
     prompt: copy.intro,
     options: goals.map((g) => `${g.title} — ${copy.kindLabels[g.kind]}`),
-    allowOther: false,
+    allowOther: true,
     multiSelect: false,
   };
 }

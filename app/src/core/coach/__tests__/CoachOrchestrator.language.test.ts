@@ -125,6 +125,14 @@ describe('CoachOrchestrator — Hebrew deterministic copy + safe closed-option m
 
     expect(turn.question?.prompt).toBe(i18n.t('scheduling.prompt', { ns: 'coachContent' }));
     // Option 0 ("flexible") leaves the preference empty — the exact-string match holds in Hebrew.
+    const check = await orchestrator.selectOption(0);
+    // And the understanding check that now follows it is Hebrew too, options included.
+    expect(check.question?.id).toBe('meta.confirm');
+    expect(check.question?.prompt).toBe(i18n.t('understandingCheck.prompt', { ns: 'coachContent' }));
+    expect(check.question?.options).toEqual(
+      i18n.t('understandingCheck.options', { ns: 'coachContent', returnObjects: true }),
+    );
+
     const done = await orchestrator.selectOption(0);
     expect(done.done).toBe(true);
     expect(done.goalSpec?.schedulingPreference).toBeUndefined();

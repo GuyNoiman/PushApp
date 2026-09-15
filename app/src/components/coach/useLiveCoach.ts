@@ -28,6 +28,7 @@ import { extractTechnicalMode } from '@/core/coach/technicalMode';
 import {
   CoachOrchestrator,
   CoachUnavailableError,
+  type CoachMode,
   type CoachTurn,
 } from '@/core/coach/CoachOrchestrator';
 import type { GoalSpec } from '@/core/coach/interviewPlaybook';
@@ -44,8 +45,15 @@ import {
   type BudgetZone,
 } from '@/core/llm/conversationBudget';
 import { getCommunicationProfile, profileToCoachStyle } from '@/core/communication/communicationProfile';
+import {
+  INTRODUCTION_CONVERSATION_KEY,
+  PLANNING_CONVERSATION_KEY,
+  asyncStorageBudgetStore,
+  type ConversationBudgetStore,
+} from '@/core/llm/conversationBudgetStore';
 import { makeCoachLlm } from '@/core/llm/makeCoachLlm';
 import type { CoachOnboardingSummary } from '@/core/onboarding/model';
+import type { Portrait } from '@/core/coach/portrait';
 
 /**
  * The calm, always-safe hand-off shown when the goal routes to a sensitive domain, and the soft retry
@@ -76,6 +84,8 @@ export type LiveCoachItem =
 
 /** The current question awaiting an answer, shaped for {@link CoachOptions}. */
 export interface LiveCoachQuestionView {
+  /** The orchestrator's question id, so the screen can recognise the turns it renders specially. */
+  id: string;
   /** A short label above the option cards (the full question is already a coach bubble). */
   label: string;
   /** Option cards; each `id` is the stringified 0-based option index (parsed back on select). */
@@ -109,6 +119,30 @@ export interface UseLiveCoach {
   canAskOpenQuestion: boolean;
   /** Whether the technical commentary is on (2026-08-27). Toggled by saying so in the conversation. */
   technicalMode: boolean;
+  /**
+   * True once the INTRODUCTION has landed (D105). It is the first run's equivalent of `goalSpec`,
+   * and it is a separate flag precisely BECAUSE there is no spec: the introduction chooses and
+   * builds nothing, so the screen's next move is the first run's own tail rather than a build.
+   * Always false in `planning` mode.
+   */
+  introductionComplete: boolean;
+  /**
+   * The name the person gave when the introduction asked what to call them, once it has one. The
+   * screen writes it to the profile; the core is framework-free and does not own that state. Null is
+   * the ordinary case in `planning` mode and a perfectly normal one in `introduction` mode.
+   */
+  personalName: string | null;
+  /**
+   * THE PORTRAIT (דיוקן) the introduction has built so far, or null in `planning` mode.
+   *
+   * Handed to the screen rather than written from here, exactly like {@link personalName}: the core
+   * is framework-free, and the door to `AppState` belongs to the screen. It updates as the
+   * conversation goes, so an introduction somebody abandons half way still leaves what it
+   * understood instead of nothing.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. It is never rendered, never logged and never sent.
+   */
+  portrait: Portrait | null;
   /** Send the opening free-text — the only LLM call (triage). */
   sendOpening: (text: string) => void;
   /** Pick a single closed option by its id (index). */
@@ -123,6 +157,15 @@ export interface UseLiveCoach {
    * them to write it a second time. A no-op when there is nothing to retry.
    */
   retryOpening: () => void;
+  /**
+   * The conversation genuinely CONCLUDED — a Journey was created from it — so its persisted budget
+   * is released and the next conversation starts fresh. Called by the screen at the build, which is
+   * the only place that knows a Journey really exists.
+   *
+   * A no-op in `introduction` mode: the first conversation is ONE conversation however many times it
+   * is re-entered, and its spend never refills (see {@link ../../core/llm/conversationBudgetStore}).
+   */
+  journeyCreated: () => void;
 }
 
 /** Construction options — a test seam to inject an orchestrator over a MockLlmClient. */
@@ -141,11 +184,23 @@ export interface UseLiveCoachOptions {
   profile?: CoachOnboardingSummary | null;
   /** The user's preferred first name, when the profile has one. Absent is normal. */
   firstName?: string | null;
+  /**
+   * Which conversation this is (D105). `introduction` is the first run: it asks what to call them,
+   * asks only what you would ask on meeting somebody, and builds nothing. Absent ⇒ `planning`, which
+   * is the Coach tab and every caller that existed before this option did.
+   *
+   * Ignored when an orchestrator is injected — that instance already knows which it is, and the hook
+   * asks it rather than being told twice.
+   */
+  mode?: CoachMode;
+  /** Where this conversation's spend is persisted. A test seam; production uses AsyncStorage. */
+  budgetStore?: ConversationBudgetStore;
 }
 
 /** Map an expert {@link DomainQuestion} onto the option-card view (index → id). */
 function toQuestionView(question: DomainQuestion, t: TFunction<'coach'>): LiveCoachQuestionView {
   return {
+    id: question.id,
     label: question.multiSelect ? t('chooseAny') : t('chooseOne'),
     options: question.options.map((title, index) => ({ id: String(index), title })),
     multiSelect: Boolean(question.multiSelect),
@@ -177,6 +232,17 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
    */
   const budgetRef = useRef<BudgetState>(EMPTY_BUDGET);
   const [budgetZone, setBudgetZone] = useState<BudgetZone>('open');
+  /**
+   * WHERE THAT NUMBER LIVES BETWEEN VISITS (founder, 2026-09-15).
+   *
+   * The ref above dies with the component, so backing out of a conversation and starting it again
+   * used to hand somebody a fresh six calls — and again, and again. The running total is now read
+   * from the device on mount and written back on every spend, keyed by the CONVERSATION rather than
+   * by the screen. Everything downstream is untouched: this changes where the number is kept, not
+   * what it means.
+   */
+  const budgetStoreRef = useRef<ConversationBudgetStore>(options?.budgetStore ?? asyncStorageBudgetStore);
+  const conversationKeyRef = useRef<string>(PLANNING_CONVERSATION_KEY);
   const orchestratorRef = useRef<CoachOrchestrator | null>(null);
   if (orchestratorRef.current === null) {
     orchestratorRef.current =
@@ -188,6 +254,9 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         llm: makeCoachLlm((tokens) => {
           budgetRef.current = spend(budgetRef.current, { tokens });
           setBudgetZone(zoneOf(budgetRef.current, DEFAULT_BUDGET));
+          // Off the render path, exactly like the ref it mirrors: fire-and-forget, never awaited
+          // inside the LLM stack, and a failed write only means a more generous budget.
+          void budgetStoreRef.current.save(conversationKeyRef.current, budgetRef.current);
         }),
         guard: new SafetyLayer().messageGuard(),
         locale: i18n.language,
@@ -206,8 +275,17 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         // nothing anyone could hear. Read once at construction for the same reason as the profile:
         // a voice that changed mid-conversation would read as a different person answering.
         styleId: profileToCoachStyle(getCommunicationProfile()),
+        // WHICH CONVERSATION THIS IS (D105). The first run is an INTRODUCTION: it meets the person
+        // and builds nothing. Absent ⇒ planning, so the Coach tab is unchanged.
+        mode: options?.mode ?? 'planning',
       });
   }
+  // Asked of the orchestrator rather than of the options, so an injected instance (every test, and
+  // the dev harness) and the hook can never disagree about which conversation this is.
+  const isIntroduction = orchestratorRef.current.isIntroduction();
+  conversationKeyRef.current = isIntroduction
+    ? INTRODUCTION_CONVERSATION_KEY
+    : PLANNING_CONVERSATION_KEY;
 
   const [items, setItems] = useState<LiveCoachItem[]>([]);
   const [questionView, setQuestionView] = useState<LiveCoachQuestionView | null>(null);
@@ -217,6 +295,12 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
   /** Whether the commentary is on. Mirrored into state so the screen can show that it is. */
   const [technicalMode, setTechnicalMode] = useState(false);
   const [awaitingOpening, setAwaitingOpening] = useState(true);
+  /** The introduction landed. There is no spec to build from — that is the point (D105). */
+  const [introductionComplete, setIntroductionComplete] = useState(false);
+  /** The name the introduction learned, for the screen to write to the profile. */
+  const [personalName, setPersonalName] = useState<string | null>(null);
+  /** What the introduction has understood so far, for the screen to write to AppState. */
+  const [portrait, setPortrait] = useState<Portrait | null>(null);
 
   // The raw current question, kept in a ref so handlers always read the latest without re-binding.
   const rawQuestionRef = useRef<DomainQuestion | null>(null);
@@ -231,6 +315,48 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     },
     [t],
   );
+
+  /**
+   * Read what this conversation has already spent.
+   *
+   * It ADDS to whatever the ref holds rather than replacing it, which is not defensive noise: a turn
+   * can be paid for before this read lands, and a replace would silently give that call back. The
+   * ref starts empty, so on the ordinary path the sum is exactly the stored value.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    const store = budgetStoreRef.current;
+    const key = conversationKeyRef.current;
+    void store
+      .load(key)
+      .then((stored) => {
+        if (cancelled) return;
+        const merged: BudgetState = {
+          callsUsed: stored.callsUsed + budgetRef.current.callsUsed,
+          tokensUsed: stored.tokensUsed + budgetRef.current.tokensUsed,
+        };
+        budgetRef.current = merged;
+        setBudgetZone(zoneOf(merged, DEFAULT_BUDGET));
+      })
+      .catch(() => {
+        // The store already swallows device failures; this is the second belt, for an injected one
+        // that does not. Nothing read means nothing spent — never a full budget, never a blocked
+        // conversation. Storage trouble must not lock somebody out of the app.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * The conversation concluded for real — a Journey exists — so its budget is released and the next
+   * one starts fresh. The introduction never releases: it is one conversation for the life of the
+   * install, however many times the first run is re-entered.
+   */
+  const journeyCreated = useCallback(() => {
+    if (isIntroduction) return;
+    void budgetStoreRef.current.clear(conversationKeyRef.current);
+  }, [isIntroduction]);
 
   // Greet once, on mount — start() is a no-op-safe local call (no LLM).
   useEffect(() => {
@@ -261,6 +387,13 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         return;
       }
 
+      // THE NAME, on the one turn that learns it. Surfaced before the branches below for the same
+      // reason the notes are: it must survive whatever this turn also is.
+      if (turn.personalName) setPersonalName(turn.personalName);
+      // WHAT THE FIRST RUN PRODUCES. Surfaced before the branches below for the same reason the
+      // name is: the landing turn is also the turn that carries the finished Portrait.
+      if (turn.portrait) setPortrait(turn.portrait);
+
       const appended: LiveCoachItem[] = [{ kind: 'coach', text: turn.coachMessage }];
       if (turn.awaitingGoalText) {
         applyQuestion(null);
@@ -274,6 +407,9 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         if (spec) appended.push(journeyCardItem(spec, t));
         applyQuestion(null);
         setGoalSpec(spec);
+        // An introduction ends with nothing to build (D105), so there is no Journey card and no
+        // Build CTA — the screen moves on to the first run's own tail instead.
+        if (isIntroduction) setIntroductionComplete(true);
         setItems((prev) => [...prev, ...appended]);
         return;
       }
@@ -281,7 +417,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
       applyQuestion(turn.question ?? null);
       setItems((prev) => [...prev, ...appended]);
     },
-    [appendNotes, applyQuestion, t],
+    [appendNotes, applyQuestion, isIntroduction, t],
   );
 
   /**
@@ -417,6 +553,10 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
 
   return {
     technicalMode,
+    introductionComplete,
+    personalName,
+    portrait,
+    journeyCreated,
     items,
     question: questionView,
     status,

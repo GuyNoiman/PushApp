@@ -72,6 +72,11 @@ jest.mock('@/components/coach/useLiveCoach', () => ({
     selectSingle: jest.fn(),
     selectMulti: jest.fn(),
     answerOther: jest.fn(),
+    // The screen releases the conversation's persisted budget when a Journey is really created
+    // (2026-09-15), and shows nothing different for an introduction that built nothing (D105).
+    journeyCreated: jest.fn(),
+    introductionComplete: false,
+    personalName: null,
   }),
 }));
 

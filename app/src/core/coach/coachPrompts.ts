@@ -451,6 +451,127 @@ export function parseDiagnosisSignals(text: string): Record<string, string> {
 }
 
 /**
+ * THE FOCUS READER — a person with two goals may answer in a sentence instead of tapping a number.
+ *
+ * The focus turn is the earliest card in the conversation and was the most jarring, because it was
+ * the only one with no way out: `allowOther: false` handed somebody who had just written freely a
+ * numbered menu. It is open now, and this step reads the sentence.
+ *
+ * IT CHOOSES FROM WHAT IT WAS OFFERED, by position, and nothing else. The engine validates the
+ * index against the goals it actually surfaced ({@link parseFocusChoice}), so an ambiguous answer —
+ * "both", "I'm not sure" — resolves to nothing and the same question simply stands. Guessing here
+ * would silently build the wrong goal and defer the one they came for.
+ */
+export const FOCUS_SYSTEM_PROMPT = [
+  'A person has been offered a short numbered list of their OWN goals and asked which one to work',
+  'on first. You read their answer and report which one they chose. You never talk to them.',
+  '',
+  'Return ONLY JSON: {"choice": <the number of the one they chose>}',
+  'Return {} when they did not clearly choose exactly one of the listed goals — including when they',
+  'said "both", asked a question, or named something that is not on the list. Silence is right when',
+  'you are not sure: the wrong choice builds the wrong plan and parks the goal they came for.',
+].join('\n');
+
+/** Prefix marking the hidden focus-reading turn. */
+export const FOCUS_DIRECTIVE_PREFIX = '[focus]';
+
+/** Hand the focus reader the goals that were actually offered, numbered, and what the person said. */
+export function buildFocusDirective(options: readonly string[], answer: string): string {
+  return [
+    `${FOCUS_DIRECTIVE_PREFIX} They were offered these goals:`,
+    ...options.map((option, index) => `${index + 1}. ${option}`),
+    `They answered: "${answer}"`,
+    'Report which one they chose, per your instructions.',
+  ].join('\n');
+}
+
+/**
+ * Read the focus reader's answer into a 0-based index — or nothing.
+ *
+ * `count` is what the engine actually offered, and a number outside it is dropped rather than
+ * clamped: a choice of "3" out of two goals is not evidence about either one.
+ */
+export function parseFocusChoice(raw: string, count: number): number | null {
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  let parsed: { choice?: unknown };
+  try {
+    parsed = JSON.parse(match[0]) as { choice?: unknown };
+  } catch {
+    return null;
+  }
+  const choice = typeof parsed.choice === 'number' ? parsed.choice : Number(parsed.choice);
+  if (!Number.isInteger(choice)) return null;
+  const index = choice - 1; // the model is shown a 1-based list
+  return index >= 0 && index < count ? index : null;
+}
+
+/**
+ * THE NAME READER — the one thing the INTRODUCTION learns before anything else.
+ *
+ * The first run used to collect a name on a form (the personal-details page), and that page left the
+ * flow on 2026-09-03. Since then `usePersonalName()` has returned nothing and the handoff screen has
+ * fallen back to its no-name sentence. The conversation asks instead, exactly as the spec's §6 does
+ * ("Hi, I'm ⟨product⟩. Before we get started, what should I call you?") — and this step reads the
+ * answer, because somebody may write "Guy", "I'm Guy", "קוראים לי גיא" or a sentence about not
+ * wanting to say.
+ *
+ * IT MAY ONLY REPORT WHAT THEY TYPED. The name is checked against their own message by
+ * {@link parsePersonalName} before it is kept, so a model that offers a name nobody wrote reports
+ * nothing. Silence is the correct outcome of not knowing: the conversation goes on, and the screens
+ * that use a name already carry a complete sentence for the case where there isn't one.
+ */
+export const NAME_SYSTEM_PROMPT = [
+  'You read ONE thing: the name a person wants to be called by, from what they just wrote.',
+  'You do not talk to them, you do not greet them, and you never ask anything.',
+  '',
+  'Return ONLY JSON: {"name": "what they want to be called"}',
+  'Copy the name exactly as they wrote it, in their own script — do not translate or transliterate it.',
+  'Return {} when they did not give a name, refused, or you are not sure. A guessed name is worse',
+  'than none: they will be greeted by it for the rest of the conversation.',
+].join('\n');
+
+/** Prefix marking the hidden name-reading turn. */
+export const NAME_DIRECTIVE_PREFIX = '[name]';
+
+/** Hand the name reader what the person said when asked what to call them. */
+export function buildNameDirective(answer: string): string {
+  return [
+    `${NAME_DIRECTIVE_PREFIX} They were asked what they would like to be called.`,
+    `They answered: "${answer}"`,
+    'Report the name, per your instructions.',
+  ].join('\n');
+}
+
+/** How long a thing somebody wants to be called can reasonably be. Longer is a sentence, not a name. */
+const MAX_NAME_CHARS = 40;
+
+/**
+ * Read the name reader's answer — and check it against what the person actually wrote.
+ *
+ * The containment check is the whole guard. Everything else here is shape (parseable, short, one
+ * line, no digits); this is the line that stops a name nobody typed from becoming how the app
+ * addresses somebody for good. Unreadable output is no name, never an error.
+ */
+export function parsePersonalName(raw: string, said: string): string | null {
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  let parsed: { name?: unknown };
+  try {
+    parsed = JSON.parse(match[0]) as { name?: unknown };
+  } catch {
+    return null;
+  }
+  if (typeof parsed.name !== 'string') return null;
+  const name = parsed.name.trim();
+  if (name.length === 0 || name.length > MAX_NAME_CHARS) return null;
+  if (/[\n\r\d]/.test(name)) return null;
+  // ONLY what they typed. A name that is not in their own message was invented for them.
+  if (!said.toLowerCase().includes(name.toLowerCase())) return null;
+  return name;
+}
+
+/**
  * The full persona for the interview: who the coach is, then what it is doing.
  *
  * A function rather than a constant because the character interpolates the

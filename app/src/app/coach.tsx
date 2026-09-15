@@ -14,9 +14,8 @@
  * Presentational + local state only — the live path keeps its business logic in
  * {@link useLiveCoach} (Engineering Bible §19).
  */
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +30,10 @@ import { TechnicalNote } from '@/components/coach/TechnicalNote';
 import { CoachOptions } from '@/components/coach/CoachOptions';
 import { buildCoachScript, type CoachOption } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
-import { RemindersAskPage } from '@/components/onboarding/FirstRunTail';
+import { CONFIRM_QUESTION_ID, FOCUS_QUESTION_ID } from '@/core/coach/CoachOrchestrator';
+import { FirstJourneyPage, HandoffPage, RemindersAskPage } from '@/components/onboarding/FirstRunTail';
+import { introJourneyContent } from '@/components/onboarding/introJourneyContent';
+import { usePersonalName } from '@/components/onboarding/usePersonalName';
 import {
   OnboardingPrimaryButton,
   OnboardingScaffold,
@@ -43,7 +45,6 @@ import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { featureFlags } from '@/core/config/featureFlags';
 import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
-import type { IntroJourneyContent } from '@/core/onboarding/introJourney';
 import type { JourneyStart } from '@/core/types/domain';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -96,21 +97,6 @@ export default function CoachScreen() {
  * fall back on either. Both arms of the old expression were dead at once and the X did nothing at all
  * (partner, 2026-09-03). Onboarding is where that person came from and the only place they can be.
  */
-/**
- * The "Getting to know PushApp" Journey's strings, pulled out of the `onboarding` namespace.
- *
- * Kept as a function rather than inlined because the Steps are an ARRAY in the locale files and
- * i18next returns arrays only when asked to (`returnObjects`), which is easy to get wrong once and
- * then never notice — a missing array here would create a Journey with no Steps at all.
- */
-function introJourneyContent(t: TFunction): IntroJourneyContent {
-  return {
-    title: t('introJourney.title'),
-    why: t('introJourney.why', { returnObjects: true }) as string[],
-    steps: t('introJourney.steps', { returnObjects: true }) as { title: string; description: string }[],
-  };
-}
-
 /**
  * Finish the first run WITHOUT a coach conversation.
  *
@@ -256,7 +242,16 @@ function LiveCoachScreen() {
   const firstRun = firstRunParam === '1';
   // The intro Journey's own copy. Read unconditionally so the hook order never depends on the route.
   const { t: tOnboarding } = useTranslation('onboarding');
-  const [tail, setTail] = useState<'none' | 'reminders'>('none');
+  /**
+   * The first run's tail, in order: the reminder ask, then the two approved screens that close the
+   * sequence — 06 · handoff and 07 · first Journey (build spec §6/§7).
+   *
+   * They live here rather than in `/onboarding` because `completeOnboarding` has already run by the
+   * time the first of them shows, and that closes the first-run gate: the onboarding route is not
+   * reachable any more. They are still steps of `ONBOARDING_STEP_ORDER` and still carry the pager.
+   */
+  const [tail, setTail] = useState<'none' | 'reminders' | 'handoff' | 'firstJourney'>('none');
+  const personalName = usePersonalName();
   /** The build's technical trace, shown after the Journey is created (technical mode only). */
   const [buildTrace, setBuildTrace] = useState<string[]>([]);
   const scrollRef = useRef<ScrollView>(null);
@@ -265,11 +260,49 @@ function LiveCoachScreen() {
   // skipped when the user already answered it in onboarding.
   // The name is read here rather than inside the hook: the core is framework-free and the profile
   // is React state the screen already holds.
-  const { profile: ownProfile } = useProfile();
+  const { profile: ownProfile, setDisplayName } = useProfile();
   const displayName = ownProfile.displayName ?? null;
-  const coach = useLiveCoach({ profile: core.getOnboardingCoachSummary(), firstName: displayName });
+  const coach = useLiveCoach({
+    profile: core.getOnboardingCoachSummary(),
+    firstName: displayName,
+    // WHICH CONVERSATION THIS IS (D105). The first run is an INTRODUCTION — it meets the person and
+    // builds no Journey. The Coach tab is unchanged.
+    mode: firstRun ? 'introduction' : 'planning',
+  });
   const { t } = useAddressedTranslation('coach');
   const { t: tCommon } = useTranslation('common');
+
+  /**
+   * THE NAME THE CONVERSATION LEARNED, written where the rest of the app reads it.
+   *
+   * The first run has had no place to ask for a name since the personal-details page left the flow
+   * on 2026-09-03, which is why `usePersonalName()` returned nothing and the handoff screen has been
+   * showing its no-name sentence. The introduction asks in conversation instead; this is the one
+   * line that lands the answer in the profile. No form field, no extra screen.
+   *
+   * It never OVERWRITES a name already on the profile: a person who set one deliberately outranks a
+   * reading of a sentence, and the common first-run case is that there is nothing there yet.
+   */
+  useEffect(() => {
+    if (!coach.personalName || displayName) return;
+    setDisplayName(coach.personalName);
+  }, [coach.personalName, displayName, setDisplayName]);
+
+  /**
+   * THE PORTRAIT (דיוקן), written where the rest of the app can read it.
+   *
+   * The introduction's actual output. It lands in `AppState`, which is what puts it in the data
+   * export and takes it out with an account deletion without either path knowing it exists.
+   *
+   * Written as the conversation goes rather than only at the end: somebody who gets three questions
+   * in and closes the app has still told us those three things, and asking them again next time
+   * would be the coach forgetting. `setPortrait` ignores an empty one, so a conversation that
+   * understood nothing writes nothing.
+   */
+  useEffect(() => {
+    if (!coach.portrait) return;
+    core.setPortrait(coach.portrait);
+  }, [coach.portrait, core]);
 
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);
 
@@ -338,12 +371,35 @@ function LiveCoachScreen() {
    *   · past the `open` zone — free text costs a model call, cards cost nothing, and the honest
    *     move at the ceiling is a cheaper conversation rather than a shorter one.
    */
+  /**
+   * THE UNDERSTANDING CHECK is the one turn that shows BOTH, because the approved design shows both
+   * (founder, 2026-09-14): two chips — "Yes, exactly" / "I want to clarify" — sitting under the
+   * reflection, with the composer still open beneath them. Either answer is a real answer, and
+   * making the person choose which affordance to use would be us asking them to guess.
+   */
+  const isUnderstandingCheck = coach.question?.id === CONFIRM_QUESTION_ID;
+  /**
+   * THE FOCUS PICK shows both for the same reason (founder, 2026-09-15). It used to be closed —
+   * somebody who had just written two goals in their own words was handed a numbered menu, on the
+   * second turn, and it was the most jarring card in the flow because it arrives so early. The goals
+   * stay as cards, because they are the real answers; the composer stays open beside them, because a
+   * person who wants to say "the pushups one, the protein can wait" should be able to.
+   */
+  const isFocusPick = coach.question?.id === FOCUS_QUESTION_ID;
+  /** The turns that offer a tap AND a sentence, rather than making the person guess which is wanted. */
+  const showsBoth = isUnderstandingCheck || isFocusPick;
+
   const offerCards = Boolean(
-    coach.question && (!coach.question.allowOther || !coach.canAskOpenQuestion),
+    coach.question &&
+      // A question with no options has nothing to show as cards, whatever the budget says. The one
+      // that exists is the correction after "I want to clarify", and it is free text by its nature:
+      // a correction picked from options we wrote is the same failure as the reading it corrects.
+      coach.question.options.length > 0 &&
+      (showsBoth || !coach.question.allowOther || !coach.canAskOpenQuestion),
   );
 
   /** A pending question the person is meant to answer in their own words. */
-  const awaitingFreeText = Boolean(coach.question) && !offerCards;
+  const awaitingFreeText = (Boolean(coach.question) && !offerCards) || showsBoth;
 
   const handleSubmitOther = useCallback(
     (text: string) => {
@@ -403,6 +459,9 @@ function LiveCoachScreen() {
           : { mode: 'now' };
     const journey = core.createJourneyFromGoalSpec(coach.goalSpec, start);
     if (!journey) return;
+    // The conversation genuinely concluded, so its persisted budget is released and the next one
+    // starts fresh. Only a real Journey counts — leaving and coming back does not refill it.
+    coach.journeyCreated();
     // A real Journey is the durable completion boundary. The reminder that follows is optional;
     // closing there must open a populated Home rather than restart and risk a duplicate Journey.
     // The intro Journey rides along with completion (founder, 2026-09-03) — it replaced the profile
@@ -418,11 +477,29 @@ function LiveCoachScreen() {
     // Step to be reminded about. Everyone else goes straight to Home, exactly as before.
     if (firstRun) setTail('reminders');
     else router.replace('/');
-  }, [coach.goalSpec, core, startMode, startInDays, firstRun, tOnboarding]);
+  }, [coach, core, startMode, startInDays, firstRun, tOnboarding]);
+
+  /**
+   * THE INTRODUCTION IS OVER, AND NOTHING WAS BUILT (D105) — which is why this is not `handleBuild`
+   * with a branch in it. The first conversation meets the person; it chooses no Journey. What
+   * follows is the first run's existing tail, entered exactly where the build used to enter it:
+   * `completeOnboarding` with the intro Journey, then reminders → handoff → first Journey.
+   *
+   * It is a tap rather than an effect on purpose. Advancing the moment the coach stops talking would
+   * replace its closing line with a new screen before anybody had read it.
+   */
+  const handleIntroductionDone = useCallback(() => {
+    core.completeOnboarding(core.getOnboardingAnswers(), introJourneyContent(tOnboarding));
+    setTail('reminders');
+  }, [core, tOnboarding]);
 
   const headerBorder = useMemo(() => ({ borderBottomColor: theme.hairline }), [theme.hairline]);
 
-  /** Both reminder answers go Home; a denied OS permission must never block the app opening. */
+  /**
+   * Both reminder answers move ON; a denied OS permission must never block the app opening. What
+   * follows is no longer Home but the handoff — the person is introduced to the Journey that was
+   * just built for them before they are dropped in front of it.
+   */
   const answerReminders = useCallback(async (turnOn: boolean) => {
     if (turnOn) {
       try {
@@ -431,11 +508,21 @@ function LiveCoachScreen() {
         // Best-effort by design: whatever the OS decided, the next page is the next page.
       }
     }
-    router.replace('/');
+    setTail('handoff');
   }, [core]);
 
   if (tail === 'reminders') {
     return <RemindersAskPage onTurnOn={() => void answerReminders(true)} onNotNow={() => void answerReminders(false)} />;
+  }
+
+  if (tail === 'handoff') {
+    return <HandoffPage name={personalName} onContinue={() => setTail('firstJourney')} />;
+  }
+
+  if (tail === 'firstJourney') {
+    return (
+      <FirstJourneyPage content={introJourneyContent(tOnboarding)} onContinue={() => router.replace('/')} />
+    );
   }
 
   return (
@@ -515,7 +602,9 @@ function LiveCoachScreen() {
                 // The budget narrows what the coach ASKS, never what it tells the person. A
                 // question that allowed free text stops offering it and keeps its cards, which cost
                 // nothing — so the conversation carries on and nobody is told they ran out.
-                allowOther={coach.question.allowOther && coach.canAskOpenQuestion}
+                // The check keeps its own composer open below, so the cards do not offer a second
+                // way in to the same thing.
+                allowOther={!showsBoth && coach.question.allowOther && coach.canAskOpenQuestion}
                 continueLabel={t('continue')}
                 selectedIds={selectedIds}
                 disabled={false}
@@ -583,6 +672,25 @@ function LiveCoachScreen() {
                 <Ionicons name="checkmark" size={17} color={theme.backgroundElement} />
                 <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
                   {t('build')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {coach.introductionComplete && (
+            <View
+              style={[
+                styles.ctaBar,
+                { backgroundColor: theme.background, paddingBottom: Spacing.three + barBottomInset },
+              ]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('continue')}
+                onPress={handleIntroductionDone}
+                style={({ pressed }) => [styles.ctaPrimary, { backgroundColor: theme.teal }, pressed && styles.pressed]}>
+                <Ionicons name="arrow-forward" size={17} color={theme.backgroundElement} />
+                <ThemedText type="smallBold" style={{ color: theme.backgroundElement }}>
+                  {t('continue')}
                 </ThemedText>
               </Pressable>
             </View>

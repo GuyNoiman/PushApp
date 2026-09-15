@@ -67,6 +67,25 @@ export interface ComposeTurnInput {
    * generic, so it gets its own instruction.
    */
   closing?: boolean;
+  /**
+   * True for THE UNDERSTANDING CHECK — the turn that says what was understood and asks whether it
+   * is right, before anything is built (founder, 2026-09-14). It is `closing`'s reflection moved to
+   * where it can still change the outcome, plus the one question that makes it a check rather than
+   * a speech. When this is set the turn is not the last one, and `closing` is not.
+   */
+  understanding?: boolean;
+  /**
+   * True for the turn AFTER the understanding was confirmed: the plan is about to be built, nothing
+   * is in question, and reflecting a second time would only make the coach sound like it forgot.
+   */
+  landing?: boolean;
+  /**
+   * True when this is the INTRODUCTION (D105) — the first conversation, which chooses and builds
+   * NOTHING. It changes exactly one line, the landing one: the ordinary landing says the plan is
+   * being built now, and in an introduction no plan is being built. A coach that says otherwise is
+   * promising something that is not happening on the very turn the person is meant to trust it.
+   */
+  introduction?: boolean;
   /** How many reflections have already happened, so the character's budget can be respected. */
   reflectionsSoFar: number;
   /** The conversation's language, so a Hebrew conversation cannot come back in English. */
@@ -83,7 +102,58 @@ function composerTask(input: ComposeTurnInput): string {
     'Write the coach’s next turn in this conversation. One turn, nothing else. No preamble, no',
     'labels, no headings, no quotation marks around it.',
     '',
-    input.closing
+    input.understanding
+      ? [
+          'This is THE CHECK. Nothing has been built yet, and this is the person’s last chance to',
+          // IN AN INTRODUCTION, NOTHING IS BUILT FROM THIS — so the instruction must not say it is.
+          // The sentence was written for the planning conversation, where the plan really is made
+          // out of this reflection, and it came along unchanged when the introduction started using
+          // the same check. An instruction that describes a consequence that will not happen is an
+          // instruction the model will honour: it steers the coach into promising a plan on the one
+          // turn the person is being asked to trust it.
+          input.introduction
+            ? 'tell you that you have them wrong before this becomes what you believe about them.'
+            : 'tell you that you have them wrong before the plan is built out of it.',
+          'Do not motivate and do not congratulate. Say back, in their own words wherever you can:',
+          'what they want, where they are now, and what is actually in the way.',
+          // The same class of untrue promise as the sentence above, and it survived the first fix.
+          // "Where you would start" is a plan in one clause. In the planning conversation that is
+          // exactly right — a plan is about to be built and saying where it begins is the point. In
+          // an INTRODUCTION nobody has asked for a plan and none is coming, so a coach that ends on
+          // where it would start has quietly begun one on the turn it promised not to.
+          input.introduction
+            ? 'Do NOT say where you would start, and do not suggest a first step: nothing is being planned here.'
+            : 'And therefore where you would start.',
+          'Only things they told you — if something was never said, it does not appear.',
+          'Open by OFFERING the reflection rather than announcing a conclusion — in the spirit of',
+          '"I would be glad to reflect back what I have understood so far, and please feel free to',
+          'correct me" (founder\'s own wording, 2026-09-14). In your own words, in their language.',
+          'The invitation to correct you belongs at the FRONT, before they read the reflection, not',
+          'as a question tacked on the end: a person who knows they may push back reads it',
+          'differently from one being asked to approve something.',
+          'Do not then close with a yes/no question. You have already invited the correction.',
+          '',
+          'The person will see tappable answer options underneath your turn. NEVER list them, number',
+          'them, or hint at them.',
+        ].join('\n')
+      : input.landing && input.introduction
+      ? [
+          'They have just confirmed you understood them. This was an INTRODUCTION: you are not',
+          'building a plan now and you must not say or imply that you are — nothing is being made',
+          'from this conversation yet. Say what is given below, briefly and in your own voice. Do',
+          'NOT say back what you understood again; they have heard it and agreed to it, and',
+          'repeating it now would sound like you had forgotten. Do not ask anything, and do not',
+          'promise a plan a date or a next step you were not given.',
+        ].join('\n')
+      : input.landing
+      ? [
+          'They have just confirmed you understood them, and the plan is being built now. Say what',
+          'is given below — an honest note about what the plan can and cannot carry, and the',
+          'suggestion about people around them — briefly and in your own voice. Do NOT say back what',
+          'you understood again; they have heard it and agreed to it, and repeating it now would',
+          'sound like you had forgotten. Do not ask anything.',
+        ].join('\n')
+      : input.closing
       ? [
           'This is the LAST turn before a plan is built, and it is the moment the person finds out',
           'whether they were listened to. Do not motivate and do not congratulate. Say back, in their',

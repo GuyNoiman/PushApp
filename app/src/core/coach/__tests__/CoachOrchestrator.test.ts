@@ -417,7 +417,13 @@ describe('CoachOrchestrator — closing scheduling meta question', () => {
     const scheduling = await driveToScheduling(orchestrator);
     expect(scheduling.question?.id).toBe('meta.scheduling');
 
-    const done = await orchestrator.selectOption(0); // "No — I'm flexible"
+    // Scheduling no longer ends the interview: the understanding check stands between the last
+    // answer and the plan (founder, 2026-09-14).
+    const check = await orchestrator.selectOption(0); // "No — I'm flexible"
+    expect(check.done).toBe(false);
+    expect(check.question?.id).toBe('meta.confirm');
+
+    const done = await orchestrator.selectOption(0); // "That's right."
 
     expect(done.done).toBe(true);
     expect(done.goalSpec?.schedulingPreference).toBeUndefined();
@@ -427,7 +433,10 @@ describe('CoachOrchestrator — closing scheduling meta question', () => {
     const orchestrator = new CoachOrchestrator({ llm: singleGoalMock('body_image', 'process') });
     await driveToScheduling(orchestrator);
 
-    const done = await orchestrator.answerOther('Tue/Thu evenings');
+    const check = await orchestrator.answerOther('Tue/Thu evenings');
+    expect(check.question?.id).toBe('meta.confirm');
+
+    const done = await orchestrator.selectOption(0); // "That's right."
 
     expect(done.done).toBe(true);
     expect(done.goalSpec?.schedulingPreference).toBe('Tue/Thu evenings');

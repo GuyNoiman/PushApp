@@ -44,6 +44,7 @@ import {
 import { featureFlags } from '@/core/config/featureFlags';
 import { dreamsForJourney } from '@/core/dreams/dreams';
 import { futureStartState, previewStartNow } from '@/core/journeys/futureJourneys';
+import { stepLinkOf } from '@/core/journeys/stepLink';
 import { unlivedStepCount } from '@/core/status/stepHistory';
 import type { StepStatus } from '@/core/status/stepStatus';
 import { remainingDaysInWeek } from '@/core/util/week';
@@ -51,6 +52,7 @@ import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/th
 import type { Step } from '@/core/types/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
+import { useStepLink } from '@/hooks/useStepLink';
 import { useSupportCircleImpact } from '@/hooks/useSupportCircleImpact';
 import { isolate, isRTL } from '@/i18n/rtl';
 import { useApp } from '@/state/AppProvider';
@@ -896,8 +898,13 @@ function StepRow({
   const theme = useTheme();
   const { t } = useTranslation('journey');
   const status = step.done ? 'done' : isNext ? 'current' : 'upcoming';
+  // A Step that NAMES a screen opens it from HERE too, not only from Home (shared rule:
+  // `useStepLink`). Reaching the same Step by opening its Journey used to lose the behaviour
+  // entirely, with nothing to say it had ever existed.
+  const openStepLink = useStepLink();
+  const link = stepLinkOf(step);
 
-  return (
+  const row = (
     <ThemedView
       type="backgroundElement"
       style={[
@@ -947,7 +954,32 @@ function StepRow({
           {t('detail.next')}
         </ThemedText>
       )}
+      {/* The only hint a linked row gets: one quiet chevron, on the reading direction's trailing
+          edge. Without it the row looks exactly like the twelve inert ones above it, and a tap
+          that takes you somewhere has to be discoverable before it can be useful. */}
+      {link !== undefined && (
+        <Ionicons
+          name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+          size={16}
+          color={theme.textMuted}
+        />
+      )}
     </ThemedView>
+  );
+
+  // A Step with no destination stays exactly what it was here: a read-only row. Wrapping it in a
+  // Pressable that does nothing would promise a tap this screen cannot answer — the report sheet
+  // lives on Home, and moving it here is a different task than this one.
+  if (link === undefined) return row;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('detail.openStepA11y', { title: step.title })}
+      onPress={() => openStepLink(step)}
+      style={({ pressed }) => [pressed && styles.pressed]}>
+      {row}
+    </Pressable>
   );
 }
 

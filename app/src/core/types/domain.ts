@@ -9,6 +9,7 @@ import type { Entitlement } from './entitlement';
 // Type-only cross-import (erased at runtime — no cycle): the on-device onboarding record (K2). The
 // answer/step shapes + logic live under core/onboarding; AppState only stores them.
 import type { CoachMemoryState } from '../coach/context/types';
+import type { Portrait } from '../coach/portrait/types';
 import type { MotivationLogEntry } from '../motivation/types';
 import type { OnboardingAnswers, OnboardingStep } from '../onboarding/model';
 // Type-only cross-import (erased at runtime — no cycle): a Weekly Review proposal carries the
@@ -1210,6 +1211,28 @@ export interface AppState {
    * scope for account deletion/export.
    */
   coachMemory?: CoachMemoryState;
+  /**
+   * THE PORTRAIT (דיוקן) — what the coach UNDERSTOOD about this person from the introduction: what
+   * they want, where they are starting, what is in the way, what stage of change they are at
+   * ({@link Portrait}). Every field carries a confidence and a source, because this is
+   * interpretation and not fact. Absent until the first conversation reads something, which is why
+   * there is no migration: absent simply means we do not know them yet.
+   *
+   * Distinct from PERSONAL DETAILS — the name, birth date, form of address and Active Hours a
+   * person owns and edits in Settings. Those are facts they typed. This is our reading, and nobody
+   * is shown it.
+   *
+   * It lives HERE, in AppState, deliberately and with the founder's approval on exactly this basis:
+   * anything in AppState is part of the data export and of the account wipe without a line of code
+   * in either path (the same argument as {@link timingModels}).
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. It must NEVER enter a DomainEvent, a ProgressSummary, a
+   * log line or any sync path, and it is stripped from the account BACKUP as well
+   * (`../backup/redactForBackup`) — it is a short description of somebody's situation in their own
+   * words, which is exactly the material the founder's rule keeps on the phone. In scope for
+   * account export + deletion, which it gets by living here.
+   */
+  portrait?: Portrait;
   /**
    * The adaptive coach's ON-DEVICE raw behaviour log (adaptive coach, S1.16). Optional so
    * an older snapshot loads without it (backfilled to `[]` in AppCore.migrateState). Only

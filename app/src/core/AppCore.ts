@@ -72,6 +72,7 @@ import {
   type CoachMemoryConsent,
   type CoachMemoryState,
 } from './coach/context';
+import { clonePortrait, type Portrait } from './coach/portrait';
 import { companionStepsFor, isCompanionEligible } from './social/companion';
 import { getSocialGateway } from './social';
 import type { CompanionStepInput, SocialGateway } from './social/SocialGateway';
@@ -356,13 +357,50 @@ function defaultCommunicationPrefs(): CommunicationPrefs {
 }
 
 /**
- * Default scheduling prefs: all-permissive so nothing changes until the user sets
- * one — no window, no Active Hours (⇒ all-day, all-days-enabled), no day-part
- * constraint, all weekdays allowed. `activeHours` stays undefined so older snapshots
- * merge unchanged (offline-first migration keeps existing behaviour, D40).
+ * NINE IN THE MORNING TO NINE AT NIGHT, on every day, for a NEW account (founder, 2026-09-15).
+ *
+ * Active Hours used to default to `undefined`, which the availability helpers read as ALL DAY — so
+ * until somebody opened Settings and set a window, a reminder could legitimately be scheduled for
+ * three in the morning. That was defensible only while choosing the hours was a Step of the first
+ * run; it is not a Step any more (the approved designs replaced it), so the default has to be a
+ * humane one rather than an unconstrained one.
+ *
+ * It stays EDITABLE and is not a decision taken away from anybody: the first Step of the intro
+ * Journey opens the personal-details screen, where this is one of the fields.
+ *
+ * `mode: 'shared'` because one window across the week is what the editor shows by default, and all
+ * seven days are enabled — the default narrows WHEN we may speak, never WHETHER we may.
+ */
+const DEFAULT_ACTIVE_HOURS_START = { hour: 9, minute: 0 } as const;
+const DEFAULT_ACTIVE_HOURS_END = { hour: 21, minute: 0 } as const;
+
+/** A fresh account's Active Hours: 09:00–21:00, shared across all seven days. */
+export function defaultActiveHours(): ActiveHours {
+  return {
+    mode: 'shared',
+    days: Array.from({ length: 7 }, () => ({
+      enabled: true,
+      window: { start: { ...DEFAULT_ACTIVE_HOURS_START }, end: { ...DEFAULT_ACTIVE_HOURS_END } },
+    })),
+  };
+}
+
+/**
+ * Default scheduling prefs for a MIGRATED snapshot: all-permissive, exactly as before — no window,
+ * no Active Hours (⇒ all-day), no day-part constraint, every weekday allowed.
+ *
+ * This deliberately does NOT carry {@link defaultActiveHours}. An app already installed on somebody's
+ * phone must not silently stop delivering a reminder it delivers today because we changed a default
+ * underneath them; that is the whole of D40. A new account gets the humane window — see
+ * {@link emptyState} — and an existing one keeps whatever it has, including nothing.
  */
 function defaultSchedulingPrefs(): SchedulingPrefs {
   return { window: undefined, activeHours: undefined, dayPart: 'either', preferredDays: [] };
+}
+
+/** A NEW account's scheduling prefs: permissive everywhere except the hours (founder, 2026-09-15). */
+function newAccountSchedulingPrefs(): SchedulingPrefs {
+  return { ...defaultSchedulingPrefs(), activeHours: defaultActiveHours() };
 }
 
 function emptyState(): AppState {
@@ -376,7 +414,7 @@ function emptyState(): AppState {
     reminderRules: [],
     motivationLog: [],
     communicationPrefs: defaultCommunicationPrefs(),
-    schedulingPrefs: defaultSchedulingPrefs(),
+    schedulingPrefs: newAccountSchedulingPrefs(),
     weekReviewAt: {},
     streak: 0,
     lastActiveDay: null,
@@ -456,7 +494,13 @@ function migrateState(state: AppState): AppState {
     login: clampLogin({ ...base.login, ...state.login }),
     reminderRules: state.reminderRules ?? base.reminderRules,
     communicationPrefs: { ...base.communicationPrefs, ...state.communicationPrefs },
-    schedulingPrefs: { ...base.schedulingPrefs, ...state.schedulingPrefs },
+    // A STORED snapshot never acquires the new-account Active Hours window (D40): `base` carries it
+    // because `base` is what a FRESH install starts from, and inheriting it here would quietly stop
+    // an installed phone delivering a reminder it delivers today. Everything else still backfills.
+    schedulingPrefs: {
+      ...defaultSchedulingPrefs(),
+      ...state.schedulingPrefs,
+    },
     // Miss-Recovery reason log — backfill to [] for a snapshot that predates it. Kept
     // on-device only; whitelist-excluded from the Social sync path (G2).
     reasonLog: state.reasonLog ?? [],
@@ -1788,6 +1832,56 @@ export class AppCore {
     memory.journeys = memory.journeys.filter((j) => journeyIds.has(j.id));
   }
 
+
+  // ── The Portrait (דיוקן) ───────────────────────────────────────────────────────────────────
+  //
+  // What the introduction UNDERSTOOD about the person, as opposed to the personal details they type
+  // into Settings themselves. Interpretation, not fact — which is why every field carries a
+  // confidence and a source, and why nobody is shown it.
+  //
+  // It is held HERE rather than in its own store for one reason, and it is the reason the founder
+  // approved: everything in AppState is already covered by the data export and by the account wipe.
+  // A Portrait in a store of its own would need a line in both, and the day somebody forgot one of
+  // them is the day a deleted account kept a description of somebody's life.
+  //
+  // ON-DEVICE ONLY (G1), and stripped from the account backup as well (`backup/redactForBackup`).
+
+  /**
+   * What we understand about this person, or undefined when no conversation has read anything.
+   *
+   * A COPY. Everything else about the Portrait is careful about provenance and confidence, and
+   * handing out the live object would let any caller edit what we believe about somebody without
+   * going through the merge rules that exist to protect it.
+   */
+  getPortrait(): Portrait | undefined {
+    return this.state.portrait ? clonePortrait(this.state.portrait) : undefined;
+  }
+
+  /**
+   * Write what the introduction understood.
+   *
+   * The whole Portrait at once, because it IS the whole reading: the orchestrator holds a cache of
+   * its own reading of the transcript and hands over the result, and merging two partial pictures
+   * here would be a second, silent set of merge rules beside the ones in `coach/portrait/merge`.
+   *
+   * An EMPTY Portrait is not written. A conversation that understood nothing has nothing to say
+   * about somebody, and writing `{}` would turn "we have never met" into "we met and learned
+   * nothing" — a distinction the coach's own memory keeps for the same reason.
+   */
+  setPortrait(portrait: Portrait): void {
+    if (Object.keys(portrait).length === 0) return;
+    this.state.portrait = clonePortrait(portrait);
+    this.persist();
+    this.notify();
+  }
+
+  /** Forget what we understood. The person's own words are theirs to withdraw. */
+  clearPortrait(): void {
+    if (!this.state.portrait) return;
+    delete this.state.portrait;
+    this.persist();
+    this.notify();
+  }
 
   // ── Reshaping the Dream layer (Dream Management §7, D40) ────────────────────────────────────
   //

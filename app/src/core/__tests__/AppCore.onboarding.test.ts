@@ -93,15 +93,16 @@ describe('AppCore onboarding facade (K2)', () => {
     await first.start();
     let answers = emptyOnboardingAnswers();
     answers = toggleSelection(answers, questionById('q1')!, 'calm');
-    // A step still IN the flow. `personalInfo` used to stand here and was retired on 2026-09-03;
-    // where a retired step resumes is covered in core/onboarding (resolveResumeStep), and what this
-    // test is about is that a live one comes back exactly where it was left.
-    first.saveOnboardingProgress('personalization', answers);
+    // A step still IN the flow. `personalization` used to stand here and was retired on 2026-09-15
+    // with the rest of the three-promise introduction; where a retired step resumes is covered in
+    // core/onboarding (resolveResumeStep), and what this test is about is that a LIVE one comes back
+    // exactly where it was left.
+    first.saveOnboardingProgress('prepare', answers);
 
     const second = new AppCore(store.repo, consumedFlag());
     await second.start();
     expect(second.getSnapshot().onboardingCompleted).toBe(false);
-    expect(second.getOnboardingStep()).toBe('personalization');
+    expect(second.getOnboardingStep()).toBe('prepare');
     expect(second.getOnboardingAnswers().selections.q1).toEqual(['calm']);
   });
 
@@ -119,8 +120,10 @@ describe('AppCore onboarding facade (K2)', () => {
 
     const second = new AppCore(store.repo, consumedFlag());
     await second.start();
-    // Resumed at the welcome — the last page before the conversation.
-    expect(second.getOnboardingStep()).toBe('intro');
+    // Resumed at the PREPARATION — the last screen before the account gate, which is as far forward
+    // as anybody can be carried: they have no session, and D104 says the conversation does not start
+    // without one.
+    expect(second.getOnboardingStep()).toBe('prepare');
     expect(second.getSnapshot().onboardingCompleted).toBe(false);
     // And nothing they told us was thrown away: the answers are still valid signals for the coach.
     expect(second.getOnboardingAnswers().selections.q3).toEqual(['notStarted']);

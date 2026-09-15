@@ -16,6 +16,12 @@
  *    at the end of a Journey.
  *  · `behaviorLog` — the coach's raw minute-by-minute signal, on-device-only by G1 since it was
  *    written; it is a portrait of a life and it has never been ours to hold.
+ *  · `portrait` — the whole of it. The coach's reading of somebody's situation is written in that
+ *    person's own words (what they want, where they are starting, what they have already tried), and
+ *    the rule cuts the other way from `coachMemory`: a summary of an APPROVED Journey is an insight
+ *    about a plan, while a Portrait is a description of a life that nobody was ever shown. Until
+ *    there is a design for carrying it under end-to-end encryption, it stays on the phone. A restore
+ *    therefore arrives without it, and the coach meets the person again — which is the honest cost.
  *  · `coachMemory.journeys[].reasons` — and ONLY that field of the coach's memory. The founder
  *    corrected this on 2026-08-25, and the correction is the rule stated again: *the raw material
  *    stays on the device; the insights the coach draws from it go to the server.* A summary IS the
@@ -39,8 +45,11 @@ import type { AppState } from '../types/domain';
 
 /** A backup-safe copy of the state. The input is never mutated. */
 export function redactForBackup(state: AppState): AppState {
+  // Dropped by NOT being copied, rather than emptied: an absent Portrait is exactly what an account
+  // that has never had a conversation looks like, so a restore needs no special case for it.
+  const { portrait: _portrait, ...rest } = state;
   return {
-    ...state,
+    ...rest,
     journeys: state.journeys.map((journey) => {
       const redacted = {
         ...journey,
@@ -87,5 +96,7 @@ export function backupCarriesRawText(state: AppState): boolean {
   if (state.journeys.some((journey) => journey.feedback?.note !== undefined)) return true;
   // The coach's memory may travel; the person's own sentences inside it may not.
   if ((state.coachMemory?.journeys ?? []).some((context) => context.reasons.length > 0)) return true;
+  // The Portrait never travels at all, so its mere presence is the failure.
+  if (state.portrait !== undefined) return true;
   return false;
 }

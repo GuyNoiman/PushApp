@@ -68,6 +68,7 @@ import type { Dream, Journey } from '@/core/types/domain';
 import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { useTheme } from '@/hooks/use-theme';
 import { useServerConnection } from '@/hooks/useServerConnection';
+import { useStepLink } from '@/hooks/useStepLink';
 import { useApp } from '@/state/AppProvider';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useSocial } from '@/state/SocialProvider';
@@ -158,19 +159,20 @@ export default function HomeScreen() {
    * arrived with the "Getting to know PushApp" Journey) opens that screen instead: being asked "did
    * you do it?" by the thing that has not taken you there yet is a question nobody can answer.
    *
+   * The GOING part now lives in {@link useStepLink}, shared with every other surface that shows a
+   * Step — it used to live here alone, which is why the identical Step opened nothing when it was
+   * reached from the Journey detail screen. Home's behaviour is unchanged.
+   *
    * Reporting is untouched. Swipe, Done, Postpone and Let go all still work on these Steps exactly
    * as they do on every other one.
    */
+  const openStepLink = useStepLink();
   const openStep = useCallback(
     (item: TodayStep) => {
-      const link = item.step.appLink;
-      if (link !== undefined) {
-        router.push(link as Href);
-        return;
-      }
+      if (openStepLink(item.step)) return;
       setReportStep(item);
     },
-    [router],
+    [openStepLink],
   );
   // The last adaptive week-review that CHANGED the plan, shown as the calm "I adjusted your
   // week" card until dismissed. Null when nothing changed (or the adaptive loop is off).

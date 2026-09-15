@@ -70,7 +70,7 @@ broken AND wrong about what is fixed.
 |---|---|---|
 | The seven screens + language step | **WORKS ON PAPER** | The test is genuinely behavioural: real i18next, both languages, real buttons, real copy, pager 1..7. No device pass. |
 | Mandatory account (D104) | **PARTIAL** | A build that can sign nobody in (web, Expo Go, jest) shows an escape that advances with **no session**. Deliberate — it would otherwise trap somebody forever — but "everyone has a real account" is therefore not absolute. |
-| Terms link | **BROKEN** | B1. |
+| Terms link | **WORKS** | Deployed and verified live on 2026-09-16. Still carries the name placeholder and three blanks awaiting the founder. |
 | Per-screen analytics | **MISSING** | Only `onboarding_completed` exists. We just shipped the riskiest onboarding change to date — an account wall — with **no way to see whether it costs us signups.** |
 | Intro Journey content | **PARTIAL** | Three Steps; the approved design has four. The missing one is the friends area. |
 

@@ -15,6 +15,8 @@ import { getLocales } from 'expo-localization';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+import { PRODUCT_NAME } from '@/constants/product';
+
 import { DEFAULT_LANGUAGE, isSupportedLanguage, type LanguageCode } from './languages';
 import enCelebration from './resources/en/celebration.json';
 import enCircle from './resources/en/circle.json';
@@ -92,7 +94,12 @@ void i18n.use(initReactI18next).init({
   ns: NAMESPACES,
   defaultNS: DEFAULT_NAMESPACE,
   // React already escapes rendered strings — double-escaping would corrupt copy.
-  interpolation: { escapeValue: false },
+  //
+  // `defaultVariables` is what makes `{{product}}` work in any string, in any namespace, without a
+  // single call site passing it. The product's name is being replaced (D107) and the approved
+  // onboarding copy names it three times in two languages — see `@/constants/product`, which is the
+  // one line that changes when the new name is chosen.
+  interpolation: { escapeValue: false, defaultVariables: { product: PRODUCT_NAME } },
   // Missing keys should fall back to the key/fallback language, never render null.
   returnNull: false,
 });

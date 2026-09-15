@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{{PRODUCT_NAME}} — תנאי שימוש / Terms of Use</title>
+    <meta name="description" content="{{PRODUCT_NAME}} terms of use — what the service is, what it is not, and what you and we each agree to." />
+    <style>
+      /*
+        The public Terms of Use. Structurally a sibling of privacy.html — read the comment there
+        first; this repeats the same choices rather than inventing new ones:
+
+        BILINGUAL IN ONE FILE, same reason as the privacy policy: the people using the app read
+        Hebrew, a store reviewer reads English, and a second URL is a second thing to keep in step.
+        The toggle swaps `lang`/`dir` on the root, so RTL and LTR are both real.
+
+        No trackers, no analytics, no cookies, no external requests, no fetched fonts.
+
+        The canonical text is `04_Product/Terms_Of_Use.md` — edit there first, then mirror here.
+
+        TWO KINDS OF BRACKETED MARK ON THIS PAGE, styled differently on purpose:
+          - `[[LIKE_THIS]]` (.todo, amber) — a real blank only the founder can fill before this may
+            publish: the controller, the contact address, the governing-law jurisdiction. Identical
+            convention to privacy.html.
+          - `{{PRODUCT_NAME}}` (.ph, neutral grey) — NOT an open question. It is the same kind of
+            interpolation slot `app/src/constants/product.ts` already uses for the product's own
+            name, which is deliberately undecided (Decision Log D107, 2026-09-14). Find-and-replace
+            every `{{PRODUCT_NAME}}` on this page in one pass once a name is chosen. Do not type a
+            name in here before then.
+
+        NEEDS A LAWYER: the Disclaimers and Limitation-of-liability/governing-law sections (§13–14)
+        are an honest first pass, not tested legal drafting, and are marked in the page itself with
+        `.legalnote` (a distinct amber-bordered callout) as well as here.
+      */
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfaf8; --card: #ffffff; --text: #14161c; --muted: #6b7280;
+        --hairline: #e6e2dc; --teal: #1f8a80; --teal-tint: #e7f3f1;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101216; --card: #171a20; --text: #f2f1ee; --muted: #9aa1ad;
+          --hairline: #262b33; --teal: #4fb3a7; --teal-tint: #14312e;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 24px 20px 64px; background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.65;
+      }
+      main { max-width: 760px; margin: 0 auto; }
+      h1 { font-size: 28px; line-height: 1.25; margin: 16px 0 4px; letter-spacing: -0.3px; }
+      h2 { font-size: 19px; margin: 36px 0 8px; letter-spacing: -0.2px; }
+      h3 { font-size: 16px; margin: 24px 0 6px; color: var(--muted); }
+      p, li { font-size: 15.5px; }
+      ul, ol { padding-inline-start: 22px; }
+      .updated { color: var(--muted); font-size: 14px; margin: 0 0 8px; }
+      .lead { background: var(--teal-tint); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; margin: 20px 0 8px; }
+      .lead p { margin: 0; }
+      .legalnote { background: #fff3cd; border: 1px solid #e6c96a; border-radius: 14px; padding: 14px 18px; margin: 16px 0; }
+      .legalnote p { margin: 0; color: #5c4600; }
+      @media (prefers-color-scheme: dark) { .legalnote { background: #3a2f00; border-color: #6b5900; } .legalnote p { color: #ffe28a; } }
+      a { color: var(--teal); }
+      .switch { display: inline-flex; gap: 6px; border: 1px solid var(--hairline); border-radius: 999px; padding: 4px; background: var(--card); }
+      .switch button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 4px 14px; border-radius: 999px; cursor: pointer; }
+      .switch button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+      .todo { background: #fff3cd; color: #5c4600; border-radius: 4px; padding: 0 5px; font-weight: 600; }
+      @media (prefers-color-scheme: dark) { .todo { background: #4a3b00; color: #ffe28a; } }
+      .ph { background: var(--hairline); color: var(--muted); border-radius: 4px; padding: 0 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+      [hidden] { display: none !important; }
+      footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="switch" role="group" aria-label="Language">
+        <button id="btn-he" aria-pressed="true">עברית</button>
+        <button id="btn-en" aria-pressed="false">English</button>
+      </div>
+
+      <!-- ── HEBREW ─────────────────────────────────────────────────────────── -->
+      <section id="sec-he">
+        <h1>תנאי השימוש של <span class="ph">{{PRODUCT_NAME}}</span></h1>
+        <p class="updated">עודכן לאחרונה: 15 בספטמבר 2026</p>
+
+        <div class="legalnote">
+          <p>
+            סעיפים 13 ו-14 (פטור מאחריות, הגבלת אחריות והדין החל) נכתבו כאן בכנות ובזהירות, אבל הם
+            עדיין לא עברו בדיקה של עורך דין. לא מי שכתב את העמוד הזה ולא מייסד החברה הם עורכי דין.
+            שני הסעיפים האלה, ובפרט הבחירה של הדין החל, חייבים לעבור בדיקה משפטית לפני שהאפליקציה
+            מוגשת לחנות כלשהי.
+          </p>
+        </div>
+
+        <h2>1. מה זה, ומה זה לא</h2>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> הוא מאמן אישי לצמיחה. הוא עוזר לכם לקחת משהו שאתם
+          רוצים לשנות בעצמכם ולהפוך אותו למסע — תוכנית סופית שבנויה מצעדים, ולפעמים מאבני דרך — ומתאים
+          את התוכנית תוך כדי, באמצעות מאמן מבוסס בינה מלאכותית שמדבר איתכם וקורא את מה שאתם מדווחים.
+        </p>
+        <p>
+          זה <strong>לא טיפול, לא ייעוץ רפואי, לא טיפול פסיכולוגי, ולא שירות למצבי משבר.</strong> שום
+          דבר שהמאמן אומר אינו אבחנה, מרשם או חוות דעת מקצועית, ואין להתייחס לכלום מזה ככזה, לא משנה
+          כמה זה נשמע ספציפי או בטוח.
+        </p>
+        <p>
+          יש נושאים בודדים שבהם המאמן לא בונה תוכנית בכלל. <strong>כיום אלה מטרות שקשורות להתמכרות
+          ולמערכת יחסים במשבר משמעותי.</strong> כשהמטרה שלכם נופלת שם, המאמן אומר את זה ומעביר את
+          השיחה לאדם במקום להפוך אותה למסע — חבר, איש מקצוע, או שירות תמיכה. זו מגבלה מכוונת בתוך
+          המוצר, לא פינה שעוד לא הגענו אליה, וייתכן שהיא תורחב לנושאים נוספים עם הזמן בלי הודעה מראש,
+          כי הכיוון של שינוי כזה הוא תמיד להוסיף זהירות, לא להוריד אותה.
+        </p>
+        <p>
+          <strong>אם אתם במשבר, חושבים לפגוע בעצמכם, או שמישהו אחר נמצא בסכנה,
+          <span class="ph">{{PRODUCT_NAME}}</span> הוא לא המקום הנכון</strong> — פנו למספר החירום
+          במדינתכם, או לקו סיוע במצבי משבר. בישראל אפשר לפנות לער"ן בטלפון 1201. זו דוגמה אחת ולא
+          רשימה סגורה או מעודכנת בהכרח, אז אם המספר לא רלוונטי אצלכם, חפשו קו סיוע במדינתכם, או פנו
+          לבית חולים.
+        </p>
+
+        <h2>2. גיל וכשירות</h2>
+        <p>
+          הגיל המינימלי הוא <strong>13</strong>, או יותר במדינה שבה גיל ההסכמה הדיגיטלית גבוה יותר
+          (באיחוד האירופי זה 14, 15 או 16 בהתאם למדינה) — אותו גיל מינימלי שחנויות האפליקציות עצמן
+          אוכפות. אם אתם מבוגרים מספיק כדי להשתמש ב<span class="ph">{{PRODUCT_NAME}}</span> אבל לא
+          מבוגרים מספיק כדי להתקשר בחוזה בעצמכם במדינתכם, הורה או אפוטרופוס צריך לאשר את תנאי השימוש
+          האלה בשמכם. <span class="ph">{{PRODUCT_NAME}}</span> אינו מיועד או משווק לילדים, ואם נגלה
+          שמישהו מתחת לגיל המינימלי משתמש בו, נמחק את החשבון.
+        </p>
+
+        <h2>3. החשבון שלכם</h2>
+        <p>
+          השימוש ב<span class="ph">{{PRODUCT_NAME}}</span> דורש חשבון. יוצרים אותו בהתחלה, בכניסה עם
+          Apple או עם Google, ואין סיסמה נפרדת שאנחנו מחזיקים ואין מצב אנונימי. החשבון קיים בשביל
+          דבר אחד: שהמסעות, ההיסטוריה והבאדי יהיו שלכם וישרדו טלפון שאבד או הוחלף. אתם אחראים לשמור
+          על הגישה אליו מאובטחת (המכשיר שלכם, וחשבון ה-Apple ID או ה-Google שלכם).
+        </p>
+        <p>
+          אפשר למחוק את החשבון בכל רגע, מתוך האפליקציה (הגדרות ← החשבון שלכם ← מחיקת חשבון), או
+          מהעמוד הציבורי <a href="./delete-account.html">מחיקת חשבון</a> אם האפליקציה כבר לא מותקנת
+          אצלכם. מה שהמחיקה עושה, ואת קומץ הדברים שהיא לא מגיעה אליהם כי הם שייכים גם למישהו אחר, שני
+          אלה מתוארים במלואם ב<a href="./privacy.html">מדיניות הפרטיות</a> — המסמך הזה לא חוזר על
+          הפירוט כדי ששני המסמכים לא יתרחקו זה מזה בשקט.
+        </p>
+
+        <h2>4. המאמן המבוסס בינה מלאכותית</h2>
+        <p>
+          המילים של המאמן <strong>נוצרות על ידי מודל בינה מלאכותית, בתגובה למה שאתם מספרים לו.</strong>
+          לזה יש שתי משמעויות שכדאי לומר בפירוש:
+        </p>
+        <ul>
+          <li><strong>הוא יכול לטעות.</strong> הוא יכול להבין אתכם לא נכון, להציע צעד שלא מתאים לחיים
+            שלכם, או לומר משהו בביטחון שהוא לא הרוויח. תשתמשו בשיקול הדעת שלכם, בייחוד בכל מה שנוגע
+            לבריאות, לכסף, לבטיחות שלכם או של מישהו אחר.</li>
+          <li><strong>זו לא חוות דעת מקצועית.</strong> לא רפואית, לא פסיכולוגית, לא משפטית, לא
+            פיננסית. המאמן מתאים תוכנית ממה שאתם מדווחים; הוא לא מאבחן, לא מטפל ולא מייעץ באף אחד
+            מהמובנים האלה, ולשום דבר שהוא אומר אין את המשקל של מישהו מוסמך לעשות את זה.</li>
+        </ul>
+        <p>
+          המאמן בנוי עם גבולות שהוא לא חוצה בכוונה — למשל, הוא לא ייתן הנחיות רפואיות או קליניות, והוא
+          לא יפעל לפי בקשות מסוכנות באופן ברור. אם הוא מסרב לעזור במשהו מהסיבה הזאת, זה המוצר עובד
+          כמו שהוא צריך, לא באג לעקוף.
+        </p>
+
+        <h2>5. מה שאתם כותבים, ומה מותר לנו לעשות איתו</h2>
+        <p>
+          <strong>מה שאתם כותבים שייך לכם.</strong> ה"למה" של מסע, רפלקציה, הערה שאתם משאירים כשיום
+          לא הסתדר — כל אלה נשארים שלכם, בכל מובן שחשוב, כולל זה שכברירת מחדל הניסוח הגולמי שלהם לא
+          עוזב את המכשיר שלכם (סעיף 3 ב<a href="./privacy.html">מדיניות הפרטיות</a> מסביר בדיוק מה כן
+          ומה לא נוסע, במלואו).
+        </p>
+        <p>
+          כדי להפעיל את השירות, אתם נותנים לנו רישיון מוגבל לתוכן שלכם: לשמור אותו, לעבד אותו — כולל
+          לשלוח את החלקים הספציפיים והמצומצמים שמדיניות הפרטיות מפרטת למאמן או לשירות הסינתזה של
+          המראה, כשתכונה שאתם משתמשים בה באמת דורשת את זה — ולהציג אותו בחזרה אליכם ולאנשים הספציפיים
+          שבחרתם לשתף איתם (בעל ברית, מעגל התמיכה שלכם, מי שענה במראה). הרישיון הזה לא רחב יותר מזה.
+          אנחנו לא מוכרים את מה שאתם כותבים, לא מוסרים אותו למפרסמים, ובמקום שבו תכונה שולחת חלק ממנו
+          לשירות חיצוני, התנאים של אותו שירות — כפי שמתוארים במדיניות הפרטיות — לא מאפשרים לאמן עליו
+          מודל.
+        </p>
+
+        <h2>6. שימוש מותר</h2>
+        <p>תשתמשו ב<span class="ph">{{PRODUCT_NAME}}</span> בדרך שהוא נועד לה. אל:</p>
+        <ul>
+          <li>תתחזו למישהו אחר, ואל תציגו את עצמכם באופן מטעה לבעל ברית, למעגל התמיכה או למי שעונה
+            במראה;</li>
+          <li>תטרידו, תאיימו או תתעללו במישהו אחר דרך עידודים, הודעות, הזמנות למראה, או כל תכונה
+            אחרת שמגיעה למישהו אחר;</li>
+          <li>תפרסמו או תשלחו משהו לא חוקי, או משהו שאין לכם זכות לשתף;</li>
+          <li>תנסו להיכנס לחשבון של מישהו אחר, או למידע שהוא לא שלכם;</li>
+          <li>תנסו להנדס לאחור, לגרד מידע, או לחלץ את האפליקציה, התוכן שלה או המודלים שלה מעבר לשימוש
+            רגיל;</li>
+          <li>תנסו לגרום למאמן להתעלם מהגבולות שבסעיף 4 — למשל, על ידי ניסוח מחדש של בקשה עד שהוא ייתן
+            הנחיות רפואיות או יפעל לפי הוראות מסוכנות;</li>
+          <li>תפריעו לפעולה הרגילה של השירות, או תשתמשו בו כדי לבנות מוצר מתחרה מהתוכן שלנו.</li>
+        </ul>
+
+        <h2>7. אנשים אחרים, ודיווח</h2>
+        <p>
+          חלק מהתכונות קיימות רק כי הזמנתם מישהו אחר פנימה — בעל ברית במסע, מעגל תמיכה, מי שעונה
+          במראה, הודעה. במקום שבו האפליקציה מאפשרת לכם לדווח על שימוש לרעה באחת מהתכונות האלה, אנחנו
+          פועלים לפי זה: אנחנו עשויים להסיר תוכן, להגביל תכונה, או להשעות או למחוק חשבון שמפר את סעיף
+          6. אם דווח על שימוש לרעה שנוגע אליכם, הראיות עשויות להישמר בנפרד לפרק הזמן שמדיניות הפרטיות
+          מתארת תחת חריג ההתעללות, גם אחרי ששאר החשבון נמחק.
+        </p>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> לא מציע כרגע שוק של מסעות שפורסמו על ידי יוצרים או
+          עסקים אחרים. אם זה ישתנה, נפרסם כללים ספציפיים לזה, כולל פיקוח ודיווח על התוכן הזה, לפני
+          שהוא יהיה זמין — המסמך הזה לא מבטיח שום דבר לגבי זה היום.
+        </p>
+
+        <h2>8. רכישות ומנויים</h2>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> חינמי לשימוש כיום, ולא נדרשת שום רכישה עבור שום
+          דבר באפליקציה כרגע.
+        </p>
+        <p>
+          אם בעתיד נציג תכונות בתשלום, מנוי, או מטבע וירטואלי (Coins), כל רכישה של תוכן דיגיטלי או
+          מנוי תעבור דרך מערכת החיוב הרשמית של Apple או Google עבור המכשיר שלכם — לעולם לא אמצעי
+          תשלום מחוץ לה. המחירים, מה כלול ברכישה, והאם היא מתחדשת יוצגו לכם לפני שתשלמו. מנוי שמתחדש
+          אוטומטית ניתן לניהול או לביטול מהגדרות ה-Apple ID או ה-Google שלכם, לא רק מתוך
+          <span class="ph">{{PRODUCT_NAME}}</span>, וזיכויים מטופלים על ידי Apple או Google לפי
+          המדיניות שלהם, לא ישירות על ידינו. במקום שהפלטפורמה תומכת בשחזור רכישה קודמת, גם אנחנו
+          נתמוך בזה.
+        </p>
+
+        <h2>9. זמינות ושינויים בשירות</h2>
+        <p>
+          אנחנו עשויים לשנות, להוסיף או להסיר תכונה, ואנחנו עשויים להשעות את השירות לצורך תחזוקה או
+          מסיבה שאינה בשליטתנו. אנחנו משתדלים לא להסיר משהו שאתם תלויים בו בלי אזהרה, אבל זה מוצר קטן
+          שנבנה על ידי צוות קטן, ואנחנו לא יכולים להבטיח שכל תכונה או כל מסע יישארו בדיוק כמו שהם
+          לנצח.
+        </p>
+
+        <h2>10. שינויים בתנאים האלה</h2>
+        <p>
+          אם נשנה את התנאים האלה באופן שנוגע לכם, האפליקציה תספר לכם לפני שהשינוי נכנס לתוקף, והתאריך
+          בראש העמוד ישתנה. המשך שימוש ב<span class="ph">{{PRODUCT_NAME}}</span> אחרי שהשינוי נכנס
+          לתוקף פירושו שאתם מקבלים את התנאים החדשים; אם לא, אפשר למחוק את החשבון כמתואר בסעיף 3.
+        </p>
+
+        <h2>11. סיום</h2>
+        <p>
+          אפשר להפסיק להשתמש ב<span class="ph">{{PRODUCT_NAME}}</span> בכל רגע, מכל סיבה, פשוט על ידי
+          הפסקת שימוש, או על ידי מחיקת החשבון. אנחנו עשויים להשעות או לסיים את הגישה שלכם אם תפרו את
+          סעיף 6, אם נחויב בכך על פי חוק, או אם נפסיק את השירות — במידת האפשר, נסביר למה. סיום הגישה
+          שלכם לא מבטל שום דבר שמדיניות הפרטיות כבר מתארת כמחוץ להישג ידה של מחיקה (למשל, הודעה
+          ששלחתם שעדיין קיימת בשיחה של מישהו אחר).
+        </p>
+
+        <h2>12. קניין רוחני</h2>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span>, העיצוב שלו, תבניות המסע שלו, וכל מה שבנינו כדי
+          להפעיל אותו שייכים ל<span class="todo">[[CONTROLLER]]</span> או לבעלי הרישיון שלנו. שימוש
+          באפליקציה לא נותן לכם בעלות על שום דבר מזה — רק זכות אישית ושאינה ניתנת להעברה להשתמש בו
+          למטרתו המיועדת, כל עוד התנאים האלה והחשבון שלכם בתוקף. סעיף 5 מכסה מה קורה למה שאתם אישית
+          כותבים.
+        </p>
+
+        <h2>13. פטור מאחריות</h2>
+        <div class="legalnote"><p>דורש בדיקה משפטית — ראו ההערה בראש העמוד.</p></div>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> ניתן "כמות שהוא" ו"כפי שהוא זמין". אנחנו לא
+          מבטיחים שהוא יהיה רציף, נטול שגיאות, או מתאים בול למצב שלכם, וגם — בהתאם לסעיפים 1 ו-4 —
+          אנחנו לא מבטיחים שום תוצאת חיים, תוצאה בריאותית, או תוצאה ספציפית מביצוע מסע או הצעה של
+          המאמן. צמיחה אישית תלויה בהרבה יותר מאפליקציה. במידה שהחוק במדינתכם מאפשר זאת, אנחנו מתנערים
+          מאחריות מעבר למה שהחוק אומר שאי אפשר להתנער ממנו.
+        </p>
+
+        <h2>14. הגבלת אחריות והדין החל</h2>
+        <div class="legalnote"><p>דורש בדיקה משפטית — ראו ההערה בראש העמוד, וגם הבלנק הפתוח <span class="todo">[[GOVERNING_LAW_JURISDICTION]]</span> למעלה.</p></div>
+        <p>
+          במידה שהחוק מאפשר זאת, <span class="todo">[[CONTROLLER]]</span> לא אחראי לנזקים עקיפים,
+          תוצאתיים או נלווים שנובעים מהשימוש שלכם ב<span class="ph">{{PRODUCT_NAME}}</span>, והאחריות
+          הכוללת שלנו לכל תביעה שקשורה לשירות מוגבלת לסכום ששילמתם לנו, אם בכלל, בשנים עשר החודשים
+          שקדמו לתביעה. שום דבר בסעיף הזה לא מגביל אחריות שהחוק במדינתכם לא מאפשר לנו להגביל.
+        </p>
+        <p>
+          התנאים האלה כפופים לדין של <span class="todo">[[GOVERNING_LAW_JURISDICTION]]</span>, וכל
+          מחלוקת שלא ניתן ליישב באופן לא רשמי תובא לבתי המשפט של אותה מדינה, מבלי לפגוע בזכות שיש לכם
+          לפי דיני הגנת הצרכן במדינתכם להגיש תביעה במקום שאתם גרים בו.
+        </p>
+
+        <h2>15. יצירת קשר</h2>
+        <p>
+          <span class="todo">[[CONTROLLER]]</span> · <span class="todo">[[CONTACT_EMAIL]]</span>
+        </p>
+        <p>
+          שאלות שנוגעות ספציפית למידע שלכם נענות ב<a href="./privacy.html">מדיניות הפרטיות</a>; המסמך
+          הזה ואותו מסמך נועדו להיקרא כזוג, ואף אחד מהם לא סותר הבטחה שהשני נותן.
+        </p>
+        <footer><a href="./">← חזרה לעמוד ההזמנה</a></footer>
+      </section>
+
+      <!-- ── ENGLISH ────────────────────────────────────────────────────────── -->
+      <section id="sec-en" hidden>
+        <h1><span class="ph">{{PRODUCT_NAME}}</span> Terms of Use</h1>
+        <p class="updated">Last updated: 15 September 2026</p>
+
+        <div class="legalnote">
+          <p>
+            Sections 13 and 14 (disclaimers, limitation of liability and governing law) are written
+            here as an honest, careful first pass — they have not yet been reviewed by a lawyer.
+            Neither the author of this page nor the founder is one. Both sections, and the choice of
+            governing law in particular, must get a legal review before this app is submitted to any
+            store.
+          </p>
+        </div>
+
+        <h2>1. What this is, and what it is not</h2>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> is a personal-growth coach. It helps you turn
+          something you want to change about yourself into a Journey — a finite plan made of Steps,
+          and sometimes Milestones — and it adapts that plan as you go, using an AI-driven coach that
+          talks with you and reads what you report.
+        </p>
+        <p>
+          It is <strong>not therapy, not medical advice, not psychological treatment, and not a
+          crisis service.</strong> Nothing the coach says is a diagnosis, a prescription, or a
+          professional opinion, and nothing here should be treated as one, however specific or
+          confident it sounds.
+        </p>
+        <p>
+          For a small number of subjects, the coach does not build a plan at all. <strong>Today that
+          means goals about addiction and about a relationship in serious difficulty.</strong> When
+          your goal falls there, the coach says so and hands the conversation to a person instead — a
+          friend, a professional, or a support service — rather than turning it into a Journey. That
+          is a deliberate limit built into the product, not a gap we have not gotten to yet, and it
+          may be extended to other subjects over time without notice, because the direction of that
+          change only ever adds caution.
+        </p>
+        <p>
+          <strong>If you are in crisis, thinking about harming yourself, or someone else is in
+          danger, <span class="ph">{{PRODUCT_NAME}}</span> is not the right place</strong> — please
+          contact your local emergency number, or a crisis line where you are. For example, in the
+          United States that is 988; in the United Kingdom and Ireland, Samaritans can be reached at
+          116 123. These are examples, not an exhaustive or guaranteed-current list — if a number does
+          not work where you are, search for a crisis line in your country, or go to a hospital.
+        </p>
+
+        <h2>2. Eligibility and age</h2>
+        <p>
+          You must be <strong>13 or older</strong>, or older still where the law where you live sets a
+          higher age of digital consent (in parts of the European Union that is 14, 15 or 16) — the
+          same minimum the app stores themselves enforce. If you are old enough to use
+          <span class="ph">{{PRODUCT_NAME}}</span> but not old enough to agree to a contract on your
+          own where you live, a parent or guardian must agree to these Terms on your behalf.
+          <span class="ph">{{PRODUCT_NAME}}</span> is not designed or marketed to children, and if we
+          learn that someone below the minimum age is using it, we will delete the account.
+        </p>
+
+        <h2>3. Your account</h2>
+        <p>
+          Using <span class="ph">{{PRODUCT_NAME}}</span> requires an account. You create one at the
+          start, by signing in with Apple or with Google — there is no separate password for us to
+          hold, and no anonymous mode. The account exists for one reason: so that your Journeys, your
+          history and your Buddy are yours and survive a lost or replaced phone. You are responsible
+          for keeping access to it secure (your device, and your Apple ID or Google account)
+          secure.
+        </p>
+        <p>
+          You can delete your account at any time, from inside the app (Settings → your account →
+          delete account), or from the public page at
+          <a href="./delete-account.html">delete your account</a> if you no longer have the app
+          installed. What deletion does, and the small number of things it cannot reach because they
+          are also someone else's data, are both described in full in the
+          <a href="./privacy.html">Privacy Policy</a> — this document does not repeat that detail so
+          the two never quietly drift apart.
+        </p>
+
+        <h2>4. The AI coach</h2>
+        <p>
+          The coach's words are <strong>generated by an AI model, in response to what you tell
+          it.</strong> That has two consequences worth saying plainly:
+        </p>
+        <ul>
+          <li><strong>It can be wrong.</strong> It can misunderstand you, suggest a Step that does not
+            fit your life, or state something with confidence it has not earned. Use your own
+            judgement, especially about anything that affects your health, your money, your safety,
+            or another person.</li>
+          <li><strong>It is not a professional opinion.</strong> Not medical, not psychological, not
+            legal, not financial. The coach adapts a plan from what you report; it does not diagnose,
+            treat, or advise in any of those senses, and nothing it says carries the weight of someone
+            licensed to do those things.</li>
+        </ul>
+        <p>
+          The coach is built with limits it does not cross by design — for example, it will not give
+          clinical or medical directives, and it will not act on plainly dangerous requests. If it
+          ever declines to help with something for that reason, that is the product working as
+          intended, not a bug to route around.
+        </p>
+
+        <h2>5. What you write, and what we may do with it</h2>
+        <p>
+          <strong>What you write is yours.</strong> A Journey's "why", a reflection, a note you leave
+          when a day did not go well — these stay yours, in every sense that matters, including that
+          by default their raw wording never leaves your device (the
+          <a href="./privacy.html">Privacy Policy</a> §3 explains exactly what does and does not
+          travel, in full).
+        </p>
+        <p>
+          To run the service, you give us a limited licence to your content: to store it, to process
+          it — including sending the specific, minimised parts the Privacy Policy names to the coach
+          or to the Mirror synthesis service when a feature you are using genuinely requires it — and
+          to show it back to you and to the specific people you chose to share it with (an Ally, your
+          Support Circle, a Mirror contributor). That licence goes no wider than that. We do not sell
+          what you write, we do not hand it to advertisers, and where a feature sends part of it to an
+          outside service, that service's terms — as described in the Privacy Policy — do not permit
+          training a model on it.
+        </p>
+
+        <h2>6. Acceptable use</h2>
+        <p>Use <span class="ph">{{PRODUCT_NAME}}</span> the way it is meant to be used. Do not:</p>
+        <ul>
+          <li>impersonate someone else, or misrepresent who you are to an Ally, a Support Circle, or a
+            Mirror contributor;</li>
+          <li>harass, threaten, or abuse another person through cheers, messages, Mirror invitations,
+            or any other feature that reaches someone else;</li>
+          <li>post or send anything illegal, or anything you do not have the right to share;</li>
+          <li>try to access another person's account, or data that is not yours;</li>
+          <li>try to reverse-engineer, scrape, or extract the app, its content, or its models beyond
+            normal use;</li>
+          <li>try to make the coach ignore the limits described in §4 — for example, by rephrasing a
+            request until it will give medical directives or act on dangerous instructions;</li>
+          <li>interfere with the service's normal operation, or use it to build a competing product
+            from our content.</li>
+        </ul>
+
+        <h2>7. Other people, and reporting</h2>
+        <p>
+          Some features exist only because you invited another person in — an Ally on a Journey, a
+          Support Circle, a Mirror contributor, a message. Where the app lets you report abuse of one
+          of those features, we act on it: we may remove content, restrict a feature, or suspend or
+          delete an account that violates §6. If someone reports abuse involving you, the evidence may
+          be kept separately for as long as the Privacy Policy's abuse-exception describes, even after
+          the rest of an account is deleted.
+        </p>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> does not currently offer a marketplace of Journeys
+          published by other creators or businesses. If that changes, we will publish specific rules
+          for it, including moderation and reporting for that content, before it becomes available —
+          this document does not promise anything about it today.
+        </p>
+
+        <h2>8. Purchases and subscriptions</h2>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> is currently free to use, and no purchase is
+          required for anything in the app today.
+        </p>
+        <p>
+          If we introduce paid features, a subscription, or a virtual currency (Coins) in the future,
+          every purchase of digital content or a subscription will go through Apple's or Google's
+          official billing system for your device — never a payment method outside it. Prices, what a
+          purchase includes, and whether it renews will be shown to you before you pay. A subscription
+          that renews automatically can be managed or cancelled from your Apple ID or Google account
+          settings, not from inside <span class="ph">{{PRODUCT_NAME}}</span> alone, and refunds are
+          handled by Apple or Google under their own policies, not by us directly. Where the platform
+          supports restoring a past purchase, we will support that too.
+        </p>
+
+        <h2>9. Availability and changes to the service</h2>
+        <p>
+          We may change, add to, or remove a feature, and we may suspend the service for maintenance
+          or a reason outside our control. We try not to remove something you depend on without
+          warning, but this is a small product built by a small team, and we cannot promise every
+          feature or every Journey stays exactly as it is forever.
+        </p>
+
+        <h2>10. Changes to these Terms</h2>
+        <p>
+          If we change these Terms in a way that affects you, the app will tell you before the change
+          takes effect, and the date at the top of this page will change. Continuing to use
+          <span class="ph">{{PRODUCT_NAME}}</span> after a change takes effect means you accept the
+          new Terms; if you do not, you can delete your account as described in §3.
+        </p>
+
+        <h2>11. Termination</h2>
+        <p>
+          You can stop using <span class="ph">{{PRODUCT_NAME}}</span> at any time, for any reason, by
+          simply not using it, or by deleting your account. We may suspend or terminate your access if
+          you violate §6, if we are required to by law, or if we discontinue the service — where
+          reasonably possible, we will tell you why. Ending your access does not undo anything the
+          Privacy Policy already describes as outside the reach of deletion (for example, a message
+          you sent that still lives in someone else's conversation).
+        </p>
+
+        <h2>12. Intellectual property</h2>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span>, its design, its Journey Templates, and everything
+          we built to run it belong to <span class="todo">[[CONTROLLER]]</span> or our licensors.
+          Using the app does not give you ownership of any of that — only a personal, non-transferable
+          right to use it for its intended purpose, for as long as these Terms and your account last.
+          §5 covers what happens to what you personally write.
+        </p>
+
+        <h2>13. Disclaimers</h2>
+        <div class="legalnote"><p>Needs lawyer review — see the note at the top of this page.</p></div>
+        <p>
+          <span class="ph">{{PRODUCT_NAME}}</span> is provided "as is" and "as available." We do not
+          promise it will be uninterrupted, error-free, or perfectly suited to your situation, and —
+          consistent with §1 and §4 — we do not promise any particular life outcome, health outcome,
+          or result from following a Journey or a coach's suggestion. Personal growth depends on far
+          more than an app. To the extent the law where you live allows it, we disclaim warranties
+          beyond what that law says we cannot disclaim.
+        </p>
+
+        <h2>14. Limitation of liability, and governing law</h2>
+        <div class="legalnote"><p>Needs lawyer review — see the note at the top of this page, and the open blank <span class="todo">[[GOVERNING_LAW_JURISDICTION]]</span> above.</p></div>
+        <p>
+          To the extent the law allows, <span class="todo">[[CONTROLLER]]</span> is not liable for
+          indirect, incidental, or consequential damages arising from your use of
+          <span class="ph">{{PRODUCT_NAME}}</span>, and our total liability for any claim relating to
+          the service is limited to the amount you paid us, if any, in the twelve months before the
+          claim. Nothing in this section limits liability that the law where you live does not allow
+          us to limit.
+        </p>
+        <p>
+          These Terms are governed by the law of
+          <span class="todo">[[GOVERNING_LAW_JURISDICTION]]</span>, and any dispute that cannot be
+          resolved informally will be brought in the courts of that jurisdiction, without prejudice to
+          any right you have under your local consumer-protection law to bring a claim where you live
+          instead.
+        </p>
+
+        <h2>15. Contact</h2>
+        <p><span class="todo">[[CONTROLLER]]</span> · <span class="todo">[[CONTACT_EMAIL]]</span></p>
+        <p>
+          Questions about your data specifically are answered in the
+          <a href="./privacy.html">Privacy Policy</a>; this document and that one are meant to be read
+          as a pair, and neither overrides a promise the other makes.
+        </p>
+        <footer><a href="./">← Back to the invitation page</a></footer>
+      </section>
+    </main>
+
+    <script>
+      // Identical toggle to privacy.html and delete-account.html, sharing the same stored
+      // preference key so a reader who chose a language on one legal page gets it on the others too.
+      (function () {
+        var he = document.getElementById('sec-he');
+        var en = document.getElementById('sec-en');
+        var btnHe = document.getElementById('btn-he');
+        var btnEn = document.getElementById('btn-en');
+
+        function show(lang) {
+          var hebrew = lang !== 'en';
+          he.hidden = !hebrew;
+          en.hidden = hebrew;
+          btnHe.setAttribute('aria-pressed', String(hebrew));
+          btnEn.setAttribute('aria-pressed', String(!hebrew));
+          document.documentElement.lang = hebrew ? 'he' : 'en';
+          document.documentElement.dir = hebrew ? 'rtl' : 'ltr';
+          try { localStorage.setItem('pushapp.policy.lang', hebrew ? 'he' : 'en'); } catch (e) {}
+        }
+
+        btnHe.addEventListener('click', function () { show('he'); });
+        btnEn.addEventListener('click', function () { show('en'); });
+
+        var stored = null;
+        try { stored = localStorage.getItem('pushapp.policy.lang'); } catch (e) {}
+        if (!stored) stored = (navigator.language || '').slice(0, 2) === 'he' ? 'he' : 'en';
+        show(stored);
+      })();
+    </script>
+  </body>
+</html>

@@ -1,21 +1,52 @@
 /**
- * Onboarding — the first-run flow (K2, Onboarding_Questionnaire_PRD). ONE route, and since v2 phase 1
- * (2026-08-31) it is a short introduction: language → Personal Information → three product
- * principles → conversation preparation. Then the conversation,
- * because the conversation IS the onboarding.
+ * Onboarding — the first run, as the founder approved it (design pack 2026-09-14, transcribed in
+ * `04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`).
  *
- * The nine questions are RETIRED from the first run — see `ONBOARDING_STEP_ORDER` and
- * `RETIRED_FIRST_RUN_STEPS` in `core/onboarding/questions.ts`, which is the authority. They still
- * exist as pages, reachable from the Tools tab, and are meant to be asked contextually when a chosen
- * Journey needs the axis.
+ * ONE route, SEVEN screens: welcome → purpose → prepare → account → conversation → handoff →
+ * firstJourney. The container owns which one is showing; `ONBOARDING_STEP_ORDER` in
+ * `core/onboarding/questions.ts` owns the order, and is the authority. Read it rather than this
+ * comment if they ever disagree — they have before, and the comment lost.
  *
- * (This paragraph described the retired flow for two days after it was retired, and cost a wrong
- * answer to a question about why a tester saw the old version. The step order is one exported
- * constant; read it rather than this comment if they ever disagree again.)
+ * ── THREE OF THE SEVEN ARE NOT RENDERED FROM HERE, AND THAT IS DELIBERATE ────────────────────
  *
- * The root layout's first-run gate ({@link '@/app/_layout'}) routes here until onboarding is complete,
- * then never again; completion lands the user on HOME (founder decision, Device QA 2026-08-17 B1),
- * with the first Coach conversation one tap away on Home's hero card.
+ * `conversation` is the coach, which lives on `/coach`. `handoff` and `firstJourney` come after the
+ * coach has built a Journey — and building a Journey CLOSES the first-run gate, which makes this
+ * route unreachable. So those two are rendered from the coach's tail
+ * ({@link '@/components/onboarding/FirstRunTail'}) on the real path. They are still steps: a step is
+ * a resume point before it is a screen. This container can still render all three, because a device
+ * that closed mid-flow can resume on any of them and must find a screen rather than a blank.
+ *
+ * ── THE ACCOUNT IS MANDATORY (D104) ─────────────────────────────────────────────────────────────
+ *
+ * There is no skip and no anonymous path out of screen 4. "Back" returns to `prepare`; the only way
+ * forward is a real session. The one exception is a build that cannot sign anybody in at all — see
+ * {@link AccountStep}, which explains why that is a broken-build escape and not a skip button.
+ *
+ * ── WHAT IS RETIRED ─────────────────────────────────────────────────────────────────────────────
+ *
+ * The language page, the three product-promise screens, the acknowledgement, the profile page and
+ * the nine questions are all out of the first run. Every one of them still EXISTS as a page —
+ * several are reachable from Settings or the Tools tab — and `resolveResumeStep` maps a device
+ * persisted on any of them onto the nearest of the seven. See `RETIRED_FIRST_RUN_STEPS`.
+ *
+ * ── THREE THINGS THE BUILD SPEC LEAVES OPEN, AND WHERE EACH ONE IS PARKED ───────────────────────
+ *
+ * None of them is decided here. Each is deliberately ONE line away from being decided:
+ *
+ *  1. **Where quiet hours live**, now that "choose the hours we may reach you" is not a first-run
+ *     screen. A new account's window is `defaultActiveHours()` in `core/AppCore.ts`; the editor is
+ *     Settings › Active Hours, and it is still Step 2 of the intro Journey.
+ *  2. **Whether voice input ships.** Screen 3 says "Type or speak", which is a promise. If voice
+ *     does not ship, `flow.prepare.metaInput` in both locale files is the one string to change.
+ *  3. **What the friends-area Step opens.** That Step is part of the approved FOUR-Step intro
+ *     Journey and does not exist yet — the shipped Journey still has three. When it lands, its
+ *     destination is one entry in `INTRO_JOURNEY_LINKS` in `core/onboarding/introJourney.ts`, which
+ *     is the array that pairs a Step with the place in the app where it is actually done.
+ *
+ * The product's NAME is the fourth, and it blocks nothing: `@/constants/product`.
+ *
+ * The root layout's first-run gate ({@link '@/app/_layout'}) routes here until onboarding is
+ * complete, then never again.
  *
  * The container owns the flow: local `step` + `answers` state (seeded from AppCore so an interrupted
  * flow RESUMES where it left off — PRD §8), the pure answer logic (`core/onboarding`), and persistence
@@ -23,11 +54,16 @@
  * presentational (Engineering Bible §19). Answers stay ON DEVICE as the Coach's opening context (PRD
  * §9/§10) — nothing is sent to the cloud here; generation→Dreams remains the coach's gated job (D40).
  */
+import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { ProviderButton } from '@/components/auth/ProviderButton';
+import { FirstJourneyPage, HandoffPage } from '@/components/onboarding/FirstRunTail';
+import { introJourneyContent } from '@/components/onboarding/introJourneyContent';
+import { usePersonalName } from '@/components/onboarding/usePersonalName';
 import { RestartPrompt } from '@/components/settings/RestartPrompt';
 import { confirmAndRestartApp } from '@/i18n/restart';
 import { isRTL, isRTLLocale } from '@/i18n/rtl';
@@ -38,15 +74,20 @@ import {
 } from '@/components/onboarding/OnboardingScaffold';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { ThemedText } from '@/components/themed-text';
+import { PRIVACY_POLICY_URL, TERMS_URL } from '@/constants/legal';
+import { PRODUCT_NAME } from '@/constants/product';
 import { Radius, Spacing } from '@/constants/theme';
+import { isAppleSignInAvailable, isGoogleSignInAvailable } from '@/core/auth/nativeIdentity';
+import { stepPosition } from '@/core/onboarding/questions';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/state/AuthProvider';
 import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
 import type { OnboardingAnswers, OnboardingStep } from '@/core/onboarding/model';
 import { firstName, getSimulatedUser } from '@/core/profile/simulatedUser';
 import { countryName } from '@/core/profile/countries';
 import { generateUsername } from '@/core/social/username';
 import { useTheme } from '@/hooks/use-theme';
-import { findLanguage, LANGUAGES, type LanguageCode } from '@/i18n/languages';
-import { Ionicons } from '@expo/vector-icons';
+import { findLanguage, LANGUAGES_ALPHABETICAL, type LanguageCode } from '@/i18n/languages';
 import { useApp } from '@/state/AppProvider';
 import { useLanguagePreference } from '@/state/LanguagePreference';
 import { useProfile } from '@/state/ProfileProvider';
@@ -92,86 +133,106 @@ export default function OnboardingScreen() {
   const startConversation = useCallback(() => {
     // Do NOT complete onboarding here. The root Coach route is deliberately reachable while the
     // first-run gate is still closed; completion happens only after a real Journey was created.
-    // If the app closes during the conversation, the persisted preparation page is a safe resume
-    // point and the person can start the conversation again rather than landing on an empty Home.
-    core.saveOnboardingProgress('intro', answers);
+    // Persisting `conversation` is what makes a device that closes mid-conversation come back to the
+    // launcher rather than to the top of the flow — or to an empty Home.
+    core.saveOnboardingProgress('conversation', answers);
     requestAnimationFrame(() => router.replace('/coach?firstRun=1' as Href));
   }, [answers, core]);
 
+  /** Leave the first run for the app proper. Used only by the two post-Journey screens. */
+  const enterApp = useCallback(() => router.replace('/'), []);
+
   // ── Render the current page ──────────────────────────────────────────────────
+
+  /**
+   * STEP ZERO — the language, before anything is said in one (founder, 2026-09-15).
+   *
+   * The approved pack starts at the welcome, and the founder overruled that gap for a reason that
+   * settles it: a person may not read English at all, and an English welcome leaves them unable to
+   * understand the onboarding well enough to go looking for a language setting. So the choice comes
+   * first, it names each language in its own script, and it takes effect on the frame it is tapped.
+   *
+   * It carries NO pager dot — `stepPosition('language')` is 0 — because the pack has seven screens
+   * and the dots have to read as seven. This is the door, not the first room.
+   */
   if (step === 'language') {
-    return <LanguageStep onContinue={() => go('acknowledge')} />;
+    return <LanguageStep onContinue={() => go('welcome')} />;
   }
 
-  if (step === 'acknowledge') {
-    return <AcknowledgeStep onBack={() => go('language')} onContinue={() => go('promise')} />;
+  if (step === 'welcome') {
+    return (
+      <WelcomeStep
+        // A DELIBERATE addition to the approved chrome: screen 1 has no Back in the pack, because
+        // the pack has no screen before it. It does now, and somebody who tapped the wrong language
+        // a second ago is otherwise stuck reading a language they cannot read until they find
+        // Settings — which is the exact harm the language screen was put in front to prevent.
+        onBack={() => go('language')}
+        onStart={() => go('purpose')}
+        // "I already have an account" is a REAL route (build spec §1): it goes straight to the
+        // account screen, which signs them in and — because the account screen advances the moment a
+        // session exists — does not walk them back through the introduction. If their record
+        // restores, the first-run gate itself takes them to Home from underneath us.
+        onHaveAccount={() => go('account')}
+      />
+    );
   }
 
-  // `personalInfo` LEFT the first run on 2026-09-03 (founder): the page below is intact and still
-  // rendered for anyone whose device resumes on it mid-flow, but nothing in the sequence walks into
-  // it any more. Its fields are now the Steps of the "Getting to know PushApp" Journey, which is
-  // created the moment the first Journey is built (core/onboarding/introJourney).
+  if (step === 'purpose') {
+    return <PurposeStep onBack={() => go('welcome')} onContinue={() => go('prepare')} />;
+  }
+
+  if (step === 'prepare') {
+    return <PrepareStep onBack={() => go('purpose')} onContinue={() => go('account')} />;
+  }
+
+  if (step === 'account') {
+    return <AccountStep onBack={() => go('prepare')} onSignedIn={startConversation} />;
+  }
+
+  // The conversation itself is `/coach`; reaching this branch means the app was CLOSED during it and
+  // has resumed here. The preparation screen is the honest landing — it is the screen that launches
+  // the conversation, and the account is already behind them, so its Back goes there rather than
+  // through the gate a second time.
+  if (step === 'conversation') {
+    return <PrepareStep pager={stepPosition('conversation')} onBack={() => go('prepare')} onContinue={startConversation} />;
+  }
+
+  // Both of these normally render from the coach's tail, after the gate has closed. Resuming onto
+  // one means the app was closed between the Journey being built and the person seeing it — so the
+  // screen is shown, and its action goes to the app rather than further into a finished flow.
+  if (step === 'handoff') {
+    return <HandoffStep onContinue={() => go('firstJourney')} />;
+  }
+
+  if (step === 'firstJourney') {
+    return <FirstJourneyStep onContinue={enterApp} />;
+  }
+
+  // Retired pages, kept renderable for a device that somehow resumes on one. `resolveResumeStep`
+  // maps every one of them onto the flow before it reaches here, so these are unreachable in
+  // practice — they exist so the component always returns an element rather than trusting that.
   if (step === 'personalInfo') {
-    return (
-      <PersonalInfoStep onBack={() => go('language')} onContinue={() => go('promise')} />
-    );
+    return <PersonalInfoStep onBack={() => go('welcome')} onContinue={() => go('prepare')} />;
   }
 
-  if (step === 'promise') {
-    return (
-      <ProductIntroStep
-        page="promise"
-        icon="trail-sign-outline"
-        progress={1}
-        onBack={() => go('acknowledge')}
-        onContinue={() => go('personalization')}
-      />
-    );
-  }
-
-  if (step === 'personalization') {
-    return (
-      <ProductIntroStep
-        page="personalization"
-        icon="sparkles-outline"
-        progress={2}
-        onBack={() => go('promise')}
-        onContinue={() => go('supportIntro')}
-      />
-    );
-  }
-
-  if (step === 'supportIntro') {
-    return (
-      <ProductIntroStep
-        page="support"
-        icon="people-outline"
-        progress={3}
-        onBack={() => go('personalization')}
-        onContinue={() => go('intro')}
-      />
-    );
-  }
-
-  if (step === 'intro') {
-    return (
-      <IntroStep
-        onBack={() => go('supportIntro')}
-        onStart={startConversation}
-      />
-    );
-  }
-
-  // Anything else a persisted resume point could name is resolved to the preparation screen by
-  // `resolveResumeStep` before it reaches here, so this is unreachable in practice — it exists so
-  // the component always returns an element rather than trusting that.
-  return <IntroStep onBack={() => go('supportIntro')} onStart={startConversation} />;
+  return <WelcomeStep onBack={() => go('language')} onStart={() => go('purpose')} onHaveAccount={() => go('account')} />;
 }
 
 // ── Step bodies (presentational; flow-specific, co-located like coach.tsx) ──────
 
 /**
- * §3 — language first: device-preselected but confirmed; a direction flip relaunches the app.
+ * STEP ZERO — language first: device-preselected but confirmed; a direction flip relaunches the app.
+ *
+ * ── WHY IT SURVIVED A DESIGN PACK THAT DOES NOT HAVE IT (founder, 2026-09-15) ───────────────────
+ *
+ * The approved screens begin at the welcome. The founder put this back in front of them, and the
+ * argument is not about preference: **a person may not read English at all.** An English welcome
+ * screen leaves them unable to understand the onboarding well enough to go and find a language
+ * setting, so a choice that can be made later is, for them, a choice that cannot be made.
+ *
+ * Which is why the list below shows each language IN ITS OWN SCRIPT — עברית, English — rather than
+ * translated names. It is readable without already reading the app's language, which is the whole
+ * requirement. It takes effect on the frame it is tapped (`setLanguage` applies before it persists).
  *
  * IT RESTARTS RIGHT HERE, and that is the fix for what the partner hit (2026-08-20): he chose Hebrew
  * and then answered the whole questionnaire in a left-aligned layout, because the flip only takes
@@ -200,7 +261,7 @@ function LanguageStep({ onContinue }: { onContinue: () => void }) {
       </ThemedText>
       <RestartPrompt visible={pendingRestart} />
       <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.hairline }]}>
-        {LANGUAGES.map((lang, i) => {
+        {LANGUAGES_ALPHABETICAL.map((lang, i) => {
           const selected = lang.code === language;
           return (
             <Pressable
@@ -210,6 +271,11 @@ function LanguageStep({ onContinue }: { onContinue: () => void }) {
               accessibilityLabel={lang.englishName}
               onPress={() => select(lang.code as LanguageCode)}
               style={({ pressed }) => [styles.langRow, pressed && styles.pressed]}>
+              {/* The flag is decoration for the eye, so it is hidden from the screen reader — the
+                  row already announces the language by its English name. */}
+              <ThemedText style={styles.langFlag} accessibilityElementsHidden importantForAccessibility="no">
+                {lang.flag}
+              </ThemedText>
               <View style={styles.langMain}>
                 <ThemedText type="default">{lang.endonym}</ThemedText>
                 {lang.endonym !== lang.englishName ? (
@@ -219,7 +285,7 @@ function LanguageStep({ onContinue }: { onContinue: () => void }) {
                 ) : null}
               </View>
               {selected ? <Ionicons name="checkmark" size={20} color={theme.teal} /> : null}
-              {i < LANGUAGES.length - 1 ? (
+              {i < LANGUAGES_ALPHABETICAL.length - 1 ? (
                 <View style={[styles.langDivider, { backgroundColor: theme.hairline }]} />
               ) : null}
             </Pressable>
@@ -342,122 +408,346 @@ function PersonalInfoStep({ onBack, onContinue }: { onBack: () => void; onContin
 }
 
 /**
- * The WELCOME (Onboarding v2 §4 Step B). Its whole job is to set the expectation that what comes
- * next is a short conversation rather than a form — because what comes next used to be nine
- * questions and now is the coach.
+ * 01 · WELCOME (build spec §1).
+ *
+ * Kicker, a two-line title whose second line is the accent, one paragraph of what the product does,
+ * and two actions. The product is named through `{{product}}` — see `@/constants/product`.
+ *
+ * The secondary is a REAL ROUTE, not a footnote: somebody who already has an account goes straight
+ * to the account screen and, because that screen advances the moment a session exists, does not
+ * walk the introduction again.
  */
-/**
- * The screen that names the difficulty before anything is promised (D98).
- *
- * ── WHY IT IS FIRST, AND WHY IT LOOKS DIFFERENT ────────────────────────────────────────────────
- *
- * Somebody installing this has almost certainly failed at something like it before. Three screens
- * of what we believe, arriving before anything acknowledges that, is a pitch to a person who is
- * still braced — and it bounces off. So this comes first, it asks for nothing, and it blames
- * nobody: the reasons people stop are usually real, which is exactly why they win.
- *
- * It deliberately does NOT wear the three-promise chrome — no progress dots, no icon plate. Those
- * mark the introduction, and this is not part of it. Making it look like a fourth promise would
- * turn recognition back into selling, which is the one thing it exists to avoid.
- *
- * The button is the person agreeing with a description of themselves rather than accepting a step,
- * which is why it is not "Continue".
- */
-function AcknowledgeStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
-  const { t } = useTranslation('onboarding');
-  return (
-    <OnboardingScaffold
-      onBack={onBack}
-      footer={<OnboardingPrimaryButton label={t('brand.acknowledge.continue')} onPress={onContinue} />}>
-      <ThemedText type="title">{t('brand.acknowledge.title')}</ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('brand.acknowledge.body')}
-      </ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('brand.acknowledge.close')}
-      </ThemedText>
-    </OnboardingScaffold>
-  );
-}
-
-function ProductIntroStep({
-  page,
-  icon,
-  progress,
-  onBack,
-  onContinue,
-}: {
-  page: 'promise' | 'personalization' | 'support';
-  icon: keyof typeof Ionicons.glyphMap;
-  progress: 1 | 2 | 3;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
-  const { t } = useTranslation('onboarding');
-  const theme = useTheme();
-  return (
-    <OnboardingScaffold
-      onBack={onBack}
-      footer={<OnboardingPrimaryButton label={t('brand.continue')} onPress={onContinue} />}>
-      <View style={styles.progressDots} accessibilityLabel={t('brand.progress', { current: progress, total: 3 })}>
-        {[1, 2, 3].map((dot) => (
-          <View
-            key={dot}
-            style={[
-              styles.progressDot,
-              { backgroundColor: dot <= progress ? theme.teal : theme.hairline },
-              dot === progress && styles.progressDotCurrent,
-            ]}
-          />
-        ))}
-      </View>
-      <View style={[styles.introArt, { backgroundColor: theme.backgroundElement }]}>
-        <Ionicons name={icon} size={58} color={theme.teal} />
-      </View>
-      <ThemedText type="title">{t(`brand.${page}.title`)}</ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t(`brand.${page}.body`)}
-      </ThemedText>
-    </OnboardingScaffold>
-  );
-}
-
-function IntroStep({
+function WelcomeStep({
   onBack,
   onStart,
+  onHaveAccount,
 }: {
   onBack: () => void;
   onStart: () => void;
+  onHaveAccount: () => void;
 }) {
+  const theme = useTheme();
   const { t } = useTranslation('onboarding');
   return (
     <OnboardingScaffold
       onBack={onBack}
+      pager={stepPosition('welcome')}
       footer={
-        <OnboardingPrimaryButton label={t('intro.start')} onPress={onStart} />
+        <>
+          <OnboardingPrimaryButton label={t('flow.welcome.primary')} onPress={onStart} />
+          <OnboardingSecondaryButton label={t('flow.welcome.secondary')} onPress={onHaveAccount} />
+        </>
       }>
-      <ThemedText type="title">{t('intro.title')}</ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('intro.p1')}
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('flow.welcome.kicker')}
       </ThemedText>
-      {/*
-        Founder, 2026-08-30: say what the next part is FOR before it starts, and
-        suggest the conditions it goes well in. Somebody who wanders into this
-        between two other things gives short answers, and short answers produce a
-        starting point that fits nobody — the cost of a distracted first
-        conversation is paid by the plan built from it, not by the conversation.
-      */}
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('intro.purpose')}
-      </ThemedText>
-      <ThemedText type="default" themeColor="textSecondary">
-        {t('intro.setting')}
+      {/* The wordmark sits large in the middle of the screen (build spec §1), not only in a header.
+          It is text rather than an asset because the name is being replaced (D107) and an image
+          would be one more place the old one survives. */}
+      <View style={[styles.wordmark, { backgroundColor: theme.tealTint }]}>
+        <ThemedText type="display" style={{ color: theme.teal }}>
+          {PRODUCT_NAME}
+        </ThemedText>
+      </View>
+      <ThemedText type="title">{t('flow.welcome.title')}</ThemedText>
+      <ThemedText type="title" style={{ color: theme.teal }}>
+        {t('flow.welcome.titleAccent')}
       </ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
-        {t('intro.p2')}
+        {t('flow.welcome.body')}
       </ThemedText>
     </OnboardingScaffold>
   );
+}
+
+/**
+ * 02 · PURPOSE (build spec §2) — what the product is for, and the four things it does.
+ *
+ * The fourth bullet is the **Support Circle**, promised on the second screen of the product. The
+ * build spec says it plainly and it is repeated here: whatever ships must not make that a lie.
+ */
+function PurposeStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
+  const theme = useTheme();
+  const { t } = useTranslation('onboarding');
+  const bullets = t('flow.purpose.bullets', { returnObjects: true }) as string[];
+  const icons: (keyof typeof Ionicons.glyphMap)[] = [
+    'chatbubble-ellipses-outline',
+    'trail-sign-outline',
+    'sparkles-outline',
+    'people-outline',
+  ];
+  return (
+    <OnboardingScaffold
+      onBack={onBack}
+      pager={stepPosition('purpose')}
+      footer={<OnboardingPrimaryButton label={t('flow.purpose.primary')} onPress={onContinue} />}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('flow.purpose.kicker')}
+      </ThemedText>
+      <ThemedText type="title">{t('flow.purpose.title')}</ThemedText>
+      <ThemedText type="default" style={{ color: theme.teal }}>
+        {t('flow.purpose.subtitle')}
+      </ThemedText>
+
+      <View style={styles.bullets}>
+        {bullets.map((bullet, index) => (
+          <View key={bullet} style={styles.bullet}>
+            <View style={[styles.bulletIcon, { backgroundColor: theme.tealTint }]}>
+              <Ionicons name={icons[index] ?? 'ellipse-outline'} size={20} color={theme.teal} />
+            </View>
+            <ThemedText type="default" style={styles.bulletText}>
+              {bullet}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
+
+      <ThemedText type="small" themeColor="textMuted">
+        {t('flow.purpose.footer')}
+      </ThemedText>
+    </OnboardingScaffold>
+  );
+}
+
+/**
+ * 03 · PREPARE (build spec §3) — a few quiet minutes, at your pace, before the conversation.
+ *
+ * ⚠ **"Type or speak" is a promise of voice input.** The line ships as the approved design has it;
+ * if voice does not ship, `flow.prepare.metaInput` is the one string that has to change. It is a
+ * single key in both locale files precisely so that is a one-line correction and not a hunt.
+ *
+ * Rendered twice in the flow: as step 3, where it continues to the account gate, and as the RESUME
+ * screen for step 5, where the same button re-enters a conversation the app was closed during.
+ * Hence `pager` being a parameter — the screen is the same, its position is not.
+ */
+function PrepareStep({
+  pager = stepPosition('prepare'),
+  onBack,
+  onContinue,
+}: {
+  pager?: number;
+  onBack: () => void;
+  onContinue: () => void;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation('onboarding');
+  return (
+    <OnboardingScaffold
+      onBack={onBack}
+      pager={pager}
+      footer={<OnboardingPrimaryButton label={t('flow.prepare.primary')} onPress={onContinue} />}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('flow.prepare.kicker')}
+      </ThemedText>
+      <ThemedText type="title">{t('flow.prepare.title')}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('flow.prepare.body')}
+      </ThemedText>
+
+      {/* The pull quote: set large, between two hairline rules, with a quotation glyph. */}
+      <View style={[styles.quote, { borderColor: theme.hairline }]}>
+        <Ionicons name="chatbox-outline" size={20} color={theme.teal} />
+        <ThemedText type="displaySmall">{t('flow.prepare.quote')}</ThemedText>
+      </View>
+
+      <View style={styles.meta}>
+        <Ionicons name="time-outline" size={18} color={theme.textMuted} />
+        <View style={styles.metaLines}>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('flow.prepare.metaPace')}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('flow.prepare.metaInput')}
+          </ThemedText>
+        </View>
+      </View>
+    </OnboardingScaffold>
+  );
+}
+
+/**
+ * 04 · ACCOUNT (build spec §4) — before the conversation, and MANDATORY (D104).
+ *
+ * ── WHAT "MANDATORY" MEANS HERE ────────────────────────────────────────────────────────────────
+ *
+ * There is no skip and no anonymous path. "Back" returns to the preparation screen; the only way
+ * forward is a real session, and the screen advances BY ITSELF the moment one exists rather than
+ * asking the person to confirm what they just did. That also makes the welcome's "I already have an
+ * account" work: it lands here, they sign in, and the flow carries on from the conversation.
+ *
+ * ── THE ONE ESCAPE, AND WHY IT IS NOT A SKIP BUTTON ────────────────────────────────────────────
+ *
+ * A build can be incapable of signing anybody in: no backend configured, or neither provider
+ * available on this device/runtime (Expo Go, web, a jest render). Held strictly, that would trap
+ * every such person on screen 4 of 7 forever, on a path they cannot fix — the same dead end the
+ * founder removed from the coach on 2026-09-03. So when, and only when, the build offers no
+ * provider at all, the screen says so and offers one clearly-labelled way on. It never appears
+ * because somebody would rather not sign in.
+ *
+ * Presentational (Engineering Bible §19): identity work belongs to AuthProvider → AuthGateway →
+ * nativeIdentity. This screen asks, waits, and reports.
+ */
+function AccountStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: () => void }) {
+  const theme = useTheme();
+  const dark = useColorScheme() === 'dark';
+  const { t } = useTranslation('onboarding');
+  const { t: tSettings } = useTranslation('settings');
+  const { enabled, status, error, signInWithApple, signInWithGoogle } = useAuth();
+
+  // Which providers THIS build can actually run. Apple's check is async (it asks the OS), so both
+  // start hidden and appear once known — a button that cannot work must never be offered.
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [googleAvailable] = useState(() => isGoogleSignInAvailable());
+  const [busy, setBusy] = useState<'apple' | 'google' | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    void isAppleSignInAvailable().then((ok) => {
+      if (mounted) setAppleAvailable(ok);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // A session is what this screen is for; having one is the only thing that advances it.
+  useEffect(() => {
+    if (status === 'authenticated') onSignedIn();
+  }, [status, onSignedIn]);
+
+  const run = async (provider: 'apple' | 'google') => {
+    if (busy) return;
+    setBusy(provider);
+    try {
+      // AuthProvider swallows a cancel and surfaces anything else through `error` — nothing to
+      // catch here, and nothing to show for a person who simply closed the sheet.
+      await (provider === 'apple' ? signInWithApple() : signInWithGoogle());
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const noProvider = !enabled || (!appleAvailable && !googleAvailable);
+
+  return (
+    <OnboardingScaffold
+      onBack={onBack}
+      pager={stepPosition('account')}
+      footer={
+        <>
+          {appleAvailable ? (
+            <ProviderButton
+              icon="logo-apple"
+              label={t('flow.account.apple')}
+              busy={busy === 'apple'}
+              disabled={busy !== null}
+              // Apple's HIG: black on a light background, white on a dark one.
+              background={dark ? '#FFFFFF' : '#000000'}
+              foreground={dark ? '#000000' : '#FFFFFF'}
+              onPress={() => void run('apple')}
+            />
+          ) : null}
+          {googleAvailable ? (
+            <ProviderButton
+              icon="logo-google"
+              label={t('flow.account.google')}
+              busy={busy === 'google'}
+              disabled={busy !== null}
+              // Google's guidelines: a neutral surface with a visible outline, not a filled brand colour.
+              background={theme.backgroundElement}
+              foreground={theme.text}
+              borderColor={theme.hairline}
+              onPress={() => void run('google')}
+            />
+          ) : null}
+          {noProvider ? (
+            <>
+              <ThemedText type="small" themeColor="textMuted" style={styles.centred}>
+                {tSettings('signIn.unavailable')}
+              </ThemedText>
+              <OnboardingPrimaryButton label={t('flow.account.unavailableContinue')} onPress={onSignedIn} />
+            </>
+          ) : null}
+          {/* A real failure is said plainly and stays on screen; the user's data is untouched. */}
+          {error ? (
+            <ThemedText type="small" style={[styles.centred, { color: theme.danger }]}>
+              {error}
+            </ThemedText>
+          ) : null}
+          <LegalLine />
+          <OnboardingSecondaryButton label={t('flow.account.back')} onPress={onBack} />
+        </>
+      }>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('flow.account.kicker')}
+      </ThemedText>
+      <ThemedText type="title">{t('flow.account.title')}</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        {t('flow.account.body')}
+      </ThemedText>
+
+      {/* A shield inside concentric rings fills the middle (build spec §4). */}
+      <View style={styles.shield}>
+        <View style={[styles.ring, styles.ringOuter, { borderColor: theme.hairline }]} />
+        <View style={[styles.ring, styles.ringInner, { borderColor: theme.tealTint }]} />
+        <Ionicons name="shield-checkmark-outline" size={54} color={theme.teal} />
+      </View>
+    </OnboardingScaffold>
+  );
+}
+
+/**
+ * "By continuing, I agree to the Terms and Privacy Policy." — one sentence, two real links.
+ *
+ * Split into five keys rather than interpolated, because a link inside an interpolation cannot be
+ * made tappable without parsing the translated string, and a parser over user-facing copy is a bug
+ * waiting for the first translator who moves a word. The five pieces reassemble into exactly the
+ * approved sentence in both languages.
+ *
+ * ⚠ The Terms document is not published yet — see `TERMS_URL`.
+ */
+function LegalLine() {
+  const theme = useTheme();
+  const { t } = useTranslation('onboarding');
+  const open = (url: string) => void Linking.openURL(url).catch(() => {});
+  return (
+    <ThemedText type="small" themeColor="textMuted" style={styles.centred}>
+      {t('flow.account.legalPrefix')}
+      <Text
+        accessibilityRole="link"
+        style={{ color: theme.teal }}
+        onPress={() => open(TERMS_URL)}>
+        {t('flow.account.legalTerms')}
+      </Text>
+      {t('flow.account.legalAnd')}
+      <Text
+        accessibilityRole="link"
+        style={{ color: theme.teal }}
+        onPress={() => open(PRIVACY_POLICY_URL)}>
+        {t('flow.account.legalPrivacy')}
+      </Text>
+      {t('flow.account.legalSuffix')}
+    </ThemedText>
+  );
+}
+
+/**
+ * 06 · HANDOFF, as reached from THIS route.
+ *
+ * The screen itself lives in `FirstRunTail` because the real path renders it from the coach, after
+ * the first-run gate has already closed. This wrapper only supplies the name — and the name is the
+ * reason it is a wrapper: the page takes whatever we have and decides which of two complete
+ * sentences is true, so a person the conversation never named still reads a finished line.
+ */
+function HandoffStep({ onContinue }: { onContinue: () => void }) {
+  const name = usePersonalName();
+  return <HandoffPage name={name} onContinue={onContinue} />;
+}
+
+/** 07 · FIRST JOURNEY, as reached from this route. Same page, same content source as the tail. */
+function FirstJourneyStep({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation('onboarding');
+  return <FirstJourneyPage content={introJourneyContent(t)} onContinue={onContinue} />;
 }
 
 const styles = StyleSheet.create({
@@ -469,20 +759,44 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
   },
+  langFlag: { fontSize: 24, lineHeight: 30, width: 34 },
   langMain: { flex: 1, gap: 1 },
   // `start`/`end`, not `left`/`right`: a physical inset does not mirror, so under RTL the divider
   // would be indented on the wrong side of the list.
   langDivider: { position: 'absolute', start: Spacing.three, end: 0, bottom: 0, height: 1 },
   section: { borderRadius: Radius.card, overflow: 'hidden', gap: 0 },
   pressed: { opacity: 0.6 },
-  progressDots: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
-  progressDot: { width: 8, height: 8, borderRadius: 4 },
-  progressDotCurrent: { width: 22 },
-  introArt: {
-    minHeight: 150,
+  centred: { textAlign: 'center' },
+
+  // 01 · Welcome — the wordmark, large, in the middle of the screen.
+  wordmark: {
+    minHeight: 120,
     borderRadius: Radius.card,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.two,
+    marginVertical: Spacing.two,
   },
+
+  // 02 · Purpose — four bullets, each with a round tinted icon. A row mirrors under RTL on its own.
+  bullets: { gap: Spacing.three, marginVertical: Spacing.two },
+  bullet: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  bulletIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  bulletText: { flex: 1 },
+
+  // 03 · Prepare — the pull quote between two hairline rules, and the meta lines under a clock.
+  quote: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    paddingVertical: Spacing.three,
+    marginVertical: Spacing.two,
+    gap: Spacing.two,
+  },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  metaLines: { flex: 1, gap: 2 },
+
+  // 04 · Account — a shield inside concentric rings.
+  shield: { minHeight: 180, alignItems: 'center', justifyContent: 'center', marginVertical: Spacing.two },
+  ring: { position: 'absolute', borderWidth: 1, borderRadius: 999 },
+  ringOuter: { width: 168, height: 168 },
+  ringInner: { width: 112, height: 112 },
 });

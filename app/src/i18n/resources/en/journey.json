@@ -53,6 +53,7 @@
     "starter": "Starter",
     "checkIn": "Check in",
     "checkInA11y": "Check in on {{title}}",
+    "openStepA11y": "Open {{title}}",
     "shareCompletion": "Share completion",
     "cancel": "Cancel this Journey",
     "cancelHint": "Stop it here and keep everything you already did",

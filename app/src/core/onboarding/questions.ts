@@ -199,54 +199,85 @@ export const ONBOARDING_QUESTION_IDS: readonly OnboardingQuestionId[] = ONBOARDI
 export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
 
 /**
- * The FIRST-RUN flow in order (Onboarding v2, 2026-08-27).
+ * The FIRST-RUN flow in order — the language choice, then the founder's SEVEN approved screens
+ * (design pack 2026-09-14,
+ * transcribed as `04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`).
  *
- * ── WHAT CHANGED, AND WHY IT IS THIS SHORT ─────────────────────────────────────────────────────
+ * ── WHAT THIS LIST IS ──────────────────────────────────────────────────────────────────────────
  *
- * It used to be fifteen pages: language, profile, an intro, nine questions, a completion screen, a
- * consent page and a permission ask — all of it before the person had seen anything the app does.
- * The revision's principle is that **onboarding should already feel like the first coaching
- * session**, so the questionnaire stops being a gate in front of the coach and the coach becomes
- * the onboarding.
+ * It is the whole first run, and nothing else is. Read it rather than any comment that claims to
+ * describe the sequence; the two have disagreed before and the comment lost.
  *
- * The fixed introduction remains short: **language** decides the whole UI and direction;
- * **personalInfo** is the little genuinely needed at first run; three lightweight product screens
- * establish the promise, adaptation model and sharing control; and **intro** prepares the person
- * for a short conversation rather than a form.
+ * ── WHAT CHANGED, AND WHY ──────────────────────────────────────────────────────────────────────
  *
- * ── WHERE EVERYTHING ELSE WENT ─────────────────────────────────────────────────────────────────
+ * The previous order (`language → acknowledge → promise → personalization → supportIntro → intro`)
+ * was three screens of what we believe stacked in front of one screen of preparation. The approved
+ * pack folds all of that into TWO screens — a welcome and a purpose — and spends the room it saves
+ * on the two moments that were missing entirely: the **account**, which now comes before the
+ * conversation and is mandatory (D104), and the **handoff + first Journey**, which give the person
+ * somewhere to arrive instead of being dropped at Home.
  *
- * The nine questions are NOT deleted — the configs, the ids and the screens all stay, they are
- * still reachable from the Tools tab, and the plan is to ask the few that matter CONTEXTUALLY, when
- * a chosen Journey actually needs the axis (Phase 2 of the spec). Removing them from this list only
- * removes them from the fixed first-run sequence.
+ * ── THE TWO NAMES THAT ARE NOT SCREENS IN THIS ROUTE ───────────────────────────────────────────
  *
- * The Coach-memory consent and the notification ask moved to AFTER the first Journey exists, which
- * is the whole point of both: consent to a coach remembering things is easier to mean once somebody
- * has met it, and a reminder is easier to want once there is something to be reminded about.
+ * `conversation` lives on `/coach` and `handoff`/`firstJourney` are reached from there too, because
+ * the first-run gate closes when the coach finishes building. They are still steps: a step is a
+ * RESUME POINT before it is a screen, and a device that closes mid-conversation has to come back to
+ * the launcher rather than to the top of the flow.
+ *
+ * ── WHY `language` IS FIRST AND IS NOT ONE OF THE SEVEN (founder, 2026-09-15) ──────────────────
+ *
+ * The approved pack has no language screen. That is a gap in the pack, not a decision to drop it,
+ * and the founder's reasoning settles it: **a person may not read English at all.** If the first
+ * thing they meet is an English welcome, they cannot understand the onboarding well enough to go
+ * looking for a language setting — so the choice cannot wait for Settings and cannot sit behind any
+ * other screen. It is STEP ZERO: before screen 1, understandable without reading either language
+ * (each option names itself in its own script), and it re-renders the flow in the chosen language
+ * the same frame.
+ *
+ * It is deliberately NOT a pager dot. The pack has seven screens and the dots must read as seven —
+ * see {@link ONBOARDING_PAGER_STEPS}. A language choice is the door, not the first room.
+ *
+ * Settings › Language is unchanged and reachable forever; this adds a moment, it removes nothing.
  */
 export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   'language',
-  // BEFORE the three promises, on purpose (D98): a person who has just installed this has failed at
-  // something like it before, and being sold to before being recognised is what makes the selling
-  // bounce off. It is the only screen in the flow that asks for nothing.
+  'welcome',
+  'purpose',
+  'prepare',
+  // BEFORE the conversation, and mandatory (D104). The conversation is saved against a real
+  // identity or it is not had yet; there is no skip here and no anonymous path.
+  'account',
+  'conversation',
+  'handoff',
+  'firstJourney',
+];
+
+/**
+ * The steps the PAGER counts — the seven approved screens, and only those.
+ *
+ * Derived from the order rather than written out, so a screen cannot be added to the flow and
+ * missed in the dots. `language` is excluded for the reason given above: it precedes the seven.
+ */
+export const ONBOARDING_PAGER_STEPS: readonly OnboardingStep[] = ONBOARDING_STEP_ORDER.filter(
+  (step) => step !== 'language',
+);
+
+/**
+ * The steps that are no longer part of the first-run sequence but are still real pages: the nine
+ * questions (reachable from the Tools tab), the profile page, the three product-promise screens the
+ * approved pack replaced, and the tail that moved after the first Journey.
+ *
+ * This exists for ONE reason, and it is a live one: people are mid-flow on the shipped build right
+ * now. A device that resumes at `q4`, or at `supportIntro`, after this update must not be handed a
+ * step the order no longer contains — `nextStep` would return that same step forever and the person
+ * would be stuck on a page with no way out. {@link resolveResumeStep} is what prevents that.
+ */
+const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
   'acknowledge',
   'promise',
   'personalization',
   'supportIntro',
   'intro',
-];
-
-/**
- * The steps that are no longer part of the first-run sequence but are still real pages: the nine
- * questions (reachable from the Tools tab) and the tail that moved after the first Journey.
- *
- * This exists for ONE reason, and it is a live one: two people are mid-flow on the shipped build
- * right now. A device that resumes at `q4` after this update must not be handed a step the order no
- * longer contains — `nextStep` would return that same step forever and the person would be stuck in
- * a questionnaire with no way out. {@link resolveResumeStep} is what prevents that.
- */
-const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
   'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9',
   'completion',
   'coachMemory',
@@ -261,17 +292,53 @@ const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
 ];
 
 /**
- * Where a persisted resume point should actually land after the v2 change.
+ * Where a retired step lands in the approved seven — by MEANING, not by index.
  *
- * A step still in the flow resumes exactly where it was. Anything the flow no longer contains
- * resumes at the **welcome** — the last page before the conversation, which is the honest place to
- * put somebody who was part-way through a sequence that no longer exists. Their answers are kept
- * (they are still valid signals; nothing is discarded), they are simply not asked for the rest.
+ * Somebody paused half-way through the old flow did not pause at "position 4"; they paused at a
+ * particular moment, and the honest resume point is the new screen that does the same job. So the
+ * three product-promise screens land on the one screen that replaced all three, the conversation
+ * preparation lands on the new preparation, and anything that was a form or an ask lands on the
+ * preparation too — because the next thing that should happen to them is the conversation, and
+ * `prepare` is the last screen before the account gate that now guards it.
+ *
+ * Nobody is ever mapped PAST the account screen. A person who was mid-questionnaire yesterday has
+ * no session today, and D104 says the conversation does not start without one.
+ */
+const RETIRED_STEP_LANDING: Partial<Record<OnboardingStep, OnboardingStep>> = {
+  // "The problem was never that you did not care enough" — the screen that named the difficulty.
+  // Its job is the welcome's kicker now.
+  acknowledge: 'welcome',
+  promise: 'purpose',
+  personalization: 'purpose',
+  supportIntro: 'purpose',
+  intro: 'prepare',
+};
+
+/**
+ * Where a persisted resume point should actually land.
+ *
+ * A step still in the flow resumes exactly where it was. Anything the flow no longer contains is
+ * mapped through {@link RETIRED_STEP_LANDING}, and anything with no mapping falls to **prepare** —
+ * the last screen before the account gate, which is the honest place to put somebody who was
+ * part-way through a sequence that no longer exists. Their answers are kept either way (they are
+ * still valid signals; nothing is discarded), they are simply not asked for the rest.
  */
 export function resolveResumeStep(step: OnboardingStep | undefined): OnboardingStep {
   if (!step) return ONBOARDING_STEP_ORDER[0];
   if (ONBOARDING_STEP_ORDER.includes(step)) return step;
-  return RETIRED_FIRST_RUN_STEPS.includes(step) ? 'intro' : ONBOARDING_STEP_ORDER[0];
+  const mapped = RETIRED_STEP_LANDING[step];
+  if (mapped) return mapped;
+  return RETIRED_FIRST_RUN_STEPS.includes(step) ? 'prepare' : ONBOARDING_STEP_ORDER[0];
+}
+
+/**
+ * 1-based position of a step among the SEVEN approved screens, for the pager dots.
+ *
+ * 0 — which the scaffold reads as "no pager" — for the language choice and for every retired page,
+ * because neither is one of the seven.
+ */
+export function stepPosition(step: OnboardingStep): number {
+  return ONBOARDING_PAGER_STEPS.indexOf(step) + 1;
 }
 
 /** The config for a question id, or undefined for a non-question step. */

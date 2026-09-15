@@ -25,12 +25,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ProviderButton } from '@/components/auth/ProviderButton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { FontFamily, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
 import { isAppleSignInAvailable, isGoogleSignInAvailable } from '@/core/auth/nativeIdentity';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
@@ -151,52 +152,6 @@ export default function SignInScreen() {
   );
 }
 
-/** One full-width provider button. Layout is direction-aware; Yoga mirrors the row under RTL. */
-function ProviderButton({
-  icon,
-  label,
-  busy,
-  disabled,
-  background,
-  foreground,
-  borderColor,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  busy: boolean;
-  disabled: boolean;
-  background: string;
-  foreground: string;
-  borderColor?: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled, busy }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.provider,
-        { backgroundColor: background },
-        borderColor ? { borderWidth: 1, borderColor } : null,
-        pressed && styles.pressed,
-        disabled && !busy && styles.dimmed,
-      ]}>
-      {busy ? (
-        <ActivityIndicator color={foreground} />
-      ) : (
-        <>
-          <Ionicons name={icon} size={20} color={foreground} />
-          <ThemedText style={[styles.providerLabel, { color: foreground }]}>{label}</ThemedText>
-        </>
-      )}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -228,25 +183,10 @@ const styles = StyleSheet.create({
   body: {
     marginBottom: Spacing.two,
   },
-  provider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    height: 50,
-    borderRadius: Radius.button,
-  },
-  providerLabel: {
-    fontSize: 15,
-    fontFamily: FontFamily.headingBold,
-  },
   note: {
     textAlign: 'center',
   },
   pressed: {
     opacity: 0.6,
-  },
-  dimmed: {
-    opacity: 0.4,
   },
 });

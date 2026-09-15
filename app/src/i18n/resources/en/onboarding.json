@@ -1,7 +1,70 @@
 {
   "skip": "Skip",
+  "flow": {
+    "pager": "Screen {{current}} of {{total}}",
+    "welcome": {
+      "kicker": "Sometimes the first step is the hardest",
+      "title": "Turn intention",
+      "titleAccent": "into real movement",
+      "body": "{{product}} helps you understand what works for you, build a personal path, and keep moving with a coach who knows you and people by your side.",
+      "primary": "Take my first step",
+      "secondary": "I already have an account"
+    },
+    "purpose": {
+      "kicker": "Your path, with the right support",
+      "title": "Starting a personal journey can feel daunting.",
+      "subtitle": "We are here to guide you and help you get wherever you choose to go.",
+      "bullets": [
+        "A coach who is always available and truly knows you",
+        "Action plans built around you",
+        "Together, we discover what truly motivates you",
+        "Build a circle of supportive people"
+      ],
+      "footer": "The path is yours. You do not have to walk it alone.",
+      "primary": "Let's begin"
+    },
+    "prepare": {
+      "kicker": "To shape the path around you",
+      "title": "Let's start getting to know you",
+      "body": "{{product}} learns how to give each person the support that fits them. We will begin with a short introduction, and get to know you better over time.",
+      "quote": "Find a few quiet minutes, wherever and whenever feels right — and let's talk.",
+      "metaPace": "A short conversation, at your pace",
+      "metaInput": "Type or speak — your choice",
+      "primary": "I'm ready, let's talk"
+    },
+    "account": {
+      "kicker": "Before we talk",
+      "title": "Let's save your path",
+      "body": "Your account saves the conversation, lets you continue on any device, and keeps your Journeys right where you left them.",
+      "apple": "Continue with Apple",
+      "google": "Continue with Google",
+      "back": "Back",
+      "legalPrefix": "By continuing, I agree to the ",
+      "legalTerms": "Terms",
+      "legalAnd": " and ",
+      "legalPrivacy": "Privacy Policy",
+      "legalSuffix": ".",
+      "unavailableContinue": "Continue without an account in this version"
+    },
+    "handoff": {
+      "kicker": "It's good to know you, {{name}}",
+      "kickerNoName": "It's good to know you",
+      "title": "Now the path begins",
+      "body": "A short Journey is waiting to help you explore the app, discover what can support you, and build your first personal Journey.",
+      "footer": "You do not need to learn everything now. We will move forward together, one Step at a time.",
+      "primary": "Take me to my first Journey"
+    },
+    "firstJourney": {
+      "kicker": "Your first Journey",
+      "title": "Discover {{product}}",
+      "body": "{{steps}} short Steps, each opening another part of the path.",
+      "cardCount": "{{current}} of {{total}}",
+      "cardStatus": "Started now",
+      "primary": "Go to the first Step"
+    }
+  },
   "language": {
-    "title": "Choose your language",
+    "title": "What language shall we talk in?",
     "subtitle": "This sets the language for everything, including your Coach. You can change it later in Settings.",
     "continue": "Continue"
   },

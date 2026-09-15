@@ -17,6 +17,7 @@
   "journeyMatching": {
     "noMatch": "I don’t have a Journey in the library that fits this well enough yet, and I’d rather be honest than give you the wrong one. Tell me what you would like to change or clarify, and I’ll try again with you.",
     "singleMatch": "I found one Journey that fits what you told me. I’ll use it as the basis for the plan, and you’ll still review the full Journey before anything starts.",
+    "recommendedSelected": "Based on what you told me, this is the Journey that fits you best: {{journey}}. I'll use it as the basis for the plan, and you'll still review the full Journey before anything starts.",
     "multipleMatch": "I found a few Journeys that could fit. One is not clearly better for you yet, so choose the approach that feels most useful.",
     "multipleRecommended": "I found a few Journeys that could fit. Based on what you told me, the first is the strongest match, but the choice is yours.",
     "recommendedSuffix": "— Recommended",
@@ -171,5 +172,238 @@
       "Take one small step toward your career goal today",
       "Reflect on what progress would look like for you"
     ]
+  },
+  "bodyImage": {
+    "foundation": {
+      "prompt": "Why does this matter to you right now?",
+      "options": [
+        "More energy and health",
+        "Feeling better in my body",
+        "Building strength or fitness",
+        "A steadier relationship with food"
+      ]
+    },
+    "baseline": {
+      "prompt": "How active and balanced are things right now?",
+      "options": [
+        "Mostly inactive, eating on the go",
+        "Some movement and balance, but not consistent",
+        "Fairly active and balanced already"
+      ]
+    },
+    "time": {
+      "prompt": "How much time can you give to this each week?",
+      "options": [
+        "Under 1 hour",
+        "1–3 hours",
+        "3–5 hours",
+        "More than 5 hours"
+      ]
+    },
+    "obstacles": {
+      "prompt": "What usually throws this off?",
+      "options": [
+        "No time or too busy",
+        "Low energy or motivation",
+        "Stress or emotional eating",
+        "All-or-nothing thinking"
+      ]
+    },
+    "motivation": {
+      "prompt": "What would you count as success?",
+      "options": [
+        "Feeling stronger and more energetic",
+        "Feeling at home in my body",
+        "Keeping the habit going",
+        "Enjoying movement and food again"
+      ]
+    },
+    "milestones": {
+      "prompt": "How would you like to approach it?",
+      "options": [
+        "Build up in clear stages",
+        "Keep it simple — one habit at a time"
+      ]
+    },
+    "feasibility": {
+      "reasonable": "This is a realistic fit — small, repeatable habits will carry it.",
+      "ambitious": "This is a real stretch — build one habit at a time so it sticks rather than snaps back.",
+      "tooAmbitious": "This is a lot to change at once; a smaller first habit is far likelier to last."
+    },
+    "defaultTitles": [
+      "Make one small, kind choice for your body today",
+      "Reflect on how you feel in your body today"
+    ]
+  },
+  "addiction": {
+    "foundation": {
+      "prompt": "What's driving you to change this now?",
+      "options": [
+        "My health",
+        "My relationships",
+        "My work or finances",
+        "I want to feel in control again"
+      ]
+    },
+    "baseline": {
+      "prompt": "Where are you with it right now?",
+      "options": [
+        "I'm deep in the pattern right now",
+        "I've had some short breaks from it",
+        "I've been free for a while and want to protect it"
+      ]
+    },
+    "time": {
+      "prompt": "How much time can you give to support routines each week?",
+      "options": [
+        "A few minutes a day",
+        "About 1–2 hours",
+        "3–5 hours",
+        "As much as it takes"
+      ]
+    },
+    "obstacles": {
+      "prompt": "When is the urge hardest to resist?",
+      "options": [
+        "Evenings or at night",
+        "Around certain people",
+        "When stressed or upset",
+        "When I'm bored or alone"
+      ]
+    },
+    "motivation": {
+      "prompt": "What helps you most on a hard day?",
+      "options": [
+        "Reaching out to someone",
+        "A distraction or activity",
+        "Remembering my reasons",
+        "Tracking my streak"
+      ]
+    },
+    "milestones": {
+      "prompt": "How would you like to structure this?",
+      "options": [
+        "Take it in clear stages",
+        "Keep it simple — one day at a time"
+      ]
+    },
+    "feasibility": {
+      "reasonable": "This is a realistic footing — small, steady support routines can hold this.",
+      "ambitious": "This is a real challenge, and worth it — lean on your support and go one step at a time.",
+      "tooAmbitious": "This is a lot to carry — please consider reaching out for extra support alongside these steps."
+    },
+    "defaultTitles": [
+      "Take one small step toward staying free today",
+      "Reflect on what is helping most right now"
+    ]
+  },
+  "relationships": {
+    "foundation": {
+      "prompt": "What matters most to you here?",
+      "options": [
+        "Feeling less alone",
+        "Finding a partner",
+        "Deepening the relationships I have",
+        "Building new friendships"
+      ]
+    },
+    "baseline": {
+      "prompt": "How connected do you feel right now?",
+      "options": [
+        "I feel quite isolated right now",
+        "I have some connections but want more",
+        "I have a solid circle and want to deepen it"
+      ]
+    },
+    "time": {
+      "prompt": "How much time can you give to nurturing connection each week?",
+      "options": [
+        "A few minutes a day",
+        "About 1–2 hours",
+        "3–5 hours",
+        "More than 5 hours"
+      ]
+    },
+    "obstacles": {
+      "prompt": "What gets in the way of connecting?",
+      "options": [
+        "Fear of rejection",
+        "Not knowing where to meet people",
+        "Feeling too busy or tired",
+        "A habit of withdrawing"
+      ]
+    },
+    "motivation": {
+      "prompt": "What keeps you reaching out?",
+      "options": [
+        "Wanting to feel understood",
+        "How good real connection feels",
+        "Not wanting to stay isolated",
+        "Someone specific I care about"
+      ]
+    },
+    "milestones": {
+      "prompt": "How would you like to approach it?",
+      "options": [
+        "Build up in clear stages",
+        "Keep it simple — one small reach-out at a time"
+      ]
+    },
+    "feasibility": {
+      "reasonable": "This is a realistic reach — small, regular reach-outs build real connection over time.",
+      "ambitious": "This is a genuine stretch — start with one small, low-pressure reach-out and let it grow.",
+      "tooAmbitious": "This is a big leap at once — a gentler first step gives you a win to build on."
+    },
+    "defaultTitles": [
+      "Take one small step toward connection today",
+      "Reflect on a relationship that matters to you"
+    ]
+  },
+  "understandingCheck": {
+    "prompt": "I'd like to reflect back what I have understood so far, and please feel free to correct me.",
+    "options": [
+      "Yes, exactly",
+      "I want to clarify"
+    ],
+    "askCorrection": "Please do — tell me what I have wrong, or what is missing. I'll go back over it with what you tell me rather than adding it on the end.",
+    "rebuilt": "Thank you — that changes the picture, so I'm going back over it rather than tacking your correction onto what I had."
+  },
+  "introduction": {
+    "namePrompt": "Hi, I’m {{product}}. Before we get started, what should I call you?",
+    "opening": "I’m glad you’re here. What brings you here right now, and what would you like some help with?",
+    "openingNamed": "Hi {{name}}, I’m glad you’re here. What brings you here right now, and what would you like some help with?",
+    "closing": "Thank you for telling me that. I am not going to plan anything on the strength of one conversation — for now I just wanted to meet you. When you are ready, we will build your first Journey together."
+  },
+  "portrait": {
+    "primaryWant": {
+      "prompt": "What would you most like to be different right now?"
+    },
+    "domain": {
+      "prompt": "What part of your life is this about?"
+    },
+    "bottleneck": {
+      "prompt": "What is actually stopping this from happening?"
+    },
+    "currentState": {
+      "prompt": "Where are things with it at the moment?"
+    },
+    "desiredOutcome": {
+      "prompt": "If this went well, what would be different for you?"
+    },
+    "stage": {
+      "prompt": "Where are you with it right now: still working out what you want, or already trying things?"
+    },
+    "supportNeed": {
+      "prompt": "What kind of help would actually be useful here?"
+    },
+    "readiness": {
+      "prompt": "What feels realistic for you to do next?"
+    },
+    "previousAttempts": {
+      "prompt": "Have you tried anything on this before, and what happened?"
+    },
+    "constraints": {
+      "prompt": "Is there anything that makes this harder than it sounds?"
+    }
   }
 }

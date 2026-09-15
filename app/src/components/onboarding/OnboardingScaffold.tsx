@@ -18,6 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { KeyboardSafeScrollView } from '@/components/ui/KeyboardSafeScrollView';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { ONBOARDING_PAGER_STEPS } from '@/core/onboarding/questions';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
 
@@ -33,6 +34,7 @@ export interface OnboardingProgress {
 export function OnboardingScaffold({
   onBack,
   progress,
+  pager,
   children,
   footer,
 }: {
@@ -40,6 +42,12 @@ export function OnboardingScaffold({
   onBack?: () => void;
   /** Question progress header (only on the six question pages — PRD §8). */
   progress?: OnboardingProgress;
+  /**
+   * The first-run pager: one dot per screen of the approved seven, above the footer actions. The
+   * 1-based position of THIS screen; the total comes from `ONBOARDING_PAGER_STEPS` so the dots and
+   * the sequence cannot drift apart.
+   */
+  pager?: number;
   children: ReactNode;
   /** Pinned action area at the bottom (primary + optional secondary). */
   footer: ReactNode;
@@ -90,9 +98,45 @@ export function OnboardingScaffold({
           {children}
         </KeyboardSafeScrollView>
 
-        <View style={[styles.footer, { borderTopColor: theme.hairline }]}>{footer}</View>
+        <View style={[styles.footer, { borderTopColor: theme.hairline }]}>
+          {pager ? <OnboardingPagerDots current={pager} /> : null}
+          {footer}
+        </View>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+/**
+ * The first-run pager — seven dots, one per approved screen, with the current one widened.
+ *
+ * It is a POSITION, not a progress bar: the person is told where they are in a short sequence, not
+ * how much of a task is left. Rendered from `ONBOARDING_PAGER_STEPS` — the flow MINUS the language
+ * choice that precedes it — rather than a literal 7, so adding or removing a screen cannot leave the
+ * dots lying. It reads as one label to a screen reader
+ * ("Screen 3 of 7") rather than as seven anonymous views.
+ */
+export function OnboardingPagerDots({ current }: { current: number }) {
+  const theme = useTheme();
+  const { t } = useTranslation('onboarding');
+  const total = ONBOARDING_PAGER_STEPS.length;
+  return (
+    <View
+      style={styles.pager}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('flow.pager', { current, total })}>
+      {Array.from({ length: total }, (_, i) => i + 1).map((dot) => (
+        <View
+          key={dot}
+          style={[
+            styles.pagerDot,
+            { backgroundColor: dot === current ? theme.teal : theme.hairline },
+            dot === current && styles.pagerDotCurrent,
+          ]}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -179,6 +223,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondary: { alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.two },
+  // Centred and direction-agnostic: a row of identical dots reads the same either way, and the
+  // widened one marks a position rather than a direction of travel.
+  pager: { flexDirection: 'row', gap: Spacing.one, alignSelf: 'center', alignItems: 'center', paddingBottom: Spacing.one },
+  pagerDot: { width: 6, height: 6, borderRadius: 3 },
+  pagerDotCurrent: { width: 18, height: 6, borderRadius: 3 },
   dim: { opacity: 0.4 },
   pressed: { opacity: 0.7 },
 });

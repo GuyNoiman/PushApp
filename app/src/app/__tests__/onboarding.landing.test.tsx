@@ -15,6 +15,13 @@
  * rather than overruled, and these tests hold the part that still matters: **the person is always
  * taken somewhere reachable, and "maybe later" is a real answer that invents nothing.**
  *
+ * ── AND AGAIN, WITH THE APPROVED SCREENS (2026-09-15) ──────────────────────────────────────────
+ *
+ * The launcher is now `flow.prepare.primary` on screen 3 rather than `intro.start` on screen 6, and
+ * the step it persists before leaving is `conversation` rather than `intro`. What is being protected
+ * is unchanged: the hand-off opens the coach, it does NOT complete onboarding early, and it always
+ * has a destination.
+ *
  * `t` is stubbed to echo its key; theme, safe-area and the providers the page uses are stubbed so it
  * renders without a provider tree.
  */
@@ -23,6 +30,11 @@ import { createElement, type ReactElement } from 'react';
 import OnboardingScreen from '../onboarding';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
+// The account screen (04) pulls in the colour scheme, which reaches AsyncStorage. Mocked rather
+// than stubbed away, so the screen under test is the real one.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
 jest.mock('@/global.css', () => ({}));
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
@@ -56,6 +68,19 @@ jest.mock('@/state/ProfileProvider', () => ({
   }),
 }));
 jest.mock('@/state/SocialProvider', () => ({ useSocial: () => ({ profile: null }) }));
+jest.mock('@/state/AuthProvider', () => ({
+  useAuth: () => ({
+    enabled: false,
+    status: 'anonymous',
+    error: null,
+    signInWithApple: jest.fn(),
+    signInWithGoogle: jest.fn(),
+  }),
+}));
+jest.mock('@/core/auth/nativeIdentity', () => ({
+  isAppleSignInAvailable: async () => false,
+  isGoogleSignInAvailable: () => false,
+}));
 
 const mockApp: { current: Record<string, unknown> } = { current: {} };
 jest.mock('@/state/AppProvider', () => ({ useApp: () => mockApp.current }));
@@ -75,10 +100,10 @@ interface TestRendererModule {
 const TestRenderer: TestRendererModule = require('react-test-renderer');
 const { act } = TestRenderer;
 
-/** A core parked on the welcome — the last page before the conversation. */
+/** A core parked on the PREPARATION — the last screen before the account gate. */
 function setApp() {
   const core = {
-    getOnboardingStep: () => 'intro',
+    getOnboardingStep: () => 'prepare',
     getOnboardingAnswers: () => ({ selections: {}, freeText: {}, skipped: [] }),
     saveOnboardingProgress: jest.fn(),
     completeOnboarding: jest.fn(),
@@ -110,14 +135,34 @@ async function tap(r: TestRoot, label: string) {
 beforeEach(() => mockReplace.mockClear());
 
 describe('Onboarding — the hand-off at the conversation preparation', () => {
-  it('opens the conversation without completing onboarding early', async () => {
+  it('goes to the account gate first; the conversation is not reachable from here (D104)', async () => {
+    // Screen 3's button used to open the coach. It now opens screen 4, and screen 4 is mandatory —
+    // so the one thing this must NOT do any more is navigate.
     const core = setApp();
     const r = await render();
 
-    await tap(r, 'intro.start');
+    await tap(r, 'flow.prepare.primary');
 
     expect(core.saveOnboardingProgress).toHaveBeenCalledWith(
-      'intro',
+      'account',
+      expect.objectContaining({ selections: {}, freeText: {}, skipped: [] }),
+    );
+    expect(core.completeOnboarding).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('opens the conversation from the account screen, without completing onboarding early', async () => {
+    // This build can sign nobody in (both providers mocked unavailable), which is the only path that
+    // leaves screen 4 without a session — see AccountStep's header for why that escape exists and
+    // why it is not a skip button.
+    const core = setApp();
+    const r = await render();
+
+    await tap(r, 'flow.prepare.primary');
+    await tap(r, 'flow.account.unavailableContinue');
+
+    expect(core.saveOnboardingProgress).toHaveBeenLastCalledWith(
+      'conversation',
       expect.objectContaining({ selections: {}, freeText: {}, skipped: [] }),
     );
     expect(core.completeOnboarding).not.toHaveBeenCalled();
@@ -126,7 +171,8 @@ describe('Onboarding — the hand-off at the conversation preparation', () => {
 
   it('the primary action always has a reachable destination', async () => {
     const r = await render();
-    await tap(r, 'intro.start');
+    await tap(r, 'flow.prepare.primary');
+    await tap(r, 'flow.account.unavailableContinue');
     expect(mockReplace).toHaveBeenCalledTimes(1);
   });
 });

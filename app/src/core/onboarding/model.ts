@@ -13,11 +13,40 @@
  */
 
 /**
- * Every page of the first-run flow, in order. `completion` recaps the starting point; the final
- * `notifications` soft pre-prompt then opens the first Coach conversation (permission is optional
- * and never blocks completion — K1).
+ * Every page the first run has ever had. The ones it walks TODAY are the first seven; the rest are
+ * pages that left the sequence without being deleted, and are kept here only so a device that
+ * persisted one of them can still be resolved onto a screen that exists
+ * ({@link '../onboarding/questions'.resolveResumeStep}).
  */
 export type OnboardingStep =
+  // ── THE APPROVED SEVEN (founder's design pack, 2026-09-14; transcribed as a build spec in
+  // `04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`) ──────────────────────
+  //
+  // Every name below this comment is a screen in the pack, in the pack's order. Everything after
+  // them is a page that still EXISTS but is no longer part of the first run; see
+  // `RETIRED_FIRST_RUN_STEPS` in `./questions`, which is the authority on both lists.
+  /** 01 — the welcome. Also the one door for somebody who already has an account. */
+  | 'welcome'
+  /** 02 — what the product is for, and the four things it does. Bullet 4 is the Support Circle. */
+  | 'purpose'
+  /** 03 — preparing for the conversation: a few quiet minutes, at your pace. */
+  | 'prepare'
+  /**
+   * 04 — the account, BEFORE the conversation and MANDATORY (D104). There is no skip and no
+   * anonymous path: the conversation is saved against a real identity or it is not had yet.
+   */
+  | 'account'
+  /**
+   * 05 — the conversation itself, which lives on `/coach` rather than in this route. It is a step
+   * because it is a RESUME POINT: a device that closes mid-conversation must come back to the
+   * launcher, not to the top of the flow.
+   */
+  | 'conversation'
+  /** 06 — the handoff, addressed by name, between the conversation and the first Journey. */
+  | 'handoff'
+  /** 07 — the intro Journey, its Steps, and the way into the app. */
+  | 'firstJourney'
+  // ── Retired from the first run, still real pages ────────────────────────────────────────────
   | 'language'
   // The screen that names the difficulty BEFORE any of the three promises (D98). It is not a
   // fourth promise and is deliberately not styled as one.

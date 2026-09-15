@@ -53,6 +53,7 @@
     "starter": "פתיחה",
     "checkIn": "דיווח",
     "checkInA11y": "דיווח על {{title}}",
+    "openStepA11y": "פתיחת {{title}}",
     "shareCompletion": "שיתוף השלמה",
     "cancel": "לבטל את המסע הזה",
     "cancelHint": "לעצור כאן, ולשמור את כל מה שכבר עשית",

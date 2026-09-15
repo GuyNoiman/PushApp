@@ -5,6 +5,66 @@ list, from 2026-08-29).
 
 ---
 
+# 2026-09-15 — Onboarding's two jobs, the catalogue-blind introduction, and the Portrait
+
+No code changed. Four founder decisions, logged as **D108–D111** in `06_Decisions/Decision_Log.md`,
+which carries the full reasoning, quotes and what each rules out:
+
+- **D108** — onboarding has exactly two jobs and no third: register the person, and build their
+  Portrait. Journey-building is a separate, later conversation. Its questions come from what a
+  Portrait needs, and it finishes when the Portrait is filled well enough — not when a question list
+  runs out.
+- **D109** — the first (introduction) conversation is **blind to the Journey catalogue**. This rules
+  out three things that were still running before the correction: the career diagnosis tree (E9),
+  the Journey-fit axis question, and the multi-Journey offer — all matching, which belongs to the
+  second conversation. Reason: three of four domains have almost no authored Journeys yet, so a
+  catalogue-aware introduction would be rich for career and thin everywhere else.
+- **D110** — two new **protected terms** in `09_Product_Philosophy/Product_Terminology.md`:
+  **Personal Details** (פרטים אישיים) — what the person sees/edits in Settings, backed by
+  `ProfileProvider.tsx` — and **Portrait** (דיוקן) — our interpretation of the person from the
+  conversation (confidence + source per field), not shown in the UI. "Portrait" was chosen over
+  "Match Profile" because a match profile belongs to the catalogue and a portrait belongs to the
+  person, which is exactly the D109 boundary.
+- **D111** — the Portrait has **no UI** and is shown to nobody, but it **is** part of the account data
+  export and the account wipe — for free, because it lives in `AppState`
+  (`app/src/core/AppCore.ts` ~line 422). The export mechanism is approved; HOW the exported Portrait
+  is presented, and whether a future "here is what we understood about you" screen should exist, are
+  both logged as **Open Questions**.
+
+`Current_Context.md` and `04_Product/Onboarding_Completion_Plan_2026-09-15.md` are maintained by the
+founder and untouched by this update.
+
+---
+
+# 2026-09-14 (later) — Four decisions from reading the approved designs closely, and a name dropped
+
+No code changed. The founder reviewed the approved onboarding designs
+(`output/onboarding/meemore-onboarding-screens/`) against what was already recorded, and against the
+deep name-clearance research written the same day, and settled four things — all logged as **D104–
+D107** in `06_Decisions/Decision_Log.md`, which carries the full reasoning and what each rules out:
+
+- **D104** — registration sits **before** the conversation and is **mandatory** (Apple/Google only,
+  no skip, no anonymous path). This **overrules** the recommendation that had been on record in
+  `Current_Context.md` ("after the Journey is built").
+- **D105** — the onboarding conversation is an **introduction**, not a Journey match; matching moves
+  to a second conversation reached from the intro Journey's fourth Step. This **overrules** §25 of
+  the founder's own newer spec (`Meemor_Onboarding_Journey_Matching_Handoff_Spec_v2.md`, not yet in
+  this repo), which had the recommendation land on Home instead. The intro Journey's shipped copy
+  (`app/src/i18n/resources/{he,en}/onboarding.json`, 3 Steps) does not yet have the 4th Step the
+  approved designs show.
+- **D106** — the English onboarding screens were exported through an RTL container by mistake
+  (mirrored punctuation, a left-pinned send button). The Hebrew screens are correct, and the written
+  rule in `04_Product/UX/Turquoise_Path_Visual_System.md` §10 (controls follow reading direction)
+  stands — a named, founder-confirmed exception to "designs outrank docs."
+- **D107** — the name in the designs (`MeMore`/`meemore`/`Meemor`) is **dropped**: `meemor.com` was
+  taken by a third party 2026-07-02, and `MeMore`/`Memore` collides with a live US supplement brand
+  and two Google Play apps (`05_Research/Product_Name_Deep_Clearance_MeMore_Meemor_2026-09-14.md`).
+  The repo's working name is unchanged for now; the replacement is an **Open Question**.
+
+`Current_Context.md` is being updated separately by the founder for this handoff.
+
+---
+
 # 2026-09-14 — The coach stopped reciting, and the app can finally say which version it is
 
 **The conversation.** Every word the coach spoke was a catalogue string and the next question was

@@ -2826,3 +2826,272 @@ walks through. The one order that remains is that the starting-point summary com
 is built, because a summary after the fact is a receipt.
 
 **Stage:** MVP.
+
+## 2026-09-14 (later) — the approved designs, read closely, settle four things and drop a name
+
+> Founder decisions taken while reviewing the approved onboarding designs
+> (`output/onboarding/meemore-onboarding-screens/`) and the deep name-clearance research written the
+> same day. All four are Approved. Engineering/build detail, when it lands, belongs in
+> `00_Foundation/CHANGELOG.md`.
+
+### D104 — Registration sits BEFORE the conversation, and it is mandatory
+**Decision (founder, 2026-09-14).** The approved onboarding designs place the account screen as step
+04 of 07 (`en/he-{light,dark}-04-account.png`), headed **"Before we talk" / "לפני שנתחיל לדבר"**,
+offering **Apple and Google only**, with a **"Back"** link and **no skip and no anonymous path**. This
+closes the open question recorded in the 2026-09-14 "START HERE" block of `Current_Context.md` item 5
+("There is no registration step in the first run… where it sits in the flow is still open").
+
+**This is the OPPOSITE of the recommendation that was on record.** That block named "after the Journey
+is built" as the AI product team's own recommendation, and cited the Xoltar analysis as singling that
+pattern out as something competitors do well. The founder's designs overrule that recommendation
+outright — registration is not deferred, softened, or made optional; it is the fourth of seven screens
+and there is no way past it without an account. **Record that the recommendation was overruled, and
+that this is now settled**, not a live tension between two documented positions.
+
+**What it rules out:** an anonymous first conversation with sign-in offered later (the option this
+document previously recommended); a skip-for-now path on the account screen; any provider other than
+Apple/Google at this step (no email/password, no guest).
+
+**Reflected in:** the seven approved screens named above; `Current_Context.md`'s 2026-09-14 block
+(item 5), which this entry closes rather than edits, since the founder is writing today's handoff
+separately.
+
+### D105 — The onboarding conversation is an INTRODUCTION; it does not choose a Journey
+**Decision (founder, 2026-09-14),** chosen explicitly over the alternative. The first conversation
+(reached after registration, screen 05 of the approved designs) is an introduction — the coach meets
+the person, hears what they want to feel different, and does not diagnose or match a Journey from it.
+Journey matching happens **later, in a second conversation**, reached from the fourth Step of the
+intro Journey — **"Build a personal Journey with my coach,"** in the approved designs' step 07
+("firstJourney").
+
+**The alternative that was rejected, and it is not a straw man — it is the founder's own new spec.**
+`Meemor_Onboarding_Journey_Matching_Handoff_Spec_v2.md` §25 (not yet committed to this repository; see
+`05_Research/Product_Name_Deep_Clearance_MeMore_Meemor_2026-09-14.md` §0 for where it is referenced
+from) describes the onboarding conversation ending with a recommendation **shown on Home**. **The spec
+and this decision disagree on this point, and this decision WINS.** The spec's §25 should be read as
+superseded on this one point when it lands in the repo, not as the current design.
+
+**The consequence, stated so it is not mistaken for progress already made:** the intro Journey's
+authored content — currently **three** Steps in `app/src/i18n/resources/{he,en}/onboarding.json`
+under `introJourney` (profile / quiet hours / try a Tool) — does not match the approved designs' **four**
+Steps (profile / a Tool / the friends area / build a personal Journey with the coach). That gap is now
+known and explicitly unbuilt; it is not a rounding difference between two versions of the same list —
+the fourth Step (the door into Journey matching) does not exist in the shipped copy at all.
+
+**What it rules out:** the onboarding conversation ending with a Journey recommendation on Home (the
+spec's §25 design); building the fourth intro Step as if it were already implied by the existing
+three.
+
+**Reflected in:** the approved screens (step 07, "firstJourney"); `app/src/i18n/resources/he/
+onboarding.json` and `.../en/onboarding.json` (`introJourney`, currently 3 Steps — needs a 4th);
+`Meemor_Onboarding_Journey_Matching_Handoff_Spec_v2.md` §25 (once committed, needs a superseded-note
+pointing here rather than a silent edit).
+
+### D106 — The English onboarding screens were exported through an RTL container by mistake; the bug is NOT carried into the product
+**Decision (founder, 2026-09-14), a named exception to "the founder's designs outrank the repo docs."**
+The English screens in the approved onboarding pack (`output/onboarding/meemore-onboarding-screens/
+en-*`) were exported through a right-to-left container by mistake. Evidence, visible on the rendered
+PNGs: leading full stops and question marks in the English chat bubbles (**".Hi Guy, it's good to meet
+you"**, **"...go?"**, mirrored punctuation throughout `en-light-05-conversation.png`), and the
+composer's send button pinned physically on the **left** in English while the placeholder text and its
+ellipsis are also mirrored ("...Write freely" instead of "Write freely..."). **The Hebrew screens are
+correct** — the same composer in `he-*` renders send-button-right, RTL-natural.
+
+**The written rule stands and is NOT overridden by those images.**
+`04_Product/UX/Turquoise_Path_Visual_System.md` §10: *"Back, chevrons, message alignment and carousel
+direction use logical direction"* — i.e., controls follow reading direction, not a fixed side. That
+rule is confirmed correct by this decision, not revised.
+
+**Why this needed a decision rather than silent correction, and why it is recorded rather than just
+fixed:** the standing rule in this repo (CLAUDE.md §2, and practice throughout this log) is that the
+founder's own designs outrank repo docs when they disagree. A future reader — human or AI — comparing
+the approved English screens against `Turquoise_Path_Visual_System.md` would see a real disagreement
+and, following that standing rule correctly, could "fix" the doc or the build to match the mirrored
+English layout, believing they were honoring an approved design. **They would be wrong**, and the
+rule that would lead them there is otherwise sound. This entry is the founder-confirmed exception: the
+mismatch here is an export bug, not intent, so the doc wins and the images do not.
+
+**What it rules out:** mirroring English composer controls, punctuation, or message alignment to match
+the `en-*` PNGs; treating the English screens as authoritative for direction-dependent layout at all
+(they remain authoritative for copy, colour, spacing and structure — only the mirrored-direction
+artifacts are disowned).
+
+**Reflected in:** `04_Product/UX/Turquoise_Path_Visual_System.md` §10 (unchanged, confirmed correct);
+`output/onboarding/meemore-onboarding-screens/en-*` (the source of the bug, left in place as the
+founder's approved reference for everything except direction).
+
+### D107 — The product name from the designs is DROPPED; the working name stays until a replacement is chosen
+**Decision (founder, 2026-09-14).** The product name used throughout the approved onboarding designs
+(`MeMore` / `meemore`, and `Meemor` in the newer spec — three spellings of one intended name, per
+`05_Research/Product_Name_Deep_Clearance_MeMore_Meemor_2026-09-14.md` §0) is **dropped**. It must not
+be carried into code or documents.
+
+**Why, in two independent findings from the same research:**
+1. **`meemor.com` is gone.** WHOIS confirms it was registered 2026-07-02 (registrar IONOS SE, created
+   `2026-07-02T19:59:58Z`), by a third party — not by us. A name whose exact `.com` was taken by
+   someone else ten weeks before this decision is a name we would be building a business on borrowed
+   ground.
+2. **`MeMore`/`Memore` collides with a live market.** The deep clearance (same file, §2) found an
+   active, press-covered US direct-to-consumer cognitive-health supplement brand trading as
+   **Memore** since 2021 (PR Newswire launch, coverage in Nosh/FoodNavigator-USA/NutritionInsight/
+   Nutraceuticals World, live retail at yourmemore.com and memoregreens.com), plus **two live Google
+   Play apps** named exactly *Memore* returning on the first page of a Play Store search for the
+   string, plus a Microsoft Store app of the same name, plus `memore.com` held since 2001. This is the
+   spelling on the currently approved onboarding screens and the research names it the worst of the
+   three candidates it examined.
+
+**What was chosen:** drop the name from the designs entirely, in both code and documents. **The
+working name stays as it currently is in the repo** — nothing is renamed today — while a fresh
+candidate search is underway.
+
+**What this rules out:** shipping, coding against, or documenting the product under `MeMore`,
+`meemore`, or `Meemor` in any form (filenames, i18n strings, store metadata, marketing copy); treating
+the deep-clearance doc's own tentative "proceed with care" reading of `Meemor` (written before this
+decision, conditional on confirming who held the `.com`) as still live now that the `.com` question is
+answered.
+
+**Open Question, not decided here:** the replacement name itself. A fresh candidate search is
+underway; until a candidate is chosen the repo keeps using its current working name.
+
+**Reflected in:** `05_Research/Product_Name_Deep_Clearance_MeMore_Meemor_2026-09-14.md` (the research
+this decision acts on); `output/onboarding/meemore-onboarding-screens/` and
+`output/onboarding/MeMore_Onboarding_Approved_Screens.zip` (the designs whose name is dropped — kept
+in place as approved for everything except the name, per D106's same pattern of "the mismatch is
+named, not silently resolved"); `05_Research/Product_Name_Candidate_Register.md` (where the next
+candidate search belongs).
+
+## 2026-09-15 — Onboarding's two jobs, the catalogue-blind introduction, and the Portrait
+
+> Founder decisions taken while writing the Onboarding Completion Plan. All four settle the boundary
+> between the first conversation (onboarding) and the second (Journey matching). Engineering/build
+> detail, when it lands, belongs in `00_Foundation/CHANGELOG.md`.
+
+### D108 — Onboarding registers the person and builds their Portrait. That is all.
+**Decision (founder, 2026-09-15):**
+
+> תהליך האונבורדינג מטרתו לרשום את המשתמש ולבנות לו פרופיל. זה הכל. לאחר מכן בשיחה הבאה עם המאמן
+> ננהל שיחה עם המשתמש על מנת לבנות לו מסע.
+
+**This is a boundary, not a summary of what already existed.** Onboarding has exactly two jobs:
+register the person, and build their Portrait (the term is defined and protected in D110).
+Journey-building is a separate, later conversation — reached from the fourth Step of the intro
+Journey (D105) — not a continuation or a shortened version of the first one.
+
+**What follows from calling it a boundary rather than an interview:**
+- **Its questions come from what a Portrait needs**, not from what a Journey needs. A question that
+  would help pick or shape a Journey but does nothing for the Portrait belongs to the second
+  conversation, not this one.
+- **It finishes when the Portrait is filled well enough, not when a question list runs out.** This is
+  the same shape D102/D103 already gave the conversation in general (no ceiling, relevance is the
+  budget) — this decision says what "enough" is measured against for THIS conversation specifically:
+  a Portrait's completeness, not a Journey's requirements.
+
+**Why this needed saying explicitly, given D105 already existed.** D105 established that onboarding
+is an introduction and does not choose a Journey. This is the sharper form of the same rule — an
+exhaustive list of two ("זה הכל") rather than a single exclusion — and it is what makes D109 possible:
+nothing about matching should be running in the first conversation, because matching was never one of
+its two jobs to begin with.
+
+**Reflected in:** D105 (sharpened, not superseded — both stand); D109 (the matching-only questions
+this rules out, by name); D110 (the Portrait, the thing this conversation exists to build).
+
+**Stage:** MVP.
+
+### D109 — The first conversation is blind to the Journey catalogue
+**Decision (founder, 2026-09-15):**
+
+> שיחת ההיכרות לומדת להכיר את המשתמש ללא תלות באילו מסעות קיימים באפליקציה.
+
+**What this rules out, named explicitly because none of the three look like planning questions and
+all three were still running before this correction:**
+- The career DIAGNOSIS tree (E9).
+- The Journey-fit axis question — a question shaped to route between authored Journey variants.
+- The multi-Journey offer — presenting more than one catalogue Journey to choose from.
+
+All three are matching, and matching is the second conversation (D105, D108) — not this one.
+
+**Why it matters beyond tidiness.** Three of the four domains have almost no authored Journeys today;
+the catalogue is deep for career (E9: twenty-seven authored Journeys) and thin everywhere else. An
+introduction that leans on the catalogue would be rich for career and thin for everyone else — the
+first thing a person experiences would differ in depth by which domain they happened to mention.
+Making the first conversation catalogue-blind is also what lets the MATCHING work narrow to one
+expert without the first conversation narrowing along with it: the introduction stays whole regardless
+of what the library currently holds, and the catalogue's unevenness stays contained to the
+conversation that is actually about the catalogue.
+
+**Reflected in:** wherever the career diagnosis tree, the Journey-fit axis question and the
+multi-Journey offer are currently reachable from the first conversation (`core/coach/
+CoachOrchestrator`, `core/learning/experts/careerDiagnosis` per E9) — these belong behind the boundary
+D108 draws, inside the second (matching) conversation, not this one.
+
+**Stage:** MVP.
+
+### D110 — Two protected terms: Personal Details and Portrait
+**Decision (founder, 2026-09-15).** Two names enter official PushApp terminology today, defined in
+full in `09_Product_Philosophy/Product_Terminology.md`:
+
+- **Personal Details** (פרטים אישיים) — what the person SEES and EDITS in Settings: name, birth
+  date, form of address, country, week start, Active Hours. Facts they own; we do not guess them and
+  do not change them behind their back. Backed by `app/src/state/ProfileProvider.tsx`.
+- **Portrait** (דיוקן) — what we UNDERSTAND about them from the conversation: what they want, where
+  they are starting, what is in the way, what drives them, what stage they are at.
+  **Interpretation, not fact** — every field carries a confidence and a source (stated by the person,
+  or inferred by a model). Not shown in the UI (see D111).
+
+**Why "Portrait" beat "Match Profile," recorded because the reasoning is the guard against it
+drifting back.** "Match Profile" sounds like it belongs to the Journey catalogue — a profile built
+FOR matching. "Portrait" belongs to the person — a picture of who they are, independent of what it
+will later be used for. That is exactly the boundary D108 and D109 draw between the first
+conversation and the second: naming the object "Match Profile" would have re-imported the catalogue
+dependency into the very thing the first conversation is supposed to be free of.
+
+**Enforced like every other protected term** (CLAUDE.md §3.2; Repository_Guidelines.md, "Product
+Language"): no synonym. Not "profile" alone (ambiguous with Personal Details), not "user model," not
+"match profile."
+
+**Reflected in:** `09_Product_Philosophy/Product_Terminology.md` (new Personal Details and Portrait
+sections); `app/src/state/ProfileProvider.tsx` (Personal Details); the Portrait's storage mechanism,
+see D111.
+
+**Stage:** MVP.
+
+### D111 — The Portrait is not shown, but it IS exported
+**Decision (founder, 2026-09-15).** Prompted by the founder asking whether we must share our
+understanding of a user WITH that user, the way Instagram does with inferred interests.
+
+**The answer accepted, in three parts:** inferences about a person are personal data, and the right
+of access covers them — though not the algorithm that produced them. Instagram itself exposes
+inferred interests through its own Download Your Information tool, which is precedent for exposing
+inference, not only fact. And the Portrait touches addiction, relationships and body image — a MORE
+sensitive category than shopping interests, not a less sensitive one. **None of that requires a
+screen.** A right of access is satisfied by an export, not by a dedicated UI.
+
+**What was decided:** the Portrait gets no UI and is shown to nobody in the app. It is stored in
+`AppState`, which — per the comment at `app/src/core/AppCore.ts` line ~422 ("AppState on purpose —
+that is what makes them part of the export and of the account wipe") — already makes anything stored
+there part of both the data export and the account wipe automatically. Zero extra code for either.
+
+**His exact position, quoted because it draws the line precisely between what is settled and what is
+not:**
+
+> אני מאשר את רעיון הייצוא. נחשוב בעתיד בדיוק איך נציג את המידע בייצוא.
+
+The MECHANISM — that the Portrait is included in the export, via `AppState`, with no dedicated
+screen — is approved. HOW the exported Portrait is presented to the person reading their export is
+deliberately deferred.
+
+**Open Question 1 — presentation of the exported Portrait.** Not decided: the format or wording the
+Portrait appears in inside a data export — raw fields, a narrative, whether per-field confidence and
+source are shown or hidden. Belongs with `04_Product/Privacy_Contract_With_The_User.md` /
+`04_Product/Privacy_Policy.md` when it is resolved.
+
+**Open Question 2 — a future "here is what I understood about you" screen.** Raised in the same
+conversation as a possible product STRENGTH (a moment of insight for the person) rather than a
+compliance burden, and explicitly deferred rather than decided either way. Separate from Open
+Question 1: this is about whether a screen should exist at all, not about what an export looks like.
+
+**Reflected in:** `app/src/core/AppCore.ts` (~line 422, the AppState export/wipe mechanism this
+relies on); `09_Product_Philosophy/Product_Terminology.md` (Portrait definition, "not shown in the
+UI").
+
+**Stage:** MVP for the export mechanism; the two Open Questions are unstaged.

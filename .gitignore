@@ -33,3 +33,12 @@ yarn-error.*
 
 # Supabase CLI scratch state (project ref cache) — never useful in git.
 app/supabase/.temp/
+
+# Working folders for large binaries the repo does not need (2026-09-16).
+# `output/` holds the founder Figma exports (26 MB of PNGs + a zip) and `tmp/` scratch PDFs.
+# Every STRING from the approved design pack is transcribed into
+# 04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md, so nothing is lost by
+# keeping the images out of git history — where they would cost storage forever and could not be
+# removed without rewriting it.
+output/
+tmp/

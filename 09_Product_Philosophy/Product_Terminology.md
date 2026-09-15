@@ -278,6 +278,60 @@ where an outside author looks. External coaching content consequently drifted to
 
 ---
 
+# Personal Details
+
+Hebrew: **פרטים אישיים**.
+
+Personal Details are the facts about the person that they see and edit themselves, in Settings: name,
+birth date, form of address, country, week start, Active Hours.
+
+Personal Details are **facts the person owns**. The product does not guess them and does not change
+them behind the person's back — the opposite posture from the Portrait, below.
+
+Backed by `app/src/state/ProfileProvider.tsx`.
+
+Do not introduce synonyms. Not "profile" alone — "profile" on its own is ambiguous with **Portrait**
+now that both exist, which is exactly why both are defined here together.
+
+(Added 2026-09-15, **D110**.)
+
+---
+
+# Portrait
+
+Hebrew: **דיוקן**.
+
+The Portrait is what the coach UNDERSTANDS about a person from the conversation: what they want,
+where they are starting, what is in the way, what drives them, what stage they are at.
+
+The Portrait is **interpretation, not fact** — the opposite posture from Personal Details, above. That
+is why every field on it carries a **confidence** and a **source** (stated by the person in their own
+words, or inferred by a model from what they said). A Portrait field is a reading, never presented as
+a fact the person confirmed.
+
+**Not shown in the UI.** Nobody — including the person it is about — sees the Portrait on a screen
+today. It is, however, part of the account's **data export** and its **account wipe**, automatically
+and with no dedicated code, because it lives inside `AppState` (see `app/src/core/AppCore.ts`
+~line 422, and Decision Log **D111**). Whether and how the exported Portrait should be presented to
+the person reading their own export, and whether a future "here is what we understood about you"
+screen should ever exist, are both **Open Questions** — see **D111**.
+
+**Built by onboarding, used by matching — and the boundary between those two is the reason this term
+exists.** The first conversation (onboarding) exists to fill the Portrait and finishes when it is
+filled well enough, never running a fixed question list and never depending on which Journeys the
+catalogue currently holds (Decision Log **D108**, **D109**). A second, later conversation reads the
+Portrait to match or build a Journey. The Portrait is the object that crosses that boundary; nothing
+about the catalogue may leak backward across it.
+
+Do not introduce synonyms. **Not "Match Profile"** — considered and rejected: a match profile sounds
+like it belongs to the Journey catalogue, and a Portrait belongs to the person, which is the exact
+distinction D108/D109 draw between the two conversations. Also not "user model," not "profile" alone
+(see Personal Details, above).
+
+(Added 2026-09-15, **D110**.)
+
+---
+
 # Ally
 
 An Ally is someone chosen to support a specific Journey.

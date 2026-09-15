@@ -10,6 +10,7 @@ import { Api } from './api.js';
 import { createAuditor, ACTIONS } from './audit.js';
 import { el, clear } from './dom.js';
 import { renderHealth } from './views/health.js';
+import { renderCost } from './views/cost.js';
 import { renderKpis } from './views/kpis.js';
 import { renderReports } from './views/reports.js';
 import { renderVersions } from './views/versions.js';
@@ -19,6 +20,7 @@ import { renderUsers } from './views/users.js';
 const TABS = [
   { id: 'health', label: 'System health', render: renderHealth },
   { id: 'kpis', label: 'KPIs', render: renderKpis },
+  { id: 'cost', label: 'Model cost', render: renderCost },
   { id: 'reports', label: 'User reports', render: renderReports },
   { id: 'versions', label: 'Versions', render: renderVersions },
   { id: 'users', label: 'Users', render: renderUsers },

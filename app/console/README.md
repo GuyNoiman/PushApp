@@ -75,6 +75,7 @@ and moving it later is one command.
 |---|---|
 | **System health** | Partial, and honest about it. Two of thirteen services have a real check; the rest are **gray**, each with a written reason. The headline number of §6.2 shows no percentage at all, because it needs a count of active installations that nothing reports. |
 | **KPIs** | Empty by design. Its data needs a separate product-analytics consent (§11.2) that nobody has been asked for. `kpi_events` accepts rows and the app sends none. |
+| **Model cost** | New (2026-09-15) and empty until two things happen: migration `0019_llm_token_accounting.sql` is applied AND `gemini-proxy` is redeployed, in that order. Then it shows cost per conversation — introduction against Journey building — with the median, p90 and the distribution beside the average, because a spending limit is set for the tail. Calls the provider reported no tokens for are counted and named, never costed as zero. |
 | **User reports** | Complete. List, filters, triage, notes, the prepared reply, and the audited attachment open. |
 | **Versions** | Complete for what is recorded. §9.2's ten statuses and the adoption counts are absent because nothing records them — the page says so rather than labelling a row "Fully released" on a guess. |
 

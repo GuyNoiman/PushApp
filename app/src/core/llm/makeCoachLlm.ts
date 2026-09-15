@@ -31,6 +31,7 @@ import { MeteringLlmClient, type SpendSink } from './MeteringLlmClient';
 import type { LlmClient } from './LlmClient';
 import { RateLimitRetryingLlmClient } from './RateLimitRetryingLlmClient';
 import { RedactingLlmClient } from './RedactingLlmClient';
+import type { ConversationTag } from './conversationTrace';
 import { supabase } from '../social/supabaseClient';
 
 /** The deployed Edge Function's URL, derived from the project URL so nothing extra is configured. */
@@ -52,8 +53,17 @@ function proxyUrl(): string | undefined {
  * retried three times is charged three times, which is what it actually cost. Inside the retry it
  * would report one call for three, and the runaway a budget exists to catch is exactly the case that
  * retries.
+ *
+ * `getConversationTag` is the SERVER-side half of the same question. The sink above measures a
+ * conversation on the device, where a client that wanted to could report nothing at all; the tag
+ * lets the proxy add up tokens per conversation itself, from the provider's own counts. A caller
+ * that passes nothing still works — those calls are recorded as unattributed rather than silently
+ * dropped, and the console names them.
  */
-export function makeCoachLlm(onSpend?: SpendSink): LlmClient {
+export function makeCoachLlm(
+  onSpend?: SpendSink,
+  getConversationTag?: () => Promise<ConversationTag | null>,
+): LlmClient {
   const url = proxyUrl();
   // Bound to a local const so the narrowing survives into the async closure below.
   const client = supabase;
@@ -67,6 +77,7 @@ export function makeCoachLlm(onSpend?: SpendSink): LlmClient {
             const { data } = await client.auth.getSession();
             return data.session?.access_token ?? null;
           },
+          getConversationTag,
         })
       : new GeminiClient();
   const stack = new RateLimitRetryingLlmClient(new RedactingLlmClient(gemini));

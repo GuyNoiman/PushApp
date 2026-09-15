@@ -34,6 +34,7 @@ import {
   type LlmRequest,
   type LlmResult,
 } from './LlmClient';
+import type { ConversationTag } from './conversationTrace';
 
 /** A flash model confirmed reachable on this (paid) key (2026-08-04). */
 const DEFAULT_MODEL = 'gemini-2.5-flash';
@@ -72,6 +73,15 @@ export interface GeminiClientOptions {
    * sent unauthenticated.
    */
   getAccessToken?: () => Promise<string | null>;
+  /**
+   * Supplies the opaque {@link ConversationTag} this call belongs to, so the proxy can add up what
+   * one conversation actually cost (see {@link ./conversationTrace}). Proxy mode only: in direct
+   * mode there is nothing on the other end recording anything, and Google has no use for it.
+   *
+   * Optional, and a failure to produce one never fails a call — an untagged call is recorded by the
+   * proxy as unattributed, which is a gap the dashboard can name. A dropped call would not be.
+   */
+  getConversationTag?: () => Promise<ConversationTag | null>;
 }
 
 /** The minimal slice of the Gemini `generateContent` response we read. */
@@ -98,6 +108,7 @@ export class GeminiClient implements LlmClient {
   private readonly fetchImpl: typeof fetch;
   private readonly proxyUrl?: string;
   private readonly getAccessToken?: () => Promise<string | null>;
+  private readonly getConversationTag?: () => Promise<ConversationTag | null>;
 
   constructor(options: GeminiClientOptions = {}) {
     // The `process.env.EXPO_PUBLIC_GEMINI_API_KEY` literal MUST stay verbatim so Metro inlines it
@@ -114,6 +125,7 @@ export class GeminiClient implements LlmClient {
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
     this.proxyUrl = options.proxyUrl?.trim() || undefined;
     this.getAccessToken = options.getAccessToken;
+    this.getConversationTag = options.getConversationTag;
   }
 
   /** True when this client routes through our own proxy and therefore holds no API key. */
@@ -134,6 +146,17 @@ export class GeminiClient implements LlmClient {
     if (this.usesProxy) {
       accessToken = (await this.getAccessToken?.()) ?? null;
       if (!accessToken) throw new LlmError('No signed-in session for the coach', undefined, 'config');
+    }
+
+    // Which conversation this call belongs to, for the proxy's cost accounting. Best-effort by
+    // design: a tag that cannot be produced must not cost the user their answer.
+    let conversation: ConversationTag | null = null;
+    if (this.usesProxy && this.getConversationTag) {
+      try {
+        conversation = await this.getConversationTag();
+      } catch {
+        conversation = null;
+      }
     }
 
     const url = this.usesProxy
@@ -158,7 +181,15 @@ export class GeminiClient implements LlmClient {
         // verbatim, so the response shape parsed below is identical in both modes.
         body: JSON.stringify(
           this.usesProxy
-            ? { model: this.model, body: buildRequestBody(request) }
+            ? {
+                model: this.model,
+                body: buildRequestBody(request),
+                // Two opaque fields. The proxy validates both and stores counts against them; see
+                // `conversationTrace` for why neither can carry anything the user wrote.
+                ...(conversation
+                  ? { conversationId: conversation.id, conversationKind: conversation.kind }
+                  : {}),
+              }
             : buildRequestBody(request),
         ),
         signal: controller.signal,

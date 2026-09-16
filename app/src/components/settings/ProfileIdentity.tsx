@@ -42,6 +42,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
 import { chevronName, isolate } from '@/i18n/rtl';
+import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 
 /** 1–2 letter monogram from a username (skips a leading @). */
@@ -55,6 +56,7 @@ function initialsFor(name: string): string {
 export function ProfileIdentity() {
   const theme = useTheme();
   const social = useSocial();
+  const { core } = useApp();
   const router = useRouter();
   const { t } = useTranslation('settings');
 
@@ -107,6 +109,8 @@ export function ProfileIdentity() {
     }
     setLocalSaved(result.handle);
     setEditing(false);
+    // A saved username is a saved Personal Detail, wherever it was edited (Gap Register B2).
+    core.noteInAppAction('profileSaved');
   };
 
   return (

@@ -46,6 +46,12 @@
  *
  * Presentational only. Swipe (Done / Postpone / Let go) is retired on a completed or locked row,
  * exactly as before; the tap path stays open so a mistaken report can be changed.
+ *
+ * A LINKED STEP'S ⋯ IS A REAL BUTTON (Gap Register B2, 2026-09-16). On a Step that names a screen the
+ * row's tap goes to that screen, and the swipe is invisible on a device, so the report sheet had no
+ * visible way in. Doing the thing in the app now closes the Step by itself, but somebody may have done
+ * it elsewhere, or want Partial, Postpone or Let go — so when the caller passes `onMore`, the ⋯ that
+ * was only a picture of a menu opens the menu. Without `onMore` the row is exactly what it was.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -74,6 +80,7 @@ export function StepRow({
   onDone,
   onPostpone,
   onLetGo,
+  onMore,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
@@ -92,6 +99,8 @@ export function StepRow({
   onDone: () => void;
   onPostpone: () => void;
   onLetGo: () => void;
+  /** Opens the report sheet from the ⋯ — for a row whose tap does something else (a linked Step). */
+  onMore?: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation('home');
@@ -115,7 +124,9 @@ export function StepRow({
       containerStyle={styles.swipe}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={completed ? t('step.doneA11y', { title }) : t('step.report', { title })}
+        accessibilityLabel={
+          completed ? t('step.doneA11y', { title }) : onMore ? t('step.open', { title }) : t('step.report', { title })
+        }
         onPress={onPress}
         style={({ pressed }) => [
           styles.row,
@@ -172,7 +183,18 @@ export function StepRow({
 
         <View style={styles.trailing}>
           <StepStatusChip status={status} />
-          <Ionicons name="ellipsis-horizontal" size={18} color={theme.textMuted} />
+          {onMore ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('step.report', { title })}
+              onPress={onMore}
+              hitSlop={10}
+              style={({ pressed }) => [styles.more, pressed && styles.pressed]}>
+              <Ionicons name="ellipsis-horizontal" size={18} color={theme.textMuted} />
+            </Pressable>
+          ) : (
+            <Ionicons name="ellipsis-horizontal" size={18} color={theme.textMuted} />
+          )}
         </View>
       </Pressable>
     </SwipeableStepRow>
@@ -231,6 +253,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
+  },
+  // A touch target that reaches past the glyph without widening the row.
+  more: {
+    padding: Spacing.one,
   },
   pressed: {
     opacity: 0.6,

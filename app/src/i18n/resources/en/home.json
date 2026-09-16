@@ -76,7 +76,8 @@
   "milestone": "Milestone {{current}} of {{total}}",
   "step": {
     "report": "Report on {{title}}",
-    "doneA11y": "{{title}}, done"
+    "doneA11y": "{{title}}, done",
+    "open": "Open {{title}}"
   },
   "status": {
     "level": "Level {{level}}, {{into}} of {{total}} XP to next level",

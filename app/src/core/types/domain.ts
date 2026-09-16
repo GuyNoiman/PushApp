@@ -96,8 +96,10 @@ export interface Step {
    * their profile, and a Step that names a screen should open that screen rather than immediately
    * ask whether it is done.
    *
-   * Reporting is UNCHANGED — these Steps are self-reported like every other one, through the same
-   * swipe and the same menu. This only decides what a plain tap does.
+   * Reporting is UNCHANGED — these Steps can be self-reported like every other one, through the same
+   * swipe and the same menu (on Home the ⋯ is a real button for them). And, since Gap Register B2
+   * (founder, 2026-09-16), doing the thing in the app closes the Step by itself: a Step is closed by
+   * what this link POINTS AT, never by its position (`core/journeys/linkedStepClosing`).
    *
    * An INTERNAL expo-router path and nothing else: never an external URL, never a deep link from
    * outside. ON-DEVICE only, never emitted or synced, and covered by export/deletion with the rest

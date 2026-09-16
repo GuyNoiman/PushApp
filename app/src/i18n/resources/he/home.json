@@ -78,7 +78,8 @@
   "milestone": "אבן דרך {{current}} מתוך {{total}}",
   "step": {
     "report": "דיווח על {{title}}",
-    "doneA11y": "{{title}}, הושלם"
+    "doneA11y": "{{title}}, הושלם",
+    "open": "פתיחת {{title}}"
   },
   "status": {
     "level": "רמה {{level}}, {{into}} מתוך {{total}} נקודות ניסיון לרמה הבאה",

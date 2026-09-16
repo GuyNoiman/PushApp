@@ -59,6 +59,7 @@ import { paletteOfRoom } from '@/core/tools/rooms';
 import { useOnTabPress } from '@/hooks/use-tab-press';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL } from '@/i18n/rtl';
+import { useApp } from '@/state/AppProvider';
 import { useToolsShelf } from '@/state/ToolsShelf';
 
 /** The three lenses on the same catalogue, in the order the founder's design shows them. */
@@ -70,6 +71,7 @@ export default function ToolsScreen() {
   const router = useRouter();
   const { t } = useTranslation('tools');
   const shelf = useToolsShelf();
+  const { core } = useApp();
 
   const [lens, setLens] = useState<Lens>('all');
   const [query, setQuery] = useState('');
@@ -98,14 +100,21 @@ export default function ToolsScreen() {
   const searching = query.trim().length > 0;
   const results = useMemo(() => searchTools(query, label), [query, label]);
 
-  /** Open a tool and remember it. A "coming" tool has no route and never reaches here. */
+  /**
+   * Open a tool and remember it. A "coming" tool has no route and never reaches here.
+   *
+   * Opening is also what counts as "used" for a Step pointing at the Tools tab (Gap Register B2). The
+   * Tools share no single "an entry was saved" moment — they keep five different stores, and some are
+   * complete without saving anything — so the one moment every Tool has is this one.
+   */
   const open = useCallback(
     (tool: ToolDefinition) => {
       if (!tool.route) return;
       shelf.markUsed(tool.key);
+      core.noteInAppAction('toolUsed');
       router.push(tool.route as Href);
     },
-    [router, shelf],
+    [core, router, shelf],
   );
 
   /** The list a lens is showing, once search or a lens has narrowed the catalogue. */

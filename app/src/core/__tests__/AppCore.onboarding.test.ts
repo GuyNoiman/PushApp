@@ -239,11 +239,8 @@ describe('the Journey the first run leaves behind (founder, 2026-09-03)', () => 
 
     const created = (saved()?.journeys ?? []).find((j) => j.title === 'Getting to know PushApp');
     expect(created).toBeDefined();
-    expect(created!.steps.map((s) => s.appLink)).toEqual([
-      '/settings/profile',
-      '/settings/active-hours',
-      '/tools',
-    ]);
+    // Positional: the fixture has three Steps, so it takes the first three of the approved four.
+    expect(created!.steps.map((s) => s.appLink)).toEqual(['/settings/profile', '/tools', '/friends']);
   });
 
   it('is created ONCE, however many times completion is re-called', async () => {

@@ -29,6 +29,9 @@ jest.mock('@/core/profile/simulatedUser', () => ({
 
 const mockSocial: { current: Record<string, unknown> } = { current: {} };
 jest.mock('@/state/SocialProvider', () => ({ useSocial: () => mockSocial.current }));
+// A saved username reports `profileSaved` to the core (Gap Register B2).
+const mockCore = { noteInAppAction: jest.fn() };
+jest.mock('@/state/AppProvider', () => ({ useApp: () => ({ core: mockCore }) }));
 
 interface Node { props: Record<string, any> }
 interface TestRoot { root: { findAllByProps(p: Record<string, unknown>): Node[] }; toJSON(): any }

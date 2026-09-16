@@ -13,6 +13,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { IN_APP_DESTINATIONS } from '../../journeys/linkedStepClosing';
 import { INTRO_JOURNEY_LINKS } from '../introJourney';
 
 const APP_DIR = join(__dirname, '../../../app');
@@ -48,6 +49,12 @@ describe('intro Journey links', () => {
   });
 
   it.each([...INTRO_JOURNEY_LINKS])('%s is a screen this app actually has', (link) => {
+    expect(routes).toContain(link);
+  });
+
+  // The closing rules read these too (Gap Register B2) — including Active Hours, which is no longer
+  // an intro Step but is still on phones holding the old three-Step Journey, and must still close.
+  it.each(Object.values(IN_APP_DESTINATIONS))('closing destination %s is a screen this app actually has', (link) => {
     expect(routes).toContain(link);
   });
 });

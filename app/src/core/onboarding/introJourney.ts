@@ -28,6 +28,7 @@
  * one place translations live, rather than half here and half there.
  */
 import type { NewJourneyInput } from '../engines/JourneyEngine';
+import { IN_APP_DESTINATIONS } from '../journeys/linkedStepClosing';
 
 /**
  * NO MARKER FIELD, deliberately. `libraryRef` means "an authored library definition built this",
@@ -51,11 +52,20 @@ export interface IntroJourneyContent {
  * The in-app destination for each Step, positionally paired with `content.steps`. Kept HERE rather
  * than in the translations: a route is not a translatable string, and a mistyped one in a locale
  * file would be a dead Step in one language only.
+ *
+ * THE APPROVED FOUR (build spec §7, founder 2026-09-16): profile · one Tool · the friends area · a
+ * Journey built with the coach. Active Hours were the second Step until then; they now belong to
+ * Personal Details and are edited from that screen, so they stopped being a Step of their own.
+ *
+ * Position pairs a link with its COPY, and nothing else. Whether a Step is finished is read from the
+ * destination, never from the index (`core/journeys/linkedStepClosing`) — which is what lets a phone
+ * still holding the old three-Step Journey, Active Hours Step included, finish it too.
  */
 export const INTRO_JOURNEY_LINKS: readonly string[] = [
-  '/settings/profile',
-  '/settings/active-hours',
-  '/tools',
+  IN_APP_DESTINATIONS.profile,
+  IN_APP_DESTINATIONS.tools,
+  IN_APP_DESTINATIONS.friends,
+  IN_APP_DESTINATIONS.coach,
 ];
 
 /**

@@ -186,6 +186,7 @@ import { deriveStepStatus, type StepStatus } from './status/stepStatus';
 import { directDependentsOf } from './status/stepDependencies';
 import { emptyOnboardingAnswers, toCoachSummary } from './onboarding/answers';
 import { introJourneyInput, type IntroJourneyContent } from './onboarding/introJourney';
+import { stepsClosedBy, type InAppAction } from './journeys/linkedStepClosing';
 import { resolveResumeStep } from './onboarding/questions';
 import type { CoachOnboardingSummary, OnboardingAnswers, OnboardingStep } from './onboarding/model';
 import {
@@ -1543,6 +1544,9 @@ export class AppCore {
         this.rememberApprovedJourney(journey, dream.id);
       }
     }
+    // A Journey actually built from a coach conversation is what "Build a personal Journey with my
+    // coach" asks for (B2). Here, after creation succeeded, so a declined Future Journey closes nothing.
+    this.noteInAppAction('journeyBuiltWithCoach');
     return journey;
   }
 
@@ -2701,6 +2705,23 @@ export class AppCore {
   }
 
   /**
+   * Something the person just did inside the app (Gap Register B2, founder 2026-09-16: "הפרופיל נשמר →
+   * הצעד נסגר"). A Step that names a screen spends its tap on going there, so the thing it asks for is
+   * done THERE — and this is where that screen says so. The surface reports the fact; which Steps it
+   * finishes is decided by destination in {@link stepsClosedBy}, never by the screen.
+   *
+   * Each one is closed through {@link checkInStep}, the exact call a manual "Done" makes, so streaks,
+   * XP, KPI events and Journey completion behave as if the person had reported it. Only open Steps of
+   * running Journeys are touched, and a done Step is never checked in again, so repeating the action
+   * pays nothing twice. Returns how many Steps it closed (0 is the ordinary answer).
+   */
+  noteInAppAction(action: InAppAction): number {
+    const toClose = stepsClosedBy(this.state.journeys, action);
+    for (const { journeyId, stepId } of toClose) this.checkInStep(journeyId, stepId);
+    return toClose.length;
+  }
+
+  /**
    * Reverse a Step's report — the open-week "un-report" path (Daily Step Reporting, D36). Delegates
    * to the JourneyEngine, which clears the completion + stamps {@link Step.lastReportClearedAt}
    * (superseding earlier terminal reason rows) while KEEPING history and clawing back NO XP, and
@@ -3405,6 +3426,9 @@ export class AppCore {
    */
   setActiveHours(activeHours: ActiveHours | undefined): void {
     this.setSchedulingPref('activeHours', activeHours);
+    // Saving them IS the thing a Step pointing at Active Hours asks for (B2). Read here rather than
+    // reported by the screen: this facade is the only door Active Hours are saved through.
+    this.noteInAppAction('activeHoursSaved');
   }
 
   /** The user's current scheduling preferences (window / Active Hours / day-part / weekdays). */

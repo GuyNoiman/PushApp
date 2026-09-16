@@ -27,6 +27,16 @@ jest.mock('expo-router', () => ({
 }));
 const mockSocial: { current: Record<string, unknown> } = { current: {} };
 jest.mock('@/state/SocialProvider', () => ({ useSocial: () => mockSocial.current }));
+// Coming into view reports `friendsVisited` (Gap Register B2). Outside a navigator there is no focus,
+// so the focus effect simply runs, once, as a first focus would.
+const mockNoteInAppAction = jest.fn();
+const mockCore = { noteInAppAction: (...args: unknown[]) => mockNoteInAppAction(...args) };
+jest.mock('@/state/AppProvider', () => ({ useApp: () => ({ core: mockCore }) }));
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  useFocusEffect: (effect: () => void) => require('react').useEffect(effect, [effect]),
+}));
 // The screen speaks in the user's form of address (D31). The hook reads the profile, which reaches
 // for storage, so it is stubbed here the same way `react-i18next` is: the key IS the assertion.
 jest.mock('@/i18n/useAddressedTranslation', () => ({
@@ -250,5 +260,15 @@ describe('Circle — empty and error states', () => {
 
     expect(json(r)).not.toContain('Not signed in.');
     expect(json(r)).toContain(tKey('empty.title'));
+  });
+});
+
+describe('Circle — arriving here is what "Explore the friends area" asks for (Gap Register B2)', () => {
+  it('reports the visit to the core once when the screen comes into view', async () => {
+    setSocial({ friends: [] });
+    await render();
+
+    expect(mockNoteInAppAction).toHaveBeenCalledTimes(1);
+    expect(mockNoteInAppAction).toHaveBeenCalledWith('friendsVisited');
   });
 });

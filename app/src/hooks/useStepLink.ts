@@ -3,7 +3,7 @@
  *
  * Almost every Step in PushApp happens outside the app, so a tap asks how it went, which is right
  * and stays the default on every surface. A Step that NAMES a screen — the "Getting to know
- * PushApp" Journey walks somebody into their profile, their Active Hours and the Tools tab — opens
+ * PushApp" Journey walks somebody into their profile, the Tools tab, the friends area and the coach — opens
  * that screen instead: being asked "did you do it?" by the thing that has not taken you there yet
  * is a question nobody can answer.
  *

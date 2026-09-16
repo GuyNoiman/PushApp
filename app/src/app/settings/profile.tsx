@@ -7,6 +7,14 @@
  * The unified {@link '@/state/ProfileProvider'} is the source of truth; `@username` still goes through
  * the social layer (`setHandle`) for its uniqueness/backend semantics. Phase 1 = these fields; the
  * profile photo is Phase 2. Presentational + local edit state only (Engineering Bible §19).
+ *
+ * ACTIVE HOURS ARE PERSONAL DETAILS (founder, 2026-09-16: "שעות הפעילות שייכות לפרטים אישיים"). They
+ * stopped being a Step of the intro Journey and are edited from here: one row that opens the existing
+ * editor rather than a second copy of it.
+ *
+ * A SAVE HERE IS REPORTED (Gap Register B2). A Step pointing at this screen is finished by saving
+ * Personal Details, so every field that commits tells the core `profileSaved`; which Steps that closes
+ * is the core's decision, not this screen's.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -32,10 +40,12 @@ import {
 } from '@/core/social/username';
 import { sampleDeservePraise, sampleNeedHelp } from '@/dev/sampleSocial';
 import { useTheme } from '@/hooks/use-theme';
+import { useActiveHoursSummary } from '@/hooks/useActiveHoursSummary';
 import type { AddressForm } from '@/i18n/addressForm';
 import { DateWheel, fromIsoDate, toIsoDate, type DateParts } from '@/components/DateWheel';
 import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
 import { useAddressedTranslation } from '@/i18n/useAddressedTranslation';
+import { useApp } from '@/state/AppProvider';
 import { useProfile } from '@/state/ProfileProvider';
 import { useSocial } from '@/state/SocialProvider';
 
@@ -63,6 +73,10 @@ export default function MyProfileScreen() {
   void _w;
   const social = useSocial();
   const simUser = getSimulatedUser();
+  const { core } = useApp();
+  const activeHoursValue = useActiveHoursSummary();
+  // Personal Details were saved — the fact a Step pointing at this screen is waiting for (B2).
+  const noteProfileSaved = () => core.noteInAppAction('profileSaved');
 
   const persistedHandle = social.profile?.handle ?? '';
   // A SUGGESTION to prefill the field with, never a name the account already has (device bug,
@@ -75,8 +89,10 @@ export default function MyProfileScreen() {
   const signInName = simUser.signedIn && simUser.name ? simUser.name : null;
   const shownName = profile.displayName ?? signInName;
 
-  const cycleAddressForm = () =>
+  const cycleAddressForm = () => {
     setAddressForm(ADDRESS_FORM_ORDER[(ADDRESS_FORM_ORDER.indexOf(profile.addressForm) + 1) % 3]);
+    noteProfileSaved();
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -115,7 +131,11 @@ export default function MyProfileScreen() {
               value={profile.displayName}
               fallback={signInName}
               placeholder={t('profile.nameEditPlaceholder')}
-              onSave={setDisplayName}
+              onSave={(name) => {
+                setDisplayName(name);
+                // The name commits on every blur, typed into or not. Only a real change is a save.
+                if (name !== profile.displayName) noteProfileSaved();
+              }}
             />
             <View style={[styles.cardDivider, { backgroundColor: theme.hairline }]} />
             <UsernameField
@@ -130,6 +150,7 @@ export default function MyProfileScreen() {
                 const result = await social.setHandle(next);
                 if (!result.ok) return result.reason;
                 setLocalHandle(result.handle);
+                noteProfileSaved();
                 return null;
               }}
             />
@@ -147,7 +168,10 @@ export default function MyProfileScreen() {
               label={t('profile.birthDate')}
               value={profile.birthDate}
               notSpecified={t('profile.birthDateNotSpecified')}
-              onSave={setBirthDate}
+              onSave={(iso) => {
+                setBirthDate(iso);
+                noteProfileSaved();
+              }}
             />
             <SettingsRow
               icon="chatbubble-ellipses-outline"
@@ -155,6 +179,15 @@ export default function MyProfileScreen() {
               detail={t('app.addressFormDetail')}
               value={t(`app.addressFormValue.${profile.addressForm}`)}
               onPress={cycleAddressForm}
+            />
+            {/* The existing editor, reached from here. Saving there reports `activeHoursSaved` through
+                `AppCore.setActiveHours`, so nothing about it needs saying on this screen. */}
+            <SettingsRow
+              icon="time-outline"
+              label={t('activeHours.title')}
+              detail={t('activeHours.rowDetail')}
+              value={activeHoursValue}
+              onPress={() => router.push('/settings/active-hours')}
             />
           </SettingsSection>
         </KeyboardSafeScrollView>

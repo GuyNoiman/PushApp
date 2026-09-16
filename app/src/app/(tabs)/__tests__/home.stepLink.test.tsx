@@ -257,3 +257,32 @@ describe('Home — a Step that names a screen still opens it (unchanged by the s
     expect(openReport(r)?.step?.id).toBe('s2');
   });
 });
+
+/**
+ * Gap Register B2: a linked Step's tap belongs to its screen and the swipe cannot be seen on a device,
+ * so the report sheet needs a visible way in. The row's ⋯ is that way — for linked Steps only, so an
+ * ordinary row (whose tap already asks how it went) is exactly what it was.
+ */
+describe('Home — the ⋯ reaches the report sheet on a linked Step', () => {
+  it('hands a linked row an ⋯ that opens the report sheet, and goes nowhere', async () => {
+    setApp();
+    const r = await render();
+
+    const row = r.root.findAllByType('step-row').find((n) => n.props.title === 'Tell us who you are')!;
+    expect(typeof row.props.onMore).toBe('function');
+    await act(async () => {
+      row.props.onMore();
+    });
+
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(openReport(r)?.step?.id).toBe('s1');
+  });
+
+  it('gives an ordinary row no separate ⋯ button', async () => {
+    setApp();
+    const r = await render();
+
+    const row = r.root.findAllByType('step-row').find((n) => n.props.title === 'Look around the Tools')!;
+    expect(row.props.onMore).toBeUndefined();
+  });
+});

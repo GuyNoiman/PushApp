@@ -6,6 +6,9 @@
  *
  * Presentational + local search state (Engineering Bible §19): the durable choice lives in
  * ProfileProvider; country data/lookups live in `core/profile/countries`.
+ *
+ * Choosing a country is saving a Personal Detail, so it is reported as `profileSaved` exactly like the
+ * fields on the Personal Details screen itself (Gap Register B2).
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,6 +24,7 @@ import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/th
 import { COUNTRY_CODES, countryName, type CountryCode } from '@/core/profile/countries';
 import { useTheme } from '@/hooks/use-theme';
 import { isRTL, START_TEXT_ALIGN } from '@/i18n/rtl';
+import { useApp } from '@/state/AppProvider';
 import { useProfile } from '@/state/ProfileProvider';
 
 export default function CountryPickerScreen() {
@@ -28,6 +32,7 @@ export default function CountryPickerScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation('settings');
   const { profile, setCountry } = useProfile();
+  const { core } = useApp();
   const [query, setQuery] = useState('');
 
   // Localized names, sorted alphabetically, filtered over the name + the code.
@@ -42,6 +47,7 @@ export default function CountryPickerScreen() {
 
   const select = (code: CountryCode) => {
     setCountry(code);
+    core.noteInAppAction('profileSaved');
     router.back();
   };
 

@@ -33,8 +33,13 @@
  * SUMMARY is ever shared; reflections and the "why" never leave the device.
  * Incoming requests and cheers now live in the Inbox tab (Friend ≠ Ally) — this
  * screen is the Support Circle / help-first people list only.
+ *
+ * Coming into view is reported as `friendsVisited` (Gap Register B2): "Explore the friends area" is a
+ * Step finished by arriving here. Which guidance a first visit should get is decided later; for now
+ * the visit itself is the whole of it.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -55,6 +60,7 @@ import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/th
 import { buildCircleRows, type CircleRow } from '@/core/social/circleRows';
 import { useTheme } from '@/hooks/use-theme';
 import { START_TEXT_ALIGN } from '@/i18n/rtl';
+import { useApp } from '@/state/AppProvider';
 import { useSocial } from '@/state/SocialProvider';
 
 export default function FriendsScreen() {
@@ -64,6 +70,15 @@ export default function FriendsScreen() {
   // Addressed, not plain: the invite message is written TO the user's friends in the user's own
   // voice ("I'm using PushApp…"), which inflects by gender in Hebrew (D31).
   const { t } = useAddressedTranslation('circle');
+  const { core } = useApp();
+
+  // On FOCUS, not on mount: a tab stays mounted once it has been seen, so a visit prompted by the
+  // Step later in the same session would otherwise report nothing.
+  useFocusEffect(
+    useCallback(() => {
+      core.noteInAppAction('friendsVisited');
+    }, [core]),
+  );
 
   const [showAdd, setShowAdd] = useState(false);
   const [people, setPeople] = useState<'friends' | 'allies'>('friends');

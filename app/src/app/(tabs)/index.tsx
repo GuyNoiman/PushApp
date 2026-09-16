@@ -69,6 +69,7 @@ import { useFinalStepConfirm } from '@/hooks/useFinalStepConfirm';
 import { useTheme } from '@/hooks/use-theme';
 import { useServerConnection } from '@/hooks/useServerConnection';
 import { useStepLink } from '@/hooks/useStepLink';
+import { stepOpensScreen } from '@/core/journeys/stepLink';
 import { useApp } from '@/state/AppProvider';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useSocial } from '@/state/SocialProvider';
@@ -165,6 +166,11 @@ export default function HomeScreen() {
    *
    * Reporting is untouched. Swipe, Done, Postpone and Let go all still work on these Steps exactly
    * as they do on every other one.
+   *
+   * And it is VISIBLE (Gap Register B2): a linked row's ⋯ is a real button onto the same report sheet
+   * (`reportLinked`), because the tap now belongs to the screen and the swipe cannot be seen on a
+   * device. Doing the thing in the app closes the Step by itself (`AppCore.noteInAppAction`); the ⋯ is
+   * for everything else — done elsewhere, Partial, Postpone, Let go.
    */
   const openStepLink = useStepLink();
   const openStep = useCallback(
@@ -174,6 +180,8 @@ export default function HomeScreen() {
     },
     [openStepLink],
   );
+  const reportLinked = (item: TodayStep) =>
+    stepOpensScreen(item.step) ? () => setReportStep(item) : undefined;
   // The last adaptive week-review that CHANGED the plan, shown as the calm "I adjusted your
   // week" card until dismissed. Null when nothing changed (or the adaptive loop is off).
   const [weekOutcome, setWeekOutcome] = useState<WeekReviewOutcome | null>(null);
@@ -773,6 +781,7 @@ export default function HomeScreen() {
                 onDone={() => reportDone(item)}
                 onPostpone={() => reportPostpone(item)}
                 onLetGo={() => reportLetGo(item)}
+                onMore={reportLinked(item)}
               />
             ))}
 
@@ -802,6 +811,7 @@ export default function HomeScreen() {
                     onDone={() => reportDone(item)}
                     onPostpone={() => reportPostpone(item)}
                     onLetGo={() => reportLetGo(item)}
+                    onMore={reportLinked(item)}
                   />
                 ))}
               </>

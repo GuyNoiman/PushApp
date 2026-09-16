@@ -39,7 +39,6 @@ import { TabScrollView } from '@/components/ui/TabScrollView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { featureFlags } from '@/core/config/featureFlags';
 import { getSimulatedUser } from '@/core/profile/simulatedUser';
-import { activeHoursShape, resolveActiveHours } from '@/core/util/availability';
 import { OTA_VERSION } from '@/core/update/otaVersion';
 import { readRunningBundle, shortRuntime, shortUpdateId } from '@/core/util/buildInfo';
 import { useApp } from '@/state/AppProvider';
@@ -52,6 +51,7 @@ import { useAuth } from '@/state/AuthProvider';
 const PRIVACY_POLICY_URL = 'https://pushapp-invite.expo.app/privacy.html';
 import { useCelebrationPreference } from '@/state/CelebrationPreference';
 import { useTheme } from '@/hooks/use-theme';
+import { useActiveHoursSummary } from '@/hooks/useActiveHoursSummary';
 import { useServerConnection } from '@/hooks/useServerConnection';
 import { findLanguage } from '@/i18n/languages';
 import type { AddressForm } from '@/i18n/addressForm';
@@ -96,24 +96,9 @@ export default function SettingsScreen() {
   const { exportData, deleteAccount } = useAccountActions();
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
 
-  // Active Hours summary (D40) — recomputed when the scheduling prefs change (a
-  // SchedulingPrefsChanged event refreshes the snapshot, re-rendering this tab).
-  const { core, snapshot } = useApp();
-  const activeHoursValue = useMemo(() => {
-    void snapshot; // re-run when a SchedulingPrefsChanged event refreshes the snapshot
-    const prefs = core.getSchedulingPrefs();
-    const shape = activeHoursShape(prefs);
-    if (shape === 'allDay') return t('activeHours.summaryAllDay');
-    if (shape === 'off') return t('activeHours.summaryOff');
-    if (shape === 'perDay') return t('activeHours.summaryPerDay');
-    const w = resolveActiveHours(prefs).days[0].window;
-    const pad2 = (n: number) => String(n).padStart(2, '0');
-    return t('activeHours.range', {
-      start: `${pad2(w.start.hour)}:${pad2(w.start.minute)}`,
-      end: `${pad2(w.end.hour)}:${pad2(w.end.minute)}`,
-    });
-    // `snapshot` is intentionally a dependency: it changes on SchedulingPrefsChanged.
-  }, [core, snapshot, t]);
+  // Active Hours summary (D40) — the same line the Personal Details row shows (useActiveHoursSummary).
+  const { core } = useApp();
+  const activeHoursValue = useActiveHoursSummary();
 
   // Notifications row (E2): tapping requests permission the first time it's undetermined; once the OS
   // has a decision, it deep-links to the app's OS settings so the user can flip it there.

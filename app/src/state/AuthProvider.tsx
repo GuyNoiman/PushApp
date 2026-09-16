@@ -6,8 +6,13 @@
  *
  * When featureFlags.auth is off (no Supabase env) it renders children with inert
  * EMPTY values — the local pillars are entirely unaffected (Bible §5/§14).
- * All gateway calls are guarded so a backend hiccup surfaces a string, never a
- * crash. No business logic here: consumers read this state and call these actions.
+ * All gateway calls are guarded so a backend hiccup never crashes. No business logic here: consumers
+ * read this state and call these actions.
+ *
+ * NO ERROR MESSAGE LEAVES THIS FILE FOR A SCREEN (first device test, 2026-09-16). A failed sign-in is
+ * exposed as {@link SignInFailure} — a provider and a word from a closed set — and the screen turns
+ * the word into a sentence from the locale files. The message itself goes only to the crash reporter,
+ * which sends the error's name and never its text.
  *
  * Privacy (red-line R1): AuthUser carries NO PII — only the uid, an anonymous
  * flag, and provider names. Name/email never enter app state.
@@ -15,10 +20,11 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { getAuthGateway, type AuthUser } from '@/core/auth';
-import { SignInCancelledError } from '@/core/auth/nativeIdentity';
 import { signInAttempted, signInSucceeded, signInThrew } from '@/core/auth/signInKpi';
+import { signInNotice, type SignInFailure } from '@/core/auth/signInNotice';
 import { appKpi } from '@/core/kpi/appKpi';
 import type { SignInProvider } from '@/core/kpi/taxonomy';
+import { getCrashGateway } from '@/core/monitoring/CrashGateway';
 import { checkBackendHealth } from '@/core/social/backendHealth';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'signedOut';
@@ -27,8 +33,11 @@ interface AuthContextValue {
   enabled: boolean;
   user: AuthUser | null;
   status: AuthStatus;
-  /** Last gateway error, for the UI to surface. Null when healthy. */
-  error: string | null;
+  /**
+   * The last sign-in that FAILED, as the screen may show it: which provider to offer again, and which
+   * sentence to say. Null after a success, a cancel, or when a new attempt starts. Never a message.
+   */
+  signInFailure: SignInFailure | null;
   ensureSession: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -46,7 +55,7 @@ const EMPTY: AuthContextValue = {
   user: null,
   // Off ⇒ fully local/anonymous; consumers stay in their offline path.
   status: 'anonymous',
-  error: null,
+  signInFailure: null,
   ensureSession: async () => {},
   signInWithApple: async () => {},
   signInWithGoogle: async () => {},
@@ -71,7 +80,7 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthStatus>('loading');
-  const [error, setError] = useState<string | null>(null);
+  const [signInFailure, setSignInFailure] = useState<SignInFailure | null>(null);
 
   // Derive status from a user snapshot. NOTE: onAuthChange fires INITIAL_SESSION
   // with null before ensureSession() resolves, so status can briefly read
@@ -83,13 +92,17 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
     setStatus(u ? (u.isAnonymous ? 'anonymous' : 'authenticated') : 'signedOut');
   }, []);
 
-  /** Run a gateway call, surfacing any failure as a string instead of crashing. */
+  /**
+   * Run a gateway call without letting a failure crash the tree. Before 2026-09-16 the failure's
+   * message was kept as `error`, and the only screens that read it were the two sign-in screens —
+   * which meant a session-bootstrap failure appeared under the sign-in buttons as raw text before
+   * anybody had pressed one. The status these calls set is what the app actually acts on.
+   */
   const guard = useCallback(async (fn: () => Promise<void>) => {
     try {
       await fn();
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+    } catch {
+      // Nothing to show: see above.
     }
   }, []);
 
@@ -129,9 +142,9 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
 
   /**
    * Run a sign-in, treating a CANCEL as a non-event. Closing the provider's sheet is a decision, not
-   * a failure, so it must leave no error banner behind — it even CLEARS a previous one, because the
-   * screen the person is looking at is now in a clean state. Everything else goes through `guard`
-   * and surfaces as a readable string.
+   * a failure, so it must leave nothing behind — it even CLEARS a previous failure, because the
+   * screen the person is looking at is now in a clean state. Anything else becomes a
+   * {@link SignInFailure}: a closed word the screen turns into a human sentence (`core/auth/signInNotice`).
    *
    * Every outcome is also COUNTED (founder, 2026-09-16): nothing else can say whether sign-in has
    * ever worked for anybody. What is counted is the provider and a closed reason decided from the
@@ -140,17 +153,23 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
   const runSignIn = useCallback(
     async (provider: SignInProvider, signIn: () => Promise<AuthUser>) => {
       appKpi.record(signInAttempted(provider));
+      // A new attempt is a clean slate: the old sentence goes, so a retry that fails again visibly
+      // says so again rather than leaving the same line sitting there unchanged.
+      setSignInFailure(null);
       try {
         applyUser(await signIn());
         appKpi.record(signInSucceeded(provider));
-        setError(null);
       } catch (e) {
         appKpi.record(signInThrew(provider, e));
-        if (e instanceof SignInCancelledError) {
-          setError(null);
-          return;
-        }
-        setError(e instanceof Error ? e.message : 'Something went wrong.');
+        const notice = signInNotice(e);
+        if (notice === null) return;
+        // The developer detail goes where developer detail belongs. The reporter sends the error's
+        // NAME (e.g. `SignInMisconfiguredError`) and never its message — see CrashGateway.
+        getCrashGateway().captureHandled(e, {
+          module: 'auth',
+          function: provider === 'apple' ? 'signInWithApple' : 'signInWithGoogle',
+        });
+        setSignInFailure({ provider, notice });
       }
     },
     [applyUser],
@@ -185,7 +204,7 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
     enabled: true,
     user,
     status,
-    error,
+    signInFailure,
     ensureSession,
     signInWithApple,
     signInWithGoogle,

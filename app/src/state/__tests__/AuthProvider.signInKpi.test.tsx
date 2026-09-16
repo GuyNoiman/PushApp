@@ -2,9 +2,10 @@
  * Sign-in is COUNTED where it happens (founder, 2026-09-16).
  *
  * The mapping itself is pinned in `core/auth/__tests__/signInKpi.test.ts`. This pins the wiring: that
- * every press produces an attempt, that each outcome lands under the provider pressed, and that the
- * message the screen shows is not what is sent — the error line under the buttons can say anything a
- * provider says, and the KPI stream must never.
+ * every press produces an attempt, that each outcome lands under the provider pressed, and that an
+ * error's message reaches NEITHER the KPI stream NOR the screen. Until 2026-09-16 the screen was given
+ * the message and showed it (Google's DEVELOPER_ERROR line, on the partner's Android); what the screen
+ * gets now is a provider and a word from a closed set.
  */
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -87,14 +88,14 @@ describe('every sign-in press is counted, by provider and outcome', () => {
       { name: 'sign_in_attempted', bucket: 'google' },
       { name: 'sign_in_cancelled', bucket: 'google' },
     ]);
-    expect(auth!.error).toBeNull();
+    expect(auth!.signInFailure).toBeNull();
   });
 
   it.each([
-    ['a server refusal', new AuthTokenRejectedError(SECRET), 'apple:rejected'],
-    ['an unavailable provider', new AuthNotAvailableError(SECRET), 'apple:unavailable'],
-    ['anything else', new Error(SECRET), 'apple:error'],
-  ])('%s, under its reason and never its message', async (_label, error, bucket) => {
+    ['a server refusal', new AuthTokenRejectedError(SECRET), 'apple:rejected', 'failed'],
+    ['an unavailable provider', new AuthNotAvailableError(SECRET), 'apple:unavailable', 'unavailable'],
+    ['anything else', new Error(SECRET), 'apple:error', 'failed'],
+  ])('%s, under its reason and never its message', async (_label, error, bucket, notice) => {
     mockGateway.signInWithApple.mockRejectedValueOnce(error);
     await mount();
     await act(async () => auth!.signInWithApple());
@@ -102,8 +103,10 @@ describe('every sign-in press is counted, by provider and outcome', () => {
       { name: 'sign_in_attempted', bucket: 'apple' },
       { name: 'sign_in_failed', bucket },
     ]);
-    // The screen still shows the message, exactly as before; the stream never carries it.
-    expect(auth!.error).toBe(SECRET);
+    // The screen is told which sentence to say, never the message; the stream never carries it either.
+    expect(auth!.signInFailure).toEqual({ provider: 'apple', notice });
+    expect(JSON.stringify(auth)).not.toContain('nonce');
+    expect(JSON.stringify(auth)).not.toContain('example.com');
     expect(JSON.stringify(sent)).not.toContain('nonce');
     expect(JSON.stringify(sent)).not.toContain('example.com');
   });

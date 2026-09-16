@@ -29,6 +29,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProviderButton } from '@/components/auth/ProviderButton';
+import { SignInFailureNotice } from '@/components/auth/SignInFailureNotice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FontFamily, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -43,7 +44,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const dark = useColorScheme() === 'dark';
   const { t } = useTranslation('settings');
-  const { status, error, signInWithApple, signInWithGoogle } = useAuth();
+  const { status, signInFailure, signInWithApple, signInWithGoogle } = useAuth();
 
   // Which providers THIS build can actually run. Apple's check is async (it asks the OS), so both
   // start hidden and appear once known — a button that cannot work must never be offered.
@@ -70,8 +71,8 @@ export default function SignInScreen() {
     if (busy) return;
     setBusy(provider);
     try {
-      // AuthProvider swallows a cancel and surfaces anything else through `error` — nothing to
-      // catch here, and nothing to show for a person who simply closed the sheet.
+      // AuthProvider swallows a cancel and surfaces anything else through `signInFailure` — nothing
+      // to catch here, and nothing to show for a person who simply closed the sheet.
       await (provider === 'apple' ? signInWithApple() : signInWithGoogle());
     } finally {
       setBusy(null);
@@ -136,12 +137,13 @@ export default function SignInScreen() {
             </ThemedText>
           ) : null}
 
-          {/* A real failure is said plainly and stays on screen; the user's data is untouched. */}
-          {error ? (
-            <ThemedText type="small" style={[styles.note, { color: theme.danger }]}>
-              {error}
-            </ThemedText>
-          ) : null}
+          {/* A real failure is said plainly, in a sentence of ours and never the error's own text,
+              and stays on screen with a way to try again; the user's data is untouched. */}
+          <SignInFailureNotice
+            failure={signInFailure}
+            disabled={busy !== null}
+            onTryAgain={(provider) => void run(provider)}
+          />
 
           <ThemedText type="small" themeColor="textMuted" style={styles.note}>
             {t('signIn.privacy')}

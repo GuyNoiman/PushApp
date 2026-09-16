@@ -46,6 +46,31 @@ export class SignInCancelledError extends Error {
   }
 }
 
+/**
+ * The provider refused because OUR build is configured wrongly for it: on Android, Google's
+ * `DEVELOPER_ERROR` (the app's signing certificate or OAuth client does not match what Google has on
+ * record). Nothing the person did, and nothing a retry on their side fixes.
+ *
+ * Its own type so the crash reporter, which sends an error's NAME and never its message, can tell a
+ * configuration fault from any other failure. It deliberately extends nothing the sign-in measurement
+ * knows (`core/auth/signInKpi`), so it is counted under `error` exactly as it was before it had a
+ * name, and the screen says the generic failure sentence.
+ */
+export class SignInMisconfiguredError extends Error {
+  constructor(provider: 'apple' | 'google') {
+    super(`${provider} sign-in is misconfigured for this build.`);
+    this.name = 'SignInMisconfiguredError';
+  }
+}
+
+/**
+ * Google Play services' `CommonStatusCodes.DEVELOPER_ERROR`, as the library rejects with it on
+ * Android: `code: "10"`, and a message pointing at its troubleshooting page (the text the partner saw
+ * on 2026-09-16). The library's JS `statusCodes` does not export it, so it is named here. Matched by
+ * CODE only — the message is the library's wording and may change in any release.
+ */
+const GOOGLE_DEVELOPER_ERROR_CODE = '10';
+
 /** Load a native module at call time; `null` when this build does not carry it. */
 function loadModule<T>(load: () => T): T | null {
   try {
@@ -151,7 +176,8 @@ export function isGoogleSignInAvailable(): boolean {
 
 /**
  * Run Google's native sheet and return the signed identity token for Supabase to verify. Same two
- * failure shapes as {@link appleIdentityToken}: a cancel is not an error, a missing module is.
+ * failure shapes as {@link appleIdentityToken}: a cancel is not an error, a missing module is. A third
+ * is named, {@link SignInMisconfiguredError}, for Google's `DEVELOPER_ERROR`.
  */
 export async function googleIdentityToken(): Promise<IdentityToken> {
   const ids = googleClientIds();
@@ -185,8 +211,12 @@ export async function googleIdentityToken(): Promise<IdentityToken> {
     return { token };
   } catch (e) {
     if (e instanceof SignInCancelledError) throw e;
+    const code = (e as { code?: unknown }).code;
     // Older versions signal a cancel through a status code instead of the result shape.
-    if ((e as { code?: string }).code === statusCodes.SIGN_IN_CANCELLED) throw new SignInCancelledError();
+    if (code === statusCodes.SIGN_IN_CANCELLED) throw new SignInCancelledError();
+    // A configuration fault is a FAILURE, never a cancel: the person did not close anything, and
+    // treating it as one would show them nothing while sign-in is broken for everybody.
+    if (String(code) === GOOGLE_DEVELOPER_ERROR_CODE) throw new SignInMisconfiguredError('google');
     throw e;
   }
 }

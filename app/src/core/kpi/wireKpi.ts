@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+import { supabase } from '../social/supabaseClient';
 import { readRunningBundle } from '../util/buildInfo';
 import { getKpiGateway } from './index';
 import { getRuntimeReporter } from './reportRuntime';
@@ -39,10 +40,10 @@ async function loadOnceStore(): Promise<OnceStore> {
     // No memory of what was sent means an event may repeat once. Acceptable.
   }
   return {
-    has: (name) => seen.has(name),
-    remember: (name) => {
-      seen.add(name);
-      void AsyncStorage.setItem(`${ONCE_PREFIX}${name}`, '1').catch(() => undefined);
+    has: (key) => seen.has(key),
+    remember: (key) => {
+      seen.add(key);
+      void AsyncStorage.setItem(`${ONCE_PREFIX}${key}`, '1').catch(() => undefined);
     },
   };
 }
@@ -101,4 +102,46 @@ export async function wireKpiGateway(): Promise<KpiGateway | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolves once this device holds a Supabase session — immediately when it already does.
+ *
+ * `kpi_events` accepts inserts from `authenticated` only, and a fresh install has no session until
+ * the anonymous bootstrap in `AuthProvider` returns. An event sent before then is refused by the
+ * database and, being fire-and-forget, is lost without a trace. `appKpi` holds events until this
+ * resolves, so the first screen of a fresh install is counted like every other.
+ *
+ * Never rejects. With no backend it resolves at once (there is nothing to wait for, and the gateway
+ * is null anyway); with a backend that never produces a session it simply never resolves, and the
+ * held events stay held — which is no worse than sending them to be refused.
+ */
+export function whenKpiSessionReady(): Promise<void> {
+  const client = supabase;
+  if (!client) return Promise.resolve();
+  return new Promise((resolve) => {
+    let done = false;
+    let subscription: { unsubscribe: () => void } | null = null;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      subscription?.unsubscribe();
+      resolve();
+    };
+    try {
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        if (session) finish();
+      });
+      subscription = data.subscription;
+      if (done) subscription.unsubscribe();
+      void client.auth.getSession().then(
+        ({ data: current }) => {
+          if (current.session) finish();
+        },
+        () => undefined,
+      );
+    } catch {
+      // A client that cannot even be asked is a client that will refuse the insert. Hold.
+    }
+  });
 }

@@ -52,6 +52,19 @@ export class AuthIdentityMismatchError extends Error {
   }
 }
 
+/**
+ * Thrown when the provider handed over an identity token and OUR SERVER refused to exchange it for a
+ * session — the nonce mismatch of 2026-09-07 was one. The message is unchanged from the plain
+ * `Error` this replaced (the screen still shows it); the type exists so the sign-in measurement can
+ * tell "the provider sheet broke" from "the server said no" without ever reading that message.
+ */
+export class AuthTokenRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthTokenRejectedError';
+  }
+}
+
 export interface AuthGateway {
   /** Whether the pillar is configured/active (feature flag + env present). */
   readonly enabled: boolean;

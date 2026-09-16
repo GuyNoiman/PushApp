@@ -94,9 +94,17 @@ export const NullKpiGateway: KpiGateway = {
  */
 const ONCE_PER_INSTALL = new Set(KPI_EVENTS.filter((e) => e.oncePerInstall).map((e) => e.name));
 
+/**
+ * What the once-store remembers. A bucketless event is remembered by its name — the key every
+ * installation already holds for `app_first_open` — and a bucketed one by name AND bucket, so each
+ * step of the first run is counted once without the first step using up the rest.
+ */
+export const onceKey = (input: KpiInput): string =>
+  input.bucket ? `${input.name}.${input.bucket}` : input.name;
+
 export interface OnceStore {
-  has(name: string): boolean;
-  remember(name: string): void;
+  has(key: string): boolean;
+  remember(key: string): void;
 }
 
 /**
@@ -111,8 +119,12 @@ export function withOnceGuard(gateway: KpiGateway, store: OnceStore): KpiGateway
     },
     record(input) {
       if (ONCE_PER_INSTALL.has(input.name)) {
-        if (store.has(input.name)) return;
-        store.remember(input.name);
+        // A bucket the event does not declare would be refused downstream anyway; refusing it here
+        // keeps it from being written into the device's memory as something that was sent.
+        if (!isAllowedBucket(input.name, input.bucket ?? null)) return;
+        const key = onceKey(input);
+        if (store.has(key)) return;
+        store.remember(key);
       }
       gateway.record(input);
     },

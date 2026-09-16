@@ -78,6 +78,8 @@ import { PRIVACY_POLICY_URL, TERMS_URL } from '@/constants/legal';
 import { PRODUCT_NAME } from '@/constants/product';
 import { Radius, Spacing } from '@/constants/theme';
 import { isAppleSignInAvailable, isGoogleSignInAvailable } from '@/core/auth/nativeIdentity';
+import { appKpi } from '@/core/kpi/appKpi';
+import { accountEscapeUsed, onboardingStepReached } from '@/core/kpi/firstRunKpi';
 import { stepPosition } from '@/core/onboarding/questions';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/state/AuthProvider';
@@ -99,6 +101,17 @@ export default function OnboardingScreen() {
   // Seed from the core so an interrupted flow resumes at the same page + language (PRD §8).
   const [step, setStep] = useState<OnboardingStep>(() => core.getOnboardingStep());
   const [answers, setAnswers] = useState<OnboardingAnswers>(() => core.getOnboardingAnswers());
+
+  /**
+   * THE FUNNEL (founder, 2026-09-16): every step this route shows is counted as reached, once per
+   * installation per step — the gateway enforces the once, so going Back and forward again, or
+   * resuming onto the same screen tomorrow, counts nothing twice. A retired page is not a step and
+   * is not counted.
+   */
+  useEffect(() => {
+    const event = onboardingStepReached(step);
+    if (event) appKpi.record(event);
+  }, [step]);
 
   /** Move to a page and persist the resume point + answers (never completes here). */
   const go = useCallback(
@@ -629,6 +642,13 @@ function AccountStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (
 
   const noProvider = !enabled || (!appleAvailable && !googleAvailable);
 
+  // The escape advances with NO session. It must never be used on a real device, and the only way
+  // to know that it is not is to count it — by why it was offered, never by anything about the person.
+  const continueWithoutProvider = () => {
+    appKpi.record(accountEscapeUsed(enabled));
+    onSignedIn();
+  };
+
   return (
     <OnboardingScaffold
       onBack={onBack}
@@ -665,7 +685,7 @@ function AccountStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (
               <ThemedText type="small" themeColor="textMuted" style={styles.centred}>
                 {tSettings('signIn.unavailable')}
               </ThemedText>
-              <OnboardingPrimaryButton label={t('flow.account.unavailableContinue')} onPress={onSignedIn} />
+              <OnboardingPrimaryButton label={t('flow.account.unavailableContinue')} onPress={continueWithoutProvider} />
             </>
           ) : null}
           {/* A real failure is said plainly and stays on screen; the user's data is untouched. */}

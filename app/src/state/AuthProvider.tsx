@@ -16,6 +16,9 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 
 import { getAuthGateway, type AuthUser } from '@/core/auth';
 import { SignInCancelledError } from '@/core/auth/nativeIdentity';
+import { signInAttempted, signInSucceeded, signInThrew } from '@/core/auth/signInKpi';
+import { appKpi } from '@/core/kpi/appKpi';
+import type { SignInProvider } from '@/core/kpi/taxonomy';
 import { checkBackendHealth } from '@/core/social/backendHealth';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'signedOut';
@@ -129,13 +132,20 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
    * a failure, so it must leave no error banner behind — it even CLEARS a previous one, because the
    * screen the person is looking at is now in a clean state. Everything else goes through `guard`
    * and surfaces as a readable string.
+   *
+   * Every outcome is also COUNTED (founder, 2026-09-16): nothing else can say whether sign-in has
+   * ever worked for anybody. What is counted is the provider and a closed reason decided from the
+   * error's type — never the message this function shows (see `core/auth/signInKpi`).
    */
   const runSignIn = useCallback(
-    async (signIn: () => Promise<AuthUser>) => {
+    async (provider: SignInProvider, signIn: () => Promise<AuthUser>) => {
+      appKpi.record(signInAttempted(provider));
       try {
         applyUser(await signIn());
+        appKpi.record(signInSucceeded(provider));
         setError(null);
       } catch (e) {
+        appKpi.record(signInThrew(provider, e));
         if (e instanceof SignInCancelledError) {
           setError(null);
           return;
@@ -147,12 +157,12 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signInWithApple = useCallback(
-    () => runSignIn(() => gateway.signInWithApple()),
+    () => runSignIn('apple', () => gateway.signInWithApple()),
     [gateway, runSignIn],
   );
 
   const signInWithGoogle = useCallback(
-    () => runSignIn(() => gateway.signInWithGoogle()),
+    () => runSignIn('google', () => gateway.signInWithGoogle()),
     [gateway, runSignIn],
   );
 

@@ -19,6 +19,7 @@ import { supabase } from '../social/supabaseClient';
 import {
   AuthIdentityMismatchError,
   AuthNotAvailableError,
+  AuthTokenRejectedError,
   type AuthGateway,
   type AuthUser,
 } from './AuthGateway';
@@ -186,7 +187,7 @@ export class SupabaseAuthGateway implements AuthGateway {
     });
     // Name the provider: the screen shows one error line under two buttons, and "which one failed"
     // was the first question the last report could not answer.
-    if (error) throw new Error(`${provider}: ${error.message}`);
+    if (error) throw new AuthTokenRejectedError(`${provider}: ${error.message}`);
     const user = toAuthUser(data.user);
     if (!user) throw new AuthNotAvailableError(`${provider} sign-in returned no user.`);
     return user;

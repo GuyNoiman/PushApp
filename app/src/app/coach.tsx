@@ -43,6 +43,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ConnectionNotice } from '@/components/ui/ConnectionNotice';
 import { featureFlags } from '@/core/config/featureFlags';
+import { appKpi } from '@/core/kpi/appKpi';
+import { introductionCompleted, introductionStarted, onboardingStepReached } from '@/core/kpi/firstRunKpi';
 import { FUTURE_JOURNEY_POLICY } from '@/core/config/futureJourneys';
 import { startInstantInDays } from '@/core/journeys/futureJourneys';
 import type { JourneyStart } from '@/core/types/domain';
@@ -64,6 +66,14 @@ export default function CoachScreen() {
   const { mode, firstRun } = useLocalSearchParams<{ mode?: string; journeyId?: string; firstRun?: string }>();
   // Read unconditionally so the hook order never depends on the route.
   const connection = useServerConnection();
+  // THE FUNNEL: arriving here on the first run is reaching its `conversation` step — whether or not the
+  // conversation can actually happen, because a person who lands on the offline screen did reach it.
+  // Once per installation; the gateway enforces it.
+  useEffect(() => {
+    if (firstRun !== '1') return;
+    const event = onboardingStepReached('conversation');
+    if (event) appKpi.record(event);
+  }, [firstRun]);
   if (mode === 'edit') return <EditCoachScreen />;
   // The scripted conversation is a development-only visual prototype. It must never impersonate
   // the personalized first-run Coach or leave a new account behind an unfinishable gate.
@@ -304,6 +314,26 @@ function LiveCoachScreen() {
     core.setPortrait(coach.portrait);
   }, [coach.portrait, core]);
 
+  /**
+   * THE INTRODUCTION, COUNTED (founder, 2026-09-16) — the gap between these two is the number.
+   *
+   * STARTED is the person's first answer, not the screen opening: opening it is already the funnel's
+   * `conversation` step, and somebody who reads the first line and leaves did not start a
+   * conversation. COMPLETED is `introductionComplete`, which only the confirmed understanding check
+   * sets. Both are once per installation at the gateway; the ref only stops a long conversation from
+   * offering the same event on every new line.
+   */
+  const introductionStartCounted = useRef(false);
+  const answeredOnce = coach.items.some((item) => item.kind === 'user');
+  useEffect(() => {
+    if (!firstRun || !answeredOnce || introductionStartCounted.current) return;
+    introductionStartCounted.current = true;
+    appKpi.record(introductionStarted);
+  }, [firstRun, answeredOnce]);
+  useEffect(() => {
+    if (firstRun && coach.introductionComplete) appKpi.record(introductionCompleted);
+  }, [firstRun, coach.introductionComplete]);
+
   const barBottomInset = Math.max(BottomTabInset, insets.bottom);
 
   /** The bottom input-bar draft (the opening free-text). */
@@ -510,6 +540,14 @@ function LiveCoachScreen() {
     }
     setTail('handoff');
   }, [core]);
+
+  // THE FUNNEL's last two steps, which on the real path are shown from here rather than from
+  // `/onboarding`. The reminder ask is not one of the steps and is not counted.
+  useEffect(() => {
+    if (tail !== 'handoff' && tail !== 'firstJourney') return;
+    const event = onboardingStepReached(tail);
+    if (event) appKpi.record(event);
+  }, [tail]);
 
   if (tail === 'reminders') {
     return <RemindersAskPage onTurnOn={() => void answerReminders(true)} onNotNow={() => void answerReminders(false)} />;

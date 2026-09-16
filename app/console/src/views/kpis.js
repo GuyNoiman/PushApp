@@ -12,8 +12,8 @@
  */
 import { el, clear, when } from '../dom.js';
 import {
-  KPIS, NOT_YET_COMPUTABLE, WINDOWS, CLASS_LABELS, TAXONOMY_VERSION,
-  indexCounts, computeKpi,
+  KPIS, NOT_YET_COMPUTABLE, WINDOWS, CLASS_LABELS, TAXONOMY_VERSION, SIGN_IN_FAILURE_REASONS,
+  indexCounts, computeKpi, computeFunnel, computeSignIn, computeAccountEscape,
 } from '../kpi-model.js';
 
 export async function renderKpis(root, ctx) {
@@ -78,6 +78,8 @@ export async function renderKpis(root, ctx) {
       );
     }
 
+    body.append(funnelCard(computeFunnel(rows)), signInCard(computeSignIn(rows), computeAccountEscape(rows)));
+
     for (const kpi of KPIS) {
       body.append(kpiCard(computeKpi(kpi, index)));
     }
@@ -135,5 +137,100 @@ function kpiCard(kpi) {
     el('p', { class: 'muted', text: `${kpi.numerator} of ${kpi.denominator}` }),
     el('p', { text: kpi.definition }),
     el('p', { class: 'muted small', text: `Excludes: ${kpi.exclusions}` }),
+  ]);
+}
+
+const table = (headings, rows) =>
+  el('div', { class: 'wrap' }, [
+    el('table', {}, [
+      el('thead', {}, [el('tr', {}, headings.map((h) => el('th', { text: h })))]),
+      el('tbody', {}, rows),
+    ]),
+  ]);
+
+/** A signed change, so a stage that GAINED installations reads as a gain rather than a loss. */
+const signed = (n) => (n > 0 ? `−${n}` : n < 0 ? `+${-n}` : '0');
+
+function funnelCard(stages) {
+  const empty = stages.every((stage) => stage.installs === 0);
+  return el('section', { class: 'card' }, [
+    el('h2', {}, [el('span', { class: `dot ${empty ? 'gray' : 'green'}` }), 'First run — where people stop']),
+    el('p', {
+      class: 'muted',
+      text:
+        'Installations that reached each step, in order, and how many fewer than the step before. The ' +
+        'account step is the mandatory sign-in wall (D104); the conversation’s two rows are the first answer ' +
+        'and the confirmed understanding check.',
+    }),
+    empty
+      ? el('p', { class: 'muted', text: 'No installation has reported a first-run step in this window.' })
+      : table(
+          ['Step', 'Installations', 'Lost since previous', 'Lost %'],
+          stages.map((stage) =>
+            el('tr', {}, [
+              el('td', { text: stage.label }),
+              el('td', { text: String(stage.installs) }),
+              el('td', { text: stage.drop === null ? '—' : signed(stage.drop) }),
+              el('td', { text: stage.dropPercent === null ? '—' : `${stage.dropPercent}%` }),
+            ]),
+          ),
+        ),
+    el('p', {
+      class: 'muted small',
+      text:
+        'Each step counts once per installation. A negative loss is real, not a bug: “I already have an ' +
+        'account” skips from Welcome to Account, and a phone that was already mid-flow when this build ' +
+        'arrived starts counting wherever it was. Builds before the first-run measurement report nothing here.',
+    }),
+  ]);
+}
+
+function signInCard(providers, escape) {
+  const escaped = escape.reduce((sum, e) => sum + e.events, 0);
+  const anySucceeded = providers.some((p) => p.succeeded > 0);
+  const anyAttempt = providers.some((p) => p.attempts > 0);
+  const dot = escaped > 0 ? 'red' : anySucceeded ? 'green' : anyAttempt ? 'yellow' : 'gray';
+  return el('section', { class: 'card' }, [
+    el('h2', {}, [el('span', { class: `dot ${dot}` }), 'Sign-in — has it worked for anybody']),
+    el('p', {
+      class: 'muted',
+      text:
+        'Events, not installations: three tries that end in one success are three attempts. A cancel is the ' +
+        'person closing the sheet and is never counted as a failure.',
+    }),
+    table(
+      ['Provider', 'Attempts', 'Succeeded', 'Cancelled', 'Failed', ...SIGN_IN_FAILURE_REASONS.map((r) => `· ${r}`), 'No outcome'],
+      providers.map((p) =>
+        el('tr', {}, [
+          el('td', { text: p.provider === 'apple' ? 'Apple' : 'Google' }),
+          el('td', { text: String(p.attempts) }),
+          el('td', { text: String(p.succeeded) }),
+          el('td', { text: String(p.cancelled) }),
+          el('td', { text: String(p.failed) }),
+          ...SIGN_IN_FAILURE_REASONS.map((reason) => el('td', { text: String(p.failures[reason]) })),
+          el('td', { text: String(p.unaccounted) }),
+        ]),
+      ),
+    ),
+    el('p', {
+      class: 'muted small',
+      text:
+        'unavailable — this build or device could not run the provider · rejected — the provider said yes and ' +
+        'our server refused the token · error — anything else. No outcome — the app closed mid-attempt, or ' +
+        'the attempt straddles the window.',
+    }),
+    el('div', { class: 'note' }, [
+      el('b', { text: `No-provider escape used: ${escaped}` }),
+      el('p', {
+        class: escaped > 0 ? 'error small' : 'muted small',
+        text:
+          escaped > 0
+            ? escape
+                .filter((e) => e.events > 0)
+                .map((e) => `${e.bucket === 'no_backend' ? 'no backend' : 'no provider'}: ${e.events} (${e.installs} installations)`)
+                .join(' · ') + ' — these people passed the account wall with no session.'
+            : 'The account step’s escape for a build that can sign nobody in. It should stay at zero on real devices.',
+      }),
+    ]),
   ]);
 }

@@ -135,6 +135,97 @@ export function computeKpi(kpi, index) {
   return { ...kpi, numerator, denominator, percent };
 }
 
+// ── The first run (founder, 2026-09-16) ────────────────────────────────────
+
+/**
+ * The first run, in the order a person meets it: the steps of `ONBOARDING_STEP_ORDER`, with the
+ * conversation's two moments between the step that opens it and the step that follows it. A stage is
+ * either a step (`onboarding_step_reached` under that bucket) or an event of its own.
+ */
+export const FUNNEL_STAGES = Object.freeze([
+  { id: 'language', label: 'Language', event: 'onboarding_step_reached', bucket: 'language' },
+  { id: 'welcome', label: 'Welcome', event: 'onboarding_step_reached', bucket: 'welcome' },
+  { id: 'purpose', label: 'Purpose', event: 'onboarding_step_reached', bucket: 'purpose' },
+  { id: 'prepare', label: 'Prepare', event: 'onboarding_step_reached', bucket: 'prepare' },
+  { id: 'account', label: 'Account (sign-in wall)', event: 'onboarding_step_reached', bucket: 'account' },
+  { id: 'conversation', label: 'Conversation opened', event: 'onboarding_step_reached', bucket: 'conversation' },
+  { id: 'introduction_started', label: 'Introduction started (first answer)', event: 'introduction_started' },
+  { id: 'introduction_completed', label: 'Introduction completed (understanding confirmed)', event: 'introduction_completed' },
+  { id: 'handoff', label: 'Handoff', event: 'onboarding_step_reached', bucket: 'handoff' },
+  { id: 'firstJourney', label: 'First Journey', event: 'onboarding_step_reached', bucket: 'firstJourney' },
+]);
+
+/** The row of `kpi_counts` for one name and bucket (null bucket = the bucketless row). */
+const rowFor = (rows, name, bucket = null) =>
+  (rows ?? []).find((row) => row.name === name && (row.bucket ?? null) === bucket);
+
+/**
+ * The funnel: how many installations reached each stage, and how many were lost since the stage
+ * before it.
+ *
+ * INSTALLATIONS, not events. `kpi_counts` returns a distinct-installation count per name AND bucket,
+ * which is exact for one step — the sum-across-buckets problem `indexCounts` guards against does not
+ * arise, because nothing here is added across buckets.
+ *
+ * The drop can be NEGATIVE, and that is shown rather than clamped. "I already have an account" goes
+ * from the welcome straight to the account step, so more installations can reach `account` than
+ * reached `prepare`; and a device that was already mid-flow when this build arrived starts counting
+ * wherever it was. A funnel that hid that would be claiming a tidiness the data does not have.
+ *
+ * `dropPercent` is null where the previous stage has nobody in it — "nobody got there" is not 0%.
+ */
+export function computeFunnel(rows, stages = FUNNEL_STAGES) {
+  let previous = null;
+  return stages.map((stage, index) => {
+    const installs = Number(rowFor(rows, stage.event, stage.bucket ?? null)?.installs) || 0;
+    const drop = index === 0 ? null : previous - installs;
+    const dropPercent = index === 0 || previous <= 0 ? null : Math.round((drop / previous) * 1000) / 10;
+    previous = installs;
+    return { ...stage, installs, drop, dropPercent };
+  });
+}
+
+export const SIGN_IN_PROVIDERS = Object.freeze(['apple', 'google']);
+export const SIGN_IN_FAILURE_REASONS = Object.freeze(['unavailable', 'rejected', 'error']);
+
+/**
+ * Sign-in, per provider: attempts, successes, cancels and failures by reason. EVENTS, not
+ * installations — somebody who tries three times and gets in on the third is three attempts, and
+ * that is the thing worth seeing.
+ *
+ * `unaccounted` is attempts that ended in none of the outcomes in the window: the app closed while
+ * the sheet was up, or an attempt that straddles the window's edge. Shown, not hidden.
+ */
+export function computeSignIn(rows) {
+  const events = (name, bucket) => Number(rowFor(rows, name, bucket)?.events) || 0;
+  return SIGN_IN_PROVIDERS.map((provider) => {
+    const failures = Object.fromEntries(
+      SIGN_IN_FAILURE_REASONS.map((reason) => [reason, events('sign_in_failed', `${provider}:${reason}`)]),
+    );
+    const failed = Object.values(failures).reduce((sum, n) => sum + n, 0);
+    const attempts = events('sign_in_attempted', provider);
+    const succeeded = events('sign_in_succeeded', provider);
+    const cancelled = events('sign_in_cancelled', provider);
+    return {
+      provider,
+      attempts,
+      succeeded,
+      cancelled,
+      failed,
+      failures,
+      unaccounted: Math.max(0, attempts - succeeded - cancelled - failed),
+    };
+  });
+}
+
+/** The account step's no-provider escape, by why it was offered. Should be zero on real devices. */
+export function computeAccountEscape(rows) {
+  return ['no_backend', 'no_provider'].map((bucket) => {
+    const row = rowFor(rows, 'account_escape_used', bucket);
+    return { bucket, events: Number(row?.events) || 0, installs: Number(row?.installs) || 0 };
+  });
+}
+
 export const WINDOWS = Object.freeze([
   { value: 7, label: 'Last 7 days' },
   { value: 30, label: 'Last 30 days' },

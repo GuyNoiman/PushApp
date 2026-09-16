@@ -35,7 +35,7 @@ jest.mock('../nativeIdentity', () => ({
   googleIdentityToken: jest.fn(),
 }));
 
-import { AuthNotAvailableError } from '../AuthGateway';
+import { AuthNotAvailableError, AuthTokenRejectedError } from '../AuthGateway';
 import { SupabaseAuthGateway } from '../SupabaseAuthGateway';
 import { appleIdentityToken, googleIdentityToken } from '../nativeIdentity';
 import { supabase } from '../../social/supabaseClient';
@@ -88,6 +88,13 @@ describe('SupabaseAuthGateway — Apple sign-in', () => {
     // The provider is named, because one error line sits under two buttons and "which one failed"
     // was the first question the last screenshot could not answer.
     await expect(new SupabaseAuthGateway().signInWithApple()).rejects.toThrow('apple: token rejected');
+  });
+
+  it('types a server refusal, so sign-in measurement can tell it from a broken sheet without reading it', async () => {
+    mockApple.mockResolvedValue({ token: 'apple-id-token', nonce: 'raw-nonce' });
+    auth.signInWithIdToken.mockResolvedValue({ data: { user: null }, error: new Error('token rejected') });
+
+    await expect(new SupabaseAuthGateway().signInWithApple()).rejects.toBeInstanceOf(AuthTokenRejectedError);
   });
 
   it('throws when the exchange succeeds but returns no user', async () => {

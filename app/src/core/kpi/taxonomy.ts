@@ -38,9 +38,53 @@ export interface KpiEventDef {
   meaning: string;
   /** The closed set of bucket labels this event may carry, or null for none. */
   buckets: readonly string[] | null;
-  /** True when the event is emitted AT MOST ONCE per installation, ever. */
+  /**
+   * True when the event is emitted AT MOST ONCE per installation, ever.
+   *
+   * For an event that carries buckets, the limit is once per installation PER BUCKET: each step of
+   * the first run is reached at most once, but reaching `welcome` does not use up `account`.
+   */
   oncePerInstall?: boolean;
 }
+
+/**
+ * The first run's steps, exactly as `ONBOARDING_STEP_ORDER` in `core/onboarding/questions.ts` has
+ * them. Written out rather than imported, and pinned to that array by a test: a screen added to the
+ * flow must be a deliberate change to what we count, not a bucket that appears on its own.
+ */
+export const ONBOARDING_STEP_BUCKETS = [
+  'language',
+  'welcome',
+  'purpose',
+  'prepare',
+  'account',
+  'conversation',
+  'handoff',
+  'firstJourney',
+] as const;
+
+/** The two providers a person can sign in with. */
+export const SIGN_IN_PROVIDERS = ['apple', 'google'] as const;
+export type SignInProvider = (typeof SIGN_IN_PROVIDERS)[number];
+
+/**
+ * Why a sign-in failed, decided ON THE DEVICE from the error's type and never from its message.
+ *
+ *  - `unavailable` — this build or device could not run the provider, or it handed back nothing
+ *    (`AuthNotAvailableError`).
+ *  - `rejected`    — the provider said yes and our server refused the token
+ *    (`AuthTokenRejectedError`). The nonce mismatch of 2026-09-07 is this reason.
+ *  - `error`       — anything else: the native sheet failing, the network, the unexpected.
+ *
+ * A CANCEL IS NOT HERE. It has its own event, because a person closing the sheet is a choice and an
+ * error is a bug, and a count that adds them together hides the bug.
+ */
+export const SIGN_IN_FAILURE_REASONS = ['unavailable', 'rejected', 'error'] as const;
+export type SignInFailureReason = (typeof SIGN_IN_FAILURE_REASONS)[number];
+
+/** `apple:rejected` — the one bucket a failure carries, because a row has room for only one. */
+export const signInFailureBucket = (provider: SignInProvider, reason: SignInFailureReason): string =>
+  `${provider}:${reason}`;
 
 export const KPI_EVENTS: readonly KpiEventDef[] = Object.freeze([
   { name: 'app_first_open', meaning: 'This installation ran the app for the first time.', buckets: null, oncePerInstall: true },
@@ -62,6 +106,58 @@ export const KPI_EVENTS: readonly KpiEventDef[] = Object.freeze([
     buckets: ['done', 'partial', 'couldnt', 'slipped', 'postponed'],
   },
   { name: 'weekly_review_completed', meaning: 'A Weekly Review was completed.', buckets: null },
+
+  // ── The first run (founder, 2026-09-16) ────────────────────────────────────
+  //
+  // D104 put a mandatory account in front of the conversation, and nothing could say whether it
+  // costs us people. These answer "where do people stop" and "has sign-in ever worked for anybody".
+  {
+    name: 'onboarding_step_reached',
+    meaning: 'A step of the first run was shown to this installation for the first time.',
+    buckets: ONBOARDING_STEP_BUCKETS,
+    oncePerInstall: true,
+  },
+  {
+    name: 'sign_in_attempted',
+    meaning: 'The person pressed a sign-in button, from any screen.',
+    buckets: SIGN_IN_PROVIDERS,
+  },
+  {
+    name: 'sign_in_succeeded',
+    meaning: 'A sign-in returned a real session.',
+    buckets: SIGN_IN_PROVIDERS,
+  },
+  {
+    name: 'sign_in_cancelled',
+    meaning: 'The person closed the provider sheet themselves. A choice, not a failure.',
+    buckets: SIGN_IN_PROVIDERS,
+  },
+  {
+    name: 'sign_in_failed',
+    meaning: 'A sign-in failed for a reason that was not the person cancelling.',
+    buckets: SIGN_IN_PROVIDERS.flatMap((provider) =>
+      SIGN_IN_FAILURE_REASONS.map((reason) => signInFailureBucket(provider, reason)),
+    ),
+  },
+  {
+    name: 'account_escape_used',
+    // The broken-build escape on the account step: it advances with NO session. It should never
+    // happen on a real device, and this is how we find out whether it does.
+    meaning: 'The account step offered no way to sign in, and the person continued without a session.',
+    buckets: ['no_backend', 'no_provider'],
+  },
+  {
+    name: 'introduction_started',
+    meaning: 'The person answered the first conversation for the first time (opening it is not starting it).',
+    buckets: null,
+    oncePerInstall: true,
+  },
+  {
+    name: 'introduction_completed',
+    meaning: 'The first conversation reached its understanding check and the person confirmed it.',
+    buckets: null,
+    oncePerInstall: true,
+  },
 ]);
 
 const BY_NAME = new Map(KPI_EVENTS.map((e) => [e.name, e]));

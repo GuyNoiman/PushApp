@@ -8,7 +8,8 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { AppCore, type Snapshot } from '@/core/AppCore';
-import { wireKpiGateway } from '@/core/kpi/wireKpi';
+import { appKpi } from '@/core/kpi/appKpi';
+import { whenKpiSessionReady, wireKpiGateway } from '@/core/kpi/wireKpi';
 
 interface AppContextValue {
   core: AppCore;
@@ -53,10 +54,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // read its own storage yet. A failure disables measurement and nothing
       // else — there is no state where the app works worse because a metric
       // could not be configured.
+      //
+      // The core and the first-run screens record on ONE gateway, `appKpi`. It holds what they record
+      // until the device has a session, because `kpi_events` refuses an insert from a device without
+      // one and a fresh install's first screen is shown before its anonymous sign-in returns.
       void wireKpiGateway().then((gateway) => {
-        if (!mounted || !gateway) return;
-        core.setKpiGateway(gateway);
+        if (!mounted) return;
+        if (!gateway) {
+          appKpi.attach(null);
+          return;
+        }
+        core.setKpiGateway(appKpi);
         core.noteFirstOpen();
+        void whenKpiSessionReady().then(() => appKpi.attach(gateway));
       });
 
       // Run the authoritative day/week rollover whenever the app returns to the

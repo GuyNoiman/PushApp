@@ -6,7 +6,7 @@ every day, before the day's release. Opened 2026-09-16 because the founder said 
 > כבר מאוד קשה לי לעקוב אחרי אילו פיצרים באמת עובדים ואילו פערים עדיין קיימים.
 
 **Last updated:** 2026-09-16, end of day — after **update 11** and the console redeploy.
-**Code state:** `tsc` clean · 3189 tests / 304 suites green · published as **update 11** to both
+**Code state:** `tsc` clean · 3302 tests / 315 suites green · published as **update 12** to both
 channels (9 and 10 were never published — both failed at export, see Traps) · branch
 `feat/buddy-3d-and-reminders`, pushed · console redeployed.
 
@@ -85,7 +85,7 @@ broken AND wrong about what is fixed.
 |---|---|---|
 | The introduction (Portrait conversation) | **WORKS ON PAPER** | Shipped today. Strong tests: proves it never touches a DomainExpert, never enters diagnosis, builds no Journey. **No real Gemini call through the real proxy on a real phone has ever produced a multi-turn conversation in this shape.** |
 | The understanding check + rebuild-on-correction | **WORKS ON PAPER** | Tested as behaviour, including that "I want to clarify" genuinely re-reads rather than acknowledges. |
-| Journey-building conversation | **PARTIAL** | Stage 1 committed 2026-09-16, ships in the next release: opens by quoting the Portrait's want and does not re-ask the four questions it answers. Still re-routes an explorer through job-search diagnosis (Stage 2). |
+| Journey-building conversation | **PARTIAL** | Stage 1 shipped in update 12: opens by quoting the Portrait's want and does not re-ask the four questions it answers. Still re-routes an explorer through job-search diagnosis (Stage 2). |
 | Career routing to authored Journeys | **PARTIAL** | Only the job-search diagnosis tree runs. 12 of 27 career Journeys (the "find a direction", "two options", "fit test" and "return after rejection" families) are unreachable, so someone who wants out of their field but does not know what next gets the generic arc. The partner already authored the missing routing rule and its copy. Plan Stage 2. |
 | Offline refusal | **WORKS ON PAPER** | A session-less coach says so rather than inventing a Journey from raw text. Pinned by a test written after that regression bit us once. |
 | Cost measured server-side | **WORKS ON PAPER, UNDEPLOYED** | Migration 0019 written and unapplied; console card undeployed. **We still cannot answer "what does a conversation cost".** |
@@ -116,8 +116,8 @@ broken AND wrong about what is fixed.
 | Feature | Verdict | Detail |
 |---|---|---|
 | Google sign-in on Android | **FIX APPLIED, UNCONFIRMED** | `DEVELOPER_ERROR` on the partner's Android (2026-09-16): no Android OAuth client existed for `com.guynoiman.pushapp` + the EAS keystore SHA-1 in Google Cloud project 872942140221. The founder created it the same day (configuration only). Confirmed when the partner signs in and S2 passes, or when `sign_in_succeeded / google` appears in the console. **When the app moves to Google Play, Play App Signing's SHA-1 must be added the same way.** |
-| Sign-in error shown to the person | **FIXED, NEXT RELEASE** | A human sentence with Try again replaces the raw library text on both sign-in screens; DEVELOPER_ERROR is detected by status code and sent to Sentry by name. |
-| Language direction on first run | **FIXED, NEXT RELEASE** | Causes: Android reports Hebrew as `iw` (unrecognised), and `_layout.tsx` re-allowed RTL at every launch, so English stayed mirrored even after a restart. Both fixed; the first-run language step restarts without a dialog and resumes on welcome. Needs a device check on a Hebrew Android phone. |
+| Sign-in error shown to the person | **SHIPPED, update 12** | A human sentence with Try again replaces the raw library text on both sign-in screens; DEVELOPER_ERROR is detected by status code and sent to Sentry by name. |
+| Language direction on first run | **SHIPPED, update 12** | Causes: Android reports Hebrew as `iw` (unrecognised), and `_layout.tsx` re-allowed RTL at every launch, so English stayed mirrored even after a restart. Both fixed; the first-run language step restarts without a dialog and resumes on welcome. Needs a device check on a Hebrew Android phone. |
 | No way past a failing provider | **OPEN QUESTION** | D104 makes the account mandatory, and the only escape is for builds where no provider exists at all. A provider that exists but fails (a config error, an outage) leaves the person with no way forward. Founder to decide whether a failure should ever allow continuing. |
 | Sign-in (Apple, Google) | **UNKNOWN** | One real backend error was hit and fixed on 2026-09-07 — the only evidence anybody has ever attempted it. **No record of a successful end-to-end sign-in with either provider.** Needs the founder's own Apple ID. || Sign-in (Apple, Google) | **UNKNOWN** | One real backend error was hit and fixed on 2026-09-07 — the only evidence anybody has ever attempted it. **No record of a successful end-to-end sign-in with either provider.** Needs the founder's own Apple ID. |
 | Local reminders firing | **WORKS ON PAPER** | Scheduler tested. **No evidence a notification has ever fired and been seen on a phone** — the classic thing that passes unit tests and dies on OS permissions. |

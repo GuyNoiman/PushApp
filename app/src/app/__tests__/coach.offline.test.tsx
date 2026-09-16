@@ -59,7 +59,7 @@ jest.mock('@/components/coach/useLiveCoach', () => ({
 }));
 
 jest.mock('@/state/AppProvider', () => ({
-  useApp: () => ({ core: { getOnboardingCoachSummary: () => null }, snapshot: { journeys: [] } }),
+  useApp: () => ({ core: { getOnboardingCoachSummary: () => null, getPortraitForPlanning: () => undefined }, snapshot: { journeys: [] } }),
 }));
 
 const mockEnsureSession = jest.fn(async () => {});

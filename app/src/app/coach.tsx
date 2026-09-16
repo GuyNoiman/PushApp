@@ -278,6 +278,10 @@ function LiveCoachScreen() {
     // WHICH CONVERSATION THIS IS (D105). The first run is an INTRODUCTION — it meets the person and
     // builds no Journey. The Coach tab is unchanged.
     mode: firstRun ? 'introduction' : 'planning',
+    // THE SECOND CONVERSATION CONTINUES FROM THE FIRST (Planning_From_Portrait_Plan, Stage 1). Only on
+    // the Coach tab: the first run is the conversation that builds the Portrait. The core returns
+    // nothing once a Journey has been built from it, unless what they want has changed since.
+    portrait: firstRun ? null : core.getPortraitForPlanning(),
   });
   const { t } = useAddressedTranslation('coach');
   const { t: tCommon } = useTranslation('common');
@@ -492,6 +496,9 @@ function LiveCoachScreen() {
     // The conversation genuinely concluded, so its persisted budget is released and the next one
     // starts fresh. Only a real Journey counts — leaving and coming back does not refill it.
     coach.journeyCreated();
+    // The handoff is spent: the next planning conversation opens with its ordinary line rather than
+    // quoting the same want back again. Only after a real Journey, like the budget release above.
+    if (coach.resumed) core.markPortraitHandoffUsed(Date.now());
     // A real Journey is the durable completion boundary. The reminder that follows is optional;
     // closing there must open a populated Home rather than restart and risk a duplicate Journey.
     // The intro Journey rides along with completion (founder, 2026-09-03) — it replaced the profile

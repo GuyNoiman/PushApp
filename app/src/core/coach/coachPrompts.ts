@@ -273,12 +273,31 @@ export function buildLocaleDirective(locale?: string): string {
 /** Prefix marking the hidden understanding directive turn. */
 export const TRIAGE_DIRECTIVE_PREFIX = '[triage]';
 
-/** Build the hidden directive that asks the understanding step to distil the user's free text. */
-export function buildTriageDirective(goalText: string): string {
-  return (
+/**
+ * Build the hidden directive that asks the understanding step to distil the user's free text.
+ *
+ * `seed` is what the FIRST conversation understood (see {@link ./portraitHandoff seedLines}), present
+ * only when the second conversation opened from the Portrait. Its only job is to let "yes, still
+ * that" be read as the goal it refers to. With no seed, or an empty one, the directive is exactly
+ * the string it has always been, byte for byte: a planning conversation with no Portrait is locked
+ * to what it sent before this parameter existed (`__tests__/planningRequestLog.test.ts`).
+ */
+export function buildTriageDirective(goalText: string, seed?: readonly string[]): string {
+  const directive =
     `${TRIAGE_DIRECTIVE_PREFIX} The user wants to work on: "${goalText}". ` +
-    'Break it into its distinct goals and classify each per your instructions.'
-  );
+    'Break it into its distinct goals and classify each per your instructions.';
+  if (!seed || seed.length === 0) return directive;
+  return [
+    directive,
+    '',
+    'CONTEXT FROM AN EARLIER CONVERSATION WITH THIS PERSON. They were just reminded of it and asked',
+    'whether it is still what they want to work on:',
+    ...seed,
+    'If their message confirms it or refers back to it ("yes", "still that", "the same thing"), return',
+    'that goal, titled in their words from the context above. If they describe something different,',
+    'classify ONLY what they describe now and ignore this context entirely.',
+    'Report careerSignals ONLY from what they wrote in this message, never from this context.',
+  ].join('\n');
 }
 
 /**

@@ -120,6 +120,15 @@ import { horizonQuestion } from './horizonQuestion';
 import { deriveConstraints, journeyShapeFor } from './goalSpecToJourney';
 import { noteOf, type TechnicalNote } from './technicalMode';
 import { variantInterviewQuestions } from './variantQuestions';
+import {
+  SEEDED_DOMAINS,
+  baselineDefault,
+  coveredIntents,
+  firstConversationFacts,
+  resumeOf,
+  seedLines,
+  type PortraitResume,
+} from './portraitHandoff';
 import { familyInterviewQuestions } from './familyQuestions';
 import {
   goalFamily,
@@ -521,6 +530,19 @@ export interface CoachOrchestratorOptions {
    * old behaviour and the right default for somebody who has not chosen.
    */
   styleId?: CommunicationStyleId;
+  /**
+   * WHAT THE FIRST CONVERSATION UNDERSTOOD (Stage 1 of
+   * `04_Product/Planning_From_Portrait_Plan_2026-09-16.md`), handed to the SECOND one so it does not
+   * restart discovery from zero.
+   *
+   * `planning` only. The introduction is the conversation that BUILDS the Portrait, and it is
+   * ignored there. Absent, or too thin to open from ({@link ./portraitHandoff resumeOf}), and the
+   * conversation is exactly today's, request for request.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. Its lines reach the goal-reading and composing calls that
+   * already carry what the person says; never a log, an event or a technical note.
+   */
+  portrait?: Portrait | null;
 }
 
 // ── The orchestrator ────────────────────────────────────────────────────────────
@@ -611,6 +633,22 @@ export class CoachOrchestrator {
    */
   private portraitBeforeRebuild?: Portrait;
   private readonly answers: InterviewAnswers = {};
+
+  // ── The handoff from the first conversation (planning only) ──────────────────────────────────
+  /**
+   * The Portrait this conversation opened from, and what it opened with. Undefined in
+   * `introduction` mode, and whenever the Portrait was absent or too thin to open from — which is
+   * what keeps those conversations byte-identical to what they were.
+   */
+  private readonly handoff?: { portrait: Portrait; resume: PortraitResume };
+  /**
+   * True once the goal read in THIS conversation is the domain the Portrait is about. Nothing from
+   * the Portrait reaches a request, the question queue or the spec until it is: somebody who says
+   * "actually I want to get fit" gets today's conversation for that, with the Portrait untouched.
+   */
+  private continuing = false;
+  /** The interview intents the Portrait already answers, while {@link continuing}. Empty otherwise. */
+  private covered: ReadonlySet<QuestionIntent> = new Set<QuestionIntent>();
   /** How many turns have handed something back, so the character's budget can be respected. */
   private reflections = 0;
   /**
@@ -652,6 +690,13 @@ export class CoachOrchestrator {
     this.profile = options.profile;
     this.firstName = options.firstName ?? null;
     this.styleFragment = getStyle(options.styleId ?? DEFAULT_STYLE_ID).systemPromptFragment ?? '';
+    // A BELT, like the ones in {@link beginDiagnosis} and {@link beginExpertQuestions}. The
+    // introduction is the conversation that BUILDS the Portrait; handing it one to continue from
+    // would have it skip the very questions it exists to ask. So a Portrait passed to it is ignored.
+    const resume = this.mode === 'planning' ? resumeOf(options.portrait) : undefined;
+    if (resume && options.portrait) {
+      this.handoff = { portrait: clonePortrait(options.portrait), resume };
+    }
   }
 
   /** The opening greeting, which asks the user for their goal in free text. No model call. */
@@ -663,7 +708,7 @@ export class CoachOrchestrator {
     // call — this is the app's first sentence and it must be there with the screen.
     this.phase = this.mode === 'introduction' ? 'name' : 'goal';
     const coachMessage = this.applyGuard(
-      this.mode === 'introduction' ? cc('introduction.namePrompt') : this.playbook.opening,
+      this.mode === 'introduction' ? cc('introduction.namePrompt') : this.planningOpening(),
     );
     this.history.push({ role: 'model', content: coachMessage });
     return {
@@ -671,6 +716,29 @@ export class CoachOrchestrator {
       choices: this.playbook.choices.map((choice) => ({ ...choice })),
       state: this.snapshot(),
     };
+  }
+
+  /**
+   * THE SECOND CONVERSATION'S FIRST LINE. No model call, so it is there with the screen.
+   *
+   * Something they SAID is quoted back to them. Something we only INFERRED is remembered in the
+   * coach's own voice, as its reading, and never put in quotation marks as if they had said it. With
+   * no Portrait to open from, it is exactly today's playbook line.
+   */
+  private planningOpening(): string {
+    const resume = this.handoff?.resume;
+    if (!resume) return this.playbook.opening;
+    return ccWith(resume.stated ? 'planning.resume.openingStated' : 'planning.resume.openingUnquoted', {
+      want: resume.want,
+    });
+  }
+
+  /**
+   * Whether this conversation opened from the Portrait (read by the surface, which marks the handoff
+   * used once a Journey is built from it, so the next planning conversation opens fresh).
+   */
+  isResumed(): boolean {
+    return this.handoff !== undefined;
   }
 
   /**
@@ -706,6 +774,15 @@ export class CoachOrchestrator {
     if (this.technicalMode) this.notes.push(noteOf(title, fields));
   }
 
+  /**
+   * A goal title as a technical note may show it. Unchanged in a conversation with no Portrait. In one
+   * that opened from the Portrait a title can be the Portrait's own words (the reading is told to
+   * title a "yes, still that" from it), and a note may name fields, never carry their values.
+   */
+  private noteTitle(title: string): string {
+    return this.handoff ? '(not shown: it may carry words from the Portrait)' : title;
+  }
+
   /** Hand the turn its notes and clear the buffer, so nothing is ever reported twice. */
   private takeNotes(): TechnicalNote[] | undefined {
     if (this.notes.length === 0) return undefined;
@@ -739,8 +816,23 @@ export class CoachOrchestrator {
 
     this.note('Understanding the opening message', {
       'goals detected': goals.length,
-      'each one': goals.map((g) => `${g.title} (${g.domain}, ${g.kind})`).join(' | ') || undefined,
+      'each one': goals.map((g) => `${this.noteTitle(g.title)} (${g.domain}, ${g.kind})`).join(' | ') || undefined,
     });
+
+    if (goals.length === 0 && this.handoff) {
+      // "Yes, still that" is not a goal on its own, and the reading may say so. But this person was
+      // just asked whether the goal we remembered is still the one, so the closed process-type card
+      // would be the coach forgetting the question it asked. The remembered goal is the answer.
+      this.note('No goal read from the reply; continuing with the one from the first conversation', {
+        'read from': 'the Portrait (primaryWant, domain)',
+      });
+      return this.voiced(
+        this.activateGoal(
+          { title: this.handoff.resume.want, kind: 'process', domain: this.handoff.resume.domain as DomainId },
+          [],
+        ),
+      );
+    }
 
     if (goals.length === 0) {
       // Understanding produced nothing usable — keep the demoted process-type question as a fallback
@@ -898,7 +990,7 @@ export class CoachOrchestrator {
     }
 
     this.note('Focus chosen in their own words', {
-      chose: options[index],
+      chose: this.noteTitle(options[index]),
       'read from': 'what they typed, mapped back onto the goals we offered',
     });
     const chosen = this.understoodGoals[index];
@@ -1003,7 +1095,16 @@ export class CoachOrchestrator {
         system,
         json: true,
         temperature: 0,
-        messages: [...this.history, { role: 'user', content: buildTriageDirective(goalText) }],
+        messages: [
+          ...this.history,
+          {
+            role: 'user',
+            content: buildTriageDirective(
+              goalText,
+              this.handoff ? seedLines(this.handoff.portrait) : undefined,
+            ),
+          },
+        ],
       });
     } catch (cause) {
       throw new CoachUnavailableError(cause);
@@ -1021,11 +1122,11 @@ export class CoachOrchestrator {
       .map(([k, v]) => `${k}=${String(v)}`)
       .join(', ');
     this.note('Goal activated', {
-      title: goal.title,
+      title: this.noteTitle(goal.title),
       domain: goal.domain,
       'kind (shapes the plan)': goal.kind,
       'already known from their message': known || 'nothing — everything will be asked',
-      'other goals parked': deferred.length > 0 ? deferred.map((g) => g.title).join(' | ') : undefined,
+      'other goals parked': deferred.length > 0 ? deferred.map((g) => this.noteTitle(g.title)).join(' | ') : undefined,
     });
     this.spec.title = goal.title;
     this.spec.domain = goal.domain;
@@ -1033,6 +1134,7 @@ export class CoachOrchestrator {
     this.knownSignals = goal.signals ?? {};
     this.spec.processType = goal.kind; // INFERRED from understanding: 'recurring' | 'process'
     this.spec.isHabit = goal.kind === 'recurring';
+    this.continueFromPortrait(goal.domain);
     if (deferred.length > 0) {
       this.spec.deferredGoals = deferred.map(
         (g): DeferredGoal => ({ title: g.title, processType: g.kind, domain: g.domain }),
@@ -1062,6 +1164,31 @@ export class CoachOrchestrator {
     // person in front of it.
     if (this.mode === 'introduction') return this.beginPortrait();
     return this.beginDiagnosis() ?? this.beginExpertQuestions();
+  }
+
+  /**
+   * Decide whether the goal read NOW is the one the Portrait is about, and if so which interview
+   * intents it already answers. Deterministic, so it holds with every model call failing.
+   *
+   * Only this conversation's reading switches it on. A career Portrait with a fitness goal read now
+   * is not a career conversation, and nothing from the Portrait may reach it.
+   */
+  private continueFromPortrait(domain: DomainId): void {
+    const handoff = this.handoff;
+    this.continuing =
+      handoff !== undefined &&
+      handoff.resume.domain === domain &&
+      (SEEDED_DOMAINS as readonly string[]).includes(domain);
+    this.covered = this.continuing && handoff ? coveredIntents(handoff.portrait) : new Set<QuestionIntent>();
+    if (!handoff) return;
+    // NAMES ONLY. A technical note is read on a device by a tester; nothing the person said reaches it.
+    this.note(this.continuing ? 'Continuing from the first conversation' : 'Not continuing from the first conversation', {
+      'goal domain now': domain,
+      'Portrait domain': handoff.resume.domain,
+      'already answered (never asked)': this.continuing ? [...this.covered].join(', ') || 'nothing' : undefined,
+      'always asked': this.continuing ? 'time, horizon, scheduling, milestones, Journey version' : undefined,
+      why: this.continuing ? undefined : 'the goal read now is a different domain; the Portrait is left untouched',
+    });
   }
 
   /**
@@ -1300,6 +1427,8 @@ export class CoachOrchestrator {
     this.pending = undefined;
     this.pendingGap = undefined;
     this.portraitQuestion = undefined;
+    this.continuing = false;
+    this.covered = new Set<QuestionIntent>();
     for (const key of Object.keys(this.answers)) delete this.answers[key];
     this.spec.title = '';
     this.spec.domain = 'general';
@@ -1768,6 +1897,18 @@ export class CoachOrchestrator {
    * chosen from what is left rather than from where a pointer happened to be.
    */
   private outstanding(): DomainQuestion[] {
+    return this.unanswered().filter((q) => !this.covered.has(q.intent));
+  }
+
+  /**
+   * Everything still UNANSWERED, including what the first conversation already covers — the set the
+   * conversation READER is offered.
+   *
+   * The split from {@link outstanding} is the whole handoff in two lines: a covered question is never
+   * ASKED, but it is still READ for, so what the person says in this conversation overwrites what
+   * the Portrait implied. With nothing covered the two are the same list.
+   */
+  private unanswered(): DomainQuestion[] {
     return this.questions.filter((q) => this.answers[q.id] === undefined);
   }
 
@@ -1811,7 +1952,7 @@ export class CoachOrchestrator {
     // The introduction has no slate to re-read; it has a Portrait, and its own reader.
     if (this.phase === 'portrait') return this.readPortraitTurn(turn);
     if (this.phase !== 'questions') return turn;
-    const before = this.outstanding();
+    const before = this.unanswered();
     if (before.length === 0) return turn;
 
     const rebuilding = this.answersBeforeRebuild !== undefined;
@@ -2038,6 +2179,7 @@ export class CoachOrchestrator {
   private finish(): CoachTurn {
     this.phase = 'done';
     if (this.mode === 'introduction') return this.landIntroduction();
+    this.defaultBaselineFromPortrait();
     this.spec.answers = { ...this.answers };
 
     let feasibility: FeasibilityAssessment | undefined;
@@ -2081,6 +2223,26 @@ export class CoachOrchestrator {
       goalSpec: this.snapshotSpec(),
       activeExpert: this.activeExpert,
     };
+  }
+
+  /**
+   * The level the Portrait implies, written into the baseline answer ONLY when this conversation
+   * left it empty. Anything the person said about where they are now was read into it already and
+   * wins; this fills the one gap that covering the question left behind, because the plan's level
+   * is built from it.
+   */
+  private defaultBaselineFromPortrait(): void {
+    if (!this.continuing || !this.handoff || !this.covered.has('baseline')) return;
+    const question = this.questions.find((q) => q.intent === 'baseline');
+    if (!question || this.answers[question.id] !== undefined) return;
+    const value = baselineDefault(this.handoff.portrait, question.options);
+    if (value === undefined) return;
+    this.answers[question.id] = value;
+    this.note('Baseline taken from the first conversation', {
+      question: question.id,
+      'read from': 'the Portrait (stage)',
+      why: 'this conversation did not say where they are now, and the plan level is built from it',
+    });
   }
 
   /**
@@ -2170,7 +2332,10 @@ export class CoachOrchestrator {
     if (this.journeyChoiceQuestion) asked.set(this.journeyChoiceQuestion.id, this.journeyChoiceQuestion.prompt);
     if (this.focusQuestion) asked.set(this.focusQuestion.id, this.focusQuestion.prompt);
 
-    const facts: KnownFact[] = [];
+    // WHAT THE FIRST CONVERSATION ALREADY HEARD comes first, labelled as such, and only once the goal
+    // read now is the one it is about. A composer that can see it cannot ask for it again.
+    const facts: KnownFact[] =
+      this.continuing && this.handoff ? firstConversationFacts(this.handoff.portrait) : [];
     for (const [id, answer] of Object.entries(this.answers)) {
       if (answer === undefined) continue;
       const text = Array.isArray(answer) ? answer.join(', ') : String(answer);

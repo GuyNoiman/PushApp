@@ -113,6 +113,9 @@ function setApp(capReached = false) {
     // is skipped when onboarding already answered it (D62). This screen's tests are about WHEN the
     // Journey starts, so the honest double is "we know nothing about this user".
     getOnboardingCoachSummary: jest.fn(() => null),
+    // Nothing to continue from: these tests are about the start, not the Portrait handoff.
+    getPortraitForPlanning: jest.fn(() => undefined),
+    markPortraitHandoffUsed: jest.fn(),
   };
   mockApp.current = {
     core,

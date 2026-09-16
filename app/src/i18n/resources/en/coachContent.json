@@ -405,5 +405,11 @@
     "constraints": {
       "prompt": "Is there anything that makes this harder than it sounds?"
     }
+  },
+  "planning": {
+    "resume": {
+      "openingStated": "Last time you told me: “{{want}}”. Let’s start there. Is that still what you want to work on, or has something changed?",
+      "openingUnquoted": "From our last conversation, here’s what I took away about what you want: {{want}}. Let’s start there. Did I get that right, or has something changed?"
+    }
   }
 }

@@ -26,7 +26,10 @@ jest.mock('expo-notifications', () => ({
 
 import { AppCore } from '../AppCore';
 import { backupCarriesRawText, redactForBackup } from '../backup/redactForBackup';
+import { CoachOrchestrator } from '../coach/CoachOrchestrator';
+import { INTERVIEW_PLAYBOOK } from '../coach/interviewPlaybook';
 import { mergePortrait } from '../coach/portrait';
+import { MockLlmClient } from '../llm/LlmClient';
 import type { Portrait } from '../coach/portrait';
 import type { AppState } from '../types/domain';
 import type { Repository } from '../persistence/Repository';
@@ -165,5 +168,77 @@ describe('it never leaves the phone', () => {
     expect(backupCarriesRawText(state)).toBe(true);
     expect(backupCarriesRawText(backup)).toBe(false);
     expect(JSON.stringify(backup)).not.toContain('leave marketing');
+  });
+});
+
+/**
+ * THE HANDOFF TO THE SECOND CONVERSATION HAPPENS ONCE (Planning_From_Portrait_Plan, Stage 1).
+ *
+ * After a Journey is built from a planning conversation that opened from the Portrait, the next one
+ * opens with its ordinary line. Quoting the same want back every time somebody plans something is
+ * the coach not listening. It reopens only when what they want has changed since.
+ */
+describe('the handoff to the second conversation', () => {
+  it('offers the Portrait until a Journey has been built from it', async () => {
+    const { core } = await freshCore();
+    core.setPortrait(aPortrait());
+
+    expect(core.getPortraitForPlanning()?.primaryWant?.value).toBe('leave marketing for something else');
+
+    core.markPortraitHandoffUsed(1_700_000_000_001);
+
+    expect(core.getPortraitForPlanning()).toBeUndefined();
+    // The Portrait itself is untouched; only the handoff is spent.
+    expect(core.getPortrait()?.primaryWant?.value).toBe('leave marketing for something else');
+  });
+
+  it('opens the next planning conversation with today’s line once the marker is set', async () => {
+    const { core } = await freshCore();
+    core.setPortrait(
+      mergePortrait(
+        aPortrait(),
+        [{ field: 'domain', value: 'career', confidence: 'high', source: 'inferred' }],
+        1_700_000_000_000,
+      ).portrait,
+    );
+
+    const first = new CoachOrchestrator({ llm: new MockLlmClient(), portrait: core.getPortraitForPlanning() });
+    expect(first.start().coachMessage).not.toBe(INTERVIEW_PLAYBOOK.opening);
+
+    core.markPortraitHandoffUsed(1_700_000_000_001);
+
+    const next = new CoachOrchestrator({ llm: new MockLlmClient(), portrait: core.getPortraitForPlanning() });
+    expect(next.start().coachMessage).toBe(INTERVIEW_PLAYBOOK.opening);
+    expect(next.isResumed()).toBe(false);
+  });
+
+  it('reopens when what they want has changed since', async () => {
+    const { core } = await freshCore();
+    core.setPortrait(aPortrait());
+    core.markPortraitHandoffUsed(1_700_000_000_001);
+
+    core.setPortrait(
+      mergePortrait(
+        {},
+        [{ field: 'primaryWant', value: 'lead a small team', confidence: 'high', source: 'stated' }],
+        1_700_000_000_002,
+      ).portrait,
+    );
+
+    expect(core.getPortraitForPlanning()?.primaryWant?.value).toBe('lead a small team');
+  });
+
+  it('is in the export and gone after a wipe, like the Portrait', async () => {
+    const { core } = await freshCore();
+    core.setPortrait(aPortrait());
+    core.markPortraitHandoffUsed(1_700_000_000_001);
+
+    const exported = JSON.parse(core.exportStateJson({ appVersion: '1', exportedAt: 0 })) as { state: AppState };
+    expect(exported.state.portraitHandoffUsedAt).toBe(1_700_000_000_001);
+
+    await core.resetToFirstRun();
+
+    const after = JSON.parse(core.exportStateJson({ appVersion: '1', exportedAt: 0 })) as { state: AppState };
+    expect(after.state.portraitHandoffUsedAt).toBeUndefined();
   });
 });

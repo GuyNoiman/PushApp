@@ -143,6 +143,13 @@ export interface UseLiveCoach {
    * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. It is never rendered, never logged and never sent.
    */
   portrait: Portrait | null;
+  /**
+   * True when this planning conversation opened from the Portrait the first conversation built
+   * (Stage 1 of `04_Product/Planning_From_Portrait_Plan_2026-09-16.md`). The screen reads it at the
+   * build, to mark the handoff used so the next planning conversation opens with its ordinary line.
+   * Always false in `introduction` mode.
+   */
+  resumed: boolean;
   /** Send the opening free-text — the only LLM call (triage). */
   sendOpening: (text: string) => void;
   /** Pick a single closed option by its id (index). */
@@ -193,6 +200,15 @@ export interface UseLiveCoachOptions {
    * asks it rather than being told twice.
    */
   mode?: CoachMode;
+  /**
+   * What the first conversation understood, for a PLANNING conversation to continue from instead of
+   * asking again. Supplied by the screen, which owns the core, for the same reason as `profile`.
+   * Ignored in `introduction` mode (the orchestrator guards it too) and when an orchestrator is
+   * injected. Absent ⇒ today's conversation.
+   *
+   * SECURITY-PRIVACY G1 — ON-DEVICE ONLY. Handed to the orchestrator and nowhere else.
+   */
+  portrait?: Portrait | null;
   /** Where this conversation's spend is persisted. A test seam; production uses AsyncStorage. */
   budgetStore?: ConversationBudgetStore;
 }
@@ -278,11 +294,15 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
         // WHICH CONVERSATION THIS IS (D105). The first run is an INTRODUCTION: it meets the person
         // and builds nothing. Absent ⇒ planning, so the Coach tab is unchanged.
         mode: options?.mode ?? 'planning',
+        // WHAT THE FIRST CONVERSATION UNDERSTOOD, so the second one does not start from zero. Read once
+        // at construction like the profile. Planning only: the introduction is what builds it.
+        portrait: (options?.mode ?? 'planning') === 'planning' ? options?.portrait ?? null : null,
       });
   }
   // Asked of the orchestrator rather than of the options, so an injected instance (every test, and
   // the dev harness) and the hook can never disagree about which conversation this is.
   const isIntroduction = orchestratorRef.current.isIntroduction();
+  const resumed = orchestratorRef.current.isResumed();
   conversationKeyRef.current = isIntroduction
     ? INTRODUCTION_CONVERSATION_KEY
     : PLANNING_CONVERSATION_KEY;
@@ -556,6 +576,7 @@ export function useLiveCoach(options?: UseLiveCoachOptions): UseLiveCoach {
     introductionComplete,
     personalName,
     portrait,
+    resumed,
     journeyCreated,
     items,
     question: questionView,

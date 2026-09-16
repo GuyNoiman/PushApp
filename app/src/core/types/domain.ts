@@ -1236,6 +1236,18 @@ export interface AppState {
    */
   portrait?: Portrait;
   /**
+   * When the second conversation last opened from the Portrait AND a Journey was built from it
+   * (epoch ms). Stage 1 of `04_Product/Planning_From_Portrait_Plan_2026-09-16.md`.
+   *
+   * The handoff happens once: after it, the Coach tab opens with its ordinary line, because quoting
+   * the same want back at somebody every time they plan something is the coach not listening. It
+   * reopens only when the Portrait's `primaryWant` is newer than this.
+   *
+   * A timestamp and nothing else. Here rather than in a store of its own so the export and the
+   * account wipe cover it without a line of code, exactly like {@link portrait}.
+   */
+  portraitHandoffUsedAt?: number;
+  /**
    * The adaptive coach's ON-DEVICE raw behaviour log (adaptive coach, S1.16). Optional so
    * an older snapshot loads without it (backfilled to `[]` in AppCore.migrateState). Only
    * populated when the `adaptiveCoach` flag is on; the BehaviorModelEngine hydrates from it

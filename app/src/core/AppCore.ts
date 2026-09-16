@@ -1879,6 +1879,31 @@ export class AppCore {
     this.notify();
   }
 
+  /**
+   * The Portrait for the SECOND conversation to continue from, or undefined when it should open as it
+   * always has (Stage 1 of `04_Product/Planning_From_Portrait_Plan_2026-09-16.md`).
+   *
+   * ONCE ONLY. After a Journey has been built from a conversation that opened from the Portrait
+   * ({@link markPortraitHandoffUsed}), it is not offered again, unless what they want has changed
+   * since: a newer `primaryWant` is a new thing to continue from, and the same one is not.
+   *
+   * A COPY, for the same reason as {@link getPortrait}.
+   */
+  getPortraitForPlanning(): Portrait | undefined {
+    const portrait = this.state.portrait;
+    if (!portrait) return undefined;
+    const usedAt = this.state.portraitHandoffUsedAt;
+    if (usedAt !== undefined && !((portrait.primaryWant?.updatedAt ?? 0) > usedAt)) return undefined;
+    return clonePortrait(portrait);
+  }
+
+  /** A Journey was built from a conversation that opened from the Portrait. See {@link getPortraitForPlanning}. */
+  markPortraitHandoffUsed(now: number): void {
+    this.state.portraitHandoffUsedAt = now;
+    this.persist();
+    this.notify();
+  }
+
   /** Forget what we understood. The person's own words are theirs to withdraw. */
   clearPortrait(): void {
     if (!this.state.portrait) return;

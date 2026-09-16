@@ -1,7 +1,8 @@
 # Current_Context.md
 
 Status: Living handoff — read this right after `AI_Start_Here.md`, then only the docs it points to.
-Last updated: **2026-09-14** — start at the **"⛳ START HERE — 2026-09-14"** block below.
+Last updated: **2026-09-16** — start at the **"⛳ START HERE — 2026-09-16"** block below, then `04_Product/Gap_Register.md`.
+Prior pointer: **2026-09-14** — the block under it, kept as accurate history.
 Prior pointer: **2026-09-01** — the **"⛳ START HERE — 2026-09-01"** block, which supersedes
 (but does not replace) every block under it. The 2026-08-27 and 2026-08-26 blocks below are accurate
 history of those days.
@@ -36,6 +37,66 @@ engineering snapshots below (2026-07-20 and earlier) are untouched.
 
 > **What is left lives in `04_Product/Backlog.md`**, the single list, from 2026-08-29. This file
 > stays the handoff: where to start today, and what happened last session.
+
+# ⛳ START HERE — 2026-09-16 (onboarding rebuilt, Portrait, daily releases)
+
+**Read `04_Product/Gap_Register.md` first.** It is now the single answer to what works, updated before
+every release, and it replaces `04_Product/Backlog.md` (superseded, kept as history). This block is the
+handoff; the register is the truth.
+
+**State:** branch `feat/buddy-3d-and-reminders`, pushed, tree clean. `tsc` clean, jest 3189 / 304.
+Published **update 11** to both channels (9 and 10 never shipped — both failed at export). Console
+redeployed. Landing site redeployed (Terms of Use now live).
+
+## How we work now (founder, 2026-09-16)
+
+- **A release at the end of every day**, however small.
+- **Three sentences a day:** what went in · what was verified on a device · what still does not work.
+- **No single gaps raised mid-day** unless one blocks the founder; everything lands in the Gap Register.
+- **Device testing** runs from a shared checklist page both testers mark:
+  https://claude.ai/artifact/9ULGZ4KXoQHntravjZTfJT — read its saved results before planning a day.
+- Target: a small, warned pilot within a week. Not a store submission.
+
+## What shipped 09-14 → 09-16, in one line each
+
+The seven approved onboarding screens plus a language step (D104–D106) · the introduction conversation
+builds a **Portrait** and nothing else, never touching an expert or the Journey catalogue (D108–D111) ·
+the understanding check, with a correction that rebuilds · Hebrew answer cards for three experts · a
+persisted per-conversation cost budget · server-side token accounting, written but NOT applied
+(migration 0019) · Step deep links, and linked Steps that close themselves when the thing is done ·
+the intro Journey's four Steps · Active Hours default 09:00–21:00 for new accounts · first-run funnel and
+sign-in measurement in the console · Terms of Use written and deployed.
+
+## Decisions to know before touching anything
+
+D104 account before the conversation, mandatory · D105/D108 onboarding = register + Portrait only;
+Journey-building is the second conversation · D106 the English design exports were mirrored by mistake
+· D107 the product name from the designs is dropped (a replacement is open; name kept as one constant)
+· D109 the introduction is catalogue-blind · D110 **Personal Details** vs **Portrait** are protected terms
+· D111 the Portrait has no screen but is exported and wiped with the account · one expert (career)
+perfect first, then the others.
+
+## In flight when this was written
+
+- Planning the second conversation reading the Portrait, so Step 4 does not re-ask (career only).
+- security-privacy review of analytics consent: the app sends KPI events with no consent asked, while
+  the console README says it sends none. Must be settled before real users.
+- Push notifications for cheers: planned (`04_Product/Push_Notifications_Plan_2026-09-16.md`), NOT
+  started — needs new native builds, founder-created Firebase/APNs credentials and a Privacy Policy
+  change. Recommended after the pilot.
+
+## Traps from these three days
+
+- **Jest green does not mean it bundles.** A stale watchman map made `expo export` fail on a new file
+  while every test passed. `watchman watch-del` + `watch-project`, clear the Metro cache.
+- **The first run's persisted step can strand a device**: retired step names map by MEANING in
+  `resolveResumeStep`, and nobody is ever carried past the account screen.
+- **A default change must not reach installed phones silently**: `migrateState` merges scheduling prefs
+  over the PERMISSIVE default, not the new-account one.
+- `output/` and `tmp/` are git-ignored on purpose: 31 MB of design exports, every word of which is in
+  `04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`.
+
+---
 
 # ⛳ START HERE — 2026-09-14 (coach behaviour, update visibility, console)
 

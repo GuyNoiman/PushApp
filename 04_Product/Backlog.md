@@ -1,5 +1,12 @@
 # Backlog — the one list
 
+> **SUPERSEDED on 2026-09-16 by `04_Product/Gap_Register.md`.** An audit that day found this file
+> five commits behind the code and wrong in both directions — rows still open that were fixed (F-02,
+> D-03) and no record of what shipped after 09-03. The founder could no longer tell what works. The Gap
+> Register replaces it as the answer to "what works, what does not, and how we know", with one verdict
+> per feature and updated before every daily release. **This file is kept unchanged below as history;
+> do not add rows to it.**
+
 Status: **The single source for what is done and what is not.** Approved 2026-08-29.
 Last updated: **2026-09-03**.
 

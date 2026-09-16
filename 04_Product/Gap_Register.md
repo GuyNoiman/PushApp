@@ -5,9 +5,10 @@ every day, before the day's release. Opened 2026-09-16 because the founder said 
 
 > כבר מאוד קשה לי לעקוב אחרי אילו פיצרים באמת עובדים ואילו פערים עדיין קיימים.
 
-**Last updated:** 2026-09-16, after update 8 and the landing deploy that closed B1.
-**Code state:** `tsc` clean · 3095 tests / 294 suites green · published as **update 8** to both
-channels · branch `feat/buddy-3d-and-reminders`, pushed.
+**Last updated:** 2026-09-16, end of day — after **update 11** and the console redeploy.
+**Code state:** `tsc` clean · 3189 tests / 304 suites green · published as **update 11** to both
+channels (9 and 10 were never published — both failed at export, see Traps) · branch
+`feat/buddy-3d-and-reminders`, pushed · console redeployed.
 
 ---
 
@@ -57,7 +58,7 @@ broken AND wrong about what is fixed.
 | # | Gap | Verdict | Why it is first |
 |---|---|---|---|
 | ~~B1~~ | ~~The Terms link goes nowhere.~~ **FIXED 2026-09-16** — deployed and verified live (HTTP 200 at `pushapp-invite.expo.app/terms.html`). | **WORKS** | Was on the mandatory account screen under a sentence saying continuing agrees to it. The page still carries a `{{PRODUCT_NAME}}` placeholder and three blanks awaiting the founder (legal entity, contact address, governing law), and §13-14 still need a lawyer before any store submission. |
-| **B2** | **A linked Step cannot be marked done by tapping.** The tap is spent navigating, so the report sheet is unreachable; only the swipe reaches it, and the swipe is invisible on device. | **BROKEN** | 3 of the intro Journey's 3 Steps are linked. So a brand-new account's **entire** first Journey cannot be completed by any visible means. Founder has chosen the fix: the action itself closes the Step. |
+| ~~B2~~ | ~~A linked Step cannot be marked done by tapping.~~ **FIXED in update 11**: doing the thing closes the Step (profile saved, Tool opened, friends visited, a Journey built with the coach), through the same check-in a manual Done uses; the row's ⋯ still opens the report sheet. | **WORKS ON PAPER** | Device check is S7b on the test page. **Watch for:** when the last Step closes away from Home, the Journey-completion screen may open on top of that screen. |
 | **B3** | **Today's rewritten first run has never run on a phone.** Language → welcome → purpose → prepare → account → introduction → handoff → first Journey. | **WORKS ON PAPER** | Every link in the chain shipped today. This is not a code fix; it is a person with a phone, and it will find things. |
 
 ---
@@ -71,8 +72,10 @@ broken AND wrong about what is fixed.
 | The seven screens + language step | **WORKS ON PAPER** | The test is genuinely behavioural: real i18next, both languages, real buttons, real copy, pager 1..7. No device pass. |
 | Mandatory account (D104) | **PARTIAL** | A build that can sign nobody in (web, Expo Go, jest) shows an escape that advances with **no session**. Deliberate — it would otherwise trap somebody forever — but "everyone has a real account" is therefore not absolute. |
 | Terms link | **WORKS** | Deployed and verified live on 2026-09-16. Still carries the name placeholder and three blanks awaiting the founder. |
-| Per-screen analytics | **MISSING** | Only `onboarding_completed` exists. We just shipped the riskiest onboarding change to date — an account wall — with **no way to see whether it costs us signups.** |
-| Intro Journey content | **PARTIAL** | Three Steps; the approved design has four. The missing one is the friends area. |
+| Per-screen analytics | **WORKS ON PAPER** | Update 11: every step records once per install; the console's KPI tab shows the funnel with the loss between steps. Events wait until the anonymous session exists, so the first screen is not lost. |
+| Sign-in measurement | **WORKS ON PAPER** | Update 11: attempted / succeeded / cancelled / failed per provider, failure by a closed reason from the error's type. **From here, whether sign-in works is visible in the console instead of unknown.** |
+| Analytics consent | **OPEN QUESTION** | The console README says KPI data needs a separate analytics consent and the app sends none, but the app already sends events on any build with Supabase configured, with no consent asked. True before today; today added more events. **security-privacy must settle this before real users.** |
+| Intro Journey content | **WORKS ON PAPER** | Update 11: the approved four Steps, verbatim in both languages. Active Hours moved into Personal Details. The old three-Step Journey on the test phones still finishes. The Settings tab also still has its own Active Hours row (not removed; founder said where they belong, not to remove the row). |
 
 ### The coach
 
@@ -91,7 +94,7 @@ broken AND wrong about what is fixed.
 |---|---|---|
 | Journey creation wizard | **WORKS ON PAPER** | Duration correctly capped at 60 days. |
 | Step reporting, ordinary Steps | **WORKS ON PAPER** | The sheet and its postpone path are tested. |
-| Step reporting, linked Steps | **BROKEN** | B2. |
+| Step reporting, linked Steps | **WORKS ON PAPER** | B2 fixed in update 11. |
 | The five Journey types | **MISSING** | `Rhythm` has three values. Avoidance is deferred (D99); critical-compliance and hybrid have no model at all. **A Journey whose success is "don't do X" cannot be expressed.** |
 | Home's popup priority | **PARTIAL** | The pieces are tested; the "only one major popup per app-open, in the right order" behaviour across all three is not, and depends on real foreground transitions. |
 | Step deep links | **WORKS ON PAPER** | Shipped today, from Home and Journey detail. Guarded by a test that checks the real route tree. |
@@ -159,3 +162,15 @@ file, and he reads it once a day.
 - `04_Product/Onboarding_Completion_Plan_2026-09-15.md` — the sequencing this register measures.
 - `06_Decisions/Decision_Log.md` — D99 through D111.
 - `04_Product/Backlog.md` — **stale since 2026-09-03**; reconcile or retire it.
+
+---
+
+## Traps found today — so nobody falls in twice
+
+- **Jest green is not "it bundles".** Updates 9 and 10 failed at `expo export` with "Unable to resolve
+  module ./journeys/linkedStepClosing" while all 3189 tests passed: watchman's file map was stale (it had
+  been warning "Recrawled this watch" all day) and did not know a new file existed. Fix: `watchman
+  watch-del` + `watch-project` on the repo, clear the Metro cache. The publish tool still advanced its
+  counter on each failed attempt, which is why the phones jump from 8 to 11.
+- **A console change does nothing until the console is redeployed** — done today for the funnel cards.
+

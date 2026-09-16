@@ -85,7 +85,8 @@ broken AND wrong about what is fixed.
 |---|---|---|
 | The introduction (Portrait conversation) | **WORKS ON PAPER** | Shipped today. Strong tests: proves it never touches a DomainExpert, never enters diagnosis, builds no Journey. **No real Gemini call through the real proxy on a real phone has ever produced a multi-turn conversation in this shape.** |
 | The understanding check + rebuild-on-correction | **WORKS ON PAPER** | Tested as behaviour, including that "I want to clarify" genuinely re-reads rather than acknowledges. |
-| Journey-building conversation | **WORKS ON PAPER** | Unchanged today by design, and guarded by a regression test. |
+| Journey-building conversation | **PARTIAL** | Re-asks what the introduction already learned: planning mode never reads the Portrait. Fix planned and in build (`04_Product/Planning_From_Portrait_Plan_2026-09-16.md`, Stage 1). |
+| Career routing to authored Journeys | **PARTIAL** | Only the job-search diagnosis tree runs. 12 of 27 career Journeys (the "find a direction", "two options", "fit test" and "return after rejection" families) are unreachable, so someone who wants out of their field but does not know what next gets the generic arc. The partner already authored the missing routing rule and its copy. Plan Stage 2. |
 | Offline refusal | **WORKS ON PAPER** | A session-less coach says so rather than inventing a Journey from raw text. Pinned by a test written after that regression bit us once. |
 | Cost measured server-side | **WORKS ON PAPER, UNDEPLOYED** | Migration 0019 written and unapplied; console card undeployed. **We still cannot answer "what does a conversation cost".** |
 | Persisted conversation budget | **WORKS ON PAPER** | Shipped today. |

@@ -101,8 +101,9 @@ broken AND wrong about what is fixed.
 | Feature | Verdict | Detail |
 |---|---|---|
 | In-app activity feed | **WORKS ON PAPER** | Only human-caused events; no fabricated nudges. |
-| **Push for a cheer or a nudge** | **MISSING** | The only push in the product is your own reminders. **If an Ally cheers you and the app is closed, you never find out.** For a product built on "you do not walk it alone", that is a broken loop, not a missing extra. |
+| **Push for a cheer or a nudge** | **MISSING, PLANNED** | The only push in the product is your own reminders. **If an Ally cheers you and the app is closed, you never find out.** Founder decided 2026-09-16 that it ships. Plan: `04_Product/Push_Notifications_Plan_2026-09-16.md`. It needs NEW NATIVE BUILDS (not an over-the-air update), Firebase and APNs credentials only the founder can create, and a Privacy Policy change, because the policy today promises we hold no push token. |
 | Remove / block / report a friend | **MISSING** | No gateway methods exist. |
+| The in-app cheer notification that exists today | **BROKEN** | Found 2026-09-16 while planning push. `SocialProvider.tsx` fires a local notification on every realtime cheer while the app runs, and it ignores the cheer and nudge switches and Active Hours, is hard-coded English with an emoji, and calls `setNotificationHandler`, which REPLACES the handler `ReminderEngine.init()` installed. So after the first cheer, the rule that hides the aggregate reminder while the app is open stops working. Fixed as step 6 of the push plan, by one handler that owns every notification. |
 
 ### Everything else
 

@@ -10,7 +10,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { I18nManager, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { resolveMediaGateway } from '@/core/media/ExpoMediaGateway';
@@ -44,14 +44,17 @@ import { ThemePreferenceProvider } from '@/state/ThemePreference';
 
 SplashScreen.preventAutoHideAsync();
 
-// Enable RTL support as early as possible (module scope, before the first
-// render). We deliberately do NOT force a direction here: React Native persists
-// the last forced direction natively across launches, so a returning RTL user
-// already opens right-to-left. Forcing from the *device* locale would fight a
-// user whose chosen app language differs in direction from their device and loop
-// the reopen prompt — so LanguagePreference resolves direction from the persisted
-// choice at its first async opportunity and prompts a reopen only on a real flip.
-I18nManager.allowRTL(true);
+// Direction is NOT set here, and neither is RTL "enabled" here any more.
+//
+// This line used to call `I18nManager.allowRTL(true)` on every launch. React Native already allows
+// RTL by default, so for a new install it changed nothing — but for somebody who CHOSE an LTR language
+// on a phone set to an RTL one, LanguagePreference has to switch `allowRTL` off (see
+// `applyDirectionForNextLaunch`), and this call switched it straight back on for the launch after.
+// That is how English stayed mirrored on a Hebrew phone (first device test, 2026-09-16).
+//
+// React Native persists both switches natively across launches, so a returning user already opens in
+// the direction of their chosen language; LanguagePreference reconciles a mismatch at its first async
+// opportunity and prompts a reopen only on a real flip.
 
 // Force the navigation chrome onto OUR palette (both schemes) so screen
 // backgrounds, cards, and borders are on-brand rather than the stock white/black

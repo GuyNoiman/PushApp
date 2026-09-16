@@ -73,13 +73,25 @@ export const resources = {
 } as const;
 
 /**
+ * ISO 639 codes that were renamed, as Java still reports them. On Android `languageCode` is
+ * `java.util.Locale#getLanguage()`, which keeps the OLD codes for compatibility — a phone set to
+ * Hebrew answers `iw`, not `he`.
+ *
+ * That mattered on the first device test (2026-09-16): `iw` is not a language we ship, so a Hebrew
+ * Android phone pre-selected ENGLISH, while React Native laid the app out from the phone's own
+ * locale, right-to-left. English copy, mirrored, before anything was tapped.
+ */
+const LEGACY_LANGUAGE_CODES: Readonly<Record<string, string>> = { iw: 'he', ji: 'yi', in: 'id' };
+
+/**
  * The device's language if we support it, else the fallback. Synchronous and
  * defensive — `getLocales()` can be empty or throw in edge/test environments,
  * and either way we degrade quietly to English rather than crashing at boot.
  */
 export function resolveDeviceLanguage(): LanguageCode {
   try {
-    const code = getLocales()[0]?.languageCode;
+    const raw = getLocales()[0]?.languageCode;
+    const code = raw ? (LEGACY_LANGUAGE_CODES[raw] ?? raw) : raw;
     if (isSupportedLanguage(code)) return code;
   } catch {
     // No usable locale — fall through to the default.

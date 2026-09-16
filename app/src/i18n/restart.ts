@@ -81,10 +81,16 @@ export function restartApp(): void {
 }
 
 /**
- * Ask first, then relaunch. A restart is a real interruption, so it never happens
- * without an explicit yes. Declining is a valid answer and leaves exactly today's
- * state: the new language is already applied, the layout direction is not — which
- * is why the RestartPrompt banner stays on screen, offering the restart again.
+ * Ask first, then relaunch. A restart is a real interruption, so outside the first
+ * run it never happens without an explicit yes. Declining is a valid answer and
+ * leaves exactly today's state: the new language is already applied, the layout
+ * direction is not — which is why the RestartPrompt banner stays on screen,
+ * offering the restart again.
+ *
+ * THE ONE PLACE THAT DOES NOT ASK is the first run's language step (2026-09-16):
+ * nothing has been entered there yet, and "Not now" left the whole first run
+ * mirrored. It calls {@link restartApp} directly — see `LanguageStep` in
+ * `app/onboarding.tsx`. Settings › Language still comes through here.
  */
 export function confirmAndRestartApp(): void {
   if (!canRestartApp()) return;

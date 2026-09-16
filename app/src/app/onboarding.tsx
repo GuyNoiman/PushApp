@@ -57,15 +57,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ProviderButton } from '@/components/auth/ProviderButton';
+import { SignInFailureNotice } from '@/components/auth/SignInFailureNotice';
 import { FirstJourneyPage, HandoffPage } from '@/components/onboarding/FirstRunTail';
 import { introJourneyContent } from '@/components/onboarding/introJourneyContent';
 import { usePersonalName } from '@/components/onboarding/usePersonalName';
 import { RestartPrompt } from '@/components/settings/RestartPrompt';
-import { confirmAndRestartApp } from '@/i18n/restart';
+import { canRestartApp, restartApp } from '@/i18n/restart';
 import { isRTL, isRTLLocale } from '@/i18n/rtl';
 import {
   OnboardingPrimaryButton,
@@ -152,6 +153,28 @@ export default function OnboardingScreen() {
     requestAnimationFrame(() => router.replace('/coach?firstRun=1' as Href));
   }, [answers, core]);
 
+  /**
+   * Relaunch the app straight onto the WELCOME, after the language step changed text direction.
+   *
+   * The resume point is moved past the language step BEFORE the relaunch, and the relaunch waits
+   * for both writes to land: the onboarding step (through the core's save loop) and the language
+   * (through LanguagePreference). A relaunched app reads both back — the first-run gate resumes on
+   * `welcome`, LanguagePreference applies the stored language — so the person arrives on the next
+   * screen, in their language, laid out the right way round, and not back on the choice they just
+   * made. A failed write still relaunches: the worst case is the language screen again, correctly
+   * laid out, which is where a person who has not chosen yet would be anyway.
+   *
+   * The screen is NOT advanced here. Until the relaunch lands, the person keeps looking at the
+   * language list rather than a welcome screen drawn in the old direction.
+   */
+  const relaunchOnWelcome = useCallback(
+    (languageStored: Promise<void>) => {
+      core.saveOnboardingProgress('welcome', answers);
+      void Promise.all([languageStored, core.flushSaves()]).then(restartApp, restartApp);
+    },
+    [answers, core],
+  );
+
   /** Leave the first run for the app proper. Used only by the two post-Journey screens. */
   const enterApp = useCallback(() => router.replace('/'), []);
 
@@ -169,7 +192,7 @@ export default function OnboardingScreen() {
    * and the dots have to read as seven. This is the door, not the first room.
    */
   if (step === 'language') {
-    return <LanguageStep onContinue={() => go('welcome')} />;
+    return <LanguageStep onContinue={() => go('welcome')} onRelaunch={relaunchOnWelcome} />;
   }
 
   if (step === 'welcome') {
@@ -234,6 +257,17 @@ export default function OnboardingScreen() {
 // ── Step bodies (presentational; flow-specific, co-located like coach.tsx) ──────
 
 /**
+ * Can relaunching the app change its layout direction, here and now?
+ *
+ * Not on web — `I18nManager` cannot flip direction there at all, so a reload would only lose the
+ * screen — and not in a build that cannot relaunch itself (see `@/i18n/restart`). In either case the
+ * language step behaves as it always did: the choice applies, and RestartPrompt says what is left.
+ */
+function canRelaunchIntoDirection(): boolean {
+  return Platform.OS !== 'web' && canRestartApp();
+}
+
+/**
  * STEP ZERO — language first: device-preselected but confirmed; a direction flip relaunches the app.
  *
  * ── WHY IT SURVIVED A DESIGN PACK THAT DOES NOT HAVE IT (founder, 2026-09-15) ───────────────────
@@ -252,22 +286,63 @@ export default function OnboardingScreen() {
  * effect on a fresh launch and nothing was relaunching. Onboarding is the cheapest possible moment
  * to relaunch — the language is already persisted and there is nothing else to lose — and it is the
  * worst possible moment to leave someone reading a mirror-image of their own language.
+ *
+ * ── AND IT DOES NOT ASK (first device test, 2026-09-16) ────────────────────────────────────────
+ *
+ * It used to ask, through the same dialog Settings › Language uses, and "Not now" left the ENTIRE
+ * first run mirrored: English, right-aligned, the back chevron on the right, all the way to the
+ * account screen. Nothing has been entered yet, so there is nothing a relaunch can lose, and a
+ * mirrored first run is the worse outcome. So a direction flip relaunches at once, onto the welcome
+ * ({@link OnboardingScreen}'s `relaunchOnWelcome`). Settings still asks, because there the person may
+ * be in the middle of something.
+ *
+ * Continue checks the same thing. The layout this launch opened in can disagree with the language
+ * that is already selected before anybody taps a row — a phone set to a right-to-left language we
+ * do not ship pre-selects English and opens right-to-left — and walking on from there would mirror
+ * the whole flow just the same.
+ *
+ * Where the app cannot relaunch itself, nothing new appears: the choice applies, and the existing
+ * RestartPrompt asks for the reopen by hand, exactly as before.
  */
-function LanguageStep({ onContinue }: { onContinue: () => void }) {
+function LanguageStep({
+  onContinue,
+  onRelaunch,
+}: {
+  onContinue: () => void;
+  onRelaunch: (languageStored: Promise<void>) => void;
+}) {
   const theme = useTheme();
   const { t } = useTranslation('onboarding');
   const { language, setLanguage, pendingRestart } = useLanguagePreference();
+  // Once a relaunch is on its way, a second tap must not change what it relaunches into.
+  const [relaunching, setRelaunching] = useState(false);
+
+  const relaunch = (stored: Promise<void>) => {
+    setRelaunching(true);
+    onRelaunch(stored);
+  };
 
   const select = (code: LanguageCode) => {
-    // Read the flip BEFORE applying it: `setLanguage` forces the new direction for the next launch,
+    if (relaunching) return;
+    // Read the flip BEFORE applying it: `setLanguage` sets the new direction for the next launch,
     // so afterwards there is nothing left to compare against.
     const flipsDirection = isRTLLocale(code) !== isRTL();
-    setLanguage(code);
-    if (flipsDirection) confirmAndRestartApp();
+    const stored = setLanguage(code);
+    if (flipsDirection && canRelaunchIntoDirection()) relaunch(stored);
+  };
+
+  const next = () => {
+    if (relaunching) return;
+    if (isRTLLocale(language) !== isRTL() && canRelaunchIntoDirection()) {
+      // Re-applying the selected language is what sets the direction for the relaunch.
+      relaunch(setLanguage(language));
+      return;
+    }
+    onContinue();
   };
 
   return (
-    <OnboardingScaffold footer={<OnboardingPrimaryButton label={t('language.continue')} onPress={onContinue} />}>
+    <OnboardingScaffold footer={<OnboardingPrimaryButton label={t('language.continue')} onPress={next} />}>
       <ThemedText type="title">{t('language.title')}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {t('language.subtitle')}
@@ -605,7 +680,7 @@ function AccountStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (
   const dark = useColorScheme() === 'dark';
   const { t } = useTranslation('onboarding');
   const { t: tSettings } = useTranslation('settings');
-  const { enabled, status, error, signInWithApple, signInWithGoogle } = useAuth();
+  const { enabled, status, signInFailure, signInWithApple, signInWithGoogle } = useAuth();
 
   // Which providers THIS build can actually run. Apple's check is async (it asks the OS), so both
   // start hidden and appear once known — a button that cannot work must never be offered.
@@ -632,8 +707,8 @@ function AccountStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (
     if (busy) return;
     setBusy(provider);
     try {
-      // AuthProvider swallows a cancel and surfaces anything else through `error` — nothing to
-      // catch here, and nothing to show for a person who simply closed the sheet.
+      // AuthProvider swallows a cancel and surfaces anything else through `signInFailure` — nothing
+      // to catch here, and nothing to show for a person who simply closed the sheet.
       await (provider === 'apple' ? signInWithApple() : signInWithGoogle());
     } finally {
       setBusy(null);
@@ -688,12 +763,14 @@ function AccountStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (
               <OnboardingPrimaryButton label={t('flow.account.unavailableContinue')} onPress={continueWithoutProvider} />
             </>
           ) : null}
-          {/* A real failure is said plainly and stays on screen; the user's data is untouched. */}
-          {error ? (
-            <ThemedText type="small" style={[styles.centred, { color: theme.danger }]}>
-              {error}
-            </ThemedText>
-          ) : null}
+          {/* A real failure is said plainly, in a sentence of ours and never the error's own text
+              (the partner's Android showed Google's DEVELOPER_ERROR line here, 2026-09-16), and it
+              stays on screen with a way to try again; the user's data is untouched. */}
+          <SignInFailureNotice
+            failure={signInFailure}
+            disabled={busy !== null}
+            onTryAgain={(provider) => void run(provider)}
+          />
           <LegalLine />
           <OnboardingSecondaryButton label={t('flow.account.back')} onPress={onBack} />
         </>

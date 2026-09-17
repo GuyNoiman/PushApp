@@ -6,7 +6,7 @@ every day, before the day's release. Opened 2026-09-16 because the founder said 
 > כבר מאוד קשה לי לעקוב אחרי אילו פיצרים באמת עובדים ואילו פערים עדיין קיימים.
 
 **Last updated:** 2026-09-16, end of day — after **update 11** and the console redeploy.
-**Code state:** `tsc` clean · 3302 tests / 315 suites green · published as **update 12** to both
+**Code state:** `tsc` clean · 3323 tests / 317 suites green · published as **update 13** to both
 channels (9 and 10 were never published — both failed at export, see Traps) · branch
 `feat/buddy-3d-and-reminders`, pushed · console redeployed.
 
@@ -84,8 +84,8 @@ broken AND wrong about what is fixed.
 | Feature | Verdict | Detail |
 |---|---|---|
 | The introduction (Portrait conversation) | **WORKS ON PAPER** | Shipped today. Strong tests: proves it never touches a DomainExpert, never enters diagnosis, builds no Journey. **No real Gemini call through the real proxy on a real phone has ever produced a multi-turn conversation in this shape.** |
-| Coach states a false limitation | **BROKEN — founder's device, 2026-09-17** | Asked "Can I answer in Hebrew?", the coach replied "I can only communicate in English." The composer was never told the coach speaks Hebrew and English, so the model invented a limit. Fix in build: state the real capability in every composing prompt, and let an explicit request or a switch in writing change the conversation language (a refinement of D101). |
-| Closed cards after a non-goal first message | **BROKEN — same test** | A question instead of a goal made understanding return nothing, and the orchestrator went straight to the closed "habit or process" card on turn one. Fix in build: the first no-goal message re-invites the goal in free text; only a second consecutive one falls back to the card. |
+| Coach states a false limitation | **SHIPPED, update 13** | Every composing prompt states the coach speaks English and Hebrew and forbids invented limits; writing in, or asking for, the other language switches the conversation (refines D101). **Still open:** after a switch the answer cards stay in the app language. |
+| Closed cards after a non-goal first message | **SHIPPED, update 13** | First no-goal message: answered, goal re-invited in free text. Only a second in a row shows the habit-or-process card. **Open for product:** that card inside the INTRODUCTION is a planning question. |
 | The understanding check + rebuild-on-correction | **WORKS ON PAPER** | Tested as behaviour, including that "I want to clarify" genuinely re-reads rather than acknowledges. |
 | Journey-building conversation | **PARTIAL** | Stage 1 shipped in update 12: opens by quoting the Portrait's want and does not re-ask the four questions it answers. Still re-routes an explorer through job-search diagnosis (Stage 2). |
 | Career routing to authored Journeys | **PARTIAL** | Only the job-search diagnosis tree runs. 12 of 27 career Journeys (the "find a direction", "two options", "fit test" and "return after rejection" families) are unreachable, so someone who wants out of their field but does not know what next gets the generic arc. The partner already authored the missing routing rule and its copy. Plan Stage 2. |

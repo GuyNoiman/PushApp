@@ -18,6 +18,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { LIFE_AREAS, readWheel, type LifeWheelAnswers } from '@/core/tools/lifeWheel/model';
 import { summarise, type LifeWheelSummary } from '@/core/tools/lifeWheel/signals';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 export const LIFE_WHEEL_ANSWERS_KEY = 'pushapp.lifeWheel.answers';
 export const LIFE_WHEEL_SUMMARY_KEY = 'pushapp.lifeWheel.summary';
@@ -92,7 +93,7 @@ export function LifeWheelProvider({ children }: { children: ReactNode }) {
 
   const save = useCallback((next: LifeWheelAnswers) => {
     setAnswers(next);
-    void AsyncStorage.setItem(LIFE_WHEEL_ANSWERS_KEY, JSON.stringify(next)).catch(() => {});
+    void writeAccountStore(LIFE_WHEEL_ANSWERS_KEY, JSON.stringify(next)).catch(() => {});
 
     // A COMPLETE wheel is the only thing that produces a summary — every finding in a reading is
     // comparative, so summarising a partial one would name whichever area happened to be answered
@@ -101,7 +102,7 @@ export function LifeWheelProvider({ children }: { children: ReactNode }) {
     if (!reading) return;
     const fresh = summarise(reading, Date.now());
     setSummary(fresh);
-    void AsyncStorage.setItem(LIFE_WHEEL_SUMMARY_KEY, JSON.stringify(fresh)).catch(() => {});
+    void writeAccountStore(LIFE_WHEEL_SUMMARY_KEY, JSON.stringify(fresh)).catch(() => {});
   }, []);
 
   const value = useMemo(

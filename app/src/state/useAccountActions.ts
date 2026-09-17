@@ -24,10 +24,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkBackendHealth } from '@/core/social/backendHealth';
 import { getStateBackupGateway } from '@/core/backup';
 import { ACCOUNT_STORAGE_KEYS, mergeProfileIntoExport } from '@/state/accountExport';
+import { wipeConversationAndMessagingKeys } from '@/state/accountWipe';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
+import { useRestartForNextAccount } from '@/state/AccountScope';
+import { holdAccountStoreWrites, releaseAccountStoreWrites } from '@/state/accountStoreWrites';
 import { useSocial } from '@/state/SocialProvider';
 import { PROFILE_KEY } from '@/state/ProfileProvider';
+import { SWITCH_ACCOUNT_RESUME_STEP } from '@/state/useAccountSession';
 
 /** The temp filename the export is shared under (deleted right after). */
 const EXPORT_FILENAME = 'pushapp-export.json';
@@ -48,6 +52,7 @@ export function useAccountActions() {
   const { core } = useApp();
   const { enabled, user, deleteAccount: deleteRemote, signOut, ensureSession } = useAuth();
   const { profile } = useSocial();
+  const restartForNextAccount = useRestartForNextAccount();
 
   /**
    * Build a local JSON export, hand it to the OS share sheet, then delete the temp
@@ -117,18 +122,41 @@ export function useAccountActions() {
     }
 
     // 2) Remote is gone (or there was never a remote account). Now wipe local, in order.
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    await signOut();
-    // The account's server-side backup goes with the account (D73). Before the local wipe, so a
-    // failure here is visible rather than leaving a copy nobody can see or reach.
+    //
+    // The account stores (Profile, Tools, …) still hold this person in memory and write it back on
+    // their next change, so their writes are held from here until the restart at the end
+    // (`accountStoreWrites.ts`). A local wipe that fails releases them: nothing was emptied that the
+    // stores would then write over.
+    holdAccountStoreWrites();
     try {
-      await getStateBackupGateway().clear();
-    } catch {
-      // A backup we could not delete belongs to an account that is being deleted anyway — the
-      // cascade on `profiles` removes the row with it.
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await signOut();
+      // The account's server-side backup goes with the account (D73). Before the local wipe, so a
+      // failure here is visible rather than leaving a copy nobody can see or reach.
+      try {
+        await getStateBackupGateway().clear();
+      } catch {
+        // A backup we could not delete belongs to an account that is being deleted anyway — the
+        // cascade on `profiles` removes the row with it.
+      }
+      await core.resetToFirstRun();
+      // The same resume point a switch of account saves, in the same place (2026-09-17). Without it,
+      // anything persisted after the reset could make the empty state look like an old install that
+      // had already finished onboarding.
+      core.saveOnboardingProgress(SWITCH_ACCOUNT_RESUME_STEP, core.getOnboardingAnswers());
+      await AsyncStorage.multiRemove([...ACCOUNT_STORAGE_KEYS]);
+    } catch (error) {
+      releaseAccountStoreWrites();
+      throw error;
     }
-    await core.resetToFirstRun();
-    await AsyncStorage.multiRemove([...ACCOUNT_STORAGE_KEYS]);
+    // The per-conversation budget and trace keys and the messaging device key (2026-09-17). Best
+    // effort: the account is already gone on the server, and a key we could not remove here must not
+    // turn a completed deletion into a reported failure.
+    try {
+      await wipeConversationAndMessagingKeys();
+    } catch {
+      // Nothing more to do; none of these hold anything the person wrote.
+    }
 
     // 3) THIS DEVICE IS NOW A FRESH INSTALL, so give it what a fresh install gets: an anonymous
     // session. `signOut` above left `status === 'signedOut'`, and nothing re-minted one until the
@@ -137,15 +165,20 @@ export function useAccountActions() {
     // precisely IN ORDER to see the first run, and the first thing the first run showed them was an
     // error that was not true (partner, 2026-09-03).
     //
-    // Best-effort on purpose, and LAST on purpose: the deletion has already succeeded and is not
-    // undone by a network that is down. Someone genuinely offline still lands on the honest offline
-    // card with a retry that works — which is the case that card was written for.
+    // Best-effort on purpose, and after the wipe on purpose: the deletion has already succeeded and
+    // is not undone by a network that is down. Someone genuinely offline still lands on the honest
+    // offline card with a retry that works — which is the case that card was written for.
     try {
       await ensureSession();
     } catch {
       // ensureSession surfaces failure as `error` rather than throwing; this is belt and braces.
     }
-  }, [enabled, user, deleteRemote, signOut, ensureSession, core]);
+
+    // 4) LAST, exactly as a switch of account ends (`useAccountSession`): the resume point and the
+    // emptied state on disk, then a fresh start, so no store keeps the deleted account in memory.
+    await core.flushSaves();
+    restartForNextAccount();
+  }, [enabled, user, deleteRemote, signOut, ensureSession, core, restartForNextAccount]);
 
   return { exportData, deleteAccount };
 }

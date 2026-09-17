@@ -31,12 +31,19 @@ import {
   type AddressForm,
 } from '@/i18n/addressForm';
 import { isWeekday, setWeekStartDay as syncWeekStart, type Weekday } from '@/core/util/week';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 /** Single source of truth for the persisted key — no magic-string duplication. */
 export const PROFILE_KEY = 'pushapp.profile';
-/** Legacy keys the former standalone providers used — migrated in on first load if present. */
-const LEGACY_ADDRESS_KEY = 'pushapp.addressForm';
-const LEGACY_WEEK_START_KEY = 'pushapp.weekStartDay';
+/**
+ * Legacy keys the former standalone providers used — migrated in on first load if present.
+ *
+ * Exported so a wipe can reach them (2026-09-17): they are read whenever {@link PROFILE_KEY} is
+ * absent, which is exactly the state a wipe leaves, so a surviving legacy key would hand the previous
+ * person's form of address to whoever uses the phone next.
+ */
+export const LEGACY_ADDRESS_KEY = 'pushapp.addressForm';
+export const LEGACY_WEEK_START_KEY = 'pushapp.weekStartDay';
 
 /** The user's own profile — the private, editable self-view. `@username`/name from sign-in stay in
  *  the social/auth layers; this holds the profile-owned fields. Photo (Phase 2) is not here yet. */
@@ -174,7 +181,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const commit = useCallback((next: Profile) => {
     setProfile(next);
     applyToModules(next);
-    void AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next)).catch(() => {
+    void writeAccountStore(PROFILE_KEY, JSON.stringify(next)).catch(() => {
       // A write failure only means the choice won't survive a reload — don't crash.
     });
   }, []);

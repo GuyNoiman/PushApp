@@ -19,6 +19,9 @@ const mockResetToFirstRun = jest.fn(async () => {});
 const mockDeleteRemote = jest.fn(async () => {});
 const mockSignOut = jest.fn(async () => {});
 const mockEnsureSession = jest.fn(async () => {});
+const mockSaveOnboardingProgress = jest.fn((_step: string, _answers: unknown) => {});
+const mockFlushSaves = jest.fn(async () => {});
+const mockRestartApp = jest.fn(() => {});
 type Health = 'reachable' | 'unreachable' | 'unconfigured';
 const mockCheckBackendHealth = jest.fn<Promise<Health>, []>(async () => 'reachable');
 
@@ -42,17 +45,40 @@ jest.mock('expo-constants', () => ({ expoConfig: { version: '1.0.0' } }));
 jest.mock('expo-file-system', () => ({ File: class {}, Paths: { cache: '' } }));
 jest.mock('expo-sharing', () => ({ isAvailableAsync: async () => false, shareAsync: async () => {} }));
 jest.mock('expo-notifications', () => ({ cancelAllScheduledNotificationsAsync: mockCancelAll }));
+const mockStoredKeys: string[] = [];
+const mockForgetDeviceKeys = jest.fn(async () => {});
+const mockTraceClear = jest.fn(async (_kind: string) => {});
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
-  default: { getItem: async () => null, multiRemove: mockMultiRemove },
+  default: { getItem: async () => null, getAllKeys: async () => mockStoredKeys, multiRemove: mockMultiRemove },
+}));
+jest.mock('@/core/messaging', () => ({ forgetDeviceKeys: mockForgetDeviceKeys }));
+jest.mock('@/core/llm/conversationTrace', () => ({
+  ...jest.requireActual('@/core/llm/conversationTrace'),
+  asyncStorageConversationTrace: { tagFor: jest.fn(), clear: (kind: string) => mockTraceClear(kind) },
 }));
 jest.mock('@/core/social/backendHealth', () => ({ checkBackendHealth: mockCheckBackendHealth }));
-jest.mock('@/state/AppProvider', () => ({ useApp: () => ({ core: { resetToFirstRun: mockResetToFirstRun, exportStateJson: () => '{}' } }) }));
+jest.mock('@/state/AppProvider', () => ({
+  useApp: () => ({
+    core: {
+      resetToFirstRun: mockResetToFirstRun,
+      exportStateJson: () => '{}',
+      saveOnboardingProgress: (step: string, answers: unknown) => mockSaveOnboardingProgress(step, answers),
+      getOnboardingAnswers: () => ({ version: 1, selections: {}, freeText: {}, skipped: [] }),
+      flushSaves: () => mockFlushSaves(),
+    },
+  }),
+}));
+jest.mock('@/i18n/restart', () => ({ canRestartApp: () => true, restartApp: () => mockRestartApp() }));
 jest.mock('@/state/AuthProvider', () => ({ useAuth: () => mockAuth }));
 jest.mock('@/state/SocialProvider', () => ({ useSocial: () => ({ profile: null }) }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { useAccountActions, BackendUnreachableError } = require('../useAccountActions');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { SWITCH_ACCOUNT_RESUME_STEP } = require('../useAccountSession');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { accountStoreWritesHeld, releaseAccountStoreWrites } = require('../accountStoreWrites');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const TestRenderer: {
   create(e: ReactElement): unknown;
@@ -77,8 +103,10 @@ function grabActions(): { deleteAccount: () => Promise<void> } {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockStoredKeys.length = 0;
   mockCheckBackendHealth.mockResolvedValue('reachable');
   mockAuth = { enabled: true, user: { id: 'u1', isAnonymous: true }, deleteAccount: mockDeleteRemote, signOut: mockSignOut, ensureSession: mockEnsureSession };
+  releaseAccountStoreWrites();
 });
 
 const run = async () => {
@@ -93,7 +121,23 @@ describe('when there IS an account on the server', () => {
     await run();
     expect(mockDeleteRemote).toHaveBeenCalledTimes(1);
     expect(mockResetToFirstRun).toHaveBeenCalledTimes(1);
-    expect(mockMultiRemove).toHaveBeenCalledTimes(1);
+    expect(mockMultiRemove).toHaveBeenCalledTimes(1); // no prefixed keys stored in this case
+  });
+
+  it('removes the conversation budget and trace keys, and forgets the messaging device key', async () => {
+    mockStoredKeys.push(
+      'pushapp.conversationBudget.v1.introduction',
+      'pushapp.conversationTrace.v1.planning',
+      'pushapp.languagePreference',
+    );
+    await run();
+    expect(mockMultiRemove).toHaveBeenCalledWith([
+      'pushapp.conversationBudget.v1.introduction',
+      'pushapp.conversationTrace.v1.planning',
+    ]);
+    // The trace store keeps the id in memory as well; clearing each kind drops both copies.
+    expect(mockTraceClear.mock.calls.map((call) => call[0]).sort()).toEqual(['introduction', 'planning']);
+    expect(mockForgetDeviceKeys).toHaveBeenCalledTimes(1);
   });
 
   it('touches nothing local when the server cannot be reached', async () => {
@@ -101,6 +145,7 @@ describe('when there IS an account on the server', () => {
     await expect(grabActions().deleteAccount()).rejects.toBeInstanceOf(BackendUnreachableError);
     expect(mockDeleteRemote).not.toHaveBeenCalled();
     expect(mockResetToFirstRun).not.toHaveBeenCalled();
+    expect(mockForgetDeviceKeys).not.toHaveBeenCalled();
   });
 
   it('touches nothing local when the server refuses', async () => {
@@ -108,6 +153,8 @@ describe('when there IS an account on the server', () => {
     await expect(grabActions().deleteAccount()).rejects.toThrow('401');
     expect(mockResetToFirstRun).not.toHaveBeenCalled();
     expect(mockMultiRemove).not.toHaveBeenCalled();
+    expect(mockRestartApp).not.toHaveBeenCalled();
+    expect(accountStoreWritesHeld()).toBe(false);
   });
 });
 
@@ -160,5 +207,67 @@ describe('the device the deletion leaves behind', () => {
     mockEnsureSession.mockRejectedValueOnce(new Error('offline'));
     await expect(run()).resolves.toBeUndefined();
     expect(mockResetToFirstRun).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the first run the deletion resumes at (2026-09-17)', () => {
+  /**
+   * A switch of account saved a resume point straight after the reset and deletion did not, so
+   * anything persisted after the reset could make the empty state look like an old install that had
+   * already finished onboarding.
+   */
+  it('saves the same resume point a switch of account saves', async () => {
+    await run();
+    expect(mockSaveOnboardingProgress).toHaveBeenCalledTimes(1);
+    expect(mockSaveOnboardingProgress.mock.calls[0][0]).toBe(SWITCH_ACCOUNT_RESUME_STEP);
+  });
+
+  it('saves it in the same place in the order: right after the reset, before the keys go', async () => {
+    await run();
+    const reset = mockResetToFirstRun.mock.invocationCallOrder[0];
+    const resume = mockSaveOnboardingProgress.mock.invocationCallOrder[0];
+    const wipe = mockMultiRemove.mock.invocationCallOrder[0];
+    expect(reset).toBeLessThan(resume);
+    expect(resume).toBeLessThan(wipe);
+  });
+});
+
+describe('what the deleted account leaves in memory (2026-09-17)', () => {
+  it('restarts the app LAST, after the fresh session and after the core has written the emptied state', async () => {
+    await run();
+    const ensure = mockEnsureSession.mock.invocationCallOrder[0];
+    const flush = mockFlushSaves.mock.invocationCallOrder[0];
+    const restart = mockRestartApp.mock.invocationCallOrder[0];
+    expect(mockRestartApp).toHaveBeenCalledTimes(1);
+    expect(ensure).toBeLessThan(flush);
+    expect(flush).toBeLessThan(restart);
+  });
+
+  it('still restarts when the network is not there for the new session', async () => {
+    mockEnsureSession.mockRejectedValueOnce(new Error('offline'));
+    await run();
+    expect(mockRestartApp).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds the account stores from before the reset until the restart', async () => {
+    const heldAt: Record<string, boolean> = {};
+    mockResetToFirstRun.mockImplementationOnce(async () => {
+      heldAt.reset = accountStoreWritesHeld();
+    });
+    mockMultiRemove.mockImplementationOnce(async () => {
+      heldAt.wipe = accountStoreWritesHeld();
+    });
+    mockRestartApp.mockImplementationOnce(() => {
+      heldAt.restart = accountStoreWritesHeld();
+    });
+    await run();
+    expect(heldAt).toEqual({ reset: true, wipe: true, restart: true });
+  });
+
+  it('lets the stores save again when the local wipe fails, and does not restart', async () => {
+    mockResetToFirstRun.mockRejectedValueOnce(new Error('storage refused'));
+    await expect(grabActions().deleteAccount()).rejects.toThrow('storage refused');
+    expect(mockRestartApp).not.toHaveBeenCalled();
+    expect(accountStoreWritesHeld()).toBe(false);
   });
 });

@@ -15,6 +15,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { writeAccountStore } from '@/state/accountStoreWrites';
+
 /** Single source of truth for the persisted key — no magic-string duplication. */
 export const CELEBRATIONS_ENABLED_KEY = 'pushapp.celebrationsEnabled';
 
@@ -54,7 +56,7 @@ export function CelebrationPreferenceProvider({ children }: { children: ReactNod
   // Apply immediately (Home reads it this frame), then write async.
   const setCelebrationsEnabled = useCallback((next: boolean) => {
     setEnabledState(next);
-    void AsyncStorage.setItem(CELEBRATIONS_ENABLED_KEY, next ? 'true' : 'false').catch(() => {
+    void writeAccountStore(CELEBRATIONS_ENABLED_KEY, next ? 'true' : 'false').catch(() => {
       // A write failure only means the choice won't survive a reload — don't crash.
     });
   }, []);

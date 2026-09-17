@@ -6,10 +6,18 @@
  * PRD §6.2 says so, and the reason is that every one of those would make "the
  * same phone" and "this person" the same question.
  *
- * It is deliberately NOT reset when somebody signs in or out. An id that
- * followed the account would be an account id wearing a disguise, and an id
- * that reset on sign-out would make one person look like several installations.
- * A reinstall genuinely IS a new installation, and is counted as one.
+ * It is deliberately NOT reset when somebody signs in. An id that followed the
+ * account would be an account id wearing a disguise. A reinstall genuinely IS a
+ * new installation, and is counted as one.
+ *
+ * SIGNING OUT NOW REPLACES IT (2026-09-17, Dev_Accounts_And_Restore_Plan Stage 1).
+ * This used to say an id reset on sign-out "would make one person look like
+ * several installations", and that cost is real and accepted. What changed is
+ * what sign-out does: it now wipes the phone back to a fresh install so the next
+ * account cannot inherit the last one's data. An id that survived that wipe would
+ * be the one thread still joining two accounts' events on one phone, and the
+ * once-per-install funnel events would never be counted for the second account.
+ * So a switch of account is treated as the new installation it effectively is.
  *
  * Pure TypeScript apart from the storage port.
  */
@@ -18,7 +26,9 @@ export interface IdStore {
   set(key: string, value: string): void;
 }
 
-const KEY = 'pushapp.kpi.install-id';
+/** Where the id lives. Exported so the one place that loads it and the wipe name the same key. */
+export const KPI_INSTALL_ID_KEY = 'pushapp.kpi.install-id';
+const KEY = KPI_INSTALL_ID_KEY;
 
 /** Crypto-quality where available; a plain random id where it is not. */
 function mint(random: () => number): string {
@@ -31,6 +41,13 @@ function mint(random: () => number): string {
 export function resolveInstallId(store: IdStore, random: () => number = Math.random): string {
   const existing = store.get(KEY);
   if (existing && existing.length >= 32) return existing;
+  const id = mint(random);
+  store.set(KEY, id);
+  return id;
+}
+
+/** Mint a new id unconditionally and store it — the switch-of-account case described above. */
+export function replaceInstallId(store: IdStore, random: () => number = Math.random): string {
   const id = mint(random);
   store.set(KEY, id);
   return id;

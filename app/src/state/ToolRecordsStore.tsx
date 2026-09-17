@@ -23,6 +23,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { writeAccountStore } from '@/state/accountStoreWrites';
+
 /** Every tool that keeps records here. Adding one is adding a key. */
 export const TOOL_RECORD_KEYS = [
   'gratitude',
@@ -134,7 +136,7 @@ export function ToolRecordsProvider({ children }: { children: ReactNode }) {
   const mutate = useCallback((tool: ToolRecordKey, change: (blob: ToolBlob) => ToolBlob) => {
     setBlobs((current) => {
       const next = { ...current, [tool]: change(current[tool] ?? EMPTY_BLOB) };
-      void AsyncStorage.setItem(toolStorageKey(tool), JSON.stringify(next[tool])).catch(() => {});
+      void writeAccountStore(toolStorageKey(tool), JSON.stringify(next[tool])).catch(() => {});
       return next;
     });
   }, []);

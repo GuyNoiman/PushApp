@@ -23,6 +23,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { writeAccountStore } from '@/state/accountStoreWrites';
+
 /** The one persisted key. Wiped on account deletion (`ACCOUNT_STORAGE_KEYS`). */
 export const TESTER_TOOLS_KEY = 'pushapp.testerTools';
 
@@ -91,7 +93,7 @@ export function useTesterTools(): TesterTools {
     setNotice(next ? 'on' : 'off');
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(null), NOTICE_MS);
-    void AsyncStorage.setItem(TESTER_TOOLS_KEY, next ? 'true' : 'false').catch(() => {
+    void writeAccountStore(TESTER_TOOLS_KEY, next ? 'true' : 'false').catch(() => {
       // Not surviving a reload is the whole cost of a failed write here.
     });
   }, []);

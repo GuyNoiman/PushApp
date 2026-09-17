@@ -43,14 +43,6 @@ function toProfile(row: ProfileRow): SocialProfile {
 
 export class SupabaseSocialGateway implements SocialGateway {
   readonly enabled = supabase !== null;
-  /** Cached current user id, kept fresh via onAuthStateChange (needed for realtime filters). */
-  private uid: string | null = null;
-
-  constructor() {
-    if (!supabase) return;
-    supabase.auth.getUser().then(({ data }) => { this.uid = data.user?.id ?? null; });
-    supabase.auth.onAuthStateChange((_e, session) => { this.uid = session?.user?.id ?? null; });
-  }
 
   private client() {
     if (!supabase) throw new Error('Social pillar is disabled (no Supabase env).');
@@ -61,15 +53,13 @@ export class SupabaseSocialGateway implements SocialGateway {
   async signInAnonymously(): Promise<void> {
     const c = this.client();
     const { data: userData } = await c.auth.getUser();
-    if (userData.user) { this.uid = userData.user.id; return; } // already signed in
-    const { data, error } = await c.auth.signInAnonymously();
+    if (userData.user) return; // already signed in
+    const { error } = await c.auth.signInAnonymously();
     if (error) throw error;
-    this.uid = data.user?.id ?? null;
   }
 
   async signOut(): Promise<void> {
     await this.client().auth.signOut();
-    this.uid = null;
   }
 
   async currentProfile(): Promise<SocialProfile | null> {
@@ -596,11 +586,20 @@ export class SupabaseSocialGateway implements SocialGateway {
     return () => {};
   }
 
+  /**
+   * The account the session holds RIGHT NOW, read on every call.
+   *
+   * THE BUG THIS REPLACES (2026-09-17, the same one `SupabaseStateBackupGateway` had): the id used to
+   * be cached, seeded by a `getUser()` fired from the constructor and refreshed by an auth listener.
+   * The seed belonged to the anonymous session the app opens at launch and could land AFTER the
+   * listener had already moved on to a real sign-in, so friend requests, Ally invites and cheers went
+   * out as the account that was no longer signed in. The session is read from local storage (no
+   * network round trip), and RLS still decides what the id may reach.
+   */
   private async requireUid(): Promise<string> {
-    if (this.uid) return this.uid;
-    const { data } = await this.client().auth.getUser();
-    this.uid = data.user?.id ?? null;
-    if (!this.uid) throw new Error('Not signed in.');
-    return this.uid;
+    const { data } = await this.client().auth.getSession();
+    const id = data.session?.user.id ?? null;
+    if (!id) throw new Error('Not signed in.');
+    return id;
   }
 }

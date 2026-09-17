@@ -30,6 +30,7 @@ import {
   type CommunicationEventId,
 } from '@/core/communication/questionnaire';
 import { useProfile } from '@/state/ProfileProvider';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 /** The on-device key holding in-progress questionnaire work (cleared on finish/skip). */
 export const COMMUNICATION_QUIZ_KEY = 'pushapp.communicationQuiz';
@@ -115,7 +116,7 @@ export function useCommunicationQuiz(): CommunicationQuizController {
 
   /** Persist the whole in-progress snapshot (save-after-every-page — PRD §5). */
   const persist = useCallback((next: QuizProgress) => {
-    void AsyncStorage.setItem(COMMUNICATION_QUIZ_KEY, JSON.stringify(next)).catch(() => {
+    void writeAccountStore(COMMUNICATION_QUIZ_KEY, JSON.stringify(next)).catch(() => {
       // A write failure only costs resume-across-restart — don't crash the flow.
     });
   }, []);

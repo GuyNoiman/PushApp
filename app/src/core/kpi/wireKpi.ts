@@ -17,10 +17,21 @@ import { supabase } from '../social/supabaseClient';
 import { readRunningBundle } from '../util/buildInfo';
 import { getKpiGateway } from './index';
 import { getRuntimeReporter } from './reportRuntime';
-import { resolveInstallId, type IdStore } from './installId';
-import type { KpiGateway, OnceStore } from './KpiGateway';
+import { KPI_INSTALL_ID_KEY, replaceInstallId, resolveInstallId, type IdStore } from './installId';
+import type { KpiContext, KpiGateway, OnceStore } from './KpiGateway';
 
-const ONCE_PREFIX = 'pushapp.kpi.once.';
+/** Prefix of the once-per-install markers. Exported so a switch of account can wipe them. */
+export const KPI_ONCE_PREFIX = 'pushapp.kpi.once.';
+const ONCE_PREFIX = KPI_ONCE_PREFIX;
+
+/**
+ * What the running app holds in memory for the KPI stream, once wired: the context every event is
+ * stamped with, the id store behind it, and the set of once-per-install events already sent.
+ *
+ * Module-level so {@link startNewKpiInstallation} can replace them. Wiping the keys from storage
+ * alone would change nothing until the next launch: the running gateway reads the id from here.
+ */
+let live: { context: KpiContext; idStore: IdStore; seen: Set<string> } | null = null;
 
 /**
  * A tiny synchronous cache over AsyncStorage.
@@ -31,8 +42,7 @@ const ONCE_PREFIX = 'pushapp.kpi.once.';
  * the flush can duplicate one event, which is a far smaller cost than making
  * every call site asynchronous.
  */
-async function loadOnceStore(): Promise<OnceStore> {
-  const seen = new Set<string>();
+async function loadOnceStore(seen: Set<string>): Promise<OnceStore> {
   try {
     const keys = await AsyncStorage.getAllKeys();
     for (const key of keys) if (key.startsWith(ONCE_PREFIX)) seen.add(key.slice(ONCE_PREFIX.length));
@@ -57,8 +67,8 @@ function nativeBuildVersion(): string | null {
 async function loadIdStore(): Promise<IdStore> {
   const cache = new Map<string, string>();
   try {
-    const existing = await AsyncStorage.getItem('pushapp.kpi.install-id');
-    if (existing) cache.set('pushapp.kpi.install-id', existing);
+    const existing = await AsyncStorage.getItem(KPI_INSTALL_ID_KEY);
+    if (existing) cache.set(KPI_INSTALL_ID_KEY, existing);
   } catch {
     // A fresh id is minted below; a reinstall is genuinely a new installation.
   }
@@ -81,27 +91,72 @@ async function loadIdStore(): Promise<IdStore> {
  */
 export async function wireKpiGateway(): Promise<KpiGateway | null> {
   try {
-    const [idStore, once] = await Promise.all([loadIdStore(), loadOnceStore()]);
+    const seen = new Set<string>();
+    const [idStore, once] = await Promise.all([loadIdStore(), loadOnceStore(seen)]);
     const installId = resolveInstallId(idStore);
     const bundle = readRunningBundle();
     const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
-    const context = {
+    const context: KpiContext = {
       installId,
       appVersion: Constants.expoConfig?.version ?? null,
       platform,
       channel: bundle.kind === 'development' ? 'development' : (bundle.channel ?? null),
-    } as const;
+    };
+    const wired = { context, idStore, seen };
+    live = wired;
     getRuntimeReporter().report(context, nativeBuildVersion());
     return getKpiGateway(
       // The channel names which audience this copy belongs to (preview vs
       // production), which is what makes a number about testers separable from a
-      // number about users.
-      () => context,
+      // number about users. Read through `wired` rather than captured, so a switch
+      // of account that replaces the id is seen by the very next event.
+      () => wired.context,
       once,
     );
   } catch {
     return null;
   }
+}
+
+/**
+ * Make this phone a NEW installation for measurement: a fresh install id, and no memory of which
+ * once-per-install events were sent. Called when the account is switched (see `installId.ts` for why
+ * that now counts as a new installation).
+ *
+ * Both halves, storage and memory: removing the keys alone would leave the running gateway stamping
+ * events with the old id until the next launch. Never throws — measurement must not be the reason a
+ * sign-out fails. Returns the new id (its write to storage is fire-and-forget, like every id write here).
+ */
+export async function startNewKpiInstallation(random: () => number = Math.random): Promise<string> {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const once = keys.filter((key) => key.startsWith(KPI_ONCE_PREFIX));
+    if (once.length > 0) await AsyncStorage.multiRemove(once);
+  } catch {
+    // An event may be counted once more for the next account. Acceptable.
+  }
+  if (live) {
+    live.seen.clear();
+    const installId = replaceInstallId(live.idStore, random);
+    live.context = { ...live.context, installId };
+    return installId;
+  }
+  // Not wired (measurement off, or not started yet): the next launch reads whatever is stored, so
+  // storing a fresh id is the whole job.
+  return replaceInstallId(
+    {
+      get: () => null,
+      set: (key, value) => {
+        void AsyncStorage.setItem(key, value).catch(() => undefined);
+      },
+    },
+    random,
+  );
+}
+
+/** The install id the running KPI stream stamps events with, or null when it is not wired. */
+export function liveKpiInstallId(): string | null {
+  return live?.context.installId ?? null;
 }
 
 /**

@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { startMap, type PassionMapState } from '@/core/tools/passionMap/model';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 export const PASSION_MAP_KEY = 'pushapp.passionMap.confirmed';
 export const PASSION_DRAFT_KEY = 'pushapp.passionMap.draft';
@@ -83,12 +84,12 @@ export function PassionMapProvider({ children }: { children: ReactNode }) {
 
   const saveDraft = useCallback((next: PassionMapState) => {
     setDraft(next);
-    void AsyncStorage.setItem(PASSION_DRAFT_KEY, JSON.stringify(next)).catch(() => {});
+    void writeAccountStore(PASSION_DRAFT_KEY, JSON.stringify(next)).catch(() => {});
   }, []);
 
   const updateMap = useCallback((next: PassionMapState) => {
     setMap(next);
-    void AsyncStorage.setItem(PASSION_MAP_KEY, JSON.stringify(next)).catch(() => {});
+    void writeAccountStore(PASSION_MAP_KEY, JSON.stringify(next)).catch(() => {});
   }, []);
 
   const discardDraft = useCallback(() => {

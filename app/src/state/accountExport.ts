@@ -6,6 +6,8 @@
  *
  * No React, no I/O — string-in/string-out + a static key list.
  */
+import { BUDGET_KEY_PREFIX } from '@/core/llm/conversationBudgetStore';
+import { TRACE_KEY_PREFIX } from '@/core/llm/conversationTrace';
 import { NOTIFICATION_READS_KEY } from '@/core/social/notificationReads';
 import { TOOL_RECORD_STORAGE_KEYS } from '@/state/ToolRecordsStore';
 import { CELEBRATIONS_ENABLED_KEY } from '@/state/CelebrationPreference';
@@ -13,7 +15,7 @@ import { COMMUNICATION_QUIZ_KEY } from '@/state/useCommunicationQuiz';
 import { LANGUAGE_PREFERENCE_KEY } from '@/state/LanguagePreference';
 import { LIFE_WHEEL_ANSWERS_KEY, LIFE_WHEEL_SUMMARY_KEY } from '@/state/LifeWheelStore';
 import { PASSION_DRAFT_KEY, PASSION_MAP_KEY } from '@/state/PassionMapStore';
-import { PROFILE_KEY } from '@/state/ProfileProvider';
+import { LEGACY_ADDRESS_KEY, LEGACY_WEEK_START_KEY, PROFILE_KEY } from '@/state/ProfileProvider';
 import { REFLECTIONS_KEY } from '@/state/ReflectionsStore';
 // TEMPORARY tester tools — remove this import and its key below with `state/TesterTools.ts`.
 import { TESTER_TOOLS_KEY } from '@/state/TesterTools';
@@ -62,7 +64,43 @@ export const ACCOUNT_STORAGE_KEYS = [
   // TEMPORARY: the hidden tester-tools switch. A wiped device is a fresh install, and a fresh install
   // has the tools off.
   TESTER_TOOLS_KEY,
+  // The two keys the profile blob replaced. ProfileProvider still reads them whenever the profile
+  // blob is missing — which is exactly what a wipe leaves behind (added 2026-09-17).
+  LEGACY_ADDRESS_KEY,
+  LEGACY_WEEK_START_KEY,
 ] as const;
+
+/**
+ * Key PREFIXES wiped with the account, for stores that write one key per conversation rather than
+ * one key in total (added 2026-09-17). They were missing from the deletion: how much of the coach's
+ * allowance a conversation had used, and the random id that groups its cost, both outlived the
+ * account. Neither holds anything a person wrote, but a wiped device is a fresh install, and a
+ * fresh install starts with neither.
+ */
+export const ACCOUNT_STORAGE_PREFIXES = [BUDGET_KEY_PREFIX, TRACE_KEY_PREFIX] as const;
+
+/**
+ * The account keys a SWITCH of account keeps (Settings › Sign out, `useAccountSession`). Language
+ * and theme describe the phone and the person holding it right now, not the account: whoever signs
+ * in next is almost always the same person, and meeting the first run in a language they did not
+ * choose is not a privacy gain.
+ *
+ * Deletion keeps nothing, so {@link ACCOUNT_STORAGE_KEYS} still lists both.
+ */
+export const DEVICE_PREFERENCE_KEYS = [LANGUAGE_PREFERENCE_KEY, THEME_PREFERENCE_KEY] as const;
+
+/**
+ * Everything a switch of account removes from AsyncStorage by exact key: every account key except
+ * the device preferences. Personal Details, the Tools, the bell's read marks and the tester flag all
+ * belong to the account that is leaving.
+ *
+ * `__tests__/accountKeyClassification.test.ts` scans the source for every `pushapp.` key and fails
+ * when one is neither wiped nor deliberately kept — so a new key cannot quietly follow the phone
+ * into somebody else's account.
+ */
+export const SWITCH_ACCOUNT_STORAGE_KEYS: readonly string[] = ACCOUNT_STORAGE_KEYS.filter(
+  (key) => !(DEVICE_PREFERENCE_KEYS as readonly string[]).includes(key),
+);
 
 /**
  * Fold the private profile blob into the data export (O1, PRD §12 portability). The AppCore export

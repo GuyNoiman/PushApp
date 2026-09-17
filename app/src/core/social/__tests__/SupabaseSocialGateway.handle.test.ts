@@ -40,6 +40,7 @@ jest.mock('../supabaseClient', () => {
   const supabase = {
     auth: {
       getUser: jest.fn(async () => ({ data: { user: { id: 'me' } } })),
+      getSession: jest.fn(async () => ({ data: { session: { user: { id: 'me' } } } })),
       onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
     },
     from: jest.fn((table: string) => makeBuilder(table)),

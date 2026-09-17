@@ -64,6 +64,7 @@ import { useNotificationPermission } from '@/state/useNotificationPermission';
 import { useProfile } from '@/state/ProfileProvider';
 import { useThemePreference, type ThemePreference } from '@/state/ThemePreference';
 import { useAccountActions } from '@/state/useAccountActions';
+import { useAccountSession } from '@/state/useAccountSession';
 
 // Appearance cycles System → Light → Dark → System on tap; the row shows the
 // current choice as its value and applies it instantly (the whole app re-themes).
@@ -210,6 +211,52 @@ export default function SettingsScreen() {
   const linkedProvider = user?.providers.find((p) => p === 'apple' || p === 'google');
   const providerLabel = linkedProvider === 'apple' ? 'Apple' : 'Google';
 
+  /**
+   * SIGN OUT IS A SWITCH OF ACCOUNT (2026-09-17). It used to end the session and leave everything on
+   * the phone, so the next account to sign in inherited the last one's Journeys and backed them up as
+   * its own. Now it clears the phone, after saying so, and the account keeps its backup. A build with
+   * the single-user config has only one account to be, so it keeps the plain sign-out.
+   */
+  const { canSwitchAccount, switchAccount } = useAccountSession();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const confirmUnbackedLoss = () =>
+    new Promise<boolean>((resolve) => {
+      Alert.alert(
+        t('signIn.signOutBackupFailedTitle'),
+        t('signIn.signOutBackupFailedBody'),
+        [
+          { text: t('cancel', { ns: 'common' }), style: 'cancel', onPress: () => resolve(false) },
+          { text: t('signIn.signOutAnyway'), style: 'destructive', onPress: () => resolve(true) },
+        ],
+        // Dismissing the dialog (Android back, tapping outside) is a "no", never a hanging sign-out.
+        { cancelable: true, onDismiss: () => resolve(false) },
+      );
+    });
+
+  const runSwitchAccount = async () => {
+    setSigningOut(true);
+    try {
+      await switchAccount({ confirmUnbackedLoss });
+    } catch {
+      Alert.alert(t('signIn.signOutFailedTitle'), t('signIn.signOutFailedBody'));
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
+  const onSignOut = () => {
+    if (!canSwitchAccount) {
+      void signOut();
+      return;
+    }
+    if (signingOut) return;
+    Alert.alert(t('signIn.signOutConfirmTitle'), t('signIn.signOutConfirmBody'), [
+      { text: t('cancel', { ns: 'common' }), style: 'cancel' },
+      { text: t('signIn.signOutConfirm'), style: 'destructive', onPress: () => void runSwitchAccount() },
+    ]);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -250,8 +297,9 @@ export default function SettingsScreen() {
                 <SettingsRow
                   icon="log-out-outline"
                   label={t('signIn.signOut')}
-                  detail={t('signIn.signOutDetail')}
-                  onPress={() => void signOut()}
+                  detail={canSwitchAccount ? t('signIn.signOutSwitchDetail') : t('signIn.signOutDetail')}
+                  value={signingOut ? t('signIn.signingOut') : undefined}
+                  onPress={onSignOut}
                 />
               </>
             ) : (

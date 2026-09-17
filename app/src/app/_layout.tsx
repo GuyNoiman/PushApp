@@ -24,6 +24,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 // Importing the i18n instance runs its init (side-effect) before any screen
 // renders, so `t(...)` is ready and the boot language is resolved.
 import '@/i18n';
+import { AccountScope } from '@/state/AccountScope';
 import { AppProvider, useApp } from '@/state/AppProvider';
 import { AuthProvider } from '@/state/AuthProvider';
 import { CelebrationPreferenceProvider } from '@/state/CelebrationPreference';
@@ -138,13 +139,21 @@ export default function RootLayout() {
                   It must wrap ThemedChrome — which resolves useColorScheme() for the
                   nav palette + StatusBar — so a preference change re-themes the app. */}
               <ThemePreferenceProvider>
-                {/* Owns the user's on/off choice for SMALL Step celebrations
-                    (Settings › App). A sibling concern to theme; the big Journey
-                    ceremony is never governed by this flag. */}
-                <CelebrationPreferenceProvider>
-                  {/* Owns the user's language choice (Settings › Language) + the
-                      RTL/restart bookkeeping. A sibling concern to theme. */}
-                  <LanguagePreferenceProvider>
+                {/* Owns the user's language choice (Settings › Language) + the
+                    RTL/restart bookkeeping. A sibling concern to theme. */}
+                <LanguagePreferenceProvider>
+                  {/* Everything below belongs to the ACCOUNT, not the phone. After a switch of
+                      account or a deletion the app relaunches so none of it keeps the last person's
+                      data in memory; where it cannot relaunch (web, Expo Go) this scope mounts it all
+                      again instead. Theme and language sit above it on purpose: they are kept. The
+                      celebration switch moved inside it on 2026-09-17 for that reason (it is wiped
+                      with the account); it never depended on the language provider or the other way
+                      round, so the order between the two changes nothing else. */}
+                  <AccountScope>
+                  {/* Owns the user's on/off choice for SMALL Step celebrations
+                      (Settings › App). A sibling concern to theme; the big Journey
+                      ceremony is never governed by this flag. */}
+                  <CelebrationPreferenceProvider>
                     {/* The ONE profile store (Own_Profile) — the private source of truth for identity +
                         adaptation fields. It mirrors form-of-address (D31) + week-start day (D33) into
                         the framework-free modules the engines read, so there is a single home. */}
@@ -173,10 +182,13 @@ export default function RootLayout() {
                             language, form of address or communication style changes (D40). It sits
                             here because it needs the core, the language provider AND the profile. */}
                         <NotificationCopySync />
-                        {/* Renders nothing: restores this account's state on a new device and keeps
-                            the server copy current. The reason a lost phone is survivable (D73). */}
-                        <StateBackupProvider />
-                        <ThemedChrome />
+                        {/* Restores this account's state on a new device and keeps the server copy
+                            current. The reason a lost phone is survivable (D73). It wraps the screens
+                            (it used to render nothing beside them) so Settings › Sign out can flush
+                            and suspend the backup before the device is handed to another account. */}
+                        <StateBackupProvider>
+                          <ThemedChrome />
+                        </StateBackupProvider>
                             </ToolRecordsProvider>
                             </MessagingProvider>
                             </ReflectionsProvider>
@@ -185,8 +197,9 @@ export default function RootLayout() {
                         </LifeWheelProvider>
                       </ToolsShelfProvider>
                     </ProfileProvider>
-                  </LanguagePreferenceProvider>
-                </CelebrationPreferenceProvider>
+                  </CelebrationPreferenceProvider>
+                  </AccountScope>
+                </LanguagePreferenceProvider>
               </ThemePreferenceProvider>
             </SocialProvider>
           </EntitlementProvider>

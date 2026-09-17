@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import type { ValuesState } from '@/core/tools/values/flow';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 export const VALUES_STATE_KEY = 'pushapp.values.state';
 
@@ -80,7 +81,7 @@ export function ValuesProvider({ children }: { children: ReactNode }) {
 
   const save = useCallback((next: ValuesState) => {
     setState(next);
-    void AsyncStorage.setItem(VALUES_STATE_KEY, JSON.stringify(next)).catch(() => {});
+    void writeAccountStore(VALUES_STATE_KEY, JSON.stringify(next)).catch(() => {});
   }, []);
 
   const clear = useCallback(() => {

@@ -33,8 +33,6 @@ function toRound(row: any): MirrorRoundRow {
 }
 
 export class SupabaseMirrorGateway implements MirrorGateway {
-  private uid: string | null = null;
-
   get enabled(): boolean {
     return supabase !== null;
   }
@@ -44,12 +42,20 @@ export class SupabaseMirrorGateway implements MirrorGateway {
     return supabase;
   }
 
+  /**
+   * The account the session holds RIGHT NOW, read on every call.
+   *
+   * THE BUG THIS REPLACES (2026-09-17, the same one `SupabaseStateBackupGateway` had): the id used to
+   * be cached on the first call, which belongs to the anonymous session the app opens at launch. After
+   * a real sign-in or a switch of account, rounds were opened, listed, answered and closed as the
+   * previous account. The session is read from local storage (no network round trip), and RLS still
+   * decides what the id may reach.
+   */
   private async requireUid(): Promise<string> {
-    if (this.uid) return this.uid;
-    const { data } = await this.client().auth.getUser();
-    this.uid = data.user?.id ?? null;
-    if (!this.uid) throw new Error('not signed in');
-    return this.uid;
+    const { data } = await this.client().auth.getSession();
+    const id = data.session?.user.id ?? null;
+    if (!id) throw new Error('not signed in');
+    return id;
   }
 
   async openRound(input: {

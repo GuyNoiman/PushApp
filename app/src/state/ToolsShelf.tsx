@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { recordUse, toggleSaved as toggle, type ToolUsage } from '@/core/tools/shelf';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 /** One key each, so a corrupt value in one never takes the other down with it. */
 export const TOOLS_USAGE_KEY = 'pushapp.toolsUsage';
@@ -83,7 +84,7 @@ export function ToolsShelfProvider({ children }: { children: ReactNode }) {
   const markUsed = useCallback((key: string) => {
     setUsage((prev) => {
       const next = recordUse(prev, key, Date.now());
-      void AsyncStorage.setItem(TOOLS_USAGE_KEY, JSON.stringify(next)).catch(() => {});
+      void writeAccountStore(TOOLS_USAGE_KEY, JSON.stringify(next)).catch(() => {});
       return next;
     });
   }, []);
@@ -91,7 +92,7 @@ export function ToolsShelfProvider({ children }: { children: ReactNode }) {
   const toggleSaved = useCallback((key: string) => {
     setSaved((prev) => {
       const next = toggle(prev, key);
-      void AsyncStorage.setItem(TOOLS_SAVED_KEY, JSON.stringify(next)).catch(() => {});
+      void writeAccountStore(TOOLS_SAVED_KEY, JSON.stringify(next)).catch(() => {});
       return next;
     });
   }, []);

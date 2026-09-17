@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { dueNow, type Reflection, type ReflectionArchive } from '@/core/tools/reflections/model';
+import { writeAccountStore } from '@/state/accountStoreWrites';
 
 export const REFLECTIONS_KEY = 'pushapp.reflections';
 
@@ -87,7 +88,7 @@ export function ReflectionsProvider({ children }: { children: ReactNode }) {
 
   const persist = useCallback((next: Reflection[]) => {
     setArchive(next);
-    void AsyncStorage.setItem(REFLECTIONS_KEY, JSON.stringify(next)).catch(() => {});
+    void writeAccountStore(REFLECTIONS_KEY, JSON.stringify(next)).catch(() => {});
   }, []);
 
   const add = useCallback(

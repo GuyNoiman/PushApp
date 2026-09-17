@@ -1904,6 +1904,14 @@ export class AppCore {
     this.notify();
   }
 
+  /**
+   * When the Portrait handoff was last used (epoch ms), or undefined if it never was. Read-only, for
+   * the TEMPORARY tester view of the Portrait (`app/settings/portrait-tester.tsx`); remove with it.
+   */
+  getPortraitHandoffUsedAt(): number | undefined {
+    return this.state.portraitHandoffUsedAt;
+  }
+
   /** Forget what we understood. The person's own words are theirs to withdraw. */
   clearPortrait(): void {
     if (!this.state.portrait) return;

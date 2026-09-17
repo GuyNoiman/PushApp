@@ -25,7 +25,7 @@ import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DeleteAccountSheet } from '@/components/settings/DeleteAccountSheet';
@@ -33,6 +33,8 @@ import { ProfileIdentity } from '@/components/settings/ProfileIdentity';
 import { SettingsOptionSheet } from '@/components/settings/SettingsOptionSheet';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+// TEMPORARY tester tools — remove this import and `useTesterTools` below with `state/TesterTools.ts`.
+import { TesterToolsNotice } from '@/components/settings/TesterToolsNotice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TabScrollView } from '@/components/ui/TabScrollView';
@@ -43,6 +45,7 @@ import { OTA_VERSION } from '@/core/update/otaVersion';
 import { readRunningBundle, shortRuntime, shortUpdateId } from '@/core/util/buildInfo';
 import { useApp } from '@/state/AppProvider';
 import { useAuth } from '@/state/AuthProvider';
+import { useTesterTools } from '@/state/TesterTools';
 
 /**
  * The public privacy policy. One URL, published from `04_Product/Privacy_Policy.md` — the app links
@@ -94,6 +97,8 @@ export default function SettingsScreen() {
     [weekdayNames],
   );
   const { exportData, deleteAccount } = useAccountActions();
+  // TEMPORARY: the hidden tester tools, unlocked by tapping About (see state/TesterTools.ts).
+  const testerTools = useTesterTools();
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
 
   // Active Hours summary (D40) — the same line the Personal Details row shows (useActiveHoursSummary).
@@ -382,12 +387,16 @@ export default function SettingsScreen() {
               detail={t('app.privacyDetail')}
               onPress={() => void Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
             />
-            <SettingsRow
-              icon="information-circle-outline"
-              label={t('app.about')}
-              detail={aboutDetail}
-              value={`v${appVersion}`}
-            />
+            {/* TEMPORARY: the About row is also the hidden tester-tools unlock. Wrapped rather than
+                given an `onPress`, so it keeps looking exactly like the plain information it is. */}
+            <Pressable accessible={false} onPress={testerTools.tap} testID="settings-about">
+              <SettingsRow
+                icon="information-circle-outline"
+                label={t('app.about')}
+                detail={aboutDetail}
+                value={`v${appVersion}`}
+              />
+            </Pressable>
           </SettingsSection>
 
           {/* Help and feedback — the one way a person can tell us something is wrong (Operational
@@ -432,7 +441,21 @@ export default function SettingsScreen() {
               />
             </SettingsSection>
           ) : null}
+
+          {/* TEMPORARY tester tools — only after the hidden unlock. Remove before real users. */}
+          {testerTools.enabled ? (
+            <SettingsSection title={t('testerTools.section')}>
+              <SettingsRow
+                icon="document-text-outline"
+                label={t('testerTools.portraitRow')}
+                detail={t('testerTools.portraitRowDetail')}
+                onPress={() => router.push('/settings/portrait-tester' as Href)}
+              />
+            </SettingsSection>
+          ) : null}
         </TabScrollView>
+
+        <TesterToolsNotice notice={testerTools.notice} />
 
         {/* The seven days, with today's choice ticked — see SettingsOptionSheet for why a list. */}
         <SettingsOptionSheet

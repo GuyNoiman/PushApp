@@ -228,5 +228,20 @@
       "cta": "פתיחת הגדרות המערכת"
     },
     "footnote": "התזכורות נקבעות על המכשיר שלכם. אין לנו שרת ששולח לכם התראות, ולכן כל השאר מגיע רק כשהאפליקציה נפתחת."
+  },
+  "testerTools": {
+    "_comment": "TEMPORARY tester copy (founder, 2026-09-17). Remove this whole block together with src/state/TesterTools.ts and src/app/settings/portrait-tester.tsx before real users.",
+    "section": "כלי בודק",
+    "unlocked": "כלי הבודק הופעלו",
+    "locked": "כלי הבודק כובו",
+    "portraitRow": "דיוקן (תצוגת בודק)",
+    "portraitRowDetail": "מה שהמאמן בנה, כפי שהוא שמור",
+    "portraitTitle": "דיוקן (תצוגת בודק)",
+    "lockedBody": "כלי הבודק כבויים.",
+    "exists": "יש דיוקן שמור",
+    "yes": "כן",
+    "no": "לא",
+    "json": "ה-JSON השמור",
+    "jsonHint": "לחיצה ארוכה על הטקסט כדי לסמן ולהעתיק."
   }
 }

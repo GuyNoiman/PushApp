@@ -15,6 +15,8 @@ import { LIFE_WHEEL_ANSWERS_KEY, LIFE_WHEEL_SUMMARY_KEY } from '@/state/LifeWhee
 import { PASSION_DRAFT_KEY, PASSION_MAP_KEY } from '@/state/PassionMapStore';
 import { PROFILE_KEY } from '@/state/ProfileProvider';
 import { REFLECTIONS_KEY } from '@/state/ReflectionsStore';
+// TEMPORARY tester tools — remove this import and its key below with `state/TesterTools.ts`.
+import { TESTER_TOOLS_KEY } from '@/state/TesterTools';
 import { THEME_PREFERENCE_KEY } from '@/state/ThemePreference';
 import { TOOLS_SAVED_KEY, TOOLS_USAGE_KEY } from '@/state/ToolsShelf';
 import { VALUES_STATE_KEY } from '@/state/ValuesStore';
@@ -57,6 +59,9 @@ export const ACCOUNT_STORAGE_KEYS = [
   ...TOOL_RECORD_STORAGE_KEYS,
   // The bell's read marks.
   NOTIFICATION_READS_KEY,
+  // TEMPORARY: the hidden tester-tools switch. A wiped device is a fresh install, and a fresh install
+  // has the tools off.
+  TESTER_TOOLS_KEY,
 ] as const;
 
 /**

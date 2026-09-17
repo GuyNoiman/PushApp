@@ -226,5 +226,20 @@
       "cta": "Open system settings"
     },
     "footnote": "Reminders are scheduled on your own device. We have no server that can send you a notification, which is why everything else arrives only when the app is opened."
+  },
+  "testerTools": {
+    "_comment": "TEMPORARY tester copy (founder, 2026-09-17). Remove this whole block together with src/state/TesterTools.ts and src/app/settings/portrait-tester.tsx before real users.",
+    "section": "Tester tools",
+    "unlocked": "Tester tools on",
+    "locked": "Tester tools off",
+    "portraitRow": "Portrait (tester view)",
+    "portraitRowDetail": "What the coach built, as it is stored",
+    "portraitTitle": "Portrait (tester view)",
+    "lockedBody": "Tester tools are off.",
+    "exists": "A Portrait is stored",
+    "yes": "Yes",
+    "no": "No",
+    "json": "Stored JSON",
+    "jsonHint": "Long-press the text to select and copy it."
   }
 }

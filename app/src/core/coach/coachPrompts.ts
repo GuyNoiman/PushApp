@@ -18,7 +18,7 @@
  *
  * Pure TypeScript — no React, no UI, no vendor imports.
  */
-import { coachCharacter } from './coachCharacter';
+import { coachCharacter, languageCapability } from './coachCharacter';
 import { findLanguage } from '../../i18n/languages';
 import { CAREER_SIGNAL_HINTS } from '../learning/domains/career/diagnosis';
 import { DOMAIN_IDS } from '../learning/registry';
@@ -374,6 +374,10 @@ export const DREAM_SYSTEM_PROMPT = [
   'Before removing a Dream that is the only Dream of a running Journey, link that Journey to another',
   'Dream in the same set of changes, or the removal will not happen.',
   'If the message asks for nothing that maps to a change, return {"changes":[],"reply":"…"}.',
+  '',
+  // The "reply" is read by the person, and this prompt carries no character. Without the facts, a
+  // model asked about language invents a limit (founder's device test, 2026-09-17).
+  languageCapability(),
 ].join('\n');
 
 /** Prefix marking the hidden Dream directive turn. */

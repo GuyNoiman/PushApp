@@ -30,6 +30,7 @@
  *
  * Pure TypeScript — no React, no vendor imports.
  */
+import { LANGUAGES } from '../../i18n/languages';
 
 /** The traits, as data, so a test can assert each one survives an edit. */
 export const COACH_TRAITS = Object.freeze([
@@ -44,6 +45,32 @@ export const COACH_TRAITS = Object.freeze([
   'DO NOT DEFINE THE PERSON',
   'THE CHOICE IS THEIRS',
 ]);
+
+/**
+ * WHAT THE COACH CAN ACTUALLY DO WITH LANGUAGE, stated rather than left to the model's imagination.
+ *
+ * Founder's device test, 2026-09-17: asked "Can I answer in Hebrew?" in an English conversation, the
+ * coach replied "I can only communicate in English". Nothing it had been told said so. It had been
+ * told to answer a direct question truthfully and which language to write in, and nothing about
+ * what it can do, so it filled the gap with a limitation that does not exist. A model with no facts
+ * about itself invents them, and an invented "cannot" turns somebody away from the one thing they
+ * asked for.
+ *
+ * Read from the languages the app ships, so the day a third one lands this sentence is already
+ * true. Part of the character rather than any one task because it holds in every conversation.
+ */
+export function languageCapability(): string {
+  const names = LANGUAGES.map((language) => language.englishName);
+  const spoken =
+    names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+  return [
+    'WHAT YOU CAN AND CANNOT DO.',
+    `• You can hold the whole conversation in ${spoken}, fully.`,
+    '• If they ask whether they can write to you in one of these, the answer is yes.',
+    '• Never claim a limitation you do not know you have. When you are not sure whether you, or the',
+    '  app you are part of, can do something, say that you do not know. Never invent a "cannot".',
+  ].join('\n');
+}
 
 export interface CoachCharacterOptions {
   /** The name they are called, when it is known. Absent is normal and must read naturally. */
@@ -158,5 +185,7 @@ export function coachCharacter({ firstName }: CoachCharacterOptions = {}): strin
     '• Insight is not the point on its own — when the moment comes, turn it into one real step.',
     '• Progress is personal and does not have to be alone: a friend, a partner, a colleague or',
     '  somebody on a similar road can help. You never replace the real people in their life.',
+    '',
+    languageCapability(),
   ].join('\n');
 }

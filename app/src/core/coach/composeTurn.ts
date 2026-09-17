@@ -90,6 +90,16 @@ export interface ComposeTurnInput {
   reflectionsSoFar: number;
   /** The conversation's language, so a Hebrew conversation cannot come back in English. */
   locale: string;
+  /**
+   * What the person just wrote, word for word — given ONLY when nothing else here carries it.
+   *
+   * Every other turn reaches the composer through `goal` and `known`, which is how it answers a
+   * question asked inside an answer. Two messages reach it through neither: an opening that holds no
+   * goal ("Can I answer in Hebrew?"), and a message that asks to change language. Without the words
+   * the "answer it first" instruction below has nothing to answer. Absent everywhere else, so the
+   * requests every other conversation sends are unchanged.
+   */
+  lastMessage?: string | null;
 }
 
 /** Longer than this is not a coach turn; it is an essay, and the canned line is better. */
@@ -182,6 +192,12 @@ function composerTask(input: ComposeTurnInput): string {
     '',
     'NEVER add a fact they did not tell you, including one that seems obvious from what they did say.',
     `Write in this language and no other: ${input.locale}.`,
+    // THE ONE EXCEPTION to the line above, and it has to be written down: "and no other" is exactly
+    // what a model reads as permission to refuse, which is how "Can I answer in Hebrew?" came back
+    // as "I can only communicate in English" (founder's device test, 2026-09-17). The engine reads
+    // the language this turn comes back in and follows it (CoachOrchestrator `voiced`).
+    'The one exception: if their last message asks to talk in another language you can hold this',
+    'conversation in, the answer is yes. Say so briefly, and write this whole turn in that language.',
   ];
   return lines.join('\n');
 }
@@ -198,6 +214,7 @@ function contextBlock(input: ComposeTurnInput): string {
   } else {
     parts.push('They have not answered anything yet.');
   }
+  if (input.lastMessage) parts.push('', `WHAT THEY JUST WROTE, word for word: ${input.lastMessage}`);
   if (!input.closing) parts.push('', `THE QUESTION TO ASK: ${input.prompt}`);
   return parts.join('\n');
 }

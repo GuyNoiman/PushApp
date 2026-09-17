@@ -434,6 +434,16 @@ export interface CoachTurn {
   technicalNotes?: TechnicalNote[];
 }
 
+/**
+ * What the person WROTE to cause a turn (never a tap). Read for a request to change language, and
+ * handed to the composer when nothing else carries their words.
+ */
+interface TypedMessage {
+  text: string;
+  /** Hand the words to the composer even when they name no language — the no-goal re-invite. */
+  quote?: boolean;
+}
+
 /** A read-only snapshot of the orchestrator's progress. */
 export interface OrchestratorState {
   /** The current stage. */
@@ -658,11 +668,34 @@ export class CoachOrchestrator {
    * wrote to the coach in Hebrew inside an English install on 2026-09-07 and was answered in
    * English, which is the app talking past the person in front of it.
    *
-   * DECIDED ONCE AND KEPT, deliberately. Reading it per message would swing the conversation on a
-   * single English word inside a Hebrew sentence — a brand name, a job title — which is worse than
-   * being wrong consistently.
+   * DECIDED ONCE FROM THE OPENING, deliberately. Reading it afresh per message would swing the
+   * conversation on a single English word inside a Hebrew sentence — a brand name, a job title —
+   * which is worse than being wrong consistently.
+   *
+   * ── REFINED 2026-09-17, DELIBERATELY: THE PERSON CAN STILL CHANGE IT ─────────────────────────
+   *
+   * D101 exists so the coach speaks the person's language. It was never meant to lock them out of
+   * it, and on the founder's device test it did exactly that: "Can I answer in Hebrew?" in an
+   * English conversation was answered "I can only communicate in English". So after the opening the
+   * language still changes, but only on a clear signal, never on a stray word:
+   *  · they PLAINLY WRITE in the other language ({@link plainlyWrittenLocale}, deterministic — see
+   *    there for why the bar is lower for Hebrew than for English); or
+   *  · they ASK for it in words ({@link namedLocales}) AND the composer, reading that request, wrote
+   *    its turn in the language asked for ({@link voiced}). No extra model call: the request is read
+   *    by the call that already writes the turn, and the engine only follows what came back.
+   * Tapped cards never count. They are rendered in the APP language, so tapping one says nothing
+   * about what the person writes in.
    */
   private conversationLocale?: string;
+  /** True once the opening message has decided {@link conversationLocale}; later messages only switch it. */
+  private openingLocaleRead = false;
+  /**
+   * How many messages IN A ROW understanding has read no goal from. The first gets a free-text
+   * re-invite; only the second gets the closed process-type card (founder, 2026-09-17: a question
+   * such as "Can I answer in Hebrew?" is not a goal, and a closed card on turn one is the "closed
+   * questions too early" he has asked us to stop).
+   */
+  private goalMisses = 0;
 
   /** The goals understanding detected, in order — held while the user makes a focus pick. */
   private understoodGoals: UnderstoodGoal[] = [];
@@ -746,7 +779,8 @@ export class CoachOrchestrator {
    * describes ({@link extractGoals}). The only model call of the interview proper. Then branch:
    *   • several goals → a FOCUS turn (the user picks which ONE to build first; the rest are deferred);
    *   • exactly one  → straight into that goal's expert questions;
-   *   • none usable  → the FALLBACK process-type question.
+   *   • none usable  → a free-text re-invite the first time; the FALLBACK process-type question
+   *                    only when a second message in a row still holds no goal.
    * Named `triage` for continuity; it now understands rather than merely classifies.
    */
   /** Turn the commentary on or off. Changes nothing about what the coach decides — only what it says. */
@@ -794,13 +828,19 @@ export class CoachOrchestrator {
   async triage(goalText: string): Promise<CoachTurn> {
     // The introduction's first message is not a goal — it is a name. Same entry point, because the
     // surface has one composer and one send, and which message this is belongs to the engine.
-    if (this.phase === 'name') return this.voiced(await this.readPersonalName(goalText.trim()));
+    if (this.phase === 'name') {
+      const said = goalText.trim();
+      return this.voiced(await this.readPersonalName(said), { text: said });
+    }
     if (this.phase !== 'goal') {
       throw new Error('Describe the goal after start(), and triage() only once');
     }
     const text = goalText.trim();
-    // Their first words in their own language, before anything is interpreted.
-    this.conversationLocale = writtenLocale(text);
+    // Their first words in their own language, before anything is interpreted. A LATER goal message
+    // (after a re-invite, or after no Journey matched) only switches it on a clear signal — see
+    // {@link conversationLocale}.
+    if (this.openingLocaleRead) this.followWrittenLanguage(text);
+    else this.conversationLocale = writtenLocale(text);
     this.history.push({ role: 'user', content: text });
 
     let goals: UnderstoodGoal[];
@@ -813,6 +853,8 @@ export class CoachOrchestrator {
       this.history.pop();
       throw e;
     }
+    this.openingLocaleRead = true;
+    const typed: TypedMessage = { text };
 
     this.note('Understanding the opening message', {
       'goals detected': goals.length,
@@ -826,26 +868,47 @@ export class CoachOrchestrator {
       this.note('No goal read from the reply; continuing with the one from the first conversation', {
         'read from': 'the Portrait (primaryWant, domain)',
       });
+      this.goalMisses = 0;
       return this.voiced(
         this.activateGoal(
           { title: this.handoff.resume.want, kind: 'process', domain: this.handoff.resume.domain as DomainId },
           [],
         ),
+        typed,
       );
     }
 
-    if (goals.length === 0) {
-      // Understanding produced nothing usable — keep the demoted process-type question as a fallback
-      // so the user can still tell us the shape, and route to the general expert.
-      this.spec.title = text;
-      this.spec.domain = 'general';
-      return this.voiced(this.askProcessTypeFallback());
+    if (goals.length === 0 && this.goalMisses === 0) {
+      // NOT A GOAL, FOR THE FIRST TIME (founder, 2026-09-17). "Can I answer in Hebrew?" is a
+      // question, and answering it with a closed "habit or process" card on turn one is the "closed
+      // questions too early" he keeps pointing at. Answer what they asked (the composer does that
+      // first, and is handed their words to do it) and invite the goal again in their own words.
+      // Same shape in both modes, and it touches nothing: no expert, no catalogue, no spec.
+      this.goalMisses = 1;
+      this.note('No goal read from this message', {
+        'what happens now': 'answer anything they asked, and invite the goal again in their own words',
+        'the closed card': 'only if the next message holds no goal either',
+      });
+      return this.voiced(this.reinviteGoal(), { ...typed, quote: true });
     }
 
+    if (goals.length === 0) {
+      // Understanding produced nothing usable TWICE IN A ROW — keep the demoted process-type
+      // question as a fallback so the user can still tell us the shape, and route to the general
+      // expert. It is what makes the conversation reachable when understanding keeps failing, and it
+      // needs no model at all. In `introduction` mode the card's answer leads to the Portrait, never
+      // to an expert or the catalogue (the belt in {@link beginExpertQuestions}).
+      this.goalMisses += 1;
+      this.spec.title = text;
+      this.spec.domain = 'general';
+      return this.voiced(this.askProcessTypeFallback(), typed);
+    }
+
+    this.goalMisses = 0;
     if (goals.length > 1) {
       // Several distinct goals — focus the user on ONE first before interviewing.
       this.understoodGoals = goals;
-      return this.voiced(this.askFocusChoice(goals));
+      return this.voiced(this.askFocusChoice(goals), typed);
     }
 
     // A single goal — no need to focus; activate it and start its expert's questions.
@@ -854,7 +917,7 @@ export class CoachOrchestrator {
     // in marketing eight years, I am burned out and I have no idea what else" has just filled half
     // the Portrait, and asking them where they are starting from would be the questionnaire again.
     // `reread` is the same async seam the interview already uses after every message.
-    return this.voiced(await this.rereadIntroduction(this.activateGoal(goals[0], [])));
+    return this.voiced(await this.rereadIntroduction(this.activateGoal(goals[0], [])), typed);
   }
 
   /**
@@ -899,14 +962,19 @@ export class CoachOrchestrator {
       throw new Error(`Question "${question.id}" does not allow a free-text answer`);
     }
     const answer = text.trim();
+    // Written, not tapped — so it may say which language they are writing in now.
+    this.followWrittenLanguage(answer);
+    const typed: TypedMessage = { text: answer };
     // ONE CALL PER MESSAGE (founder, 2026-08-21). During the diagnosis a sentence usually answers more
     // than the question in front of it, so it is read for EVERY signal it supports and the tree skips
     // all of them at once. Everywhere else a free-text answer is stored verbatim, exactly as before.
-    if (this.phase === 'diagnosis') return this.voiced(await this.readSpokenDiagnosisAnswer(question, answer));
+    if (this.phase === 'diagnosis') {
+      return this.voiced(await this.readSpokenDiagnosisAnswer(question, answer), typed);
+    }
     // The focus pick is a choice between goals they named themselves, so a sentence has to be placed
     // back onto one of them before it means anything.
-    if (this.phase === 'focus') return this.voiced(await this.readSpokenFocusPick(answer));
-    return this.voiced(await this.reread(this.record(question, answer)));
+    if (this.phase === 'focus') return this.voiced(await this.readSpokenFocusPick(answer), typed);
+    return this.voiced(await this.reread(this.record(question, answer)), typed);
   }
 
   /**
@@ -1387,6 +1455,24 @@ export class CoachOrchestrator {
       done: false,
       question: cloneQuestion(this.journeyChoiceQuestion),
       activeExpert: this.activeExpert,
+    };
+  }
+
+  /**
+   * Invite the goal again, in their own words — the first message that held no goal (see
+   * {@link goalMisses}). The same shape as {@link offerJourneyRefinement}: still in `goal`, the
+   * composer open, no question and no cards. Nothing about a goal is set, because none was read.
+   */
+  private reinviteGoal(): CoachTurn {
+    this.phase = 'goal';
+    const coachMessage = this.applyGuard(cc('goalReinvite'));
+    this.history.push({ role: 'model', content: coachMessage });
+    return {
+      coachMessage,
+      state: this.snapshot(),
+      technicalNotes: this.takeNotes(),
+      done: false,
+      awaitingGoalText: true,
     };
   }
 
@@ -2263,8 +2349,14 @@ export class CoachOrchestrator {
    *
    * A failure returns the turn exactly as it arrived (see {@link composeCoachTurn}), so the offline
    * path is unchanged.
+   *
+   * `typed` is what the person WROTE to cause this turn, absent after a tap. It is where a request
+   * to change language is read (see {@link conversationLocale}): the composer is handed their words
+   * when they name a language, and if its turn comes back in the language they asked for, the
+   * conversation follows from here on. The model is trusted only to have read the request; the
+   * engine checks the script of what it wrote and that the language asked for is one we speak.
    */
-  private async voiced(turn: CoachTurn): Promise<CoachTurn> {
+  private async voiced(turn: CoachTurn, typed?: TypedMessage): Promise<CoachTurn> {
     // WHAT THE FIRST RUN ACTUALLY PRODUCES rides out with every turn of it. Not a Journey — a
     // Portrait, which the screen writes to AppState. Attached HERE, at the one seam every turn
     // passes through, rather than at each builder: a builder that forgot would hand the screen a
@@ -2272,6 +2364,11 @@ export class CoachOrchestrator {
     const said = this.mode === 'introduction' ? this.withPortrait(turn) : turn;
     const original = said.coachMessage;
     if (original.trim().length === 0) return said;
+
+    const current = this.conversationLocale ?? this.locale ?? 'en';
+    // A language they ASKED for in words, other than the one we are already in. Deterministic; the
+    // composer decides whether it was a request, and the check below decides whether it is honoured.
+    const requested = typed ? namedLocales(typed.text).filter((locale) => locale !== current) : [];
 
     const composed = this.applyGuard(
       await composeCoachTurn(this.llm, {
@@ -2291,10 +2388,22 @@ export class CoachOrchestrator {
         // happening — which is the whole reason this mode exists.
         introduction: this.mode === 'introduction',
         reflectionsSoFar: this.reflections,
-        locale: this.conversationLocale ?? this.locale ?? 'en',
+        locale: current,
+        // Only when nothing else carries their words to the composer — see `lastMessage`.
+        ...(typed && (typed.quote || requested.length > 0) ? { lastMessage: typed.text } : {}),
       }),
     );
     if (composed === original) return said;
+
+    const wroteIn = dominantLocale(composed);
+    if (wroteIn && requested.includes(wroteIn)) {
+      this.conversationLocale = wroteIn;
+      this.note('Conversation language changed', {
+        to: wroteIn,
+        why: 'they asked for it in words, and the turn was written in it',
+        'the cards': 'stay in the app language',
+      });
+    }
 
     if (looksLikeReflection(composed, original)) this.reflections += 1;
     // Replace what the builder pushed rather than appending beside it.
@@ -2306,6 +2415,21 @@ export class CoachOrchestrator {
     }
     this.note('Turn composed', { reflections: this.reflections });
     return { ...said, coachMessage: composed };
+  }
+
+  /**
+   * Follow the language somebody PLAINLY WROTE in, after the opening has decided it. A message that
+   * is not clearly in one supported language changes nothing (see {@link plainlyWrittenLocale}).
+   */
+  private followWrittenLanguage(text: string): void {
+    const written = plainlyWrittenLocale(text);
+    if (!written || written === (this.conversationLocale ?? this.locale ?? 'en')) return;
+    this.conversationLocale = written;
+    this.note('Conversation language changed', {
+      to: written,
+      why: 'they are writing in it now',
+      'the cards': 'stay in the app language',
+    });
   }
 
   /** The turn, carrying the Portrait as it stands. A copy, so the screen holds no live reference. */
@@ -2499,6 +2623,61 @@ export function writtenLocale(text: string): string | undefined {
   if (/[\u0590-\u05FF]/.test(text)) return 'he';
   if (/[A-Za-z]/.test(text)) return 'en';
   return undefined;
+}
+
+/** Hebrew and Latin letters in a text, counted. The two scripts this product ships. */
+function scriptCounts(text: string): { hebrew: number; latin: number } {
+  return {
+    hebrew: (text.match(/[\u05D0-\u05EA]/g) ?? []).length,
+    latin: (text.match(/[A-Za-z]/g) ?? []).length,
+  };
+}
+
+/** How many Latin words a message needs, with no Hebrew at all, before it counts as written in English. */
+const PLAIN_ENGLISH_MIN_WORDS = 4;
+
+/**
+ * Which language a message MID-CONVERSATION is plainly written in, or undefined when it is not clear.
+ *
+ * Stricter than {@link writtenLocale}, which reads the opening, because here a wrong answer switches
+ * a conversation that is already under way. And deliberately LOPSIDED:
+ *  · Hebrew wins when there are more Hebrew letters than Latin ones. Somebody writing Hebrew is
+ *    writing Hebrew; an English speaker does not type a Hebrew sentence by accident.
+ *  · English needs no Hebrew at all and at least {@link PLAIN_ENGLISH_MIN_WORDS} Latin words.
+ *    English words inside Hebrew are ordinary (a job title, a tool, "Python", "Google Cloud"), and an
+ *    answer made only of them must not turn a Hebrew conversation into an English one.
+ */
+export function plainlyWrittenLocale(text: string): string | undefined {
+  const { hebrew, latin } = scriptCounts(text);
+  if (hebrew > latin) return 'he';
+  if (hebrew > 0) return undefined;
+  const words = (text.match(/[A-Za-z][A-Za-z'\u2019-]*/g) ?? []).length;
+  return words >= PLAIN_ENGLISH_MIN_WORDS ? 'en' : undefined;
+}
+
+/**
+ * The language a COMPOSED turn is written in: whichever script has more letters. Used only to see
+ * whether the composer honoured a request, so a quoted word in the other script cannot tip it.
+ */
+export function dominantLocale(text: string): string | undefined {
+  const { hebrew, latin } = scriptCounts(text);
+  if (hebrew > latin) return 'he';
+  if (latin > hebrew) return 'en';
+  return undefined;
+}
+
+/**
+ * The supported languages a message NAMES, in either language's word for it. Only a name, never a
+ * decision: "I want to improve my English" names English too, which is why a switch also needs the
+ * composer to have read it as a request and written its turn in that language.
+ */
+const LANGUAGE_NAMES: readonly { locale: string; pattern: RegExp }[] = [
+  { locale: 'he', pattern: /hebrew|ivrit|עברית/i },
+  { locale: 'en', pattern: /english|אנגלית/i },
+];
+
+export function namedLocales(text: string): string[] {
+  return LANGUAGE_NAMES.filter(({ pattern }) => pattern.test(text)).map(({ locale }) => locale);
 }
 
 function questionsForProcessType(

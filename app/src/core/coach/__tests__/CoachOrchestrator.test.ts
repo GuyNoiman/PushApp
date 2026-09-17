@@ -269,11 +269,17 @@ describe('CoachOrchestrator — type drives the flow', () => {
 });
 
 describe('CoachOrchestrator — fallback when nothing is understood', () => {
-  it('falls back to the process-type question when no goal is detected', async () => {
+  it('falls back to the process-type question when a SECOND message in a row holds no goal', async () => {
     const orchestrator = new CoachOrchestrator({
       llm: new MockLlmClient((req) => (req.json ? '{"goals":[]}' : 'x')),
     });
     orchestrator.start();
+
+    // The first miss re-invites in free text (founder, 2026-09-17: no closed card on turn one). The
+    // re-invite itself is covered in `noGoalReinvite.test.ts`.
+    const reinvite = await orchestrator.triage('uhh not sure');
+    expect(reinvite.awaitingGoalText).toBe(true);
+    expect(reinvite.question).toBeUndefined();
 
     const turn = await orchestrator.triage('uhh not sure');
 

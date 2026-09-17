@@ -97,6 +97,8 @@ describe('CoachOrchestrator — Hebrew deterministic copy + safe closed-option m
     });
     orchestrator.start();
 
+    // The first message with no goal re-invites in free text; the card is the second miss.
+    await orchestrator.triage('לא בטוח');
     const fallback = await orchestrator.triage('לא בטוח');
     expect(fallback.question?.id).toBe('meta.processType');
     // The prompt + options are the ACTIVE-language (Hebrew) coachContent copy.

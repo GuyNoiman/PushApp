@@ -6,7 +6,7 @@ every day, before the day's release. Opened 2026-09-16 because the founder said 
 > כבר מאוד קשה לי לעקוב אחרי אילו פיצרים באמת עובדים ואילו פערים עדיין קיימים.
 
 **Last updated:** 2026-09-16, end of day — after **update 11** and the console redeploy.
-**Code state:** `tsc` clean · 3323 tests / 317 suites green · published as **update 13** to both
+**Code state:** `tsc` clean · 3344 tests / 319 suites green · published as **update 14** to both
 channels (9 and 10 were never published — both failed at export, see Traps) · branch
 `feat/buddy-3d-and-reminders`, pushed · console redeployed.
 
@@ -87,8 +87,8 @@ broken AND wrong about what is fixed.
 | Coach states a false limitation | **SHIPPED, update 13** | Every composing prompt states the coach speaks English and Hebrew and forbids invented limits; writing in, or asking for, the other language switches the conversation (refines D101). **Still open:** after a switch the answer cards stay in the app language. |
 | Closed cards after a non-goal first message | **SHIPPED, update 13** | First no-goal message: answered, goal re-invited in free text. Only a second in a row shows the habit-or-process card. **Open for product:** that card inside the INTRODUCTION is a planning question. |
 | The introduction on a real phone | **WORKS, with flaws — partner, 2026-09-17** | First device evidence: the partner ran the introduction in English and in Hebrew. The English conversation read as largely correct (founder: needs wording and tone rules, to come). **Promoted from WORKS ON PAPER.** |
-| One language per coach turn | **BROKEN — partner's Hebrew conversation** | A turn came out half Hebrew, half English ("ליעם, you mentioned that…"), then returned to Hebrew. Likely cause: the question handed to the composer and the fallback copy are resolved in the APP language (English on his phone) rather than the conversation language, and nothing checks the composed turn's language. Fix in build. |
-| Introduction screen header | **BROKEN** | Reads "תוכנית חדשה" / "New plan" during the introduction; approved design §5 says "המאמן שלך · שיחת היכרות". Fix in build. |
+| One language per coach turn | **SHIPPED, update 14** | Copy feeding a turn is resolved in the conversation language; a composed turn in the wrong or mixed language is dropped for the ready-made line (no extra call). Option cards stay in the app language. Needs a re-run of the partner's flow: Android, app in English, conversation in Hebrew. **Known fallback:** a Hebrew turn quoting 4+ English words in a row falls back to the ready-made line. |
+| Introduction screen header | **SHIPPED, update 14** | "Your coach · Introduction" / "המאמן שלך · שיחת היכרות" per design §5; planning keeps "New plan". |
 | The understanding check + rebuild-on-correction | **WORKS ON PAPER** | Tested as behaviour, including that "I want to clarify" genuinely re-reads rather than acknowledges. |
 | Journey-building conversation | **PARTIAL** | Stage 1 shipped in update 12: opens by quoting the Portrait's want and does not re-ask the four questions it answers. Still re-routes an explorer through job-search diagnosis (Stage 2). |
 | Career routing to authored Journeys | **PARTIAL** | Only the job-search diagnosis tree runs. 12 of 27 career Journeys (the "find a direction", "two options", "fit test" and "return after rejection" families) are unreachable, so someone who wants out of their field but does not know what next gets the generic arc. The partner already authored the missing routing rule and its copy. Plan Stage 2. |

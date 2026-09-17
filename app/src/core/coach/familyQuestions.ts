@@ -11,18 +11,23 @@ export function familyQuestionId(familyId: string, axisId: AxisId): string {
   return `library.family.${familyId}.${axisId}`;
 }
 
-function libraryCopy(key: string): string {
-  return i18n.t(key, { ns: 'library', context: addressContext() });
+function libraryCopy(key: string, lng?: string): string {
+  return i18n.t(key, { ns: 'library', context: addressContext(), ...(lng ? { lng } : {}) });
 }
 
+/**
+ * `promptLocale` resolves the PROMPT in the conversation's language when it differs from the app's.
+ * The options never follow it: they are rendered as cards and a tap is matched back against them.
+ */
 export function familyInterviewQuestions(
   family: GoalFamily,
   ctx: SelectionContext = {},
+  promptLocale?: string,
 ): DomainQuestion[] {
   return journeyQuestionsFor(family, ctx).map((question) => ({
     id: familyQuestionId(family.id, question.axisId),
     intent: 'variant',
-    prompt: libraryCopy(question.questionKey),
+    prompt: libraryCopy(question.questionKey, promptLocale),
     options: question.values.map((value) => libraryCopy(value.labelKey)),
     allowOther: false,
   }));

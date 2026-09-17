@@ -79,10 +79,18 @@ export interface AuthoredArc {
   suggestedDurationDays?: number;
 }
 
-/** One authored string in the ACTIVE language and form of address, falling back to the English. */
-export function arcCopy(key: string | undefined, authored: string): string {
+/**
+ * One authored string in the ACTIVE language and form of address, falling back to the English. `lng`
+ * resolves it in another language for this one call (a coach turn in the conversation's language).
+ */
+export function arcCopy(key: string | undefined, authored: string, lng?: string): string {
   if (!key) return authored;
-  const translated = i18n.t(key, { ns: 'library', context: addressContext(), defaultValue: '' });
+  const translated = i18n.t(key, {
+    ns: 'library',
+    context: addressContext(),
+    defaultValue: '',
+    ...(lng ? { lng } : {}),
+  });
   return translated || authored;
 }
 

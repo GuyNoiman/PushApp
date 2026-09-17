@@ -1,6 +1,10 @@
 {
   "closeConversation": "סגירת השיחה",
   "header": "תוכנית חדשה",
+  "introductionHeader": {
+    "title": "המאמן שלך",
+    "subtitle": "שיחת היכרות"
+  },
   "thinking": "חושב…",
   "chooseOne": "בחר אחת",
   "chooseOne_feminine": "בחרי אחת",

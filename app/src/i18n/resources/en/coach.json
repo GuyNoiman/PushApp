@@ -1,6 +1,10 @@
 {
   "closeConversation": "Close conversation",
   "header": "New plan",
+  "introductionHeader": {
+    "title": "Your coach",
+    "subtitle": "Introduction"
+  },
   "thinking": "Thinking…",
   "chooseOne": "Choose one",
   "chooseAny": "Choose any that apply",

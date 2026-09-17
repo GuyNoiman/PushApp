@@ -206,7 +206,7 @@ function CoachOfflineScreen({
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
           </Pressable>
-          <ThemedText type="smallBold">{t('header')}</ThemedText>
+          <CoachHeaderTitle introduction={firstRun} />
         </View>
         <View style={styles.offline}>
           <ConnectionNotice
@@ -229,6 +229,24 @@ function CoachOfflineScreen({
         </View>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+/**
+ * The coach header's title. The INTRODUCTION is not a plan being made, so it does not say "New plan":
+ * approved build spec §5 (`04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`)
+ * gives it "Your coach" over "Introduction". Planning keeps its own title.
+ */
+function CoachHeaderTitle({ introduction }: { introduction: boolean }) {
+  const { t } = useAddressedTranslation('coach');
+  if (!introduction) return <ThemedText type="smallBold">{t('header')}</ThemedText>;
+  return (
+    <View>
+      <ThemedText type="smallBold">{t('introductionHeader.title')}</ThemedText>
+      <ThemedText type="small" themeColor="textMuted">
+        {t('introductionHeader.subtitle')}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -582,7 +600,7 @@ function LiveCoachScreen() {
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <Ionicons name={isRTL() ? 'chevron-forward' : 'chevron-back'} size={24} color={theme.text} />
           </Pressable>
-          <ThemedText type="smallBold">{t('header')}</ThemedText>
+          <CoachHeaderTitle introduction={firstRun} />
         </View>
 
         <KeyboardSafeView

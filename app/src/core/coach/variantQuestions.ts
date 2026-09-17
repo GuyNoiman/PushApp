@@ -38,8 +38,8 @@ export function variantQuestionId(definitionId: string, axisId: AxisId): string 
 }
 
 /** One axis's copy in the ACTIVE language and form of address, from the `library` cache (D55). */
-function libraryCopy(key: string): string {
-  return i18n.t(key, { ns: 'library', context: addressContext() });
+function libraryCopy(key: string, lng?: string): string {
+  return i18n.t(key, { ns: 'library', context: addressContext(), ...(lng ? { lng } : {}) });
 }
 
 /**
@@ -50,6 +50,12 @@ function libraryCopy(key: string): string {
 export function variantInterviewQuestions(
   def: JourneyDefinition,
   ctx: VariantContext = {},
+  /**
+   * The conversation's language for the PROMPT, when it differs from the app's. The options never
+   * follow it: they are cards, and {@link axisAnswersFrom} matches a tap back against the app-language
+   * label.
+   */
+  promptLocale?: string,
 ): DomainQuestion[] {
   return variantQuestionsFor(def, ctx).map((question) => ({
     id: variantQuestionId(def.id, question.axisId),
@@ -57,7 +63,7 @@ export function variantInterviewQuestions(
     // into `obstacles` or `foundation` would put it in the aggregate bucket of a question that is
     // asked of everyone, when this one is asked only by the Journey that needs it.
     intent: 'variant',
-    prompt: libraryCopy(question.questionKey),
+    prompt: libraryCopy(question.questionKey, promptLocale),
     options: question.values.map((value) => libraryCopy(value.labelKey)),
     allowOther: false,
   }));

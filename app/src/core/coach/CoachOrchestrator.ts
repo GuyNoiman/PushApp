@@ -167,11 +167,16 @@ export * from './disclosureParser';
  * Resolve a `coachContent` string in the user's ACTIVE language (i18next core — no React), carrying
  * the user's FORM OF ADDRESS as context so gendered `_feminine`/`_masculine` variants resolve (base
  * key is the fallback — D31).
+ *
+ * `lng` resolves it in another language for this one call, without touching the app's. It is how a
+ * coach turn is written in the CONVERSATION's language (see {@link CoachOrchestrator.say}); absent,
+ * the app language, exactly as before.
  */
-const cc = (key: string): string => i18n.t(key, { ns: 'coachContent', context: addressContext() });
+const cc = (key: string, lng?: string): string =>
+  i18n.t(key, { ns: 'coachContent', context: addressContext(), ...(lng ? { lng } : {}) });
 /** {@link cc} for the few strings that name something back to the user (a Journey, a goal). */
-const ccWith = (key: string, vars: Record<string, string>): string =>
-  i18n.t(key, { ns: 'coachContent', context: addressContext(), ...vars });
+const ccWith = (key: string, vars: Record<string, string>, lng?: string): string =>
+  i18n.t(key, { ns: 'coachContent', context: addressContext(), ...vars, ...(lng ? { lng } : {}) });
 /**
  * Resolve a `coachContent` OPTIONS array in the active language, as a FRESH copy so callers can't
  * mutate the shared resource. The rendered option list AND the constant an answer is matched against
@@ -187,9 +192,11 @@ const ccOptions = (key: string): string[] => [
  * definition id only when the library has no essence for it, which would be a content bug and is
  * better shown than silently blank.
  */
-const journeyEssenceLabel = (definitionId: string): string => {
+const journeyEssenceLabel = (definitionId: string, lng?: string): string => {
   const key = journeyDefinition(definitionId)?.variants[0]?.essenceKey;
-  return key ? i18n.t(key, { ns: 'library', context: addressContext() }) : definitionId;
+  return key
+    ? i18n.t(key, { ns: 'library', context: addressContext(), ...(lng ? { lng } : {}) })
+    : definitionId;
 };
 
 /** The stable id of the fallback process-type meta question. */
@@ -285,11 +292,13 @@ export const CONFIRM_QUESTION: DomainQuestion = {
  * `interview.*` template voices over, and being replaced by a catalogue string from the planner's
  * slate is exactly what must not happen to these.
  */
-function portraitGapQuestion(gap: PortraitGap): DomainQuestion {
+function portraitGapQuestion(gap: PortraitGap, lng?: string): DomainQuestion {
   return {
     id: `portrait.${gap.field}`,
     intent: 'variant',
-    prompt: cc(`portrait.${gap.field}.prompt`),
+    // The conversation's language, not the app's: there are no cards here for a tap to be matched
+    // against, and this sentence is both what the composer rephrases and what is shown without it.
+    prompt: cc(`portrait.${gap.field}.prompt`, lng),
     options: [],
     allowOther: true,
     multiSelect: false,
@@ -1046,7 +1055,7 @@ export class CoachOrchestrator {
         'what happens now': 'the same question stands, with the goals still on offer',
         why: 'choosing for them would build one goal and park the one they came for',
       });
-      const coachMessage = this.applyGuard(this.playbook.focus.intro);
+      const coachMessage = this.applyGuard(this.playbookLine('focus.intro', this.playbook.focus.intro));
       this.history.push({ role: 'model', content: coachMessage });
       return {
         coachMessage,
@@ -1117,7 +1126,7 @@ export class CoachOrchestrator {
     // Their first words, in their own language, before anything is interpreted.
     this.conversationLocale = writtenLocale(said);
     const coachMessage = this.applyGuard(
-      name ? ccWith('introduction.openingNamed', { name }) : cc('introduction.opening'),
+      name ? this.sayWith('introduction.openingNamed', { name }) : this.say('introduction.opening'),
     );
     this.history.push({ role: 'model', content: coachMessage });
     return {
@@ -1153,7 +1162,9 @@ export class CoachOrchestrator {
       this.styleFragment,
       coachSystemPrompt({ firstName: this.firstName }),
       TRIAGE_SYSTEM_PROMPT,
-      buildLocaleDirective(this.locale),
+      // The language they are WRITING in, once the opening has shown it — not the app's. A Hebrew
+      // message in an English install is read as Hebrew, and its goal title is kept in Hebrew.
+      buildLocaleDirective(this.conversationLocale ?? this.locale),
     ]
       .filter((s) => s.length > 0)
       .join('\n\n');
@@ -1325,7 +1336,9 @@ export class CoachOrchestrator {
   /** Surface one diagnosis question, in the partner's own words plus the free-text escape. */
   private askDiagnosisQuestion(question: CareerDiagnosisQuestion): CoachTurn {
     const surfaced = diagnosisQuestionAsDomainQuestion(question);
-    const coachMessage = this.applyGuard(surfaced.prompt);
+    // Spoken in the conversation's language. `surfaced` keeps the app-language prompt and options,
+    // because its options are what a tap is matched back against ({@link diagnosisValueFor}).
+    const coachMessage = this.applyGuard(arcCopy(question.promptKey, question.prompt, this.speechLocale()));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -1388,10 +1401,11 @@ export class CoachOrchestrator {
       if (!family) return this.offerJourneyRefinement('missing_authored_family');
       this.journeyFitAxisId = result.request.question.axisId;
       this.journeyFitValueIds = result.request.question.values.map((value) => value.id);
-      this.journeyFitQuestion = familyInterviewQuestions(family, {
-        answers: this.familyAnswers,
-        signals: profileSignals(this.profile),
-      })[0];
+      this.journeyFitQuestion = familyInterviewQuestions(
+        family,
+        { answers: this.familyAnswers, signals: profileSignals(this.profile) },
+        this.speechLocale(),
+      )[0];
       if (!this.journeyFitQuestion) return this.offerJourneyRefinement('missing_journey_content');
       this.phase = 'journeyFit';
       const coachMessage = this.applyGuard(this.journeyFitQuestion.prompt);
@@ -1410,7 +1424,7 @@ export class CoachOrchestrator {
       const selected = result.autoSelectedDefinitionId;
       if (!selected) return this.offerJourneyRefinement('missing_journey_content');
       this.spec.selectedJourneyDefinitionId = selected;
-      return this.beginExpertQuestions(cc('journeyMatching.singleMatch'));
+      return this.beginExpertQuestions(this.say('journeyMatching.singleMatch'));
     }
 
     // When the matcher has a recommendation, TAKE IT. Handing the user our own taxonomy of Journey
@@ -1429,8 +1443,8 @@ export class CoachOrchestrator {
         why: 'the matcher recommended it — the user is told which, not asked to pick',
       });
       return this.beginExpertQuestions(
-        ccWith('journeyMatching.recommendedSelected', {
-          journey: journeyEssenceLabel(recommended.definitionId),
+        this.sayWith('journeyMatching.recommendedSelected', {
+          journey: journeyEssenceLabel(recommended.definitionId, this.speechLocale()),
         }),
       );
     }
@@ -1441,8 +1455,9 @@ export class CoachOrchestrator {
     this.journeyChoiceQuestion = {
       id: 'career.journeyChoice',
       intent: 'variant',
-      prompt: cc('journeyMatching.multipleMatch'),
-      options: this.journeyChoiceDefinitionIds.map(journeyEssenceLabel),
+      prompt: this.say('journeyMatching.multipleMatch'),
+      // The cards stay in the app language: a tap is matched back against exactly these strings.
+      options: this.journeyChoiceDefinitionIds.map((id) => journeyEssenceLabel(id)),
       allowOther: false,
     };
     this.phase = 'journeyChoice';
@@ -1465,7 +1480,7 @@ export class CoachOrchestrator {
    */
   private reinviteGoal(): CoachTurn {
     this.phase = 'goal';
-    const coachMessage = this.applyGuard(cc('goalReinvite'));
+    const coachMessage = this.applyGuard(this.say('goalReinvite'));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -1481,7 +1496,7 @@ export class CoachOrchestrator {
     this.note('No matching Journey', { reason, next: 'ask the user to refine the goal' });
     this.resetActiveGoal();
     this.phase = 'goal';
-    const coachMessage = this.applyGuard(cc('journeyMatching.noMatch'));
+    const coachMessage = this.applyGuard(this.say('journeyMatching.noMatch'));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -1566,7 +1581,7 @@ export class CoachOrchestrator {
     const gap = nextGap(this.portrait, preferred);
     if (!gap) return this.askUnderstandingCheck(prefix);
     this.pendingGap = gap.field;
-    this.portraitQuestion = portraitGapQuestion(gap);
+    this.portraitQuestion = portraitGapQuestion(gap, this.speechLocale());
     this.note('Opening the most valuable gap', {
       gap: gap.field,
       'worth asking': gap.weight,
@@ -1738,7 +1753,7 @@ export class CoachOrchestrator {
     const definition = journeyDefinition(this.spec.selectedJourneyDefinitionId)
       ?? journeyDefinitionsFor(shape, this.spec.domain)[0];
     if (!definition) return [];
-    return variantInterviewQuestions(definition, { signals: profileSignals(this.profile) });
+    return variantInterviewQuestions(definition, { signals: profileSignals(this.profile) }, this.speechLocale());
   }
 
   /**
@@ -1749,7 +1764,7 @@ export class CoachOrchestrator {
   private askFocusChoice(goals: UnderstoodGoal[]): CoachTurn {
     this.phase = 'focus';
     this.focusQuestion = buildFocusQuestion(goals, this.playbook.focus);
-    const coachMessage = this.applyGuard(this.playbook.focus.intro);
+    const coachMessage = this.applyGuard(this.playbookLine('focus.intro', this.playbook.focus.intro));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -1763,7 +1778,7 @@ export class CoachOrchestrator {
   /** Surface the FALLBACK process-type question (understanding found no usable goal). */
   private askProcessTypeFallback(): CoachTurn {
     this.phase = 'processType';
-    const coachMessage = this.applyGuard(PROCESS_TYPE_QUESTION.prompt);
+    const coachMessage = this.applyGuard(this.say('processType.prompt'));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -1891,7 +1906,7 @@ export class CoachOrchestrator {
   private askJourneyChoiceAgain(): CoachTurn {
     const question = this.journeyChoiceQuestion;
     if (!question) return this.offerJourneyRefinement('missing_journey_content');
-    const coachMessage = this.applyGuard(cc('journeyMatching.selectionUnavailable'));
+    const coachMessage = this.applyGuard(this.say('journeyMatching.selectionUnavailable'));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -1956,7 +1971,7 @@ export class CoachOrchestrator {
   /** Surface the closing scheduling-preference meta question after the expert's questions. */
   private askSchedulingQuestion(prefix?: string): CoachTurn {
     this.phase = 'scheduling';
-    const body = SCHEDULING_QUESTION.prompt;
+    const body = this.say('scheduling.prompt');
     const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${body}` : body);
     this.history.push({ role: 'model', content: coachMessage });
     return {
@@ -2114,7 +2129,7 @@ export class CoachOrchestrator {
   private metaVoiced(question: DomainQuestion): DomainQuestion {
     const key = META_VOICE_KEYS[question.intent];
     if (!key) return question;
-    const voiced = cc(key);
+    const voiced = this.say(key);
     return voiced && voiced !== key ? { ...question, prompt: voiced } : question;
   }
 
@@ -2129,7 +2144,7 @@ export class CoachOrchestrator {
   private askUnderstandingCheck(prefix?: string): CoachTurn {
     this.phase = 'confirm';
     this.understandingChecked = true;
-    const body = CONFIRM_QUESTION.prompt;
+    const body = this.say('understandingCheck.prompt');
     const coachMessage = this.applyGuard(prefix ? `${prefix}\n\n${body}` : body);
     this.history.push({ role: 'model', content: coachMessage });
     this.note('Understanding check', {
@@ -2152,7 +2167,7 @@ export class CoachOrchestrator {
    */
   private askForCorrection(): CoachTurn {
     this.phase = 'correcting';
-    const coachMessage = this.applyGuard(CORRECTION_QUESTION.prompt);
+    const coachMessage = this.applyGuard(this.say('understandingCheck.askCorrection'));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -2196,7 +2211,7 @@ export class CoachOrchestrator {
       why: 'a correction acknowledged is a plan still built on the wrong answer',
     });
     // `reread`, at the async boundary, does the reading. This returns the turn it works from.
-    return this.askNextOutstanding(cc('understandingCheck.rebuilt'));
+    return this.askNextOutstanding(this.say('understandingCheck.rebuilt'));
   }
 
   /**
@@ -2227,7 +2242,7 @@ export class CoachOrchestrator {
       why: 'a correction acknowledged is a picture still built on what they told us was wrong',
     });
     // `readPortraitTurn`, at the async boundary, does the reading. This is the turn it works from.
-    return this.askNextGap(cc('understandingCheck.rebuilt'));
+    return this.askNextGap(this.say('understandingCheck.rebuilt'));
   }
 
   /**
@@ -2247,7 +2262,7 @@ export class CoachOrchestrator {
       'what was built': 'nothing — this conversation chooses no Journey (D105)',
       'what happens next': 'the first run continues with the intro Journey and its tail',
     });
-    const coachMessage = this.applyGuard(cc('introduction.closing'));
+    const coachMessage = this.applyGuard(this.say('introduction.closing'));
     this.history.push({ role: 'model', content: coachMessage });
     return {
       coachMessage,
@@ -2295,7 +2310,10 @@ export class CoachOrchestrator {
       });
     }
 
-    const lines = [feasibility?.note, this.playbook.supportCircleRecommendation].filter(
+    const lines = [
+      feasibility?.note,
+      this.playbookLine('supportCircleRecommendation', this.playbook.supportCircleRecommendation),
+    ].filter(
       (l): l is string => !!l && l.length > 0,
     );
     const coachMessage = this.applyGuard(lines.join('\n\n'));
@@ -2396,7 +2414,23 @@ export class CoachOrchestrator {
     if (composed === original) return said;
 
     const wroteIn = dominantLocale(composed);
-    if (wroteIn && requested.includes(wroteIn)) {
+    const switching = wroteIn !== undefined && requested.includes(wroteIn) && turnIsWrittenIn(composed, wroteIn);
+    // THE TURN MUST BE IN THE CONVERSATION'S LANGUAGE, AND ONLY IN IT (partner's device test,
+    // 2026-09-17). Handed a Hebrew conversation, the composer once wrote "ליעם, you mentioned that
+    // if this changed…" — a Hebrew name and then English. Nothing checked, so it was shown. Now a
+    // turn that is in the wrong language, or carries a whole sentence of the other one, is dropped
+    // and the canned line (already resolved in the conversation's language) is shown instead. The
+    // one exception is the switch they asked for, which has to arrive in the language they asked for.
+    if (!switching && !turnIsWrittenIn(composed, current)) {
+      this.note('Composed turn discarded', {
+        'conversation language': current,
+        'written in': wroteIn ?? 'no clear language',
+        why: 'a turn that is not wholly in the conversation language is worse than the canned line',
+        'shown instead': 'the canned line, in the conversation language',
+      });
+      return said;
+    }
+    if (switching && wroteIn) {
       this.conversationLocale = wroteIn;
       this.note('Conversation language changed', {
         to: wroteIn,
@@ -2467,6 +2501,40 @@ export class CoachOrchestrator {
       facts.push({ asked: asked.get(id) ?? id, answered: text });
     }
     return facts;
+  }
+
+  /**
+   * The language a coach turn is resolved in: the language of the CONVERSATION once a message has
+   * shown it, and the app's until then (which is also what the composer is told, in {@link voiced}).
+   * Undefined only when neither is known, which resolves in the active app language.
+   */
+  private speechLocale(): string | undefined {
+    return this.conversationLocale ?? this.locale;
+  }
+
+  /**
+   * A `coachContent` line for a coach TURN, in the conversation's language (partner, 2026-09-17).
+   *
+   * The app's language decides the interface; it does not decide the conversation. Resolving the
+   * question in the app language handed a Hebrew conversation an English question to rephrase, and
+   * the composer half-translated it. Only the words said move: option CARDS stay in the app language,
+   * because a tap is matched back against the exact string rendered ({@link ccOptions}).
+   */
+  private say(key: string): string {
+    return cc(key, this.speechLocale());
+  }
+
+  /** {@link say} for a line that names something back to them. */
+  private sayWith(key: string, vars: Record<string, string>): string {
+    return ccWith(key, vars, this.speechLocale());
+  }
+
+  /**
+   * A playbook line, in the conversation's language when the playbook is the shipped one. An injected
+   * playbook says exactly what it was given: its copy is not ours to translate.
+   */
+  private playbookLine(key: string, injected: string): string {
+    return this.playbook === INTERVIEW_PLAYBOOK ? this.say(key) : injected;
   }
 
   private applyGuard(text: string): string {
@@ -2664,6 +2732,54 @@ export function dominantLocale(text: string): string | undefined {
   if (hebrew > latin) return 'he';
   if (latin > hebrew) return 'en';
   return undefined;
+}
+
+/**
+ * How many words IN A ROW of the other script make a sentence rather than a name or a term.
+ *
+ * The same bar as {@link PLAIN_ENGLISH_MIN_WORDS}, deliberately: four Latin words are where a
+ * person's own message counts as English, so four are where a coach turn has English in it. A name
+ * ("ליעם"), a product ("Google Cloud") or a job title ("Senior product manager") stays under it.
+ */
+const FOREIGN_SENTENCE_MIN_WORDS = PLAIN_ENGLISH_MIN_WORDS;
+
+/** Runs of Hebrew letters, and runs of Latin ones, as words. */
+const HEBREW_LETTERS = /[\u05D0-\u05EA]+/g;
+const LATIN_LETTERS = /[A-Za-z]+/g;
+const HEBREW_WORD = /[\u05D0-\u05EA][\u05D0-\u05EA'"\u05F3\u05F4-]*/g;
+const LATIN_WORD = /[A-Za-z][A-Za-z'\u2019-]*/g;
+
+/**
+ * The most words of the OTHER script that appear with none of `locale`'s own letters between them.
+ * Punctuation, digits and spaces do not break a run: "you mentioned that if this changed, you'd…" is
+ * one run, however many commas it has.
+ */
+function longestForeignRun(text: string, locale: 'he' | 'en'): number {
+  const [own, foreignWord] = locale === 'he' ? [HEBREW_LETTERS, LATIN_WORD] : [LATIN_LETTERS, HEBREW_WORD];
+  return text
+    .split(own)
+    .reduce((most, segment) => Math.max(most, (segment.match(foreignWord) ?? []).length), 0);
+}
+
+/**
+ * Is a COMPOSED turn written in `locale`, and only in it? Deterministic; no model call.
+ *
+ * Two conditions, both needed:
+ *  · more WORDS in the locale's script than in the other. Words rather than letters (which is what
+ *    {@link dominantLocale} counts): "אתה עובד כ-Senior product manager כבר שנתיים?" has more Latin
+ *    letters than Hebrew ones and is plainly a Hebrew sentence; and
+ *  · no run of {@link FOREIGN_SENTENCE_MIN_WORDS} or more words in the other script. That is what
+ *    catches a turn that is mostly Hebrew and then says a whole sentence in English, which the
+ *    count alone would let through.
+ * A locale this product does not ship is not judged: there is nothing to check it against.
+ */
+export function turnIsWrittenIn(text: string, locale: string): boolean {
+  if (locale !== 'he' && locale !== 'en') return true;
+  const hebrew = (text.match(HEBREW_WORD) ?? []).length;
+  const latin = (text.match(LATIN_WORD) ?? []).length;
+  const [own, other] = locale === 'he' ? [hebrew, latin] : [latin, hebrew];
+  if (own <= other) return false;
+  return longestForeignRun(text, locale) < FOREIGN_SENTENCE_MIN_WORDS;
 }
 
 /**

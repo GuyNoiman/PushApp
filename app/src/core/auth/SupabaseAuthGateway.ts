@@ -20,6 +20,7 @@ import {
   AuthIdentityMismatchError,
   AuthNotAvailableError,
   AuthTokenRejectedError,
+  type AccountEntryStatus,
   type AuthGateway,
   type AuthUser,
 } from './AuthGateway';
@@ -146,6 +147,27 @@ export class SupabaseAuthGateway implements AuthGateway {
       cb(toAuthUser(session?.user ?? null));
     });
     return () => data.subscription.unsubscribe();
+  }
+
+  /**
+   * Ask the server whether the signed-in account is new or existing. One security-definer RPC that
+   * answers about the CALLER only (`auth.uid()` on the server); nothing here names an account.
+   */
+  async accountEntryStatus(): Promise<AccountEntryStatus> {
+    const { data, error } = await this.client().rpc('account_entry_status').maybeSingle();
+    if (error) throw error;
+    const row = data as {
+      created_now: boolean | null;
+      has_backup: boolean | null;
+      onboarding_complete: boolean | null;
+    } | null;
+    // No row means the server saw no session: that is "could not ask", never "a new account".
+    if (!row) throw new Error('account_entry_status: not signed in.');
+    return {
+      createdNow: row.created_now === true,
+      hasBackup: row.has_backup === true,
+      onboardingComplete: row.onboarding_complete === true,
+    };
   }
 
   // ── Real sign-in (P4/P5) — the native sheet runs behind `./nativeIdentity`; only a token lands here ──

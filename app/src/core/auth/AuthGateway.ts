@@ -65,6 +65,23 @@ export class AuthTokenRejectedError extends Error {
   }
 }
 
+/**
+ * What the server knows about the account that was just signed into — the three facts that tell a
+ * NEW account from an EXISTING one after an Apple or Google sign-in (Dev_Accounts_And_Restore_Plan
+ * 2026-09-17, `account_entry_status()` in `supabase/migrations/0020_account_entry.sql`).
+ *
+ * Supabase's `signInWithIdToken` creates the account when it does not exist and signs in when it
+ * does, and says nothing about which happened. These answer it. Facts only: no name, no email.
+ */
+export type AccountEntryStatus = {
+  /** The account was created within the last minute — i.e. by the sign-in that just happened. */
+  createdNow: boolean;
+  /** The account holds a state backup. */
+  hasBackup: boolean;
+  /** That backup records a finished first run. False when there is no backup. */
+  onboardingComplete: boolean;
+};
+
 export interface AuthGateway {
   /** Whether the pillar is configured/active (feature flag + env present). */
   readonly enabled: boolean;
@@ -98,6 +115,13 @@ export interface AuthGateway {
    * sign-out. Downstream pillars (social) react to this rather than owning auth.
    */
   onAuthChange(cb: (user: AuthUser | null) => void): () => void;
+
+  /**
+   * Whether the signed-in account is new or existing, and how far it got (see
+   * {@link AccountEntryStatus}). THROWS when there is no session or the server cannot answer, so a
+   * caller never mistakes "could not ask" for "a new account". Not wired to a screen yet (Stage 2).
+   */
+  accountEntryStatus(): Promise<AccountEntryStatus>;
 
   /**
    * Real Apple sign-in. DECLARED for P4 — not available in this phase.
@@ -135,6 +159,11 @@ export const NullAuthGateway: AuthGateway = {
   async deleteAccount() {},
   onAuthChange() {
     return () => {};
+  },
+  async accountEntryStatus() {
+    throw new AuthNotAvailableError(
+      'Account status is unavailable: the auth backend is not configured.',
+    );
   },
   async signInWithApple() {
     throw new AuthNotAvailableError('Sign-in is unavailable: the auth backend is not configured.');

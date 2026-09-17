@@ -24,13 +24,36 @@ export interface StateBackup {
   deviceLabel?: string;
 }
 
+/**
+ * Thrown when the session in front of the gateway belongs to a different account than the caller
+ * meant to read or write. The window is short (the session has changed and React has not caught up
+ * yet), and it is exactly the window in which one account's device state could be written into
+ * another account's row. So the gateway refuses rather than guesses.
+ */
+export class StateBackupAccountChangedError extends Error {
+  constructor() {
+    super('The signed-in account changed before the backup call ran.');
+    this.name = 'StateBackupAccountChangedError';
+  }
+}
+
 export interface StateBackupGateway {
   /** Whether the pillar is configured (backend present and a session exists). */
   readonly enabled: boolean;
-  /** The newest backup for the signed-in account, or null when there has never been one. */
-  fetch(): Promise<StateBackup | null>;
-  /** Store a backup. Returns the timestamp the server recorded. */
-  save(state: string, schemaVersion: number, deviceLabel?: string): Promise<number>;
+  /**
+   * The newest backup for the signed-in account, or null when there has never been one.
+   *
+   * `expectedUserId`, when given, must be the account the session currently holds, or the call
+   * throws {@link StateBackupAccountChangedError} without touching the server.
+   */
+  fetch(expectedUserId?: string): Promise<StateBackup | null>;
+  /** Store a backup. Returns the timestamp the server recorded. Same `expectedUserId` rule as fetch. */
+  save(
+    state: string,
+    schemaVersion: number,
+    deviceLabel?: string,
+    expectedUserId?: string,
+  ): Promise<number>;
   /** Remove it — part of account deletion. */
   clear(): Promise<void>;
 }

@@ -6,7 +6,7 @@ every day, before the day's release. Opened 2026-09-16 because the founder said 
 > כבר מאוד קשה לי לעקוב אחרי אילו פיצרים באמת עובדים ואילו פערים עדיין קיימים.
 
 **Last updated:** 2026-09-16, end of day — after **update 11** and the console redeploy.
-**Code state:** `tsc` clean · 3344 tests / 319 suites green · published as **update 14** to both
+**Code state:** `tsc` clean · 3344 tests / 319 suites green · published as **update 16** to both
 channels (9 and 10 were never published — both failed at export, see Traps) · branch
 `feat/buddy-3d-and-reminders`, pushed · console redeployed.
 
@@ -127,8 +127,8 @@ broken AND wrong about what is fixed.
 | Sign-in with Apple | **UNKNOWN** | One real backend error was hit and fixed on 2026-09-07. No record yet of a successful Apple sign-in end to end; the founder's own device test (S1) will settle it, and it now shows in the console's sign-in card. |
 | Local reminders firing | **WORKS ON PAPER** | Scheduler tested. **No evidence a notification has ever fired and been seen on a phone** — the classic thing that passes unit tests and dies on OS permissions. |
 | Active Hours default 09:00–21:00 | **WORKS ON PAPER** | New accounts only; installed phones keep what they have. |
-| **Account restore on a new device** | **BROKEN — confirmed on the live project, 2026-09-17** | Read-only check: `account_state` has **0 rows**, so no account has ever been backed up; 0 triggers on `auth.users`; 2 real users (one with no `profiles` row), 24 anonymous users. The backup check was spent on the anonymous launch session, the gateway cached that anonymous id, and backups need a `profiles` row nothing created. The promise in the Privacy Policy that an account survives a lost phone has never been true. Fix built (Stage 0, migration 0020 unapplied); plan: `04_Product/Dev_Accounts_And_Restore_Plan_2026-09-17.md`. |
-| **Sign out leaks into the next account** | **BROKEN — found 2026-09-17** | Settings › Sign out ends the session but leaves every local record; if a different account then signs in, the previous person's Journeys are kept and backed up into that account. Plan Stage 1. |
+| **Account restore on a new device** | **BROKEN — confirmed on the live project, 2026-09-17** | Read-only check: `account_state` has **0 rows**, so no account has ever been backed up; 0 triggers on `auth.users`; 2 real users (one with no `profiles` row), 24 anonymous users. The backup check was spent on the anonymous launch session, the gateway cached that anonymous id, and backups need a `profiles` row nothing created. The promise in the Privacy Policy that an account survives a lost phone has never been true. Client fix shipped in update 16; **server half (migration 0020) waits for the founder's approval to apply** — until then backups still fail; plan: `04_Product/Dev_Accounts_And_Restore_Plan_2026-09-17.md`. |
+| **Sign out leaks into the next account** | **SHIPPED, update 16** | Sign out and Delete account now wipe every account key except language and theme, hold all store writes, and restart the app, so nothing of the previous person survives in memory or storage. Social, Messaging and Mirror gateways no longer act as the previous user. **Device check:** both should relaunch into the first run at the language step. |
 | Switching test users | **PLANNED** | Founder request: username-only accounts during development, a Create/Sign-in screen before onboarding, Apple/Google distinguishing new from existing. Temporary username path behind a server switch; code removed before any store submission. |
 | Data export | **WORKS ON PAPER** | Good defensive pattern — it caught a real privacy bug once (Tool data surviving a "delete"). No device pass on the share sheet. |
 | Account deletion | **WORKS ON PAPER** | No record of a real account ever deleted against the live backend. |

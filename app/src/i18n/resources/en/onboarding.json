@@ -53,14 +53,6 @@
       "body": "A short Journey is waiting to help you explore the app, discover what can support you, and build your first personal Journey.",
       "footer": "You do not need to learn everything now. We will move forward together, one Step at a time.",
       "primary": "Take me to my first Journey"
-    },
-    "firstJourney": {
-      "kicker": "Your first Journey",
-      "title": "Discover {{product}}",
-      "body": "{{steps}} short Steps, each opening another part of the path.",
-      "cardCount": "{{current}} of {{total}}",
-      "cardStatus": "Started now",
-      "primary": "Go to the first Step"
     }
   },
   "language": {

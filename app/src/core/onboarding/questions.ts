@@ -199,7 +199,7 @@ export const ONBOARDING_QUESTION_IDS: readonly OnboardingQuestionId[] = ONBOARDI
 export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
 
 /**
- * The FIRST-RUN flow in order — the language choice, then the founder's SEVEN approved screens
+ * The FIRST-RUN flow in order — the language choice, then the SIX screens the first run still shows
  * (design pack 2026-09-14,
  * transcribed as `04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`).
  *
@@ -214,15 +214,28 @@ export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
  * was three screens of what we believe stacked in front of one screen of preparation. The approved
  * pack folds all of that into TWO screens — a welcome and a purpose — and spends the room it saves
  * on the two moments that were missing entirely: the **account**, which now comes before the
- * conversation and is mandatory (D104), and the **handoff + first Journey**, which give the person
- * somewhere to arrive instead of being dropped at Home.
+ * conversation and is mandatory (D104), and the **handoff**, which gives the person a sentence
+ * between the conversation and Home instead of being dropped there.
  *
  * ── THE TWO NAMES THAT ARE NOT SCREENS IN THIS ROUTE ───────────────────────────────────────────
  *
- * `conversation` lives on `/coach` and `handoff`/`firstJourney` are reached from there too, because
- * the first-run gate closes when the coach finishes building. They are still steps: a step is a
- * RESUME POINT before it is a screen, and a device that closes mid-conversation has to come back to
- * the launcher rather than to the top of the flow.
+ * `conversation` lives on `/coach` and `handoff` is reached from there too, because the first-run
+ * gate closes when the coach finishes building. They are still steps: a step is a RESUME POINT
+ * before it is a screen, and a device that closes mid-conversation has to come back to the launcher
+ * rather than to the top of the flow.
+ *
+ * ── WHY THERE ARE SIX AND NOT SEVEN (founder, 2026-09-18) ──────────────────────────────────────
+ *
+ * Screen 07 presented the intro Journey and its Steps as the last page of the first run. The
+ * founder, after running the flow on his own phone: *the Journey should not be shown as part of
+ * onboarding — it is an ordinary Journey on the home screen.* A Journey that needs a screen of its
+ * own to be introduced is a Journey the product is apologising for; the same card is on Home a
+ * second later, next to the one the conversation just built, and that is where it is met.
+ *
+ * So the handoff is the last page, its button goes Home, and `completeOnboarding` still runs where
+ * it always did — at the end of the conversation — so the intro Journey exists BEFORE anybody
+ * arrives at Home. Nothing about the Journey changed; only the screen that used to stand in
+ * front of it is gone.
  *
  * ── WHY `language` IS FIRST AND IS NOT ONE OF THE SEVEN (founder, 2026-09-15) ──────────────────
  *
@@ -234,8 +247,8 @@ export const ONBOARDING_QUESTION_COUNT = ONBOARDING_QUESTIONS.length;
  * (each option names itself in its own script), and it re-renders the flow in the chosen language
  * the same frame.
  *
- * It is deliberately NOT a pager dot. The pack has seven screens and the dots must read as seven —
- * see {@link ONBOARDING_PAGER_STEPS}. A language choice is the door, not the first room.
+ * It is deliberately NOT a pager dot. The dots count the screens the first run shows — six, since
+ * 2026-09-18 — see {@link ONBOARDING_PAGER_STEPS}. A language choice is the door, not the first room.
  *
  * Settings › Language is unchanged and reachable forever; this adds a moment, it removes nothing.
  */
@@ -248,24 +261,27 @@ export const ONBOARDING_STEP_ORDER: readonly OnboardingStep[] = [
   // identity or it is not had yet; there is no skip here and no anonymous path.
   'account',
   'conversation',
+  // The last page of the first run since 2026-09-18. Its button goes to Home, where the intro
+  // Journey is waiting as an ordinary Journey card — see the note above.
   'handoff',
-  'firstJourney',
 ];
 
 /**
- * The steps the PAGER counts — the seven approved screens, and only those.
+ * The steps the PAGER counts — the screens the first run shows, and only those. Six of them since
+ * screen 07 was dropped (founder, 2026-09-18).
  *
  * Derived from the order rather than written out, so a screen cannot be added to the flow and
- * missed in the dots. `language` is excluded for the reason given above: it precedes the seven.
+ * missed in the dots. `language` is excluded for the reason given above: it precedes them all.
  */
 export const ONBOARDING_PAGER_STEPS: readonly OnboardingStep[] = ONBOARDING_STEP_ORDER.filter(
   (step) => step !== 'language',
 );
 
 /**
- * The steps that are no longer part of the first-run sequence but are still real pages: the nine
- * questions (reachable from the Tools tab), the profile page, the three product-promise screens the
- * approved pack replaced, and the tail that moved after the first Journey.
+ * The steps that are no longer part of the first-run sequence but are still real pages (or, for
+ * `firstJourney`, were one until 2026-09-18): the nine questions (reachable from the Tools tab), the
+ * profile page, the three product-promise screens the approved pack replaced, and the two permission
+ * asks that moved into the coach's tail.
  *
  * This exists for ONE reason, and it is a live one: people are mid-flow on the shipped build right
  * now. A device that resumes at `q4`, or at `supportIntro`, after this update must not be handed a
@@ -282,6 +298,10 @@ const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
   'completion',
   'coachMemory',
   'notifications',
+  // Screen 07, the intro-Journey page (founder, 2026-09-18). The Journey it showed is unchanged and
+  // is created exactly where it always was; it is simply met on Home now, as an ordinary Journey.
+  // The step stays NAMED here because a device may still have it persisted as a resume point.
+  'firstJourney',
   // The profile page (founder, 2026-09-03). Everything on it was already pre-filled and confirmable
   // in one tap, and it was still a form standing between somebody and the reason they opened the
   // app — none of which has to be answered before the conversation. Its contents are now the Steps
@@ -301,8 +321,10 @@ const RETIRED_FIRST_RUN_STEPS: readonly OnboardingStep[] = [
  * preparation too — because the next thing that should happen to them is the conversation, and
  * `prepare` is the last screen before the account gate that now guards it.
  *
- * Nobody is ever mapped PAST the account screen. A person who was mid-questionnaire yesterday has
- * no session today, and D104 says the conversation does not start without one.
+ * Nobody who has not been THROUGH the account screen is ever mapped past it. A person who was
+ * mid-questionnaire yesterday has no session today, and D104 says the conversation does not start
+ * without one. The one mapping that lands later — `firstJourney` → `handoff` — is the opposite
+ * case: that person finished the conversation, so walking them back to the gate would be the bug.
  */
 const RETIRED_STEP_LANDING: Partial<Record<OnboardingStep, OnboardingStep>> = {
   // "The problem was never that you did not care enough" — the screen that named the difficulty.
@@ -312,6 +334,12 @@ const RETIRED_STEP_LANDING: Partial<Record<OnboardingStep, OnboardingStep>> = {
   personalization: 'purpose',
   supportIntro: 'purpose',
   intro: 'prepare',
+  // A device persisted on the dropped screen 07 was, by definition, past the conversation and past
+  // `completeOnboarding` — its intro Journey exists. `handoff` is therefore the only honest landing:
+  // it is a real screen of the flow, it is one tap from Home, and that tap now goes to Home. Sending
+  // them to `prepare` instead would walk somebody who is finished back through the account gate and
+  // a second conversation, and "Home" cannot be written here at all — Home is outside onboarding.
+  firstJourney: 'handoff',
 };
 
 /**
@@ -332,10 +360,10 @@ export function resolveResumeStep(step: OnboardingStep | undefined): OnboardingS
 }
 
 /**
- * 1-based position of a step among the SEVEN approved screens, for the pager dots.
+ * 1-based position of a step among the screens the first run shows, for the pager dots.
  *
  * 0 — which the scaffold reads as "no pager" — for the language choice and for every retired page,
- * because neither is one of the seven.
+ * because neither is one of them.
  */
 export function stepPosition(step: OnboardingStep): number {
   return ONBOARDING_PAGER_STEPS.indexOf(step) + 1;

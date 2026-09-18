@@ -42,11 +42,19 @@ export type OnboardingStep =
    * launcher, not to the top of the flow.
    */
   | 'conversation'
-  /** 06 — the handoff, addressed by name, between the conversation and the first Journey. */
+  /**
+   * 06 — the handoff, addressed by name: the last page of the first run, between the conversation
+   * and Home (founder, 2026-09-18).
+   */
   | 'handoff'
-  /** 07 — the intro Journey, its Steps, and the way into the app. */
-  | 'firstJourney'
   // ── Retired from the first run, still real pages ────────────────────────────────────────────
+  /**
+   * 07 — the intro Journey and its Steps, as a page of the first run. Dropped 2026-09-18: the
+   * founder asked for that Journey to be met on Home as an ordinary Journey card rather than
+   * presented as a step of onboarding. The NAME stays because a device may still carry it as a
+   * persisted resume point; `resolveResumeStep` lands it on `handoff`.
+   */
+  | 'firstJourney'
   | 'language'
   // The screen that names the difficulty BEFORE any of the three promises (D98). It is not a
   // fourth promise and is deliberately not styled as one.

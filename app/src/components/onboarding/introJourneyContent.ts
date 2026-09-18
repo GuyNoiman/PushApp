@@ -3,9 +3,10 @@
  *
  * It lives here rather than in `core/onboarding/introJourney` because the engines are framework-free
  * (Engineering Bible §19) and i18n is a UI concern — the engine takes strings, it does not fetch
- * them. It moved OUT of `app/coach.tsx` on 2026-09-15 because the approved first-Journey screen
- * (build spec §7) renders the same Steps the Journey is built from, and two readers of one set of
- * keys must not be two copies of this function.
+ * them. It moved OUT of `app/coach.tsx` on 2026-09-15 so that more than one caller could read one
+ * set of keys without becoming two copies of this function; the callers today are the two places
+ * that COMPLETE onboarding (the coach's tail and the handoff's button), which is the moment the
+ * Journey is built.
  */
 import type { TFunction } from 'i18next';
 

@@ -76,11 +76,11 @@ describe('onboarding config (PRD §6)', () => {
     expect(questionNumber('completion')).toBe(0);
   });
 
-  it("walks the founder's seven approved screens, behind the language choice", () => {
-    // The approved design pack (2026-09-14) is the sequence now. It is pinned here rather than left
-    // to whoever next edits the list, because the order is not decoration: the account sits between
-    // the preparation and the conversation on purpose (D104), and the two screens after the
-    // conversation exist so nobody is dropped at Home without being introduced to what was built.
+  it("walks the founder's approved screens, behind the language choice", () => {
+    // The approved design pack (2026-09-14) is the sequence now, minus its seventh screen. It is
+    // pinned here rather than left to whoever next edits the list, because the order is not
+    // decoration: the account sits between the preparation and the conversation on purpose (D104),
+    // and the handoff exists so nobody is dropped at Home without a sentence saying what was built.
     expect([...ONBOARDING_STEP_ORDER]).toEqual([
       'language',
       'welcome',
@@ -89,8 +89,10 @@ describe('onboarding config (PRD §6)', () => {
       'account',
       'conversation',
       'handoff',
-      'firstJourney',
     ]);
+    // Screen 07 presented the intro Journey as a page of onboarding. The founder, 2026-09-18: it is
+    // an ordinary Journey on the home screen, not a step of the first run.
+    expect(ONBOARDING_STEP_ORDER).not.toContain('firstJourney');
     // The three-promise introduction, the acknowledgement (D98) and the profile page are gone from
     // the SEQUENCE. Their pages still exist; nothing walks into them from either direction.
     for (const retired of ['acknowledge', 'promise', 'personalization', 'supportIntro', 'intro', 'personalInfo'] as const) {
@@ -99,23 +101,25 @@ describe('onboarding config (PRD §6)', () => {
     expect(nextStep('welcome')).toBe('purpose');
     expect(nextStep('prepare')).toBe('account');
     expect(prevStep('account')).toBe('prepare');
-    expect(nextStep('firstJourney')).toBe('firstJourney'); // terminal — the next screen is the app
+    expect(nextStep('handoff')).toBe('handoff'); // terminal — the next screen is Home
     expect(prevStep('language')).toBe('language'); // the first screen; there is nothing behind it
   });
 
-  it('puts the LANGUAGE before everything, and keeps it out of the seven dots', () => {
+  it('puts the LANGUAGE before everything, and keeps it out of the dots', () => {
     // Founder, 2026-09-15, and the reasoning is what makes it non-negotiable: a person may not read
     // English at all, so an English welcome screen leaves them unable to understand the onboarding
     // well enough to go and find a language setting. The approved pack has no language screen; that
     // is a gap in the pack, not a decision to drop the feature.
     expect(ONBOARDING_STEP_ORDER[0]).toBe('language');
-    // ...and the pager still reads as the seven approved screens. The language choice is the door,
-    // not the first room.
-    expect(ONBOARDING_PAGER_STEPS).toHaveLength(7);
+    // ...and the pager reads as the six screens the first run shows. The language choice is the
+    // door, not the first room.
+    expect(ONBOARDING_PAGER_STEPS).toHaveLength(6);
     expect(ONBOARDING_PAGER_STEPS).not.toContain('language');
     expect(stepPosition('language')).toBe(0);
     expect(stepPosition('welcome')).toBe(1);
-    expect(stepPosition('firstJourney')).toBe(7);
+    expect(stepPosition('handoff')).toBe(6);
+    // The dropped seventh screen counts for nothing — it is not one of them any more.
+    expect(stepPosition('firstJourney')).toBe(0);
     // A retired page has no dot either — it is not one of the seven.
     expect(stepPosition('q4')).toBe(0);
   });
@@ -161,10 +165,15 @@ describe('onboarding config (PRD §6)', () => {
     for (const retired of ['q1', 'q5', 'q9', 'completion', 'coachMemory', 'notifications', 'personalInfo'] as const) {
       expect(resolveResumeStep(retired)).toBe('prepare');
     }
-    // A live step resumes exactly where it was — including the three that render elsewhere.
-    for (const live of ['welcome', 'account', 'conversation', 'handoff', 'firstJourney'] as const) {
+    // A live step resumes exactly where it was — including the two that render elsewhere.
+    for (const live of ['welcome', 'account', 'conversation', 'handoff'] as const) {
       expect(resolveResumeStep(live)).toBe(live);
     }
+    // The dropped screen 07 lands on the handoff, and deliberately not on `prepare`: a device that
+    // persisted it had finished the conversation and already has its intro Journey, so the honest
+    // resume is the last screen of the flow — one tap from Home, which is where that tap now goes.
+    // Home itself cannot be named here; it is outside onboarding.
+    expect(resolveResumeStep('firstJourney')).toBe('handoff');
     // And a device with nothing persisted starts at the language, not at the welcome.
     expect(resolveResumeStep(undefined)).toBe('language');
     expect(resolveResumeStep('language')).toBe('language');

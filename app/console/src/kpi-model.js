@@ -152,7 +152,10 @@ export const FUNNEL_STAGES = Object.freeze([
   { id: 'introduction_started', label: 'Introduction started (first answer)', event: 'introduction_started' },
   { id: 'introduction_completed', label: 'Introduction completed (understanding confirmed)', event: 'introduction_completed' },
   { id: 'handoff', label: 'Handoff', event: 'onboarding_step_reached', bucket: 'handoff' },
-  { id: 'firstJourney', label: 'First Journey', event: 'onboarding_step_reached', bucket: 'firstJourney' },
+  // The seventh screen, 'firstJourney', was dropped from the first run on 2026-09-18 (the intro
+  // Journey is met on Home as an ordinary Journey card). Its rows are still in `kpi_events` and the
+  // taxonomy still names the bucket, but no installation can reach it again — leaving it as a stage
+  // would print a 100% drop at the foot of the funnel every day, about a screen that no longer runs.
 ]);
 
 /** The row of `kpi_counts` for one name and bucket (null bucket = the bucketless row). */

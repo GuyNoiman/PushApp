@@ -2,19 +2,27 @@
  * Onboarding — the first run, as the founder approved it (design pack 2026-09-14, transcribed in
  * `04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`).
  *
- * ONE route, SEVEN screens: welcome → purpose → prepare → account → conversation → handoff →
- * firstJourney. The container owns which one is showing; `ONBOARDING_STEP_ORDER` in
- * `core/onboarding/questions.ts` owns the order, and is the authority. Read it rather than this
- * comment if they ever disagree — they have before, and the comment lost.
+ * ONE route, SIX screens: welcome → purpose → prepare → account → conversation → handoff. The
+ * container owns which one is showing; `ONBOARDING_STEP_ORDER` in `core/onboarding/questions.ts`
+ * owns the order, and is the authority. Read it rather than this comment if they ever disagree —
+ * they have before, and the comment lost.
  *
- * ── THREE OF THE SEVEN ARE NOT RENDERED FROM HERE, AND THAT IS DELIBERATE ────────────────────
+ * ── SCREEN 07 IS GONE (founder, 2026-09-18) ─────────────────────────────────────────────────────
  *
- * `conversation` is the coach, which lives on `/coach`. `handoff` and `firstJourney` come after the
- * coach has built a Journey — and building a Journey CLOSES the first-run gate, which makes this
- * route unreachable. So those two are rendered from the coach's tail
- * ({@link '@/components/onboarding/FirstRunTail'}) on the real path. They are still steps: a step is
- * a resume point before it is a screen. This container can still render all three, because a device
- * that closed mid-flow can resume on any of them and must find a screen rather than a blank.
+ * The pack had a seventh screen that presented the intro Journey and its Steps. The founder, after
+ * the first run on his own phone: the Journey is not a step of onboarding, it is an ordinary Journey
+ * on the home screen. So the handoff is the last page and its button goes to Home, where that
+ * Journey is already waiting — `completeOnboarding` still creates it at the end of the conversation,
+ * exactly where it did before.
+ *
+ * ── TWO OF THE SIX ARE NOT RENDERED FROM HERE, AND THAT IS DELIBERATE ────────────────────────
+ *
+ * `conversation` is the coach, which lives on `/coach`. `handoff` comes after the coach has built a
+ * Journey — and building a Journey CLOSES the first-run gate, which makes this route unreachable. So
+ * it is rendered from the coach's tail ({@link '@/components/onboarding/FirstRunTail'}) on the real
+ * path. It is still a step: a step is a resume point before it is a screen. This container can still
+ * render both, because a device that closed mid-flow can resume on either and must find a screen
+ * rather than a blank.
  *
  * ── THE ACCOUNT IS MANDATORY (D104) ─────────────────────────────────────────────────────────────
  *
@@ -62,7 +70,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ProviderButton } from '@/components/auth/ProviderButton';
 import { SignInFailureNotice } from '@/components/auth/SignInFailureNotice';
-import { FirstJourneyPage, HandoffPage } from '@/components/onboarding/FirstRunTail';
+import { HandoffPage } from '@/components/onboarding/FirstRunTail';
 import { introJourneyContent } from '@/components/onboarding/introJourneyContent';
 import { usePersonalName } from '@/components/onboarding/usePersonalName';
 import { RestartPrompt } from '@/components/settings/RestartPrompt';
@@ -98,6 +106,8 @@ import { useSocial } from '@/state/SocialProvider';
 
 export default function OnboardingScreen() {
   const { core } = useApp();
+  // The intro Journey's own copy, for the completion the handoff's button guarantees (see `enterApp`).
+  const { t } = useTranslation('onboarding');
 
   // Seed from the core so an interrupted flow resumes at the same page + language (PRD §8).
   const [step, setStep] = useState<OnboardingStep>(() => core.getOnboardingStep());
@@ -175,8 +185,23 @@ export default function OnboardingScreen() {
     [answers, core],
   );
 
-  /** Leave the first run for the app proper. Used only by the two post-Journey screens. */
-  const enterApp = useCallback(() => router.replace('/'), []);
+  /**
+   * Leave the first run for the app proper — the handoff's one button since screen 07 was dropped
+   * (founder, 2026-09-18).
+   *
+   * It COMPLETES onboarding first, and that is not a duplicate of the coach's call. Home lives
+   * behind the first-run gate: replacing to `/` while the gate is still closed bounces the person
+   * straight back to this route, onto this same screen, forever. On the real path completion has
+   * already happened at the end of the conversation and this is an idempotent no-op that keeps the
+   * original timestamp and creates nothing twice (see `AppCore.completeOnboarding`). On the one path
+   * where it has not — a device resuming onto the handoff from a build that got here another way —
+   * it is what makes the intro Journey exist before Home is reached, which is the guarantee this
+   * screen's button now carries.
+   */
+  const enterApp = useCallback(() => {
+    core.completeOnboarding(answers, introJourneyContent(t));
+    router.replace('/');
+  }, [answers, core, t]);
 
   // ── Render the current page ──────────────────────────────────────────────────
 
@@ -233,15 +258,11 @@ export default function OnboardingScreen() {
     return <PrepareStep pager={stepPosition('conversation')} onBack={() => go('prepare')} onContinue={startConversation} />;
   }
 
-  // Both of these normally render from the coach's tail, after the gate has closed. Resuming onto
-  // one means the app was closed between the Journey being built and the person seeing it — so the
-  // screen is shown, and its action goes to the app rather than further into a finished flow.
+  // This normally renders from the coach's tail, after the gate has closed. Resuming onto it means
+  // the app was closed between the Journey being built and the person seeing this sentence — so the
+  // screen is shown, and its button goes to the app rather than further into a finished flow.
   if (step === 'handoff') {
-    return <HandoffStep onContinue={() => go('firstJourney')} />;
-  }
-
-  if (step === 'firstJourney') {
-    return <FirstJourneyStep onContinue={enterApp} />;
+    return <HandoffStep onContinue={enterApp} />;
   }
 
   // Retired pages, kept renderable for a device that somehow resumes on one. `resolveResumeStep`
@@ -829,7 +850,7 @@ function LegalLine() {
 }
 
 /**
- * 06 · HANDOFF, as reached from THIS route.
+ * 06 · HANDOFF, as reached from THIS route — the last screen of the first run (founder, 2026-09-18).
  *
  * The screen itself lives in `FirstRunTail` because the real path renders it from the coach, after
  * the first-run gate has already closed. This wrapper only supplies the name — and the name is the
@@ -839,12 +860,6 @@ function LegalLine() {
 function HandoffStep({ onContinue }: { onContinue: () => void }) {
   const name = usePersonalName();
   return <HandoffPage name={name} onContinue={onContinue} />;
-}
-
-/** 07 · FIRST JOURNEY, as reached from this route. Same page, same content source as the tail. */
-function FirstJourneyStep({ onContinue }: { onContinue: () => void }) {
-  const { t } = useTranslation('onboarding');
-  return <FirstJourneyPage content={introJourneyContent(t)} onContinue={onContinue} />;
 }
 
 const styles = StyleSheet.create({

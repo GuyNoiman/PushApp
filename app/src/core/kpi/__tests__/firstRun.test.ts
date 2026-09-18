@@ -24,10 +24,15 @@ function capture(): KpiGateway & { sent: KpiInput[] } {
 }
 
 describe('the taxonomy', () => {
-  it('counts exactly the steps the flow has, in its order', () => {
+  it('counts exactly the steps the flow has, in its order, plus the ones it has retired', () => {
     // If this fails, the first run changed. Decide whether the new step belongs in the funnel, then
     // change ONBOARDING_STEP_BUCKETS and the console's FUNNEL_STAGES together.
-    expect([...ONBOARDING_STEP_BUCKETS]).toEqual([...ONBOARDING_STEP_ORDER]);
+    //
+    // A RETIRED step keeps its bucket and is listed after the live ones: `firstJourney` was screen
+    // 07 until the founder dropped it (2026-09-18), and the rows written under it are real history a
+    // taxonomy that no longer named the bucket could not label. Nothing records it any more.
+    expect([...ONBOARDING_STEP_BUCKETS]).toEqual([...ONBOARDING_STEP_ORDER, 'firstJourney']);
+    expect(ONBOARDING_STEP_ORDER).not.toContain('firstJourney');
   });
 
   it('declares every first-run event, and none of them carries an open bucket', () => {

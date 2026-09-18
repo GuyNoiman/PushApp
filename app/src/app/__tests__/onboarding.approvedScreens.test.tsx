@@ -1,6 +1,8 @@
 /**
- * The first run, walked end to end, in both languages — the founder's seven approved screens
- * (`04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`).
+ * The first run, walked end to end, in both languages — the founder's approved screens
+ * (`04_Product/UX/Onboarding_Approved_Screens_Build_Spec_2026-09-15.md`), which have been SIX since
+ * screen 07 was dropped on 2026-09-18: the intro Journey is an ordinary Journey card on Home, not a
+ * page of onboarding.
  *
  * ── WHY THIS TEST USES THE REAL TRANSLATIONS ───────────────────────────────────────────────────
  *
@@ -11,7 +13,7 @@
  * language, asserting each screen by the words the founder approved.
  *
  * It also pins the two things that are easy to break silently:
- *  - **The pager reads as SEVEN** on every one of the seven, and the language choice has no dots at
+ *  - **The pager reads as SIX** on every one of the six, and the language choice has no dots at
  *    all — it precedes them (founder, 2026-09-15).
  *  - **`⟨PRODUCT⟩` is interpolated**, never rendered raw. The name is being replaced (D107); a
  *    literal `{{product}}` on the welcome screen is what a missed interpolation looks like.
@@ -148,7 +150,7 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
     });
   });
 
-  it('walks all seven approved screens in order, from the language choice to the conversation', async () => {
+  it('walks every approved screen in order, from the language choice to the conversation', async () => {
     const core = setApp('language');
     const r = await render(createElement(OnboardingScreen));
 
@@ -163,7 +165,7 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
     expect(textOf(r)).toContain(T('flow.welcome.titleAccent'));
     expect(textOf(r)).not.toContain('{{product}}');
     expect(textOf(r)).toContain('PushApp');
-    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 1, total: 7 }));
+    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 1, total: 6 }));
     // The secondary is a real route to the account screen, and it is on this screen.
     expect(r.root.findAllByProps({ accessibilityLabel: T('flow.welcome.secondary') }).length).toBeGreaterThan(0);
     await tap(r, T('flow.welcome.primary'));
@@ -174,7 +176,7 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
     expect(bullets).toHaveLength(4);
     for (const bullet of bullets) expect(textOf(r)).toContain(bullet);
     expect(textOf(r)).toContain(T('flow.purpose.footer'));
-    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 2, total: 7 }));
+    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 2, total: 6 }));
     await tap(r, T('flow.purpose.primary'));
 
     // 03 · PREPARE — the pull quote and the two meta lines.
@@ -182,7 +184,7 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
     expect(textOf(r)).toContain(T('flow.prepare.metaPace'));
     expect(textOf(r)).toContain(T('flow.prepare.metaInput'));
     expect(textOf(r)).not.toContain('{{product}}');
-    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 3, total: 7 }));
+    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 3, total: 6 }));
     await tap(r, T('flow.prepare.primary'));
 
     // 04 · ACCOUNT — mandatory (D104). It persisted the step and did NOT navigate anywhere.
@@ -200,7 +202,7 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
     // as one contiguous sentence on screen.
     const squash = (text: string) => text.replace(/\s+/g, '');
     expect(squash(textOf(r))).toContain(squash(legal));
-    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 4, total: 7 }));
+    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 4, total: 6 }));
 
     // 05 · CONVERSATION lives on /coach. Leaving persists it, so a device closed mid-conversation
     // comes back to the launcher rather than to the top of the flow.
@@ -211,34 +213,33 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
     expect(core.completeOnboarding).not.toHaveBeenCalled();
   });
 
-  it('shows the handoff and the first Journey as screens 6 and 7, then lands in the app', async () => {
-    // Both normally render from the coach's tail, after the gate has closed. Resuming onto one — the
+  it('shows the handoff as the LAST screen, and its button goes to Home', async () => {
+    // It normally renders from the coach's tail, after the gate has closed. Resuming onto it — the
     // app was closed between the Journey being built and the person seeing it — must still work.
-    setApp('handoff');
+    const core = setApp('handoff');
     const r = await render(createElement(OnboardingScreen));
 
-    // 06 · HANDOFF.
+    // 06 · HANDOFF, and there is no 07: the intro Journey is met on Home (founder, 2026-09-18).
     expect(textOf(r)).toContain(T('flow.handoff.title'));
     expect(textOf(r)).toContain(T('flow.handoff.footer'));
-    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 6, total: 7 }));
-    await tap(r, T('flow.handoff.primary'));
+    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 6, total: 6 }));
 
-    // 07 · FIRST JOURNEY — the intro Journey, rendered from the very keys the Journey is built from,
-    // so this screen cannot promise a Step that does not exist.
+    await tap(r, T('flow.handoff.primary'));
+    expect(mockReplace).toHaveBeenCalledWith('/');
+    // Home is behind the first-run gate, so the button completes onboarding on its way — with the
+    // intro Journey's content, which is what guarantees the Journey exists before Home is reached.
+    // On the real path this already happened at the end of the conversation and the re-call is an
+    // idempotent no-op; on a resumed device it is the thing that stops `/` bouncing straight back.
+    expect(core.completeOnboarding).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ title: T('introJourney.title') }),
+    );
+    // Nothing on this screen is the intro Journey's own page any more.
     const steps = i18n.t('introJourney.steps', { ns: 'onboarding', returnObjects: true }) as {
       title: string;
       description: string;
     }[];
-    expect(textOf(r)).toContain(T('introJourney.title'));
-    for (const step of steps) expect(textOf(r)).toContain(step.title);
-    // The count in the body line is the REAL number of Steps, not a number written into the copy.
-    expect(textOf(r)).toContain(T('flow.firstJourney.body', { steps: steps.length }));
-    expect(textOf(r)).toContain(T('flow.firstJourney.cardCount', { current: 1, total: steps.length }));
-    expect(textOf(r)).not.toContain('{{product}}');
-    expect(pagerLabel(r)).toBe(T('flow.pager', { current: 7, total: 7 }));
-
-    await tap(r, T('flow.firstJourney.primary'));
-    expect(mockReplace).toHaveBeenCalledWith('/');
+    for (const step of steps) expect(textOf(r)).not.toContain(step.title);
   });
 
   it('greets a person the conversation never named with a finished sentence', async () => {
@@ -258,7 +259,7 @@ describe.each(['he', 'en'] as const)('the first run in %s', (lang) => {
 });
 
 describe('the pager and the sequence cannot drift apart', () => {
-  it('counts exactly the seven approved screens', () => {
+  it('counts exactly the screens the first run shows', () => {
     expect(ONBOARDING_PAGER_STEPS).toEqual([
       'welcome',
       'purpose',
@@ -266,7 +267,6 @@ describe('the pager and the sequence cannot drift apart', () => {
       'account',
       'conversation',
       'handoff',
-      'firstJourney',
     ]);
   });
 });

@@ -19,7 +19,7 @@ jest.mock('expo-notifications', () => ({
 
 import { AppCore } from '../AppCore';
 import { emptyOnboardingAnswers, toggleSelection } from '../onboarding/answers';
-import { questionById } from '../onboarding/questions';
+import { ONBOARDING_STEP_ORDER, questionById } from '../onboarding/questions';
 import type { AppState } from '../types/domain';
 import type { Repository } from '../persistence/Repository';
 import type { FirstRunFlag } from '../persistence/firstRunFlag';
@@ -253,6 +253,41 @@ describe('the Journey the first run leaves behind (founder, 2026-09-03)', () => 
 
     const matches = (saved()?.journeys ?? []).filter((j) => j.title === 'Getting to know PushApp');
     expect(matches).toHaveLength(1);
+  });
+
+  /**
+   * THE WHOLE POINT OF DROPPING SCREEN 07 (founder, 2026-09-18).
+   *
+   * The intro Journey is no longer introduced by a page of its own; the first run ends on the
+   * handoff and its button goes to Home. That is only honest if the Journey is already THERE when
+   * Home draws — an empty Home with a promise of a Journey would be worse than the screen we
+   * removed. So: walk the real sequence, complete it where the coach completes it, and look at what
+   * a fresh account's Home would actually show.
+   */
+  it('a fresh account lands on Home with the intro Journey already on it', async () => {
+    const { repo } = memRepo();
+    const core = new AppCore(repo, consumedFlag());
+    await core.start();
+
+    // The first run, step by step, exactly as `/onboarding` persists it. Nothing completes on the way.
+    for (const step of ONBOARDING_STEP_ORDER) {
+      core.saveOnboardingProgress(step, emptyOnboardingAnswers());
+      expect(core.getSnapshot().onboardingCompleted).toBe(false);
+    }
+    expect(core.getOnboardingStep()).toBe('handoff'); // the last screen of the flow, not a Journey page
+
+    // What the coach's tail does when the introduction ends — before the handoff is ever shown.
+    core.completeOnboarding(emptyOnboardingAnswers(), intro);
+
+    const snapshot = core.getSnapshot();
+    // The first-run gate is open, so the handoff's `router.replace('/')` reaches Home instead of
+    // bouncing back into onboarding.
+    expect(snapshot.onboardingCompleted).toBe(true);
+    // And Home has the Journey on it, as an ordinary Journey with its Steps.
+    const onHome = snapshot.journeys.find((j) => j.title === 'Getting to know PushApp');
+    expect(onHome).toBeDefined();
+    expect(onHome!.steps).toHaveLength(intro.steps.length);
+    expect(snapshot.weekSteps.some((s) => s.journeyId === onHome!.id)).toBe(true);
   });
 
   it('is not created at all when the caller does not ask for one', async () => {

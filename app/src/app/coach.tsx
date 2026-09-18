@@ -31,7 +31,7 @@ import { CoachOptions } from '@/components/coach/CoachOptions';
 import { buildCoachScript, type CoachOption } from '@/components/coach/coachScript';
 import { useLiveCoach } from '@/components/coach/useLiveCoach';
 import { CONFIRM_QUESTION_ID, FOCUS_QUESTION_ID } from '@/core/coach/CoachOrchestrator';
-import { FirstJourneyPage, HandoffPage, RemindersAskPage } from '@/components/onboarding/FirstRunTail';
+import { HandoffPage, RemindersAskPage } from '@/components/onboarding/FirstRunTail';
 import { introJourneyContent } from '@/components/onboarding/introJourneyContent';
 import { usePersonalName } from '@/components/onboarding/usePersonalName';
 import {
@@ -271,14 +271,17 @@ function LiveCoachScreen() {
   // The intro Journey's own copy. Read unconditionally so the hook order never depends on the route.
   const { t: tOnboarding } = useTranslation('onboarding');
   /**
-   * The first run's tail, in order: the reminder ask, then the two approved screens that close the
-   * sequence — 06 · handoff and 07 · first Journey (build spec §6/§7).
+   * The first run's tail, in order: the reminder ask, then the screen that closes the sequence —
+   * 06 · handoff (build spec §6). Screen 07, which presented the intro Journey, was dropped on
+   * 2026-09-18 at the founder's instruction: that Journey is met on Home as an ordinary Journey
+   * card, so the handoff's button goes to Home.
    *
-   * They live here rather than in `/onboarding` because `completeOnboarding` has already run by the
-   * time the first of them shows, and that closes the first-run gate: the onboarding route is not
-   * reachable any more. They are still steps of `ONBOARDING_STEP_ORDER` and still carry the pager.
+   * The tail lives here rather than in `/onboarding` because `completeOnboarding` has already run by
+   * the time the first of these shows, and that closes the first-run gate: the onboarding route is
+   * not reachable any more. The handoff is still a step of `ONBOARDING_STEP_ORDER` and still carries
+   * the pager.
    */
-  const [tail, setTail] = useState<'none' | 'reminders' | 'handoff' | 'firstJourney'>('none');
+  const [tail, setTail] = useState<'none' | 'reminders' | 'handoff'>('none');
   const personalName = usePersonalName();
   /** The build's technical trace, shown after the Journey is created (technical mode only). */
   const [buildTrace, setBuildTrace] = useState<string[]>([]);
@@ -566,10 +569,10 @@ function LiveCoachScreen() {
     setTail('handoff');
   }, [core]);
 
-  // THE FUNNEL's last two steps, which on the real path are shown from here rather than from
+  // THE FUNNEL's last step, which on the real path is shown from here rather than from
   // `/onboarding`. The reminder ask is not one of the steps and is not counted.
   useEffect(() => {
-    if (tail !== 'handoff' && tail !== 'firstJourney') return;
+    if (tail !== 'handoff') return;
     const event = onboardingStepReached(tail);
     if (event) appKpi.record(event);
   }, [tail]);
@@ -579,13 +582,9 @@ function LiveCoachScreen() {
   }
 
   if (tail === 'handoff') {
-    return <HandoffPage name={personalName} onContinue={() => setTail('firstJourney')} />;
-  }
-
-  if (tail === 'firstJourney') {
-    return (
-      <FirstJourneyPage content={introJourneyContent(tOnboarding)} onContinue={() => router.replace('/')} />
-    );
+    // Home, and the intro Journey is already there: `handleIntroductionDone` created it before this
+    // screen was ever shown, which is the guarantee that survived screen 07 being dropped.
+    return <HandoffPage name={personalName} onContinue={() => router.replace('/')} />;
   }
 
   return (

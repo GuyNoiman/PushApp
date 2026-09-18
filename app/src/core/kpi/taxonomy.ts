@@ -49,8 +49,13 @@ export interface KpiEventDef {
 
 /**
  * The first run's steps, exactly as `ONBOARDING_STEP_ORDER` in `core/onboarding/questions.ts` has
- * them. Written out rather than imported, and pinned to that array by a test: a screen added to the
- * flow must be a deliberate change to what we count, not a bucket that appears on its own.
+ * them, followed by any step the flow has RETIRED. Written out rather than imported, and pinned to
+ * that array by a test: a screen added to the flow must be a deliberate change to what we count, not
+ * a bucket that appears on its own.
+ *
+ * A retired step keeps its bucket. Rows written under it are real history — `firstJourney` was
+ * screen 07 until the founder dropped it on 2026-09-18 — and a taxonomy that could no longer name a
+ * bucket it holds would leave the console with rows it cannot label. Nothing records it any more.
  */
 export const ONBOARDING_STEP_BUCKETS = [
   'language',
@@ -60,6 +65,7 @@ export const ONBOARDING_STEP_BUCKETS = [
   'account',
   'conversation',
   'handoff',
+  // Retired 2026-09-18 (see above). Never recorded again; kept so the rows already written have a name.
   'firstJourney',
 ] as const;
 

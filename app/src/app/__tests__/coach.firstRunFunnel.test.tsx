@@ -187,7 +187,7 @@ describe('the first-run conversation, counted', () => {
     expect(JSON.stringify(sent)).not.toContain('Guy');
   });
 
-  it('counts completion when the understanding is confirmed, then the handoff and the first Journey', async () => {
+  it('counts completion when the understanding is confirmed, then the handoff', async () => {
     setApp();
     mockCoachView.current = baseCoach({
       items: [{ kind: 'user', text: 'Guy' }],
@@ -205,13 +205,14 @@ describe('the first-run conversation, counted', () => {
 
     await tap(r, 'continue');
     await tap(r, 'notifications.secondary');
-    await tap(r, 'flow.handoff.primary');
 
-    expect(names().slice(3)).toEqual([
-      'onboarding_step_reached.handoff',
-      'onboarding_step_reached.firstJourney',
-    ]);
-    expect(names()).toHaveLength(5);
+    // The handoff is the last step of the funnel since screen 07 was dropped (founder, 2026-09-18),
+    // and its button goes to Home rather than to one more page of onboarding.
+    expect(names().slice(3)).toEqual(['onboarding_step_reached.handoff']);
+    expect(names()).toHaveLength(4);
+
+    await tap(r, 'flow.handoff.primary');
+    expect(names()).toHaveLength(4);
   });
 
   it('counts no completion while the introduction is still running', async () => {

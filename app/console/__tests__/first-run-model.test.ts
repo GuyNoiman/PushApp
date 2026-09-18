@@ -47,8 +47,12 @@ describe('computeFunnel', () => {
   it('walks the first run in order, with the conversation between its opening and the handoff', () => {
     expect(FUNNEL_STAGES.map((s) => s.id)).toEqual([
       'language', 'welcome', 'purpose', 'prepare', 'account', 'conversation',
-      'introduction_started', 'introduction_completed', 'handoff', 'firstJourney',
+      'introduction_started', 'introduction_completed', 'handoff',
     ]);
+    // Screen 07 ('firstJourney') was dropped from the first run on 2026-09-18 — the intro Journey is
+    // met on Home as an ordinary Journey card. Its old rows still exist; no installation can reach
+    // it again, so it is not a stage any more.
+    expect(FUNNEL_STAGES.map((s) => s.id)).not.toContain('firstJourney');
   });
 
   it('gives each stage its installations and the loss since the stage before', () => {
@@ -62,7 +66,6 @@ describe('computeFunnel', () => {
       { name: 'introduction_started', bucket: null, events: 30, installs: 30 },
       { name: 'introduction_completed', bucket: null, events: 12, installs: 12 },
       step('handoff', 12),
-      step('firstJourney', 11),
     ]);
     const byId = Object.fromEntries(funnel.map((s) => [s.id, s]));
 
@@ -72,7 +75,8 @@ describe('computeFunnel', () => {
     expect(byId.conversation).toMatchObject({ installs: 40, drop: 60, dropPercent: 60 });
     // The introduction gap.
     expect(byId.introduction_completed).toMatchObject({ installs: 12, drop: 18, dropPercent: 60 });
-    expect(byId.firstJourney).toMatchObject({ installs: 11, drop: 1, dropPercent: 8.3 });
+    // The last stage of the first run: the handoff, which lands on Home.
+    expect(byId.handoff).toMatchObject({ installs: 12, drop: 0, dropPercent: 0 });
   });
 
   it('reads INSTALLATIONS, not events', () => {
